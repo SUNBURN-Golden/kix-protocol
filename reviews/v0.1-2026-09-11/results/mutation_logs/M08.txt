@@ -1,0 +1,36 @@
+test_admission_first_blocks_resale (test_core.LifecycleTests.test_admission_first_blocks_resale) ... ok
+test_cancel_after_payout_keeps_recoverables_then_recovers (test_core.LifecycleTests.test_cancel_after_payout_keeps_recoverables_then_recovers) ... ok
+test_cancel_delegation_does_not_invent_unused_closure (test_core.LifecycleTests.test_cancel_delegation_does_not_invent_unused_closure) ... ok
+test_capture_is_not_available_cash (test_core.LifecycleTests.test_capture_is_not_available_cash) ... ok
+test_delegation_requires_bound_final_log (test_core.LifecycleTests.test_delegation_requires_bound_final_log) ... ok
+test_duplicate_capture_under_new_operation_id (test_core.LifecycleTests.test_duplicate_capture_under_new_operation_id) ... ok
+test_effect_observation_orders_and_duplicate_facts (test_core.LifecycleTests.test_effect_observation_orders_and_duplicate_facts) ... ok
+test_event_completion_aborts_unfinished_checkout (test_core.LifecycleTests.test_event_completion_aborts_unfinished_checkout) ... ok
+test_existing_private_rights_model_financial_terms_binding (test_core.LifecycleTests.test_existing_private_rights_model_financial_terms_binding) ... ok
+test_existing_toss_reconciliation_contract (test_core.LifecycleTests.test_existing_toss_reconciliation_contract) ... ok
+test_failure_rolls_back_state_journal_and_outbox (test_core.LifecycleTests.test_failure_rolls_back_state_journal_and_outbox) ... ok
+test_full_chain_refund_before_payout (test_core.LifecycleTests.test_full_chain_refund_before_payout) ... ok
+test_funds_before_status_debits_cash_without_claiming_refund_done (test_core.LifecycleTests.test_funds_before_status_debits_cash_without_claiming_refund_done) ... ok
+test_inflight_payout_delays_reversal_then_creates_recovery (test_core.LifecycleTests.test_inflight_payout_delays_reversal_then_creates_recovery) ... ok
+test_late_failure_does_not_erase_completed_money (test_core.LifecycleTests.test_late_failure_does_not_erase_completed_money) ... ok
+test_late_payment_after_abort_never_mints_ticket (test_core.LifecycleTests.test_late_payment_after_abort_never_mints_ticket) ... ok
+test_marketing_consent_and_revocation_and_finance_minimization (test_core.LifecycleTests.test_marketing_consent_and_revocation_and_finance_minimization) ... ok
+test_original_qr_invalid_after_resale (test_core.LifecycleTests.test_original_qr_invalid_after_resale) ... ok
+test_partial_refunds_are_separate_bounded_effects (test_core.LifecycleTests.test_partial_refunds_are_separate_bounded_effects) ... ok
+test_policy_consent_domain_and_permissions (test_core.LifecycleTests.test_policy_consent_domain_and_permissions) ... ok
+test_purchase_resale_admission_and_exact_payouts (test_core.LifecycleTests.test_purchase_resale_admission_and_exact_payouts) ... ok
+test_resale_lock_blocks_admission_and_second_resale (test_core.LifecycleTests.test_resale_lock_blocks_admission_and_second_resale) ... ok
+test_response_loss_and_conflicting_id_after_restart (test_core.LifecycleTests.test_response_loss_and_conflicting_id_after_restart) ... ok
+test_same_event_other_payment_cannot_fund_refund (test_core.LifecycleTests.test_same_event_other_payment_cannot_fund_refund) ... ok
+test_same_funds_evidence_cannot_pay_two_obligations (test_core.LifecycleTests.test_same_funds_evidence_cannot_pay_two_obligations) ... ok
+test_source_scope_and_recipient_binding (test_core.LifecycleTests.test_source_scope_and_recipient_binding) ... ok
+test_two_database_connections_compete_for_same_seat (test_core.LifecycleTests.test_two_database_connections_compete_for_same_seat) ... ok
+test_unknown_outcome_never_releases_reservation (test_core.LifecycleTests.test_unknown_outcome_never_releases_reservation) ... ok
+test_unrelated_event_funds_cannot_fund_refund (test_core.LifecycleTests.test_unrelated_event_funds_cannot_fund_refund) ... ok
+test_unsent_payout_can_be_aborted_after_cancellation (test_core.LifecycleTests.test_unsent_payout_can_be_aborted_after_cancellation) ... ok
+test_wrong_capture_and_payment_reuse_rejected (test_core.LifecycleTests.test_wrong_capture_and_payment_reuse_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 0.094s
+
+OK

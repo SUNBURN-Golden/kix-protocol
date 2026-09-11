@@ -1,0 +1,16 @@
+{
+  "KIX_프로토콜_통합명세_v0.1.md": "a62c153936701749168ca07d8a5446a6f99f5a5f2c7331497ed02376c80682d6",
+  "README.md": "eaa1ec9a9582f6261e342b607f0bd71e04b7bc415bac5a32f22d887c7ffa366a",
+  "adapters.py": "f7d546d3d8e3c7e1061599708966212c205001275f7423bb207c71fd9afa4514",
+  "core.py": "045ac4092d4ca9eadb4ccf434a3d45b14053f9fa0b277d0c5c0a1497eb7880f4",
+  "protocol_contract.json": "f61a57ede0c2013f80a19c25e79dc8741855f50cb97a656ed8c6ebe08efbe5c7",
+  "requirements.txt": "346c4cbc64ee0af488dfdedc5a2b601e36e5d82aaa7eeb756b77729afeefc646",
+  "results/synthetic_lifecycle_trace.json": "40592b93b347fc492e2c3d54e995ab4695ea98dc28fdb7f4095de46129c33213",
+  "results/tests.txt": "6bfee91ea839af9408c3c78788c652b18bb31cf66588d530a36ce544deae2df5",
+  "results/verification.json": "c5e3dc828c1e3aea4cd97166e31bf907bdd8369c8d79e12f05486c4d47915ca6",
+  "source_inventory.json": "4f8e614e21ede773bb87b0d6b09d6d8b9b4dda4c5579edcb52582621a2c4335b",
+  "test_core.py": "bc35316f84718e6255d857b5be27e176fae3db58bb777c7d992c29eb4f31c987",
+  "vendor/rights_model.py": "6151d37d84146256638af9ad46fffe0d640738ad3098f46d13f06b92b0750806",
+  "vendor/tix_reconcile.py": "eff9c1b8ec4ce363c23feb7d62b2eed87b97035234219b827047685cd5bf3ac3",
+  "verify.py": "9fb0f14295cfc15414688bc9dbd1af57e651501d667bbb69b030b0fd9d31850d"
+}

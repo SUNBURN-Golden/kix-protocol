@@ -1,0 +1,24 @@
+# Local runtimes and generated scratch results
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.local/
+node_modules/
+
+# Credentials and local state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Desktop files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,54 @@
+{
+  "reviewDate": "2026-09-11",
+  "reusedSourceRecords": [
+    {
+      "name": "KIX_체인병렬_시뮬레이션_v0.7.md",
+      "library_file_id": "libfile_e2b6982c271881919754cf018a2f4a52",
+      "file_id": "file_000000002ecc81f682fa1cffb50fc976",
+      "version_id": null,
+      "modified_at": "2026-09-11T01:06:53.082913Z"
+    },
+    {
+      "name": "KIX_운영자독립_검증_v0.1.zip",
+      "library_file_id": "libfile_6b959363ee08819198cda478f02b3bea",
+      "file_id": "file_0000000090dc820c8444fb4159153f92",
+      "version_id": null,
+      "modified_at": "2026-09-10T10:02:27.472745Z"
+    },
+    {
+      "name": "KIX_결정자료_20260910.zip",
+      "library_file_id": "libfile_0bbe309a45508191b917e38dc58b1830",
+      "file_id": "file_0000000088c8822fbcf4d7c924615b31",
+      "version_id": "1",
+      "modified_at": "2026-09-10T08:47:47.192129Z"
+    },
+    {
+      "name": "KIX_실행검증기_후속설계_v1.6.md",
+      "library_file_id": "libfile_624545193a4481919d612eac70929bdc",
+      "file_id": "file_00000000abc081f59f06fe3a36f6349b",
+      "version_id": null,
+      "modified_at": "2026-09-10T05:10:36.937239Z"
+    },
+    {
+      "name": "Korean_TIX_취소대사_구현패키지_v0.1.zip",
+      "library_file_id": "libfile_f664527d33708191a57741d6bd2f4097",
+      "file_id": "file_00000000aad081fda6e458e7114e3b81",
+      "version_id": null,
+      "modified_at": "2026-09-08T23:55:11.087062Z"
+    }
+  ],
+  "derivedWork": "KIX protocol integration core v0.1",
+  "legalOrPatentConclusionsReassessed": false,
+  "preservedCode": [
+    {
+      "target": "vendor/tix_reconcile.py",
+      "sha256": "eff9c1b8ec4ce363c23feb7d62b2eed87b97035234219b827047685cd5bf3ac3",
+      "byteIdenticalToPriorSource": true
+    },
+    {
+      "target": "vendor/rights_model.py",
+      "sha256": "6151d37d84146256638af9ad46fffe0d640738ad3098f46d13f06b92b0750806",
+      "byteIdenticalToPriorSource": true
+    }
+  ]
+}

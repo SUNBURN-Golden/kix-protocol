@@ -1,0 +1,2 @@
+# Needed only for the preserved private-rights model contract test.
+cryptography==46.0.0

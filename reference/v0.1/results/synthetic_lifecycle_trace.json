@@ -1,0 +1,3449 @@
+{
+  "after_resale": {
+    "primaryCaptured": 100000,
+    "resaleCaptured": 120000,
+    "organizerGrossAllocated": 97400,
+    "organizerPaid": 0,
+    "organizerPayable": 97400,
+    "organizerRecoveryOutstanding": 0,
+    "refundOutstanding": 0,
+    "refundPlansPending": 0,
+    "evidenceClass": "synthetic",
+    "currency": "KRW",
+    "sequence": 10
+  },
+  "after_payout": {
+    "balances": {
+      "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a": 0,
+      "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6": 0,
+      "held:primary": 0,
+      "held:resale": 0,
+      "in_transit:payout-primary-0": 0,
+      "in_transit:payout-primary-1": 0,
+      "in_transit:payout-resale-0": 0,
+      "in_transit:payout-resale-1": 0,
+      "in_transit:payout-resale-2": 0,
+      "payable:primary-0": 0,
+      "payable:primary-1": 0,
+      "payable:resale-0": 0,
+      "payable:resale-1": 0,
+      "payable:resale-2": 0,
+      "pg:primary": 0,
+      "pg:resale": 0
+    },
+    "consents": {},
+    "domain": "kix:fixture:lifecycle:0.1",
+    "effects": {
+      "payout-primary-0": {
+        "allocation": "primary-0",
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99",
+        "kind": "PAYOUT",
+        "owed": "payable:primary-0",
+        "paymentId": "pay-primary",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "request": {
+          "amount": 95000,
+          "beneficiary": "organizer",
+          "currency": "KRW",
+          "effectId": "payout-primary-0",
+          "kind": "PAYOUT",
+          "paymentId": "pay-primary",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "primary"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "primary"
+      },
+      "payout-primary-1": {
+        "allocation": "primary-1",
+        "amount": 5000,
+        "beneficiary": "platform",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41",
+        "kind": "PAYOUT",
+        "owed": "payable:primary-1",
+        "paymentId": "pay-primary",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "request": {
+          "amount": 5000,
+          "beneficiary": "platform",
+          "currency": "KRW",
+          "effectId": "payout-primary-1",
+          "kind": "PAYOUT",
+          "paymentId": "pay-primary",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "primary"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "primary"
+      },
+      "payout-resale-0": {
+        "allocation": "resale-0",
+        "amount": 114000,
+        "beneficiary": "A",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-0",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 114000,
+          "beneficiary": "A",
+          "currency": "KRW",
+          "effectId": "payout-resale-0",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      },
+      "payout-resale-1": {
+        "allocation": "resale-1",
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-1",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 2400,
+          "beneficiary": "organizer",
+          "currency": "KRW",
+          "effectId": "payout-resale-1",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      },
+      "payout-resale-2": {
+        "allocation": "resale-2",
+        "amount": 3600,
+        "beneficiary": "platform",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-2",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 3600,
+          "beneficiary": "platform",
+          "currency": "KRW",
+          "effectId": "payout-resale-2",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      }
+    },
+    "events": {
+      "show": {
+        "organizer": "organizer",
+        "policy": {
+          "primaryFeeBps": 500,
+          "primaryPrice": 100000,
+          "refundProfile": "FULL_CHAIN_UNWIND_FIXTURE",
+          "resaleAllowed": true,
+          "resaleCap": 150000,
+          "resaleFeeBps": 300,
+          "resaleOrganizerBps": 200
+        },
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "427b31a42df1f04736e6949e09e9b42e77f2c8d8f29b07f6b64cf47ac37acaa8",
+        "status": "COMPLETED"
+      }
+    },
+    "events_log": [
+      {
+        "action": "create_event",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-1",
+        "result": {
+          "eventId": "show",
+          "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456"
+        },
+        "sequence": 1
+      },
+      {
+        "action": "prepare_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-2",
+        "result": {
+          "externalOrderId": "primary",
+          "status": "PREPARED",
+          "termsHash": "c9dc445da83fb20a5a8d5e9f753558c56cf652a0487602c6d34dc8c60fe8b69a",
+          "tradeId": "primary"
+        },
+        "sequence": 2
+      },
+      {
+        "action": "capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-3",
+        "result": {
+          "captured": true,
+          "cashAvailable": false
+        },
+        "sequence": 3
+      },
+      {
+        "action": "settle_capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-4",
+        "result": {
+          "settled": 100000
+        },
+        "sequence": 4
+      },
+      {
+        "action": "commit_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-5",
+        "result": {
+          "admissionEpoch": 1,
+          "owner": "A",
+          "rightsVersion": 1,
+          "ticketId": "show/A1"
+        },
+        "sequence": 5
+      },
+      {
+        "action": "prepare_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-6",
+        "result": {
+          "externalOrderId": "resale",
+          "status": "PREPARED",
+          "termsHash": "ca5e9a26060a103c85ab022c19d190a27cf1acfa12bb0b760ea6e3c555a2de3f",
+          "tradeId": "resale"
+        },
+        "sequence": 6
+      },
+      {
+        "action": "accept_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-7",
+        "result": {
+          "accepted": true
+        },
+        "sequence": 7
+      },
+      {
+        "action": "capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-8",
+        "result": {
+          "captured": true,
+          "cashAvailable": false
+        },
+        "sequence": 8
+      },
+      {
+        "action": "settle_capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-9",
+        "result": {
+          "settled": 120000
+        },
+        "sequence": 9
+      },
+      {
+        "action": "commit_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-10",
+        "result": {
+          "admissionEpoch": 2,
+          "owner": "B",
+          "rightsVersion": 2,
+          "ticketId": "show/A1"
+        },
+        "sequence": 10
+      },
+      {
+        "action": "admit",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-11",
+        "result": {
+          "admissionId": "op-11",
+          "decision": "ADMITTED_ONCE"
+        },
+        "sequence": 11
+      },
+      {
+        "action": "complete_event",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-12",
+        "result": {
+          "eventStatus": "COMPLETED"
+        },
+        "sequence": 12
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-13",
+        "result": {
+          "effectId": "payout-primary-0",
+          "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99"
+        },
+        "sequence": 13
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-14",
+        "result": {
+          "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99",
+          "unsentFixtureRequest": {
+            "amount": 95000,
+            "beneficiary": "organizer",
+            "currency": "KRW",
+            "effectId": "payout-primary-0",
+            "kind": "PAYOUT",
+            "paymentId": "pay-primary",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "primary"
+          }
+        },
+        "sequence": 14
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-15",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 15
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-16",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 16
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-17",
+        "result": {
+          "effectId": "payout-primary-1",
+          "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41"
+        },
+        "sequence": 17
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-18",
+        "result": {
+          "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41",
+          "unsentFixtureRequest": {
+            "amount": 5000,
+            "beneficiary": "platform",
+            "currency": "KRW",
+            "effectId": "payout-primary-1",
+            "kind": "PAYOUT",
+            "paymentId": "pay-primary",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "primary"
+          }
+        },
+        "sequence": 18
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-19",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 19
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-20",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 20
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-21",
+        "result": {
+          "effectId": "payout-resale-0",
+          "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354"
+        },
+        "sequence": 21
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-22",
+        "result": {
+          "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354",
+          "unsentFixtureRequest": {
+            "amount": 114000,
+            "beneficiary": "A",
+            "currency": "KRW",
+            "effectId": "payout-resale-0",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 22
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-23",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 23
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-24",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 24
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-25",
+        "result": {
+          "effectId": "payout-resale-1",
+          "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5"
+        },
+        "sequence": 25
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-26",
+        "result": {
+          "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5",
+          "unsentFixtureRequest": {
+            "amount": 2400,
+            "beneficiary": "organizer",
+            "currency": "KRW",
+            "effectId": "payout-resale-1",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 26
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-27",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 27
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-28",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 28
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-29",
+        "result": {
+          "effectId": "payout-resale-2",
+          "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f"
+        },
+        "sequence": 29
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-30",
+        "result": {
+          "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f",
+          "unsentFixtureRequest": {
+            "amount": 3600,
+            "beneficiary": "platform",
+            "currency": "KRW",
+            "effectId": "payout-resale-2",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 30
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-31",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 31
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-32",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 32
+      }
+    ],
+    "evidence": {
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-primary-0-STATUS-SUCCESS\"]": {
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "effect": "payout-primary-0",
+        "payment": "pay-primary",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-primary-1-STATUS-SUCCESS\"]": {
+        "amount": 5000,
+        "beneficiary": "platform",
+        "effect": "payout-primary-1",
+        "payment": "pay-primary",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-0-STATUS-SUCCESS\"]": {
+        "amount": 114000,
+        "beneficiary": "A",
+        "effect": "payout-resale-0",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-1-STATUS-SUCCESS\"]": {
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "effect": "payout-resale-1",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-2-STATUS-SUCCESS\"]": {
+        "amount": 3600,
+        "beneficiary": "platform",
+        "effect": "payout-resale-2",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"deposit-primary\"]": {
+        "amount": 100000,
+        "kind": "IN",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "trade": "primary"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"deposit-resale\"]": {
+        "amount": 120000,
+        "kind": "IN",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "trade": "resale"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-primary-0-FUNDS-None\"]": {
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "effect": "payout-primary-0",
+        "payment": "pay-primary",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-primary-1-FUNDS-None\"]": {
+        "amount": 5000,
+        "beneficiary": "platform",
+        "effect": "payout-primary-1",
+        "payment": "pay-primary",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-0-FUNDS-None\"]": {
+        "amount": 114000,
+        "beneficiary": "A",
+        "effect": "payout-resale-0",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-1-FUNDS-None\"]": {
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "effect": "payout-resale-1",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-2-FUNDS-None\"]": {
+        "amount": 3600,
+        "beneficiary": "platform",
+        "effect": "payout-resale-2",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"payment\",\"pay-primary\"]": {
+        "amount": 100000,
+        "buyer": "A",
+        "currency": "KRW",
+        "trade": "primary"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"payment\",\"pay-resale\"]": {
+        "amount": 120000,
+        "buyer": "B",
+        "currency": "KRW",
+        "trade": "resale"
+      }
+    },
+    "journal": [
+      {
+        "amount": 100000,
+        "credit": "held:primary",
+        "currency": "KRW",
+        "debit": "pg:primary",
+        "operation": "op-3",
+        "reason": "capture confirmed; not spendable cash"
+      },
+      {
+        "amount": 100000,
+        "credit": "pg:primary",
+        "currency": "KRW",
+        "debit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "operation": "op-4",
+        "reason": "synthetic actual net receipt; zero PG fee fixture"
+      },
+      {
+        "amount": 95000,
+        "credit": "payable:primary-0",
+        "currency": "KRW",
+        "debit": "held:primary",
+        "operation": "op-5",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 5000,
+        "credit": "payable:primary-1",
+        "currency": "KRW",
+        "debit": "held:primary",
+        "operation": "op-5",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 120000,
+        "credit": "held:resale",
+        "currency": "KRW",
+        "debit": "pg:resale",
+        "operation": "op-8",
+        "reason": "capture confirmed; not spendable cash"
+      },
+      {
+        "amount": 120000,
+        "credit": "pg:resale",
+        "currency": "KRW",
+        "debit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "operation": "op-9",
+        "reason": "synthetic actual net receipt; zero PG fee fixture"
+      },
+      {
+        "amount": 114000,
+        "credit": "payable:resale-0",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 2400,
+        "credit": "payable:resale-1",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 3600,
+        "credit": "payable:resale-2",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 95000,
+        "credit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "currency": "KRW",
+        "debit": "in_transit:payout-primary-0",
+        "operation": "op-16",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 95000,
+        "credit": "in_transit:payout-primary-0",
+        "currency": "KRW",
+        "debit": "payable:primary-0",
+        "operation": "op-16",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 5000,
+        "credit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "currency": "KRW",
+        "debit": "in_transit:payout-primary-1",
+        "operation": "op-20",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 5000,
+        "credit": "in_transit:payout-primary-1",
+        "currency": "KRW",
+        "debit": "payable:primary-1",
+        "operation": "op-20",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 114000,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-0",
+        "operation": "op-24",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 114000,
+        "credit": "in_transit:payout-resale-0",
+        "currency": "KRW",
+        "debit": "payable:resale-0",
+        "operation": "op-24",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 2400,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-1",
+        "operation": "op-28",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 2400,
+        "credit": "in_transit:payout-resale-1",
+        "currency": "KRW",
+        "debit": "payable:resale-1",
+        "operation": "op-28",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 3600,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-2",
+        "operation": "op-32",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 3600,
+        "credit": "in_transit:payout-resale-2",
+        "currency": "KRW",
+        "debit": "payable:resale-2",
+        "operation": "op-32",
+        "reason": "confirmed result and actual funds matched"
+      }
+    ],
+    "payment_bindings": {
+      "pay-primary": "primary",
+      "pay-resale": "resale"
+    },
+    "tickets": {
+      "show/A1": {
+        "admissionEpoch": 3,
+        "event": "show",
+        "lock": null,
+        "owner": "B",
+        "rightsVersion": 3,
+        "seat": "A1",
+        "session": null,
+        "state": "CONSUMED",
+        "trades": [
+          "primary",
+          "resale"
+        ],
+        "used": true
+      }
+    },
+    "trades": {
+      "primary": {
+        "accepted": true,
+        "allocations": [
+          {
+            "amount": 95000,
+            "id": "primary-0",
+            "paid": 95000,
+            "payee": "organizer",
+            "recovered": 0
+          },
+          {
+            "amount": 5000,
+            "id": "primary-1",
+            "paid": 5000,
+            "payee": "platform",
+            "recovered": 0
+          }
+        ],
+        "amount": 100000,
+        "buyer": "A",
+        "captured": true,
+        "currency": "KRW",
+        "event": "show",
+        "expectedAdmissionEpoch": 0,
+        "expectedVersion": 0,
+        "id": "primary",
+        "kind": "PRIMARY",
+        "paymentId": "pay-primary",
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "refundDue": 0,
+        "refunded": 0,
+        "reversalPlanned": false,
+        "reversalRequested": false,
+        "seller": null,
+        "settled": 100000,
+        "status": "COMMITTED",
+        "termsHash": "c9dc445da83fb20a5a8d5e9f753558c56cf652a0487602c6d34dc8c60fe8b69a",
+        "ticket": "show/A1"
+      },
+      "resale": {
+        "accepted": true,
+        "allocations": [
+          {
+            "amount": 114000,
+            "id": "resale-0",
+            "paid": 114000,
+            "payee": "A",
+            "recovered": 0
+          },
+          {
+            "amount": 2400,
+            "id": "resale-1",
+            "paid": 2400,
+            "payee": "organizer",
+            "recovered": 0
+          },
+          {
+            "amount": 3600,
+            "id": "resale-2",
+            "paid": 3600,
+            "payee": "platform",
+            "recovered": 0
+          }
+        ],
+        "amount": 120000,
+        "buyer": "B",
+        "captured": true,
+        "currency": "KRW",
+        "event": "show",
+        "expectedAdmissionEpoch": 1,
+        "expectedVersion": 1,
+        "id": "resale",
+        "kind": "RESALE",
+        "paymentId": "pay-resale",
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "refundDue": 0,
+        "refunded": 0,
+        "reversalPlanned": false,
+        "reversalRequested": false,
+        "seller": "A",
+        "settled": 120000,
+        "status": "COMMITTED",
+        "termsHash": "ca5e9a26060a103c85ab022c19d190a27cf1acfa12bb0b760ea6e3c555a2de3f",
+        "ticket": "show/A1"
+      }
+    }
+  },
+  "cancellation_after_payout": {
+    "balances": {
+      "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a": 0,
+      "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6": 0,
+      "held:primary": 0,
+      "held:resale": 0,
+      "in_transit:payout-primary-0": 0,
+      "in_transit:payout-primary-1": 0,
+      "in_transit:payout-resale-0": 0,
+      "in_transit:payout-resale-1": 0,
+      "in_transit:payout-resale-2": 0,
+      "payable:primary-0": 0,
+      "payable:primary-1": 0,
+      "payable:resale-0": 0,
+      "payable:resale-1": 0,
+      "payable:resale-2": 0,
+      "pg:primary": 0,
+      "pg:resale": 0,
+      "recoverable:primary-0": 95000,
+      "recoverable:primary-1": 5000,
+      "recoverable:resale-0": 114000,
+      "recoverable:resale-1": 2400,
+      "recoverable:resale-2": 3600,
+      "refund:primary": -100000,
+      "refund:resale": -120000
+    },
+    "consents": {},
+    "domain": "kix:fixture:lifecycle:0.1",
+    "effects": {
+      "payout-primary-0": {
+        "allocation": "primary-0",
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99",
+        "kind": "PAYOUT",
+        "owed": "payable:primary-0",
+        "paymentId": "pay-primary",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "request": {
+          "amount": 95000,
+          "beneficiary": "organizer",
+          "currency": "KRW",
+          "effectId": "payout-primary-0",
+          "kind": "PAYOUT",
+          "paymentId": "pay-primary",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "primary"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "primary"
+      },
+      "payout-primary-1": {
+        "allocation": "primary-1",
+        "amount": 5000,
+        "beneficiary": "platform",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41",
+        "kind": "PAYOUT",
+        "owed": "payable:primary-1",
+        "paymentId": "pay-primary",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "request": {
+          "amount": 5000,
+          "beneficiary": "platform",
+          "currency": "KRW",
+          "effectId": "payout-primary-1",
+          "kind": "PAYOUT",
+          "paymentId": "pay-primary",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "primary"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "primary"
+      },
+      "payout-resale-0": {
+        "allocation": "resale-0",
+        "amount": 114000,
+        "beneficiary": "A",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-0",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 114000,
+          "beneficiary": "A",
+          "currency": "KRW",
+          "effectId": "payout-resale-0",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      },
+      "payout-resale-1": {
+        "allocation": "resale-1",
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-1",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 2400,
+          "beneficiary": "organizer",
+          "currency": "KRW",
+          "effectId": "payout-resale-1",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      },
+      "payout-resale-2": {
+        "allocation": "resale-2",
+        "amount": 3600,
+        "beneficiary": "platform",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-2",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 3600,
+          "beneficiary": "platform",
+          "currency": "KRW",
+          "effectId": "payout-resale-2",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      }
+    },
+    "events": {
+      "show": {
+        "organizer": "organizer",
+        "policy": {
+          "primaryFeeBps": 500,
+          "primaryPrice": 100000,
+          "refundProfile": "FULL_CHAIN_UNWIND_FIXTURE",
+          "resaleAllowed": true,
+          "resaleCap": 150000,
+          "resaleFeeBps": 300,
+          "resaleOrganizerBps": 200
+        },
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "427b31a42df1f04736e6949e09e9b42e77f2c8d8f29b07f6b64cf47ac37acaa8",
+        "status": "CANCELLED"
+      }
+    },
+    "events_log": [
+      {
+        "action": "create_event",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-1",
+        "result": {
+          "eventId": "show",
+          "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456"
+        },
+        "sequence": 1
+      },
+      {
+        "action": "prepare_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-2",
+        "result": {
+          "externalOrderId": "primary",
+          "status": "PREPARED",
+          "termsHash": "c9dc445da83fb20a5a8d5e9f753558c56cf652a0487602c6d34dc8c60fe8b69a",
+          "tradeId": "primary"
+        },
+        "sequence": 2
+      },
+      {
+        "action": "capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-3",
+        "result": {
+          "captured": true,
+          "cashAvailable": false
+        },
+        "sequence": 3
+      },
+      {
+        "action": "settle_capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-4",
+        "result": {
+          "settled": 100000
+        },
+        "sequence": 4
+      },
+      {
+        "action": "commit_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-5",
+        "result": {
+          "admissionEpoch": 1,
+          "owner": "A",
+          "rightsVersion": 1,
+          "ticketId": "show/A1"
+        },
+        "sequence": 5
+      },
+      {
+        "action": "prepare_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-6",
+        "result": {
+          "externalOrderId": "resale",
+          "status": "PREPARED",
+          "termsHash": "ca5e9a26060a103c85ab022c19d190a27cf1acfa12bb0b760ea6e3c555a2de3f",
+          "tradeId": "resale"
+        },
+        "sequence": 6
+      },
+      {
+        "action": "accept_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-7",
+        "result": {
+          "accepted": true
+        },
+        "sequence": 7
+      },
+      {
+        "action": "capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-8",
+        "result": {
+          "captured": true,
+          "cashAvailable": false
+        },
+        "sequence": 8
+      },
+      {
+        "action": "settle_capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-9",
+        "result": {
+          "settled": 120000
+        },
+        "sequence": 9
+      },
+      {
+        "action": "commit_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-10",
+        "result": {
+          "admissionEpoch": 2,
+          "owner": "B",
+          "rightsVersion": 2,
+          "ticketId": "show/A1"
+        },
+        "sequence": 10
+      },
+      {
+        "action": "admit",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-11",
+        "result": {
+          "admissionId": "op-11",
+          "decision": "ADMITTED_ONCE"
+        },
+        "sequence": 11
+      },
+      {
+        "action": "complete_event",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-12",
+        "result": {
+          "eventStatus": "COMPLETED"
+        },
+        "sequence": 12
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-13",
+        "result": {
+          "effectId": "payout-primary-0",
+          "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99"
+        },
+        "sequence": 13
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-14",
+        "result": {
+          "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99",
+          "unsentFixtureRequest": {
+            "amount": 95000,
+            "beneficiary": "organizer",
+            "currency": "KRW",
+            "effectId": "payout-primary-0",
+            "kind": "PAYOUT",
+            "paymentId": "pay-primary",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "primary"
+          }
+        },
+        "sequence": 14
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-15",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 15
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-16",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 16
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-17",
+        "result": {
+          "effectId": "payout-primary-1",
+          "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41"
+        },
+        "sequence": 17
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-18",
+        "result": {
+          "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41",
+          "unsentFixtureRequest": {
+            "amount": 5000,
+            "beneficiary": "platform",
+            "currency": "KRW",
+            "effectId": "payout-primary-1",
+            "kind": "PAYOUT",
+            "paymentId": "pay-primary",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "primary"
+          }
+        },
+        "sequence": 18
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-19",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 19
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-20",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 20
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-21",
+        "result": {
+          "effectId": "payout-resale-0",
+          "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354"
+        },
+        "sequence": 21
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-22",
+        "result": {
+          "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354",
+          "unsentFixtureRequest": {
+            "amount": 114000,
+            "beneficiary": "A",
+            "currency": "KRW",
+            "effectId": "payout-resale-0",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 22
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-23",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 23
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-24",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 24
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-25",
+        "result": {
+          "effectId": "payout-resale-1",
+          "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5"
+        },
+        "sequence": 25
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-26",
+        "result": {
+          "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5",
+          "unsentFixtureRequest": {
+            "amount": 2400,
+            "beneficiary": "organizer",
+            "currency": "KRW",
+            "effectId": "payout-resale-1",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 26
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-27",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 27
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-28",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 28
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-29",
+        "result": {
+          "effectId": "payout-resale-2",
+          "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f"
+        },
+        "sequence": 29
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-30",
+        "result": {
+          "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f",
+          "unsentFixtureRequest": {
+            "amount": 3600,
+            "beneficiary": "platform",
+            "currency": "KRW",
+            "effectId": "payout-resale-2",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 30
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-31",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 31
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-32",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 32
+      },
+      {
+        "action": "cancel_event",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-33",
+        "result": {
+          "eventStatus": "CANCELLED"
+        },
+        "sequence": 33
+      }
+    ],
+    "evidence": {
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-primary-0-STATUS-SUCCESS\"]": {
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "effect": "payout-primary-0",
+        "payment": "pay-primary",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-primary-1-STATUS-SUCCESS\"]": {
+        "amount": 5000,
+        "beneficiary": "platform",
+        "effect": "payout-primary-1",
+        "payment": "pay-primary",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-0-STATUS-SUCCESS\"]": {
+        "amount": 114000,
+        "beneficiary": "A",
+        "effect": "payout-resale-0",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-1-STATUS-SUCCESS\"]": {
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "effect": "payout-resale-1",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-2-STATUS-SUCCESS\"]": {
+        "amount": 3600,
+        "beneficiary": "platform",
+        "effect": "payout-resale-2",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"deposit-primary\"]": {
+        "amount": 100000,
+        "kind": "IN",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "trade": "primary"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"deposit-resale\"]": {
+        "amount": 120000,
+        "kind": "IN",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "trade": "resale"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-primary-0-FUNDS-None\"]": {
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "effect": "payout-primary-0",
+        "payment": "pay-primary",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-primary-1-FUNDS-None\"]": {
+        "amount": 5000,
+        "beneficiary": "platform",
+        "effect": "payout-primary-1",
+        "payment": "pay-primary",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-0-FUNDS-None\"]": {
+        "amount": 114000,
+        "beneficiary": "A",
+        "effect": "payout-resale-0",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-1-FUNDS-None\"]": {
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "effect": "payout-resale-1",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-2-FUNDS-None\"]": {
+        "amount": 3600,
+        "beneficiary": "platform",
+        "effect": "payout-resale-2",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"payment\",\"pay-primary\"]": {
+        "amount": 100000,
+        "buyer": "A",
+        "currency": "KRW",
+        "trade": "primary"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"payment\",\"pay-resale\"]": {
+        "amount": 120000,
+        "buyer": "B",
+        "currency": "KRW",
+        "trade": "resale"
+      }
+    },
+    "journal": [
+      {
+        "amount": 100000,
+        "credit": "held:primary",
+        "currency": "KRW",
+        "debit": "pg:primary",
+        "operation": "op-3",
+        "reason": "capture confirmed; not spendable cash"
+      },
+      {
+        "amount": 100000,
+        "credit": "pg:primary",
+        "currency": "KRW",
+        "debit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "operation": "op-4",
+        "reason": "synthetic actual net receipt; zero PG fee fixture"
+      },
+      {
+        "amount": 95000,
+        "credit": "payable:primary-0",
+        "currency": "KRW",
+        "debit": "held:primary",
+        "operation": "op-5",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 5000,
+        "credit": "payable:primary-1",
+        "currency": "KRW",
+        "debit": "held:primary",
+        "operation": "op-5",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 120000,
+        "credit": "held:resale",
+        "currency": "KRW",
+        "debit": "pg:resale",
+        "operation": "op-8",
+        "reason": "capture confirmed; not spendable cash"
+      },
+      {
+        "amount": 120000,
+        "credit": "pg:resale",
+        "currency": "KRW",
+        "debit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "operation": "op-9",
+        "reason": "synthetic actual net receipt; zero PG fee fixture"
+      },
+      {
+        "amount": 114000,
+        "credit": "payable:resale-0",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 2400,
+        "credit": "payable:resale-1",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 3600,
+        "credit": "payable:resale-2",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 95000,
+        "credit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "currency": "KRW",
+        "debit": "in_transit:payout-primary-0",
+        "operation": "op-16",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 95000,
+        "credit": "in_transit:payout-primary-0",
+        "currency": "KRW",
+        "debit": "payable:primary-0",
+        "operation": "op-16",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 5000,
+        "credit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "currency": "KRW",
+        "debit": "in_transit:payout-primary-1",
+        "operation": "op-20",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 5000,
+        "credit": "in_transit:payout-primary-1",
+        "currency": "KRW",
+        "debit": "payable:primary-1",
+        "operation": "op-20",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 114000,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-0",
+        "operation": "op-24",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 114000,
+        "credit": "in_transit:payout-resale-0",
+        "currency": "KRW",
+        "debit": "payable:resale-0",
+        "operation": "op-24",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 2400,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-1",
+        "operation": "op-28",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 2400,
+        "credit": "in_transit:payout-resale-1",
+        "currency": "KRW",
+        "debit": "payable:resale-1",
+        "operation": "op-28",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 3600,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-2",
+        "operation": "op-32",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 3600,
+        "credit": "in_transit:payout-resale-2",
+        "currency": "KRW",
+        "debit": "payable:resale-2",
+        "operation": "op-32",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 95000,
+        "credit": "refund:primary",
+        "currency": "KRW",
+        "debit": "recoverable:primary-0",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 5000,
+        "credit": "refund:primary",
+        "currency": "KRW",
+        "debit": "recoverable:primary-1",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 114000,
+        "credit": "refund:resale",
+        "currency": "KRW",
+        "debit": "recoverable:resale-0",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 2400,
+        "credit": "refund:resale",
+        "currency": "KRW",
+        "debit": "recoverable:resale-1",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 3600,
+        "credit": "refund:resale",
+        "currency": "KRW",
+        "debit": "recoverable:resale-2",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      }
+    ],
+    "payment_bindings": {
+      "pay-primary": "primary",
+      "pay-resale": "resale"
+    },
+    "tickets": {
+      "show/A1": {
+        "admissionEpoch": 4,
+        "event": "show",
+        "lock": null,
+        "owner": "B",
+        "rightsVersion": 4,
+        "seat": "A1",
+        "session": null,
+        "state": "VOID",
+        "trades": [
+          "primary",
+          "resale"
+        ],
+        "used": true
+      }
+    },
+    "trades": {
+      "primary": {
+        "accepted": true,
+        "allocations": [
+          {
+            "amount": 95000,
+            "id": "primary-0",
+            "paid": 95000,
+            "payee": "organizer",
+            "recovered": 0
+          },
+          {
+            "amount": 5000,
+            "id": "primary-1",
+            "paid": 5000,
+            "payee": "platform",
+            "recovered": 0
+          }
+        ],
+        "amount": 100000,
+        "buyer": "A",
+        "captured": true,
+        "currency": "KRW",
+        "event": "show",
+        "expectedAdmissionEpoch": 0,
+        "expectedVersion": 0,
+        "id": "primary",
+        "kind": "PRIMARY",
+        "paymentId": "pay-primary",
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "refundDue": 100000,
+        "refunded": 0,
+        "reversalPlanned": true,
+        "reversalRequested": true,
+        "seller": null,
+        "settled": 100000,
+        "status": "COMMITTED",
+        "termsHash": "c9dc445da83fb20a5a8d5e9f753558c56cf652a0487602c6d34dc8c60fe8b69a",
+        "ticket": "show/A1"
+      },
+      "resale": {
+        "accepted": true,
+        "allocations": [
+          {
+            "amount": 114000,
+            "id": "resale-0",
+            "paid": 114000,
+            "payee": "A",
+            "recovered": 0
+          },
+          {
+            "amount": 2400,
+            "id": "resale-1",
+            "paid": 2400,
+            "payee": "organizer",
+            "recovered": 0
+          },
+          {
+            "amount": 3600,
+            "id": "resale-2",
+            "paid": 3600,
+            "payee": "platform",
+            "recovered": 0
+          }
+        ],
+        "amount": 120000,
+        "buyer": "B",
+        "captured": true,
+        "currency": "KRW",
+        "event": "show",
+        "expectedAdmissionEpoch": 1,
+        "expectedVersion": 1,
+        "id": "resale",
+        "kind": "RESALE",
+        "paymentId": "pay-resale",
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "refundDue": 120000,
+        "refunded": 0,
+        "reversalPlanned": true,
+        "reversalRequested": true,
+        "seller": "A",
+        "settled": 120000,
+        "status": "COMMITTED",
+        "termsHash": "ca5e9a26060a103c85ab022c19d190a27cf1acfa12bb0b760ea6e3c555a2de3f",
+        "ticket": "show/A1"
+      }
+    }
+  },
+  "after_recovery_and_refund": {
+    "balances": {
+      "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a": 0,
+      "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6": 0,
+      "held:primary": 0,
+      "held:resale": 0,
+      "in_transit:payout-primary-0": 0,
+      "in_transit:payout-primary-1": 0,
+      "in_transit:payout-resale-0": 0,
+      "in_transit:payout-resale-1": 0,
+      "in_transit:payout-resale-2": 0,
+      "in_transit:refund-primary": 0,
+      "in_transit:refund-resale": 0,
+      "payable:primary-0": 0,
+      "payable:primary-1": 0,
+      "payable:resale-0": 0,
+      "payable:resale-1": 0,
+      "payable:resale-2": 0,
+      "pg:primary": 0,
+      "pg:resale": 0,
+      "recoverable:primary-0": 0,
+      "recoverable:primary-1": 0,
+      "recoverable:resale-0": 0,
+      "recoverable:resale-1": 0,
+      "recoverable:resale-2": 0,
+      "refund:primary": 0,
+      "refund:resale": 0
+    },
+    "consents": {},
+    "domain": "kix:fixture:lifecycle:0.1",
+    "effects": {
+      "payout-primary-0": {
+        "allocation": "primary-0",
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99",
+        "kind": "PAYOUT",
+        "owed": "payable:primary-0",
+        "paymentId": "pay-primary",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "request": {
+          "amount": 95000,
+          "beneficiary": "organizer",
+          "currency": "KRW",
+          "effectId": "payout-primary-0",
+          "kind": "PAYOUT",
+          "paymentId": "pay-primary",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "primary"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "primary"
+      },
+      "payout-primary-1": {
+        "allocation": "primary-1",
+        "amount": 5000,
+        "beneficiary": "platform",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41",
+        "kind": "PAYOUT",
+        "owed": "payable:primary-1",
+        "paymentId": "pay-primary",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "request": {
+          "amount": 5000,
+          "beneficiary": "platform",
+          "currency": "KRW",
+          "effectId": "payout-primary-1",
+          "kind": "PAYOUT",
+          "paymentId": "pay-primary",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "primary"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "primary"
+      },
+      "payout-resale-0": {
+        "allocation": "resale-0",
+        "amount": 114000,
+        "beneficiary": "A",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-0",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 114000,
+          "beneficiary": "A",
+          "currency": "KRW",
+          "effectId": "payout-resale-0",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      },
+      "payout-resale-1": {
+        "allocation": "resale-1",
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-1",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 2400,
+          "beneficiary": "organizer",
+          "currency": "KRW",
+          "effectId": "payout-resale-1",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      },
+      "payout-resale-2": {
+        "allocation": "resale-2",
+        "amount": 3600,
+        "beneficiary": "platform",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f",
+        "kind": "PAYOUT",
+        "owed": "payable:resale-2",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 3600,
+          "beneficiary": "platform",
+          "currency": "KRW",
+          "effectId": "payout-resale-2",
+          "kind": "PAYOUT",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      },
+      "refund-primary": {
+        "allocation": null,
+        "amount": 100000,
+        "beneficiary": "A",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "e71e610f6b348abda35070d815851c256baf449463de62374420e93dd748833c",
+        "kind": "REFUND",
+        "owed": "refund:primary",
+        "paymentId": "pay-primary",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "request": {
+          "amount": 100000,
+          "beneficiary": "A",
+          "currency": "KRW",
+          "effectId": "refund-primary",
+          "kind": "REFUND",
+          "paymentId": "pay-primary",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "primary"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "primary"
+      },
+      "refund-resale": {
+        "allocation": null,
+        "amount": 120000,
+        "beneficiary": "B",
+        "confirmed": true,
+        "conflict": false,
+        "currency": "KRW",
+        "fundsObserved": true,
+        "idempotencyKey": "bcbaf7cfa9ca5b17e1672f7178cbdd442436dabe5aec88341ea7466e4ad4ae1d",
+        "kind": "REFUND",
+        "owed": "refund:resale",
+        "paymentId": "pay-resale",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "request": {
+          "amount": 120000,
+          "beneficiary": "B",
+          "currency": "KRW",
+          "effectId": "refund-resale",
+          "kind": "REFUND",
+          "paymentId": "pay-resale",
+          "scope": {
+            "channel": "card",
+            "environment": "test",
+            "merchant": "kix-fixture",
+            "provider": "toss"
+          },
+          "tradeId": "resale"
+        },
+        "sent": true,
+        "state": "DONE",
+        "trade": "resale"
+      }
+    },
+    "events": {
+      "show": {
+        "organizer": "organizer",
+        "policy": {
+          "primaryFeeBps": 500,
+          "primaryPrice": 100000,
+          "refundProfile": "FULL_CHAIN_UNWIND_FIXTURE",
+          "resaleAllowed": true,
+          "resaleCap": 150000,
+          "resaleFeeBps": 300,
+          "resaleOrganizerBps": 200
+        },
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "427b31a42df1f04736e6949e09e9b42e77f2c8d8f29b07f6b64cf47ac37acaa8",
+        "status": "CANCELLED"
+      }
+    },
+    "events_log": [
+      {
+        "action": "create_event",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-1",
+        "result": {
+          "eventId": "show",
+          "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456"
+        },
+        "sequence": 1
+      },
+      {
+        "action": "prepare_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-2",
+        "result": {
+          "externalOrderId": "primary",
+          "status": "PREPARED",
+          "termsHash": "c9dc445da83fb20a5a8d5e9f753558c56cf652a0487602c6d34dc8c60fe8b69a",
+          "tradeId": "primary"
+        },
+        "sequence": 2
+      },
+      {
+        "action": "capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-3",
+        "result": {
+          "captured": true,
+          "cashAvailable": false
+        },
+        "sequence": 3
+      },
+      {
+        "action": "settle_capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-4",
+        "result": {
+          "settled": 100000
+        },
+        "sequence": 4
+      },
+      {
+        "action": "commit_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-5",
+        "result": {
+          "admissionEpoch": 1,
+          "owner": "A",
+          "rightsVersion": 1,
+          "ticketId": "show/A1"
+        },
+        "sequence": 5
+      },
+      {
+        "action": "prepare_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-6",
+        "result": {
+          "externalOrderId": "resale",
+          "status": "PREPARED",
+          "termsHash": "ca5e9a26060a103c85ab022c19d190a27cf1acfa12bb0b760ea6e3c555a2de3f",
+          "tradeId": "resale"
+        },
+        "sequence": 6
+      },
+      {
+        "action": "accept_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-7",
+        "result": {
+          "accepted": true
+        },
+        "sequence": 7
+      },
+      {
+        "action": "capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-8",
+        "result": {
+          "captured": true,
+          "cashAvailable": false
+        },
+        "sequence": 8
+      },
+      {
+        "action": "settle_capture",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-9",
+        "result": {
+          "settled": 120000
+        },
+        "sequence": 9
+      },
+      {
+        "action": "commit_trade",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-10",
+        "result": {
+          "admissionEpoch": 2,
+          "owner": "B",
+          "rightsVersion": 2,
+          "ticketId": "show/A1"
+        },
+        "sequence": 10
+      },
+      {
+        "action": "admit",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-11",
+        "result": {
+          "admissionId": "op-11",
+          "decision": "ADMITTED_ONCE"
+        },
+        "sequence": 11
+      },
+      {
+        "action": "complete_event",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-12",
+        "result": {
+          "eventStatus": "COMPLETED"
+        },
+        "sequence": 12
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-13",
+        "result": {
+          "effectId": "payout-primary-0",
+          "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99"
+        },
+        "sequence": 13
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-14",
+        "result": {
+          "idempotencyKey": "1e5e4a934d163eac4bf551852948c77c1525e7ea9664f9ab481ffcb1de882e99",
+          "unsentFixtureRequest": {
+            "amount": 95000,
+            "beneficiary": "organizer",
+            "currency": "KRW",
+            "effectId": "payout-primary-0",
+            "kind": "PAYOUT",
+            "paymentId": "pay-primary",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "primary"
+          }
+        },
+        "sequence": 14
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-15",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 15
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-16",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 16
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-17",
+        "result": {
+          "effectId": "payout-primary-1",
+          "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41"
+        },
+        "sequence": 17
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-18",
+        "result": {
+          "idempotencyKey": "cb11c5cd587280e9082b705866c522759b47c740c68f397adca1ebe1620e7d41",
+          "unsentFixtureRequest": {
+            "amount": 5000,
+            "beneficiary": "platform",
+            "currency": "KRW",
+            "effectId": "payout-primary-1",
+            "kind": "PAYOUT",
+            "paymentId": "pay-primary",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "primary"
+          }
+        },
+        "sequence": 18
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-19",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 19
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-20",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 20
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-21",
+        "result": {
+          "effectId": "payout-resale-0",
+          "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354"
+        },
+        "sequence": 21
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-22",
+        "result": {
+          "idempotencyKey": "d1e91dc37e8ce3991c16dc10739a6eded55c6869cfb2b64822b0d750c482b354",
+          "unsentFixtureRequest": {
+            "amount": 114000,
+            "beneficiary": "A",
+            "currency": "KRW",
+            "effectId": "payout-resale-0",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 22
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-23",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 23
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-24",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 24
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-25",
+        "result": {
+          "effectId": "payout-resale-1",
+          "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5"
+        },
+        "sequence": 25
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-26",
+        "result": {
+          "idempotencyKey": "b6684ea95d32dceea7dceb9fbe50fcefcf75d99d22c05f9fce780da1ab178ec5",
+          "unsentFixtureRequest": {
+            "amount": 2400,
+            "beneficiary": "organizer",
+            "currency": "KRW",
+            "effectId": "payout-resale-1",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 26
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-27",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 27
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-28",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 28
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-29",
+        "result": {
+          "effectId": "payout-resale-2",
+          "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f"
+        },
+        "sequence": 29
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-30",
+        "result": {
+          "idempotencyKey": "d09ad6aeb506459de40ba62e3df01f25f178c7e7d9d6a677a0dcf61c30ec806f",
+          "unsentFixtureRequest": {
+            "amount": 3600,
+            "beneficiary": "platform",
+            "currency": "KRW",
+            "effectId": "payout-resale-2",
+            "kind": "PAYOUT",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 30
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-31",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 31
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-32",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 32
+      },
+      {
+        "action": "cancel_event",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-33",
+        "result": {
+          "eventStatus": "CANCELLED"
+        },
+        "sequence": 33
+      },
+      {
+        "action": "observe_recovery",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-34",
+        "result": {
+          "recovered": 95000
+        },
+        "sequence": 34
+      },
+      {
+        "action": "observe_recovery",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-35",
+        "result": {
+          "recovered": 5000
+        },
+        "sequence": 35
+      },
+      {
+        "action": "observe_recovery",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-36",
+        "result": {
+          "recovered": 114000
+        },
+        "sequence": 36
+      },
+      {
+        "action": "observe_recovery",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-37",
+        "result": {
+          "recovered": 2400
+        },
+        "sequence": 37
+      },
+      {
+        "action": "observe_recovery",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-38",
+        "result": {
+          "recovered": 3600
+        },
+        "sequence": 38
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-39",
+        "result": {
+          "effectId": "refund-primary",
+          "idempotencyKey": "e71e610f6b348abda35070d815851c256baf449463de62374420e93dd748833c"
+        },
+        "sequence": 39
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-40",
+        "result": {
+          "idempotencyKey": "e71e610f6b348abda35070d815851c256baf449463de62374420e93dd748833c",
+          "unsentFixtureRequest": {
+            "amount": 100000,
+            "beneficiary": "A",
+            "currency": "KRW",
+            "effectId": "refund-primary",
+            "kind": "REFUND",
+            "paymentId": "pay-primary",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "primary"
+          }
+        },
+        "sequence": 40
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-41",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 41
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-42",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 42
+      },
+      {
+        "action": "prepare_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-43",
+        "result": {
+          "effectId": "refund-resale",
+          "idempotencyKey": "bcbaf7cfa9ca5b17e1672f7178cbdd442436dabe5aec88341ea7466e4ad4ae1d"
+        },
+        "sequence": 43
+      },
+      {
+        "action": "send_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-44",
+        "result": {
+          "idempotencyKey": "bcbaf7cfa9ca5b17e1672f7178cbdd442436dabe5aec88341ea7466e4ad4ae1d",
+          "unsentFixtureRequest": {
+            "amount": 120000,
+            "beneficiary": "B",
+            "currency": "KRW",
+            "effectId": "refund-resale",
+            "kind": "REFUND",
+            "paymentId": "pay-resale",
+            "scope": {
+              "channel": "card",
+              "environment": "test",
+              "merchant": "kix-fixture",
+              "provider": "toss"
+            },
+            "tradeId": "resale"
+          }
+        },
+        "sequence": 44
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-45",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": false,
+          "review": false,
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "sequence": 45
+      },
+      {
+        "action": "observe_effect",
+        "domain": "kix:fixture:lifecycle:0.1",
+        "operationId": "op-46",
+        "result": {
+          "confirmed": true,
+          "fundsObserved": true,
+          "review": false,
+          "state": "DONE"
+        },
+        "sequence": 46
+      }
+    ],
+    "evidence": {
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-primary-0-STATUS-SUCCESS\"]": {
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "effect": "payout-primary-0",
+        "payment": "pay-primary",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-primary-1-STATUS-SUCCESS\"]": {
+        "amount": 5000,
+        "beneficiary": "platform",
+        "effect": "payout-primary-1",
+        "payment": "pay-primary",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-0-STATUS-SUCCESS\"]": {
+        "amount": 114000,
+        "beneficiary": "A",
+        "effect": "payout-resale-0",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-1-STATUS-SUCCESS\"]": {
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "effect": "payout-resale-1",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"payout-resale-2-STATUS-SUCCESS\"]": {
+        "amount": 3600,
+        "beneficiary": "platform",
+        "effect": "payout-resale-2",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"refund-primary-STATUS-SUCCESS\"]": {
+        "amount": 100000,
+        "beneficiary": "A",
+        "effect": "refund-primary",
+        "payment": "pay-primary",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"effect-status\",\"refund-resale-STATUS-SUCCESS\"]": {
+        "amount": 120000,
+        "beneficiary": "B",
+        "effect": "refund-resale",
+        "payment": "pay-resale",
+        "phase": "STATUS",
+        "status": "SUCCESS"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"deposit-primary\"]": {
+        "amount": 100000,
+        "kind": "IN",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "trade": "primary"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"deposit-resale\"]": {
+        "amount": 120000,
+        "kind": "IN",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "trade": "resale"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-primary-0-FUNDS-None\"]": {
+        "amount": 95000,
+        "beneficiary": "organizer",
+        "effect": "payout-primary-0",
+        "payment": "pay-primary",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-primary-1-FUNDS-None\"]": {
+        "amount": 5000,
+        "beneficiary": "platform",
+        "effect": "payout-primary-1",
+        "payment": "pay-primary",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-0-FUNDS-None\"]": {
+        "amount": 114000,
+        "beneficiary": "A",
+        "effect": "payout-resale-0",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-1-FUNDS-None\"]": {
+        "amount": 2400,
+        "beneficiary": "organizer",
+        "effect": "payout-resale-1",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"payout-resale-2-FUNDS-None\"]": {
+        "amount": 3600,
+        "beneficiary": "platform",
+        "effect": "payout-resale-2",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"recover-primary-0\"]": {
+        "allocation": "primary-0",
+        "amount": 95000,
+        "kind": "RECOVERY",
+        "trade": "primary"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"recover-primary-1\"]": {
+        "allocation": "primary-1",
+        "amount": 5000,
+        "kind": "RECOVERY",
+        "trade": "primary"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"recover-resale-0\"]": {
+        "allocation": "resale-0",
+        "amount": 114000,
+        "kind": "RECOVERY",
+        "trade": "resale"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"recover-resale-1\"]": {
+        "allocation": "resale-1",
+        "amount": 2400,
+        "kind": "RECOVERY",
+        "trade": "resale"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"recover-resale-2\"]": {
+        "allocation": "resale-2",
+        "amount": 3600,
+        "kind": "RECOVERY",
+        "trade": "resale"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"refund-primary-FUNDS-None\"]": {
+        "amount": 100000,
+        "beneficiary": "A",
+        "effect": "refund-primary",
+        "payment": "pay-primary",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"funds\",\"refund-resale-FUNDS-None\"]": {
+        "amount": 120000,
+        "beneficiary": "B",
+        "effect": "refund-resale",
+        "payment": "pay-resale",
+        "phase": "FUNDS",
+        "status": null
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"payment\",\"pay-primary\"]": {
+        "amount": 100000,
+        "buyer": "A",
+        "currency": "KRW",
+        "trade": "primary"
+      },
+      "[{\"channel\":\"card\",\"environment\":\"test\",\"merchant\":\"kix-fixture\",\"provider\":\"toss\"},\"payment\",\"pay-resale\"]": {
+        "amount": 120000,
+        "buyer": "B",
+        "currency": "KRW",
+        "trade": "resale"
+      }
+    },
+    "journal": [
+      {
+        "amount": 100000,
+        "credit": "held:primary",
+        "currency": "KRW",
+        "debit": "pg:primary",
+        "operation": "op-3",
+        "reason": "capture confirmed; not spendable cash"
+      },
+      {
+        "amount": 100000,
+        "credit": "pg:primary",
+        "currency": "KRW",
+        "debit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "operation": "op-4",
+        "reason": "synthetic actual net receipt; zero PG fee fixture"
+      },
+      {
+        "amount": 95000,
+        "credit": "payable:primary-0",
+        "currency": "KRW",
+        "debit": "held:primary",
+        "operation": "op-5",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 5000,
+        "credit": "payable:primary-1",
+        "currency": "KRW",
+        "debit": "held:primary",
+        "operation": "op-5",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 120000,
+        "credit": "held:resale",
+        "currency": "KRW",
+        "debit": "pg:resale",
+        "operation": "op-8",
+        "reason": "capture confirmed; not spendable cash"
+      },
+      {
+        "amount": 120000,
+        "credit": "pg:resale",
+        "currency": "KRW",
+        "debit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "operation": "op-9",
+        "reason": "synthetic actual net receipt; zero PG fee fixture"
+      },
+      {
+        "amount": 114000,
+        "credit": "payable:resale-0",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 2400,
+        "credit": "payable:resale-1",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 3600,
+        "credit": "payable:resale-2",
+        "currency": "KRW",
+        "debit": "held:resale",
+        "operation": "op-10",
+        "reason": "allocate frozen policy"
+      },
+      {
+        "amount": 95000,
+        "credit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "currency": "KRW",
+        "debit": "in_transit:payout-primary-0",
+        "operation": "op-16",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 95000,
+        "credit": "in_transit:payout-primary-0",
+        "currency": "KRW",
+        "debit": "payable:primary-0",
+        "operation": "op-16",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 5000,
+        "credit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "currency": "KRW",
+        "debit": "in_transit:payout-primary-1",
+        "operation": "op-20",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 5000,
+        "credit": "in_transit:payout-primary-1",
+        "currency": "KRW",
+        "debit": "payable:primary-1",
+        "operation": "op-20",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 114000,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-0",
+        "operation": "op-24",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 114000,
+        "credit": "in_transit:payout-resale-0",
+        "currency": "KRW",
+        "debit": "payable:resale-0",
+        "operation": "op-24",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 2400,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-1",
+        "operation": "op-28",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 2400,
+        "credit": "in_transit:payout-resale-1",
+        "currency": "KRW",
+        "debit": "payable:resale-1",
+        "operation": "op-28",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 3600,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:payout-resale-2",
+        "operation": "op-32",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 3600,
+        "credit": "in_transit:payout-resale-2",
+        "currency": "KRW",
+        "debit": "payable:resale-2",
+        "operation": "op-32",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 95000,
+        "credit": "refund:primary",
+        "currency": "KRW",
+        "debit": "recoverable:primary-0",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 5000,
+        "credit": "refund:primary",
+        "currency": "KRW",
+        "debit": "recoverable:primary-1",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 114000,
+        "credit": "refund:resale",
+        "currency": "KRW",
+        "debit": "recoverable:resale-0",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 2400,
+        "credit": "refund:resale",
+        "currency": "KRW",
+        "debit": "recoverable:resale-1",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 3600,
+        "credit": "refund:resale",
+        "currency": "KRW",
+        "debit": "recoverable:resale-2",
+        "operation": "op-33",
+        "reason": "paid funds must be recovered"
+      },
+      {
+        "amount": 95000,
+        "credit": "recoverable:primary-0",
+        "currency": "KRW",
+        "debit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "operation": "op-34",
+        "reason": "actual beneficiary recovery observed"
+      },
+      {
+        "amount": 5000,
+        "credit": "recoverable:primary-1",
+        "currency": "KRW",
+        "debit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "operation": "op-35",
+        "reason": "actual beneficiary recovery observed"
+      },
+      {
+        "amount": 114000,
+        "credit": "recoverable:resale-0",
+        "currency": "KRW",
+        "debit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "operation": "op-36",
+        "reason": "actual beneficiary recovery observed"
+      },
+      {
+        "amount": 2400,
+        "credit": "recoverable:resale-1",
+        "currency": "KRW",
+        "debit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "operation": "op-37",
+        "reason": "actual beneficiary recovery observed"
+      },
+      {
+        "amount": 3600,
+        "credit": "recoverable:resale-2",
+        "currency": "KRW",
+        "debit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "operation": "op-38",
+        "reason": "actual beneficiary recovery observed"
+      },
+      {
+        "amount": 100000,
+        "credit": "funds:96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "currency": "KRW",
+        "debit": "in_transit:refund-primary",
+        "operation": "op-42",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 100000,
+        "credit": "in_transit:refund-primary",
+        "currency": "KRW",
+        "debit": "refund:primary",
+        "operation": "op-42",
+        "reason": "confirmed result and actual funds matched"
+      },
+      {
+        "amount": 120000,
+        "credit": "funds:d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "currency": "KRW",
+        "debit": "in_transit:refund-resale",
+        "operation": "op-46",
+        "reason": "actual debit observed, status may still be unknown"
+      },
+      {
+        "amount": 120000,
+        "credit": "in_transit:refund-resale",
+        "currency": "KRW",
+        "debit": "refund:resale",
+        "operation": "op-46",
+        "reason": "confirmed result and actual funds matched"
+      }
+    ],
+    "payment_bindings": {
+      "pay-primary": "primary",
+      "pay-resale": "resale"
+    },
+    "tickets": {
+      "show/A1": {
+        "admissionEpoch": 4,
+        "event": "show",
+        "lock": null,
+        "owner": "B",
+        "rightsVersion": 4,
+        "seat": "A1",
+        "session": null,
+        "state": "VOID",
+        "trades": [
+          "primary",
+          "resale"
+        ],
+        "used": true
+      }
+    },
+    "trades": {
+      "primary": {
+        "accepted": true,
+        "allocations": [
+          {
+            "amount": 95000,
+            "id": "primary-0",
+            "paid": 95000,
+            "payee": "organizer",
+            "recovered": 95000
+          },
+          {
+            "amount": 5000,
+            "id": "primary-1",
+            "paid": 5000,
+            "payee": "platform",
+            "recovered": 5000
+          }
+        ],
+        "amount": 100000,
+        "buyer": "A",
+        "captured": true,
+        "currency": "KRW",
+        "event": "show",
+        "expectedAdmissionEpoch": 0,
+        "expectedVersion": 0,
+        "id": "primary",
+        "kind": "PRIMARY",
+        "paymentId": "pay-primary",
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "96fe3c4385b2d190258525c12e2b6315093b90733c62bcd19e19ce00db3aea6a",
+        "refundDue": 100000,
+        "refunded": 100000,
+        "reversalPlanned": true,
+        "reversalRequested": true,
+        "seller": null,
+        "settled": 100000,
+        "status": "COMMITTED",
+        "termsHash": "c9dc445da83fb20a5a8d5e9f753558c56cf652a0487602c6d34dc8c60fe8b69a",
+        "ticket": "show/A1"
+      },
+      "resale": {
+        "accepted": true,
+        "allocations": [
+          {
+            "amount": 114000,
+            "id": "resale-0",
+            "paid": 114000,
+            "payee": "A",
+            "recovered": 114000
+          },
+          {
+            "amount": 2400,
+            "id": "resale-1",
+            "paid": 2400,
+            "payee": "organizer",
+            "recovered": 2400
+          },
+          {
+            "amount": 3600,
+            "id": "resale-2",
+            "paid": 3600,
+            "payee": "platform",
+            "recovered": 3600
+          }
+        ],
+        "amount": 120000,
+        "buyer": "B",
+        "captured": true,
+        "currency": "KRW",
+        "event": "show",
+        "expectedAdmissionEpoch": 1,
+        "expectedVersion": 1,
+        "id": "resale",
+        "kind": "RESALE",
+        "paymentId": "pay-resale",
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "pool": "d691d809ded730ecfc326247e3b81ef42c04b608a2d61f0f3fbd6a17ad44bfc6",
+        "refundDue": 120000,
+        "refunded": 120000,
+        "reversalPlanned": true,
+        "reversalRequested": true,
+        "seller": "A",
+        "settled": 120000,
+        "status": "COMMITTED",
+        "termsHash": "ca5e9a26060a103c85ab022c19d190a27cf1acfa12bb0b760ea6e3c555a2de3f",
+        "ticket": "show/A1"
+      }
+    }
+  }
+}

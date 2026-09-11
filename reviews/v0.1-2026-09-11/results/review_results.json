@@ -1,0 +1,324 @@
+{
+  "scope": "bounded review, original Core and disposable one-line mutants; synthetic only",
+  "inputCoreSHA256": "045ac4092d4ca9eadb4ccf434a3d45b14053f9fa0b277d0c5c0a1497eb7880f4",
+  "environment": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1"
+  },
+  "hashes": {
+    "KIX_프로토콜_통합명세_v0.1.md": true,
+    "README.md": true,
+    "adapters.py": true,
+    "core.py": true,
+    "protocol_contract.json": true,
+    "requirements.txt": true,
+    "results/synthetic_lifecycle_trace.json": true,
+    "results/tests.txt": true,
+    "results/verification.json": true,
+    "source_inventory.json": true,
+    "test_core.py": true,
+    "vendor/rights_model.py": true,
+    "vendor/tix_reconcile.py": true,
+    "verify.py": true
+  },
+  "probes": [
+    {
+      "id": "C01",
+      "category": "missing dispatch revalidation and monetary exposure field",
+      "observations": {
+        "eventStatus": "CANCELLED",
+        "unsentPayoutCanBecomeSent": true,
+        "returnedRequestAmount": 95000,
+        "finance": {
+          "primaryCaptured": 100000,
+          "resaleCaptured": 0,
+          "organizerGrossAllocated": 95000,
+          "organizerPaid": 0,
+          "organizerPayable": 95000,
+          "organizerRecoveryOutstanding": 0,
+          "refundOutstanding": 0,
+          "refundPlansPending": 1,
+          "evidenceClass": "synthetic",
+          "currency": "KRW",
+          "sequence": 8
+        }
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C02",
+      "category": "cash-only refund profile limitation",
+      "observations": {
+        "error": "INSUFFICIENT_CONFIRMED_FUNDS",
+        "refundDue": 100000,
+        "captured": true,
+        "settled": 0
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C03",
+      "category": "net-settlement fee unsupported",
+      "observations": {
+        "gross": 100000,
+        "netReceipt": 97000,
+        "unclassifiedPGReceivable": 3000,
+        "remainingCash": 2000,
+        "platformPayable": 5000,
+        "error": "INSUFFICIENT_CONFIRMED_FUNDS"
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C04",
+      "category": "inventory-reissue lifecycle missing",
+      "observations": {
+        "eventStatus": "OPEN",
+        "ticketState": "VOID",
+        "fullyRefunded": true,
+        "error": "RIGHT_NOT_TRANSFERABLE"
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C05",
+      "category": "explicit full-chain-unwind product choice",
+      "observations": {
+        "primary": {
+          "buyer": "A",
+          "refundDue": 100000
+        },
+        "resale": {
+          "buyer": "B",
+          "refundDue": 120000
+        }
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C06",
+      "category": "gift command missing",
+      "observations": {
+        "error": "INVALID_AMOUNT"
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C07",
+      "category": "raw inbox missing, already disclosed",
+      "observations": {
+        "error": "SECOND_PAYMENT_REQUIRES_SEPARATE_REVIEW",
+        "rejectedObservationPersisted": false,
+        "stateUnchanged": true
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C08",
+      "category": "no causal consent-version precondition",
+      "observations": {
+        "semantics": "distinct-id positive intent after revocation accepted; freshness not distinguishable",
+        "marketing": [
+          {
+            "subject": "A",
+            "consentVersion": 3,
+            "purpose": "next_event_marketing",
+            "attended": false
+          }
+        ]
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C09",
+      "category": "provider identifier mapping missing",
+      "observations": {
+        "returnedExternalOrderId": "주문 1",
+        "note": "Toss orderId requires 6-64 characters from its documented ASCII alphabet"
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    },
+    {
+      "id": "C10",
+      "category": "provider payment id truncated contract",
+      "observations": {
+        "paymentKeyLength": 150,
+        "error": "INVALID_ID",
+        "note": "Toss documents maximum 200 characters"
+      },
+      "meaning": "current behavior reproduced; not an acceptance-test pass"
+    }
+  ],
+  "mutations": [
+    {
+      "id": "M01",
+      "description": "remove old-holder/version presentation guard",
+      "result": "KILLED_BY_ASSERTION",
+      "returncode": 1,
+      "failingTests": [
+        "FAIL: test_original_qr_invalid_after_resale (test_core.LifecycleTests.test_original_qr_invalid_after_resale)"
+      ],
+      "patch": {
+        "old": "        require(b[\"holder\"]==t[\"owner\"] and b[\"expectedVersion\"]==t[\"rightsVersion\"] and b[\"admissionEpoch\"]==t[\"admissionEpoch\"],\"STALE_OR_WRONG_PRESENTATION\")",
+        "new": "        pass # mutation: omit holder/version presentation guard"
+      },
+      "nonEquivalentWitness": null
+    },
+    {
+      "id": "M02",
+      "description": "allow admission while trade locked",
+      "result": "KILLED_BY_ASSERTION",
+      "returncode": 1,
+      "failingTests": [
+        "FAIL: test_resale_lock_blocks_admission_and_second_resale (test_core.LifecycleTests.test_resale_lock_blocks_admission_and_second_resale)"
+      ],
+      "patch": {
+        "old": "        require(self.event(t[\"event\"])[\"status\"]==\"OPEN\" and t[\"state\"]==\"ACTIVE\" and t[\"lock\"] is None,\"RIGHT_NOT_ADMISSIBLE\")",
+        "new": "        require(self.event(t[\"event\"])[\"status\"]==\"OPEN\" and t[\"state\"]==\"ACTIVE\",\"RIGHT_NOT_ADMISSIBLE\")"
+      },
+      "nonEquivalentWitness": null
+    },
+    {
+      "id": "M03",
+      "description": "FUNDS also confirms result",
+      "result": "KILLED_BY_ASSERTION",
+      "returncode": 1,
+      "failingTests": [
+        "FAIL: test_funds_before_status_debits_cash_without_claiming_refund_done (test_core.LifecycleTests.test_funds_before_status_debits_cash_without_claiming_refund_done)"
+      ],
+      "patch": {
+        "old": "            x[\"fundsObserved\"]=True",
+        "new": "            x[\"fundsObserved\"]=True; x[\"confirmed\"]=True"
+      },
+      "nonEquivalentWitness": null
+    },
+    {
+      "id": "M04",
+      "description": "ignore effect beneficiary",
+      "result": "KILLED_BY_ASSERTION",
+      "returncode": 1,
+      "failingTests": [
+        "FAIL: test_source_scope_and_recipient_binding (test_core.LifecycleTests.test_source_scope_and_recipient_binding)"
+      ],
+      "patch": {
+        "old": " and b[\"beneficiary\"]==x[\"beneficiary\"] and b[\"paymentId\"]==x[\"paymentId\"]",
+        "new": " and b[\"paymentId\"]==x[\"paymentId\"]"
+      },
+      "nonEquivalentWitness": null
+    },
+    {
+      "id": "M05",
+      "description": "revocation remains allowed",
+      "result": "KILLED_BY_ASSERTION",
+      "returncode": 1,
+      "failingTests": [
+        "FAIL: test_marketing_consent_and_revocation_and_finance_minimization (test_core.LifecycleTests.test_marketing_consent_and_revocation_and_finance_minimization)"
+      ],
+      "patch": {
+        "old": "            allowed=b[\"allowed\"],version=prior[\"version\"]+1,operationId=self.op)",
+        "new": "            allowed=True,version=prior[\"version\"]+1,operationId=self.op)"
+      },
+      "nonEquivalentWitness": null
+    },
+    {
+      "id": "M06",
+      "description": "ignore OPEN at admission",
+      "result": "SURVIVED",
+      "returncode": 0,
+      "failingTests": [],
+      "patch": {
+        "old": "        require(self.event(t[\"event\"])[\"status\"]==\"OPEN\" and t[\"state\"]==\"ACTIVE\" and t[\"lock\"] is None,\"RIGHT_NOT_ADMISSIBLE\")",
+        "new": "        require(t[\"state\"]==\"ACTIVE\" and t[\"lock\"] is None,\"RIGHT_NOT_ADMISSIBLE\")"
+      },
+      "nonEquivalentWitness": {
+        "original": {
+          "result": "REJECTED",
+          "reason": "RIGHT_NOT_ADMISSIBLE"
+        },
+        "mutant": {
+          "result": "ACCEPTED"
+        }
+      }
+    },
+    {
+      "id": "M07",
+      "description": "ignore caller expectedVersion when preparing trade",
+      "result": "SURVIVED",
+      "returncode": 0,
+      "failingTests": [],
+      "patch": {
+        "old": "        require(type(b[\"expectedVersion\"]) is int and t[\"rightsVersion\"] == b[\"expectedVersion\"], \"STALE_RIGHTS_VERSION\")",
+        "new": "        require(type(b[\"expectedVersion\"]) is int, \"STALE_RIGHTS_VERSION\")"
+      },
+      "nonEquivalentWitness": {
+        "original": {
+          "result": "REJECTED",
+          "reason": "STALE_RIGHTS_VERSION"
+        },
+        "mutant": {
+          "result": "ACCEPTED"
+        }
+      }
+    },
+    {
+      "id": "M08",
+      "description": "remove commit actor guard",
+      "result": "SURVIVED",
+      "returncode": 0,
+      "failingTests": [],
+      "patch": {
+        "old": "        self.role(\"operator\"); tid=b[\"tradeId\"]; r=self.trade(tid); t=self.ticket(r[\"ticket\"]); e=self.event(r[\"event\"])",
+        "new": "        tid=b[\"tradeId\"]; r=self.trade(tid); t=self.ticket(r[\"ticket\"]); e=self.event(r[\"event\"])"
+      },
+      "nonEquivalentWitness": {
+        "original": {
+          "result": "REJECTED",
+          "reason": "UNAUTHORIZED_FIXTURE_ACTOR"
+        },
+        "mutant": {
+          "result": "ACCEPTED"
+        }
+      }
+    },
+    {
+      "id": "M09",
+      "description": "remove refund owner guard",
+      "result": "SURVIVED",
+      "returncode": 0,
+      "failingTests": [],
+      "patch": {
+        "old": "        t=self.ticket(b[\"ticketId\"]); self.role(t[\"owner\"])\n        require(self.event(t[\"event\"])[\"status\"]==\"OPEN\" and t[\"state\"]==\"ACTIVE\" and t[\"lock\"] is None,\"RIGHT_NOT_REFUNDABLE\")",
+        "new": "        t=self.ticket(b[\"ticketId\"])\n        require(self.event(t[\"event\"])[\"status\"]==\"OPEN\" and t[\"state\"]==\"ACTIVE\" and t[\"lock\"] is None,\"RIGHT_NOT_REFUNDABLE\")"
+      },
+      "nonEquivalentWitness": {
+        "original": {
+          "result": "REJECTED",
+          "reason": "UNAUTHORIZED_FIXTURE_ACTOR"
+        },
+        "mutant": {
+          "result": "ACCEPTED"
+        }
+      }
+    },
+    {
+      "id": "M10",
+      "description": "omit final-controller-log provenance requirement",
+      "result": "SURVIVED",
+      "returncode": 0,
+      "failingTests": [],
+      "patch": {
+        "old": "        require(type(b[\"used\"]) is bool and b.get(\"provenance\")==\"synthetic_final_controller_log\",\"FINAL_USE_RESULT_REQUIRED\")",
+        "new": "        require(type(b[\"used\"]) is bool,\"FINAL_USE_RESULT_REQUIRED\")"
+      },
+      "nonEquivalentWitness": {
+        "original": {
+          "result": "REJECTED",
+          "reason": "FINAL_USE_RESULT_REQUIRED"
+        },
+        "mutant": {
+          "result": "ACCEPTED"
+        }
+      }
+    }
+  ]
+}

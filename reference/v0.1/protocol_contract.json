@@ -1,0 +1,254 @@
+{
+  "version": "0.1",
+  "status": "local executable reference contract; no HTTP service or authentication",
+  "domain": "kix:fixture:lifecycle:0.1",
+  "envelope": {
+    "required": [
+      "operationId",
+      "actor",
+      "action",
+      "body"
+    ],
+    "operationId": "nonempty immutable command identity within domain",
+    "actor": "fixture principal, production must derive from verified identity",
+    "action": [
+      "abort_effect",
+      "abort_trade",
+      "accept_trade",
+      "admit",
+      "cancel_event",
+      "capture",
+      "close_delegation",
+      "commit_trade",
+      "complete_event",
+      "create_event",
+      "delegate",
+      "observe_effect",
+      "observe_recovery",
+      "prepare_effect",
+      "prepare_trade",
+      "refund_ticket",
+      "send_effect",
+      "set_consent",
+      "settle_capture"
+    ],
+    "body": "domain and action-specific fields"
+  },
+  "commands": {
+    "create_event": {
+      "requiredBodyFields": [
+        "domain",
+        "eventId",
+        "organizer",
+        "policy",
+        "seats"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "prepare_trade": {
+      "requiredBodyFields": [
+        "amount",
+        "buyer",
+        "domain",
+        "expectedVersion",
+        "ticketId",
+        "tradeId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "accept_trade": {
+      "requiredBodyFields": [
+        "domain",
+        "termsHash",
+        "tradeId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "capture": {
+      "requiredBodyFields": [
+        "amount",
+        "buyer",
+        "currency",
+        "domain",
+        "orderId",
+        "paymentId",
+        "provenance",
+        "scope",
+        "tradeId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "settle_capture": {
+      "requiredBodyFields": [
+        "amount",
+        "currency",
+        "domain",
+        "paymentId",
+        "provenance",
+        "scope",
+        "sourceId",
+        "tradeId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "commit_trade": {
+      "requiredBodyFields": [
+        "domain",
+        "tradeId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "abort_trade": {
+      "requiredBodyFields": [
+        "domain",
+        "tradeId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "refund_ticket": {
+      "requiredBodyFields": [
+        "domain",
+        "expectedVersion",
+        "ticketId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "cancel_event": {
+      "requiredBodyFields": [
+        "domain",
+        "eventId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "complete_event": {
+      "requiredBodyFields": [
+        "domain",
+        "eventId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "admit": {
+      "requiredBodyFields": [
+        "admissionEpoch",
+        "domain",
+        "expectedVersion",
+        "holder",
+        "ticketId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "delegate": {
+      "requiredBodyFields": [
+        "domain",
+        "expectedVersion",
+        "ticketId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "close_delegation": {
+      "requiredBodyFields": [
+        "admissionEpoch",
+        "domain",
+        "session",
+        "ticketId",
+        "used"
+      ],
+      "conditionalOrOptionalFields": [
+        "provenance"
+      ]
+    },
+    "prepare_effect": {
+      "requiredBodyFields": [
+        "amount",
+        "domain",
+        "effectId",
+        "kind",
+        "tradeId"
+      ],
+      "conditionalOrOptionalFields": [
+        "allocationId"
+      ]
+    },
+    "send_effect": {
+      "requiredBodyFields": [
+        "domain",
+        "effectId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "abort_effect": {
+      "requiredBodyFields": [
+        "domain",
+        "effectId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "observe_effect": {
+      "requiredBodyFields": [
+        "amount",
+        "beneficiary",
+        "currency",
+        "domain",
+        "effectId",
+        "paymentId",
+        "phase",
+        "provenance",
+        "scope",
+        "sourceId"
+      ],
+      "conditionalOrOptionalFields": [
+        "status"
+      ]
+    },
+    "observe_recovery": {
+      "requiredBodyFields": [
+        "allocationId",
+        "amount",
+        "currency",
+        "domain",
+        "payer",
+        "provenance",
+        "scope",
+        "sourceId",
+        "tradeId"
+      ],
+      "conditionalOrOptionalFields": []
+    },
+    "set_consent": {
+      "requiredBodyFields": [
+        "allowed",
+        "domain",
+        "eventId",
+        "purpose"
+      ],
+      "conditionalOrOptionalFields": []
+    }
+  },
+  "paymentScope": {
+    "provider": "toss",
+    "environment": "test",
+    "merchant": "kix-fixture",
+    "channel": "card"
+  },
+  "evidenceClass": "synthetic",
+  "sourceIdentityRules": [
+    "sourceId is an immutable observation or movement identity",
+    "provider operation identifiers must be carried separately in production",
+    "same movement id cannot be consumed for different payments or effects"
+  ],
+  "supportedCurrency": "KRW",
+  "money": "positive integer won, at most 1000000000000",
+  "views": [
+    "mine",
+    "finance",
+    "marketing"
+  ],
+  "notImplemented": [
+    "HTTP transport",
+    "authentication",
+    "provider signature verification",
+    "blockchain adapter",
+    "raw observation inbox",
+    "actual messaging or funds execution"
+  ]
+}
