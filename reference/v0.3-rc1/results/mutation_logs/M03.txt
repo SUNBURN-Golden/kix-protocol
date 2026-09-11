@@ -1,0 +1,12 @@
+======================================================================
+FAIL: test_funds_before_status_debits_cash_without_claiming_refund_done (test_core.LifecycleTests.test_funds_before_status_debits_cash_without_claiming_refund_done)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-vjogtgoj/model/test_core.py", line 250, in test_funds_before_status_debits_cash_without_claiming_refund_done
+    self.assertEqual(s["trades"]["primary"]["refunded"],0)
+AssertionError: 100000 != 0
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

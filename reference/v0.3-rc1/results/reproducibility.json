@@ -1,0 +1,14 @@
+{
+  "checks": {
+    "acceptance_trace.json": {
+      "byteIdentical": true,
+      "sha256": "099505bb6b9fa6e92374ad01e9056d79d7ee9ef3aebc4a91b206dcc4fd5d9f0e"
+    },
+    "verification.json": {
+      "byteIdentical": true,
+      "sha256": "b4428a76125293e38abd0d1522ade01e2317383ac9baa75d1441813d57f1727a"
+    }
+  },
+  "passed": true,
+  "sameEnvironmentRequired": true
+}

@@ -1,0 +1,38 @@
+{
+  "supplied_manifest_entries": 42,
+  "all_supplied_hashes_match_after_review": true,
+  "standalone_specifications_match": true,
+  "baseline": {
+    "canonicalRightsAuthority": "local SQLite reference model",
+    "cryptography": "46.0.0",
+    "domain": "kix:fixture:lifecycle:0.2",
+    "errors": 0,
+    "externalNetworkCalls": 0,
+    "failures": 0,
+    "newBehavioralCases": 41,
+    "python": "3.12.14",
+    "realMoneyMoved": false,
+    "recoveryClass": "unsigned local command/evidence export",
+    "retainedV01Cases": 31,
+    "selectedMutations": 14,
+    "selectedMutationsDetected": 14,
+    "sqlite": "3.53.1",
+    "suiImplemented": false,
+    "testsPassed": true,
+    "testsRun": 72,
+    "version": "0.2",
+    "zeroKnowledgeImplemented": false
+  },
+  "deterministic_result_comparisons": {
+    "acceptance_trace.json": true,
+    "verification.json": true,
+    "mutation_results.json": true,
+    "reproducibility.json": true
+  },
+  "additional_review_observations": 9,
+  "independent_command_driver": true,
+  "independent_protocol_implementation": false,
+  "real_pg_calls_in_review": 0,
+  "sui_transactions_in_review": 0,
+  "sources_modified": false
+}

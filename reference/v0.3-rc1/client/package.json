@@ -1,0 +1,8 @@
+{
+  "name": "kix-independent-client-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": { "test:offline": "node --test offline.test.mjs", "journey": "node localnet.mjs" },
+  "dependencies": { "@mysten/sui": "^2.0.0", "circomlibjs": "0.1.7", "snarkjs": "0.7.5", "circomlib": "2.0.5" },
+  "devDependencies": { "circom2": "0.2.22" }
+}

@@ -1,0 +1,13 @@
+======================================================================
+FAIL: test_second_capture_is_preserved_and_deduplicated_under_review (test_v02.InboxAndRecoveryTests.test_second_capture_is_preserved_and_deduplicated_under_review)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-0uhcyqlr/model/test_v02.py", line 355, in test_second_capture_is_preserved_and_deduplicated_under_review
+    self.assertIsNotNone(row); self.assertEqual(row[0],blob)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

@@ -1,0 +1,171 @@
+{
+  "scope": "bounded synthetic review using original Core and a separate command driver",
+  "independent_protocol_implementation": false,
+  "real_external_calls": 0,
+  "source_hashes": {
+    "core.py": "29245685888291550c56741334205509b64aaace400e90125dcbd270c4a0ff5c",
+    "finance.py": "b0852024842c25f10b7fd10fd470e66f217ad79b6272451cd90401b56890e47a",
+    "lifecycle.py": "55aa0a02822000a449436f239ed088b40f2dc2cb6b55c22879a76ffb26ca8c5b",
+    "observations.py": "4502c41e0af5e4db4713edaef970a93e489e453faf78f4591c3e832a4c685f09",
+    "contracts.py": "405d7d0e10e19ff8864c24f90806788e96fb9aa8fac267761c646ffff24ada32"
+  },
+  "results": [
+    {
+      "id": "R01",
+      "classification": "DEFECT",
+      "title": "Resolved observation remains in unposted-review amount",
+      "observed": {
+        "first": {
+          "observationId": "early-settlement",
+          "state": "REVIEW",
+          "error": "SETTLEMENT_BINDING_MISMATCH"
+        },
+        "second_state": "APPLIED",
+        "settled": 100000,
+        "sourceReview": {
+          "evidenceDigest": "7c97a9db82e692e23b51f083b8a7ab77000866f91ff4bf4b88aa9421a7e684e4",
+          "eventReviewFacts": 1,
+          "observedCaptureAmountUnderReview": 0,
+          "observedMovementAmountUnderReview": 100000,
+          "conflictingReviewFacts": 0,
+          "unattributedFacts": 0,
+          "inboxPendingOrReview": 0,
+          "amountsAreUnpostedObservations": true
+        }
+      }
+    },
+    {
+      "id": "R02",
+      "classification": "DEFECT_ON_CONFLICTING_SOURCE_INPUTS",
+      "title": "Customer credit does not block contradictory failure fence and second route",
+      "observed": {
+        "credit_ingest": "APPLIED",
+        "fence_ingest": "APPLIED",
+        "new_cash_dispatch": "FIRST_SEND_INTENT",
+        "pg_state": "FAILED_FENCED",
+        "pg_customer_credit": 100000,
+        "separate_cash_fulfilled": 100000,
+        "original_duty": 100000,
+        "local_invariants_accept": true,
+        "real_pg_behavior_asserted": false
+      }
+    },
+    {
+      "id": "R03",
+      "classification": "MISSING_TERMINAL_STATE",
+      "title": "Partially successful payout has no final-partial closure",
+      "observed": {
+        "attempted_fence": {
+          "accepted": false,
+          "error": "FINAL_FAILURE_FENCE_REQUIRED",
+          "exception": "Rejected"
+        },
+        "paid": 40000,
+        "remaining_reserved": 55000,
+        "refundUnclassified": 100000,
+        "effect_state": "OUTCOME_UNKNOWN"
+      }
+    },
+    {
+      "id": "R04",
+      "classification": "MISSING_EVENT_CASE",
+      "title": "Return of an already applied partial payout cannot be posted",
+      "observed": {
+        "accepted": false,
+        "error": "RETURN_REQUIRES_COMPLETED_CASH_EFFECT",
+        "exception": "Rejected"
+      }
+    },
+    {
+      "id": "R05",
+      "classification": "RECOVERY_LIVENESS_CONTRACT_GAP",
+      "title": "Lost first-send handoff leaves query-only work without provider operation ID",
+      "observed": {
+        "loss": {
+          "accepted": false,
+          "error": "INJECTED_RESPONSE_LOSS_AFTER_COMMIT",
+          "exception": "ConnectionError"
+        },
+        "same_operation": {
+          "effectId": "p",
+          "dispatchDecision": "QUERY_ONLY",
+          "state": "OUTCOME_UNKNOWN",
+          "replay": true
+        },
+        "new_operation": {
+          "effectId": "p",
+          "dispatchDecision": "QUERY_ONLY",
+          "state": "OUTCOME_UNKNOWN"
+        },
+        "providerOperationId": null,
+        "local_request_retained": true,
+        "external_sends_in_probe": 0
+      }
+    },
+    {
+      "id": "R06",
+      "classification": "EVIDENCE_SUMMARY_GAP",
+      "title": "Raw collision is preserved but absent from finance digest and conflict count",
+      "observed": {
+        "conflict": {
+          "accepted": false,
+          "error": "RAW_OBSERVATION_ID_CONFLICT_PRESERVED",
+          "exception": "Rejected"
+        },
+        "raw_conflict_count": 1,
+        "finance_summary_unchanged": true,
+        "reported_conflictingReviewFacts": 0
+      }
+    },
+    {
+      "id": "R07",
+      "classification": "ORDERING_CROSSCHECK",
+      "title": "Credit/fence order asymmetry",
+      "observed": [
+        {
+          "order": [
+            "CUSTOMER_CREDIT_CONFIRMED",
+            "FENCED_FAILURE"
+          ],
+          "states": [
+            "APPLIED",
+            "APPLIED"
+          ],
+          "effect": "FAILED_FENCED"
+        },
+        {
+          "order": [
+            "FENCED_FAILURE",
+            "CUSTOMER_CREDIT_CONFIRMED"
+          ],
+          "states": [
+            "APPLIED",
+            "REVIEW"
+          ],
+          "effect": "FAILED_FENCED"
+        }
+      ]
+    },
+    {
+      "id": "R08",
+      "classification": "PRODUCT_POLICY_GAP",
+      "title": "Buyer can reserve a listing for 24h without payment",
+      "observed": {
+        "hold_seconds": 86400,
+        "captured": false,
+        "owner_can_abort": true
+      }
+    },
+    {
+      "id": "R09",
+      "classification": "IDENTIFIER_COLLISION",
+      "title": "Valid event/seat tuples can overwrite unissued inventory",
+      "observed": {
+        "event_count": 2,
+        "inventory_count": 1,
+        "colliding_id": "a/b/c",
+        "surviving_event": "a/b"
+      }
+    }
+  ]
+}

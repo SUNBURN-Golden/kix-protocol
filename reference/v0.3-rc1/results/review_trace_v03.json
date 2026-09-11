@@ -1,0 +1,126 @@
+{
+  "domain": "kix:fixture:lifecycle:0.3",
+  "evidenceClass": "SYNTHETIC_REFERENCE_EXECUTION",
+  "results": {
+    "R01": {
+      "after": "APPLIED",
+      "before": "REVIEW",
+      "settled": 100000,
+      "unposted": 0
+    },
+    "R02": {
+      "effectState": "EVIDENCE_CONFLICT",
+      "order": [
+        "CUSTOMER_CREDIT_CONFIRMED",
+        "FENCED_FAILURE"
+      ],
+      "replacement": {
+        "accepted": false,
+        "error": "OBLIGATION_EVIDENCE_CONFLICT"
+      }
+    },
+    "R03": {
+      "applied": 40000,
+      "finance": {
+        "asOf": {
+          "logicalTime": 0,
+          "sequence": 12
+        },
+        "calculatorVersion": "kix:fixture:lifecycle:0.3",
+        "capturedAwaitingRightsOrRefund": 0,
+        "cashRouteShortfall": 40000,
+        "chainCheckpoint": null,
+        "confirmedRefundCash": 60000,
+        "conflictingEffectAmount": 0,
+        "conflictingEffectCount": 0,
+        "currency": "KRW",
+        "customerCreditConfirmed": 0,
+        "evidenceClass": "synthetic",
+        "organizerGrossAllocated": 95000,
+        "organizerPaid": 40000,
+        "organizerPayable": 0,
+        "organizerRecoveryOutstanding": 40000,
+        "payoutOutcomeUnknown": 0,
+        "pgFees": 0,
+        "pgMerchantAdjustmentOutstanding": 0,
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "primaryCaptured": 100000,
+        "primaryNetAfterRecognizedRefunds": 0,
+        "primaryRefundObligation": 100000,
+        "refundFulfilled": 0,
+        "refundFundsInTransit": 0,
+        "refundObligation": 100000,
+        "refundOutstanding": 100000,
+        "refundPlansPending": 0,
+        "refundUnclassified": 0,
+        "resaleCaptured": 0,
+        "resaleNetAfterRecognizedRefunds": 0,
+        "resaleRefundObligation": 0,
+        "rightsCommittedAmount": 100000,
+        "sequence": 12,
+        "sourceCompleteness": "NOT_ATTESTED",
+        "sourceReview": {
+          "amountsAreUnpostedObservations": true,
+          "completenessAttested": false,
+          "conflictingFactAmountReference": 0,
+          "conflictingReviewFacts": 0,
+          "eventResolvedFacts": 3,
+          "eventReviewFacts": 0,
+          "evidenceDigest": "0664181c8f365d783f0d279e8781fa175459e666cb87b75af43c1f6a93a059f1",
+          "evidenceDigestScope": "GLOBAL_INBOX_AND_LEDGER_V1",
+          "globalRawConflictCount": 0,
+          "inboxPendingOrReview": 0,
+          "observedCaptureAmountUnderReview": 0,
+          "observedMovementAmountUnderReview": 0,
+          "pendingCountScope": "GLOBAL",
+          "unattributedFacts": 0
+        },
+        "sourceScope": {
+          "channel": "card",
+          "environment": "test",
+          "merchant": "kix-fixture",
+          "provider": "toss"
+        }
+      },
+      "state": "PARTIALLY_FINALIZED",
+      "unexecutedFinal": 55000
+    },
+    "R04": {
+      "recoveryOutstanding": 0,
+      "returned": 40000
+    },
+    "R05": {
+      "dispatch": "SUBMIT_SAME_REQUEST",
+      "realExternalSends": 0,
+      "requestHash": "522f198ff40926b4f2e5a120f91efd06419bee9efbb9d174306e0ed1608cb343",
+      "sameDurableKey": true
+    },
+    "R06": {
+      "after": "a8906f17581a4dc59405f12c43e4a739a7a11b0f5b9a149c4db29a6e5a4ee5a7",
+      "before": "479a4de284ec8612250991b04a158fb3eb6e803d01e685f5901d06c8becfcbad",
+      "rawConflictCount": 1
+    },
+    "R07": {
+      "effectState": "EVIDENCE_CONFLICT",
+      "order": [
+        "FENCED_FAILURE",
+        "CUSTOMER_CREDIT_CONFIRMED"
+      ],
+      "replacement": {
+        "accepted": false,
+        "error": "OBLIGATION_EVIDENCE_CONFLICT"
+      }
+    },
+    "R08": {
+      "accepted": false,
+      "error": "INVALID_RESERVATION_EXPIRY"
+    },
+    "R09": {
+      "inventoryCount": 2,
+      "inventoryIds": [
+        "inv-8787770ea28450c3e5873792285bf6279b6b174d09c5bd42c1374553ee19a204",
+        "inv-c65970b11b298bb00a7a2c6ec1e8b14778bc66fa4cacd55a928470621a6d360a"
+      ]
+    }
+  }
+}

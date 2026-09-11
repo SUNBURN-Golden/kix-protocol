@@ -1,0 +1,13 @@
+======================================================================
+FAIL: test_old_consent_new_id_is_rejected_and_new_intent_is_accepted (test_v02.ReviewRegressions.test_old_consent_new_id_is_rejected_and_new_intent_is_accepted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-ui198j5v/model/test_v02.py", line 316, in test_old_consent_new_id_is_rejected_and_new_intent_is_accepted
+    with self.assertRaisesRegex(Rejected,"STALE_CONSENT_VERSION"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Rejected not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)

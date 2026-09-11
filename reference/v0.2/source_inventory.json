@@ -1,0 +1,44 @@
+{
+  "baseVersion": "0.1",
+  "newVersion": "0.2",
+  "oldHashChecks": {
+    "KIX_프로토콜_통합명세_v0.1.md": true,
+    "README.md": true,
+    "adapters.py": true,
+    "core.py": true,
+    "protocol_contract.json": true,
+    "requirements.txt": true,
+    "results/synthetic_lifecycle_trace.json": true,
+    "results/tests.txt": true,
+    "results/verification.json": true,
+    "source_inventory.json": true,
+    "test_core.py": true,
+    "vendor/rights_model.py": true,
+    "vendor/tix_reconcile.py": true,
+    "verify.py": true
+  },
+  "reviewInputs": [
+    {
+      "name": "KIX_v0.1_검토재현자료(1).zip",
+      "sha256": "01b15bd1aa69e331fc5a723c7b2caf7786336b224318e3b705dc3eceafff3f65"
+    },
+    {
+      "name": "KIX_통합프로토콜_v0.1_상세검토(1).md",
+      "sha256": "4680af4e8c2d9d303c1e4e15e2a2f8010a972e8b2bf6d87b2ff018a0f628293e"
+    }
+  ],
+  "baselineBoundaryCasesReproduced": 10,
+  "preservedVendorFiles": [
+    {
+      "name": "vendor/rights_model.py",
+      "sha256": "6151d37d84146256638af9ad46fffe0d640738ad3098f46d13f06b92b0750806",
+      "matchesV01": true
+    },
+    {
+      "name": "vendor/tix_reconcile.py",
+      "sha256": "eff9c1b8ec4ce363c23feb7d62b2eed87b97035234219b827047685cd5bf3ac3",
+      "matchesV01": true
+    }
+  ],
+  "scope": "user provided original bundle and independent review; original sources preserved"
+}

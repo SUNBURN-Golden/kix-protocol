@@ -1,0 +1,15 @@
+======================================================================
+FAIL: test_send_boundary_checks_allocation_version_even_without_cancel (test_v02.ReviewRegressions.test_send_boundary_checks_allocation_version_even_without_cancel)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-kqpyph9q/model/test_v02.py", line 79, in test_send_boundary_checks_allocation_version_even_without_cancel
+    self.assertEqual(result["dispatchDecision"],"BLOCKED")
+AssertionError: 'FIRST_SEND_INTENT' != 'BLOCKED'
+- FIRST_SEND_INTENT
++ BLOCKED
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

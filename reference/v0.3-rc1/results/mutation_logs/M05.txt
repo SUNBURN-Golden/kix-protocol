@@ -1,0 +1,24 @@
+======================================================================
+FAIL: test_marketing_consent_and_revocation_and_finance_minimization (test_core.LifecycleTests.test_marketing_consent_and_revocation_and_finance_minimization)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-yzdj4tqn/model/test_core.py", line 370, in test_marketing_consent_and_revocation_and_finance_minimization
+    self.assertEqual(h.c.view("marketing-adapter","show","marketing"),[])
+AssertionError: Lists differ: [{'subject': 'B', 'consentVersion': 2, 'pu[94 chars]lse}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'subject': 'B', 'consentVersion': 2, 'purpose': 'next_event_marketing', 'business': 'KIX', 'channel': 'email', 'admissionRecorded': False}
+
++ []
+- [{'admissionRecorded': False,
+-   'business': 'KIX',
+-   'channel': 'email',
+-   'consentVersion': 2,
+-   'purpose': 'next_event_marketing',
+-   'subject': 'B'}]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+FAILED (failures=1)

@@ -1,0 +1,13 @@
+======================================================================
+FAIL: test_stale_resale_version_rejected_at_prepare (test_v02.ReviewRegressions.test_stale_resale_version_rejected_at_prepare)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-c_9guej_/model/test_v02.py", line 39, in test_stale_resale_version_rejected_at_prepare
+    with self.assertRaisesRegex(Rejected,"STALE_RIGHTS_VERSION"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Rejected not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

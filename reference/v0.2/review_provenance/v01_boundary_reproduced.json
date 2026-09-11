@@ -1,0 +1,128 @@
+[
+  {
+    "id": "C01",
+    "category": "missing dispatch revalidation and monetary exposure field",
+    "observations": {
+      "eventStatus": "CANCELLED",
+      "unsentPayoutCanBecomeSent": true,
+      "returnedRequestAmount": 95000,
+      "finance": {
+        "primaryCaptured": 100000,
+        "resaleCaptured": 0,
+        "organizerGrossAllocated": 95000,
+        "organizerPaid": 0,
+        "organizerPayable": 95000,
+        "organizerRecoveryOutstanding": 0,
+        "refundOutstanding": 0,
+        "refundPlansPending": 1,
+        "evidenceClass": "synthetic",
+        "currency": "KRW",
+        "sequence": 8
+      }
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C02",
+    "category": "cash-only refund profile limitation",
+    "observations": {
+      "error": "INSUFFICIENT_CONFIRMED_FUNDS",
+      "refundDue": 100000,
+      "captured": true,
+      "settled": 0
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C03",
+    "category": "net-settlement fee unsupported",
+    "observations": {
+      "gross": 100000,
+      "netReceipt": 97000,
+      "unclassifiedPGReceivable": 3000,
+      "remainingCash": 2000,
+      "platformPayable": 5000,
+      "error": "INSUFFICIENT_CONFIRMED_FUNDS"
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C04",
+    "category": "inventory-reissue lifecycle missing",
+    "observations": {
+      "eventStatus": "OPEN",
+      "ticketState": "VOID",
+      "fullyRefunded": true,
+      "error": "RIGHT_NOT_TRANSFERABLE"
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C05",
+    "category": "explicit full-chain-unwind product choice",
+    "observations": {
+      "primary": {
+        "buyer": "A",
+        "refundDue": 100000
+      },
+      "resale": {
+        "buyer": "B",
+        "refundDue": 120000
+      }
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C06",
+    "category": "gift command missing",
+    "observations": {
+      "error": "INVALID_AMOUNT"
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C07",
+    "category": "raw inbox missing, already disclosed",
+    "observations": {
+      "error": "SECOND_PAYMENT_REQUIRES_SEPARATE_REVIEW",
+      "rejectedObservationPersisted": false,
+      "stateUnchanged": true
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C08",
+    "category": "no causal consent-version precondition",
+    "observations": {
+      "semantics": "distinct-id positive intent after revocation accepted; freshness not distinguishable",
+      "marketing": [
+        {
+          "subject": "A",
+          "consentVersion": 3,
+          "purpose": "next_event_marketing",
+          "attended": false
+        }
+      ]
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C09",
+    "category": "provider identifier mapping missing",
+    "observations": {
+      "returnedExternalOrderId": "주문 1",
+      "note": "Toss orderId requires 6-64 characters from its documented ASCII alphabet"
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  },
+  {
+    "id": "C10",
+    "category": "provider payment id truncated contract",
+    "observations": {
+      "paymentKeyLength": 150,
+      "error": "INVALID_ID",
+      "note": "Toss documents maximum 200 characters"
+    },
+    "meaning": "current behavior reproduced; not an acceptance-test pass"
+  }
+]

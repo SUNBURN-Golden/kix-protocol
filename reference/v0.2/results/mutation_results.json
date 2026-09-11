@@ -1,0 +1,146 @@
+{
+  "scope": "14 selected deletions, not exhaustive mutation coverage",
+  "results": [
+    {
+      "id": "M01",
+      "file": "core.py",
+      "guard": "presentation holder/version guard",
+      "test": "test_core.LifecycleTests.test_original_qr_invalid_after_resale",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M02",
+      "file": "core.py",
+      "guard": "admission exclusion during reservation",
+      "test": "test_core.LifecycleTests.test_resale_lock_blocks_admission_and_second_resale",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M03",
+      "file": "finance.py",
+      "guard": "funds are not provider success",
+      "test": "test_core.LifecycleTests.test_funds_before_status_debits_cash_without_claiming_refund_done",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M04",
+      "file": "finance.py",
+      "guard": "effect beneficiary binding",
+      "test": "test_core.LifecycleTests.test_source_scope_and_recipient_binding",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M05",
+      "file": "lifecycle.py",
+      "guard": "revocation disables consent",
+      "test": "test_core.LifecycleTests.test_marketing_consent_and_revocation_and_finance_minimization",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M06",
+      "file": "core.py",
+      "guard": "event lifecycle guard independent of stale gate configuration",
+      "test": "test_v02.ReviewRegressions.test_completed_event_guard_survives_stale_gate_configuration",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": "stale independent gate configuration injected"
+    },
+    {
+      "id": "M07",
+      "file": "lifecycle.py",
+      "guard": "request rights version at preparation",
+      "test": "test_v02.ReviewRegressions.test_stale_resale_version_rejected_at_prepare",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M08",
+      "file": "core.py",
+      "guard": "trade commit authority",
+      "test": "test_v02.ReviewRegressions.test_non_operator_cannot_commit_paid_trade",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M09",
+      "file": "core.py",
+      "guard": "refund current holder authority",
+      "test": "test_v02.ReviewRegressions.test_stranger_cannot_refund_current_right",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M10",
+      "file": "core.py",
+      "guard": "delegation final log provenance",
+      "test": "test_v02.ReviewRegressions.test_delegation_requires_actual_final_fixture_marker",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M11",
+      "file": "finance.py",
+      "guard": "send rechecks allocation version",
+      "test": "test_v02.ReviewRegressions.test_send_boundary_checks_allocation_version_even_without_cancel",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": "allocation revision injected at boundary"
+    },
+    {
+      "id": "M12",
+      "file": "observations.py",
+      "guard": "rejected raw retained",
+      "test": "test_v02.InboxAndRecoveryTests.test_second_capture_is_preserved_and_deduplicated_under_review",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M13",
+      "file": "lifecycle.py",
+      "guard": "causal consent version guard",
+      "test": "test_v02.ReviewRegressions.test_old_consent_new_id_is_rejected_and_new_intent_is_accepted",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    },
+    {
+      "id": "M14",
+      "file": "finance.py",
+      "guard": "shared refund route obligation reservation",
+      "test": "test_v02.ReviewRegressions.test_pg_and_cash_routes_share_same_refund_limit",
+      "baselinePassed": true,
+      "detected": true,
+      "returncode": 1,
+      "fixtureNote": null
+    }
+  ],
+  "allDetected": true
+}

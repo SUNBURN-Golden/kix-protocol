@@ -1,0 +1,38 @@
+{
+  "checks": {
+    "client/backup.mjs": {
+      "passed": true,
+      "output": ""
+    },
+    "client/encoding.mjs": {
+      "passed": true,
+      "output": ""
+    },
+    "client/independent.mjs": {
+      "passed": true,
+      "output": ""
+    },
+    "client/localnet.mjs": {
+      "passed": true,
+      "output": ""
+    },
+    "client/offline.test.mjs": {
+      "passed": true,
+      "output": ""
+    },
+    "client/private.mjs": {
+      "passed": true,
+      "output": ""
+    },
+    "client/setup-zk.mjs": {
+      "passed": true,
+      "output": ""
+    },
+    "client/types.mjs": {
+      "passed": true,
+      "output": ""
+    }
+  },
+  "sdkLoaded": false,
+  "rpcCalled": false
+}

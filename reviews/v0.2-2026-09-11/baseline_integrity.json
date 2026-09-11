@@ -1,0 +1,9 @@
+{
+  "manifest_total": 42,
+  "hashes_match": true,
+  "mismatches": [],
+  "standalone_match": {
+    "KIX_프로토콜_수정명세_v0.2.md": true,
+    "KIX_Sui_ZK_후속구현계약_v0.2.md": true
+  }
+}

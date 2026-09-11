@@ -1,0 +1,25 @@
+{
+  "status": "BLOCKED_MISSING_RUNTIME",
+  "tools": {
+    "python3": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "node": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "sui": null,
+    "cargo": null,
+    "rustc": null
+  },
+  "packages": {
+    "@mysten/sui": false,
+    "snarkjs": false,
+    "circom2": false,
+    "circomlib": false,
+    "circomlibjs": false
+  },
+  "versions": {
+    "python3": "Python 3.12.14",
+    "node": "v24.19.0"
+  },
+  "moveCompiled": false,
+  "chainExecuted": false,
+  "proofGenerated": false,
+  "note": "This probe only checks prerequisites; READY is not a passing chain test."
+}

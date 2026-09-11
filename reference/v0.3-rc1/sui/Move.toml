@@ -1,0 +1,8 @@
+[package]
+name = "kix"
+edition = "2024.beta"
+
+# Sui CLI supplies the matching framework dependency. Record the CLI version
+# and generated Move.lock when the blocked build can actually be run.
+[addresses]
+kix = "0x0"

@@ -1,0 +1,13 @@
+======================================================================
+FAIL: test_delegation_requires_actual_final_fixture_marker (test_v02.ReviewRegressions.test_delegation_requires_actual_final_fixture_marker)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-tkxegjj0/model/test_v02.py", line 56, in test_delegation_requires_actual_final_fixture_marker
+    with self.assertRaisesRegex(Rejected,"FINAL_USE_RESULT_REQUIRED"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Rejected not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

@@ -1,0 +1,999 @@
+--- v0.2/common.py
++++ v0.3-rc1/common.py
+@@ -1,6 +1,7 @@
+ """Deterministic fixture encoding. Not a cross-language signing standard."""
+ import hashlib
+ import json
++import unicodedata
+ 
+ 
+ class Rejected(ValueError):
+@@ -38,3 +39,10 @@
+ def external_id(value):
+     require(isinstance(value, str) and 0 < len(value) <= 200 and value.strip() == value, "INVALID_EXTERNAL_ID")
+     return value
++
++
++def inventory_id(issuer, event, session, seat):
++    """Versioned, length-delimited tuple via canonical JSON; no slash concatenation."""
++    parts=[ident(x) for x in (issuer,event,session,seat)]
++    require(all(unicodedata.normalize("NFC",x)==x for x in parts),"IDENTIFIER_MUST_BE_NFC")
++    return "inv-"+digest(["kix:inventory:v1",*parts])
+--- v0.2/contracts.py
++++ v0.3-rc1/contracts.py
+@@ -3,7 +3,7 @@
+ 
+ # Required / optional fields. Unknown fields are rejected at the boundary.
+ COMMANDS={
+- "create_event":("eventId organizer policy seats","invitationQuota admissionStatus"),
++ "create_event":("eventId organizer policy seats","invitationQuota admissionStatus issuerId sessionId reservationSeconds"),
+  "prepare_trade":("tradeId buyer amount expectedVersion","ticketId inventoryId expectedInventoryVersion expiresAt listingId listingHash"),
+  "accept_trade":("tradeId termsHash",""),
+  "capture":("tradeId orderId paymentId amount currency buyer",""),
+@@ -14,6 +14,10 @@
+  "delegate":("ticketId expectedVersion",""),
+  "close_delegation":("ticketId session admissionEpoch used provenance",""),
+  "prepare_effect":("effectId tradeId kind amount routeProfile contractRef","allocationId beneficiaryAccountRef retryOf"),
++ "claim_effect":("effectId workerId leaseSeconds",""),
++ "dispatch_effect":("effectId workerId claimGeneration",""),
++ "observe_dispatch_lookup":("effectId idempotencyKey requestHash result lookupRef observedAt","providerOperationId"),
++ "finalize_effect":("effectId providerOperationId paymentId beneficiary amount unexecutedAmount currency sourceId fenceRef sourceCursor observedAt contractRef",""),
+  "send_effect":("effectId",""),"abort_effect":("effectId",""),
+  "observe_effect":("effectId phase sourceId providerOperationId amount currency beneficiary paymentId","movementId status fenceRef fenceProvenance"),
+  "observe_recovery":("tradeId allocationId payer amount currency movementId","sourceId"),
+@@ -32,8 +36,8 @@
+  "set_consent":("eventId business channel purpose allowed expectedConsentVersion",""),
+  "authorize_marketing":("eventId subject business channel purpose expectedConsentVersion",""),
+ }
+-SOURCE_ACTIONS={"capture","settle_capture","observe_effect","observe_recovery","adjust_pg_cancel","observe_return","observe_funding"}
+-INTEGER_FIELDS=set("amount expectedVersion admissionEpoch grossAmount feeAmount taxAmount heldAmount adjustmentAmount expectedInventoryVersion expiresAt now invitationQuota expectedConsentVersion".split())
++SOURCE_ACTIONS={"capture","settle_capture","observe_effect","observe_recovery","adjust_pg_cancel","observe_return","observe_funding","finalize_effect","observe_dispatch_lookup"}
++INTEGER_FIELDS=set("amount expectedVersion admissionEpoch grossAmount feeAmount taxAmount heldAmount adjustmentAmount expectedInventoryVersion expiresAt now invitationQuota expectedConsentVersion reservationSeconds leaseSeconds claimGeneration observedAt unexecutedAmount".split())
+ BOOLEAN_FIELDS={"used","allowed"}
+ NULLABLE_FIELDS={"allocationId","beneficiaryAccountRef","retryOf","status"}
+ 
+@@ -66,7 +70,7 @@
+ 
+ 
+ def schema():
+-    result={"domain":"kix:fixture:lifecycle:0.2","unknownFields":"REJECT","sourceAuthentication":"FIXTURE_ONLY","commands":{}}
++    result={"domain":"kix:fixture:lifecycle:0.3","unknownFields":"REJECT","sourceAuthentication":"FIXTURE_ONLY","commands":{}}
+     for action in COMMANDS:
+         req,opt=command_fields(action); props={}
+         for field in sorted(req|opt):
+--- v0.2/core.py
++++ v0.3-rc1/core.py
+@@ -15,11 +15,12 @@
+ from finance import FinanceMixin
+ from lifecycle import LifecycleMixin
+ from observations import ObservationMixin
+-from contracts import validate_command
+-
+-
+-class Core(FinanceMixin, LifecycleMixin, ObservationMixin):
+-    DOMAIN = "kix:fixture:lifecycle:0.2"
++from contracts import validate_command, SOURCE_ACTIONS
++from dispatch import DispatchMixin
++
++
++class Core(DispatchMixin, FinanceMixin, LifecycleMixin, ObservationMixin):
++    DOMAIN = "kix:fixture:lifecycle:0.3"
+     SCOPE = {"provider": "toss", "environment": "test", "merchant": "kix-fixture", "channel": "card"}
+ 
+     def __init__(self, path=":memory:"):
+@@ -38,7 +39,7 @@
+     def snapshot(self):
+         return json.loads(self.db.execute("SELECT body FROM state WHERE id=1").fetchone()[0])
+ 
+-    def execute(self, operation_id, actor, action, body, *, fail_before_commit=False, lose_response=False):
++    def execute(self, operation_id, actor, action, body, *, fail_before_commit=False, lose_response=False, _observation_id=None):
+         ident(operation_id); ident(actor)
+         validate_command(action, body)
+         require(isinstance(body, dict) and body.get("domain") == self.DOMAIN, "DOMAIN_MISMATCH")
+@@ -48,7 +49,9 @@
+             old = self.db.execute("SELECT fingerprint,receipt FROM commands WHERE operation_id=?", (operation_id,)).fetchone()
+             if old:
+                 require(old[0] == fingerprint, "OPERATION_ID_CONFLICT")
+-                receipt = json.loads(old[1]); self.db.execute("COMMIT")
++                receipt = json.loads(old[1])
++                if _observation_id is not None: self.mark_observation_applied(_observation_id)
++                self.db.execute("COMMIT")
+                 return self.replay_receipt(action, receipt, body)
+             self.s = self.snapshot()
+             self.actor, self.op = actor, operation_id
+@@ -59,6 +62,10 @@
+             receipt = dict(domain=self.DOMAIN, operationId=operation_id, sequence=seq,
+                            action=action, result=result)
+             self.s["events_log"].append(receipt)
++            if action in SOURCE_ACTIONS:
++                self.record_source_fact(_observation_id or operation_id, dict(action=action,body=body),
++                                        applied=(operation_id, seq) if result.get("financialApplication",True) else None, state=self.s)
++            if _observation_id is not None: self.mark_observation_applied(_observation_id)
+             self.db.execute("UPDATE state SET body=? WHERE id=1", (canonical(self.s),))
+             self.db.execute("INSERT INTO commands VALUES(?,?,?)", (operation_id, fingerprint, canonical(receipt)))
+             self.db.execute("INSERT INTO command_inputs VALUES(?,?,?,?)", (operation_id, actor, action, canonical(body)))
+--- v0.2/dispatch.py
++++ v0.3-rc1/dispatch.py
+@@ -0,0 +1,54 @@
++"""Durable dispatcher contract. Fixture claims/lookups; performs NO network I/O.
++
++A lease fences coordinator grants, not a worker that already obtained a request.
++Provider same-key replay guarantees are still required. One-hour replay window
++and 30-second lookup freshness are explicit synthetic contract constants.
++"""
++from common import require, ident, digest, canonical
++from finance import TERMINAL
++
++
++class DispatchMixin:
++    def _claim_effect(self,b):
++        self.role('operator'); x=self.s['effects'][b['effectId']]; d=x['dispatch']
++        require(x['sent'] and x['state'] not in TERMINAL and x['state']!='EVIDENCE_CONFLICT','EFFECT_NOT_CLAIMABLE')
++        require(not d['worker'] or self.s['clock']>=d['leaseUntil'],'DISPATCH_ALREADY_CLAIMED')
++        require(1<=b['leaseSeconds']<=60,'INVALID_CLAIM_LEASE')
++        d['claimGeneration']+=1; d['worker']=ident(b['workerId']); d['leaseUntil']=self.s['clock']+b['leaseSeconds']
++        return dict(effectId=b['effectId'],claimGeneration=d['claimGeneration'],leaseUntil=d['leaseUntil'],
++                    idempotencyKey=x['idempotencyKey'],requestHash=x['requestHash'],
++                    providerOperationId=x['providerOperationId'],attempts=d['attempts'])
++
++    def _observe_dispatch_lookup(self,b):
++        self.source(b); eid=b['effectId']; x=self.s['effects'][eid]; d=x['dispatch']
++        require(b['idempotencyKey']==x['idempotencyKey'] and b['requestHash']==x['requestHash'],'LOOKUP_REQUEST_MISMATCH')
++        require(x['sent'] and d['attempts']>0 and b['observedAt']<=self.s['clock']
++                and b['observedAt']>=d['permits'][-1]['at'],'LOOKUP_TIME_MISMATCH')
++        require(b['result'] in ('FOUND','NOT_FOUND_REPLAY_SAFE','UNKNOWN'),'LOOKUP_RESULT_UNSUPPORTED')
++        if not self.evidence('dispatch-lookup',b['lookupRef'],b): return {'duplicate':True}
++        if b['result']=='FOUND': self.bind_provider_operation(eid,x,b['providerOperationId'])
++        d['lookup']=dict(result=b['result'],ref=b['lookupRef'],observedAt=b['observedAt'],attempt=d['attempts'],used=False)
++        return {'lookupResult':b['result']}
++
++    def _dispatch_effect(self,b):
++        self.role('operator'); eid=b['effectId']; x=self.s['effects'][eid]; d=x['dispatch']; r=self.trade(x['trade'])
++        require(d['worker']==b['workerId'] and d['claimGeneration']==b['claimGeneration']
++                and self.s['clock']<d['leaseUntil'],'STALE_DISPATCH_CLAIM')
++        require(x['sent'] and x['state'] not in TERMINAL,'DISPATCH_TERMINAL')
++        require(not any(y['owed']==x['owed'] and y['state']=='EVIDENCE_CONFLICT' for y in self.s['effects'].values()),'OBLIGATION_EVIDENCE_CONFLICT')
++        valid=x['kind']!='PAYOUT' or (self.event(r['event'])['status']=='COMPLETED'
++                and not r['reversalRequested'] and x['allocationVersion']==r['allocationVersion'])
++        require(valid and x['amount']-x['appliedAmount']<=-self.balance(x['owed']),'DISPATCH_OBLIGATION_CHANGED')
++        require(x['requestBytes']==canonical(x['request']) and x['requestHash']==digest(x['request']),'DURABLE_REQUEST_CHANGED')
++        require(self.s['clock']<d['idempotencyUntil'],'IDEMPOTENCY_WINDOW_EXPIRED_QUERY_ONLY')
++        if d['attempts']:
++            q=d['lookup']
++            require(x['providerOperationId'] is None and q and q['result']=='NOT_FOUND_REPLAY_SAFE'
++                    and not q['used'] and q['attempt']==d['attempts']
++                    and 0<=self.s['clock']-q['observedAt']<=30,'SOURCE_LOOKUP_REQUIRED_QUERY_ONLY')
++            q['used']=True
++        d['attempts']+=1
++        d['permits'].append(dict(operation=self.op,at=self.s['clock'],generation=d['claimGeneration']))
++        return dict(effectId=eid,dispatchDecision='SUBMIT_SAME_REQUEST',idempotencyKey=x['idempotencyKey'],
++                    requestBytes=x['requestBytes'],requestHash=x['requestHash'],attempt=d['attempts'],
++                    contract='fixture:stable-key-replay:1h:v1')
+--- v0.2/finance.py
++++ v0.3-rc1/finance.py
+@@ -1,7 +1,7 @@
+ """Explicit execution routes and double-entry reference accounting; no network I/O."""
+ from common import canonical, digest, ident, external_id, positive, nonnegative, require
+ 
+-TERMINAL = ("DONE", "ABORTED", "FAILED_FENCED")
++TERMINAL = ("DONE", "ABORTED", "FAILED_FENCED", "PARTIALLY_FINALIZED")
+ ROUTES = {
+     "CASH_REFUND_FIXTURE": {"kind": "REFUND", "contract": "fixture:cash-refund:v1", "cash": True,
+                             "requiredEvidence": ["PROVIDER_SUCCESS", "BANK_DEBIT_OBSERVED"]},
+@@ -91,6 +91,7 @@
+             require(r["refundDue"]>0,"REFUND_PLAN_NOT_READY")
+             owed="refund:"+tid; beneficiary=r["buyer"]
+         pending=list(self.s["effects"].values())
++        require(not any(x["owed"]==owed and x["state"]=="EVIDENCE_CONFLICT" for x in pending),"OBLIGATION_EVIDENCE_CONFLICT")
+         reserved=sum(x["amount"]-x["appliedAmount"] for x in pending if x["owed"]==owed and x["state"] not in TERMINAL)
+         require(n<=-self.balance(owed)-reserved,"OBLIGATION_ALREADY_RESERVED")
+         if route["cash"]:
+@@ -114,7 +115,11 @@
+         x["request"]=dict(effectId=eid,attemptId=x["attemptId"],tradeId=tid,kind=kind,amount=n,currency="KRW",
+                           beneficiary=beneficiary,beneficiaryAccountRef=b.get("beneficiaryAccountRef"),
+                           paymentId=r["paymentId"],routeProfile=profile,contractRef=route["contract"],scope=self.SCOPE)
++        x["requestHash"]=digest(x["request"])
++        x["requestBytes"]=canonical(x["request"])
+         x["idempotencyKey"]=digest([self.DOMAIN,eid,x["request"]])
++        x["dispatch"]=dict(claimGeneration=0,worker=None,leaseUntil=0,attempts=0,
++                           firstIntentAt=None,idempotencyUntil=None,lookup=None,permits=[])
+         self.s["effects"][eid]=x
+         if kind=="REFUND": self.s["refund_cases"][tid]["routes"].append(dict(effectId=eid,profile=profile,amount=n))
+         return {"effectId":eid,"idempotencyKey":x["idempotencyKey"],"fundingBasis":x["fundingBasis"]}
+@@ -134,10 +139,13 @@
+             return {"effectId":eid,"dispatchDecision":"BLOCKED","state":"ABORTED"}
+         require(x["amount"]<=-self.balance(x["owed"]),"OBLIGATION_CHANGED")
+         x["sent"]=True; x["state"]="OUTCOME_UNKNOWN"
+-        return {"effectId":eid,"dispatchDecision":"FIRST_SEND_INTENT", "unsentFixtureRequest":x["request"],"idempotencyKey":x["idempotencyKey"]}
++        x["dispatch"]["firstIntentAt"]=self.s["clock"]
++        # Deliberately bounded synthetic provider contract, NOT a claim about a real PG.
++        x["dispatch"]["idempotencyUntil"]=self.s["clock"]+3600
++        return {"effectId":eid,"dispatchDecision":"FIRST_SEND_INTENT", "requiresWorkerClaim":True, "requestHash":x["requestHash"],"idempotencyKey":x["idempotencyKey"]}
+ 
+     def replay_receipt(self,action,receipt,body):
+-        if action=="send_effect":
++        if action in ("send_effect","claim_effect","dispatch_effect"):
+             x=self.snapshot()["effects"][body["effectId"]]
+             return dict(receipt,result={"effectId":body["effectId"],"dispatchDecision":"QUERY_ONLY","state":x["state"],"replay":True})
+         if action=="authorize_marketing":
+@@ -154,7 +162,7 @@
+ 
+     def finish_effect(self,eid):
+         x=self.s["effects"][eid]
+-        if x["state"]=="DONE": return
++        if x["state"] in TERMINAL or x["state"]=="EVIDENCE_CONFLICT": return
+         x["confirmed"]=x["confirmedAmount"]==x["amount"]
+         x["fundsObserved"]=x["fundsAmount"]==x["amount"]
+         matched=min(x["confirmedAmount"],x["fundsAmount"]) if x["cashRoute"] else x["confirmedAmount"]
+@@ -185,7 +193,7 @@
+         self.source(b); eid=b["effectId"]; require(eid in self.s["effects"],"UNKNOWN_EFFECT")
+         x=self.s["effects"][eid]; n=positive(b["amount"])
+         require(x["sent"],"EFFECT_NOT_SENT")
+-        require(x["state"] not in ("ABORTED","FAILED_FENCED"),"LATE_TERMINAL_EFFECT_FACT_REQUIRES_REVIEW")
++        require(x["state"]!="ABORTED","LATE_TERMINAL_EFFECT_FACT_REQUIRES_REVIEW")
+         require(n<=x["amount"] and b["currency"]==x["currency"] and b["beneficiary"]==x["beneficiary"] and b["paymentId"]==x["paymentId"],"EFFECT_BINDING_MISMATCH")
+         self.bind_provider_operation(eid,x,b["providerOperationId"])
+         phase=b["phase"]; status=b.get("status")
+@@ -194,6 +202,21 @@
+         binding=dict(effect=eid,amount=n,payment=x["paymentId"],beneficiary=x["beneficiary"],phase=phase,status=status,
+                      providerOperationId=b["providerOperationId"],movementId=b.get("movementId"),fenceRef=b.get("fenceRef"))
+         if not self.evidence("effect-observation",b["sourceId"],binding): return {"duplicate":True}
++        positive_fact=phase in ("FUNDS","PG_CANCELLED","CUSTOMER_CREDIT_CONFIRMED") or phase=="STATUS" and status=="SUCCESS"
++        if positive_fact and x["state"]=="FAILED_FENCED":
++            if phase=="CUSTOMER_CREDIT_CONFIRMED":
++                require(not x["cashRoute"] and n==x["amount"],"CUSTOMER_CREDIT_BINDING_MISMATCH")
++                x["customerCreditConfirmed"]=n
++            self.conflict_effect(eid,"POSITIVE_FACT_AFTER_FINAL_FAILURE",b)
++            return {"state":x["state"],"review":True,"financialApplication":False}
++        if x["state"]=="EVIDENCE_CONFLICT":
++            self.conflict_effect(eid,"ADDITIONAL_CONFLICT_EVIDENCE",b)
++            return {"state":x["state"],"review":True,"financialApplication":False}
++        if x["state"]=="PARTIALLY_FINALIZED" and positive_fact:
++            compatible=phase=="STATUS" and status=="SUCCESS" and n<=x["finalExecutedAmount"]
++            if not compatible:
++                self.conflict_effect(eid,"POSITIVE_FACT_AFTER_PARTIAL_FENCE",b)
++                return {"state":x["state"],"review":True,"financialApplication":False}
+         if phase=="FUNDS":
+             require(x["cashRoute"],"PG_CANCEL_IS_NOT_BANK_DEBIT")
+             require(b.get("movementId"),"MOVEMENT_ID_REQUIRED")
+@@ -210,8 +233,11 @@
+             x["customerCreditConfirmed"]=n
+         elif phase=="FENCED_FAILURE":
+             require(b.get("fenceRef") and b.get("fenceProvenance")=="synthetic_final_provider_fence"
+-                    and not x["confirmedAmount"] and not x["fundsAmount"] and n==x["amount"],"FINAL_FAILURE_FENCE_REQUIRED")
+-            x["state"]="FAILED_FENCED"; x["fenceRef"]=b["fenceRef"]
++                    and n==x["amount"],"FINAL_FAILURE_FENCE_REQUIRED")
++            if x["confirmedAmount"] or x["fundsAmount"] or x["customerCreditConfirmed"]:
++                self.conflict_effect(eid,"FINAL_FAILURE_CONTRADICTS_POSITIVE_FACT",b)
++                return {"state":x["state"],"review":True,"reservationReleased":False}
++            x["state"]="FAILED_FENCED"; x["conflict"]=False; x["fenceRef"]=b["fenceRef"]
+             if self.trade(x["trade"])["reversalRequested"]: self.reverse(x["trade"])
+             return {"state":x["state"]}
+         elif status=="SUCCESS":
+@@ -221,6 +247,31 @@
+         elif status=="FAILED": x["conflict"]=True
+         self.finish_effect(eid)
+         return {"state":x["state"],"confirmed":x["confirmed"],"fundsObserved":x["fundsObserved"],"review":x["conflict"]}
++
++    def conflict_effect(self,eid,reason,body):
++        x=self.s["effects"][eid]
++        x["state"]="EVIDENCE_CONFLICT"; x["conflict"]=True
++        x.setdefault("conflictingFacts",[]).append(dict(reason=reason,body=body,operation=self.op))
++        # Do not release a contradictory execution. Stop work which has no send intent.
++        for y in self.s["effects"].values():
++            if y is not x and y["owed"]==x["owed"] and y["state"]=="PREPARED":
++                y["state"]="ABORTED"; y["abortReason"]="RELATED_EVIDENCE_CONFLICT"
++
++    def _finalize_effect(self,b):
++        self.source(b); eid=b["effectId"]; x=self.s["effects"][eid]
++        n=positive(b["amount"]); remainder=positive(b["unexecutedAmount"])
++        require(x["sent"] and x["cashRoute"] and x["state"] in ("OUTCOME_UNKNOWN","PARTIALLY_FINALIZED"),"EFFECT_NOT_PARTIALLY_FINALIZABLE")
++        require(b["paymentId"]==x["paymentId"] and b["beneficiary"]==x["beneficiary"] and b["currency"]==x["currency"],"EFFECT_BINDING_MISMATCH")
++        require(b["contractRef"]=="fixture:partial-final:v1" and b["fenceRef"] and b["sourceCursor"]
++                and b["observedAt"]<=self.s["clock"],"PARTIAL_FINAL_FENCE_REQUIRED")
++        require(n+remainder==x["amount"] and n==x["confirmedAmount"]==x["fundsAmount"]==x["appliedAmount"],"FINAL_CUMULATIVE_MISMATCH")
++        self.bind_provider_operation(eid,x,b["providerOperationId"])
++        if not self.evidence("partial-final",b["sourceId"],b): return {"duplicate":True}
++        x["state"]="PARTIALLY_FINALIZED"; x["conflict"]=False
++        x["finalExecutedAmount"]=n; x["unexecutedFinalAmount"]=remainder
++        x["finalFence"]={k:b[k] for k in ("fenceRef","sourceCursor","observedAt","contractRef")}
++        if self.trade(x["trade"])["reversalRequested"]: self.reverse(x["trade"])
++        return {"state":x["state"],"executed":n,"unexecutedFinal":remainder}
+ 
+     def _adjust_pg_cancel(self,b):
+         self.source(b); tid=b["tradeId"]; r=self.trade(tid); n=positive(b["amount"])
+@@ -240,17 +291,17 @@
+ 
+     def _observe_return(self,b):
+         self.source(b); eid=b["effectId"]; x=self.s["effects"][eid]; n=positive(b["amount"])
+-        require(x["state"]=="DONE" and x["cashRoute"],"RETURN_REQUIRES_COMPLETED_CASH_EFFECT")
++        require(x["cashRoute"] and x["appliedAmount"]>0,"RETURN_REQUIRES_APPLIED_CASH_EFFECT")
+         require(b["currency"]=="KRW" and b["paymentId"]==x["paymentId"] and b["payer"]==x["beneficiary"],"RETURN_BINDING_MISMATCH")
+         if not self.evidence("funds",b["movementId"],dict(effect=eid,amount=n,direction="RETURN")): return {"duplicate":True}
+-        require(x["returned"]+n<=x["amount"],"EXCESS_RETURN")
++        require(x["returned"]+n<=x["appliedAmount"],"EXCESS_RETURN")
+         r=self.trade(x["trade"])
+         if x["kind"]=="REFUND":
+             credit=x["owed"]; r["refunded"]-=n
+         else:
+             a=next(a for a in r["allocations"] if a["id"]==x["allocation"])
+-            if r["reversalRequested"]:
+-                require(r["reversalPlanned"] and n<=self.balance("recoverable:"+a["id"]),"RETURN_CLASSIFICATION_PENDING")
++            if r["reversalRequested"] and r["reversalPlanned"]:
++                require(n<=self.balance("recoverable:"+a["id"]),"RETURN_CLASSIFICATION_PENDING")
+                 credit="recoverable:"+a["id"]; a["recovered"]+=n
+             else:
+                 credit=x["owed"]; a["paid"]-=n
+@@ -315,6 +366,8 @@
+             confirmedRefundCash=funding,refundFundsInTransit=transit_total,cashRouteShortfall=shortage,
+             pgMerchantAdjustmentOutstanding=sum(-s["balances"].get("pg_cancel_due:"+tid,0) for tid in trades),
+             customerCreditConfirmed=sum(x["customerCreditConfirmed"] for x in effects),
++            conflictingEffectCount=sum(x["state"]=="EVIDENCE_CONFLICT" for x in effects),
++            conflictingEffectAmount=sum(x["amount"] for x in effects if x["state"]=="EVIDENCE_CONFLICT"),
+             pgFees=sum(s["balances"].get("expense:platform:"+tid,0) for tid in trades),
+             sourceReview=inbox,evidenceClass="synthetic",currency="KRW",sequence=len(s["events_log"]),
+             asOf={"logicalTime":s["clock"],"sequence":len(s["events_log"])},policyHash=e["policyHash"],
+@@ -352,4 +405,4 @@
+             require(not live or live==[unit["currentRight"]],"INVENTORY_RIGHT_MISMATCH")
+         for pool in {x["pool"] for x in s["effects"].values()}:
+             reserved=sum(cash_reservation(x) for x in s["effects"].values() if x["pool"]==pool)
+-            require(reserved<=balances.get("funds:"+pool,0),"OVERRESERVED_CASH")
++            require(reserved<=balances.get("funds:"+pool,0) or any(x["pool"]==pool and x["state"]=="EVIDENCE_CONFLICT" for x in s["effects"].values()),"OVERRESERVED_CASH")
+--- v0.2/lifecycle.py
++++ v0.3-rc1/lifecycle.py
+@@ -1,5 +1,5 @@
+ """Inventory, issuance, offers and consent. Time/actors remain injected fixtures."""
+-from common import canonical, digest, ident, positive, nonnegative, require
++from common import canonical, digest, ident, positive, nonnegative, require, inventory_id
+ 
+ REFUND_PROFILES=("FULL_CHAIN_UNWIND_FIXTURE","LATEST_TRADE_UNWIND_FIXTURE")
+ 
+@@ -20,13 +20,17 @@
+         require(len(set(seats))==len(seats),"DUPLICATE_SEAT")
+         quota=nonnegative(b.get("invitationQuota",0)); require(quota<=len(seats),"INVITATION_QUOTA_EXCEEDS_INVENTORY")
+         admission=b.get("admissionStatus","OPEN"); require(admission in ("OPEN","CLOSED"),"INVALID_ADMISSION_STATUS")
+-        self.s["events"][eid]=dict(status="OPEN",salesStatus="OPEN",admissionStatus=admission,
++        issuer=ident(b.get("issuerId",b["organizer"])); session=ident(b.get("sessionId","main"))
++        reservation_seconds=b.get("reservationSeconds",900)
++        require(type(reservation_seconds) is int and 1<=reservation_seconds<=900,"INVALID_RESERVATION_POLICY")
++        ids=[inventory_id(issuer,eid,session,seat) for seat in seats]
++        require(len(set(ids))==len(ids) and all(i not in self.s["inventory"] for i in ids),"INVENTORY_ID_COLLISION")
++        self.s["events"][eid]=dict(issuer=issuer,session=session,reservationSeconds=reservation_seconds,status="OPEN",salesStatus="OPEN",admissionStatus=admission,
+             organizer=ident(b["organizer"]),policy=p,policyHash=digest(p),pool=digest([eid,self.SCOPE]),
+             invitationQuota=quota,invitationsIssued=0)
+-        for seat in seats:
+-            ident(seat); iid=eid+"/"+seat; ident(iid)
+-            self.s["inventory"][iid]=dict(event=eid,seat=seat,generation=0,version=0,currentRight=None)
+-        return {"eventId":eid,"policyHash":digest(p),"inventoryIds":[eid+"/"+x for x in seats]}
++        for seat,iid in zip(seats,ids):
++            self.s["inventory"][iid]=dict(issuer=issuer,event=eid,session=session,seat=seat,generation=0,version=0,currentRight=None)
++        return {"eventId":eid,"policyHash":digest(p),"inventoryIds":ids,"reservationSeconds":reservation_seconds}
+ 
+     def new_right(self,iid,expected):
+         require(iid in self.s["inventory"],"INVENTORY_NOT_FOUND")
+@@ -67,8 +71,8 @@
+                 self.role(buyer)
+             else: self.role(t["owner"])
+             require(e["policy"]["resaleAllowed"] and buyer!=t["owner"] and price<=e["policy"]["resaleCap"],"RESALE_POLICY_REJECTED")
+-        expiry=b.get("expiresAt",self.s["clock"]+900)
+-        require(type(expiry) is int and self.s["clock"]<expiry<=self.s["clock"]+86400,"INVALID_RESERVATION_EXPIRY")
++        expiry=b.get("expiresAt",self.s["clock"]+e["reservationSeconds"])
++        require(type(expiry) is int and self.s["clock"]<expiry<=self.s["clock"]+e["reservationSeconds"],"INVALID_RESERVATION_EXPIRY")
+         if listing: require(expiry<=listing["expiresAt"],"RESERVATION_EXCEEDS_LISTING")
+         r=dict(id=tid,ticket=rid,event=t["event"],kind="PRIMARY" if primary else "RESALE",seller=t["owner"],buyer=buyer,
+             amount=price,currency="KRW",policyHash=e["policyHash"],expectedVersion=t["rightsVersion"],
+--- v0.2/observations.py
++++ v0.3-rc1/observations.py
+@@ -8,14 +8,19 @@
+ import json
+ from common import canonical, digest, ident, require, Rejected
+ 
+-SOURCE_ACTIONS={"capture","settle_capture","observe_effect","observe_recovery","adjust_pg_cancel","observe_return","observe_funding"}
++SOURCE_ACTIONS={"capture","settle_capture","observe_effect","observe_recovery","adjust_pg_cancel","observe_return","observe_funding","finalize_effect","observe_dispatch_lookup"}
+ 
+ 
+ class ObservationMixin:
+     def init_inbox(self):
+         self.db.execute("CREATE TABLE IF NOT EXISTS raw_inbox (id TEXT PRIMARY KEY, raw BLOB NOT NULL, sha256 TEXT NOT NULL, state TEXT NOT NULL, normalized TEXT, error TEXT, fixture_verified INTEGER NOT NULL DEFAULT 0)")
+         self.db.execute("CREATE TABLE IF NOT EXISTS raw_conflicts (id TEXT, sha256 TEXT, raw BLOB NOT NULL, PRIMARY KEY(id,sha256))")
+-        self.db.execute("CREATE TABLE IF NOT EXISTS review_facts (fact_key TEXT PRIMARY KEY, event_id TEXT, action TEXT, amount INTEGER, currency TEXT, first_observation TEXT, conflict INTEGER NOT NULL DEFAULT 0)")
++        self.db.execute("CREATE TABLE IF NOT EXISTS review_facts (fact_key TEXT PRIMARY KEY, event_id TEXT, action TEXT, amount INTEGER, currency TEXT, first_observation TEXT, conflict INTEGER NOT NULL DEFAULT 0, resolution TEXT NOT NULL DEFAULT 'OPEN')")
++
++        self.db.execute("CREATE TABLE IF NOT EXISTS fact_variants (fact_key TEXT, binding_hash TEXT, normalized TEXT, first_observation TEXT, applied_operation TEXT, applied_sequence INTEGER, PRIMARY KEY(fact_key,binding_hash))")
++
++    def mark_observation_applied(self,observation_id):
++        self.db.execute("UPDATE raw_inbox SET state='APPLIED',error=NULL WHERE id=?",(observation_id,))
+ 
+     def ingest(self,observation_id,raw,*,fixture_authenticated=False,fail_after_store=False,fail_before_apply_commit=False):
+         ident(observation_id)
+@@ -46,47 +51,69 @@
+             action=normalized["action"]; body=normalized["body"]
+             require(action in SOURCE_ACTIONS and isinstance(body,dict),"INVALID_SOURCE_ACTION")
+             self.db.execute("UPDATE raw_inbox SET state='NORMALIZED',normalized=?,error=NULL WHERE id=?",(canonical(normalized),observation_id))
+-            result=self.execute("observation-"+digest(observation_id),"pg-adapter",action,body,fail_before_commit=fail_before_apply_commit)
+-            # Crash here is safe: the durable command key returns the prior receipt.
+-            self.db.execute("UPDATE raw_inbox SET state='APPLIED',error=NULL WHERE id=?",(observation_id,))
++            result=self.execute("observation-"+digest(observation_id),"pg-adapter",action,body,fail_before_commit=fail_before_apply_commit,_observation_id=observation_id)
++            # Raw resolution and economic-fact resolution committed WITH the ledger.
+             return {"observationId":observation_id,"state":"APPLIED","receipt":result}
+         except (Rejected,ValueError,TypeError,KeyError) as exc:
+             self.db.execute("UPDATE raw_inbox SET state='REVIEW',error=? WHERE id=?",(str(exc),observation_id))
+-            if fixture_authenticated and isinstance(normalized,dict): self.record_review_fact(observation_id,normalized)
++            if fixture_authenticated and isinstance(normalized,dict): self.record_source_fact(observation_id,normalized)
+             return {"observationId":observation_id,"state":"REVIEW","error":str(exc)}
+ 
+-    def record_review_fact(self,observation_id,normalized):
++    def record_source_fact(self,observation_id,normalized,applied=None,state=None):
+         b=normalized.get("body"); action=normalized.get("action")
+         if action not in SOURCE_ACTIONS or not isinstance(b,dict) or b.get("scope")!=self.SCOPE or b.get("provenance")!="synthetic": return
+         amount=b.get("amount"); currency=b.get("currency")
+-        if type(amount) is not int or not 0<amount<=10**12 or currency!="KRW": return
++        if type(amount) is not int or not 0<=amount<=10**12 or currency!="KRW": return
+         reference=b.get("paymentId") if action=="capture" else b.get("movementId")
+         if not isinstance(reference,str): return
+-        if action=="capture" and b.get("paymentId") in self.snapshot()["payment_bindings"]:
+-            # A binding conflict concerning an already recorded payment is not new money.
+-            action="CAPTURE_REFERENCE_CONFLICT"; amount=0
+-        namespace="capture" if action in ("capture","CAPTURE_REFERENCE_CONFLICT") else "movement"
++        state=state or self.snapshot()
++        namespace="capture" if action=="capture" else "movement"
+         key=digest([self.SCOPE,namespace,reference])
+-        r=self.snapshot()["trades"].get(b.get("tradeId"))
+-        if r is None and b.get("effectId") in self.snapshot()["effects"]:
+-            x=self.snapshot()["effects"][b["effectId"]]; r=self.snapshot()["trades"][x["trade"]]
++        r=state["trades"].get(b.get("tradeId"))
++        if r is None and b.get("effectId") in state["effects"]:
++            x=state["effects"][b["effectId"]]; r=state["trades"][x["trade"]]
+         event=r["event"] if r else None
+-        old=self.db.execute("SELECT event_id,action,amount,currency FROM review_facts WHERE fact_key=?",(key,)).fetchone()
+-        if old:
+-            if old!=(event,action,amount,currency): self.db.execute("UPDATE review_facts SET conflict=1 WHERE fact_key=?",(key,))
+-        else:
+-            self.db.execute("INSERT INTO review_facts VALUES(?,?,?,?,?,?,0)",(key,event,action,amount,currency,observation_id))
++        # Delivery identifiers do not change an economic fact. The full binding does.
++        binding=dict(action=action,body={k:v for k,v in b.items() if k!="sourceId"})
++        bh=digest(binding)
++        own_transaction=not self.db.in_transaction
++        if own_transaction: self.db.execute("BEGIN IMMEDIATE")
++        try:
++            self.db.execute("INSERT OR IGNORE INTO review_facts VALUES(?,?,?,?,?,?,0,'OPEN')",(key,event,action,amount,currency,observation_id))
++            self.db.execute("INSERT OR IGNORE INTO fact_variants VALUES(?,?,?,?,NULL,NULL)",(key,bh,canonical(binding),observation_id))
++            if applied:
++                self.db.execute("UPDATE fact_variants SET applied_operation=COALESCE(applied_operation,?),applied_sequence=COALESCE(applied_sequence,?) WHERE fact_key=? AND binding_hash=?",(*applied,key,bh))
++            variants=self.db.execute("SELECT binding_hash,applied_operation FROM fact_variants WHERE fact_key=?",(key,)).fetchall()
++            conflict=len(variants)>1
++            resolved=not conflict and all(op is not None for _,op in variants)
++            self.db.execute("UPDATE review_facts SET conflict=?,resolution=?,event_id=COALESCE(event_id,?) WHERE fact_key=?",(int(conflict),'CONFLICT' if conflict else 'RESOLVED' if resolved else 'OPEN',event,key))
++            if own_transaction: self.db.execute("COMMIT")
++        except BaseException:
++            if own_transaction: self.db.execute("ROLLBACK")
++            raise
+ 
+     def inbox_summary(self,event_id):
+-        # Scope claims are explicit; unassigned events are reported separately.
+-        rows=self.db.execute("SELECT action,amount,conflict FROM review_facts WHERE event_id=?",(event_id,)).fetchall()
+-        evidence_digest=digest([list(row) for row in self.db.execute("SELECT id,sha256,state,error,fixture_verified FROM raw_inbox ORDER BY id")])
+-        return dict(evidenceDigest=evidence_digest,eventReviewFacts=len(rows),observedCaptureAmountUnderReview=sum(n for a,n,c in rows if a=="capture" and not c),
+-                    observedMovementAmountUnderReview=sum(n for a,n,c in rows if a!="capture" and not c),
+-                    conflictingReviewFacts=sum(c for a,n,c in rows),
++        rows=self.db.execute("SELECT action,amount,conflict,resolution FROM review_facts WHERE event_id=?",(event_id,)).fetchall()
++        evidence={
++            "scope":"GLOBAL_INBOX_AND_LEDGER_V1",
++            "raw":[list(r) for r in self.db.execute("SELECT id,sha256,state,normalized,error,fixture_verified FROM raw_inbox ORDER BY id")],
++            "rawConflicts":[list(r) for r in self.db.execute("SELECT id,sha256 FROM raw_conflicts ORDER BY id,sha256")],
++            "facts":[list(r) for r in self.db.execute("SELECT * FROM review_facts ORDER BY fact_key")],
++            "variants":[list(r) for r in self.db.execute("SELECT * FROM fact_variants ORDER BY fact_key,binding_hash")],
++            "ledgerStateHash":digest(self.snapshot()),
++        }
++        return dict(evidenceDigest=digest(evidence),evidenceDigestScope=evidence["scope"],
++                    eventReviewFacts=sum(status!='RESOLVED' for _,_,_,status in rows),
++                    eventResolvedFacts=sum(status=='RESOLVED' for _,_,_,status in rows),
++                    observedCaptureAmountUnderReview=sum(n for a,n,c,status in rows if a=="capture" and status=='OPEN'),
++                    observedMovementAmountUnderReview=sum(n for a,n,c,status in rows if a!="capture" and status=='OPEN'),
++                    conflictingReviewFacts=sum(c for a,n,c,status in rows),
++                    conflictingFactAmountReference=sum(n for a,n,c,status in rows if c),
++                    globalRawConflictCount=len(evidence['rawConflicts']),
+                     unattributedFacts=self.db.execute("SELECT count(*) FROM review_facts WHERE event_id IS NULL").fetchone()[0],
+                     inboxPendingOrReview=self.db.execute("SELECT count(*) FROM raw_inbox WHERE state!='APPLIED'").fetchone()[0],
+-                    amountsAreUnpostedObservations=True)
++                    pendingCountScope='GLOBAL',amountsAreUnpostedObservations=True,
++                    completenessAttested=False)
+ 
+     def export_replay(self):
+         self.db.execute("BEGIN")
+@@ -106,7 +133,8 @@
+         review=[list(row) for row in self.db.execute("SELECT * FROM review_facts ORDER BY fact_key")]
+         conflicts=[dict(observationId=i,sha256=sha,rawBase64=base64.b64encode(b).decode())
+                    for i,sha,b in self.db.execute("SELECT id,sha256,raw FROM raw_conflicts ORDER BY id,sha256")]
+-        evidence=dict(rawInbox=raw,reviewFacts=review,rawConflicts=conflicts)
++        variants=[list(row) for row in self.db.execute("SELECT * FROM fact_variants ORDER BY fact_key,binding_hash")]
++        evidence=dict(rawInbox=raw,reviewFacts=review,rawConflicts=conflicts,factVariants=variants)
+         return dict(domain=self.DOMAIN,commands=commands,expectedStateHash=digest(self.snapshot()),**evidence,
+                     expectedEvidenceHash=digest(evidence),authenticity="UNSIGNED_LOCAL_FIXTURE_EXPORT",chainFinalityVerified=False)
+ 
+@@ -117,14 +145,17 @@
+         require(not c.snapshot()["events_log"],"REBUILD_REQUIRES_EMPTY_DATABASE")
+         for cmd in export["commands"]: c.execute(cmd["operationId"],cmd["actor"],cmd["action"],cmd["body"])
+         require(digest(c.snapshot())==export["expectedStateHash"],"REPLAY_STATE_MISMATCH")
+-        evidence={key:export[key] for key in ("rawInbox","reviewFacts","rawConflicts")}
++        evidence={key:export[key] for key in ("rawInbox","reviewFacts","rawConflicts","factVariants")}
+         require(digest(evidence)==export["expectedEvidenceHash"],"REPLAY_EVIDENCE_MISMATCH")
+         for row in export["rawInbox"]:
+             raw=base64.b64decode(row["rawBase64"],validate=True)
+             require(hashlib.sha256(raw).hexdigest()==row["sha256"],"RAW_EXPORT_HASH_MISMATCH")
+             # Restore evidence without upgrading authentication or retrying rejected facts.
+             c.db.execute("INSERT INTO raw_inbox VALUES(?,?,?,?,?,?,?)",(row["observationId"],raw,row["sha256"],row["state"],row["normalized"],row["error"],row["fixtureVerified"]))
+-        for row in export["reviewFacts"]: c.db.execute("INSERT INTO review_facts VALUES(?,?,?,?,?,?,?)",row)
++        c.db.execute("DELETE FROM fact_variants")
++        c.db.execute("DELETE FROM review_facts")
++        for row in export["reviewFacts"]: c.db.execute("INSERT INTO review_facts VALUES(?,?,?,?,?,?,?,?)",row)
++        for row in export["factVariants"]: c.db.execute("INSERT INTO fact_variants VALUES(?,?,?,?,?,?)",row)
+         for row in export["rawConflicts"]:
+             raw=base64.b64decode(row["rawBase64"],validate=True)
+             require(hashlib.sha256(raw).hexdigest()==row["sha256"],"RAW_EXPORT_HASH_MISMATCH")
+--- v0.2/review_trace_v03.py
++++ v0.3-rc1/review_trace_v03.py
+@@ -0,0 +1,40 @@
++"""Observed after-fix behavior; synthetic execution, not independent validation."""
++import json
++from common import Rejected,inventory_id
++from test_v03 import V03Regressions
++from test_core import Harness
++from core import Core
++
++def attempt(fn):
++ try:return {'accepted':True,'result':fn()}
++ except Rejected as e:return {'accepted':False,'error':str(e)}
++def run():
++ rows={}
++ h=Harness();h.event();h.prepare();t=V03Regressions();t.h=h
++ before=h.c.ingest('early',t.statement(),fixture_authenticated=True);h.capture(settle=False)
++ after=h.c.apply_observation('early',fixture_authenticated=True)
++ rows['R01']={'before':before['state'],'after':after['state'],'settled':h.c.snapshot()['trades']['primary']['settled'],'unposted':h.c.inbox_summary('show')['observedMovementAmountUnderReview']};h.c.db.close()
++ for phases in [('CUSTOMER_CREDIT_CONFIRMED','FENCED_FAILURE'),('FENCED_FAILURE','CUSTOMER_CREDIT_CONFIRMED')]:
++  h=Harness();t.h=h;t.refund()
++  for phase in phases:h.observe('pg',phase,**({'fenceRef':'final','fenceProvenance':'synthetic_final_provider_fence'} if phase=='FENCED_FAILURE' else {}))
++  rows['R02' if phases[0].startswith('CUSTOMER') else 'R07']={'order':phases,'effectState':h.c.snapshot()['effects']['pg']['state'],'replacement':attempt(lambda:h.effect('cash','primary','REFUND',100000))}
++  h.c.db.close()
++ h=Harness();t.h=h;t.partial();h.run('cancel_event',eventId='show');t.final()
++ rows['R03']={'state':h.c.snapshot()['effects']['p']['state'],'applied':40000,'unexecutedFinal':h.c.snapshot()['effects']['p']['unexecutedFinalAmount'],'finance':h.c.view('finance-adapter','show','finance')}
++ h.source('observe_return',effectId='p',paymentId='pay-primary',payer='organizer',amount=40000,currency='KRW',movementId='return')
++ rows['R04']={'returned':h.c.snapshot()['effects']['p']['returned'],'recoveryOutstanding':h.c.view('finance-adapter','show','finance')['organizerRecoveryOutstanding']};h.c.db.close()
++ h=Harness();h.event();h.purchase();h.run('complete_event',eventId='show');h.run('prepare_effect',effectId='p',tradeId='primary',kind='PAYOUT',amount=95000,allocationId='primary-0')
++ try:h.c.execute('lost','operator','send_effect',dict(domain=Core.DOMAIN,effectId='p'),lose_response=True)
++ except ConnectionError:pass
++ claim=h.run('claim_effect',effectId='p',workerId='w',leaseSeconds=30)['result']
++ out=h.run('dispatch_effect',effectId='p',workerId='w',claimGeneration=claim['claimGeneration'])['result']
++ rows['R05']={'dispatch':out['dispatchDecision'],'requestHash':out['requestHash'],'sameDurableKey':out['idempotencyKey']==h.c.snapshot()['effects']['p']['idempotencyKey'],'realExternalSends':0};h.c.db.close()
++ h=Harness();h.event();h.c.ingest('same',b'one');before=h.c.inbox_summary('show');attempt(lambda:h.c.ingest('same',b'two'));after=h.c.inbox_summary('show')
++ rows['R06']={'before':before['evidenceDigest'],'after':after['evidenceDigest'],'rawConflictCount':after['globalRawConflictCount']};h.c.db.close()
++ h=Harness();h.event();h.purchase();listing=h.run('create_listing','A',listingId='L',ticketId=h.right(),expectedVersion=1,amount=120000,expiresAt=86400)['result']
++ rows['R08']=attempt(lambda:h.run('reserve_listing','B',listingId='L',listingHash=listing['termsHash'],tradeId='reserve',expiresAt=86400));h.c.db.close()
++ h=Harness();h.event('a',['b/c']);h.event('a/b',['c']);rows['R09']={'inventoryCount':len(h.c.snapshot()['inventory']),'inventoryIds':sorted(h.c.snapshot()['inventory'])};h.c.db.close()
++ return {'domain':Core.DOMAIN,'evidenceClass':'SYNTHETIC_REFERENCE_EXECUTION','results':rows}
++if __name__=='__main__':
++ from pathlib import Path
++ Path('results/review_trace_v03.json').write_text(json.dumps(run(),sort_keys=True,ensure_ascii=False,indent=2)+'\n')
+--- v0.2/test_core.py
++++ v0.3-rc1/test_core.py
+@@ -1,3 +1,4 @@
++from common import inventory_id
+ import copy
+ import itertools
+ import json
+@@ -51,14 +52,14 @@
+         body.setdefault("scope",Core.SCOPE); body.setdefault("provenance","synthetic")
+         return self.run(action,"pg-adapter",**body)
+ 
+-    def right(self,inventory="show/A1"):
++    def right(self,inventory=inventory_id("organizer","show","main","A1")):
+         return self.c.snapshot()["inventory"][inventory]["currentRight"]
+ 
+     def event(self,eid="show",seats=None,**changes):
+         body=dict(eventId=eid,organizer="organizer",policy=POLICY,seats=seats or ["A1"]); body.update(changes)
+         self.run("create_event",**body)
+ 
+-    def prepare(self,trade="primary",ticket="show/A1",buyer="A",amount=100000):
++    def prepare(self,trade="primary",ticket=inventory_id("organizer","show","main","A1"),buyer="A",amount=100000):
+         state=self.c.snapshot(); unit=state["inventory"].get(ticket)
+         if unit and unit["currentRight"] is None:
+             self.run("prepare_trade",buyer,tradeId=trade,inventoryId=ticket,buyer=buyer,amount=amount,
+@@ -80,7 +81,7 @@
+         if settle:
+             self.source("settle_capture",tradeId=trade,paymentId="pay-"+trade,sourceId="deposit-"+trade,amount=r["amount"],currency="KRW")
+ 
+-    def purchase(self,trade="primary",ticket="show/A1",buyer="A",amount=100000,settle=True):
++    def purchase(self,trade="primary",ticket=inventory_id("organizer","show","main","A1"),buyer="A",amount=100000,settle=True):
+         self.prepare(trade,ticket,buyer,amount); self.capture(trade,settle)
+         self.run("commit_trade",tradeId=trade)
+ 
+@@ -123,7 +124,7 @@
+     def test_purchase_resale_admission_and_exact_payouts(self):
+         h=self.h; h.chain(); t=h.c.snapshot()["tickets"][h.right()]
+         self.assertEqual(t["owner"],"B")
+-        h.run("admit","venue",ticketId="show/A1",holder="B",expectedVersion=2,admissionEpoch=2)
++        h.run("admit","venue",ticketId=inventory_id("organizer","show","main","A1"),holder="B",expectedVersion=2,admissionEpoch=2)
+         h.run("complete_event",eventId="show"); h.payout_all()
+         s=h.c.snapshot(); paid={}
+         for r in s["trades"].values():
+@@ -132,7 +133,7 @@
+         self.assertTrue(all(v==0 for v in s["balances"].values()))
+ 
+     def test_full_chain_refund_before_payout(self):
+-        h=self.h; h.chain(); h.run("refund_ticket","B",ticketId="show/A1",expectedVersion=2)
++        h=self.h; h.chain(); h.run("refund_ticket","B",ticketId=inventory_id("organizer","show","main","A1"),expectedVersion=2)
+         self.assertEqual(h.c.snapshot()["tickets"][h.right()]["state"],"VOID")
+         h.refund_all(); s=h.c.snapshot()
+         self.assertEqual([s["trades"][x]["refunded"] for x in ("primary","resale")],[100000,120000])
+@@ -169,34 +170,34 @@
+     def test_original_qr_invalid_after_resale(self):
+         h=self.h; h.chain()
+         with self.assertRaisesRegex(Rejected,"STALE_OR_WRONG_PRESENTATION"):
+-            h.run("admit","venue",ticketId="show/A1",holder="A",expectedVersion=1,admissionEpoch=1)
++            h.run("admit","venue",ticketId=inventory_id("organizer","show","main","A1"),holder="A",expectedVersion=1,admissionEpoch=1)
+ 
+     def test_resale_lock_blocks_admission_and_second_resale(self):
+         h=self.h; h.event(); h.purchase(); h.prepare("resale",buyer="B",amount=120000)
+         with self.assertRaisesRegex(Rejected,"RIGHT_NOT_ADMISSIBLE"):
+-            h.run("admit","venue",ticketId="show/A1",holder="A",expectedVersion=1,admissionEpoch=1)
++            h.run("admit","venue",ticketId=inventory_id("organizer","show","main","A1"),holder="A",expectedVersion=1,admissionEpoch=1)
+         with self.assertRaisesRegex(Rejected,"TICKET_LOCKED"): h.prepare("second",buyer="C",amount=120000)
+ 
+     def test_admission_first_blocks_resale(self):
+         h=self.h; h.event(); h.purchase()
+-        h.run("admit","venue",ticketId="show/A1",holder="A",expectedVersion=1,admissionEpoch=1)
++        h.run("admit","venue",ticketId=inventory_id("organizer","show","main","A1"),holder="A",expectedVersion=1,admissionEpoch=1)
+         with self.assertRaisesRegex(Rejected,"RIGHT_NOT_TRANSFERABLE"): h.prepare("resale",buyer="B",amount=120000)
+ 
+     def test_delegation_requires_bound_final_log(self):
+         h=self.h; h.event(); h.purchase()
+-        d=h.run("delegate","A",ticketId="show/A1",expectedVersion=1)["result"]
++        d=h.run("delegate","A",ticketId=inventory_id("organizer","show","main","A1"),expectedVersion=1)["result"]
+         with self.assertRaisesRegex(Rejected,"RIGHT_NOT_TRANSFERABLE"): h.prepare("resale",buyer="B",amount=120000)
+         with self.assertRaisesRegex(Rejected,"DELEGATION_SCOPE_MISMATCH"):
+-            h.run("close_delegation","venue",ticketId="show/A1",session=d["session"],admissionEpoch=d["admissionEpoch"]-1,used=False,provenance="synthetic_final_controller_log")
+-        h.run("close_delegation","venue",ticketId="show/A1",session=d["session"],admissionEpoch=d["admissionEpoch"],used=False,provenance="synthetic_final_controller_log")
++            h.run("close_delegation","venue",ticketId=inventory_id("organizer","show","main","A1"),session=d["session"],admissionEpoch=d["admissionEpoch"]-1,used=False,provenance="synthetic_final_controller_log")
++        h.run("close_delegation","venue",ticketId=inventory_id("organizer","show","main","A1"),session=d["session"],admissionEpoch=d["admissionEpoch"],used=False,provenance="synthetic_final_controller_log")
+         h.prepare("resale",buyer="B",amount=120000)
+ 
+     def test_cancel_delegation_does_not_invent_unused_closure(self):
+         h=self.h; h.event(); h.purchase()
+-        d=h.run("delegate","A",ticketId="show/A1",expectedVersion=1)["result"]
++        d=h.run("delegate","A",ticketId=inventory_id("organizer","show","main","A1"),expectedVersion=1)["result"]
+         h.run("cancel_event",eventId="show")
+         self.assertEqual(h.c.snapshot()["tickets"][h.right()]["state"],"CANCEL_PENDING_CLOSE")
+-        h.run("close_delegation","venue",ticketId="show/A1",session=d["session"],admissionEpoch=d["admissionEpoch"],used=True,provenance="synthetic_final_controller_log")
++        h.run("close_delegation","venue",ticketId=inventory_id("organizer","show","main","A1"),session=d["session"],admissionEpoch=d["admissionEpoch"],used=True,provenance="synthetic_final_controller_log")
+         t=h.c.snapshot()["tickets"][h.right()]; self.assertEqual(t["state"],"VOID"); self.assertTrue(t["used"])
+ 
+     def test_response_loss_and_conflicting_id_after_restart(self):
+@@ -225,7 +226,7 @@
+         self.assertEqual(before,h.c.snapshot()["balances"])
+ 
+     def test_wrong_capture_and_payment_reuse_rejected(self):
+-        h=self.h; h.event(seats=["A1","A2"]); h.purchase(); h.prepare("other","show/A2",buyer="B")
++        h=self.h; h.event(seats=["A1","A2"]); h.purchase(); h.prepare("other",inventory_id("organizer","show","main","A2"),buyer="B")
+         with self.assertRaisesRegex(Rejected,"SOURCE_EVIDENCE_CONFLICT"):
+             h.source("capture",tradeId="other",orderId="other",paymentId="pay-primary",amount=100000,currency="KRW",buyer="B")
+         with self.assertRaisesRegex(Rejected,"CAPTURE_BINDING_MISMATCH"):
+@@ -295,7 +296,7 @@
+ 
+     def test_unrelated_event_funds_cannot_fund_refund(self):
+         h=self.h; h.event("first"); h.event("second")
+-        h.purchase("t1","first/A1",settle=False); h.purchase("t2","second/A1")
++        h.purchase("t1",inventory_id("organizer","first","main","A1"),settle=False); h.purchase("t2",inventory_id("organizer","second","main","A1"))
+         h.run("cancel_event",eventId="first")
+         with self.assertRaisesRegex(Rejected,"INSUFFICIENT_CONFIRMED_FUNDS"): h.effect("r","t1","REFUND",100000)
+ 
+@@ -304,7 +305,7 @@
+         with self.assertRaisesRegex(Rejected,"UNAUTHORIZED"): h.run("cancel_event","B",eventId="show")
+         with self.assertRaisesRegex(Rejected,"RESALE_POLICY_REJECTED"): h.prepare("high",buyer="B",amount=150001)
+         t=h.c.snapshot()["tickets"][h.right()]
+-        h.run("prepare_trade","A",tradeId="resale",ticketId="show/A1",buyer="B",amount=120000,expectedVersion=t["rightsVersion"])
++        h.run("prepare_trade","A",tradeId="resale",ticketId=inventory_id("organizer","show","main","A1"),buyer="B",amount=120000,expectedVersion=t["rightsVersion"])
+         with self.assertRaisesRegex(Rejected,"BUYER_HAS_NOT_ACCEPTED"): h.capture("resale")
+         with self.assertRaisesRegex(Rejected,"DOMAIN_MISMATCH"): h.c.execute("bad-domain","operator","cancel_event",dict(domain="wrong",eventId="show"))
+ 
+@@ -345,7 +346,7 @@
+                 c=Core(path)
+                 try:
+                     barrier.wait(timeout=5)
+-                    c.execute("race-"+user,user,"prepare_trade",dict(domain=Core.DOMAIN,tradeId="trade-"+user,inventoryId="show/A1",expectedInventoryVersion=0,buyer=user,amount=100000,expectedVersion=0))
++                    c.execute("race-"+user,user,"prepare_trade",dict(domain=Core.DOMAIN,tradeId="trade-"+user,inventoryId=inventory_id("organizer","show","main","A1"),expectedInventoryVersion=0,buyer=user,amount=100000,expectedVersion=0))
+                     outcomes.append("reserved")
+                 except Rejected: outcomes.append("rejected")
+                 finally: c.db.close()
+@@ -356,7 +357,7 @@
+ 
+     def test_same_event_other_payment_cannot_fund_refund(self):
+         h=self.h; h.event(seats=["A1","A2"])
+-        h.purchase("t1","show/A1",settle=False); h.purchase("t2","show/A2")
++        h.purchase("t1",inventory_id("organizer","show","main","A1"),settle=False); h.purchase("t2",inventory_id("organizer","show","main","A2"))
+         h.run("cancel_event",eventId="show")
+         with self.assertRaisesRegex(Rejected,"INSUFFICIENT_CONFIRMED_FUNDS"): h.effect("r","t1","REFUND",100000)
+ 
+--- v0.2/test_v02.py
++++ v0.3-rc1/test_v02.py
+@@ -1,3 +1,4 @@
++from common import inventory_id
+ """Behavioral regressions derived from the independent v0.1 review."""
+ import copy
+ import itertools
+@@ -175,7 +176,9 @@
+         h.observe("r","FENCED_FAILURE",fenceRef="provider-final-record",fenceProvenance="synthetic_final_provider_fence")
+         h.effect("r2","primary","REFUND",100000,retryOf="r")
+         result=h.c.ingest("late-debit",raw("observe_effect",effectId="r",phase="FUNDS",sourceId="late-status",providerOperationId="provider-r",movementId="late-move",amount=100000,currency="KRW",beneficiary="A",paymentId="pay-primary"),fixture_authenticated=True)
+-        self.assertEqual(result["state"],"REVIEW")
++        self.assertEqual(result["state"],"APPLIED")  # Conflict recorded durably; money is NOT applied.
++        self.assertTrue(result["receipt"]["result"]["review"])
++        self.assertEqual(h.c.snapshot()["effects"]["r"]["state"],"EVIDENCE_CONFLICT")
+         self.assertEqual(h.c.inbox_summary("show")["observedMovementAmountUnderReview"],100000)
+         self.assertEqual(h.c.snapshot()["effects"]["r"]["fundsAmount"],0)
+ 
+@@ -190,8 +193,8 @@
+     def test_refund_reissue_has_new_id_old_right_and_trade_stay_closed(self):
+         h=self.h; h.event(); h.purchase(); old=h.right()
+         h.run("refund_ticket","A",ticketId=old,expectedVersion=1); h.refund_all()
+-        version=h.c.snapshot()["inventory"]["show/A1"]["version"]
+-        h.run("release_inventory",inventoryId="show/A1",closedRightId=old,expectedInventoryVersion=version)
++        version=h.c.snapshot()["inventory"][inventory_id("organizer","show","main","A1")]["version"]
++        h.run("release_inventory",inventoryId=inventory_id("organizer","show","main","A1"),closedRightId=old,expectedInventoryVersion=version)
+         h.purchase("second",buyer="B"); new=h.right(); self.assertNotEqual(old,new)
+         self.assertEqual(h.c.snapshot()["tickets"][old]["state"],"VOID")
+         with self.assertRaisesRegex(Rejected,"RIGHT_NOT_ADMISSIBLE"):
+@@ -204,16 +207,16 @@
+         h=self.h; h.event(); h.purchase(); rid=h.right()
+         d=h.run("delegate","A",ticketId=rid,expectedVersion=1)["result"]
+         with self.assertRaisesRegex(Rejected,"RIGHT_NOT_SAFELY_CLOSED"):
+-            h.run("release_inventory",inventoryId="show/A1",closedRightId=rid,expectedInventoryVersion=1)
++            h.run("release_inventory",inventoryId=inventory_id("organizer","show","main","A1"),closedRightId=rid,expectedInventoryVersion=1)
+         h.run("close_delegation","venue",ticketId=rid,session=d["session"],admissionEpoch=d["admissionEpoch"],used=True,provenance="synthetic_final_controller_log")
+         with self.assertRaisesRegex(Rejected,"RIGHT_NOT_SAFELY_CLOSED"):
+-            h.run("release_inventory",inventoryId="show/A1",closedRightId=rid,expectedInventoryVersion=1)
++            h.run("release_inventory",inventoryId=inventory_id("organizer","show","main","A1"),closedRightId=rid,expectedInventoryVersion=1)
+ 
+     def test_late_payment_after_expiry_and_reissue_cannot_issue_old_right(self):
+         h=self.h; h.event(); h.prepare(); old=h.right()
+         h.run("advance_clock",now=900); h.run("expire_trade",tradeId="primary")
+         h.run("void_unissued",ticketId=old)
+-        h.run("release_inventory",inventoryId="show/A1",closedRightId=old,expectedInventoryVersion=1)
++        h.run("release_inventory",inventoryId=inventory_id("organizer","show","main","A1"),closedRightId=old,expectedInventoryVersion=1)
+         h.purchase("second",buyer="B"); h.capture("primary")
+         self.assertEqual(h.c.snapshot()["trades"]["primary"]["refundDue"],100000)
+         with self.assertRaisesRegex(Rejected,"TRADE_NOT_COMMITTABLE"): h.run("commit_trade",tradeId="primary")
+@@ -292,9 +295,9 @@
+ 
+     def test_invitation_requires_issuer_quota_and_no_zero_money_entries(self):
+         h=self.h; h.event(seats=["A1","A2"],invitationQuota=1)
+-        with self.assertRaisesRegex(Rejected,"UNAUTHORIZED"): h.run("issue_invitation","A",inventoryId="show/A1",expectedInventoryVersion=0,recipient="B")
+-        h.run("issue_invitation","organizer",inventoryId="show/A1",expectedInventoryVersion=0,recipient="B")
+-        with self.assertRaisesRegex(Rejected,"INVITATION_QUOTA_EXCEEDED"): h.run("issue_invitation","organizer",inventoryId="show/A2",expectedInventoryVersion=0,recipient="C")
++        with self.assertRaisesRegex(Rejected,"UNAUTHORIZED"): h.run("issue_invitation","A",inventoryId=inventory_id("organizer","show","main","A1"),expectedInventoryVersion=0,recipient="B")
++        h.run("issue_invitation","organizer",inventoryId=inventory_id("organizer","show","main","A1"),expectedInventoryVersion=0,recipient="B")
++        with self.assertRaisesRegex(Rejected,"INVITATION_QUOTA_EXCEEDED"): h.run("issue_invitation","organizer",inventoryId=inventory_id("organizer","show","main","A2"),expectedInventoryVersion=0,recipient="C")
+         self.assertEqual(h.c.snapshot()["journal"],[])
+         h.run("refund_ticket","B",ticketId=h.right(),expectedVersion=1)
+         self.assertEqual(h.c.snapshot()["refund_cases"],{})
+--- v0.2/test_v03.py
++++ v0.3-rc1/test_v03.py
+@@ -0,0 +1,190 @@
++"""Behavioral regressions for the supplied independent v0.2 counterexamples."""
++import copy
++import itertools
++import tempfile
++import unittest
++from pathlib import Path
++from common import inventory_id, digest
++from core import Core, Rejected
++from test_core import Harness, POLICY
++from test_v02 import raw
++
++
++class V03Regressions(unittest.TestCase):
++    def setUp(self):
++        self.h=Harness(); self.addCleanup(self.h.c.db.close)
++
++    def refund(self):
++        h=self.h; h.event(); h.purchase(); h.run('cancel_event',eventId='show')
++        h.effect('pg','primary','REFUND',100000,routeProfile='PG_ORIGINAL_CANCEL_FIXTURE')
++
++    def payout(self):
++        h=self.h; h.event(); h.purchase(); h.run('complete_event',eventId='show')
++        h.effect('p','primary','PAYOUT',95000,'primary-0')
++
++    def partial(self):
++        self.payout(); h=self.h
++        h.observe('p','STATUS','SUCCESS',amount=40000); h.observe('p','FUNDS',amount=40000)
++
++    def final(self,**changes):
++        b=dict(effectId='p',providerOperationId='provider-p',paymentId='pay-primary',beneficiary='organizer',
++            amount=40000,unexecutedAmount=55000,currency='KRW',sourceId='final-p',fenceRef='closed-remaining-p',
++            sourceCursor='fixture-final:1',observedAt=0,contractRef='fixture:partial-final:v1')
++        b.update(changes); return self.h.source('finalize_effect',**b)
++
++    def statement(self,amount=100000):
++        return raw('settle_capture',tradeId='primary',paymentId='pay-primary',amount=amount,grossAmount=100000,
++            feeAmount=100000-amount,taxAmount=0,heldAmount=0,adjustmentAmount=0,feeBearer='platform',
++            currency='KRW',contractRef='fixture:settlement:v1',movementId='early')
++
++    def test_R01_resolved_statement_not_counted_unposted(self):
++        h=self.h; h.event(); h.prepare()
++        self.assertEqual(h.c.ingest('early',self.statement(),fixture_authenticated=True)['state'],'REVIEW')
++        h.capture(settle=False)
++        h.c.apply_observation('early',fixture_authenticated=True)
++        f=h.c.inbox_summary('show')
++        self.assertEqual((f['observedMovementAmountUnderReview'],f['eventReviewFacts']),(0,0))
++        self.assertEqual(h.c.snapshot()['trades']['primary']['settled'],100000)
++        self.assertEqual(h.c.db.execute("SELECT resolution FROM review_facts WHERE action='settle_capture'").fetchone()[0],'RESOLVED')
++
++    def test_statement_ledger_and_resolution_rollback_together(self):
++        h=self.h; h.event(); h.prepare(); h.c.ingest('early',self.statement(),fixture_authenticated=True); h.capture(settle=False)
++        with self.assertRaises(RuntimeError): h.c.apply_observation('early',fixture_authenticated=True,fail_before_apply_commit=True)
++        self.assertEqual(h.c.snapshot()['trades']['primary']['settled'],0)
++        self.assertEqual(h.c.inbox_summary('show')['observedMovementAmountUnderReview'],100000)
++        h.c.apply_observation('early',fixture_authenticated=True)
++        self.assertEqual(h.c.inbox_summary('show')['observedMovementAmountUnderReview'],0)
++
++    def test_one_applied_variant_does_not_resolve_conflicting_statement(self):
++        h=self.h; h.event(); h.prepare()
++        h.c.ingest('early',self.statement(),fixture_authenticated=True)
++        h.c.ingest('changed',self.statement(97000),fixture_authenticated=True)
++        h.capture(settle=False); h.c.apply_observation('early',fixture_authenticated=True)
++        f=h.c.inbox_summary('show'); self.assertEqual(f['conflictingReviewFacts'],1)
++        self.assertEqual(f['observedMovementAmountUnderReview'],0)
++        self.assertEqual(h.c.db.execute("SELECT resolution FROM review_facts WHERE action='settle_capture'").fetchone()[0],'CONFLICT')
++
++    def test_R02_R07_credit_and_fence_both_orders_block_new_refund(self):
++        for order in itertools.permutations(('CUSTOMER_CREDIT_CONFIRMED','FENCED_FAILURE')):
++            with self.subTest(order=order):
++                if self.h.c.snapshot()['events']:
++                    self.h=Harness(); self.addCleanup(self.h.c.db.close)
++                self.refund(); h=self.h
++                for phase in order:
++                    extra=dict(fenceRef='fence',fenceProvenance='synthetic_final_provider_fence') if phase=='FENCED_FAILURE' else {}
++                    h.observe('pg',phase,**extra)
++                x=h.c.snapshot()['effects']['pg']; self.assertEqual(x['state'],'EVIDENCE_CONFLICT')
++                self.assertEqual(x['customerCreditConfirmed'],100000)
++                with self.assertRaisesRegex(Rejected,'OBLIGATION_EVIDENCE_CONFLICT'):
++                    h.effect('cash','primary','REFUND',100000)
++
++    def test_late_positive_fact_stops_prepared_replacement(self):
++        self.refund(); h=self.h
++        h.observe('pg','FENCED_FAILURE',fenceRef='fence',fenceProvenance='synthetic_final_provider_fence')
++        h.run('prepare_effect',effectId='cash',tradeId='primary',kind='REFUND',amount=100000)
++        h.observe('pg','CUSTOMER_CREDIT_CONFIRMED')
++        self.assertEqual(h.c.snapshot()['effects']['cash']['state'],'ABORTED')
++        self.assertEqual(h.run('send_effect',effectId='cash')['result']['dispatchDecision'],'BLOCKED')
++
++    def test_R03_partial_final_releases_only_unexecuted_and_classifies(self):
++        self.partial(); h=self.h; h.run('cancel_event',eventId='show')
++        self.assertEqual(h.c.view('finance-adapter','show','finance')['refundUnclassified'],100000)
++        self.final(); f=h.c.view('finance-adapter','show','finance')
++        self.assertEqual((f['payoutOutcomeUnknown'],f['refundUnclassified'],f['organizerRecoveryOutstanding']),(0,0,40000))
++        self.assertEqual(h.c.snapshot()['effects']['p']['unexecutedFinalAmount'],55000)
++
++    def test_partial_fence_requires_matched_total_and_correct_remainder(self):
++        self.partial()
++        for changes in (dict(amount=50000,unexecutedAmount=45000),dict(unexecutedAmount=55001),dict(observedAt=1)):
++            with self.assertRaises(Rejected): self.final(**changes)
++        self.assertEqual(self.h.c.snapshot()['effects']['p']['state'],'OUTCOME_UNKNOWN')
++
++    def test_R04_return_applied_fragment_before_and_after_finalization(self):
++        for finalize_first in (False,True):
++            with self.subTest(finalize_first=finalize_first):
++                if self.h.c.snapshot()['events']:
++                    self.h=Harness(); self.addCleanup(self.h.c.db.close)
++                self.partial(); h=self.h; h.run('cancel_event',eventId='show')
++                if finalize_first: self.final()
++                h.source('observe_return',effectId='p',paymentId='pay-primary',payer='organizer',amount=40000,currency='KRW',movementId='return')
++                if not finalize_first: self.final()
++                self.assertEqual(h.c.view('finance-adapter','show','finance')['organizerRecoveryOutstanding'],0)
++                self.assertEqual(h.c.snapshot()['effects']['p']['returned'],40000)
++                with self.assertRaisesRegex(Rejected,'EXCESS_RETURN'):
++                    h.source('observe_return',effectId='p',paymentId='pay-primary',payer='organizer',amount=1,currency='KRW',movementId='extra')
++
++    def test_late_execution_after_partial_fence_is_conflict(self):
++        self.partial(); self.final(); h=self.h
++        h.observe('p','STATUS','SUCCESS',amount=95000,source_id='late')
++        self.assertEqual(h.c.snapshot()['effects']['p']['state'],'EVIDENCE_CONFLICT')
++        self.assertEqual(h.c.snapshot()['effects']['p']['appliedAmount'],40000)
++
++    def claim(self,worker='w'):
++        return self.h.run('claim_effect',effectId='p',workerId=worker,leaseSeconds=30)['result']['claimGeneration']
++
++    def dispatch(self,g,**fault):
++        h=self.h; return h.c.execute('dispatch-'+str(h.seq+1),'operator','dispatch_effect',
++            dict(domain=Core.DOMAIN,effectId='p',workerId='w',claimGeneration=g),**fault)['result']
++
++    def test_R05_first_intent_response_loss_can_be_claimed_after_restart(self):
++        with tempfile.TemporaryDirectory() as td:
++            h=Harness(Core(str(Path(td)/'db'))); self.h=h; self.addCleanup(h.c.db.close)
++            h.event(); h.purchase(); h.run('complete_event',eventId='show')
++            h.run('prepare_effect',effectId='p',tradeId='primary',kind='PAYOUT',amount=95000,allocationId='primary-0')
++            with self.assertRaises(ConnectionError): h.c.execute('lost','operator','send_effect',dict(domain=Core.DOMAIN,effectId='p'),lose_response=True)
++            h.c.db.close(); h.c=Core(str(Path(td)/'db')); self.addCleanup(h.c.db.close)
++            g=self.claim(); out=self.dispatch(g)
++            self.assertEqual(out['dispatchDecision'],'SUBMIT_SAME_REQUEST')
++            self.assertEqual(out['requestHash'],digest(h.c.snapshot()['effects']['p']['request']))
++
++    def test_dispatch_loss_requires_stable_key_lookup_before_resubmit(self):
++        self.payout(); h=self.h; g=self.claim()
++        with self.assertRaises(ConnectionError): self.dispatch(g,lose_response=True)
++        with self.assertRaisesRegex(Rejected,'SOURCE_LOOKUP_REQUIRED'):
++            h.run('dispatch_effect',effectId='p',workerId='w',claimGeneration=g)
++        x=h.c.snapshot()['effects']['p']
++        h.source('observe_dispatch_lookup',effectId='p',idempotencyKey=x['idempotencyKey'],requestHash=x['requestHash'],result='NOT_FOUND_REPLAY_SAFE',lookupRef='lookup-1',observedAt=0)
++        out=h.run('dispatch_effect',effectId='p',workerId='w',claimGeneration=g)['result']
++        self.assertEqual((out['idempotencyKey'],out['requestBytes']),(x['idempotencyKey'],x['requestBytes']))
++        with self.assertRaisesRegex(Rejected,'SOURCE_LOOKUP_REQUIRED'): h.run('dispatch_effect',effectId='p',workerId='w',claimGeneration=g)
++
++    def test_cancel_stale_worker_and_expired_window_block_dispatch(self):
++        self.payout(); h=self.h; g=self.claim()
++        h.run('advance_clock',now=30); self.claim('new-worker')
++        with self.assertRaisesRegex(Rejected,'STALE_DISPATCH_CLAIM'): h.run('dispatch_effect',effectId='p',workerId='w',claimGeneration=g)
++        h.run('advance_clock',now=3600); g=self.claim()
++        with self.assertRaisesRegex(Rejected,'IDEMPOTENCY_WINDOW_EXPIRED'): h.run('dispatch_effect',effectId='p',workerId='w',claimGeneration=g)
++        h.run('cancel_event',eventId='show')
++        with self.assertRaisesRegex(Rejected,'DISPATCH_OBLIGATION_CHANGED'): h.run('dispatch_effect',effectId='p',workerId='w',claimGeneration=g)
++
++    def test_R06_raw_conflict_changes_global_digest(self):
++        h=self.h; h.event(); h.c.ingest('same',b'one'); a=h.c.inbox_summary('show')
++        with self.assertRaises(Rejected): h.c.ingest('same',b'two')
++        b=h.c.inbox_summary('show'); self.assertNotEqual(a['evidenceDigest'],b['evidenceDigest'])
++        self.assertEqual(b['globalRawConflictCount'],1); self.assertFalse(b['completenessAttested'])
++
++    def test_R08_listing_day_is_not_checkout_day(self):
++        h=self.h; h.event(); h.purchase()
++        r=h.run('create_listing','A',listingId='L',ticketId=h.right(),expectedVersion=1,amount=120000,expiresAt=86400)['result']
++        with self.assertRaisesRegex(Rejected,'INVALID_RESERVATION_EXPIRY'):
++            h.run('reserve_listing','B',listingId='L',listingHash=r['termsHash'],tradeId='r',expiresAt=86400)
++        h.run('reserve_listing','B',listingId='L',listingHash=r['termsHash'],tradeId='r',expiresAt=900)
++        h.run('advance_clock',now=900); h.capture('r')
++        with self.assertRaisesRegex(Rejected,'TRADE_NOT_COMMITTABLE'): h.run('commit_trade',tradeId='r')
++
++    def test_R09_collision_pairs_get_distinct_inventory(self):
++        h=self.h; h.event('a',['b/c']); h.event('a/b',['c'])
++        self.assertEqual(len(h.c.snapshot()['inventory']),2)
++        self.assertNotEqual(inventory_id('organizer','a','main','b/c'),inventory_id('organizer','a/b','main','c'))
++        self.assertNotEqual(inventory_id('one','a','main','c'),inventory_id('two','a','main','c'))
++        self.assertNotEqual(inventory_id('one','a','main','c'),inventory_id('one','a','next','c'))
++
++    def test_conflict_and_resolved_evidence_survive_rebuild(self):
++        self.refund(); h=self.h
++        h.observe('pg','CUSTOMER_CREDIT_CONFIRMED')
++        h.observe('pg','FENCED_FAILURE',fenceRef='fence',fenceProvenance='synthetic_final_provider_fence')
++        x=h.c.export_replay(); c=Core.rebuild_fixture(x); self.addCleanup(c.db.close)
++        self.assertEqual(c.snapshot(),h.c.snapshot())
++        self.assertEqual(c.inbox_summary('show'),h.c.inbox_summary('show'))
++
++if __name__=='__main__': unittest.main()
+--- v0.2/verify.py
++++ v0.3-rc1/verify.py
+@@ -1,3 +1,4 @@
++from common import inventory_id
+ """Offline reproducible verification, bounded mutations, and acceptance traces."""
+ from pathlib import Path
+ import hashlib
+@@ -39,7 +40,7 @@
+     h.observe('r','CUSTOMER_CREDIT_CONFIRMED')
+     cases['pg_cancel_adjusted']=dict(finance=h.c.view('finance-adapter','show','finance'),balances=h.c.snapshot()['balances']); h.c.db.close()
+     h=Harness(); h.event(); h.purchase(); old=h.right(); h.run('refund_ticket','A',ticketId=old,expectedVersion=1); h.refund_all()
+-    h.run('release_inventory',inventoryId='show/A1',closedRightId=old,expectedInventoryVersion=1); h.purchase('new-sale',buyer='B')
++    h.run('release_inventory',inventoryId=inventory_id('organizer','show','main','A1'),closedRightId=old,expectedInventoryVersion=1); h.purchase('new-sale',buyer='B')
+     s=h.c.snapshot(); cases['seat_reissued']=dict(inventory=s['inventory'],rights=s['tickets'],oldRight=old,newRight=h.right())
+     export=h.c.export_replay(); rebuilt=Core.rebuild_fixture(export)
+     cases['local_rebuild']=dict(sameState=rebuilt.snapshot()==s,authenticity=export['authenticity'],chainFinalityVerified=False)
+@@ -57,10 +58,10 @@
+     if not mutations['allDetected']: print('A bounded mutation survived; inspect results/mutation_results.json'); return 1
+     dump(RESULTS/'acceptance_trace.json',traces())
+     dump(ROOT/'protocol_contract.json',schema())
+-    verification=dict(version='0.2',domain=Core.DOMAIN,testsRun=tests.testsRun,failures=len(tests.failures),errors=len(tests.errors),
++    verification=dict(version='0.3-rc1',domain=Core.DOMAIN,testsRun=tests.testsRun,failures=len(tests.failures),errors=len(tests.errors),
+         testsPassed=tests.wasSuccessful(),selectedMutations=len(mutations['results']),selectedMutationsDetected=sum(x['detected'] for x in mutations['results']),
+         python=platform.python_version(),sqlite=sqlite3.sqlite_version,cryptography=cryptography.__version__,
+-        externalNetworkCalls=0,realMoneyMoved=False,suiImplemented=False,zeroKnowledgeImplemented=False,
++        externalNetworkCalls=0,realMoneyMoved=False,suiSourceIncluded=True,suiBuildVerified=False,suiJourneyExecuted=False,zeroKnowledgeSourceIncluded=True,zeroKnowledgeProofGenerated=False,overallStatus='REFERENCE_VERIFIED_CHAIN_EXECUTION_BLOCKED',
+         canonicalRightsAuthority='local SQLite reference model',recoveryClass='unsigned local command/evidence export',
+         retainedV01Cases=31,newBehavioralCases=tests.testsRun-31)
+     dump(RESULTS/'verification.json',verification)
