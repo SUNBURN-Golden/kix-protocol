@@ -1,0 +1,63 @@
+{
+  "sui": "sui 1.79.1-808640d9b49a",
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "python": "Python 3.12.14",
+  "pythonPackages": [
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "cryptography",
+      "version": "46.0.0"
+    },
+    {
+      "name": "pip",
+      "version": "25.0.1"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.0"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3"
+    }
+  ],
+  "nodePackages": {
+    "@mysten/sui": {
+      "version": "2.30.0",
+      "resolved": "https://registry.npmjs.org/@mysten/sui/-/sui-2.30.0.tgz",
+      "overridden": false
+    },
+    "circom2": {
+      "version": "0.2.22",
+      "resolved": "https://registry.npmjs.org/circom2/-/circom2-0.2.22.tgz",
+      "overridden": false
+    },
+    "circomlib": {
+      "version": "2.0.5",
+      "resolved": "https://registry.npmjs.org/circomlib/-/circomlib-2.0.5.tgz",
+      "overridden": false
+    },
+    "circomlibjs": {
+      "version": "0.1.7",
+      "resolved": "https://registry.npmjs.org/circomlibjs/-/circomlibjs-0.1.7.tgz",
+      "overridden": false
+    },
+    "snarkjs": {
+      "version": "0.7.5",
+      "resolved": "https://registry.npmjs.org/snarkjs/-/snarkjs-0.7.5.tgz",
+      "overridden": false
+    }
+  },
+  "installation": {
+    "release": "mainnet-v1.79.1",
+    "url": "https://github.com/MystenLabs/sui/releases/download/mainnet-v1.79.1/sui-mainnet-v1.79.1-ubuntu-x86_64.tgz",
+    "archiveSha256": "547b3091e975b8a6b4078473a3868d86e985156b6715a8c4afb7fd7313a36abf",
+    "binarySha256": "042b9fcaaeff95cef083795e577cc30b28f52bd9d71a0e38b2e51c38d2977d8b",
+    "version": "sui 1.79.1-808640d9b49a"
+  },
+  "bootstrapCompleted": true
+}

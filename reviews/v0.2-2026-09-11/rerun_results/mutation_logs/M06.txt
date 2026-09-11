@@ -1,0 +1,13 @@
+======================================================================
+FAIL: test_completed_event_guard_survives_stale_gate_configuration (test_v02.ReviewRegressions.test_completed_event_guard_survives_stale_gate_configuration)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-huofq5gp/model/test_v02.py", line 33, in test_completed_event_guard_survives_stale_gate_configuration
+    with self.assertRaisesRegex(Rejected,"RIGHT_NOT_ADMISSIBLE"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Rejected not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)

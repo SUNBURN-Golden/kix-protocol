@@ -1,0 +1,258 @@
+--- /dev/null
++++ b/reference/v0.3-rc1/client/compile-circuits.mjs
+@@ -0,0 +1,27 @@
++// Keep WASI includes inside one staging directory. circom2 cannot consistently
++// resolve sibling source/include paths when launched from the client directory.
++import {execFileSync} from 'node:child_process';
++import {cp, mkdir, mkdtemp, rm} from 'node:fs/promises';
++import {join, resolve} from 'node:path';
++import {fileURLToPath} from 'node:url';
++
++export async function compileCircuits() {
++  const here=fileURLToPath(new URL('.',import.meta.url));
++  const out=resolve(here,'../zk/artifacts');
++  await mkdir(out,{recursive:true});
++  const staging=await mkdtemp(join(out,'.compile-'));
++  try {
++    for(const name of ['common','mint','spend']) {
++      await cp(resolve(here,'../zk/circuits',name+'.circom'),join(staging,name+'.circom'));
++    }
++    await cp(join(here,'node_modules/circomlib/circuits'),join(staging,'circomlib/circuits'),{recursive:true});
++    for(const name of ['mint','spend']) {
++      execFileSync(process.execPath,[join(here,'node_modules/circom2/cli.js'),name+'.circom',
++        '--r1cs','--wasm','--sym','-o',out],{cwd:staging,stdio:'inherit',timeout:120000});
++    }
++  } finally {
++    await rm(staging,{recursive:true,force:true});
++  }
++}
++
++if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url))await compileCircuits();
+--- a/reference/v0.3-rc1/client/independent.mjs
++++ b/reference/v0.3-rc1/client/independent.mjs
+@@ -33,11 +33,12 @@
+     const {object}=await this.rpc.getObject({objectId:'0x6',include:{content:true}});
+     return BigInt(Clock.parse(object.content).timestamp_ms);
+   }
++  async transactionBytes(tx) { return tx.build({client:this.rpc}); }
+   async submit(tx,label) {
+     await this.chain(); tx.setSender(this.keypair.toSuiAddress()); tx.setGasBudget(100000000);
+-    const bytes=await tx.build({client:this.rpc});
++    const bytes=await this.transactionBytes(tx);
+     const signed=await this.keypair.signTransaction(bytes);
+-    const digest=await tx.getDigest({client:this.rpc});
++    const digest=await Transaction.from(bytes).getDigest();
+     const path=join(this.journal,label+'-'+digest+'.json');
+     const record={chain:this.expectedChain,packageId:this.packageId,digest,bytes:Buffer.from(bytes).toString('base64'),
+       signatures:[signed.signature],state:'SIGNED_NOT_CONFIRMED'};
+@@ -52,7 +53,11 @@
+     const executed=result.Transaction??result.FailedTransaction;
+     if(!executed)throw Error('UNRECOGNIZED_EXECUTION_RESULT');
+     await durableJSON(path,{...record,state:executed.status.success?'EXECUTED_SUCCESS':'EXECUTED_FAILURE',result});
+-    if(!executed.status.success)throw Error('CHAIN_EXECUTION_FAILED:'+JSON.stringify(executed.status));
++    if(!executed.status.success) {
++      const error=Error('CHAIN_EXECUTION_FAILED:'+JSON.stringify(executed.status));
++      error.receipt={digest:executed.digest,status:executed.status};
++      throw error;
++    }
+     return executed;
+   }
+   call(fn,args){const tx=new Transaction();tx.moveCall({target:this.packageId+'::rights::'+fn,arguments:args(tx)});return this.submit(tx,fn);}
+--- a/reference/v0.3-rc1/client/localnet.mjs
++++ b/reference/v0.3-rc1/client/localnet.mjs
+@@ -18,8 +18,30 @@
+ const out=resolve(process.env.KIX_JOURNEY_DIR??join(here,'../results/localnet'));
+ await mkdir(out,{recursive:true});
+ const cfg=(keypair,packageId,chain,name)=>({endpoint,keypair,packageId,expectedChain:chain,journal:join(out,'signed',name)});
+-async function rejection(fn,reason) {
+-  try{await fn();}catch(e){if(!String(e).includes('CHAIN_EXECUTION_FAILED:'))throw e;return {reason,result:'ONCHAIN_REJECTED',error:String(e)};}
++// Test-only path: fully resolve kind and gas before signing, so deliberately
++// invalid calls are actually executed and rejected by Move instead of being
++// stopped by the SDK's gas-resolution simulation. This file permits localhost only.
++class LocalExecutionClient extends IndependentClient {
++  async transactionBytes(tx) {
++    const kind=await tx.build({client:this.rpc,onlyTransactionKind:true});
++    const resolved=Transaction.fromKind(kind);
++    resolved.setSender(this.keypair.toSuiAddress());
++    resolved.setGasBudget(100000000);
++    const {referenceGasPrice}=await this.rpc.getReferenceGasPrice();
++    resolved.setGasPrice(referenceGasPrice);
++    const {objects}=await this.rpc.listCoins({owner:this.keypair.toSuiAddress()});
++    const gas=objects.find(c=>BigInt(c.balance)>=100000000n);
++    if(!gas)throw Error('LOCAL_TEST_GAS_NOT_FOUND');
++    resolved.setGasPayment([{objectId:gas.objectId,version:gas.version,digest:gas.digest}]);
++    return resolved.build();
++  }
++}
++async function rejection(fn,reason,module,code) {
++  try{await fn();}catch(e){
++    const abort=e.receipt?.status?.error?.MoveAbort;
++    if(!e.receipt?.digest || !abort || abort.location?.module!==module || String(abort.abortCode)!==String(code))throw e;
++    return {reason,result:'ONCHAIN_REJECTED',digest:e.receipt.digest,module,abortCode:String(code)};
++  }
+   throw Error('EXPECTED_ONCHAIN_REJECTION:'+reason);
+ }
+ async function faucet(address) {
+@@ -43,7 +65,9 @@
+   const chain=await bootstrap.chain();bootstrap.expectedChain=chain;
+   await Promise.all([issuer,a,b,gate].map(k=>faucet(k.toSuiAddress())));
+   await gasReady(bootstrap);
+-  const build=spawnSync('sui',['move','build','--path',resolve(here,'../sui'),'--dump-bytecode-as-base64'],{encoding:'utf8'});
++  const configArgs=process.env.KIX_SUI_CONFIG?['--client.config',process.env.KIX_SUI_CONFIG]:[];
++  // This selects framework address resolution only; publishing uses the local RPC above.
++  const build=spawnSync('sui',['move',...configArgs,'--build-env','mainnet','build','--path',resolve(here,'../sui'),'--dump-bytecode-as-base64'],{encoding:'utf8'});
+   await durableJSON(join(out,'move-build.json'),{status:build.status,stdout:build.stdout,stderr:build.stderr,error:build.error?String(build.error):null});
+   if(build.status!==0)throw Error('MOVE_BUILD_FAILED');
+   const compiled=JSON.parse(build.stdout); const tx=new Transaction();
+@@ -88,11 +112,11 @@
+   const {client:b,current,backup}=await IndependentClient.restore(join(out,'b-backup.json'),process.env.KIX_BACKUP_PASSPHRASE,{endpoint,journal:join(out,'independent-b')});
+   if(context.private ? current.ticket.state!==3 || current.ticket.version!=='3' : !current.valid || current.ticket.version!=='2')throw Error('RECOVERED_RIGHT_NOT_CURRENT');
+   const g=unseal(await readJSON(join(out,'gate-backup.json')),process.env.KIX_BACKUP_PASSPHRASE);
+-  const gate=new IndependentClient(cfg(Ed25519Keypair.fromSecretKey(g.secretKey),g.packageId,g.chain,'independent-gate'));
++  const gate=new LocalExecutionClient(cfg(Ed25519Keypair.fromSecretKey(g.secretKey),g.packageId,g.chain,'independent-gate'));
+   const old=unseal(await readJSON(join(out,'a-backup.json')),process.env.KIX_BACKUP_PASSPHRASE);
+-  const a=new IndependentClient(cfg(Ed25519Keypair.fromSecretKey(old.secretKey),old.packageId,old.chain,'old-A'));
++  const a=new LocalExecutionClient(cfg(Ed25519Keypair.fromSecretKey(old.secretKey),old.packageId,old.chain,'old-A'));
+   const request=challengeBytes();
+-  const oldOwner=await rejection(()=>a.authorize(context.showId,context.ticketId,current.ticket.version,context.gate,request,BigInt(Date.now())+60000n),'previous holder');
++  const oldOwner=await rejection(()=>a.authorize(context.showId,context.ticketId,current.ticket.version,context.gate,request,BigInt(Date.now())+60000n),'previous holder','rights',context.private?1:2);
+   let used,replay,privacy=null;
+   if(context.private) {
+     const {admissionProof,checkVerifier}=await import('./private.mjs');
+@@ -100,9 +124,9 @@
+     const p=await admissionProof(current.show,backup.extra.note,context.gate,(await b.now())+90000n);
+     await durableJSON(join(out,'gate-presentation.json'),p);
+     const consume=p=>gate.call('consume_private',t=>[t.object(context.showId),t.object(context.verifierId),t.pure.u256(p.nullifier),t.pure.u256(p.challenge),t.pure.u64(p.expiresMs),t.pure.vector('u8',p.proof),t.object('0x6')]);
+-    const changedContext=await rejection(()=>consume({...p,challenge:String(BigInt(p.challenge)+1n)}),'changed proof context');
+-    const wrongKey=await rejection(()=>gate.call('consume_private',t=>[t.object(context.showId),t.object(context.alternateVerifierId),t.pure.u256(p.nullifier),t.pure.u256(p.challenge),t.pure.u64(p.expiresMs),t.pure.vector('u8',p.proof),t.object('0x6')]),'wrong verifier object');
+-    used=await consume(p);replay=await rejection(()=>consume(p),'private second consumption');
++    const changedContext=await rejection(()=>consume({...p,challenge:String(BigInt(p.challenge)+1n)}),'changed proof context','zk_gate',2);
++    const wrongKey=await rejection(()=>gate.call('consume_private',t=>[t.object(context.showId),t.object(context.alternateVerifierId),t.pure.u256(p.nullifier),t.pure.u256(p.challenge),t.pure.u64(p.expiresMs),t.pure.vector('u8',p.proof),t.object('0x6')]),'wrong verifier object','rights',4);
++    used=await consume(p);replay=await rejection(()=>consume(p),'private second consumption','rights',8);
+     const after=await b.right(context.showId,context.ticketId);
+     if(!after.show.nullifiers.some(n=>BigInt(n)===BigInt(p.nullifier)))throw Error('NULLIFIER_NOT_RECORDED');
+     privacy={mintAndSpendProofsAccepted:true,nullifier:p.nullifier,changedContext,wrongKey,
+@@ -110,7 +134,7 @@
+   } else {
+     await b.authorize(context.showId,context.ticketId,2,context.gate,request,(await b.now())+60000n);
+     used=await gate.consume(context.showId,context.ticketId,2,request);
+-    replay=await rejection(()=>gate.consume(context.showId,context.ticketId,2,request),'second admission');
++    replay=await rejection(()=>gate.consume(context.showId,context.ticketId,2,request),'second admission','rights',1);
+     const final=await b.right(context.showId,context.ticketId);if(final.ticket.state!==1)throw Error('NOT_CONSUMED');
+   }
+   await durableJSON(join(out,'journey-result.json'),{status:'PASSED_ACTUAL_LOCALNET',chain:context.chain,packageId:context.packageId,
+@@ -127,3 +151,9 @@
+   // Test-only backup passphrase is not persisted. Real holders supply and retain theirs.
+   console.log(JSON.stringify(await readJSON(join(out,'journey-result.json')),null,2));
+ } else {throw Error('UNKNOWN_PHASE');}
++
++// snarkjs/ffjavascript can retain worker threads after awaited proof work.
++// Each test phase must really exit before the next independent process starts.
++// All durable writes above are awaited; flush stdout before terminating workers.
++await new Promise(resolve=>process.stdout.write('',resolve));
++process.exit(0);
+--- a/reference/v0.3-rc1/client/package.json
++++ b/reference/v0.3-rc1/client/package.json
+@@ -2,7 +2,23 @@
+   "name": "kix-independent-client-prototype",
+   "private": true,
+   "type": "module",
+-  "scripts": { "test:offline": "node --test offline.test.mjs", "journey": "node localnet.mjs" },
+-  "dependencies": { "@mysten/sui": "^2.0.0", "circomlibjs": "0.1.7", "snarkjs": "0.7.5", "circomlib": "2.0.5" },
+-  "devDependencies": { "circom2": "0.2.22" }
++  "scripts": {
++    "test:offline": "node --test offline.test.mjs",
++    "journey": "node localnet.mjs",
++    "build:circuits": "node compile-circuits.mjs",
++    "setup:zk": "node setup-zk.mjs"
++  },
++  "dependencies": {
++    "@mysten/sui": "2.30.0",
++    "circomlibjs": "0.1.7",
++    "snarkjs": "0.7.5",
++    "circomlib": "2.0.5"
++  },
++  "devDependencies": {
++    "circom2": "0.2.22"
++  },
++  "engines": {
++    "node": ">=24 <25"
++  },
++  "packageManager": "npm@11.9.0"
+ }
+--- a/reference/v0.3-rc1/client/setup-zk.mjs
++++ b/reference/v0.3-rc1/client/setup-zk.mjs
+@@ -6,11 +6,12 @@
+ import {fileURLToPath} from 'node:url';
+ import {vkBytes} from './encoding.mjs';
+ import {sha256,durableJSON} from './backup.mjs';
++import {compileCircuits} from './compile-circuits.mjs';
+ const here=fileURLToPath(new URL('.',import.meta.url));
+ const out=resolve(here,'../zk/artifacts');await mkdir(out,{recursive:true});
+ const bin=n=>join(here,'node_modules/.bin',n);
+ const run=(cmd,args)=>execFileSync(bin(cmd),args,{cwd:here,stdio:'inherit',timeout:600000});
+-for(const name of ['mint','spend'])run('circom2',[resolve(here,'../zk/circuits',name+'.circom'),'--r1cs','--wasm','--sym','-l',join(here,'node_modules'),'-o',out]);
++await compileCircuits();
+ run('snarkjs',['powersoftau','new','bn128','14',join(out,'pot-initial.ptau')]);
+ run('snarkjs',['powersoftau','contribute',join(out,'pot-initial.ptau'),join(out,'pot-one.ptau'),'--name=KIX-single-party-local-fixture','-e='+randomBytes(64).toString('hex')]);
+ run('snarkjs',['powersoftau','prepare','phase2',join(out,'pot-one.ptau'),join(out,'pot-final.ptau')]);
+--- a/reference/v0.3-rc1/sui/Move.toml
++++ b/reference/v0.3-rc1/sui/Move.toml
+@@ -2,7 +2,8 @@
+ name = "kix"
+ edition = "2024.beta"
+ 
+-# Sui CLI supplies the matching framework dependency. Record the CLI version
+-# and generated Move.lock when the blocked build can actually be run.
++[dependencies]
++Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "808640d9b49aecf29d8e6f46033c15eca236efa7" }
++
+ [addresses]
+ kix = "0x0"
+--- a/reference/v0.3-rc1/sui/sources/rights.move
++++ b/reference/v0.3-rc1/sui/sources/rights.move
+@@ -1,4 +1,4 @@
+-/// PROTOTYPE SOURCE: not compiled or deployed in the authoring environment.
++/// LOCALNET PROTOTYPE: compiled and exercised; production limitations remain.
+ /// 16 inventory slots. Public gifts/resale + optional private admission only.
+ /// Fiat evidence is an authorized attester assertion, never proof of bank funds.
+ module kix::rights;
+@@ -77,7 +77,6 @@
+ }
+ 
+ public fun create_show(capacity: u64, gates: vector<address>, payment_attesters: vector<address>,
+-    payment_refs: vector<vector<u8>>,
+     resale_cap: u64, organizer_bps: u64, platform_bps: u64, verifier: ID, ctx: &mut TxContext) {
+     assert!(capacity > 0 && capacity <= 16 && !gates.is_empty(), EPolicy);
+     assert!(organizer_bps <= 10000 && platform_bps <= 10000 && organizer_bps + platform_bps <= 10000, EPolicy);
+@@ -111,7 +110,10 @@
+ public fun issue(s: &mut Show, cap: &IssuerCap, slot: u64, holder: address, ctx: &mut TxContext) {
+     authority(s,cap);
+     assert!(s.open && slot < s.capacity && !s.occupied[slot], EInventory);
+-    s.occupied[slot] = true; s.generations[slot] = s.generations[slot] + 1; s.issued = s.issued + 1;
++    *s.occupied.borrow_mut(slot) = true;
++    let next_generation = s.generations[slot] + 1;
++    *s.generations.borrow_mut(slot) = next_generation;
++    s.issued = s.issued + 1;
+     let t = Ticket { id: object::new(ctx), show: object::id(s), slot, generation: s.generations[slot], holder,
+         version: 1, state: ACTIVE, offer: option::none(), admission: option::none(), last_payment: vector[], last_amount: 0, last_payer: holder };
+     changed(&t,0); transfer::share_object(t);
+@@ -185,7 +187,7 @@
+ public fun refund(s: &mut Show, t: &mut Ticket, version: u64, c: &Clock, ctx: &TxContext) {
+     live(s,t,version); assert!(ctx.sender() == t.holder, ENotHolder); idle(t,c);
+     t.state = VOID; t.version = t.version + 1; t.offer = option::none(); t.admission = option::none();
+-    s.occupied[t.slot] = false;
++    *s.occupied.borrow_mut(t.slot) = false;
+     event::emit(RefundDutyRequested { show: t.show, ticket: object::id(t), beneficiary: t.last_payer,
+         amount: t.last_amount, payment_ref: t.last_payment });
+     changed(t,3);
+@@ -193,7 +195,8 @@
+ public fun cancel_show(s: &mut Show, cap: &IssuerCap) { authority(s,cap); s.open = false; }
+ public fun revoke(s: &mut Show, cap: &IssuerCap, t: &mut Ticket) {
+     authority(s,cap); assert!(t.show == object::id(s) && t.generation == s.generations[t.slot], EStale);
+-    s.generations[t.slot] = s.generations[t.slot] + 1;
++    let next_generation = s.generations[t.slot] + 1;
++    *s.generations.borrow_mut(t.slot) = next_generation;
+     t.state = VOID; t.version = t.version + 1; t.offer = option::none(); t.admission = option::none();
+     // Revocation does NOT reopen inventory: private/physical use could be unknown.
+     changed(t,4);

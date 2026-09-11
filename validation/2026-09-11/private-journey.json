@@ -1,0 +1,54 @@
+{
+  "status": "PASSED_ACTUAL_LOCALNET",
+  "chain": "Au8paXThdFsqgU2DgRLLiW5PuDXnhtKdoE7Kok3rhosG",
+  "packageId": "0xc9be8571f1058682e76ce72fb178411e02ce511114884733277e0e286fa3222f",
+  "authority": "SUI_MOVE",
+  "coordinatorSetupProcessExited": true,
+  "kixServicesCalled": 0,
+  "independentProcessRecovered": true,
+  "zk": true,
+  "ownGas": true,
+  "oldOwner": {
+    "reason": "previous holder",
+    "result": "ONCHAIN_REJECTED",
+    "digest": "AkK853sP2Xo5J1fPMa7JdEu1FMDpZ8Cj7HYRn8jhMCbD",
+    "module": "rights",
+    "abortCode": "1"
+  },
+  "replay": {
+    "reason": "private second consumption",
+    "result": "ONCHAIN_REJECTED",
+    "digest": "5DPXufrjkxCYnJinHordmXJHBhAmp28ctQLCe1hPkWEW",
+    "module": "rights",
+    "abortCode": "8"
+  },
+  "consumeDigest": "UqDkLkmZrfHnmLJfVXZm2kGbERrmDoHCsEVxJs86nTY",
+  "privacy": {
+    "mintAndSpendProofsAccepted": true,
+    "nullifier": "7559435843271925290024549546707627629587184861368514558258797878946025584839",
+    "changedContext": {
+      "reason": "changed proof context",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "GSuixBfgNbwCSMk516twYB6Tmqomkp4KKBYgE47FdtDi",
+      "module": "zk_gate",
+      "abortCode": "2"
+    },
+    "wrongKey": {
+      "reason": "wrong verifier object",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "6gU3UuNrCHFLs5xtmmKxzftzrRyyTwRczP6hvFQs6C3j",
+      "module": "rights",
+      "abortCode": "4"
+    },
+    "limitations": [
+      "16-slot demo anonymity set",
+      "shield transition and holder address remain public",
+      "no private resale/refund/unshield/key rotation",
+      "RPC is trusted"
+    ]
+  },
+  "limitation": "RPC is trusted; validator/checkpoint proof verification and production KIX shutdown are not implemented.",
+  "localCommitteeSize": 1,
+  "networkFaultToleranceTested": false,
+  "zkLoginBackgroundKeyFetchDisabled": true
+}

@@ -1,0 +1,21 @@
+{
+  "name": "KIX Sui and ZK development",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" }
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "bash scripts/bootstrap.sh",
+  "remoteEnv": {
+    "PATH": "${containerWorkspaceFolder}/.local/bin:${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}",
+    "KIX_SUI_CONFIG": "${containerWorkspaceFolder}/.local/sui-config/client.yaml"
+  },
+  "portsAttributes": {
+    "9000": { "label": "KIX local Sui RPC", "onAutoForward": "ignore" },
+    "9123": { "label": "Local faucet", "onAutoForward": "ignore" }
+  },
+  "customizations": {
+    "vscode": { "settings": { "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python" } }
+  }
+}

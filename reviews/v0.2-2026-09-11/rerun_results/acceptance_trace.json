@@ -1,0 +1,301 @@
+{
+  "cases": {
+    "cancel_after_send_intent": {
+      "asOf": {
+        "logicalTime": 0,
+        "sequence": 9
+      },
+      "calculatorVersion": "kix:fixture:lifecycle:0.2",
+      "capturedAwaitingRightsOrRefund": 0,
+      "cashRouteShortfall": 95000,
+      "chainCheckpoint": null,
+      "confirmedRefundCash": 5000,
+      "currency": "KRW",
+      "customerCreditConfirmed": 0,
+      "evidenceClass": "synthetic",
+      "organizerGrossAllocated": 95000,
+      "organizerPaid": 0,
+      "organizerPayable": 95000,
+      "organizerRecoveryOutstanding": 0,
+      "payoutOutcomeUnknown": 95000,
+      "pgFees": 0,
+      "pgMerchantAdjustmentOutstanding": 0,
+      "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+      "primaryCaptured": 100000,
+      "primaryNetAfterRecognizedRefunds": 0,
+      "primaryRefundObligation": 100000,
+      "refundFulfilled": 0,
+      "refundFundsInTransit": 0,
+      "refundObligation": 100000,
+      "refundOutstanding": 100000,
+      "refundPlansPending": 1,
+      "refundUnclassified": 100000,
+      "resaleCaptured": 0,
+      "resaleNetAfterRecognizedRefunds": 0,
+      "resaleRefundObligation": 0,
+      "rightsCommittedAmount": 100000,
+      "sequence": 9,
+      "sourceCompleteness": "NOT_ATTESTED",
+      "sourceReview": {
+        "amountsAreUnpostedObservations": true,
+        "conflictingReviewFacts": 0,
+        "eventReviewFacts": 0,
+        "evidenceDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "inboxPendingOrReview": 0,
+        "observedCaptureAmountUnderReview": 0,
+        "observedMovementAmountUnderReview": 0,
+        "unattributedFacts": 0
+      },
+      "sourceScope": {
+        "channel": "card",
+        "environment": "test",
+        "merchant": "kix-fixture",
+        "provider": "toss"
+      }
+    },
+    "cancel_before_first_send": {
+      "dispatch": {
+        "dispatchDecision": "BLOCKED",
+        "effectId": "p",
+        "state": "ABORTED"
+      },
+      "finance": {
+        "asOf": {
+          "logicalTime": 0,
+          "sequence": 9
+        },
+        "calculatorVersion": "kix:fixture:lifecycle:0.2",
+        "capturedAwaitingRightsOrRefund": 0,
+        "cashRouteShortfall": 0,
+        "chainCheckpoint": null,
+        "confirmedRefundCash": 100000,
+        "currency": "KRW",
+        "customerCreditConfirmed": 0,
+        "evidenceClass": "synthetic",
+        "organizerGrossAllocated": 95000,
+        "organizerPaid": 0,
+        "organizerPayable": 0,
+        "organizerRecoveryOutstanding": 0,
+        "payoutOutcomeUnknown": 0,
+        "pgFees": 0,
+        "pgMerchantAdjustmentOutstanding": 0,
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "primaryCaptured": 100000,
+        "primaryNetAfterRecognizedRefunds": 0,
+        "primaryRefundObligation": 100000,
+        "refundFulfilled": 0,
+        "refundFundsInTransit": 0,
+        "refundObligation": 100000,
+        "refundOutstanding": 100000,
+        "refundPlansPending": 0,
+        "refundUnclassified": 0,
+        "resaleCaptured": 0,
+        "resaleNetAfterRecognizedRefunds": 0,
+        "resaleRefundObligation": 0,
+        "rightsCommittedAmount": 100000,
+        "sequence": 9,
+        "sourceCompleteness": "NOT_ATTESTED",
+        "sourceReview": {
+          "amountsAreUnpostedObservations": true,
+          "conflictingReviewFacts": 0,
+          "eventReviewFacts": 0,
+          "evidenceDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "inboxPendingOrReview": 0,
+          "observedCaptureAmountUnderReview": 0,
+          "observedMovementAmountUnderReview": 0,
+          "unattributedFacts": 0
+        },
+        "sourceScope": {
+          "channel": "card",
+          "environment": "test",
+          "merchant": "kix-fixture",
+          "provider": "toss"
+        }
+      }
+    },
+    "local_rebuild": {
+      "authenticity": "UNSIGNED_LOCAL_FIXTURE_EXPORT",
+      "chainFinalityVerified": false,
+      "sameState": true
+    },
+    "pg_cancel_adjusted": {
+      "balances": {
+        "held:primary": 0,
+        "payable:primary-0": 0,
+        "payable:primary-1": 0,
+        "pg:primary": 0,
+        "pg_cancel_due:primary": 0,
+        "refund:primary": 0,
+        "refund_classification:primary": 0
+      },
+      "finance": {
+        "asOf": {
+          "logicalTime": 0,
+          "sequence": 10
+        },
+        "calculatorVersion": "kix:fixture:lifecycle:0.2",
+        "capturedAwaitingRightsOrRefund": 0,
+        "cashRouteShortfall": 0,
+        "chainCheckpoint": null,
+        "confirmedRefundCash": 0,
+        "currency": "KRW",
+        "customerCreditConfirmed": 100000,
+        "evidenceClass": "synthetic",
+        "organizerGrossAllocated": 95000,
+        "organizerPaid": 0,
+        "organizerPayable": 0,
+        "organizerRecoveryOutstanding": 0,
+        "payoutOutcomeUnknown": 0,
+        "pgFees": 0,
+        "pgMerchantAdjustmentOutstanding": 0,
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "primaryCaptured": 100000,
+        "primaryNetAfterRecognizedRefunds": 0,
+        "primaryRefundObligation": 100000,
+        "refundFulfilled": 100000,
+        "refundFundsInTransit": 0,
+        "refundObligation": 100000,
+        "refundOutstanding": 0,
+        "refundPlansPending": 0,
+        "refundUnclassified": 0,
+        "resaleCaptured": 0,
+        "resaleNetAfterRecognizedRefunds": 0,
+        "resaleRefundObligation": 0,
+        "rightsCommittedAmount": 100000,
+        "sequence": 10,
+        "sourceCompleteness": "NOT_ATTESTED",
+        "sourceReview": {
+          "amountsAreUnpostedObservations": true,
+          "conflictingReviewFacts": 0,
+          "eventReviewFacts": 0,
+          "evidenceDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "inboxPendingOrReview": 0,
+          "observedCaptureAmountUnderReview": 0,
+          "observedMovementAmountUnderReview": 0,
+          "unattributedFacts": 0
+        },
+        "sourceScope": {
+          "channel": "card",
+          "environment": "test",
+          "merchant": "kix-fixture",
+          "provider": "toss"
+        }
+      }
+    },
+    "pg_cancel_no_settlement": {
+      "balances": {
+        "held:primary": 0,
+        "payable:primary-0": 0,
+        "payable:primary-1": 0,
+        "pg:primary": 100000,
+        "pg_cancel_due:primary": -100000,
+        "refund:primary": 0,
+        "refund_classification:primary": 0
+      },
+      "finance": {
+        "asOf": {
+          "logicalTime": 0,
+          "sequence": 8
+        },
+        "calculatorVersion": "kix:fixture:lifecycle:0.2",
+        "capturedAwaitingRightsOrRefund": 0,
+        "cashRouteShortfall": 0,
+        "chainCheckpoint": null,
+        "confirmedRefundCash": 0,
+        "currency": "KRW",
+        "customerCreditConfirmed": 0,
+        "evidenceClass": "synthetic",
+        "organizerGrossAllocated": 95000,
+        "organizerPaid": 0,
+        "organizerPayable": 0,
+        "organizerRecoveryOutstanding": 0,
+        "payoutOutcomeUnknown": 0,
+        "pgFees": 0,
+        "pgMerchantAdjustmentOutstanding": 100000,
+        "policyHash": "f22874279c77b7bce2836296aac2faca84dbc5e7b59e6b2d696aa0e2cb7d8456",
+        "primaryCaptured": 100000,
+        "primaryNetAfterRecognizedRefunds": 0,
+        "primaryRefundObligation": 100000,
+        "refundFulfilled": 100000,
+        "refundFundsInTransit": 0,
+        "refundObligation": 100000,
+        "refundOutstanding": 0,
+        "refundPlansPending": 0,
+        "refundUnclassified": 0,
+        "resaleCaptured": 0,
+        "resaleNetAfterRecognizedRefunds": 0,
+        "resaleRefundObligation": 0,
+        "rightsCommittedAmount": 100000,
+        "sequence": 8,
+        "sourceCompleteness": "NOT_ATTESTED",
+        "sourceReview": {
+          "amountsAreUnpostedObservations": true,
+          "conflictingReviewFacts": 0,
+          "eventReviewFacts": 0,
+          "evidenceDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "inboxPendingOrReview": 0,
+          "observedCaptureAmountUnderReview": 0,
+          "observedMovementAmountUnderReview": 0,
+          "unattributedFacts": 0
+        },
+        "sourceScope": {
+          "channel": "card",
+          "environment": "test",
+          "merchant": "kix-fixture",
+          "provider": "toss"
+        }
+      }
+    },
+    "seat_reissued": {
+      "inventory": {
+        "show/A1": {
+          "currentRight": "right-3c5b3d919a78e82a755410ae6f77e0141964af5f0f760f168e7f0bc534933dd9",
+          "event": "show",
+          "generation": 2,
+          "seat": "A1",
+          "version": 3
+        }
+      },
+      "newRight": "right-3c5b3d919a78e82a755410ae6f77e0141964af5f0f760f168e7f0bc534933dd9",
+      "oldRight": "right-f86f12fe4197067989d5f40b863e36a15b195bd1064c34ebddcf77f83ed30d71",
+      "rights": {
+        "right-3c5b3d919a78e82a755410ae6f77e0141964af5f0f760f168e7f0bc534933dd9": {
+          "admissionEpoch": 1,
+          "event": "show",
+          "generation": 2,
+          "inventoryId": "show/A1",
+          "issuanceKind": "PURCHASE",
+          "lock": null,
+          "owner": "B",
+          "rightsVersion": 1,
+          "seat": "A1",
+          "session": null,
+          "state": "ACTIVE",
+          "trades": [
+            "new-sale"
+          ],
+          "used": false
+        },
+        "right-f86f12fe4197067989d5f40b863e36a15b195bd1064c34ebddcf77f83ed30d71": {
+          "admissionEpoch": 2,
+          "event": "show",
+          "generation": 1,
+          "inventoryId": "show/A1",
+          "issuanceKind": "PURCHASE",
+          "lock": null,
+          "owner": "A",
+          "rightsVersion": 2,
+          "seat": "A1",
+          "session": null,
+          "state": "VOID",
+          "trades": [
+            "primary"
+          ],
+          "used": false
+        }
+      }
+    }
+  },
+  "domain": "kix:fixture:lifecycle:0.2",
+  "evidence": "synthetic reference execution only"
+}

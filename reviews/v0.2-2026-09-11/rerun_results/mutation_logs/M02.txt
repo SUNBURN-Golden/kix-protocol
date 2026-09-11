@@ -1,0 +1,17 @@
+======================================================================
+FAIL: test_resale_lock_blocks_admission_and_second_resale (test_core.LifecycleTests.test_resale_lock_blocks_admission_and_second_resale)
+----------------------------------------------------------------------
+common.Rejected: BROKEN_TICKET_LOCK
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-ey_kjndh/model/test_core.py", line 176, in test_resale_lock_blocks_admission_and_second_resale
+    with self.assertRaisesRegex(Rejected,"RIGHT_NOT_ADMISSIBLE"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "RIGHT_NOT_ADMISSIBLE" does not match "BROKEN_TICKET_LOCK"
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

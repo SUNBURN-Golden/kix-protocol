@@ -1,0 +1,13 @@
+======================================================================
+FAIL: test_pg_and_cash_routes_share_same_refund_limit (test_v02.ReviewRegressions.test_pg_and_cash_routes_share_same_refund_limit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-dshulprs/model/test_v02.py", line 134, in test_pg_and_cash_routes_share_same_refund_limit
+    with self.assertRaisesRegex(Rejected,"OBLIGATION_ALREADY_RESERVED"): h.effect("cash","primary","REFUND",1)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Rejected not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

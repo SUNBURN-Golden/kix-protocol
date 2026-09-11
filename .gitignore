@@ -6,6 +6,19 @@ __pycache__/
 .pytest_cache/
 .local/
 node_modules/
+build/
+*.r1cs
+*.sym
+*.wasm
+*.ptau
+*.zkey
+*.vk.bin
+*.vkey.json
+reference/v0.3-rc1/zk/artifacts/*
+!reference/v0.3-rc1/zk/artifacts/README.md
+reference/v0.3-rc1/results/localnet/
+reference/v0.3-rc1/results/private-localnet/
+*.keystore
 
 # Credentials and local state
 .env

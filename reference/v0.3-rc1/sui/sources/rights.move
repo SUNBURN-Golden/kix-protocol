@@ -1,4 +1,4 @@
-/// PROTOTYPE SOURCE: not compiled or deployed in the authoring environment.
+/// LOCALNET PROTOTYPE: compiled and exercised; production limitations remain.
 /// 16 inventory slots. Public gifts/resale + optional private admission only.
 /// Fiat evidence is an authorized attester assertion, never proof of bank funds.
 module kix::rights;
@@ -77,7 +77,6 @@ public struct RefundDutyRequested has copy, drop {
 }
 
 public fun create_show(capacity: u64, gates: vector<address>, payment_attesters: vector<address>,
-    payment_refs: vector<vector<u8>>,
     resale_cap: u64, organizer_bps: u64, platform_bps: u64, verifier: ID, ctx: &mut TxContext) {
     assert!(capacity > 0 && capacity <= 16 && !gates.is_empty(), EPolicy);
     assert!(organizer_bps <= 10000 && platform_bps <= 10000 && organizer_bps + platform_bps <= 10000, EPolicy);
@@ -111,7 +110,10 @@ fun idle(t: &Ticket, c: &Clock) {
 public fun issue(s: &mut Show, cap: &IssuerCap, slot: u64, holder: address, ctx: &mut TxContext) {
     authority(s,cap);
     assert!(s.open && slot < s.capacity && !s.occupied[slot], EInventory);
-    s.occupied[slot] = true; s.generations[slot] = s.generations[slot] + 1; s.issued = s.issued + 1;
+    *s.occupied.borrow_mut(slot) = true;
+    let next_generation = s.generations[slot] + 1;
+    *s.generations.borrow_mut(slot) = next_generation;
+    s.issued = s.issued + 1;
     let t = Ticket { id: object::new(ctx), show: object::id(s), slot, generation: s.generations[slot], holder,
         version: 1, state: ACTIVE, offer: option::none(), admission: option::none(), last_payment: vector[], last_amount: 0, last_payer: holder };
     changed(&t,0); transfer::share_object(t);
@@ -185,7 +187,7 @@ public fun consume(s: &Show, t: &mut Ticket, version: u64, request: vector<u8>, 
 public fun refund(s: &mut Show, t: &mut Ticket, version: u64, c: &Clock, ctx: &TxContext) {
     live(s,t,version); assert!(ctx.sender() == t.holder, ENotHolder); idle(t,c);
     t.state = VOID; t.version = t.version + 1; t.offer = option::none(); t.admission = option::none();
-    s.occupied[t.slot] = false;
+    *s.occupied.borrow_mut(t.slot) = false;
     event::emit(RefundDutyRequested { show: t.show, ticket: object::id(t), beneficiary: t.last_payer,
         amount: t.last_amount, payment_ref: t.last_payment });
     changed(t,3);
@@ -193,7 +195,8 @@ public fun refund(s: &mut Show, t: &mut Ticket, version: u64, c: &Clock, ctx: &T
 public fun cancel_show(s: &mut Show, cap: &IssuerCap) { authority(s,cap); s.open = false; }
 public fun revoke(s: &mut Show, cap: &IssuerCap, t: &mut Ticket) {
     authority(s,cap); assert!(t.show == object::id(s) && t.generation == s.generations[t.slot], EStale);
-    s.generations[t.slot] = s.generations[t.slot] + 1;
+    let next_generation = s.generations[t.slot] + 1;
+    *s.generations.borrow_mut(t.slot) = next_generation;
     t.state = VOID; t.version = t.version + 1; t.offer = option::none(); t.admission = option::none();
     // Revocation does NOT reopen inventory: private/physical use could be unknown.
     changed(t,4);

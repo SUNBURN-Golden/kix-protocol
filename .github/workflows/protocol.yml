@@ -1,0 +1,56 @@
+name: KIX protocol verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      run_private:
+        description: Generate local fixture keys and run the private Sui journey
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kix-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  protocol:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: reference/v0.3-rc1/client/package-lock.json
+      - name: Install pinned CLI and locked dependencies
+        run: bash scripts/bootstrap.sh
+      - name: Python, SDK, Move and circuit checks
+        run: .venv/bin/python scripts/verify_runtime.py
+      - name: Public journey on a disposable local chain
+        run: .venv/bin/python scripts/run_localnet.py
+      - name: Generate fixture proving artifacts
+        if: github.event_name == 'workflow_dispatch' && inputs.run_private
+        run: npm --prefix reference/v0.3-rc1/client run setup:zk
+      - name: Private journey on a disposable local chain
+        if: github.event_name == 'workflow_dispatch' && inputs.run_private
+        run: .venv/bin/python scripts/run_localnet.py --private
+      - name: Upload check results only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: kix-verification-${{ github.sha }}
+          path: .local/verification/
+          include-hidden-files: true
+          retention-days: 14

@@ -1,0 +1,13 @@
+======================================================================
+FAIL: test_source_scope_and_recipient_binding (test_core.LifecycleTests.test_source_scope_and_recipient_binding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/kix-mutant-8w2xobxi/model/test_core.py", line 313, in test_source_scope_and_recipient_binding
+    with self.assertRaisesRegex(Rejected,"EFFECT_BINDING_MISMATCH"): h.observe("r","STATUS","SUCCESS",beneficiary="B")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Rejected not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

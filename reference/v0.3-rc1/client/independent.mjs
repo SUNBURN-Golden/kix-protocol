@@ -33,11 +33,12 @@ export class IndependentClient {
     const {object}=await this.rpc.getObject({objectId:'0x6',include:{content:true}});
     return BigInt(Clock.parse(object.content).timestamp_ms);
   }
+  async transactionBytes(tx) { return tx.build({client:this.rpc}); }
   async submit(tx,label) {
     await this.chain(); tx.setSender(this.keypair.toSuiAddress()); tx.setGasBudget(100000000);
-    const bytes=await tx.build({client:this.rpc});
+    const bytes=await this.transactionBytes(tx);
     const signed=await this.keypair.signTransaction(bytes);
-    const digest=await tx.getDigest({client:this.rpc});
+    const digest=await Transaction.from(bytes).getDigest();
     const path=join(this.journal,label+'-'+digest+'.json');
     const record={chain:this.expectedChain,packageId:this.packageId,digest,bytes:Buffer.from(bytes).toString('base64'),
       signatures:[signed.signature],state:'SIGNED_NOT_CONFIRMED'};
@@ -52,7 +53,11 @@ export class IndependentClient {
     const executed=result.Transaction??result.FailedTransaction;
     if(!executed)throw Error('UNRECOGNIZED_EXECUTION_RESULT');
     await durableJSON(path,{...record,state:executed.status.success?'EXECUTED_SUCCESS':'EXECUTED_FAILURE',result});
-    if(!executed.status.success)throw Error('CHAIN_EXECUTION_FAILED:'+JSON.stringify(executed.status));
+    if(!executed.status.success) {
+      const error=Error('CHAIN_EXECUTION_FAILED:'+JSON.stringify(executed.status));
+      error.receipt={digest:executed.digest,status:executed.status};
+      throw error;
+    }
     return executed;
   }
   call(fn,args){const tx=new Transaction();tx.moveCall({target:this.packageId+'::rights::'+fn,arguments:args(tx)});return this.submit(tx,fn);}

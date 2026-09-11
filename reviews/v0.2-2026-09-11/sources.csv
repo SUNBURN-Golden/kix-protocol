@@ -1,0 +1,8 @@
+id,url,title,pinpoint,verified_claim,design_relevance,access_date,source_type
+S01,https://docs.tosspayments.com/guides/v2/cancel-payment,토스 결제 취소 안내,이미 정산 받은 결제; 전액 취소하기,정산 후 취소의 다음 정산 조정 및 취소 transactionKey,원결제 취소와 은행 출금의 구분,2026-09-11,official_provider_documentation
+S02,https://docs.tosspayments.com/reference/using-api/authorization,토스 인증 및 기타 헤더 설정,멱등키 사용하기; 에러 처리하기,동일 요청 재시도; 최초 사용일부터 15일; API 키/주소/메서드 scope; 오류 후 키 교체 위험,송신 복구 계약을 원천별로 구분,2026-09-11,official_provider_documentation
+S03,https://docs.sui.io/develop/transactions/transaction-lifecycle,Sui Life of a Transaction,Transaction idempotence and finality verification,같은 서명 거래의 멱등성; 미조회는 실패 확정 아님; 확정된 실패 거래,서명 거래 보존과 effects 실행 결과 확인,2026-09-11,official_provider_documentation
+S04,https://docs.sui.io/develop/objects/object-ownership/address-owned,Sui Address-Owned Objects,"Create address-owned objects, transfer/public_transfer signatures",key와 key+store에 따른 모듈 내부/공개 전송 인터페이스,실제 권리 타입의 전송 정책 우회 검사,2026-09-11,official_provider_documentation
+S05,https://docs.sui.io/sui-stack/zklogin-integration/zklogin,Sui zkLogin Technical Reference,Entities; User salt; Privacy,salt와 proving service 의존성; salt 유실; 서비스가 신원을 연결할 수 있는 범위,KIX 중지 시험의 키/로그인/증명 경로와 프라이버시 범위,2026-09-11,official_provider_documentation
+S06,https://docs.sui.io/develop/transaction-payment/sponsor-txn,Sui Sponsored Transactions,Data structure; Create sponsored transactions using a GasData object,사용자와 sponsor 서명 및 가스 공급 역할,대체 sponsor/자체 가스 경로가 없는 독립성 주장 제한,2026-09-11,official_provider_documentation
+S07,https://docs.sui.io/develop/cryptography/groth16,Sui Groth16,도입부; 검증키 주의사항; Usage,BN254/BLS12-381; 회로별 trusted setup; 검증키 고정; 최대 8 공개 입력 안내,회로 registry와 입력 직렬화 설계 필요,2026-09-11,official_provider_documentation

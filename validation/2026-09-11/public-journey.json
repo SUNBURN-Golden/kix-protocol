@@ -1,0 +1,31 @@
+{
+  "status": "PASSED_ACTUAL_LOCALNET",
+  "chain": "Ge8gwFGEkkbQSVwmQeHQDRANfSq42maGK6Sa446MbQaN",
+  "packageId": "0x9ffedc58036b7fa9b96a9a5ca2ba46c45e6444152337edd94d65d0f7431b00e2",
+  "authority": "SUI_MOVE",
+  "coordinatorSetupProcessExited": true,
+  "kixServicesCalled": 0,
+  "independentProcessRecovered": true,
+  "zk": false,
+  "ownGas": true,
+  "oldOwner": {
+    "reason": "previous holder",
+    "result": "ONCHAIN_REJECTED",
+    "digest": "2ojYZp6dth3dAhtz29kxgffiQjB2JQd8tJGF7NCWvwAB",
+    "module": "rights",
+    "abortCode": "2"
+  },
+  "replay": {
+    "reason": "second admission",
+    "result": "ONCHAIN_REJECTED",
+    "digest": "GrEPZcz2P3iDBThZB1qPmBKbqkWXr25WFVJsEAzoYPZq",
+    "module": "rights",
+    "abortCode": "1"
+  },
+  "consumeDigest": "EiouLb8RArpRSZXBz77Rys4qBc4nG5gqibPfo6esaGiA",
+  "privacy": null,
+  "limitation": "RPC is trusted; validator/checkpoint proof verification and production KIX shutdown are not implemented.",
+  "localCommitteeSize": 1,
+  "networkFaultToleranceTested": false,
+  "zkLoginBackgroundKeyFetchDisabled": true
+}

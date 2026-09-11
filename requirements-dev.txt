@@ -1,0 +1,2 @@
+-r reference/v0.3-rc1/requirements.txt
+PyYAML==6.0.3

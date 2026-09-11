@@ -18,8 +18,30 @@ if(!['127.0.0.1','localhost','[::1]'].includes(new URL(endpoint).hostname))throw
 const out=resolve(process.env.KIX_JOURNEY_DIR??join(here,'../results/localnet'));
 await mkdir(out,{recursive:true});
 const cfg=(keypair,packageId,chain,name)=>({endpoint,keypair,packageId,expectedChain:chain,journal:join(out,'signed',name)});
-async function rejection(fn,reason) {
-  try{await fn();}catch(e){if(!String(e).includes('CHAIN_EXECUTION_FAILED:'))throw e;return {reason,result:'ONCHAIN_REJECTED',error:String(e)};}
+// Test-only path: fully resolve kind and gas before signing, so deliberately
+// invalid calls are actually executed and rejected by Move instead of being
+// stopped by the SDK's gas-resolution simulation. This file permits localhost only.
+class LocalExecutionClient extends IndependentClient {
+  async transactionBytes(tx) {
+    const kind=await tx.build({client:this.rpc,onlyTransactionKind:true});
+    const resolved=Transaction.fromKind(kind);
+    resolved.setSender(this.keypair.toSuiAddress());
+    resolved.setGasBudget(100000000);
+    const {referenceGasPrice}=await this.rpc.getReferenceGasPrice();
+    resolved.setGasPrice(referenceGasPrice);
+    const {objects}=await this.rpc.listCoins({owner:this.keypair.toSuiAddress()});
+    const gas=objects.find(c=>BigInt(c.balance)>=100000000n);
+    if(!gas)throw Error('LOCAL_TEST_GAS_NOT_FOUND');
+    resolved.setGasPayment([{objectId:gas.objectId,version:gas.version,digest:gas.digest}]);
+    return resolved.build();
+  }
+}
+async function rejection(fn,reason,module,code) {
+  try{await fn();}catch(e){
+    const abort=e.receipt?.status?.error?.MoveAbort;
+    if(!e.receipt?.digest || !abort || abort.location?.module!==module || String(abort.abortCode)!==String(code))throw e;
+    return {reason,result:'ONCHAIN_REJECTED',digest:e.receipt.digest,module,abortCode:String(code)};
+  }
   throw Error('EXPECTED_ONCHAIN_REJECTION:'+reason);
 }
 async function faucet(address) {
@@ -43,7 +65,9 @@ if(mode==='setup') {
   const chain=await bootstrap.chain();bootstrap.expectedChain=chain;
   await Promise.all([issuer,a,b,gate].map(k=>faucet(k.toSuiAddress())));
   await gasReady(bootstrap);
-  const build=spawnSync('sui',['move','build','--path',resolve(here,'../sui'),'--dump-bytecode-as-base64'],{encoding:'utf8'});
+  const configArgs=process.env.KIX_SUI_CONFIG?['--client.config',process.env.KIX_SUI_CONFIG]:[];
+  // This selects framework address resolution only; publishing uses the local RPC above.
+  const build=spawnSync('sui',['move',...configArgs,'--build-env','mainnet','build','--path',resolve(here,'../sui'),'--dump-bytecode-as-base64'],{encoding:'utf8'});
   await durableJSON(join(out,'move-build.json'),{status:build.status,stdout:build.stdout,stderr:build.stderr,error:build.error?String(build.error):null});
   if(build.status!==0)throw Error('MOVE_BUILD_FAILED');
   const compiled=JSON.parse(build.stdout); const tx=new Transaction();
@@ -88,11 +112,11 @@ if(mode==='setup') {
   const {client:b,current,backup}=await IndependentClient.restore(join(out,'b-backup.json'),process.env.KIX_BACKUP_PASSPHRASE,{endpoint,journal:join(out,'independent-b')});
   if(context.private ? current.ticket.state!==3 || current.ticket.version!=='3' : !current.valid || current.ticket.version!=='2')throw Error('RECOVERED_RIGHT_NOT_CURRENT');
   const g=unseal(await readJSON(join(out,'gate-backup.json')),process.env.KIX_BACKUP_PASSPHRASE);
-  const gate=new IndependentClient(cfg(Ed25519Keypair.fromSecretKey(g.secretKey),g.packageId,g.chain,'independent-gate'));
+  const gate=new LocalExecutionClient(cfg(Ed25519Keypair.fromSecretKey(g.secretKey),g.packageId,g.chain,'independent-gate'));
   const old=unseal(await readJSON(join(out,'a-backup.json')),process.env.KIX_BACKUP_PASSPHRASE);
-  const a=new IndependentClient(cfg(Ed25519Keypair.fromSecretKey(old.secretKey),old.packageId,old.chain,'old-A'));
+  const a=new LocalExecutionClient(cfg(Ed25519Keypair.fromSecretKey(old.secretKey),old.packageId,old.chain,'old-A'));
   const request=challengeBytes();
-  const oldOwner=await rejection(()=>a.authorize(context.showId,context.ticketId,current.ticket.version,context.gate,request,BigInt(Date.now())+60000n),'previous holder');
+  const oldOwner=await rejection(()=>a.authorize(context.showId,context.ticketId,current.ticket.version,context.gate,request,BigInt(Date.now())+60000n),'previous holder','rights',context.private?1:2);
   let used,replay,privacy=null;
   if(context.private) {
     const {admissionProof,checkVerifier}=await import('./private.mjs');
@@ -100,9 +124,9 @@ if(mode==='setup') {
     const p=await admissionProof(current.show,backup.extra.note,context.gate,(await b.now())+90000n);
     await durableJSON(join(out,'gate-presentation.json'),p);
     const consume=p=>gate.call('consume_private',t=>[t.object(context.showId),t.object(context.verifierId),t.pure.u256(p.nullifier),t.pure.u256(p.challenge),t.pure.u64(p.expiresMs),t.pure.vector('u8',p.proof),t.object('0x6')]);
-    const changedContext=await rejection(()=>consume({...p,challenge:String(BigInt(p.challenge)+1n)}),'changed proof context');
-    const wrongKey=await rejection(()=>gate.call('consume_private',t=>[t.object(context.showId),t.object(context.alternateVerifierId),t.pure.u256(p.nullifier),t.pure.u256(p.challenge),t.pure.u64(p.expiresMs),t.pure.vector('u8',p.proof),t.object('0x6')]),'wrong verifier object');
-    used=await consume(p);replay=await rejection(()=>consume(p),'private second consumption');
+    const changedContext=await rejection(()=>consume({...p,challenge:String(BigInt(p.challenge)+1n)}),'changed proof context','zk_gate',2);
+    const wrongKey=await rejection(()=>gate.call('consume_private',t=>[t.object(context.showId),t.object(context.alternateVerifierId),t.pure.u256(p.nullifier),t.pure.u256(p.challenge),t.pure.u64(p.expiresMs),t.pure.vector('u8',p.proof),t.object('0x6')]),'wrong verifier object','rights',4);
+    used=await consume(p);replay=await rejection(()=>consume(p),'private second consumption','rights',8);
     const after=await b.right(context.showId,context.ticketId);
     if(!after.show.nullifiers.some(n=>BigInt(n)===BigInt(p.nullifier)))throw Error('NULLIFIER_NOT_RECORDED');
     privacy={mintAndSpendProofsAccepted:true,nullifier:p.nullifier,changedContext,wrongKey,
@@ -110,7 +134,7 @@ if(mode==='setup') {
   } else {
     await b.authorize(context.showId,context.ticketId,2,context.gate,request,(await b.now())+60000n);
     used=await gate.consume(context.showId,context.ticketId,2,request);
-    replay=await rejection(()=>gate.consume(context.showId,context.ticketId,2,request),'second admission');
+    replay=await rejection(()=>gate.consume(context.showId,context.ticketId,2,request),'second admission','rights',1);
     const final=await b.right(context.showId,context.ticketId);if(final.ticket.state!==1)throw Error('NOT_CONSUMED');
   }
   await durableJSON(join(out,'journey-result.json'),{status:'PASSED_ACTUAL_LOCALNET',chain:context.chain,packageId:context.packageId,
@@ -127,3 +151,9 @@ if(mode==='setup') {
   // Test-only backup passphrase is not persisted. Real holders supply and retain theirs.
   console.log(JSON.stringify(await readJSON(join(out,'journey-result.json')),null,2));
 } else {throw Error('UNKNOWN_PHASE');}
+
+// snarkjs/ffjavascript can retain worker threads after awaited proof work.
+// Each test phase must really exit before the next independent process starts.
+// All durable writes above are awaited; flush stdout before terminating workers.
+await new Promise(resolve=>process.stdout.write('',resolve));
+process.exit(0);
