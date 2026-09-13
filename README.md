@@ -2,7 +2,9 @@
 
 티켓의 발행·구매·공식 리셀·입장·환불·배분·정산을 연결하는 프로토콜 연구·개발 저장소다.
 
-현재 개발 기준은 **v0.3-rc1 + 실행 환경 보완(2026-09-11)**이다. Sui와 npm 의존성을 설치했고, Move 및 회로 컴파일에 이어 공개·비공개 권리 사용을 실제 Sui 로컬넷에서 실행했다.
+현재 개발 기준은 **v0.3-rc1 + ZK 설정·권리 현재성 보완(2026-09-13)**이다. KIX는 예매·리셀·검표·금융·마케팅 서비스가 연결하는 티켓 권리·거래·정산 프로토콜이다.
+
+기준 커밋 `2658a43`의 Groth16 설정에는 회로별 기여가 빠져 있었다. 당시 공개 증명·검증키만으로 공개 입력과 증명을 함께 조정해 검증을 통과하는 결함을 재현했다. 이 브랜치는 회로별 기여·검증, 기존 키 거절, 조작 증명과 폐기·취소 경계의 회귀 검사를 추가한다. 과거 검증 수락 기록을 보안 보장으로 해석하지 않는다. [보완 결과](docs/PROTOCOL_HARDENING.md)를 먼저 읽는다.
 
 ## 구성
 
@@ -30,6 +32,7 @@ python scripts/run_localnet.py
 
 ```bash
 npm --prefix reference/v0.3-rc1/client run setup:zk
+npm --prefix reference/v0.3-rc1/client run test:zk
 python scripts/run_localnet.py --private
 ```
 
@@ -47,7 +50,7 @@ GitHub에서 **Code → Codespaces → Create codespace on main**으로 같은 �
 
 이 로컬넷은 검증자 1개이며 RPC를 신뢰한다. 확인한 독립성은 설정 프로세스 종료 뒤 다른 프로세스가 백업과 체인 자료로 진행하는 범위다. 실제 PG·은행 연결, 다중 노드 장애 내성, 상용 KIX 서비스 전체 중단, 실서비스 익명성은 검증하지 않았다. ZK 설정은 단일 주체가 만든 시험용이며 비공개 모형은 16슬롯이다.
 
-기존 선택 변이 14개 결과는 rc1 원자료를 보존했으며 이번 실행에서 재검사하지 않았다. 이전 `results/verification.json`은 각 버전 작성 당시 기록이다. 이번 실행 근거는 [실행 검증 보고](docs/RUNTIME_VALIDATION.md)와 `validation/2026-09-11/`이다.
+기존 선택 변이 14개 결과는 rc1 원자료를 보존했으며 이번 실행에서 재검사하지 않았다. 이전 `results/verification.json`과 [2026-09-11 실행 보고](docs/RUNTIME_VALIDATION.md)는 당시 기록이다. ZK 보완 후 근거는 [보완 결과](docs/PROTOCOL_HARDENING.md)와 `validation/2026-09-13/`이다.
 
 ## 문서
 
@@ -57,5 +60,6 @@ GitHub에서 **Code → Codespaces → Create codespace on main**으로 같은 �
 - [가져온 자료의 원본 해시](docs/source-imports-2026-09-11.json)
 - [rc1 이후 소스 수정](docs/runtime-changes-from-rc1.patch)
 - [후속 개발 계획](docs/ROADMAP.md)
+- [프로토콜 통합의 다음 구현 계약](docs/PROTOCOL_INTEGRATION_NEXT.md)
 
 개인키·백업 비밀번호·비공개 노트·시험용 proving key·로컬 체인 DB는 추적하지 않는다. 공개 배포용 라이선스는 부여하지 않았다.

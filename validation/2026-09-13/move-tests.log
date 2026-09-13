@@ -1,0 +1,19 @@
+Downloading from https://github.com/MystenLabs/sui.git
+[NOTE] Dependencies on Sui, MoveStdlib, Bridge, DeepBook, and SuiSystem are automatically added, but this feature is disabled for your package because you have explicitly included dependencies on Sui. Consider removing these dependencies from `Move.toml`.
+INCLUDING DEPENDENCY MoveStdlib
+INCLUDING DEPENDENCY Sui
+BUILDING kix
+warning[WC04039]: unable to determine literal's type
+   ┌─ ./sources/rights.move:88:17
+   │
+88 │     let mut i = 0;
+   │                 ^ Could not determine a concrete type for this numeric literal, so defaulting to 'u64'
+   │
+   = To avoid this warning, add an explicit type annotation, e.g., '<num>u64'
+   = This warning can be suppressed with '#[allow(untyped_literal)]' applied to the 'module' or module member ('const', 'fun', or 'struct')
+
+Running Move unit tests
+[ PASS    ] kix::rights_tests::independent_gate_consumes_once
+[ PASS    ] kix::rights_tests::previous_holder_cannot_authorize_gate
+[ PASS    ] kix::rights_tests::unauthorized_recipient_cannot_accept
+Test result: OK. Total tests: 3; passed: 3; failed: 0

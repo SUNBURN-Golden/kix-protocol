@@ -4,8 +4,9 @@ import {randomBytes} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {FR,proofBytes} from './encoding.mjs';
+import {FR,proofBytes,vkBytes} from './encoding.mjs';
 import {sha256,readJSON} from './backup.mjs';
+import {requirePhase2Key,requirePhase2Manifest} from './zk-policy.mjs';
 const root=resolve(fileURLToPath(new URL('.',import.meta.url)),'../zk/artifacts');
 let cached;
 async function hash(){if(!cached){const p=await buildPoseidon();cached=xs=>BigInt(p.F.toObject(p(xs.map(BigInt))));}return cached;}
@@ -15,14 +16,22 @@ export async function artifacts(expectedHash) {
   const bytes=await readFile(join(root,'manifest.json'));
   if(expectedHash && sha256(bytes)!==expectedHash)throw Error('CIRCUIT_MANIFEST_PIN_MISMATCH');
   const manifest=JSON.parse(bytes);
-  if(manifest.format!=='kix-zk-artifacts-v1'||manifest.depth!==4)throw Error('CIRCUIT_MANIFEST_FORMAT');
+  requirePhase2Manifest(manifest);
   for(const [file,digest] of Object.entries(manifest.files)) {
     const path=resolve(root,file);if(!path.startsWith(root+'/'))throw Error('ARTIFACT_PATH');
     if(sha256(await readFile(path))!==digest)throw Error('CIRCUIT_ARTIFACT_HASH_MISMATCH:'+file);
   }
+  for(const name of ['mint','spend']) {
+    const key=await readJSON(join(root,name+'.vkey.json'));
+    requirePhase2Key(key,name==='mint'?4:6);
+    if(!vkBytes(key).equals(await readFile(join(root,name+'.vk.bin'))))throw Error('VERIFIER_ENCODING_MISMATCH');
+  }
   return {manifest,hash:sha256(bytes),mintVK:Array.from(await readFile(join(root,'mint.vk.bin'))),spendVK:Array.from(await readFile(join(root,'spend.vk.bin')))};
 }
 async function prove(name,input,expectedPublic) {
+  // Public mintNote/admissionProof calls must also reject legacy or mixed keys,
+  // even when a caller did not explicitly invoke checkVerifier first.
+  await artifacts();
   const {proof,publicSignals}=await groth16.fullProve(input,join(root,name+'_js',name+'.wasm'),join(root,name+'.zkey'));
   if(JSON.stringify(publicSignals)!==JSON.stringify(expectedPublic.map(String)))throw Error('CIRCUIT_PUBLIC_INPUT_LAYOUT');
   const vk=await readJSON(join(root,name+'.vkey.json'));

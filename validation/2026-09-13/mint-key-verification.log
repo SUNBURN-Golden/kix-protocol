@@ -1,0 +1,23 @@
+[INFO]  snarkJS: Reading r1cs
+[INFO]  snarkJS: Reading tauG1
+[INFO]  snarkJS: Reading tauG2
+[INFO]  snarkJS: Reading alphatauG1
+[INFO]  snarkJS: Reading betatauG1
+[INFO]  snarkJS: Circuit hash:
+		6cf9234f ed76d8fa 0578023f fb451b0d
+		a6236a12 2319667b 0ff82798 c8f4276b
+		29786d36 8886d6b7 23315bb3 fb5117e2
+		76b44676 695b02be e2d58391 0fbb5120
+[INFO]  snarkJS: Circuit Hash:
+		6cf9234f ed76d8fa 0578023f fb451b0d
+		a6236a12 2319667b 0ff82798 c8f4276b
+		29786d36 8886d6b7 23315bb3 fb5117e2
+		76b44676 695b02be e2d58391 0fbb5120
+[INFO]  snarkJS: -------------------------
+[INFO]  snarkJS: contribution #1 KIX-single-party-local-fixture-mint:
+		704b9cf4 31a05642 e0cbfb3d 92bbc1c2
+		b2594c96 1e55b7c0 3d2b738f 51734a8d
+		30a19a87 f3e64c4c f6540f01 a448145f
+		19b5537f c4036559 53e08ea3 dc020a89
+[INFO]  snarkJS: -------------------------
+[INFO]  snarkJS: ZKey Ok!

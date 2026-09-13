@@ -105,7 +105,16 @@ if(mode==='setup') {
   }
   await cb.backup(join(out,'b-backup.json'),process.env.KIX_BACKUP_PASSPHRASE,showId,ticketId,extra);
   await durableJSON(join(out,'gate-backup.json'),seal({secretKey:gate.getSecretKey(),chain,packageId},process.env.KIX_BACKUP_PASSPHRASE));
-  await durableJSON(join(out,'journey-context.json'),{chain,packageId,showId,ticketId,gate:gate.toSuiAddress(),acceptedDigest:accepted.digest,private:process.env.KIX_PRIVATE==='1',verifierId,alternateVerifierId,manifestHash});
+  let privateBoundaryResults=null;
+  if(process.env.KIX_PRIVATE==='1') {
+    const {privateBoundaries}=await import('./localnet-boundaries.mjs');
+    privateBoundaryResults=await privateBoundaries({
+      issuer:new LocalExecutionClient(cfg(issuer,packageId,chain,'boundary-issuer')),
+      holder:new LocalExecutionClient(cfg(b,packageId,chain,'boundary-holder')),
+      gate:new LocalExecutionClient(cfg(gate,packageId,chain,'boundary-gate')),
+      verifierId,changedId,rejection});
+  }
+  await durableJSON(join(out,'journey-context.json'),{chain,packageId,showId,ticketId,gate:gate.toSuiAddress(),acceptedDigest:accepted.digest,private:process.env.KIX_PRIVATE==='1',verifierId,alternateVerifierId,manifestHash,privateBoundaryResults});
   // Process exits here: issuer key, coordinator memory and its clients disappear.
 } else if(mode==='recover') {
   const context=await readJSON(join(out,'journey-context.json'));
@@ -139,7 +148,7 @@ if(mode==='setup') {
   }
   await durableJSON(join(out,'journey-result.json'),{status:'PASSED_ACTUAL_LOCALNET',chain:context.chain,packageId:context.packageId,
     authority:'SUI_MOVE',coordinatorSetupProcessExited:true,kixServicesCalled:0,independentProcessRecovered:true,
-    zk:context.private,ownGas:true,oldOwner,replay,consumeDigest:used.digest,privacy,
+    zk:context.private,ownGas:true,oldOwner,replay,consumeDigest:used.digest,privacy,privateBoundaryResults:context.privateBoundaryResults,
     limitation:'RPC is trusted; validator/checkpoint proof verification and production KIX shutdown are not implemented.'});
 } else if(mode==='run') {
   const pass=randomBytes(32).toString('base64');

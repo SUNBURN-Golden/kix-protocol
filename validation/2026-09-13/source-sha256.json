@@ -1,0 +1,11 @@
+{
+  ".github/workflows/protocol.yml": "937106873e5e7257e5beb5c43d38dc2aea79f4455eaf1a0422f08e0788dbb8ea",
+  "reference/v0.3-rc1/client/setup-zk.mjs": "b1a83ed2d31b5ca43e03467dfe7927fc50bcbbe6c9da4844a3e641abf79f5939",
+  "reference/v0.3-rc1/client/private.mjs": "f240385cc4b021dde41bf5a351be9a4087ccf8187ae42a384241421df8de122f",
+  "reference/v0.3-rc1/client/localnet.mjs": "c8b76e4858d65006e8940430e239be5c46131258c1c604495b170c62900fb6a3",
+  "reference/v0.3-rc1/client/localnet-boundaries.mjs": "da5076e7b6f12908daad3f9baab337ce59aac536481d736caf46b30a71919dc1",
+  "reference/v0.3-rc1/client/zk-policy.mjs": "2a828fb52702b798b326c6398c83ba27394476ac6f36b21637b754ae33daca68",
+  "reference/v0.3-rc1/client/zk-regression.mjs": "b7ab17ff1e6a5a181b135513f9978ac923d2997a075915385e950266b4c0dfac",
+  "reference/v0.3-rc1/client/zk-test-utils.mjs": "bad132fb9c39aa7aba6c560090cece5406352dffda5e7bc61b199ee22c1da1a8",
+  "reference/v0.3-rc1/client/package.json": "40ec9e202e7d4943404f246bffff6ed14a74ce1dc68fef0750eaf422b54164da"
+}

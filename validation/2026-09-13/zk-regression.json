@@ -1,0 +1,143 @@
+{
+  "baselineCommit": "2658a43aefa792ff783457188814f8598a62f5b0",
+  "checks": [
+    {
+      "check": "archived original",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "archived input-only nullifier",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "archived compensated nullifier",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "archived input-only forbidden action",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "archived compensated forbidden action",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "contributed mint original",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "contributed mint input-only 0",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed mint compensated 0",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed mint input-only 1",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed mint compensated 1",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed mint input-only 2",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed mint compensated 2",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed mint input-only 3",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed mint compensated 3",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend original",
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "contributed spend input-only 0",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend compensated 0",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend input-only 1",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend compensated 1",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend input-only 2",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend compensated 2",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend input-only 3",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend compensated 3",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend input-only 4",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend compensated 4",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend input-only 5",
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "contributed spend compensated 5",
+      "accepted": false,
+      "expected": false
+    }
+  ],
+  "artifactManifestHash": "859df6c17f0abf3a5c60226a01b5204142e1a67e6805a7015f087d73754e00c4",
+  "status": "PASSED",
+  "scope": "ARCHIVED_AND_FRESH_KEYS"
+}

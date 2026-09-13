@@ -1,0 +1,24 @@
+[32mtemplate instances[0m: 77
+non-linear constraints: 393
+linear constraints: 513
+public inputs: 4
+private inputs: 2
+public outputs: 0
+wires: 909
+labels: 1429
+[32mWritten successfully:[0m ../mint.r1cs
+[32mWritten successfully:[0m ../mint.sym
+[32mWritten successfully:[0m ../mint_js/mint.wasm
+[32mEverything went okay[0m
+[32mtemplate instances[0m: 222
+non-linear constraints: 3629
+linear constraints: 4167
+public inputs: 6
+private inputs: 20
+public outputs: 0
+wires: 7804
+labels: 11825
+[32mWritten successfully:[0m ../spend.r1cs
+[32mWritten successfully:[0m ../spend.sym
+[32mWritten successfully:[0m ../spend_js/spend.wasm
+[32mEverything went okay[0m
