@@ -146,6 +146,13 @@ class Archive:
             require(read_json(self.source/POINTER) == head, 'ARCHIVE_POINTER_DIVERGED')
             require(digest(state_of(self.source)) == entry['stateHash'], 'ARCHIVE_ACKNOWLEDGED_STATE_DIVERGED')
 
+    def anchor(self):
+        """Recovery may observe newer provider facts, but never an old head."""
+        with self.store.locked():
+            head, _ = self.store.latest()
+            require(read_json(self.source/POINTER) == head, 'ARCHIVE_POINTER_DIVERGED')
+            return head
+
     def publish(self, boundary, initial=False):
         with self.store.locked(create=initial):
             has_head = (self.store.directory/'head.json').exists()

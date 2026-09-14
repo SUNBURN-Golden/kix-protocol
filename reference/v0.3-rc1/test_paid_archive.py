@@ -267,6 +267,27 @@ with patch('paid_archive.os.rename',side_effect=kill):
             with self.assertRaisesRegex(Rejected,'STALE_RECONCILIATION_PLAN'):
                 reconcile(self.target,self.provider)
 
+    def test_s03_cannot_resume_a_rolled_back_source_against_newer_archive(self):
+        self.f.crash_original('before'); plan=self.f.r.inspect()
+        older=self.source.parent/'older-pending'
+        shutil.copytree(self.source,older,symlinks=True)
+        provider_before=self.source.parent/'provider-before.sqlite'
+        sql_copy(self.provider,provider_before)
+        self.assertEqual(self.f.r.apply(plan['planId'])['decision'],'RECOVERED')
+        head=self.latest()
+        shutil.rmtree(self.source);shutil.copytree(older,self.source,symlinks=True)
+        # Deliberate fault: even the mock provider is rolled back. The separate
+        # archive head must prevent authorizing the old first-send request.
+        self.provider.unlink();sql_copy(provider_before,self.provider)
+        before=self.provider_state()
+        with patch.object(MockProvider,'submit') as submitted:
+            with self.assertRaisesRegex(Rejected,'ARCHIVE_POINTER_DIVERGED'):
+                self.f.r.apply(plan['planId'])
+            submitted.assert_not_called()
+        self.assertEqual(self.f.r.inspect()['reason'],'ARCHIVE_POINTER_DIVERGED')
+        self.assertEqual(self.provider_state(),before)
+        self.assertEqual(self.latest(),head)
+
 
 if __name__ == '__main__':
     unittest.main()

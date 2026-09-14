@@ -76,6 +76,10 @@ class Recovery:
                       followUp='Preserve evidence; reconcile source records before retry.',
                       providerContract=CONTRACT, source='LOCAL_FIXTURE_ONLY')
         try:
+            from paid_archive import Archive
+            archive = Archive.for_source(self.directory)
+            if archive:
+                report['archiveAnchor'] = archive.anchor()
             p = read_json(self.pending)
             report['pendingHash'] = digest(p)
             report['originalCommand'] = p.get('request')
@@ -168,6 +172,10 @@ class Recovery:
         from paid_archive import ensure_live
         ensure_live(self.directory)
         with StorageReceipt(self.directory, {'action':'recovery_apply', 'planId':plan_id}):
+            from paid_archive import Archive
+            archive = Archive.for_source(self.directory)
+            if archive:
+                archive.anchor()
             case = self._case(plan_id)
             journal_path = case/'journal.json'
             if journal_path.exists():

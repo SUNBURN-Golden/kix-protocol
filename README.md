@@ -70,4 +70,4 @@ GitHub에서 **검토하려는 PR의 브랜치를 선택한 뒤 Code → Codespa
 
 ## S05: separate-filesystem archive and reconciliation-only restore
 
-The follow-up to PR #4 adds separate-filesystem checkpoints and restoration after loss of the original working directory. Restored workspaces cannot submit money. The live mock provider is queried separately; its historical backup never replaces it. See [scope and commands](docs/PAID_ARCHIVE.md) and [blueprint 1.3](docs/BLUEPRINT_20260914.md). The local Python suite now has 141 checks. Whole-host loss, remote durability and the historical storage incident root cause remain unverified.
+The follow-up to PR #4 adds separate-filesystem checkpoints and restoration after loss of the original working directory. Restored workspaces cannot submit money. The live mock provider is queried separately; its historical backup never replaces it. See [scope and commands](docs/PAID_ARCHIVE.md) and [blueprint 1.3](docs/BLUEPRINT_20260914.md). The local Python suite now has 142 checks. Whole-host loss, remote durability and the historical storage incident root cause remain unverified.

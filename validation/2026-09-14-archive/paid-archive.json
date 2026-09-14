@@ -18,13 +18,13 @@
         "provider": 27
       },
       "latestCheckpoint": {
-        "checkpoint": "531ca3f3d48480532e2f9ef67442ab3a44ce640ca0418ee7a7a5873bbc94d8fa",
+        "checkpoint": "3b64afc7cc49f885ed3ed48693d670cc1a8cbd2a4147f5cf5c76e877378d4c98",
         "sequence": 3
       },
       "report": {
         "format": "kix-archive-reconciliation-v1",
         "checkpoint": {
-          "checkpoint": "531ca3f3d48480532e2f9ef67442ab3a44ce640ca0418ee7a7a5873bbc94d8fa",
+          "checkpoint": "3b64afc7cc49f885ed3ed48693d670cc1a8cbd2a4147f5cf5c76e877378d4c98",
           "sequence": 3
         },
         "decision": "HOLD",
@@ -62,23 +62,23 @@
                     1
                   ]
                 ],
-                "replayUntil": 1789370646.7798588
+                "replayUntil": 1789371396.4942377
               },
               "format": "kix-local-storage-pending-v1",
               "previousReceiptHash": "4d1ab006df6445353e9c01ea9d39efb53a7859ce73d5c21436dd1bbbcefc0045",
               "request": {
                 "action": "send_effect",
                 "archive": {
-                  "root": "/dev/shm/kix-vault-test-qk1fxroh/archive",
+                  "root": "/dev/shm/kix-vault-test-cffqc55p/archive",
                   "stream": "fixture-one"
                 },
-                "directory": "/tmp/tmplkq5ailc/state",
+                "directory": "/tmp/tmpwaspw0rc/state",
                 "endpoint": "http://127.0.0.1:9000",
                 "params": {
                   "eid": "payout"
                 }
               },
-              "requestHash": "e5d7c36dd78bc43f8bb70abb755c60927fa944cfbb5ffc10d1ed52fe01ef033a"
+              "requestHash": "2fe0c54d504cc2114b3dd60400aa3d2569004a3331dbdcf26a47607042ce7227"
             },
             "storage-receipt.json": {
               "databases": {
@@ -94,7 +94,7 @@
         "evidenceScope": "TRUSTED_LOCAL_PROVIDER_AND_SUI_RPC",
         "plan": {
           "format": "kix-local-recovery-plan-v1",
-          "observedAt": 1789367046.8270519,
+          "observedAt": 1789367796.5383213,
           "decision": "REPLAY_SAME_REQUEST",
           "reason": "SAME_KEY_CONTRACT_AND_CURRENT_GUARDS_VALID",
           "followUp": "Preserve evidence; reconcile source records before retry.",
@@ -111,14 +111,14 @@
             "executionWindowSeconds": 3600
           },
           "source": "LOCAL_FIXTURE_ONLY",
-          "pendingHash": "d39be4a84ec55691c338450617a82f0b496bfb6999d260e995f97378a18ffc54",
+          "pendingHash": "7b80685377325e1fcdb258dec03fe9d51bcefe1a1b64ae8da01bfcdca695d56e",
           "originalCommand": {
             "action": "send_effect",
             "archive": {
-              "root": "/dev/shm/kix-vault-test-qk1fxroh/archive",
+              "root": "/dev/shm/kix-vault-test-cffqc55p/archive",
               "stream": "fixture-one"
             },
-            "directory": "/tmp/tmplkq5ailc/state",
+            "directory": "/tmp/tmpwaspw0rc/state",
             "endpoint": "http://127.0.0.1:9000",
             "params": {
               "eid": "payout"
@@ -316,7 +316,7 @@
             },
             "commandSequence": 12
           },
-          "replayUntil": 1789370646.7798588,
+          "replayUntil": 1789371396.4942377,
           "providerRows": [
             [
               "35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a",
@@ -354,11 +354,11 @@
             "objectVersion": "2",
             "source": "SYNTHETIC_CHAIN_TEST"
           },
-          "planId": "961900c2f90ddea1a6e02dcf37e32fd97260db0ab3eadd17280ba1a7d97f2d96"
+          "planId": "c5444aadbe90cc751e8659e540b1869bb0dd7cc2db569ad215993e7322fa36a2"
         },
         "providerHash": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291",
         "reason": "RESTORED_WRITER_NOT_AUTHORIZED",
-        "reportHash": "9207fb3501f69f573a6e3736a2ec4441ad7cbbe5c2a655fd1d02769440a15673"
+        "reportHash": "f334c386e9f32e0da5b75bbda9c21dfa19621d62f073ab96f89b4517cdfd2e89"
       },
       "repeatedRestore": true,
       "repeatedReconciliationChangedProvider": false,
@@ -374,13 +374,13 @@
         "provider": 27
       },
       "latestCheckpoint": {
-        "checkpoint": "6294f7b3fdcf40beb85cb3d455956e656106179c3eac2324006ed1691323bb99",
+        "checkpoint": "578ebb083b337ff41af4715ccd71681fb5ecb26b124ef1d461547beca1188b78",
         "sequence": 3
       },
       "report": {
         "format": "kix-archive-reconciliation-v1",
         "checkpoint": {
-          "checkpoint": "6294f7b3fdcf40beb85cb3d455956e656106179c3eac2324006ed1691323bb99",
+          "checkpoint": "578ebb083b337ff41af4715ccd71681fb5ecb26b124ef1d461547beca1188b78",
           "sequence": 3
         },
         "decision": "RECONCILED_VIEW",
@@ -418,23 +418,23 @@
                     1
                   ]
                 ],
-                "replayUntil": 1789370646.9997668
+                "replayUntil": 1789371396.7191443
               },
               "format": "kix-local-storage-pending-v1",
               "previousReceiptHash": "4d1ab006df6445353e9c01ea9d39efb53a7859ce73d5c21436dd1bbbcefc0045",
               "request": {
                 "action": "send_effect",
                 "archive": {
-                  "root": "/dev/shm/kix-vault-test-cb2lvtjy/archive",
+                  "root": "/dev/shm/kix-vault-test-9pmhyonu/archive",
                   "stream": "fixture-one"
                 },
-                "directory": "/tmp/tmprgtt_wor/state",
+                "directory": "/tmp/tmpbzc76mbv/state",
                 "endpoint": "http://127.0.0.1:9000",
                 "params": {
                   "eid": "payout"
                 }
               },
-              "requestHash": "d818141c096bf503073bf2a415656beba6321adbf1917e2f8e920a35719bc67b"
+              "requestHash": "b6bcab7811d626cc032dc52b8d14af53cd83d5d60b92229f2faec6030891f42b"
             },
             "storage-receipt.json": {
               "databases": {
@@ -450,7 +450,7 @@
         "evidenceScope": "TRUSTED_LOCAL_PROVIDER_AND_SUI_RPC",
         "plan": {
           "format": "kix-local-recovery-plan-v1",
-          "observedAt": 1789367047.042358,
+          "observedAt": 1789367796.7624989,
           "decision": "LINK_EXISTING",
           "reason": "PROVIDER_EXECUTION_FOUND",
           "followUp": "Preserve evidence; reconcile source records before retry.",
@@ -467,14 +467,14 @@
             "executionWindowSeconds": 3600
           },
           "source": "LOCAL_FIXTURE_ONLY",
-          "pendingHash": "95960699729e2ef09c3e4ea19e21ce90071af77608a644dd3b024fd25a1ed954",
+          "pendingHash": "5e30ca00f1ee19a1564efa3018943ea0b426d2f57368f8cd1febd1b6c6bbeffd",
           "originalCommand": {
             "action": "send_effect",
             "archive": {
-              "root": "/dev/shm/kix-vault-test-cb2lvtjy/archive",
+              "root": "/dev/shm/kix-vault-test-9pmhyonu/archive",
               "stream": "fixture-one"
             },
-            "directory": "/tmp/tmprgtt_wor/state",
+            "directory": "/tmp/tmpbzc76mbv/state",
             "endpoint": "http://127.0.0.1:9000",
             "params": {
               "eid": "payout"
@@ -672,7 +672,7 @@
             },
             "commandSequence": 12
           },
-          "replayUntil": 1789370646.9997668,
+          "replayUntil": 1789371396.7191443,
           "providerRows": [
             [
               "35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a",
@@ -745,7 +745,7 @@
             "objectVersion": "3",
             "source": "SYNTHETIC_CHAIN_TEST"
           },
-          "planId": "c7e5ef10098f13548eb21976fe81c8f5be033bde8c5ed9e64a51d5c467ebfb38"
+          "planId": "dfd0d0450180bde0cc6fdc3a3d6e32f2301a1f14b8ab4123c7c00ff0821a7e28"
         },
         "providerHash": "7efbaaeb5b2bb16fefc8f192aea916c999626f233218acb9bd7ce1524e4fbb4e",
         "view": {
@@ -896,7 +896,7 @@
             }
           }
         },
-        "reportHash": "34f1b80d94b119db803a4301dc2c6ffb2ab24b85a6e670712da6a6eac097fcb8"
+        "reportHash": "eda2355735b95a4e04707185203113073f67ad71c79a7245ab10e5edd57e0b39"
       },
       "repeatedRestore": true,
       "repeatedReconciliationChangedProvider": false,
@@ -904,11 +904,11 @@
     }
   ],
   "sourceSha256": {
-    "reference/v0.3-rc1/paid_archive.py": "26aef09b3a7f228228f478ada0c0154a71fc571aaa939a3abac382728755a580",
+    "reference/v0.3-rc1/paid_archive.py": "604555872f0db621c563ac4ef9e2af85b4c4f8ffdaa4070a589e7d65f6502db2",
     "reference/v0.3-rc1/archive_driver.py": "91c1c903c8a51403441e7191be6f1a58f53f5c5e468d8ad0962cd7d8dd60cc3c",
     "reference/v0.3-rc1/storage_receipt.py": "58b42a872f5d4be96b2da0c28ce272ef53585db2c50eca30d021dc12f6bdcbb2",
-    "reference/v0.3-rc1/paid_recovery.py": "5a4d734a23b302db6c024c36d3a2e2822523d2bef3f84b66caaba6af555600fc",
-    "reference/v0.3-rc1/test_paid_archive.py": "9c79d3ed0792339283c8f6cc0e1a936fa4e4bfc0e34420cc688861c9aac74a64",
+    "reference/v0.3-rc1/paid_recovery.py": "7a560135b33d26df73ccfa118fb38592ed66173dada39af4d08d976169c56d1d",
+    "reference/v0.3-rc1/test_paid_archive.py": "5740bc5d28882debecfad01b323997f4673c1f6816cef07fc5b23a1ada38c59a",
     "reference/v0.3-rc1/client/archive-fixture.mjs": "2ef44a3ad48c1046e19fa81660a2f92d658478f3f6f2c52b6b18d2b6a09be689",
     "reference/v0.3-rc1/client/localnet-paid.mjs": "55e65c94f19e0c21a3d0d0994cfcf017eea419475ac7e10653a703382978331e",
     "scripts/verify_paid_archive.py": "ec93b983f2578f89eb7d5fd91527ef9502aade03be7852cc3a1173746a6e45f8"

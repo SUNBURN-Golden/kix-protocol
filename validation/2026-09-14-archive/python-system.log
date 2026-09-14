@@ -44,6 +44,7 @@ test_old_valid_checkpoint_is_rejected_against_live_archive_head (test_paid_archi
 test_provider_change_while_rebuilding_view_requires_new_reconciliation (test_paid_archive.PaidArchiveTests.test_provider_change_while_rebuilding_view_requires_new_reconciliation) ... ok
 test_restore_process_dies_before_or_after_install_and_can_be_repeated (test_paid_archive.PaidArchiveTests.test_restore_process_dies_before_or_after_install_and_can_be_repeated) ... ok
 test_restored_workspace_blocks_normal_cli_and_s03_apply (test_paid_archive.PaidArchiveTests.test_restored_workspace_blocks_normal_cli_and_s03_apply) ... ok
+test_s03_cannot_resume_a_rolled_back_source_against_newer_archive (test_paid_archive.PaidArchiveTests.test_s03_cannot_resume_a_rolled_back_source_against_newer_archive) ... ok
 test_same_filesystem_archive_is_rejected_before_any_new_command (test_paid_archive.PaidArchiveTests.test_same_filesystem_archive_is_rejected_before_any_new_command) ... ok
 test_source_recovery_ack_is_archived_before_reported_complete (test_paid_archive.PaidArchiveTests.test_source_recovery_ack_is_archived_before_reported_complete) ... ok
 test_wrong_live_provider_preserves_unresolved_obligations (test_paid_archive.PaidArchiveTests.test_wrong_live_provider_preserves_unresolved_obligations) ... ok
@@ -141,6 +142,6 @@ test_partial_fence_requires_matched_total_and_correct_remainder (test_v03.V03Reg
 test_statement_ledger_and_resolution_rollback_together (test_v03.V03Regressions.test_statement_ledger_and_resolution_rollback_together) ... ok
 
 ----------------------------------------------------------------------
-Ran 141 tests in 11.117s
+Ran 142 tests in 10.630s
 
 OK
