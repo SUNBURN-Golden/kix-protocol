@@ -1,0 +1,7 @@
+{
+  "python": "3.12.3",
+  "sqlite": "3.45.1",
+  "executable": "/usr/bin/python3",
+  "exitCode": 0,
+  "command": "-m unittest discover -v"
+}

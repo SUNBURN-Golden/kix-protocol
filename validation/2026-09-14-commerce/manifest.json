@@ -1,0 +1,29 @@
+{
+  "baseCommit": "96d0daad5b96af501c19284f149cb288b17e5d05",
+  "files": {
+    ".github/workflows/protocol.yml": "e1c4991f3e13476f1dd4f312230c2bf37fd39ebf956e57d1cd397b819e701d09",
+    "README.md": "5e2d676f78dd0a80a5b032aea9640c9441f8ba4cb3f1b1c9a3fb5f79dc3c9cc9",
+    "docs/BLUEPRINT_20260914.md": "3e2371b3aa1acb6525a44edff16396c1924076708be1985f917191261093686d",
+    "docs/COMMERCE_CONTRACTS.md": "ee422658af6492cdb070b3804f1ab1a4e729d2e8b3b30a40cac00dd33cf84856",
+    "docs/PAID_RECOVERY.md": "e0be7c5bd5499bb112dd1c215a894a6ff960e821148329c4449e4e481589f994",
+    "docs/PROTOCOL_MASTERPLAN_V2.md": "6461b69ed68061b004f2838cb072e09bbc645dd341d8ae76b9f7d9a5f0fb14af",
+    "reference/v0.3-rc1/assets.py": "c9514ddd7c4d6c77c43208bec778fadd6a87593a0602b2e2d0a31cf0c895c4b3",
+    "reference/v0.3-rc1/commerce.py": "47428062bb4befc755d63c845c408843138953b2cdc87cb0d24595f64939e8a2",
+    "reference/v0.3-rc1/commerce_driver.py": "3578383bc0547bd084b61023f2af1cb75eaa7d0a1371c70565da4c9bdbf30dae",
+    "reference/v0.3-rc1/paid_recovery.py": "4cf2be1219a748d1dc7b37592a45b75c74ceb186677ef1c5296a94982675d39e",
+    "reference/v0.3-rc1/test_assets.py": "b73b6765e1bcc7963a8c2411c577f4fd44091e957fc965d33f6383b4f69d6a90",
+    "reference/v0.3-rc1/test_commerce.py": "cd44182db6285412e0498b8f5b39ba0d1170b56ad6f4a2a722b4c92f3222dfbf",
+    "reference/v0.3-rc1/test_commerce_driver.py": "c297cd06c5e4f37fde1600b712cf68d45977ec82dbec43b15427171dfc7fb97f",
+    "reference/v0.3-rc1/test_paid_recovery.py": "73597b7ebc6730ffac5c621163dcaa35aa916585e76abcd06eba59c932daf408",
+    "scripts/verify_commerce.py": "4eea7e15000c163c751e8959cc02a1816a7886790c89e0a630af25c402e3f865",
+    "validation/2026-09-14-commerce/README.md": "f7d602d691182163e8f7162959223b4f7416915a66d70374bd42cff95e78d2e6",
+    "validation/2026-09-14-commerce/commerce.json": "60be681ed05657390bf9a41c20cfc987ac99dc8c13a7a5f73e2f717d8d8b31b5",
+    "validation/2026-09-14-commerce/python-default.json": "e76ed2b8307b34b3860ead13a7b2ad470cf6d3ddd638752f7cc74d625d80817c",
+    "validation/2026-09-14-commerce/python-default.log": "fc0be3c875e7af52dfbfd682f639f25845cf201bd2e3e3b97afb13a2f0ac7658",
+    "validation/2026-09-14-commerce/python-system.json": "e49ed7d5e3112a6b67100229c565bf816c06052dee19322f26f84728975dbb60",
+    "validation/2026-09-14-commerce/python-system.log": "fc9b617a561ee6d2d853017895a1f519e7e1cab3a7954d3eadad86fb9cbeae22"
+  },
+  "format": "kix-s06-source-evidence-v1",
+  "scope": "CALCULATION_CONTRACTS_AND_LOCAL_RECOVERY_HOLD_AUDIT",
+  "testsPerEnvironment": 181
+}

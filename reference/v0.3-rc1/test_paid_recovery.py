@@ -13,11 +13,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from common import canonical, digest
+from common import canonical, digest, Rejected
 from mock_provider import MockProvider
 from paid_integration import PaidCoordinator
 from paid_recovery import Recovery, CONTRACT
-from storage_receipt import StorageReceipt, directory_fingerprint, write_atomic
+from storage_receipt import StorageReceipt, directory_fingerprint, write_atomic, sync_directory
 from test_storage_receipt import seed
 
 HERE = Path(__file__).resolve().parent
@@ -88,6 +88,23 @@ with StorageReceipt(q['directory'],q) as receipt:
         plan=self.r.inspect()
         return self.r.apply(plan['planId'])
 
+    def assert_hold_saved(self, result, plan_id, stage):
+        self.assertEqual(result['decision'], 'HOLD')
+        self.assertEqual(result['holdStage'], stage)
+        self.assertEqual(result['attemptedPlanId'], plan_id)
+        path=self.r.cases/plan_id/('hold-'+result['holdId']+'.json')
+        record=read_json(path)
+        self.assertEqual(record['reason'], result['reason'])
+        self.assertEqual(record['stage'], stage)
+        self.assertEqual(record['attemptedPlanId'], plan_id)
+        self.assertEqual(record['holdId'], result['holdId'])
+        facts=record['currentPlan']
+        self.assertEqual(digest({k:v for k,v in facts.items() if k not in ('observedAt','planId')}),
+                         record['currentPlanId'])
+        self.assertEqual(record['currentPlanId'], facts['planId'])
+        self.assertTrue(self.r.pending.exists())
+        return path
+
     def test_before_call_replays_same_request_then_repeat_does_nothing(self):
         self.crash_original('before')
         before=directory_fingerprint(self.directory)
@@ -140,7 +157,9 @@ with StorageReceipt(q['directory'],q) as receipt:
         self.crash_original('after'); plan=self.r.inspect()
         self.advance(status=True,funds=True)
         before=directory_fingerprint(self.directory)
-        self.assertEqual(self.r.apply(plan['planId'])['reason'],'STALE_RECOVERY_PLAN')
+        held=self.r.apply(plan['planId'])
+        self.assertEqual(held['reason'],'STALE_RECOVERY_PLAN')
+        self.assert_hold_saved(held,plan['planId'],'BEFORE_INTENT')
         self.assertEqual(directory_fingerprint(self.directory),before)
         self.assertEqual(self.apply_current()['effect']['appliedAmount'],114000)
 
@@ -148,7 +167,9 @@ with StorageReceipt(q['directory'],q) as receipt:
         self.crash_original('before'); plan=self.r.inspect()
         self.context.update(showOpen=False,objectVersion='3')
         before=directory_fingerprint(self.directory)
-        self.assertEqual(self.r.apply(plan['planId'])['reason'],'STALE_RECOVERY_PLAN')
+        held=self.r.apply(plan['planId'])
+        self.assertEqual(held['reason'],'STALE_RECOVERY_PLAN')
+        self.assert_hold_saved(held,plan['planId'],'BEFORE_INTENT')
         self.assertEqual(self.apply_current()['reason'],'PAYOUT_NO_LONGER_ALLOWED')
         self.assertEqual(directory_fingerprint(self.directory),before)
 
@@ -193,7 +214,8 @@ from paid_recovery import write_atomic
 q=json.loads(sys.stdin.read()); r=Recovery(q['directory'])
 target=q['method']; owner=Recovery
 if target=='source_status': owner=PaidCoordinator; target='_source'
-original=getattr(owner,target) if target!='receipt_written' else write_atomic
+atomic_target=target in ('receipt_written','hold_written')
+original=write_atomic if atomic_target else getattr(owner,target)
 def kill(self,*args,**kwargs):
  if q['method']=='source_status':
   result=original(self,*args,**kwargs)
@@ -203,9 +225,15 @@ def kill(self,*args,**kwargs):
   original(self,*args,**kwargs)
   if self.name=='storage-receipt.json': os._exit(92)
   return
+ if q['method']=='hold_written':
+  is_hold=self.name.startswith('hold-') and self.suffix=='.json'
+  if is_hold and not q['after']: os._exit(92)
+  original(self,*args,**kwargs)
+  if is_hold: os._exit(92)
+  return
  if q['after']: original(self,*args,**kwargs)
  os._exit(92)
-injection=patch('paid_recovery.write_atomic',kill) if target=='receipt_written' else patch.object(owner,target,kill)
+injection=patch('paid_recovery.write_atomic',kill) if atomic_target else patch.object(owner,target,kill)
 with patch('paid_recovery.chain_context',return_value=q['context']),injection:
  r.apply(q['planId'])
 '''
@@ -244,6 +272,7 @@ with patch('paid_recovery.chain_context',return_value=q['context']),injection:
         self.context.update(showOpen=False,objectVersion='3')
         result=self.r.apply(plan['planId'])
         self.assertEqual(result['reason'],'STALE_RECOVERY_PLAN')
+        self.assert_hold_saved(result,plan['planId'],'BEFORE_INSTALL')
         self.assertTrue(self.r.pending.exists())
         self.assertEqual(self.apply_current()['trade']['refundDue'],120000)
 
@@ -282,6 +311,7 @@ with patch('paid_recovery.chain_context',return_value=q['context']),injection:
         with patch('paid_recovery.write_atomic',side_effect=cancel_on_intent):
             result=self.r.apply(plan['planId'])
         self.assertEqual(result['reason'],'STALE_RECOVERY_PLAN')
+        self.assert_hold_saved(result,plan['planId'],'BEFORE_SUBMISSION')
         self.assertTrue(self.r.pending.exists())
         p=self.provider()
         try: self.assertFalse(any(x['kind']=='PAYOUT' for x in p.summary()))
@@ -304,8 +334,133 @@ with patch('paid_recovery.chain_context',return_value=q['context']),injection:
         with patch.object(PaidCoordinator,'sync_effect',late):
             result=self.r.apply(plan['planId'])
         self.assertEqual(result['reason'],'STALE_RECOVERY_PLAN')
+        self.assert_hold_saved(result,plan['planId'],'BEFORE_INSTALL_READY')
         self.assertEqual(self.state()['effects']['payout']['appliedAmount'],0)
         self.assertEqual(self.apply_current()['effect']['appliedAmount'],114000)
+
+    def test_repeated_hold_reuses_record_and_changed_evidence_keeps_both(self):
+        self.crash_original('before'); plan=self.r.inspect()
+        self.context.update(showOpen=False,objectVersion='3')
+        before=directory_fingerprint(self.directory)
+        held=self.r.apply(plan['planId'])
+        first=self.assert_hold_saved(held,plan['planId'],'BEFORE_INTENT')
+        first_bytes=first.read_bytes()
+        repeated=self.r.apply(plan['planId'])
+        self.assertEqual(repeated['holdId'],held['holdId'])
+        self.assertEqual(first.read_bytes(),first_bytes)
+        self.context.update(objectVersion='4')
+        later=self.r.apply(plan['planId'])
+        second=self.assert_hold_saved(later,plan['planId'],'BEFORE_INTENT')
+        self.assertNotEqual(first,second)
+        self.assertEqual(first.read_bytes(),first_bytes)
+        self.assertEqual(len(list(first.parent.glob('hold-*.json'))),2)
+        self.assertEqual(directory_fingerprint(self.directory),before)
+
+    def test_hold_write_failure_keeps_pending_ledger_and_provider_unchanged(self):
+        self.crash_original('before'); plan=self.r.inspect()
+        self.context.update(showOpen=False,objectVersion='3')
+        before=directory_fingerprint(self.directory)
+        pending=self.r.pending.read_bytes(); receipt=self.r.receipt.read_bytes()
+        with patch('paid_recovery.write_atomic',side_effect=OSError('fixture disk failure')):
+            with self.assertRaisesRegex(OSError,'fixture disk failure'):
+                self.r.apply(plan['planId'])
+        self.assertEqual(directory_fingerprint(self.directory),before)
+        self.assertEqual(self.r.pending.read_bytes(),pending)
+        self.assertEqual(self.r.receipt.read_bytes(),receipt)
+        self.assert_hold_saved(self.r.apply(plan['planId']),plan['planId'],'BEFORE_INTENT')
+
+    def test_changed_hold_evidence_is_rejected_without_overwriting_or_execution(self):
+        self.crash_original('before'); plan=self.r.inspect()
+        self.context.update(showOpen=False,objectVersion='3')
+        held=self.r.apply(plan['planId'])
+        path=self.assert_hold_saved(held,plan['planId'],'BEFORE_INTENT')
+        record=read_json(path)
+        record['currentPlan']['chain']['showOpen']=True
+        write_atomic(path,record)
+        damaged=path.read_bytes(); before=directory_fingerprint(self.directory)
+        with self.assertRaisesRegex(Rejected,'RECOVERY_HOLD_RECORD_CONFLICT'):
+            self.r.apply(plan['planId'])
+        self.assertEqual(path.read_bytes(),damaged)
+        self.assertEqual(directory_fingerprint(self.directory),before)
+        self.assertTrue(self.r.pending.exists())
+
+    def test_hold_record_directory_sync_failure_is_retried_before_acknowledging_hold(self):
+        self.crash_original('before'); plan=self.r.inspect()
+        self.context.update(showOpen=False,objectVersion='3')
+        before=directory_fingerprint(self.directory)
+        pending=self.r.pending.read_bytes(); receipt=self.r.receipt.read_bytes()
+        case=self.r.cases/plan['planId']
+        def fail_case_sync(path):
+            if path == case: raise OSError('fixture hold directory sync failure')
+            return sync_directory(path)
+        # Atomic rename succeeds; the following directory sync fails. The
+        # visible record alone must not let a later attempt skip that boundary.
+        with patch('storage_receipt.sync_directory',side_effect=fail_case_sync):
+            with self.assertRaisesRegex(OSError,'fixture hold directory sync failure'):
+                self.r.apply(plan['planId'])
+        files=list(case.glob('hold-*.json'))
+        self.assertEqual(len(files),1)
+        saved=files[0].read_bytes()
+        with patch('paid_recovery.sync_directory',side_effect=fail_case_sync):
+            with self.assertRaisesRegex(OSError,'fixture hold directory sync failure'):
+                self.r.apply(plan['planId'])
+        with patch('paid_recovery.sync_directory',wraps=sync_directory) as synced:
+            result=self.r.apply(plan['planId'])
+        synced.assert_any_call(case)
+        self.assert_hold_saved(result,plan['planId'],'BEFORE_INTENT')
+        self.assertEqual(files[0].read_bytes(),saved)
+        self.assertEqual(len(list(case.glob('hold-*.json'))),1)
+        self.assertEqual(directory_fingerprint(self.directory),before)
+        self.assertEqual(self.r.pending.read_bytes(),pending)
+        self.assertEqual(self.r.receipt.read_bytes(),receipt)
+
+    def test_conflict_after_submission_records_hold_without_ledger_application(self):
+        self.crash_original('before'); plan=self.r.inspect()
+        original=MockProvider.submit
+        def conflict(provider,*args,**kwargs):
+            result=original(provider,*args,**kwargs)
+            row=provider.db.execute("SELECT key,result FROM operations WHERE json_extract(request,'$.kind')='PAYOUT'").fetchone()
+            fact=json.loads(row[1]); fact['request']['amount']=1
+            provider.db.execute('UPDATE operations SET result=? WHERE key=?',(canonical(fact),row[0]))
+            return result
+        before=directory_fingerprint(self.directory)['projection.sqlite']
+        with patch.object(MockProvider,'submit',conflict):
+            result=self.r.apply(plan['planId'])
+        self.assertEqual(result['reason'],'PROVIDER_BINDING_CONFLICT')
+        path=self.assert_hold_saved(result,plan['planId'],'AFTER_SUBMISSION')
+        self.assertEqual(read_json(path)['currentPlan']['providerResult']['economicExecutions'],1)
+        self.assertEqual(directory_fingerprint(self.directory)['projection.sqlite'],before)
+        repeated=self.r.apply(plan['planId'])
+        self.assertEqual(repeated['decision'],'HOLD')
+        p=self.provider()
+        try:
+            rows=[x for x in p.summary() if x['kind']=='PAYOUT']
+            self.assertEqual((len(rows),rows[0]['economicExecutions'],rows[0]['submitCalls']),(1,1,1))
+        finally: p.db.close()
+
+    def test_death_before_and_after_hold_record_retains_reservations_and_repeats(self):
+        for after in (False,True):
+            with self.subTest(after_record=after):
+                t=PaidRecoveryTests('runTest'); t.setUp()
+                try:
+                    t.crash_original('before'); plan=t.r.inspect()
+                    t.context.update(showOpen=False,objectVersion='3')
+                    before=directory_fingerprint(t.directory)
+                    pending=t.r.pending.read_bytes(); receipt=t.r.receipt.read_bytes()
+                    t.crash_recovery(plan,'hold_written',after=after)
+                    prior=list((t.r.cases/plan['planId']).glob('hold-*.json'))
+                    self.assertEqual(len(prior),int(after))
+                    saved=prior[0].read_bytes() if prior else None
+                    result=t.r.apply(plan['planId'])
+                    path=t.assert_hold_saved(result,plan['planId'],'BEFORE_INTENT')
+                    if saved is not None: self.assertEqual(path.read_bytes(),saved)
+                    repeated=t.r.apply(plan['planId'])
+                    self.assertEqual(repeated['holdId'],result['holdId'])
+                    self.assertEqual(len(list(path.parent.glob('hold-*.json'))),1)
+                    self.assertEqual(directory_fingerprint(t.directory),before)
+                    self.assertEqual(t.r.pending.read_bytes(),pending)
+                    self.assertEqual(t.r.receipt.read_bytes(),receipt)
+                finally: t.doCleanups()
 
     def test_chain_conflict_never_authorizes_new_submission(self):
         self.crash_original('before')

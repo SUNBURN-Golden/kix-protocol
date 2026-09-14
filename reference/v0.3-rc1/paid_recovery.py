@@ -168,6 +168,44 @@ class Recovery:
                 and all(c in '0123456789abcdef' for c in plan_id), 'INVALID_PLAN_ID')
         return self.cases/plan_id
 
+    def _hold(self, case, stage, plan, reason=None, compared_plan_id=None):
+        """Persist one decision per evidence set; never acknowledge a command.
+
+        Inspection time is not an authorization premise. Repeated attempts with
+        the same facts reuse the first record, while later facts get a new one.
+        These local records explain a hold; they confer no replay authority and
+        are not a replacement for the separate archive.
+        """
+        reason = reason or plan['reason']
+        identity = dict(format='kix-local-recovery-hold-v1', decision='HOLD',
+                        attemptedPlanId=case.name, stage=stage, reason=reason,
+                        comparedPlanId=compared_plan_id or case.name,
+                        currentPlanId=plan['planId'])
+        hold_id = digest(identity)
+        case.mkdir(parents=True, exist_ok=True)
+        # Persist newly created directory entries as well as the atomic record.
+        sync_directory(self.directory)
+        sync_directory(self.cases)
+        path = case/('hold-'+hold_id+'.json')
+        if path.exists():
+            saved = read_json(path)
+            require(isinstance(saved, dict) and isinstance(saved.get('currentPlan'), dict)
+                    and all(saved.get(k) == v for k,v in identity.items())
+                    and saved.get('holdId') == hold_id
+                    and saved['currentPlan'].get('planId') == plan['planId']
+                    and digest({k:v for k,v in saved['currentPlan'].items()
+                                if k not in ('observedAt', 'planId')})
+                        == plan['planId'], 'RECOVERY_HOLD_RECORD_CONFLICT')
+            # A prior attempt may have replaced the record but failed while
+            # syncing this directory. Reading it back does not acknowledge that
+            # boundary; retry the sync before returning a recorded decision.
+            sync_directory(case)
+        else:
+            write_atomic(path, dict(identity, holdId=hold_id, currentPlan=plan))
+        result = dict(plan) if plan['decision'] == 'HOLD' and reason == plan['reason'] else dict(
+            decision='HOLD', reason=reason, currentPlan=plan)
+        return dict(result, holdId=hold_id, holdStage=stage, attemptedPlanId=case.name)
+
     def apply(self, plan_id):
         from paid_archive import ensure_live
         ensure_live(self.directory)
@@ -186,11 +224,10 @@ class Recovery:
                     return self._install(case, journal)
             plan = self._inspect()
             if plan['planId'] != plan_id:
-                return dict(decision='HOLD', reason='STALE_RECOVERY_PLAN', currentPlan=plan)
+                return self._hold(case, 'BEFORE_INTENT', plan, 'STALE_RECOVERY_PLAN')
             case.mkdir(parents=True, exist_ok=True)
             if plan['decision'] == 'HOLD':
-                write_atomic(case/'hold.json', plan)
-                return plan
+                return self._hold(case, 'BEFORE_INTENT', plan)
             # These snapshots preserve the original state. Subsequent normal
             # commands remain fenced by the original pending record.
             if not (case/'before').exists():
@@ -203,7 +240,7 @@ class Recovery:
             # Requery AFTER durable intent and immediately before any submission.
             fresh = self._inspect()
             if fresh['planId'] != plan_id:
-                return dict(decision='HOLD', reason='STALE_RECOVERY_PLAN', currentPlan=fresh)
+                return self._hold(case, 'BEFORE_SUBMISSION', fresh, 'STALE_RECOVERY_PLAN')
             if plan['decision'] == 'REPLAY_SAME_REQUEST':
                 provider = MockProvider(str(self.directory/'mock-provider.sqlite'))
                 try:
@@ -214,8 +251,7 @@ class Recovery:
             # inspection observes the provider, never an injected crash label.
             observed = self._inspect()
             if observed['decision'] != 'LINK_EXISTING':
-                write_atomic(case/'hold-after-call.json', observed)
-                return observed
+                return self._hold(case, 'AFTER_SUBMISSION', observed)
             return self._prepare_install(case, journal, observed)
 
     def _prepare_install(self, case, journal, observed):
@@ -259,8 +295,8 @@ class Recovery:
         # installation. A late payout/cancellation requires a fresh plan.
         fresh = self._inspect()
         if fresh['planId'] != observed['planId']:
-            write_atomic(case/'stale-before-install.json', fresh)
-            return dict(decision='HOLD', reason='STALE_RECOVERY_PLAN', currentPlan=fresh)
+            return self._hold(case, 'BEFORE_INSTALL_READY', fresh, 'STALE_RECOVERY_PLAN',
+                              compared_plan_id=observed['planId'])
         journal.update(phase='INSTALL_READY', observed=observed, candidateHash=candidate_hash,
                        beforeHash=observed['databases']['projection.sqlite'], result=result)
         write_atomic(case/'journal.json', journal)
@@ -284,7 +320,8 @@ class Recovery:
             if fresh['planId'] != journal['observed']['planId']:
                 # Nothing installed: allow a new evidence-bound plan. Keep the
                 # old journal/snapshots as evidence instead of clearing pending.
-                return dict(decision='HOLD', reason='STALE_RECOVERY_PLAN', currentPlan=fresh)
+                return self._hold(case, 'BEFORE_INSTALL', fresh, 'STALE_RECOVERY_PLAN',
+                                  compared_plan_id=journal['observed']['planId'])
             with closing(readonly(case/'install.sqlite')) as db:
                 require(connection_fingerprint(db) == journal['candidateHash'], 'RECOVERY_CANDIDATE_CHANGED')
             # Let SQLite checkpoint its own committed WAL under the exclusive

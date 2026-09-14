@@ -1,8 +1,10 @@
 # KIX Protocol
 
+**최신 개발 기준:** S05 `96d0daa` 위의 S06 자산·묶음 계산 계약 및 보류 기록 보완. [개발계획 2.1](docs/PROTOCOL_MASTERPLAN_V2.md)과 [구현·제한](docs/COMMERCE_CONTRACTS.md)을 먼저 확인하세요. 계산 도구는 실제 지급 권한을 만들지 않으며 S05 복원은 조회·대사 전용입니다.
+
 티켓의 발행·구매·공식 리셀·입장·환불·배분·정산을 연결하는 프로토콜 연구·개발 저장소다.
 
-현재 개발 기준은 **v0.3-rc1 + ZK 보완 + 첫 유상 리셀 통합 + 저장 차단 + S03의 제한된 지급 복구(2026-09-14)**이다. KIX는 예매·리셀·검표·금융·마케팅 서비스가 연결하는 티켓 권리·거래·정산 프로토콜이다. S03은 호출 직전 확인값이 남은 최초 지급을 현재 근거에 따라 재개하거나 보류한다. 저장 유실의 근본 원인과 독립 저장 내구성은 미해결이다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 범위·실행·제한](docs/PAID_RECOVERY.md)을 따른다.
+현재 개발 기준은 **v0.3-rc1 + S05 조회 전용 복원 + S06 계산 계약·보류 기록(2026-09-14)**이다. KIX는 예매·리셀·검표·금융·마케팅 서비스가 연결하는 티켓 권리·거래·정산 프로토콜이다. S03은 호출 직전 확인값이 남은 최초 지급을 현재 근거에 따라 재개하거나 보류한다. 저장 유실의 근본 원인과 독립 저장 내구성은 미해결이다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 범위·실행·제한](docs/PAID_RECOVERY.md)을 따른다.
 
 기준 커밋 `2658a43`의 Groth16 설정에는 회로별 기여가 빠져 있었다. 당시 공개 증명·검증키만으로 공개 입력과 증명을 함께 조정해 검증을 통과하는 결함을 재현했다. 이 브랜치는 회로별 기여·검증, 기존 키 거절, 조작 증명과 폐기·취소 경계의 회귀 검사를 추가한다. 과거 검증 수락 기록을 보안 보장으로 해석하지 않는다. [보완 결과](docs/PROTOCOL_HARDENING.md)를 먼저 읽는다.
 
@@ -70,4 +72,8 @@ GitHub에서 **검토하려는 PR의 브랜치를 선택한 뒤 Code → Codespa
 
 ## S05: separate-filesystem archive and reconciliation-only restore
 
-The follow-up to PR #4 adds separate-filesystem checkpoints and restoration after loss of the original working directory. Restored workspaces cannot submit money. The live mock provider is queried separately; its historical backup never replaces it. See [scope and commands](docs/PAID_ARCHIVE.md) and [blueprint 1.3](docs/BLUEPRINT_20260914.md). The local Python suite now has 142 checks. Whole-host loss, remote durability and the historical storage incident root cause remain unverified.
+The follow-up to PR #4 adds separate-filesystem checkpoints and restoration after loss of the original working directory. Restored workspaces cannot submit money. The live mock provider is queried separately; its historical backup never replaces it. See [scope and commands](docs/PAID_ARCHIVE.md) and [blueprint history](docs/BLUEPRINT_20260914.md). The S05 baseline has 142 Python checks; S06 extends the suite to 181. Whole-host loss, remote durability and the historical storage incident root cause remain unverified.
+
+## S06: asset and bundle calculation contracts
+
+Exact asset amounts, ordered discounts, multi-leg payment allocation and selected-line reversal proposals are available through a bounded JSON calculation interface. These are calculation-only contracts: no payment capture, ticket issuance or refund is executed. Recovery HOLD decisions now retain a stable local audit record, including stale-plan and interrupted-write paths. See [implementation boundaries](docs/COMMERCE_CONTRACTS.md) and [direct validation evidence](validation/2026-09-14-commerce/README.md). The broad protocol and AI operations roadmap remains [development plan 2.1](docs/PROTOCOL_MASTERPLAN_V2.md).

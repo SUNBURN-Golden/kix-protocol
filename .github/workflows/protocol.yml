@@ -33,6 +33,8 @@ jobs:
         run: bash scripts/bootstrap.sh
       - name: Python, SDK, Move and circuit checks
         run: .venv/bin/python scripts/verify_runtime.py
+      - name: Asset and bundle calculation contracts
+        run: .venv/bin/python scripts/verify_commerce.py --report .local/verification/commerce.json
       - name: Storage continuity and deliberate rollback probes
         run: |
           .venv/bin/python scripts/probe_paid_storage.py --python /usr/bin/python3 --directory .local/storage-probe --cycles 3 --report .local/verification/storage-probe.json
