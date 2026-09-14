@@ -4,13 +4,15 @@ import itertools
 import unittest
 
 from assets import Amount, AssetSpec, KRW, MAX_ATOMS
-from common import Rejected, digest
-from commerce import (build_quote, plan_payments, propose_line_refund,
+from common import Rejected
+from canonical_encoding import digest
+from commerce import (SCHEMA, QUOTE_HASH_DOMAIN, PAYMENT_PLAN_HASH_DOMAIN,
+                      build_quote, plan_payments, propose_line_refund,
                       proportional, validate_quote, validate_payment_plan)
 
 
 def request(prices=(10000, 20000, 30000), asset=KRW):
-    return dict(schemaVersion='kix:commerce:1', orderId='order-1', orderVersion=1,
+    return dict(schemaVersion=SCHEMA, orderId='order-1', orderVersion=1,
                 scope=dict(issuerId='issuer', eventId='show', performanceId='evening'),
                 policyRef='frozen-price-v1', expiresAt=1000,
                 lines=[dict(lineId='L'+str(i+1), inventoryId='inv-'+str(i+1),
@@ -28,6 +30,41 @@ def leg(leg_id, value, asset=KRW):
 
 
 class CommerceTests(unittest.TestCase):
+    def test_old_schema_is_explicitly_unsupported(self):
+        old = request(); old['schemaVersion'] = 'kix:commerce:1'
+        with self.assertRaisesRegex(Rejected, 'UNSUPPORTED_COMMERCE_SCHEMA'):
+            build_quote(old)
+        quote = build_quote(request())
+        plan = plan_payments(quote, [leg('a', 60000)], quote['quoteHash'], 1)
+        for snapshot, validate in ((quote, validate_quote),
+                                   (plan, lambda value: validate_payment_plan(quote, value))):
+            old = copy.deepcopy(snapshot); old['schemaVersion'] = 'kix:commerce:1'
+            with self.assertRaisesRegex(Rejected, 'UNSUPPORTED_COMMERCE_SCHEMA'):
+                validate(old)
+
+    def test_order_version_and_millisecond_wire_limits(self):
+        for version in (0, 2**32, True):
+            q = request(); q['orderVersion'] = version
+            with self.subTest(version=version), self.assertRaises(Rejected):
+                build_quote(q)
+        q = request(); q['orderVersion'] = 2**32 - 1
+        q['expiresAt'] = 2**53 - 1
+        quote = build_quote(q)
+        plan = plan_payments(quote, [leg('a', 60000)], quote['quoteHash'], 2**53 - 2)
+        self.assertEqual(plan['checkedAt'], 2**53 - 2)
+        q['expiresAt'] = 2**53
+        with self.assertRaises(Rejected):
+            build_quote(q)
+
+    def test_public_allocation_rejects_unicode_and_malformed_machine_ids(self):
+        for key in ('\ue000', '\U00010000', 'é', 'e\u0301', '', 'a b', None, 1):
+            with self.subTest(key=key), self.assertRaises(Rejected):
+                proportional(1, {key: 2})
+        with self.assertRaises(Rejected):
+            proportional(0, [])
+        self.assertEqual(list(proportional(1, {'2': 1, '10': 1})), ['10', '2'])
+        self.assertEqual(proportional(1, {'2': 1, '10': 1}), {'10': 1, '2': 0})
+
     def test_bundle_discount_payment_split_and_failed_line_refund_calculation(self):
         q=request(); q['discounts']=[rule(), rule('member','platform','BPS',1000)]
         quote=build_quote(q)
@@ -95,7 +132,7 @@ class CommerceTests(unittest.TestCase):
     def test_quote_tampering_remains_rejected_after_attacker_rehashes(self):
         good=build_quote(request())
         bad=copy.deepcopy(good);bad['lines'][0]['payableAtoms']='1'
-        bad.pop('quoteHash');bad['quoteHash']=digest(['kix:quote:1',bad])
+        bad.pop('quoteHash');bad['quoteHash']=digest(QUOTE_HASH_DOMAIN,bad)
         with self.assertRaisesRegex(Rejected,'QUOTE_CONTENT_MISMATCH'):validate_quote(bad)
         # Legitimately recomputing a new request produces a different proposal,
         # but it cannot reuse an already-selected hash.
@@ -107,7 +144,7 @@ class CommerceTests(unittest.TestCase):
     def test_plan_allocation_and_original_route_changes_do_not_reuse_expected_hash(self):
         quote=build_quote(request());plan=plan_payments(quote,[leg('a',60000)],quote['quoteHash'],1)
         bad=copy.deepcopy(plan);bad['legs'][0]['allocations']['L1']='1'
-        bad.pop('planHash');bad['planHash']=digest(['kix:payment-plan:1',bad])
+        bad.pop('planHash');bad['planHash']=digest(PAYMENT_PLAN_HASH_DOMAIN,bad)
         with self.assertRaisesRegex(Rejected,'PAYMENT_PLAN_CONTENT_MISMATCH'):validate_payment_plan(quote,bad)
         changed=leg('a',60000);changed['routeRef']='attacker'
         newer=plan_payments(quote,[changed],quote['quoteHash'],1)

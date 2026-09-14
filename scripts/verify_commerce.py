@@ -9,11 +9,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'reference/v0.3-rc1'))
 from assets import Amount, AssetSpec, KRW, MAX_ATOMS
 from commerce_driver import dispatch
+from commerce import SCHEMA
 from common import Rejected, canonical
 
 
 def run():
-    request = dict(schemaVersion='kix:commerce:1',orderId='bundle-three',orderVersion=1,
+    request = dict(schemaVersion=SCHEMA,orderId='bundle-three',orderVersion=1,
                    scope=dict(issuerId='fixture-issuer',eventId='fixture-show',performanceId='evening'),
                    policyRef='frozen-line-price-v1',expiresAt=1000,
                    lines=[dict(lineId=f'L{i}',inventoryId=f'inv-{i}',gross=Amount(KRW,price).to_dict())

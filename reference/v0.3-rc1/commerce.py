@@ -2,14 +2,20 @@
 
 Snapshots are recomputed before use. Hashes bind calculations, not the truth of
 an external payment or the identity/authority of the snapshot's author.
+Schema 2 orderVersion uses positive u32 Version. expiresAt, now and checkedAt
+are Unix milliseconds, restricted to CE1's safe JSON integer range.
 """
 import json
-import unicodedata
 
 from assets import AssetRegistry, AssetSpec, Amount
-from common import canonical, digest, ident as common_ident, require
+from canonical_encoding import canonical, digest, machine_id
+from common import require
+from execution_contracts import TimestampMs, Version
 
-SCHEMA = 'kix:commerce:1'
+SCHEMA = 'kix:commerce:2'
+QUOTE_HASH_DOMAIN = 'kix:quote:2'
+PAYMENT_PLAN_HASH_DOMAIN = 'kix:payment-plan:2'
+REFUND_PROPOSAL_HASH_DOMAIN = 'kix:line-refund-proposal:2'
 MAX_LINES = 300
 MAX_RULES = 64
 MAX_LEGS = 16
@@ -23,15 +29,17 @@ def fields(value, names):
 
 
 def ident(value):
-    common_ident(value)
-    require(unicodedata.normalize('NFC', value) == value
-            and not any(unicodedata.category(c).startswith('C') for c in value), 'INVALID_CANONICAL_ID')
-    return value
+    return machine_id(value)
 
 
 def integer(value, minimum=0, maximum=2**53-1):
     require(type(value) is int and minimum <= value <= maximum, 'INVALID_COUNTER')
     return value
+
+
+def timestamp_ms(value, minimum=0):
+    """Explicit typed conversion from this schema's safe-number wire profile."""
+    return TimestampMs(integer(value, minimum)).value
 
 
 def atoms(value, maximum):
@@ -57,6 +65,8 @@ def proportional(total, capacities):
     exceeds a line's capacity. Input dictionary insertion order is irrelevant.
     """
     require(type(total) is int and total >= 0, 'INVALID_ALLOCATION_TOTAL')
+    require(type(capacities) is dict, 'INVALID_CAPACITIES')
+    for key in capacities: ident(key)
     require(all(type(v) is int and v >= 0 for v in capacities.values()), 'INVALID_CAPACITY')
     size = sum(capacities.values())
     require(total <= size, 'ALLOCATION_EXCEEDS_CAPACITY')
@@ -74,7 +84,8 @@ def build_quote(request):
     fields(request, 'schemaVersion orderId orderVersion scope policyRef expiresAt lines discounts')
     require(request['schemaVersion'] == SCHEMA, 'UNSUPPORTED_COMMERCE_SCHEMA')
     ident(request['orderId']); ident(request['policyRef'])
-    integer(request['orderVersion'], 1); integer(request['expiresAt'], 1)
+    Version(integer(request['orderVersion'], 1))
+    timestamp_ms(request['expiresAt'], 1)
     fields(request['scope'], 'issuerId eventId performanceId')
     for value in request['scope'].values(): ident(value)
     require(type(request['lines']) is list and 0 < len(request['lines']) <= MAX_LINES, 'INVALID_LINES')
@@ -120,20 +131,20 @@ def build_quote(request):
         row = dict(rows[key])
         for field in ('grossAtoms', 'discountAtoms', 'payableAtoms'): row[field] = str(row[field])
         result_rows.append(row)
-    # A JSON round trip severs aliases to mutable caller input. This local
-    # encoding is versioned but is not a production cross-language signature.
+    # A CE1 JSON round trip severs aliases to mutable caller input.
     result = dict(schemaVersion=SCHEMA, evidenceClass='CALCULATION_ONLY',
                   request=json.loads(canonical(request)), asset=asset.to_dict(),
                   lines=result_rows,
                   totals=dict(grossAtoms=str(gross),
                               discountAtoms=str(sum(r['discountAtoms'] for r in rows.values())),
                               payableAtoms=str(sum(r['payableAtoms'] for r in rows.values()))))
-    result['quoteHash'] = digest(['kix:quote:1', result])
+    result['quoteHash'] = digest(QUOTE_HASH_DOMAIN, result)
     return result
 
 
 def validate_quote(quote):
     require(type(quote) is dict and 'request' in quote, 'INVALID_QUOTE')
+    require(quote.get('schemaVersion') == SCHEMA, 'UNSUPPORTED_COMMERCE_SCHEMA')
     rebuilt = build_quote(quote['request'])
     require(canonical(quote) == canonical(rebuilt), 'QUOTE_CONTENT_MISMATCH')
     return rebuilt
@@ -142,7 +153,7 @@ def validate_quote(quote):
 def plan_payments(quote, legs, expected_quote_hash, now):
     quote = validate_quote(quote)
     require(type(expected_quote_hash) is str and quote['quoteHash'] == expected_quote_hash, 'STALE_QUOTE')
-    integer(now)
+    timestamp_ms(now)
     require(now < quote['request']['expiresAt'], 'QUOTE_EXPIRED')
     require(type(legs) is list and len(legs) <= MAX_LEGS, 'INVALID_PAYMENT_LEGS')
     asset = AssetSpec.from_dict(quote['asset'])
@@ -166,12 +177,13 @@ def plan_payments(quote, legs, expected_quote_hash, now):
     require(not any(remaining.values()), 'UNALLOCATED_PAYMENT')
     result = dict(schemaVersion=SCHEMA, evidenceClass='CALCULATION_ONLY', quoteHash=quote['quoteHash'],
                   checkedAt=now, legs=output_legs)
-    result['planHash'] = digest(['kix:payment-plan:1', result])
+    result['planHash'] = digest(PAYMENT_PLAN_HASH_DOMAIN, result)
     return result
 
 
 def validate_payment_plan(quote, plan):
     fields(plan, 'schemaVersion evidenceClass quoteHash checkedAt legs planHash')
+    require(plan['schemaVersion'] == SCHEMA, 'UNSUPPORTED_COMMERCE_SCHEMA')
     require(type(plan['legs']) is list, 'INVALID_PAYMENT_LEGS')
     legs = []
     for leg in plan['legs']:
@@ -220,5 +232,5 @@ def propose_line_refund(quote, payment_plan, line_ids, expected_plan_hash):
                   requiredEvidence=['CONFIRMED_ORIGINAL_PAYMENTS', 'CURRENT_LINE_RIGHT_STATE',
                                     'REFUND_POLICY_AUTHORITY', 'UNRESOLVED_REFUND_RESERVATIONS',
                                     'CURRENT_PROVIDER_REFUNDABLE_CAPACITY'])
-    result['proposalHash'] = digest(['kix:line-refund-proposal:1', result])
+    result['proposalHash'] = digest(REFUND_PROPOSAL_HASH_DOMAIN, result)
     return result

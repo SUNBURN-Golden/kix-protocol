@@ -35,6 +35,8 @@ jobs:
         run: .venv/bin/python scripts/verify_runtime.py
       - name: Asset and bundle calculation contracts
         run: .venv/bin/python scripts/verify_commerce.py --report .local/verification/commerce.json
+      - name: Python and TypeScript canonical contract agreement
+        run: .venv/bin/python scripts/verify_canonical.py --report .local/verification/canonical.json
       - name: Storage continuity and deliberate rollback probes
         run: |
           .venv/bin/python scripts/probe_paid_storage.py --python /usr/bin/python3 --directory .local/storage-probe --cycles 3 --report .local/verification/storage-probe.json

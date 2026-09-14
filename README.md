@@ -1,10 +1,10 @@
 # KIX Protocol
 
-**최신 개발 기준:** S05 `96d0daa` 위의 S06 자산·묶음 계산 계약 및 보류 기록 보완. [개발계획 2.1](docs/PROTOCOL_MASTERPLAN_V2.md)과 [구현·제한](docs/COMMERCE_CONTRACTS.md)을 먼저 확인하세요. 계산 도구는 실제 지급 권한을 만들지 않으며 S05 복원은 조회·대사 전용입니다.
+**최신 개발 기준:** PR 계보를 연결한 S06 `974d8e4` 위의 S06.1 기반 보완. [개발계획 2.2](docs/PROTOCOL_MASTERPLAN_V2.md), [S06.1 범위](docs/FOUNDATION_S061.md), [공통 바이트·해시 규격](docs/CANONICAL_ENCODING_V1.md)을 먼저 확인하세요. Python/TypeScript 계산 계약은 Commerce v2를 사용합니다. 계산 도구는 실제 지급 권한을 만들지 않으며 S05 복원은 조회·대사 전용입니다.
 
 티켓의 발행·구매·공식 리셀·입장·환불·배분·정산을 연결하는 프로토콜 연구·개발 저장소다.
 
-현재 개발 기준은 **v0.3-rc1 + S05 조회 전용 복원 + S06 계산 계약·보류 기록(2026-09-14)**이다. KIX는 예매·리셀·검표·금융·마케팅 서비스가 연결하는 티켓 권리·거래·정산 프로토콜이다. S03은 호출 직전 확인값이 남은 최초 지급을 현재 근거에 따라 재개하거나 보류한다. 저장 유실의 근본 원인과 독립 저장 내구성은 미해결이다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 범위·실행·제한](docs/PAID_RECOVERY.md)을 따른다.
+현재 개발 기준은 **v0.3-rc1 + S05 조회 전용 복원 + S06 계산·보류 기록 + S06.1 결정론·실행 입력 계약(2026-09-14)**이다. KIX는 예매·리셀·검표·금융·마케팅 서비스가 연결하는 티켓 권리·거래·정산 프로토콜이다. S03은 호출 직전 확인값이 남은 최초 지급을 현재 근거에 따라 재개하거나 보류한다. 저장 유실의 근본 원인과 독립 저장 내구성은 미해결이다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 범위·실행·제한](docs/PAID_RECOVERY.md)을 따른다.
 
 기준 커밋 `2658a43`의 Groth16 설정에는 회로별 기여가 빠져 있었다. 당시 공개 증명·검증키만으로 공개 입력과 증명을 함께 조정해 검증을 통과하는 결함을 재현했다. 이 브랜치는 회로별 기여·검증, 기존 키 거절, 조작 증명과 폐기·취소 경계의 회귀 검사를 추가한다. 과거 검증 수락 기록을 보안 보장으로 해석하지 않는다. [보완 결과](docs/PROTOCOL_HARDENING.md)를 먼저 읽는다.
 
@@ -45,14 +45,15 @@ GitHub에서 **검토하려는 PR의 브랜치를 선택한 뒤 Code → Codespa
 
 | 확인 항목 | 확인 범위·근거 |
 |---|---|
-| Python 모형·저장 경계·복구 검사 / Node 오프라인 검사 | S06 Python 181개를 두 환경에서 직접 통과. Node 및 전체 체인 검사는 PR #6의 현재 head CI로 별도 확인 |
+| Python 모형·저장 경계·복구 검사 | S06.1 Python 207개를 Python 3.12.14/SQLite 3.53.1과 Python 3.12.3/SQLite 3.45.1에서 직접 통과. [직접 검증 기록](validation/2026-09-14-foundation/README.md) |
+| 새 계산 계약의 언어 간 일치 | 두 Python 환경과 Node 24 TypeScript에서 고정 바이트·해시·자산·배정·견적·반환안 및 잘못된 입력의 거절 확인 |
 | Sui Move / ZK 회로 | Move 검사 3개 통과, 회로 2개 컴파일 |
 | 공개 경로 | 발행·이전 후 별도 프로세스 복구·소비, 이전 소유자·중복 사용 거절 |
 | 유상 리셀 연결 | 실제 Sui 이전·실패 영수증과 독립 모의 PG·은행 연결. 초기 응답 유실·중복·늦은 지급 3개, S03 복구 2개, S05 archive 2개 여정을 CI에 포함 |
 | 비공개 경로 | 노트 생성·소비 증명 생성, Sui의 Groth16 검증 수락 |
 | 비공개 오류 경로 | 다른 검표 문맥·다른 검증키 객체·중복 소비가 실제 체인에서 거절됨 |
 
-표의 체인 실행 설명은 S05까지 확보한 범위이며 S06의 [현재 CI](https://github.com/BeautifulMind-JT/kix-protocol/pull/6) 결론과 구분한다. 이 로컬넷은 검증자 1개이며 RPC를 신뢰한다. 확인한 독립성은 설정 프로세스 종료 뒤 다른 프로세스가 백업과 체인 자료로 진행하는 범위다. 실제 PG·은행 연결, 다중 노드 장애 내성, 상용 KIX 서비스 전체 중단, 실서비스 익명성은 검증하지 않았다. ZK 설정은 단일 주체가 만든 시험용이며 현재 Move 공연 정원과 비공개 모형은 16슬롯이다.
+표의 체인 실행 설명은 기존 여정의 범위다. 계보 보완 S06 `974d8e4`의 [새 CI](https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/34830584614)는 성공했으며, S06.1의 전체 CI는 S06.1 PR의 최종 SHA에 대해 별도로 확인한다. 이 로컬넷은 검증자 1개이며 RPC를 신뢰한다. 확인한 독립성은 설정 프로세스 종료 뒤 다른 프로세스가 백업과 체인 자료로 진행하는 범위다. 실제 PG·은행 연결, 다중 노드 장애 내성, 상용 KIX 서비스 전체 중단, 실서비스 익명성은 검증하지 않았다. ZK 설정은 단일 주체가 만든 시험용이며 현재 Move 공연 정원과 비공개 모형은 16슬롯이다.
 
 기존 선택 변이 14개 결과는 rc1 원자료를 보존했으며 이번 실행에서 재검사하지 않았다. 이전 `results/verification.json`과 [2026-09-11 실행 보고](docs/RUNTIME_VALIDATION.md)는 당시 기록이다. ZK 보완 후 근거는 [보완 결과](docs/PROTOCOL_HARDENING.md)와 `validation/2026-09-13/`이다.
 
@@ -63,7 +64,7 @@ GitHub에서 **검토하려는 PR의 브랜치를 선택한 뒤 Code → Codespa
 - [v0.3-rc1 원래 구현 보고](reference/v0.3-rc1/KIX_v0.3_rc1_구현결과와_실행조건.md)
 - [가져온 자료의 원본 해시](docs/source-imports-2026-09-11.json)
 - [rc1 이후 소스 수정](docs/runtime-changes-from-rc1.patch)
-- [현재 개발계획 2.1](docs/PROTOCOL_MASTERPLAN_V2.md) / [이전 로드맵 기록](docs/ROADMAP.md)
+- [현재 개발계획 2.2](docs/PROTOCOL_MASTERPLAN_V2.md) / [이전 로드맵 기록](docs/ROADMAP.md)
 - [프로토콜 통합의 다음 구현 계약](docs/PROTOCOL_INTEGRATION_NEXT.md)
 - [첫 유상 리셀 통합과 남은 범위](docs/PAID_INTEGRATION.md)
 - [저장 기록 유실 조사와 지급 판단 차단](docs/STORAGE_INVESTIGATION.md)
@@ -76,4 +77,8 @@ The follow-up to PR #4 adds separate-filesystem checkpoints and restoration afte
 
 ## S06: asset and bundle calculation contracts
 
-Exact asset amounts, ordered discounts, multi-leg payment allocation and selected-line reversal proposals are available through a bounded JSON calculation interface. These are calculation-only contracts: no payment capture, ticket issuance or refund is executed. Recovery HOLD decisions now retain a stable local audit record, including stale-plan and interrupted-write paths. See [implementation boundaries](docs/COMMERCE_CONTRACTS.md) and [direct validation evidence](validation/2026-09-14-commerce/README.md). The broad protocol and AI operations roadmap remains [development plan 2.1](docs/PROTOCOL_MASTERPLAN_V2.md).
+Exact asset amounts, ordered discounts, multi-leg payment allocation and selected-line reversal proposals are available through a bounded JSON calculation interface. These are calculation-only contracts: no payment capture, ticket issuance or refund is executed. Recovery HOLD decisions now retain a stable local audit record, including stale-plan and interrupted-write paths. See [implementation boundaries](docs/COMMERCE_CONTRACTS.md) and [historical S06 validation evidence](validation/2026-09-14-commerce/README.md). The current roadmap is [development plan 2.2](docs/PROTOCOL_MASTERPLAN_V2.md).
+
+## S06.1: deterministic contracts before durable commerce
+
+The PR stack now includes the latest S03 ancestry without rewriting existing commits. CE1 pins canonical bytes, ASCII machine IDs, Unicode 15 assigned characters and hash domains; Python and TypeScript independently verify Commerce v2 calculations. AssetAmount records bind the entire selected registry configuration. Distinct integer types and an explicit, disabled-by-default legacy KRW adapter preserve asset and unit boundaries. Existing rc1 hashes and recovery semantics remain unchanged. See [scope and remaining work](docs/FOUNDATION_S061.md) and [207-test and cross-language evidence](validation/2026-09-14-foundation/README.md). S07 persistence, authenticated registries and multi-asset execution are not implemented here.

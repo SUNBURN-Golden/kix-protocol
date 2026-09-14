@@ -1,0 +1,28 @@
+[
+  {
+    "environment": "python-3.12.14",
+    "versions": {
+      "python": "3.12.14",
+      "sqlite": "3.53.1",
+      "unicode": "15.0.0"
+    },
+    "exitCode": 0,
+    "command": "python -m unittest discover -s reference/v0.3-rc1 -p test*.py -v",
+    "log": "python-3.12.14.log",
+    "sha256": "fccb0ca5ae1fad2dc1092ce75be51906880222f39e8999e11d24a780242845b2",
+    "tests": 207
+  },
+  {
+    "environment": "python-3.12.3",
+    "versions": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
+      "unicode": "15.0.0"
+    },
+    "exitCode": 0,
+    "command": "python -m unittest discover -s reference/v0.3-rc1 -p test*.py -v",
+    "log": "python-3.12.3.log",
+    "sha256": "1fa068c8f8caf5e9ade632122edd76331d349412c2e236569843e4c2724a9e5c",
+    "tests": 207
+  }
+]

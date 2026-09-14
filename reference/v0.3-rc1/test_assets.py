@@ -3,11 +3,21 @@ import copy
 import json
 import unittest
 
-from assets import Amount, AssetRegistry, AssetSpec, KRW, MAX_ATOMS, from_decimal
+from assets import (ASSET_HASH_DOMAIN, ASSET_ID_PREFIX, ASSET_ID_VERSION,
+                    Amount, AssetRegistry, AssetSpec, KRW, MAX_ATOMS, from_decimal)
+from canonical_encoding import digest
 from common import Rejected
 
 
 class AssetContractTests(unittest.TestCase):
+    def test_identity_v2_is_explicit_and_ascii_only(self):
+        self.assertEqual(ASSET_ID_VERSION, 2)
+        self.assertEqual(KRW.asset_id, ASSET_ID_PREFIX + digest(ASSET_HASH_DOMAIN, KRW.to_dict()))
+        self.assertTrue(KRW.asset_id.startswith('asset-v2-'))
+        for reference in ('é', '\ue000', '\U00010000', 'USD₮', '한글', 'a@b'):
+            with self.subTest(reference=reference), self.assertRaises(Rejected):
+                AssetSpec('fixture', reference, 0, MAX_ATOMS)
+
     def setUp(self):
         # Explicit fixture identities: these are not deployed token addresses.
         self.token = AssetSpec("chain", "fixture:sui:network-a:coin-usd", 6, MAX_ATOMS)

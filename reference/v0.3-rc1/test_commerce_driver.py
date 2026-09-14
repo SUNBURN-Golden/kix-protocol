@@ -8,6 +8,7 @@ import unittest
 
 from assets import Amount, KRW
 from common import Rejected
+from commerce import SCHEMA
 from commerce_driver import MAX_INPUT_BYTES, decode_request, dispatch
 
 
@@ -16,7 +17,7 @@ HERE = Path(__file__).resolve().parent
 
 def request():
     return {
-        "schemaVersion": "kix:commerce:1",
+        "schemaVersion": SCHEMA,
         "orderId": "order-1",
         "orderVersion": 1,
         "scope": {
@@ -113,6 +114,16 @@ class CommerceDriverTests(unittest.TestCase):
                 decode_request(payload)
         with self.assertRaises(Rejected):
             dispatch(decode_request(b'{"action":"simulate_quote","args":{"x":1e400}}'))
+
+    def test_number_tokens_are_lossless_and_nullability_is_schema_owned(self):
+        for token in ('-0', '1.0', '1e0', '9007199254740992', '9007199254740993'):
+            with self.subTest(token=token), self.assertRaises(Rejected):
+                decode_request(('{"x":' + token + '}').encode())
+        self.assertEqual(decode_request(b'{"x":9007199254740991}'), {'x': 2**53 - 1})
+        for field in ('orderId', 'scope', 'lines', 'discounts', 'expiresAt'):
+            value = request(); value[field] = None
+            with self.subTest(field=field), self.assertRaises(Rejected):
+                dispatch({'action': 'simulate_quote', 'args': value})
 
     def test_input_bound_applies_to_cli_and_direct_call(self):
         with self.assertRaisesRegex(Rejected, "INPUT_TOO_LARGE"):

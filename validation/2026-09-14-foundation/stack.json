@@ -1,0 +1,46 @@
+{
+  "format": "kix-s061-stack-repair-v1",
+  "method": "two-parent merge commits preserving existing history; no force push; PRs remain unmerged",
+  "s03": {
+    "head": "68a65db0208cf57e35750b226dfac49f555ae850"
+  },
+  "s05": {
+    "previous": "96d0daad5b96af501c19284f149cb288b17e5d05",
+    "head": "e7259a5d17f0d73a993858c5f17e678700a74498",
+    "tree": "e1a9b131a790e8e6d860c44b5f2dd2234d1531f9",
+    "parents": [
+      "96d0daad5b96af501c19284f149cb288b17e5d05",
+      "68a65db0208cf57e35750b226dfac49f555ae850"
+    ],
+    "blobCount": 287,
+    "changesFromPrevious": [
+      "docs/BLUEPRINT_20260914.md: preserve S05 blueprint 1.3 and add S03 masterplan direction",
+      "docs/PROTOCOL_MASTERPLAN_V2.md: exact S03 document"
+    ],
+    "ci": {
+      "run": 34830524529,
+      "url": "https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/34830524529",
+      "conclusion": "success"
+    }
+  },
+  "s06": {
+    "previous": "032d974627484f94b1a0e986031a2205bfaf0081",
+    "head": "974d8e4875c5128266aaefa830bdfcd33cf89534",
+    "tree": "dbc152cd601a1dfbff2c8cb9a447b2010b16ccc4",
+    "parents": [
+      "032d974627484f94b1a0e986031a2205bfaf0081",
+      "e7259a5d17f0d73a993858c5f17e678700a74498"
+    ],
+    "blobCount": 302,
+    "wholeTreeUnchanged": true,
+    "ci": {
+      "run": 34830584614,
+      "url": "https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/34830584614",
+      "conclusion": "success"
+    }
+  },
+  "s061": {
+    "parent": "974d8e4875c5128266aaefa830bdfcd33cf89534",
+    "finalCommitCi": "Separate fresh CI required on final S06.1 PR head; stack CI does not validate S06.1 feature changes."
+  }
+}

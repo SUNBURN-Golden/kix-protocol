@@ -1,17 +1,19 @@
 """Exact asset amounts for new protocol contracts; no FX or legacy-ledger migration.
 
-The fixture hash uses common.digest, not a production cross-language signing
-standard. Callers must supply a fully qualified asset reference (including chain,
+Asset identity v2 uses KIX CE1 domain-separated hashing. Callers must supply a
+fully qualified ASCII asset reference (including chain,
 network and token type where relevant); ticker symbols are not asset identities.
 """
 from dataclasses import dataclass
 import re
-import unicodedata
-
-from common import digest, require
+from canonical_encoding import digest, machine_id
+from common import require
 
 
 MAX_ATOMS = 2**128 - 1
+ASSET_ID_VERSION = 2
+ASSET_HASH_DOMAIN = "kix:asset:2"
+ASSET_ID_PREFIX = "asset-v2-"
 _UINT = re.compile(r"(?:0|[1-9][0-9]*)\Z")
 _DECIMAL = re.compile(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?\Z")
 _NAMESPACE = re.compile(r"[a-z][a-z0-9-]{0,62}\Z")
@@ -32,13 +34,7 @@ class AssetSpec:
     def __post_init__(self):
         require(type(self.namespace) is str and _NAMESPACE.fullmatch(self.namespace),
                 "INVALID_ASSET_NAMESPACE")
-        require(type(self.reference) is str and 0 < len(self.reference) <= 256,
-                "INVALID_ASSET_REFERENCE")
-        require(unicodedata.normalize("NFC", self.reference) == self.reference,
-                "ASSET_REFERENCE_MUST_BE_NFC")
-        require(all(not c.isspace() and not unicodedata.category(c).startswith("C")
-                    for c in self.reference), "INVALID_ASSET_REFERENCE")
-        require(len(self.reference.encode("utf-8")) <= 512, "INVALID_ASSET_REFERENCE")
+        machine_id(self.reference, max_length=256)
         require(type(self.decimals) is int and 0 <= self.decimals <= 38,
                 "INVALID_ASSET_DECIMALS")
         require(type(self.max_atoms) is int and 0 < self.max_atoms <= MAX_ATOMS,
@@ -46,7 +42,7 @@ class AssetSpec:
 
     @property
     def asset_id(self):
-        return "asset-" + digest(["kix:asset:v1", self.to_dict()])
+        return ASSET_ID_PREFIX + digest(ASSET_HASH_DOMAIN, self.to_dict())
 
     def to_dict(self):
         return {"namespace": self.namespace, "reference": self.reference,

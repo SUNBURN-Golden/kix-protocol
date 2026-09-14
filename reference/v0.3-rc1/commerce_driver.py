@@ -3,14 +3,13 @@
 This process never sends money, submits a chain transaction, or writes a ledger.
 Its output is a calculation, not provider evidence or execution permission.
 """
-import json
 import sys
 
 import commerce
-from common import Rejected, canonical, require
+from canonical_encoding import MAX_INPUT_BYTES, canonical, decode_json
+from common import Rejected, require
 
 
-MAX_INPUT_BYTES = 256 * 1024
 EVIDENCE_CLASS = "CALCULATION_ONLY"
 ACTION_FIELDS = {
     # simulate_quote passes args directly as the quote request; commerce owns
@@ -31,32 +30,9 @@ ACTION_FIELDS = {
 }
 
 
-def _unique_object(pairs):
-    result = {}
-    for key, value in pairs:
-        require(key not in result, "DUPLICATE_JSON_KEY")
-        result[key] = value
-    return result
-
-
-def _reject_constant(_value):
-    raise Rejected("NONFINITE_JSON_NUMBER")
-
-
 def decode_request(payload):
-    """Decode exactly one UTF-8 JSON value without ambiguous duplicate keys."""
-    require(type(payload) is bytes, "INPUT_MUST_BE_BYTES")
-    require(len(payload) <= MAX_INPUT_BYTES, "INPUT_TOO_LARGE")
-    try:
-        return json.loads(
-            payload.decode("utf-8"),
-            object_pairs_hook=_unique_object,
-            parse_constant=_reject_constant,
-        )
-    except Rejected:
-        raise
-    except (UnicodeDecodeError, ValueError, RecursionError) as exc:
-        raise Rejected("INVALID_JSON") from exc
+    """Decode one CE1-compatible JSON value, including lossless number checks."""
+    return decode_json(payload)
 
 
 def dispatch(envelope):
@@ -70,6 +46,8 @@ def dispatch(envelope):
     # caller cannot send non-JSON values to a lower-level calculation either.
     try:
         encoded = canonical(envelope).encode("utf-8")
+    except Rejected:
+        raise
     except (TypeError, ValueError, UnicodeEncodeError, RecursionError) as exc:
         raise Rejected("INVALID_JSON_VALUE") from exc
     require(len(encoded) <= MAX_INPUT_BYTES, "INPUT_TOO_LARGE")
