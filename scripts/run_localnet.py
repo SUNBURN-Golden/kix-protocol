@@ -22,7 +22,13 @@ PROTO = ROOT / 'reference/v0.3-rc1'
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--private', action='store_true', help='Requires client/setup-zk.mjs artifacts')
+    parser.add_argument('--paid', action='store_true', help='Actual public Sui resale with independent mock PG/bank')
     args = parser.parse_args()
+    if args.private and args.paid:
+        raise SystemExit('The paid integration currently supports public rights only.')
+    output_name = 'paid-journey.json' if args.paid else 'private-journey.json' if args.private else 'public-journey.json'
+    # A failed new attempt must not leave an older success as its apparent result.
+    (ROOT / '.local/verification' / output_name).unlink(missing_ok=True)
     if args.private and not (PROTO / 'zk/artifacts/manifest.json').exists():
         raise SystemExit('Run npm --prefix reference/v0.3-rc1/client run setup:zk first.')
     for port in (9000, 9123):
@@ -44,6 +50,8 @@ def main():
     env['KIX_LOCAL_RPC'] = 'http://127.0.0.1:9000'
     env['KIX_JOURNEY_DIR'] = str(run / 'journey')
     env['KIX_PRIVATE'] = '1' if args.private else '0'
+    env['KIX_PAID'] = '1' if args.paid else '0'
+    env['KIX_PYTHON'] = env.get('KIX_PYTHON', sys.executable)
     subprocess.run([sys.executable, str(ROOT / 'scripts/configure_local.py')], check=True)
     print('Local run: ' + str(run), flush=True)
     network = run / 'network'
@@ -105,7 +113,9 @@ def main():
             receipt['zkLoginBackgroundKeyFetchDisabled'] = True
             public_receipts = ROOT / '.local/verification'
             public_receipts.mkdir(parents=True, exist_ok=True)
-            (public_receipts / ('private-journey.json' if args.private else 'public-journey.json')).write_text(
+            if args.paid and receipt.get('paidIntegration', {}).get('status') != 'PASSED_ACTUAL_SUI_MOCK_MONEY':
+                raise RuntimeError('MISSING_PAID_INTEGRATION_RECEIPT')
+            (public_receipts / output_name).write_text(
                 json.dumps(receipt, indent=2) + '\n')
             print(json.dumps(receipt, indent=2), flush=True)
         finally:

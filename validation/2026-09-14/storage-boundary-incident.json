@@ -1,0 +1,45 @@
+{
+  "status": "CONNECTION_BOUNDARY_MITIGATED_AND_RETESTED",
+  "failingConfiguration": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1",
+    "databaseHandlesHeldAcrossNodeSubprocess": true
+  },
+  "observations": [
+    "WAL database disk image is malformed",
+    "saved submission absent after process restart",
+    "explicit WAL checkpoint did not resolve failure",
+    "temporary rollback-journal variant encountered attempt to write a readonly database"
+  ],
+  "controlRun": {
+    "python": "3.12.3",
+    "sqlite": "3.45.1",
+    "result": "PASSED_ACTUAL_SUI_MOCK_MONEY"
+  },
+  "finalChange": "Commit and close both database connections before Node RPC child, reopen in finally before retaining observations; keep original WAL and FULL sync",
+  "finalRun": {
+    "runtime": {
+      "python": "3.12.14",
+      "sqlite": "3.53.1",
+      "journalMode": "wal",
+      "synchronous": 2
+    },
+    "coordinatorProcesses": 136,
+    "result": "PASSED_ACTUAL_SUI_MOCK_MONEY",
+    "integrity": {
+      "projection.sqlite": [
+        [
+          "ok"
+        ]
+      ],
+      "mock-provider.sqlite": [
+        [
+          "ok"
+        ]
+      ]
+    }
+  },
+  "rootCause": "Underlying runtime mechanism not established; no SQLite library defect or inode replacement is claimed",
+  "regression": "test_child_query_closes_databases_and_reopens_even_after_timeout",
+  "productionStorageAndBackupValidated": false
+}

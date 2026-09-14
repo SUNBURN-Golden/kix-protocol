@@ -35,6 +35,8 @@ jobs:
         run: .venv/bin/python scripts/verify_runtime.py
       - name: Public journey on a disposable local chain
         run: .venv/bin/python scripts/run_localnet.py
+      - name: Paid resale with actual Sui and independent mock PG and bank
+        run: .venv/bin/python scripts/run_localnet.py --paid
       - name: Generate fixture proving artifacts
         run: npm --prefix reference/v0.3-rc1/client run setup:zk
       - name: Reject compensated proofs with contributed keys

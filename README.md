@@ -2,7 +2,7 @@
 
 티켓의 발행·구매·공식 리셀·입장·환불·배분·정산을 연결하는 프로토콜 연구·개발 저장소다.
 
-현재 개발 기준은 **v0.3-rc1 + ZK 설정·권리 현재성 보완(2026-09-13)**이다. KIX는 예매·리셀·검표·금융·마케팅 서비스가 연결하는 티켓 권리·거래·정산 프로토콜이다.
+현재 개발 기준은 **v0.3-rc1 + ZK 설정·권리 현재성 보완 + 첫 유상 리셀 통합(2026-09-14)**이다. KIX는 예매·리셀·검표·금융·마케팅 서비스가 연결하는 티켓 권리·거래·정산 프로토콜이다.
 
 기준 커밋 `2658a43`의 Groth16 설정에는 회로별 기여가 빠져 있었다. 당시 공개 증명·검증키만으로 공개 입력과 증명을 함께 조정해 검증을 통과하는 결함을 재현했다. 이 브랜치는 회로별 기여·검증, 기존 키 거절, 조작 증명과 폐기·취소 경계의 회귀 검사를 추가한다. 과거 검증 수락 기록을 보안 보장으로 해석하지 않는다. [보완 결과](docs/PROTOCOL_HARDENING.md)를 먼저 읽는다.
 
@@ -26,6 +26,7 @@ bash scripts/bootstrap.sh
 source scripts/env.sh
 python scripts/verify_runtime.py
 python scripts/run_localnet.py
+python scripts/run_localnet.py --paid
 ```
 
 실제 Groth16 생성·검증을 포함하는 비공개 경로:
@@ -42,9 +43,10 @@ GitHub에서 **Code → Codespaces → Create codespace on main**으로 같은 �
 
 | 확인 항목 | 이번 실제 결과 |
 |---|---|
-| Python 합성 검사 / Node 오프라인 검사 | 88개 / 4개 통과 |
+| Python 모형·내구성 검사 / Node 오프라인 검사 | 96개 / 4개 통과 |
 | Sui Move / ZK 회로 | Move 검사 3개 통과, 회로 2개 컴파일 |
 | 공개 경로 | 발행·이전 후 별도 프로세스 복구·소비, 이전 소유자·중복 사용 거절 |
+| 유상 리셀 연결 | 실제 Sui 이전·실패 영수증과 독립 모의 PG·은행 연결. 응답 유실·중복·취소 중 늦은 지급 3개 경로 |
 | 비공개 경로 | 노트 생성·소비 증명 생성, Sui의 Groth16 검증 수락 |
 | 비공개 오류 경로 | 다른 검표 문맥·다른 검증키 객체·중복 소비가 실제 체인에서 거절됨 |
 
@@ -61,5 +63,6 @@ GitHub에서 **Code → Codespaces → Create codespace on main**으로 같은 �
 - [rc1 이후 소스 수정](docs/runtime-changes-from-rc1.patch)
 - [후속 개발 계획](docs/ROADMAP.md)
 - [프로토콜 통합의 다음 구현 계약](docs/PROTOCOL_INTEGRATION_NEXT.md)
+- [첫 유상 리셀 통합과 남은 범위](docs/PAID_INTEGRATION.md)
 
 개인키·백업 비밀번호·비공개 노트·시험용 proving key·로컬 체인 DB는 추적하지 않는다. 공개 배포용 라이선스는 부여하지 않았다.

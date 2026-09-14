@@ -1,0 +1,12 @@
+{
+  "README.md": "e7203a097957acea0d838ba939799b47c5e461e89b43d78c381215fedd173900",
+  "build-verification.json": "4dcb2ef524e67c7d7a92e9895803461d860be113cc14bcf592947ebd8a4dd04c",
+  "circuit-build.log": "c787438bb01e7fadff291d5870319e0bb62d343264c7beb40612baf88ecf0585",
+  "move-tests.log": "4993ed4cce93047af3dd3b0a234808d099a7dcf6288da2cac2839dd0e9230a65",
+  "node-offline.log": "75acdd70883a74284493d53e711e6bd9803ca0484a8232bbfd60a61e9679a4cd",
+  "paid-integration.json": "d21f0f9208b7e1ee7f8fe6678a250f95fdbf90e538849f6ca7e3c804ae5ab86d",
+  "python-tests.log": "db94c59e03aff34749f507fdd18861e8a647ebea770469616dd30af06d36708c",
+  "sdk-import.log": "26fba6288ff54f990d527c4fb78033c069aac0b32e8c2d6de5312394f5ac1bb7",
+  "source-sha256.json": "f681245e61e39370c777acd3edce4a71a7688554ac3475a8d7e599ae76c37047",
+  "storage-boundary-incident.json": "2cda49e59a14c65b7023e02bd206c3cd05b215d26ea96206e874053b41b4471a"
+}

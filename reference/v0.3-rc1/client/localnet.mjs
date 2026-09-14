@@ -114,7 +114,14 @@ if(mode==='setup') {
       gate:new LocalExecutionClient(cfg(gate,packageId,chain,'boundary-gate')),
       verifierId,changedId,rejection});
   }
-  await durableJSON(join(out,'journey-context.json'),{chain,packageId,showId,ticketId,gate:gate.toSuiAddress(),acceptedDigest:accepted.digest,private:process.env.KIX_PRIVATE==='1',verifierId,alternateVerifierId,manifestHash,privateBoundaryResults});
+  let paidIntegration=null;
+  if(process.env.KIX_PAID==='1'){
+    const {paidJourney}=await import('./localnet-paid.mjs');
+    paidIntegration=await paidJourney({issuer:new LocalExecutionClient(cfg(issuer,packageId,chain,'paid-issuer')),
+      a:new LocalExecutionClient(cfg(a,packageId,chain,'paid-seller')),b:new LocalExecutionClient(cfg(b,packageId,chain,'paid-buyer')),
+      chain,packageId,endpoint,out,changedId});
+  }
+  await durableJSON(join(out,'journey-context.json'),{chain,packageId,showId,ticketId,gate:gate.toSuiAddress(),acceptedDigest:accepted.digest,private:process.env.KIX_PRIVATE==='1',verifierId,alternateVerifierId,manifestHash,privateBoundaryResults,paidIntegration});
   // Process exits here: issuer key, coordinator memory and its clients disappear.
 } else if(mode==='recover') {
   const context=await readJSON(join(out,'journey-context.json'));
@@ -148,7 +155,7 @@ if(mode==='setup') {
   }
   await durableJSON(join(out,'journey-result.json'),{status:'PASSED_ACTUAL_LOCALNET',chain:context.chain,packageId:context.packageId,
     authority:'SUI_MOVE',coordinatorSetupProcessExited:true,kixServicesCalled:0,independentProcessRecovered:true,
-    zk:context.private,ownGas:true,oldOwner,replay,consumeDigest:used.digest,privacy,privateBoundaryResults:context.privateBoundaryResults,
+    zk:context.private,ownGas:true,oldOwner,replay,consumeDigest:used.digest,privacy,privateBoundaryResults:context.privateBoundaryResults,paidIntegration:context.paidIntegration,
     limitation:'RPC is trusted; validator/checkpoint proof verification and production KIX shutdown are not implemented.'});
 } else if(mode==='run') {
   const pass=randomBytes(32).toString('base64');

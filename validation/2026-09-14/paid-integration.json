@@ -1,0 +1,642 @@
+{
+  "status": "PASSED_ACTUAL_SUI_MOCK_MONEY",
+  "chain": "DZqYEKBBF9cKih65b8Bt4RfmDxJKNcJmNh7VCyu9Y3J",
+  "packageId": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d",
+  "coordinatorProcesses": 136,
+  "rightsAuthority": "ACTUAL_SUI_LOCALNET_TRUSTED_RPC",
+  "moneyAuthority": "INDEPENDENT_SQLITE_MOCK_PROVIDER",
+  "limitations": [
+    "existing public rights; one tracked resale per show; no paid primary issuance",
+    "mock PG/bank and injected performance completion; no real money or public authentication",
+    "RPC is trusted; no checkpoint verification",
+    "unknown absent provider operations remain query-only; no automatic retransmission",
+    "late payout cancellation leaves 114000 KRW recovery and 120000 KRW refund duty unresolved",
+    "no private resale, clean-host ZK recovery, key migration, partial bank movements or returns in this integration"
+  ],
+  "baseCommit": "a13244fe6dc07d72b314752f056612899dc544cb",
+  "runtime": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1",
+    "journalMode": "wal",
+    "synchronous": 2
+  },
+  "fullDatabaseIntegrity": {
+    "projection.sqlite": [
+      [
+        "ok"
+      ]
+    ],
+    "mock-provider.sqlite": [
+      [
+        "ok"
+      ]
+    ]
+  },
+  "cases": [
+    {
+      "scenario": "success-response-loss",
+      "transferDigest": "HjyUd6BNdgWNZFqmrzwcnKq5KZ9yxVnunY6gmbJipSPA",
+      "cancellationDigest": null,
+      "binding": {
+        "amount": 120000,
+        "buyer": "0xe558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f181264",
+        "chain": "DZqYEKBBF9cKih65b8Bt4RfmDxJKNcJmNh7VCyu9Y3J",
+        "currency": "KRW",
+        "expectedVersion": 1,
+        "expiresMs": "1789350838252",
+        "format": "kix-paid-localnet-v1",
+        "generation": 1,
+        "organizer": "0x3c969a91230190d26be0b100446326dcbcc1c15f5a757c7d0b305e2ac85dbf41",
+        "organizerBps": 200,
+        "packageId": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d",
+        "platformBps": 300,
+        "policyHash": "b084518631e5db28aecf3eebd0d88b50fdf51cf3e59da48cfdb1dc3537cd7dd7",
+        "resaleCap": 150000,
+        "seller": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+        "showId": "0x295b6eae7787780f098211724debd93d6f89f1e88d2ff08fdf628f51cb5a4a39",
+        "slot": 0,
+        "termsHash": "0d75695e6a4af0e2a92dcc537b1effc12c6efd8a20617928cdcc74afa0d5a147",
+        "ticketId": "0x5f167e4a96dc0c08e70354252c84937d836c7ae57c6d77ab32dec5afac99f470",
+        "tradeId": "paid-success-response-loss"
+      },
+      "chain": {
+        "allocation": {
+          "organizer_due": "2400",
+          "payment": [
+            197,
+            187,
+            99,
+            162,
+            109,
+            184,
+            109,
+            208,
+            163,
+            229,
+            128,
+            186,
+            39,
+            118,
+            102,
+            204,
+            254,
+            42,
+            197,
+            98,
+            24,
+            13,
+            85,
+            186,
+            248,
+            239,
+            43,
+            222,
+            83,
+            155,
+            106,
+            190
+          ],
+          "platform_due": "3600",
+          "seller": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+          "seller_due": "114000",
+          "show": "0x295b6eae7787780f098211724debd93d6f89f1e88d2ff08fdf628f51cb5a4a39",
+          "ticket": "0x5f167e4a96dc0c08e70354252c84937d836c7ae57c6d77ab32dec5afac99f470",
+          "total": "120000"
+        },
+        "bindingHash": "a9115b338a72959598fc8f53ce89798c7ab646b4bdda0ff0a9b8b5e2bf0c7840",
+        "change": {
+          "holder": "0xe558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f181264",
+          "kind": 1,
+          "show": "0x295b6eae7787780f098211724debd93d6f89f1e88d2ff08fdf628f51cb5a4a39",
+          "state": 0,
+          "ticket": "0x5f167e4a96dc0c08e70354252c84937d836c7ae57c6d77ab32dec5afac99f470",
+          "version": "2"
+        },
+        "digest": "HjyUd6BNdgWNZFqmrzwcnKq5KZ9yxVnunY6gmbJipSPA",
+        "observedAt": "2026-09-14T01:44:05.881Z",
+        "raw": {
+          "digest": "HjyUd6BNdgWNZFqmrzwcnKq5KZ9yxVnunY6gmbJipSPA",
+          "events": [
+            {
+              "bcs": "295b6eae7787780f098211724debd93d6f89f1e88d2ff08fdf628f51cb5a4a395f167e4a96dc0c08e70354252c84937d836c7ae57c6d77ab32dec5afac99f47020c5bb63a26db86dd0a3e580ba277666ccfe2ac562180d55baf8ef2bde539b6abe15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05c0d401000000000050bd0100000000006009000000000000100e000000000000",
+              "type": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d::rights::Allocation"
+            },
+            {
+              "bcs": "295b6eae7787780f098211724debd93d6f89f1e88d2ff08fdf628f51cb5a4a395f167e4a96dc0c08e70354252c84937d836c7ae57c6d77ab32dec5afac99f470020000000000000000e558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f18126401",
+              "type": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d::rights::Change"
+            }
+          ],
+          "status": {
+            "error": null,
+            "success": true
+          }
+        },
+        "rawHash": "9374b7aff832833775878e1cab268deedc8168cb1cfb913bbd3bea19c2eb51f3",
+        "source": "ACTUAL_SUI_LOCALNET_TRUSTED_RPC",
+        "state": "EXECUTED_SUCCESS",
+        "storageBoundary": {
+          "fileIdentityChanged": false,
+          "reopenedAfterChild": true
+        }
+      },
+      "trade": {
+        "id": "paid-success-response-loss",
+        "kind": "RESALE",
+        "status": "COMMITTED",
+        "captured": true,
+        "paymentId": "mock-4c8c7c32261ea14c5238fe1acb2323bbd323a54d73cd3ff67044600a7022c702",
+        "amount": 120000,
+        "currency": "KRW",
+        "settled": 120000,
+        "settlementGross": 120000,
+        "refundDue": 0,
+        "refunded": 0,
+        "reversalRequested": false,
+        "reversalPlanned": false,
+        "allocations": [
+          {
+            "amount": 114000,
+            "id": "paid-success-response-loss-0",
+            "paid": 114000,
+            "payee": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+            "recovered": 0,
+            "returned": 0
+          },
+          {
+            "amount": 2400,
+            "id": "paid-success-response-loss-1",
+            "paid": 2400,
+            "payee": "0x3c969a91230190d26be0b100446326dcbcc1c15f5a757c7d0b305e2ac85dbf41",
+            "recovered": 0,
+            "returned": 0
+          },
+          {
+            "amount": 3600,
+            "id": "paid-success-response-loss-2",
+            "paid": 3600,
+            "payee": "platform",
+            "recovered": 0,
+            "returned": 0
+          }
+        ]
+      },
+      "right": {
+        "owner": "0xe558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f181264",
+        "state": "ACTIVE",
+        "rightsVersion": 2
+      },
+      "effects": {
+        "paid-success-response-loss-1": {
+          "kind": "PAYOUT",
+          "amount": 2400,
+          "currency": "KRW",
+          "beneficiary": "0x3c969a91230190d26be0b100446326dcbcc1c15f5a757c7d0b305e2ac85dbf41",
+          "state": "DONE",
+          "sent": true,
+          "confirmedAmount": 2400,
+          "fundsAmount": 2400,
+          "appliedAmount": 2400,
+          "providerOperationId": "mock-1ded39825324ba76968ea68864a8a580fed224fee71322e697f3d27d20f51db7",
+          "idempotencyKey": "b6e17f097a2d31a190b225a0f9c87431542b5f1a21b04b314dfded6efa34865b",
+          "requestHash": "0c1c57eaede098ee6d786f3df05859e64814e3185a7313846a7724bf87e8ec52"
+        },
+        "paid-success-response-loss-2": {
+          "kind": "PAYOUT",
+          "amount": 3600,
+          "currency": "KRW",
+          "beneficiary": "platform",
+          "state": "DONE",
+          "sent": true,
+          "confirmedAmount": 3600,
+          "fundsAmount": 3600,
+          "appliedAmount": 3600,
+          "providerOperationId": "mock-cade56f9843ef1a6d02a2c02dad6948df8d8a94aff4e236560bd2d74d560648a",
+          "idempotencyKey": "16e4afcffebf0e518c06b4cb6c846347e196ed0d5033ed32ecd59d299704c844",
+          "requestHash": "16bd2477c27a490304da7e716e7f65afd067d7501ec18cef8f79dfbe5c335136"
+        },
+        "paid-success-response-loss-seller": {
+          "kind": "PAYOUT",
+          "amount": 114000,
+          "currency": "KRW",
+          "beneficiary": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+          "state": "DONE",
+          "sent": true,
+          "confirmedAmount": 114000,
+          "fundsAmount": 114000,
+          "appliedAmount": 114000,
+          "providerOperationId": "mock-c83265e36f13f338561ca5639ac023cbf1ce5500f5ae0283253dc320dbb7b110",
+          "idempotencyKey": "8fefb1c40131be45f5f6e7b2bd2a65b847d71ab4104aba56dfcb3eb93711f982",
+          "requestHash": "e5e35f6292c441e1084d5817ead91eedfd6219bed1e2a5468fe1eb9931496a6e"
+        }
+      },
+      "globalBalancesAtScenarioEnd": {
+        "funds:955d0820d9a27689c8acbd181b53ee299565e889643d3781759030afe44383b9": 0,
+        "held:paid-success-response-loss": 0,
+        "in_transit:paid-success-response-loss-1": 0,
+        "in_transit:paid-success-response-loss-2": 0,
+        "in_transit:paid-success-response-loss-seller": 0,
+        "payable:paid-success-response-loss-0": 0,
+        "payable:paid-success-response-loss-1": 0,
+        "payable:paid-success-response-loss-2": 0,
+        "pg:paid-success-response-loss": 0
+      },
+      "journalEntries": 11
+    },
+    {
+      "scenario": "cancel-before-transfer",
+      "transferDigest": "EEiFHKVH6FJMDXiWXypfvTqAGWJmsCffeERPohQggYaX",
+      "cancellationDigest": "971Lv3JtsiE5B499auDPQHUAhYLaFwyY4y87LCvMdscX",
+      "binding": {
+        "amount": 120000,
+        "buyer": "0xe558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f181264",
+        "chain": "DZqYEKBBF9cKih65b8Bt4RfmDxJKNcJmNh7VCyu9Y3J",
+        "currency": "KRW",
+        "expectedVersion": 1,
+        "expiresMs": "1789350854697",
+        "format": "kix-paid-localnet-v1",
+        "generation": 1,
+        "organizer": "0x3c969a91230190d26be0b100446326dcbcc1c15f5a757c7d0b305e2ac85dbf41",
+        "organizerBps": 200,
+        "packageId": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d",
+        "platformBps": 300,
+        "policyHash": "b084518631e5db28aecf3eebd0d88b50fdf51cf3e59da48cfdb1dc3537cd7dd7",
+        "resaleCap": 150000,
+        "seller": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+        "showId": "0x309c03dc3a6545137c0331fa508547c92c042295b20f62314da64f49ae3e4762",
+        "slot": 0,
+        "termsHash": "57f7b5997d23fe110e42e1924ade7208aeb238cc5505171ee83b5ecb1049e11f",
+        "ticketId": "0x497cd9268337b693bdad0e89347c7a1d417d8cb80c4a8c2f1dddcb6da659c699",
+        "tradeId": "paid-cancel-before-transfer"
+      },
+      "chain": {
+        "bindingHash": "29a54e4f99d830611d531ac66a2f0aa7dcf2d8ba90ca1ec5e6c84376af4421e2",
+        "compensationFence": "SHOW_CLOSED_UNTRANSFERRED",
+        "digest": "EEiFHKVH6FJMDXiWXypfvTqAGWJmsCffeERPohQggYaX",
+        "observedAt": "2026-09-14T01:44:22.578Z",
+        "raw": {
+          "digest": "EEiFHKVH6FJMDXiWXypfvTqAGWJmsCffeERPohQggYaX",
+          "events": [],
+          "status": {
+            "error": {
+              "$kind": "MoveAbort",
+              "MoveAbort": {
+                "abortCode": "1",
+                "location": {
+                  "function": 2,
+                  "functionName": "live",
+                  "instruction": 21,
+                  "module": "rights",
+                  "package": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d"
+                }
+              },
+              "command": 0,
+              "message": "MoveAbort in 1st command, abort code: 1, in '0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d::rights::live' (instruction 21)"
+            },
+            "success": false
+          }
+        },
+        "rawHash": "56c02035b60a68acdc4af96f3899dfd2d667c0c7a2e51485c9ecf912de619d58",
+        "source": "ACTUAL_SUI_LOCALNET_TRUSTED_RPC",
+        "state": "EXECUTED_FAILURE",
+        "storageBoundary": {
+          "fileIdentityChanged": false,
+          "reopenedAfterChild": true
+        }
+      },
+      "trade": {
+        "id": "paid-cancel-before-transfer",
+        "kind": "RESALE",
+        "status": "VOID",
+        "captured": true,
+        "paymentId": "mock-158978fef5a25e331db39f0b83fa12b877522a2ba9fec92414ef81d52095ed8d",
+        "amount": 120000,
+        "currency": "KRW",
+        "settled": 120000,
+        "settlementGross": 120000,
+        "refundDue": 120000,
+        "refunded": 120000,
+        "reversalRequested": true,
+        "reversalPlanned": true,
+        "allocations": []
+      },
+      "right": {
+        "owner": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+        "state": "VOID",
+        "rightsVersion": 2
+      },
+      "effects": {
+        "paid-cancel-before-transfer-refund": {
+          "kind": "REFUND",
+          "amount": 120000,
+          "currency": "KRW",
+          "beneficiary": "0xe558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f181264",
+          "state": "DONE",
+          "sent": true,
+          "confirmedAmount": 120000,
+          "fundsAmount": 120000,
+          "appliedAmount": 120000,
+          "providerOperationId": "mock-d7dce899477b272db53e0346600cc7e97fba6535d792d171550003a00a473081",
+          "idempotencyKey": "d09933df20a01b3045e873d11d03dac71655bec4db15965c84d20f23fabba970",
+          "requestHash": "7014cf8db1bdf2fa3a4d0d6dc6704439d2e98331d95830943a3f7d34aa36632d"
+        }
+      },
+      "globalBalancesAtScenarioEnd": {
+        "funds:23f50acd52d52e7d11c124b8146f2d9f38bcc5b998de495cdec29a097ba17a7d": 0,
+        "funds:955d0820d9a27689c8acbd181b53ee299565e889643d3781759030afe44383b9": 0,
+        "held:paid-cancel-before-transfer": 0,
+        "held:paid-success-response-loss": 0,
+        "in_transit:paid-cancel-before-transfer-refund": 0,
+        "in_transit:paid-success-response-loss-1": 0,
+        "in_transit:paid-success-response-loss-2": 0,
+        "in_transit:paid-success-response-loss-seller": 0,
+        "payable:paid-success-response-loss-0": 0,
+        "payable:paid-success-response-loss-1": 0,
+        "payable:paid-success-response-loss-2": 0,
+        "pg:paid-cancel-before-transfer": 0,
+        "pg:paid-success-response-loss": 0,
+        "refund:paid-cancel-before-transfer": 0,
+        "refund_classification:paid-cancel-before-transfer": 0
+      },
+      "journalEntries": 17
+    },
+    {
+      "scenario": "cancel-during-payout",
+      "transferDigest": "EgBKCtpMPQsZhFJsZ41eU22b7U1AfxMGaCTnM6WWaRkp",
+      "cancellationDigest": "AzKrk3n5kxwBzuCiUqTknPDa9eJy43sKaDtXNHUU7KtX",
+      "binding": {
+        "amount": 120000,
+        "buyer": "0xe558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f181264",
+        "chain": "DZqYEKBBF9cKih65b8Bt4RfmDxJKNcJmNh7VCyu9Y3J",
+        "currency": "KRW",
+        "expectedVersion": 1,
+        "expiresMs": "1789350866448",
+        "format": "kix-paid-localnet-v1",
+        "generation": 1,
+        "organizer": "0x3c969a91230190d26be0b100446326dcbcc1c15f5a757c7d0b305e2ac85dbf41",
+        "organizerBps": 200,
+        "packageId": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d",
+        "platformBps": 300,
+        "policyHash": "b084518631e5db28aecf3eebd0d88b50fdf51cf3e59da48cfdb1dc3537cd7dd7",
+        "resaleCap": 150000,
+        "seller": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+        "showId": "0xf23218ca0ceee3458d229e9dce1110c10ac34e296e626020968278c762b71833",
+        "slot": 0,
+        "termsHash": "7852889cfab127f6fc2ab2eb4fb742be55c71c8058f73d6fff1f60a24741b7e7",
+        "ticketId": "0xfb173c3858ee51d199c12b36b50aeeaf1782dd5ea3958bd9097ea53dfda8cbf1",
+        "tradeId": "paid-cancel-during-payout"
+      },
+      "chain": {
+        "allocation": {
+          "organizer_due": "2400",
+          "payment": [
+            21,
+            89,
+            203,
+            74,
+            37,
+            18,
+            38,
+            158,
+            56,
+            112,
+            148,
+            169,
+            57,
+            21,
+            132,
+            241,
+            123,
+            236,
+            229,
+            101,
+            33,
+            162,
+            195,
+            81,
+            129,
+            206,
+            61,
+            15,
+            123,
+            71,
+            43,
+            21
+          ],
+          "platform_due": "3600",
+          "seller": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+          "seller_due": "114000",
+          "show": "0xf23218ca0ceee3458d229e9dce1110c10ac34e296e626020968278c762b71833",
+          "ticket": "0xfb173c3858ee51d199c12b36b50aeeaf1782dd5ea3958bd9097ea53dfda8cbf1",
+          "total": "120000"
+        },
+        "bindingHash": "d575c60bc50accb3c058b7e0b316c46d17b8b11fa4b23616c8d3e4291881a5b8",
+        "change": {
+          "holder": "0xe558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f181264",
+          "kind": 1,
+          "show": "0xf23218ca0ceee3458d229e9dce1110c10ac34e296e626020968278c762b71833",
+          "state": 0,
+          "ticket": "0xfb173c3858ee51d199c12b36b50aeeaf1782dd5ea3958bd9097ea53dfda8cbf1",
+          "version": "2"
+        },
+        "digest": "EgBKCtpMPQsZhFJsZ41eU22b7U1AfxMGaCTnM6WWaRkp",
+        "observedAt": "2026-09-14T01:44:32.602Z",
+        "raw": {
+          "digest": "EgBKCtpMPQsZhFJsZ41eU22b7U1AfxMGaCTnM6WWaRkp",
+          "events": [
+            {
+              "bcs": "f23218ca0ceee3458d229e9dce1110c10ac34e296e626020968278c762b71833fb173c3858ee51d199c12b36b50aeeaf1782dd5ea3958bd9097ea53dfda8cbf1201559cb4a2512269e387094a9391584f17bece56521a2c35181ce3d0f7b472b1515b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05c0d401000000000050bd0100000000006009000000000000100e000000000000",
+              "type": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d::rights::Allocation"
+            },
+            {
+              "bcs": "f23218ca0ceee3458d229e9dce1110c10ac34e296e626020968278c762b71833fb173c3858ee51d199c12b36b50aeeaf1782dd5ea3958bd9097ea53dfda8cbf1020000000000000000e558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f18126401",
+              "type": "0x77ff53307b610de47747d47b067e2d5957c2882e07c323a3274550092679156d::rights::Change"
+            }
+          ],
+          "status": {
+            "error": null,
+            "success": true
+          }
+        },
+        "rawHash": "e5a5d615f663820ef263de2900a88c070afb32edd9acf14ef3cf78a5ae146ecb",
+        "source": "ACTUAL_SUI_LOCALNET_TRUSTED_RPC",
+        "state": "EXECUTED_SUCCESS",
+        "storageBoundary": {
+          "fileIdentityChanged": false,
+          "reopenedAfterChild": true
+        }
+      },
+      "trade": {
+        "id": "paid-cancel-during-payout",
+        "kind": "RESALE",
+        "status": "COMMITTED",
+        "captured": true,
+        "paymentId": "mock-3e192f16d3552bcb4f604a3597fdf0bf50bfa05fad854b21c31d1b6de8676176",
+        "amount": 120000,
+        "currency": "KRW",
+        "settled": 120000,
+        "settlementGross": 120000,
+        "refundDue": 120000,
+        "refunded": 0,
+        "reversalRequested": true,
+        "reversalPlanned": true,
+        "allocations": [
+          {
+            "amount": 114000,
+            "id": "paid-cancel-during-payout-0",
+            "paid": 114000,
+            "payee": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+            "recovered": 0,
+            "returned": 0
+          },
+          {
+            "amount": 2400,
+            "id": "paid-cancel-during-payout-1",
+            "paid": 0,
+            "payee": "0x3c969a91230190d26be0b100446326dcbcc1c15f5a757c7d0b305e2ac85dbf41",
+            "recovered": 0,
+            "returned": 0
+          },
+          {
+            "amount": 3600,
+            "id": "paid-cancel-during-payout-2",
+            "paid": 0,
+            "payee": "platform",
+            "recovered": 0,
+            "returned": 0
+          }
+        ]
+      },
+      "right": {
+        "owner": "0xe558f125f7303f6528d860ff1bb9e268192fb5e1184e585557e3ca959f181264",
+        "state": "VOID",
+        "rightsVersion": 3
+      },
+      "effects": {
+        "paid-cancel-during-payout-seller": {
+          "kind": "PAYOUT",
+          "amount": 114000,
+          "currency": "KRW",
+          "beneficiary": "0x15b70f5446105f6f6e79b774043d12e3749883700002abc6a919be3bc8053f05",
+          "state": "DONE",
+          "sent": true,
+          "confirmedAmount": 114000,
+          "fundsAmount": 114000,
+          "appliedAmount": 114000,
+          "providerOperationId": "mock-59e13d34966d1e2bb4fa603a37d028462dd6fe1c3be97429494545c60253033d",
+          "idempotencyKey": "8d231af4ac8d5d795f11f9de3e1e55848f16b670abcf8228a1cab373f7a0502e",
+          "requestHash": "e94fda2ee41e90ccee34903cedb8de5ea8ddc5bf56c4cbe11242fc601d9bc33a"
+        }
+      },
+      "globalBalancesAtScenarioEnd": {
+        "funds:23f50acd52d52e7d11c124b8146f2d9f38bcc5b998de495cdec29a097ba17a7d": 0,
+        "funds:955d0820d9a27689c8acbd181b53ee299565e889643d3781759030afe44383b9": 0,
+        "funds:c786a206be5e533c4874175d152cba1ca7dc619770ac0c3e074ed48c8554bb96": 6000,
+        "held:paid-cancel-before-transfer": 0,
+        "held:paid-cancel-during-payout": 0,
+        "held:paid-success-response-loss": 0,
+        "in_transit:paid-cancel-before-transfer-refund": 0,
+        "in_transit:paid-cancel-during-payout-seller": 0,
+        "in_transit:paid-success-response-loss-1": 0,
+        "in_transit:paid-success-response-loss-2": 0,
+        "in_transit:paid-success-response-loss-seller": 0,
+        "payable:paid-cancel-during-payout-0": 0,
+        "payable:paid-cancel-during-payout-1": 0,
+        "payable:paid-cancel-during-payout-2": 0,
+        "payable:paid-success-response-loss-0": 0,
+        "payable:paid-success-response-loss-1": 0,
+        "payable:paid-success-response-loss-2": 0,
+        "pg:paid-cancel-before-transfer": 0,
+        "pg:paid-cancel-during-payout": 0,
+        "pg:paid-success-response-loss": 0,
+        "recoverable:paid-cancel-during-payout-0": 114000,
+        "refund:paid-cancel-before-transfer": 0,
+        "refund:paid-cancel-during-payout": -120000,
+        "refund_classification:paid-cancel-before-transfer": 0,
+        "refund_classification:paid-cancel-during-payout": 0
+      },
+      "journalEntries": 28
+    }
+  ],
+  "providerOperations": [
+    {
+      "key": "083a52c3e1e605b228eade539821073080c6064747eecca87efcd6bc5d13f388",
+      "operationId": "mock-3e192f16d3552bcb4f604a3597fdf0bf50bfa05fad854b21c31d1b6de8676176",
+      "kind": "CAPTURE",
+      "status": "SUCCESS",
+      "economicExecutions": 1,
+      "submitCalls": 2,
+      "funds": false,
+      "settlement": true
+    },
+    {
+      "key": "16e4afcffebf0e518c06b4cb6c846347e196ed0d5033ed32ecd59d299704c844",
+      "operationId": "mock-cade56f9843ef1a6d02a2c02dad6948df8d8a94aff4e236560bd2d74d560648a",
+      "kind": "PAYOUT",
+      "status": "SUCCESS",
+      "economicExecutions": 1,
+      "submitCalls": 1,
+      "funds": true,
+      "settlement": false
+    },
+    {
+      "key": "8d231af4ac8d5d795f11f9de3e1e55848f16b670abcf8228a1cab373f7a0502e",
+      "operationId": "mock-59e13d34966d1e2bb4fa603a37d028462dd6fe1c3be97429494545c60253033d",
+      "kind": "PAYOUT",
+      "status": "SUCCESS",
+      "economicExecutions": 1,
+      "submitCalls": 1,
+      "funds": true,
+      "settlement": false
+    },
+    {
+      "key": "8fefb1c40131be45f5f6e7b2bd2a65b847d71ab4104aba56dfcb3eb93711f982",
+      "operationId": "mock-c83265e36f13f338561ca5639ac023cbf1ce5500f5ae0283253dc320dbb7b110",
+      "kind": "PAYOUT",
+      "status": "SUCCESS",
+      "economicExecutions": 1,
+      "submitCalls": 1,
+      "funds": true,
+      "settlement": false
+    },
+    {
+      "key": "b684b0defc2ec0765757705ee618eaa601236e93d3559360942808b28ec32bfe",
+      "operationId": "mock-158978fef5a25e331db39f0b83fa12b877522a2ba9fec92414ef81d52095ed8d",
+      "kind": "CAPTURE",
+      "status": "SUCCESS",
+      "economicExecutions": 1,
+      "submitCalls": 2,
+      "funds": false,
+      "settlement": true
+    },
+    {
+      "key": "b6e17f097a2d31a190b225a0f9c87431542b5f1a21b04b314dfded6efa34865b",
+      "operationId": "mock-1ded39825324ba76968ea68864a8a580fed224fee71322e697f3d27d20f51db7",
+      "kind": "PAYOUT",
+      "status": "SUCCESS",
+      "economicExecutions": 1,
+      "submitCalls": 1,
+      "funds": true,
+      "settlement": false
+    },
+    {
+      "key": "d09933df20a01b3045e873d11d03dac71655bec4db15965c84d20f23fabba970",
+      "operationId": "mock-d7dce899477b272db53e0346600cc7e97fba6535d792d171550003a00a473081",
+      "kind": "REFUND",
+      "status": "SUCCESS",
+      "economicExecutions": 1,
+      "submitCalls": 1,
+      "funds": true,
+      "settlement": false
+    },
+    {
+      "key": "e5e618cb2bba843db240807fe7e22b299ded9ea13b4aceb35cc00d07813e6f38",
+      "operationId": "mock-4c8c7c32261ea14c5238fe1acb2323bbd323a54d73cd3ff67044600a7022c702",
+      "kind": "CAPTURE",
+      "status": "SUCCESS",
+      "economicExecutions": 1,
+      "submitCalls": 2,
+      "funds": false,
+      "settlement": true
+    }
+  ]
+}
