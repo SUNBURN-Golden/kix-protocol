@@ -95,6 +95,7 @@ class StorageReceipt:
         self.pending_path = self.directory / "storage-command-pending.json"
         self.lock = None
         self.previous = None
+        self.archive = None
 
     def __enter__(self):
         self.directory.mkdir(parents=True, exist_ok=True)
@@ -108,6 +109,8 @@ class StorageReceipt:
         return self
 
     def begin(self):
+        from paid_archive import Archive, ensure_live
+        ensure_live(self.directory)
         if self.pending_path.exists():
             raise StorageFault("STORAGE_RECOVERY_REQUIRED:UNFINISHED_COMMAND")
         existing = any((self.directory / name).exists() for name in DATABASES)
@@ -124,8 +127,19 @@ class StorageReceipt:
                 raise StorageFault("STORAGE_RECOVERY_REQUIRED:ACKNOWLEDGED_STATE_CHANGED")
         elif existing:
             raise StorageFault("STORAGE_RECOVERY_REQUIRED:UNTRACKED_DATABASE")
+        self.archive = Archive.for_source(self.directory, self.request.get('archive'))
+        if self.archive:
+            self.archive.check()
         write_atomic(self.pending_path, dict(format="kix-local-storage-pending-v1", requestHash=self.request_hash,
                      request=self.request, previousReceiptHash=digest(self.previous) if self.previous else None))
+        self._archive_checkpoint('COMMAND_INTENT')
+
+    def _archive_checkpoint(self, boundary):
+        if self.archive:
+            try:
+                return self.archive.publish(boundary)
+            except (OSError, ValueError, Rejected, sqlite3.Error) as error:
+                raise StorageFault('ARCHIVE_CHECKPOINT_REQUIRED:'+str(error)) from error
 
     def before_effect_submit(self, coordinator, eid, permit):
         """Durable boundary evidence, written BEFORE the first provider call.
@@ -143,6 +157,7 @@ class StorageReceipt:
             providerRows=coordinator.provider.db.execute('SELECT * FROM operations ORDER BY key').fetchall(),
             replayUntil=time.time()+3600, boundary='BEFORE_PROVIDER_CALL')
         write_atomic(self.pending_path, pending)
+        self._archive_checkpoint('BEFORE_PROVIDER_CALL')
 
     def finish(self, coordinator):
         if not self.pending_path.exists():
@@ -156,6 +171,7 @@ class StorageReceipt:
         write_atomic(self.receipt_path, receipt)
         self.pending_path.unlink()
         sync_directory(self.directory)
+        self._archive_checkpoint('COMMAND_ACK')
         return dict(sequence=receipt["sequence"], receiptHash=digest(receipt))
 
     def __exit__(self, *_):

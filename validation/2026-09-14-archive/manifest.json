@@ -1,0 +1,32 @@
+{
+  "baseCommit": "f2a370dd55c29d7b3403e3872489bd965e38411e",
+  "checks": 141,
+  "runtimes": [
+    {
+      "python": "3.12.14",
+      "sqlite": "3.53.1"
+    },
+    {
+      "python": "3.12.3",
+      "sqlite": "3.45.1"
+    }
+  ],
+  "chainInLocalEvidence": "SYNTHETIC",
+  "money": "MOCK",
+  "sourceSha256": {
+    "reference/v0.3-rc1/paid_archive.py": "26aef09b3a7f228228f478ada0c0154a71fc571aaa939a3abac382728755a580",
+    "reference/v0.3-rc1/archive_driver.py": "91c1c903c8a51403441e7191be6f1a58f53f5c5e468d8ad0962cd7d8dd60cc3c",
+    "reference/v0.3-rc1/storage_receipt.py": "58b42a872f5d4be96b2da0c28ce272ef53585db2c50eca30d021dc12f6bdcbb2",
+    "reference/v0.3-rc1/paid_recovery.py": "5a4d734a23b302db6c024c36d3a2e2822523d2bef3f84b66caaba6af555600fc",
+    "reference/v0.3-rc1/test_paid_archive.py": "9c79d3ed0792339283c8f6cc0e1a936fa4e4bfc0e34420cc688861c9aac74a64",
+    "reference/v0.3-rc1/client/archive-fixture.mjs": "2ef44a3ad48c1046e19fa81660a2f92d658478f3f6f2c52b6b18d2b6a09be689",
+    "reference/v0.3-rc1/client/localnet-paid.mjs": "55e65c94f19e0c21a3d0d0994cfcf017eea419475ac7e10653a703382978331e",
+    "scripts/verify_paid_archive.py": "ec93b983f2578f89eb7d5fd91527ef9502aade03be7852cc3a1173746a6e45f8",
+    ".github/workflows/protocol.yml": "41ebb0906ac6185fbe6fdeecd9d3026cea47b018db450ce514e6110a8c6fd08e"
+  },
+  "artifactSha256": {
+    "python-default.log": "4113d3d36dfe0187171601c78887d869f7d59f15efeca1c3b61e9c67f58283df",
+    "python-system.log": "3298e4c2cbb2666e4651627f09f5baeae332c998fc99bae2f6513c7b885a3809",
+    "paid-archive.json": "90da2e31a19ade5677b84833421a37ae522f8e708dff080f64ee03792c7a6152"
+  }
+}

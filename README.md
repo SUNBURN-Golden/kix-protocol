@@ -67,3 +67,7 @@ GitHub에서 **검토하려는 PR의 브랜치를 선택한 뒤 Code → Codespa
 - [저장 기록 유실 조사와 지급 판단 차단](docs/STORAGE_INVESTIGATION.md)
 
 개인키·백업 비밀번호·비공개 노트·시험용 proving key·로컬 체인 DB는 추적하지 않는다. 공개 배포용 라이선스는 부여하지 않았다.
+
+## S05: separate-filesystem archive and reconciliation-only restore
+
+The follow-up to PR #4 adds separate-filesystem checkpoints and restoration after loss of the original working directory. Restored workspaces cannot submit money. The live mock provider is queried separately; its historical backup never replaces it. See [scope and commands](docs/PAID_ARCHIVE.md) and [blueprint 1.3](docs/BLUEPRINT_20260914.md). The local Python suite now has 141 checks. Whole-host loss, remote durability and the historical storage incident root cause remain unverified.

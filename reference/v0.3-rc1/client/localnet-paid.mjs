@@ -6,10 +6,11 @@ import {fileURLToPath} from 'node:url';
 import {Transaction} from '@mysten/sui/transactions';
 import {durableJSON} from './backup.mjs';
 import {hash,policyFor,inspectOffer,observeSale} from './paid-chain.mjs';
+import {createArchiveFixture} from './archive-fixture.mjs';
 
 const here=fileURLToPath(new URL('.',import.meta.url));
 export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,changedId}){
-  const directory=join(out,'paid');let processCount=0;
+  const ordinaryDirectory=join(out,'paid');let directory=ordinaryDirectory;let processCount=0;
   const python=process.env.KIX_PYTHON??resolve(here,'../../../.venv/bin/python');
   function command(action,params={},expectedError=null){
     const result=spawnSync(python,[resolve(here,'../paid_driver.py')],{encoding:'utf8',timeout:60000,
@@ -25,7 +26,10 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
   const advanceEffect=(tid,eid,rest)=>advance(summary(tid).effects[eid].idempotencyKey,rest);
   const sameLedger=(before,after)=>{assert.deepEqual(after.balances,before.balances);assert.equal(after.journalEntries,before.journalEntries);};
   const results=[];
-  for(const scenario of ['success-response-loss','cancel-before-transfer','cancel-during-payout','recovery-before-call','recovery-after-call']){
+  for(const scenario of ['success-response-loss','cancel-before-transfer','cancel-during-payout','recovery-before-call','recovery-after-call','archive-before-call','archive-after-call']){
+    const archiveScenario=scenario.startsWith('archive-');
+    const archiveFixture=archiveScenario?createArchiveFixture(out,scenario,python,endpoint):null;
+    directory=archiveFixture?.directory??ordinaryDirectory;
     const recoveryScenario=scenario.startsWith('recovery-');
     const cancelledPayout=['cancel-during-payout','recovery-after-call'].includes(scenario);
     const tid='paid-'+scenario;
@@ -104,6 +108,19 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
     const allocations=summary(tid).trade.allocations;
     const eid=tid+'-seller';
     command('prepare_effect',{tid,eid,kind:'PAYOUT',amount:114000,allocation_id:allocations[0].id});
+    if(archiveScenario){
+      archiveFixture.moveProvider();
+      const point=scenario==='archive-before-call'?'before':'after';
+      const killed=spawnSync(python,[resolve(here,'../../../scripts/fault_paid_call.py'),point],{
+        encoding:'utf8',timeout:60000,input:JSON.stringify({directory,endpoint,action:'send_effect',params:{eid},archive:archiveFixture.config})});
+      processCount++;assert.equal(killed.status,91,killed.stderr+killed.stdout);
+      try{
+        const archiveEvidence=await archiveFixture.loseRestoreAndReconcile(point==='after',async()=>
+          (await issuer.call('cancel_show',t=>[t.object(showId),t.object(capId)])).digest);
+        results.push({scenario,transferDigest:digest,chainState:recovered.state,archiveEvidence});
+      }finally{archiveFixture.cleanup();}
+      continue;
+    }
     let recoveryEvidence=null;
     if(recoveryScenario){
       const point=scenario==='recovery-before-call'?'before':'after';
@@ -160,6 +177,7 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
     }
     results.push({scenario,transferDigest:digest,cancellationDigest,chainState:recovered.state,recoveryEvidence,final:summary(tid)});
   }
+  directory=ordinaryDirectory;
   const final=summary('paid-cancel-during-payout');
   assert.equal(final.provider.filter(x=>x.kind==='CAPTURE').length,5);
   assert.ok(final.provider.every(x=>x.economicExecutions===1));
@@ -170,6 +188,7 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
       'mock PG/bank and injected performance completion; no real money or public authentication',
       'RPC is trusted; no checkpoint verification',
       'explicit recovery supports witnessed interrupted first payouts only; missing witness or unsafe replay remains held',
+      'separate-filesystem archive tests working-directory loss; restored views cannot submit money; whole-host loss is untested',
       'late payout cancellation leaves 114000 KRW recovery and 120000 KRW refund duty unresolved',
       'no private resale, clean-host ZK recovery, key migration, partial bank movements or returns in this integration']};
   await durableJSON(join(out,'paid-integration-result.json'),result);return result;

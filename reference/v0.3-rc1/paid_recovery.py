@@ -165,6 +165,8 @@ class Recovery:
         return self.cases/plan_id
 
     def apply(self, plan_id):
+        from paid_archive import ensure_live
+        ensure_live(self.directory)
         with StorageReceipt(self.directory, {'action':'recovery_apply', 'planId':plan_id}):
             case = self._case(plan_id)
             journal_path = case/'journal.json'
@@ -313,6 +315,10 @@ class Recovery:
         return self._done(case, journal)
 
     def _done(self, case, journal):
+        from paid_archive import Archive
+        archive = Archive.for_source(self.directory)
+        if archive:
+            archive.publish('RECOVERY_ACK')
         journal['phase'] = 'DONE'
         write_atomic(case/'journal.json', journal)
         return journal['result']
