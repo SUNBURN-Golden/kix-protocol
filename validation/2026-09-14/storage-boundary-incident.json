@@ -1,5 +1,5 @@
 {
-  "status": "CONNECTION_BOUNDARY_MITIGATED_AND_RETESTED",
+  "status": "UNRESOLVED_NEWER_RUNTIME_EXCLUDED_FROM_PAID_FIXTURE",
   "failingConfiguration": {
     "python": "3.12.14",
     "sqlite": "3.53.1",
@@ -9,22 +9,23 @@
     "WAL database disk image is malformed",
     "saved submission absent after process restart",
     "explicit WAL checkpoint did not resolve failure",
-    "temporary rollback-journal variant encountered attempt to write a readonly database"
+    "temporary rollback-journal variant encountered attempt to write a readonly database",
+    "Committed send/dispatch records were absent on an additional run even after closing handles around the child; the pending payout appeared unsent and cancellation incorrectly planned reversal in that failed experiment"
   ],
   "controlRun": {
     "python": "3.12.3",
     "sqlite": "3.45.1",
     "result": "PASSED_ACTUAL_SUI_MOCK_MONEY"
   },
-  "finalChange": "Commit and close both database connections before Node RPC child, reopen in finally before retaining observations; keep original WAL and FULL sync",
+  "finalChange": "Keep commit/close/reopen boundary but do not claim it resolves the issue; require Python 3.12 with SQLite 3.45.1 in paid CLI and runner preflight before financial state is opened",
   "finalRun": {
     "runtime": {
-      "python": "3.12.14",
-      "sqlite": "3.53.1",
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
       "journalMode": "wal",
       "synchronous": 2
     },
-    "coordinatorProcesses": 136,
+    "coordinatorProcesses": 139,
     "result": "PASSED_ACTUAL_SUI_MOCK_MONEY",
     "integrity": {
       "projection.sqlite": [
@@ -39,7 +40,7 @@
       ]
     }
   },
-  "rootCause": "Underlying runtime mechanism not established; no SQLite library defect or inode replacement is claimed",
+  "rootCause": "Not established. The observed configuration is excluded; production storage, cross-runtime recovery and the underlying failure remain blockers.",
   "regression": "test_child_query_closes_databases_and_reopens_even_after_timeout",
   "productionStorageAndBackupValidated": false
 }

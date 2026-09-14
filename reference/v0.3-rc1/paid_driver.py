@@ -4,6 +4,7 @@ This stdin interface is trusted test administration, not a public API. Fixture
 provider controls and performance completion deliberately require that context.
 """
 import json
+import sqlite3
 import sys
 from common import Rejected
 from paid_integration import PaidCoordinator
@@ -11,6 +12,13 @@ from paid_integration import PaidCoordinator
 
 def main():
     q = json.load(sys.stdin)
+    # Acceptance runtime only. The newer task runtime lost committed state on
+    # repeated child-process runs; do not silently continue money projections
+    # under a configuration that has not passed this integration.
+    if sys.version_info[:2] != (3, 12) or sqlite3.sqlite_version != "3.45.1":
+        print(json.dumps({"ok": False, "error": "PAID_FIXTURE_REQUIRES_PYTHON_3_12_SQLITE_3_45_1",
+                          "python": sys.version.split()[0], "sqlite": sqlite3.sqlite_version}))
+        return 2
     c = PaidCoordinator(q["directory"], q["endpoint"])
     try:
         a, p = q["action"], q.get("params", {})

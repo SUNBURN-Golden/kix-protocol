@@ -33,6 +33,9 @@ def main():
         raise SystemExit('Run npm --prefix reference/v0.3-rc1/client run setup:zk first.')
     for port in (9000, 9123):
         with socket.socket() as test:
+            # A preceding localnet can leave TIME_WAIT connections after its
+            # process has exited. Reuse permits those, not an active listener.
+            test.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 test.bind(('127.0.0.1', port))
             except OSError:
@@ -51,7 +54,14 @@ def main():
     env['KIX_JOURNEY_DIR'] = str(run / 'journey')
     env['KIX_PRIVATE'] = '1' if args.private else '0'
     env['KIX_PAID'] = '1' if args.paid else '0'
-    env['KIX_PYTHON'] = env.get('KIX_PYTHON', sys.executable)
+    env['KIX_PYTHON'] = env.get('KIX_PYTHON', '/usr/bin/python3' if args.paid else sys.executable)
+    if args.paid:
+        # Ubuntu 24.04 system Python is the bounded integration runtime. Fail
+        # before creating a chain if a different environment is selected.
+        subprocess.run([env['KIX_PYTHON'], '-c',
+            'import sys,sqlite3; assert sys.version_info[:2]==(3,12) and sqlite3.sqlite_version=="3.45.1", '
+            '"Paid fixture requires Python 3.12 / SQLite 3.45.1"; '
+            'print("Paid fixture runtime:",sys.version.split()[0],sqlite3.sqlite_version)'], check=True, env=env)
     subprocess.run([sys.executable, str(ROOT / 'scripts/configure_local.py')], check=True)
     print('Local run: ' + str(run), flush=True)
     network = run / 'network'

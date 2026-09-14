@@ -1,8 +1,8 @@
 {
   ".github/workflows/protocol.yml": "13d14a147430256d9f014ad8559d9a1ac811f4fdbc78c9b5ae51b2a43ba77b91",
-  "scripts/run_localnet.py": "0f0934e38e5e1cc88c81cbaf2ed00507a8adcc6cd651f9c7fefb39afa7c8c4b3",
+  "scripts/run_localnet.py": "b88c566aa9e90a879a18afaba8206dd9d307e480f163da6b2894c12cb4e6bb97",
   "reference/v0.3-rc1/paid_integration.py": "13428183afa5d17584891ea8b15d3783b7d79ccc7a565c60a4be1eb90c15534a",
-  "reference/v0.3-rc1/paid_driver.py": "ceecd7a50c7e86acc75c885e5744f5df2526f42e6a631affb1d9567456660ad1",
+  "reference/v0.3-rc1/paid_driver.py": "638a4d1ecd8e89a6590e4ed25413cd0f4d3156fa0068469d305ab8faa0b5136c",
   "reference/v0.3-rc1/mock_provider.py": "ec22008417615453b42bfb319e44f2e2abc0119490796bddd3c52667d319abd7",
   "reference/v0.3-rc1/test_paid_integration.py": "18803d590175e370a9a0673103490df7e3bdeafe46c3b56974684fde0b024f51",
   "reference/v0.3-rc1/client/paid-chain.mjs": "ecaa6baefe5c83e467b2062ee705e57e724f7f582f4bb3532210ca11f58e24a9",
