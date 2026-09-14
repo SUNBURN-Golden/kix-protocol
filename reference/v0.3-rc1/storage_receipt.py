@@ -8,6 +8,7 @@ import fcntl
 import json
 import os
 import sqlite3
+import time
 from pathlib import Path
 from common import canonical, digest, Rejected
 
@@ -89,6 +90,7 @@ class StorageReceipt:
     def __init__(self, directory, request):
         self.directory = Path(directory)
         self.request_hash = digest(request)
+        self.request = request
         self.receipt_path = self.directory / "storage-receipt.json"
         self.pending_path = self.directory / "storage-command-pending.json"
         self.lock = None
@@ -123,7 +125,24 @@ class StorageReceipt:
         elif existing:
             raise StorageFault("STORAGE_RECOVERY_REQUIRED:UNTRACKED_DATABASE")
         write_atomic(self.pending_path, dict(format="kix-local-storage-pending-v1", requestHash=self.request_hash,
-                     previousReceiptHash=digest(self.previous) if self.previous else None))
+                     request=self.request, previousReceiptHash=digest(self.previous) if self.previous else None))
+
+    def before_effect_submit(self, coordinator, eid, permit):
+        """Durable boundary evidence, written BEFORE the first provider call.
+
+        No fault-injection label enters this record. Old pending records without
+        this witness stay quarantined; recovery must never invent one.
+        """
+        pending = json.loads(self.pending_path.read_text())
+        if pending['requestHash'] != self.request_hash or digest(pending.get('request')) != self.request_hash:
+            raise StorageFault('STORAGE_RECOVERY_REQUIRED:PENDING_REQUEST_CHANGED')
+        if self.request.get('action') != 'send_effect' or self.request.get('params', {}).get('eid') != eid:
+            raise StorageFault('STORAGE_RECOVERY_REQUIRED:UNSUPPORTED_RECOVERY_COMMAND')
+        pending['execution'] = dict(effectId=eid, permit=permit,
+            databases=coordinator_fingerprint(coordinator),
+            providerRows=coordinator.provider.db.execute('SELECT * FROM operations ORDER BY key').fetchall(),
+            replayUntil=time.time()+3600, boundary='BEFORE_PROVIDER_CALL')
+        write_atomic(self.pending_path, pending)
 
     def finish(self, coordinator):
         if not self.pending_path.exists():

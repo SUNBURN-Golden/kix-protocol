@@ -89,10 +89,18 @@ export async function observeSale(endpoint,b,saved){
     && Number(change.version)===b.expectedVersion+1 && change.state===0 && change.kind===1,'TRANSFER_BINDING_MISMATCH');
   return {...base,state:'EXECUTED_SUCCESS',allocation:a,change};
 }
+export async function recoveryContext(endpoint,b,saved){
+  const sale=await observeSale(endpoint,b,saved),c=clientFor(endpoint,b);
+  const current=await c.right(b.showId,b.ticketId);
+  return {bindingHash:hash(b),sale,showOpen:current.show.open,objectVersion:current.objectVersion,
+    holder:current.ticket.holder,version:current.ticket.version,
+    source:'ACTUAL_SUI_LOCALNET_TRUSTED_RPC'};
+}
 if(process.argv[1]===fileURLToPath(import.meta.url)){
   const q=JSON.parse(readFileSync(0,'utf8'));
   const result=q.action==='inspect'?await inspectOffer(q.endpoint,q.binding):q.action==='closed'?await inspectClosed(q.endpoint,q.binding):
     q.action==='open'?await inspectOpen(q.endpoint,q.binding):
+    q.action==='recovery'?await recoveryContext(q.endpoint,q.binding,q.submission):
     q.action==='observe'?await observeSale(q.endpoint,q.binding,q.submission):(()=>{throw Error('UNKNOWN_CHAIN_QUERY');})();
   console.log(JSON.stringify(result));
 }

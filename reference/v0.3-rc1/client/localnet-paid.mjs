@@ -25,7 +25,9 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
   const advanceEffect=(tid,eid,rest)=>advance(summary(tid).effects[eid].idempotencyKey,rest);
   const sameLedger=(before,after)=>{assert.deepEqual(after.balances,before.balances);assert.equal(after.journalEntries,before.journalEntries);};
   const results=[];
-  for(const scenario of ['success-response-loss','cancel-before-transfer','cancel-during-payout']){
+  for(const scenario of ['success-response-loss','cancel-before-transfer','cancel-during-payout','recovery-before-call','recovery-after-call']){
+    const recoveryScenario=scenario.startsWith('recovery-');
+    const cancelledPayout=['cancel-during-payout','recovery-after-call'].includes(scenario);
     const tid='paid-'+scenario;
     const made=await issuer.call('create_show',t=>[t.pure.u64(1),t.pure.vector('address',[issuer.keypair.toSuiAddress()]),
       t.pure.vector('address',[issuer.keypair.toSuiAddress()]),t.pure.u64(150000),t.pure.u64(200),t.pure.u64(300),t.pure.address('0x0')]);
@@ -102,11 +104,36 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
     const allocations=summary(tid).trade.allocations;
     const eid=tid+'-seller';
     command('prepare_effect',{tid,eid,kind:'PAYOUT',amount:114000,allocation_id:allocations[0].id});
-    assert.equal(command('send_effect',{eid,lose_response:true}).state,'OUTCOME_UNKNOWN');
+    let recoveryEvidence=null;
+    if(recoveryScenario){
+      const point=scenario==='recovery-before-call'?'before':'after';
+      // Fault location is an argument to the injector only, never to recovery.
+      const killed=spawnSync(python,[resolve(here,'../../../scripts/fault_paid_call.py'),point],{
+        encoding:'utf8',timeout:60000,input:JSON.stringify({directory,endpoint,action:'send_effect',params:{eid}})});
+      processCount++;assert.equal(killed.status,91,killed.stderr);
+      command('send_effect',{eid},'UNFINISHED_COMMAND');
+      let plan=command('recovery_inspect');
+      assert.equal(plan.decision,point==='before'?'REPLAY_SAME_REQUEST':'LINK_EXISTING');
+      if(point==='after'){
+        cancellationDigest=(await issuer.call('cancel_show',t=>[t.object(showId),t.object(capId)])).digest;
+        assert.equal(command('recovery_apply',{planId:plan.planId}).reason,'STALE_RECOVERY_PLAN');
+        plan=command('recovery_inspect');assert.equal(plan.decision,'LINK_EXISTING');
+      }
+      const recoveredPayout=command('recovery_apply',{planId:plan.planId});
+      assert.equal(recoveredPayout.decision,'RECOVERED');
+      assert.equal(recoveredPayout.effect.appliedAmount,0);
+      const beforeReplay=summary(tid);
+      assert.equal(command('recovery_apply',{planId:plan.planId}).replay,true);
+      sameLedger(beforeReplay,summary(tid));
+      recoveryEvidence={authorization:plan.decision,originalRequest:plan.originalRequest,
+        providerBefore:plan.providerResult,chain:plan.chain,result:recoveredPayout};
+    }else{
+      assert.equal(command('send_effect',{eid,lose_response:true}).state,'OUTCOME_UNKNOWN');
+    }
     command('send_effect',{eid});
     command('prepare_effect',{tid,eid:tid+'-duplicate',kind:'PAYOUT',amount:114000,allocation_id:allocations[0].id},'OBLIGATION_ALREADY_RESERVED');
-    if(scenario==='cancel-during-payout'){
-      cancellationDigest=(await issuer.call('cancel_show',t=>[t.object(showId),t.object(capId)])).digest;
+    if(cancelledPayout){
+      if(!cancellationDigest)cancellationDigest=(await issuer.call('cancel_show',t=>[t.object(showId),t.object(capId)])).digest;
       command('prepare_effect',{tid,eid:tid+'-closed-payout',kind:'PAYOUT',amount:2400,allocation_id:allocations[1].id},'SHOW_CLOSED_PAYOUT_BLOCKED');
       command('cancel',{tid});
       assert.equal(summary(tid).trade.refundDue,120000);assert.equal(summary(tid).trade.reversalPlanned,false);
@@ -117,7 +144,7 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
     advanceEffect(tid,eid,{funds:true});command('sync_effect',{eid});
     assert.equal(summary(tid).trade.allocations[0].paid,114000);
     const paid=summary(tid);command('sync_effect',{eid});sameLedger(paid,summary(tid));
-    if(scenario==='success-response-loss'){
+    if(!cancelledPayout){
       for(const a of allocations.slice(1)){
         const eid=a.id;command('prepare_effect',{tid,eid,kind:'PAYOUT',amount:a.amount,allocation_id:a.id});
         command('send_effect',{eid});advanceEffect(tid,eid,{status:true,funds:true});command('sync_effect',{eid});
@@ -128,10 +155,10 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
       assert.equal(summary(tid).trade.refunded,0);
       command('prepare_effect',{tid,eid:tid+'-refund',kind:'REFUND',amount:120000},'INSUFFICIENT_CONFIRMED_FUNDS');
     }
-    results.push({scenario,transferDigest:digest,cancellationDigest,chainState:recovered.state,final:summary(tid)});
+    results.push({scenario,transferDigest:digest,cancellationDigest,chainState:recovered.state,recoveryEvidence,final:summary(tid)});
   }
   const final=summary('paid-cancel-during-payout');
-  assert.equal(final.provider.filter(x=>x.kind==='CAPTURE').length,3);
+  assert.equal(final.provider.filter(x=>x.kind==='CAPTURE').length,5);
   assert.ok(final.provider.every(x=>x.economicExecutions===1));
   assert.ok(final.provider.filter(x=>x.kind!=='CAPTURE').every(x=>x.submitCalls===1));
   const result={status:'PASSED_ACTUAL_SUI_MOCK_MONEY',chain,packageId,coordinatorProcesses:processCount,
@@ -139,7 +166,7 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
     limitations:['existing public rights; one tracked resale per show; no paid primary issuance',
       'mock PG/bank and injected performance completion; no real money or public authentication',
       'RPC is trusted; no checkpoint verification',
-      'unknown absent provider operations remain query-only; no automatic retransmission',
+      'explicit recovery supports witnessed interrupted first payouts only; missing witness or unsafe replay remains held',
       'late payout cancellation leaves 114000 KRW recovery and 120000 KRW refund duty unresolved',
       'no private resale, clean-host ZK recovery, key migration, partial bank movements or returns in this integration']};
   await durableJSON(join(out,'paid-integration-result.json'),result);return result;

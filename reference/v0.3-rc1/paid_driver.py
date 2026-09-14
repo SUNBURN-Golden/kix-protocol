@@ -22,9 +22,16 @@ def main():
         return 2
     c = None
     try:
+        if q['action'] in ('recovery_inspect', 'recovery_apply'):
+            from paid_recovery import Recovery
+            recovery = Recovery(q['directory'])
+            result = recovery.inspect() if q['action'] == 'recovery_inspect' else recovery.apply(q['params']['planId'])
+            print(json.dumps({'ok': True, 'result': result}))
+            return 0
         with StorageReceipt(q["directory"], q) as receipt:
             receipt.begin()
             c = PaidCoordinator(q["directory"], q["endpoint"])
+            c.before_effect_submit = receipt.before_effect_submit
             a, p = q["action"], q.get("params", {})
             commands = {"prepare": c.prepare, "capture": c.capture, "sync_capture": c.sync_capture,
                         "record_submission": c.record_submission, "reconcile_chain": c.reconcile_chain,
@@ -48,6 +55,9 @@ def main():
             return 0 if response["ok"] else 2
     except StorageFault as error:
         print(json.dumps({"ok": False, "error": str(error)}))
+        return 2
+    except (Rejected, ConnectionError) as error:
+        print(json.dumps({'ok': False, 'error': str(error)}))
         return 2
     finally:
         if c is not None:

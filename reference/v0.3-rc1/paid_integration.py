@@ -235,6 +235,8 @@ class PaidCoordinator:
         require(permit["dispatchDecision"] == "SUBMIT_SAME_REQUEST", "NO_DISPATCH_PERMIT")
         request = json.loads(permit["requestBytes"])
         require(digest(request) == permit["requestHash"], "REQUEST_BYTES_CHANGED")
+        if getattr(self, 'before_effect_submit', None):
+            self.before_effect_submit(self, eid, permit)
         try:
             self.provider.submit(permit["idempotencyKey"], request, lose_response=lose_response)
         except ConnectionError:
