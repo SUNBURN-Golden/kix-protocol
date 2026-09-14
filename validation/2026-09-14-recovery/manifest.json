@@ -10,7 +10,7 @@
     "scripts/verify_paid_recovery.py": "f08482f261c0526fb7ce9bd33305dc360f214266c59448d50ad08778e14676ce",
     "scripts/fault_paid_call.py": "53f05d75c2601ab1040ca54be57a8a1f54f0a7a52a9fa51a8c25f668b99b4fa1",
     "reference/v0.3-rc1/client/paid-chain.mjs": "c820b7440b14d2f3fd9d867f754df18e089d25822b8f9d3a8c97b5085f14e7d5",
-    "reference/v0.3-rc1/client/localnet-paid.mjs": "7cbe6c0a975244149d9ae42680d4cdf7dbc40ecac0f448dca8ada6f912579985",
+    "reference/v0.3-rc1/client/localnet-paid.mjs": "79f5ecc842a4de52fe10f0bcfb502d48f28b531db5380886aa915c79cc8b04a3",
     "docs/PAID_RECOVERY.md": "d57b744aafdb6d3e3d913ce0a54cf0029a9567aa3c8a66229b4deb15a5043c42",
     "README.md": "3fe66543fb1fe65eeaeb0b2e734b112f88a650b20fdec2ccc456bc6389692432",
     ".github/workflows/protocol.yml": "4138bc350915f823ebdb0977797e5103c8087e864f98d733f468e42fd70854e3",

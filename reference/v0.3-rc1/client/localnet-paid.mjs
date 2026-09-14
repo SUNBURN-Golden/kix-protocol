@@ -131,7 +131,10 @@ export async function paidJourney({issuer,a,b,chain,packageId,endpoint,out,chang
       assert.equal(command('send_effect',{eid,lose_response:true}).state,'OUTCOME_UNKNOWN');
     }
     command('send_effect',{eid});
-    command('prepare_effect',{tid,eid:tid+'-duplicate',kind:'PAYOUT',amount:114000,allocation_id:allocations[0].id},'OBLIGATION_ALREADY_RESERVED');
+    // The recovery-after-call scenario already closed the show while pending.
+    // That guard precedes the reservation check; both must continue to reject.
+    command('prepare_effect',{tid,eid:tid+'-duplicate',kind:'PAYOUT',amount:114000,allocation_id:allocations[0].id},
+      cancellationDigest?'SHOW_CLOSED_PAYOUT_BLOCKED':'OBLIGATION_ALREADY_RESERVED');
     if(cancelledPayout){
       if(!cancellationDigest)cancellationDigest=(await issuer.call('cancel_show',t=>[t.object(showId),t.object(capId)])).digest;
       command('prepare_effect',{tid,eid:tid+'-closed-payout',kind:'PAYOUT',amount:2400,allocation_id:allocations[1].id},'SHOW_CLOSED_PAYOUT_BLOCKED');
