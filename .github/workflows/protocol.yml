@@ -33,6 +33,10 @@ jobs:
         run: bash scripts/bootstrap.sh
       - name: Python, SDK, Move and circuit checks
         run: .venv/bin/python scripts/verify_runtime.py
+      - name: Storage continuity and deliberate rollback probes
+        run: |
+          .venv/bin/python scripts/probe_paid_storage.py --python /usr/bin/python3 --directory .local/storage-probe --cycles 3 --report .local/verification/storage-probe.json
+          .venv/bin/python scripts/reproduce_storage_rollback.py --report .local/verification/storage-rollback.json
       - name: Public journey on a disposable local chain
         run: .venv/bin/python scripts/run_localnet.py
       - name: Paid resale with actual Sui and independent mock PG and bank

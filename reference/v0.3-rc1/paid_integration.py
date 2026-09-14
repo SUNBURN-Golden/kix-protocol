@@ -12,6 +12,7 @@ from pathlib import Path
 from common import canonical, digest, ident, require
 from core import Core
 from mock_provider import MockProvider, SCOPE
+from storage_receipt import StorageFault, coordinator_fingerprint
 
 HERE = Path(__file__).resolve().parent
 
@@ -76,6 +77,7 @@ class PaidCoordinator:
         # Persist and close before crossing a child-process/runtime boundary.
         # Never retain SQLite handles through the independent RPC process.
         require(not self.core.db.in_transaction and not self.provider.db.in_transaction, "QUERY_REQUIRES_COMMITTED_STATE")
+        expected_storage = coordinator_fingerprint(self)
         db_path = self.directory / "projection.sqlite"
         before = db_path.stat().st_ino
         self.close()
@@ -84,6 +86,8 @@ class PaidCoordinator:
                                text=True, capture_output=True, timeout=45, cwd=HERE / "client")
         finally:
             self._connect()
+            if coordinator_fingerprint(self) != expected_storage:
+                raise StorageFault("STORAGE_RECOVERY_REQUIRED:STATE_CHANGED_DURING_QUERY")
         require(r.returncode == 0, "CHAIN_ADAPTER_REJECTED:"+r.stderr[-1000:])
         result = json.loads(r.stdout)
         require(result["bindingHash"] == digest(binding), "CHAIN_ADAPTER_BINDING_MISMATCH")

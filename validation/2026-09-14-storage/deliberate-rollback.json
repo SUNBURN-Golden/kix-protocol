@@ -1,0 +1,55 @@
+{
+  "fault": "DELIBERATE_PROJECTION_ROLLBACK",
+  "historicalRootCauseEstablished": false,
+  "rights": "SYNTHETIC",
+  "money": "MOCK",
+  "steps": [
+    {
+      "action": "prepare_payout",
+      "sent": false,
+      "amount": 114000
+    },
+    {
+      "action": "provider_committed_response_lost",
+      "sent": true,
+      "providerOperations": 2,
+      "dispatchAttempts": 1
+    }
+  ],
+  "unguarded": {
+    "before": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "sent": false,
+      "providerOperations": 2
+    },
+    "cancellationExecuted": true,
+    "reversalPlanned": true,
+    "payoutState": "ABORTED"
+  },
+  "guarded": {
+    "before": {
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "sent": false,
+      "providerOperations": 2
+    },
+    "error": "STORAGE_RECOVERY_REQUIRED:ACKNOWLEDGED_STATE_CHANGED",
+    "cancellationExecuted": false,
+    "providerOperations": 2
+  },
+  "result": "INJECTED_ROLLBACK_REJECTED_BEFORE_CANCELLATION",
+  "sourceSha256": {
+    "scripts/reproduce_storage_rollback.py": "cbedba56a16bb1b7ee8def774a43769dd8f794e19b1fbe833cc3072b9d12c7fc",
+    "reference/v0.3-rc1/core.py": "476757febe1f3f8a0923cc803943c5bf35d61766568c0db95a66e8debec77fd7",
+    "reference/v0.3-rc1/paid_integration.py": "55bb423115c8287524841c3d5bb458e7169acbe94c1d2b478b9740fe21745384",
+    "reference/v0.3-rc1/storage_receipt.py": "bc16c3389d2fbed689c60289a19c71e95ceb4fba92f455cb12a5186042cafc19",
+    "reference/v0.3-rc1/test_storage_receipt.py": "97ca7d39807698b050046d695a8a79ce8dff4fe5db01fc841773463ae4f41c09"
+  }
+}

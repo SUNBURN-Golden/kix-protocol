@@ -1,0 +1,22 @@
+{
+  "baseCommit": "8e69bd7f64e019dc3e1256a94ccf283d13dffc73",
+  "historicalRootCauseEstablished": false,
+  "files": {
+    ".github/workflows/protocol.yml": "9c597ef9d9b94c8b8e39e9a740b5f2c7efd9d9a323cd05d6aa5158c5bd9824c2",
+    "README.md": "1d7715ab3bfe32e49eb0bd6f5738b98dda59ea0cf13c34684a637ba91ad606a4",
+    "docs/PAID_INTEGRATION.md": "14a13d03d5f627a217ea06d99d254092be638bd49d90a6c2b726b1af4616183a",
+    "docs/STORAGE_INVESTIGATION.md": "35a694f64d9b06c9187e18d118b7e69f0f6211b6e447fc7feeb2bd28f418bc3b",
+    "reference/v0.3-rc1/paid_driver.py": "60b7885c987d171d707d3d45a9b63a633840e9feb3933644b663478d8cb14339",
+    "reference/v0.3-rc1/paid_integration.py": "55bb423115c8287524841c3d5bb458e7169acbe94c1d2b478b9740fe21745384",
+    "reference/v0.3-rc1/storage_receipt.py": "bc16c3389d2fbed689c60289a19c71e95ceb4fba92f455cb12a5186042cafc19",
+    "reference/v0.3-rc1/test_storage_receipt.py": "97ca7d39807698b050046d695a8a79ce8dff4fe5db01fc841773463ae4f41c09",
+    "scripts/probe_paid_storage.py": "fc548836282072de4408bb5ad3b252ee4482c7c3ab684725d8acb011a9cdf560",
+    "scripts/reproduce_storage_rollback.py": "cbedba56a16bb1b7ee8def774a43769dd8f794e19b1fbe833cc3072b9d12c7fc",
+    "validation/2026-09-14-storage/README.md": "5d557966791181236e32921eb7b7855080ebbd38528d114d2e0e56103ed6b6a8",
+    "validation/2026-09-14-storage/deliberate-rollback.json": "2e4be4027c7cdf01c87b2a7115db4401ae66cc4398ff92bf269f842357626a9e",
+    "validation/2026-09-14-storage/probe-default.json": "700372a96fe452da5463aaa29a57eb153f70d7e5969d7ae5921069de5519ebe8",
+    "validation/2026-09-14-storage/probe-system.json": "409dda71b790d2a23d015aa6aea3233a419b0376cba4eaee798708d316a6b1d2",
+    "validation/2026-09-14-storage/python-default.log": "6364b49f5b146cda0fa850b27164c47a99fbb337037dd6b385a35e0a24d63f2e",
+    "validation/2026-09-14-storage/python-system.log": "5fb0ee1b62b2fd03c44f93a9ed7bec15966c23b7e69144692d15dca4a9d484fb"
+  }
+}
