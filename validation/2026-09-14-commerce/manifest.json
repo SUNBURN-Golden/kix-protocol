@@ -2,11 +2,11 @@
   "baseCommit": "96d0daad5b96af501c19284f149cb288b17e5d05",
   "files": {
     ".github/workflows/protocol.yml": "e1c4991f3e13476f1dd4f312230c2bf37fd39ebf956e57d1cd397b819e701d09",
-    "README.md": "5e2d676f78dd0a80a5b032aea9640c9441f8ba4cb3f1b1c9a3fb5f79dc3c9cc9",
+    "README.md": "913d98eeccfacf14e1e663857c4f0e098a4b00aa3a2b916b8368db5ca7254591",
     "docs/BLUEPRINT_20260914.md": "3e2371b3aa1acb6525a44edff16396c1924076708be1985f917191261093686d",
     "docs/COMMERCE_CONTRACTS.md": "ee422658af6492cdb070b3804f1ab1a4e729d2e8b3b30a40cac00dd33cf84856",
     "docs/PAID_RECOVERY.md": "e0be7c5bd5499bb112dd1c215a894a6ff960e821148329c4449e4e481589f994",
-    "docs/PROTOCOL_MASTERPLAN_V2.md": "6461b69ed68061b004f2838cb072e09bbc645dd341d8ae76b9f7d9a5f0fb14af",
+    "docs/PROTOCOL_MASTERPLAN_V2.md": "774cf329778f6d4d7874aac3e5808a2185d0ca2dd74fd408cfd1790b72939141",
     "reference/v0.3-rc1/assets.py": "c9514ddd7c4d6c77c43208bec778fadd6a87593a0602b2e2d0a31cf0c895c4b3",
     "reference/v0.3-rc1/commerce.py": "47428062bb4befc755d63c845c408843138953b2cdc87cb0d24595f64939e8a2",
     "reference/v0.3-rc1/commerce_driver.py": "3578383bc0547bd084b61023f2af1cb75eaa7d0a1371c70565da4c9bdbf30dae",

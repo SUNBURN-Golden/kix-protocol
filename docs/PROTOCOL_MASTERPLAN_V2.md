@@ -268,12 +268,12 @@ S06에서 P0/P2의 자산·견적·배정 계산과 S03 보류 기록을 구현�
 
 ## 15. 검토 근거
 
-- [현재 코드 기준 PR #4](https://github.com/BeautifulMind-JT/kix-protocol/pull/4), [기준 CI](https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/34811690942)
-- [기존 블루프린트 1.2](BLUEPRINT_20260914.md), [S03 범위·제한](PAID_RECOVERY.md)
+- [S05 기준 PR #5](https://github.com/BeautifulMind-JT/kix-protocol/pull/5), [S05 기준 CI](https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/34814252032), [S06 구현 PR #6](https://github.com/BeautifulMind-JT/kix-protocol/pull/6)
+- [블루프린트 1.4와 이전 기록](BLUEPRINT_20260914.md), [S03 범위·제한](PAID_RECOVERY.md), [S05 조회 복원](PAID_ARCHIVE.md), [S06 계산 계약](COMMERCE_CONTRACTS.md)
 - [권리·주문 모형](../reference/v0.3-rc1/lifecycle.py), [금융 모형](../reference/v0.3-rc1/finance.py), [입력 규격](../reference/v0.3-rc1/contracts.py)
 - [Sui PTB](https://docs.sui.io/develop/transactions/ptbs/): 단일 체인 거래의 원자적 구성 근거. 외부 PG까지 포함하는 보장은 아님.
 - [Sui 객체 이전](https://docs.sui.io/develop/objects/transfers/): 권리 이전 규칙 구현의 기술 근거. KIX의 우회 차단은 자체 코드·시험으로 검증.
 - [Sui Groth16](https://docs.sui.io/develop/cryptography/groth16): 신뢰 설정과 기대 검증키 식별 필요. 시험 키는 운영 보안 근거가 아님.
 - [OWASP 과도한 에이전트 권한](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/), [명령 주입](https://genai.owasp.org/llmrisk/llm01-prompt-injection/): 최소 도구·권한과 실행 계층 검증 설계의 참고. 사전 허가 안의 자동 실행은 KIX의 설계 제안.
 
-이 문서의 모듈·단계·AI 권한은 제안 설계다. 이번 작업으로 코드·금융 연결·AI 운영이 새로 구현됐다는 주장은 하지 않는다.
+현재 구현으로 명시한 S06 계산 계약·도구·보류 기록 외의 모듈·단계·AI 실행 권한은 후속 설계다. S06을 실제 금융 연결이나 자율 AI 운영의 구현 완료로 해석하지 않는다.

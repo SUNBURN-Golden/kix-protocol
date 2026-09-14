@@ -43,16 +43,16 @@ GitHub에서 **검토하려는 PR의 브랜치를 선택한 뒤 Code → Codespa
 
 ## 확인된 범위
 
-| 확인 항목 | 이번 실제 결과 |
+| 확인 항목 | 확인 범위·근거 |
 |---|---|
-| Python 모형·저장 경계·복구 검사 / Node 오프라인 검사 | Python 123개 로컬 통과. Node 4개 및 전체 체인 검사는 해당 PR의 CI 결과로 확인 |
+| Python 모형·저장 경계·복구 검사 / Node 오프라인 검사 | S06 Python 181개를 두 환경에서 직접 통과. Node 및 전체 체인 검사는 PR #6의 현재 head CI로 별도 확인 |
 | Sui Move / ZK 회로 | Move 검사 3개 통과, 회로 2개 컴파일 |
 | 공개 경로 | 발행·이전 후 별도 프로세스 복구·소비, 이전 소유자·중복 사용 거절 |
-| 유상 리셀 연결 | 실제 Sui 이전·실패 영수증과 독립 모의 PG·은행 연결. 응답 유실·중복·취소 중 늦은 지급 3개 경로 |
+| 유상 리셀 연결 | 실제 Sui 이전·실패 영수증과 독립 모의 PG·은행 연결. 초기 응답 유실·중복·늦은 지급 3개, S03 복구 2개, S05 archive 2개 여정을 CI에 포함 |
 | 비공개 경로 | 노트 생성·소비 증명 생성, Sui의 Groth16 검증 수락 |
 | 비공개 오류 경로 | 다른 검표 문맥·다른 검증키 객체·중복 소비가 실제 체인에서 거절됨 |
 
-이 로컬넷은 검증자 1개이며 RPC를 신뢰한다. 확인한 독립성은 설정 프로세스 종료 뒤 다른 프로세스가 백업과 체인 자료로 진행하는 범위다. 실제 PG·은행 연결, 다중 노드 장애 내성, 상용 KIX 서비스 전체 중단, 실서비스 익명성은 검증하지 않았다. ZK 설정은 단일 주체가 만든 시험용이며 비공개 모형은 16슬롯이다.
+표의 체인 실행 설명은 S05까지 확보한 범위이며 S06의 [현재 CI](https://github.com/BeautifulMind-JT/kix-protocol/pull/6) 결론과 구분한다. 이 로컬넷은 검증자 1개이며 RPC를 신뢰한다. 확인한 독립성은 설정 프로세스 종료 뒤 다른 프로세스가 백업과 체인 자료로 진행하는 범위다. 실제 PG·은행 연결, 다중 노드 장애 내성, 상용 KIX 서비스 전체 중단, 실서비스 익명성은 검증하지 않았다. ZK 설정은 단일 주체가 만든 시험용이며 현재 Move 공연 정원과 비공개 모형은 16슬롯이다.
 
 기존 선택 변이 14개 결과는 rc1 원자료를 보존했으며 이번 실행에서 재검사하지 않았다. 이전 `results/verification.json`과 [2026-09-11 실행 보고](docs/RUNTIME_VALIDATION.md)는 당시 기록이다. ZK 보완 후 근거는 [보완 결과](docs/PROTOCOL_HARDENING.md)와 `validation/2026-09-13/`이다.
 
@@ -63,7 +63,7 @@ GitHub에서 **검토하려는 PR의 브랜치를 선택한 뒤 Code → Codespa
 - [v0.3-rc1 원래 구현 보고](reference/v0.3-rc1/KIX_v0.3_rc1_구현결과와_실행조건.md)
 - [가져온 자료의 원본 해시](docs/source-imports-2026-09-11.json)
 - [rc1 이후 소스 수정](docs/runtime-changes-from-rc1.patch)
-- [후속 개발 계획](docs/ROADMAP.md)
+- [현재 개발계획 2.1](docs/PROTOCOL_MASTERPLAN_V2.md) / [이전 로드맵 기록](docs/ROADMAP.md)
 - [프로토콜 통합의 다음 구현 계약](docs/PROTOCOL_INTEGRATION_NEXT.md)
 - [첫 유상 리셀 통합과 남은 범위](docs/PAID_INTEGRATION.md)
 - [저장 기록 유실 조사와 지급 판단 차단](docs/STORAGE_INVESTIGATION.md)
