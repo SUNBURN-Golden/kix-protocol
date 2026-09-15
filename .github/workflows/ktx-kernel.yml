@@ -1,0 +1,48 @@
+name: KTX kernel verification
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ktx-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kernel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
+        with:
+          toolchain: '1.98.1'
+          components: rustfmt, clippy
+      - name: Compile and test kernel transitions
+        run: cargo test --manifest-path runtime/Cargo.toml -p kix-kernel
+      - name: Clippy
+        run: cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets -- -D warnings
+      - name: Formatting
+        run: cargo fmt --manifest-path runtime/Cargo.toml --all -- --check
+      - name: Dependency and formatting review material
+        if: always()
+        run: |
+          echo KTX_LOCK_BEGIN
+          test ! -f runtime/Cargo.lock || cat runtime/Cargo.lock
+          echo KTX_LOCK_END
+          cargo fmt --manifest-path runtime/Cargo.toml --all
+          git diff -- runtime/
+      - name: Preserve review artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ktx-review-${{ github.sha }}
+          path: |
+            runtime/Cargo.lock
+            runtime/crates/kix-kernel/
+          retention-days: 14
