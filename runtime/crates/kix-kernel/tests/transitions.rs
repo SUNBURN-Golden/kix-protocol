@@ -625,7 +625,7 @@ fn unknown_semantics_and_regressed_time_are_not_applied() {
     assert_eq!(
         k.reserve(
             Context {
-                semantics_version: 2,
+                semantics_version: SEMANTICS_VERSION + 1,
                 ..ctx(11)
             },
             reserve(4, 2, 1)

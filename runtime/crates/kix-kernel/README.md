@@ -11,7 +11,8 @@ An I/O-free deterministic transition model using only `kix-types` and Rust std c
 - One transition applies reservation, minimal order, quote/policy/asset binding, stable external operation and result without whole-state JSON or state cloning.
 - Local execution/business fences and explicit ordered time/semantics version.
 - PaymentUnknown is retained past TTL. Authenticated late bound facts may arrive after ownership change.
-- Capture event and economic operation deduplication are distinct. Preserve conflict evidence and quarantine both named operations, including an operation not yet bound to an order. Quarantine blocks later binding and external-send authorization; matching later evidence never clears review automatically.
+- Capture event and economic operation deduplication are distinct. When free evidence capacity exists, preserve conflict evidence and quarantine both named operations, including an operation not yet bound to an order. Quarantine blocks later binding and external-send authorization; matching later evidence never clears review automatically.
+- Before authorizing the first external send, `mark_payment_unknown` reserves one first-capture observation slot for that operation or returns `Capacity` without changing the order. UNKNOWN retries reuse the reservation. Unrelated events and conflicting evidence cannot spend it.
 - Matching capture after expiry/cancellation creates ReturnRequired without reviving the old reservation or releasing another order's seats.
 
 ## Hard boundaries
@@ -24,8 +25,16 @@ The initial fixture accepts positive-price orders, one entire capture operation,
 
 Memory admission is bounded by configured record counts with fixed-width inputs and maximum seat/segment/bundle lengths. History never silently disappears; retention/GC/checkpoints are future work, so a full kernel stops new work rather than forgetting dedupe. This is not a fixed-pool zero-allocation engine and has no published throughput/floor number.
 
+## Observation reservation and remaining gaps
+
+The budget includes stored event records, stored conflicts and outstanding reserved slots. A fresh bound capture converts its own reserved slot into retained evidence in the same transition, even if its amount is wrong or it arrives after cancellation/expiry/owner change. Those state changes never free the slot first. A conflicting reuse of an existing event does not apply a capture and cannot consume the first-capture reservation.
+
+This protects one first bound capture per authorized operation, not every future external fact. A NEW conflict at full capacity still returns `Capacity` before retaining evidence or setting quarantine; a fresh unbound operation still returns `UnknownOperation` without storage (or `Capacity` if already full). Neither condition is solved by slot reservation. The adapter inbox named above is a requirement, not an implementation in this crate. Do not acknowledge provider receipt or claim universal external-success preservation based on these return values.
+
+This change uses **semantics version 2** because the same inputs can now receive a different admission result. Version 1 contexts are rejected; this crate does not implement a version-1 replay interpreter or migration. The separate R2-A branch and its old version-1 wire/golden/logs have not been upgraded by this change. They require explicit version-aware integration rather than silently substituting this reducer.
+
 ## Verification
 
 `tests/transitions.rs` contains 32 deterministic regression cases after the R1 audit fixes. Successful state commands advance admitted time, including no-op expiry and duplicate observations; immutable reservation-result lookup remains read-only. Actual compilation and run evidence belongs to the exact PR head/CI run, not this count. They test local transitions, not multithreaded competition, disks or a replica cluster.
 
-Next: registered versioned command/snapshot envelopes, mature storage/consensus integration, explicit stable-storage ACK, crash/torn-write/snapshot/leader histories, then real authenticated economic adapters. See ADR-0001 and masterplan 2.4.
+The observation-slot regressions also check failed-send atomicity, retry reuse, reserved capacity isolation, conflicts, late observations and explicit version-1 refusal. These are business-logic tests and supply no evidence for choosing KTX over another durable backend.

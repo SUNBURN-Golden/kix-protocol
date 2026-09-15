@@ -1,4 +1,9 @@
 #![forbid(unsafe_code)]
+#![deny(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::float_arithmetic
+)]
 //! KTX-R1 deterministic, single-shard transition kernel. NOT a durable service.
 //!
 //! Inputs must come from an authenticated, ordered adapter. This crate does not
@@ -11,7 +16,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use kix_types::{AssetAmount, Hash32, KixId};
 
-pub const SEMANTICS_VERSION: u16 = 1;
+// V2 adds first-capture capacity reservation before external-send authorization.
+// V1 input histories must not be silently replayed under this changed reducer.
+pub const SEMANTICS_VERSION: u16 = 2;
 pub const MAX_SEATS: u16 = 4_096;
 pub const MAX_BUNDLE: u16 = 64;
 
@@ -291,6 +298,9 @@ pub struct Kernel {
     quarantined_operations: BTreeSet<ProviderOperation>,
     observations: BTreeMap<EventKey, (CaptureObservation, ObservationOutcome)>,
     conflicts: Vec<CaptureObservation>,
+    // One first-capture slot per operation authorized for external sending.
+    // Other observations/conflicts cannot consume this operation's reservation.
+    reserved_observations: BTreeSet<ProviderOperation>,
 }
 
 impl Kernel {
@@ -343,6 +353,7 @@ impl Kernel {
             quarantined_operations: BTreeSet::new(),
             observations: BTreeMap::new(),
             conflicts: Vec::new(),
+            reserved_observations: BTreeSet::new(),
         })
     }
 
@@ -431,6 +442,8 @@ impl Kernel {
     /// is not failure, and expiry alone must not release this reservation.
     /// Reviewed orders cannot authorize a send, including a retry of UNKNOWN;
     /// observations of a request already sent must still be recorded separately.
+    /// Reserve one observation slot before first send authorization. Retrying
+    /// UNKNOWN reuses it. If no slot is available, leave the order unchanged.
     pub fn mark_payment_unknown(
         &mut self,
         ctx: Context,
@@ -439,7 +452,7 @@ impl Kernel {
         self.context(ctx)?;
         let order = self
             .orders
-            .get_mut(&order_id)
+            .get(&order_id)
             .ok_or(KernelError::UnknownOrder)?;
         if order.review_required
             || !matches!(order.state, OrderState::Held | OrderState::PaymentUnknown)
@@ -449,7 +462,14 @@ impl Kernel {
         if self.cancelled || ctx.now_ms >= order.request.expires_at_ms {
             return Err(KernelError::InvalidTransition);
         }
-        order.state = OrderState::PaymentUnknown;
+        let operation = order.request.payment;
+        if !self.reserved_observations.contains(&operation) {
+            if self.observation_slots_used() >= self.limits.observations {
+                return Err(KernelError::Capacity);
+            }
+            self.reserved_observations.insert(operation);
+        }
+        self.orders.get_mut(&order_id).unwrap().state = OrderState::PaymentUnknown;
         self.now_ms = ctx.now_ms;
         Ok(())
     }
@@ -519,7 +539,9 @@ impl Kernel {
             }
             let affected_operations = [original.operation, observation.operation];
             if !self.conflicts.contains(&observation) {
-                if self.observations.len() + self.conflicts.len() >= self.limits.observations {
+                // A conflicting event is not an applied first capture and
+                // therefore may not spend any operation's promised slot.
+                if self.observation_slots_used() >= self.limits.observations {
                     return Err(KernelError::Capacity);
                 }
                 self.conflicts.push(observation);
@@ -538,7 +560,8 @@ impl Kernel {
             self.now_ms = ctx.now_ms;
             return Ok(ObservationOutcome::Conflict);
         }
-        if self.observations.len() + self.conflicts.len() >= self.limits.observations {
+        let has_reserved_slot = self.reserved_observations.contains(&observation.operation);
+        if !has_reserved_slot && self.observation_slots_used() >= self.limits.observations {
             return Err(KernelError::Capacity);
         }
         let order_id = self
@@ -582,6 +605,9 @@ impl Kernel {
                 ObservationOutcome::PaymentConfirmed
             }
         };
+        // Convert the reservation into retained evidence in this same transition.
+        // Cancellation, expiry and owner changes never release it beforehand.
+        self.reserved_observations.remove(&observation.operation);
         self.observations.insert(key, (observation, result));
         self.now_ms = ctx.now_ms;
         Ok(result)
@@ -598,6 +624,15 @@ impl Kernel {
     }
     pub fn observation_count(&self) -> usize {
         self.observations.len()
+    }
+    pub fn reserved_observation_count(&self) -> usize {
+        self.reserved_observations.len()
+    }
+    fn observation_slots_used(&self) -> usize {
+        self.observations
+            .len()
+            .saturating_add(self.conflicts.len())
+            .saturating_add(self.reserved_observations.len())
     }
     pub fn conflicts(&self) -> &[CaptureObservation] {
         &self.conflicts
