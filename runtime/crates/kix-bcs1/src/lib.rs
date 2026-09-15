@@ -241,7 +241,10 @@ mod tests {
         let bytes_b = canonical_bytes(&value).unwrap();
         assert_eq!(bytes_a, bytes_b);
         assert_eq!(decode_canonical::<SmallBody>(&bytes_a).unwrap(), value);
-        assert_eq!(canonical_hash(&value).unwrap(), canonical_hash_bytes(&bytes_a));
+        assert_eq!(
+            canonical_hash(&value).unwrap(),
+            canonical_hash_bytes(&bytes_a)
+        );
     }
 
     #[test]
