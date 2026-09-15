@@ -22,7 +22,9 @@ def require(condition: bool, message: str) -> None:
 
 def expected(actual: dict, values: dict, label: str) -> None:
     for key, value in values.items():
-        require(actual.get(key) == value, f"{label}_CHANGED:{key}")
+        candidate = actual.get(key)
+        # Python considers 0 == False and 1 == True; the contract does not.
+        require(type(candidate) is type(value) and candidate == value, f"{label}_CHANGED:{key}")
 
 
 def main() -> int:
@@ -129,7 +131,8 @@ def main() -> int:
         "arrow_device_array_required": True, "fallback_to_python": False,
         "cudf_polars_conformance_required": True,
     }
-    require(data["gpu_native"] == gpu, "NATIVE_GPU_CONTRACT_CHANGED")
+    expected(data["gpu_native"], gpu, "NATIVE_GPU")
+    require(set(data["gpu_native"]) == set(gpu), "NATIVE_GPU_CONTRACT_CHANGED")
     expected(data["gpu_crossover"], {
         "single_global_threshold": False, "measurement_proxy": "cudf-polars-raise-on-fail",
         "native_enable_gate": "gpu-wins-three-consecutive-scales-with-zero-fallback",
@@ -168,6 +171,8 @@ def main() -> int:
     require(kernel.get("dependencies") == {"kix-types": {"path": "../kix-types"}}, "KERNEL_DEPENDENCY_DRIFT")
     types = tomllib.loads((ROOT / "runtime/crates/kix-types/Cargo.toml").read_text())
     require(not types.get("dependencies"), "KERNEL_TRANSITIVE_DEPENDENCY_DRIFT")
+    for package in (kernel, types):
+        require(not package.get("target") and not package.get("build-dependencies"), "KERNEL_HIDDEN_DEPENDENCY_DRIFT")
     print("architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified")
     return 0
 
