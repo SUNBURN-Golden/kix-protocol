@@ -461,7 +461,7 @@ fn retained_cross_order_conflict_replays_at_capacity_without_duplicate_evidence(
 }
 
 #[test]
-fn conflict_capacity_failure_does_not_partially_quarantine_or_discard_original() {
+fn conflict_capacity_failure_keeps_quarantine_and_original_evidence() {
     let mut cap = limits();
     cap.observations = 1;
     let mut k = Kernel::new(id(9), fence(), 1, Inventory::seats(&[10]).unwrap(), cap).unwrap();
@@ -470,12 +470,19 @@ fn conflict_capacity_failure_does_not_partially_quarantine_or_discard_original()
     k.reserve(ctx(1), first.clone()).unwrap();
     k.reserve(ctx(2), second.clone()).unwrap();
     k.observe_capture(ctx(3), observation(&first, 1)).unwrap();
-    let before = k.clone();
     assert_eq!(
         k.observe_capture(ctx(4), observation(&second, 1)),
         Err(KernelError::Capacity)
     );
-    assert_eq!(k, before);
+    assert!(k.order(first.order_id).unwrap().review_required);
+    assert!(k.order(second.order_id).unwrap().review_required);
+    assert_eq!(k.observation_count(), 1);
+    assert!(k.conflicts().is_empty());
+    assert_eq!(
+        k.order(first.order_id).unwrap().captured,
+        Some(first.amount)
+    );
+    assert_eq!(k.order(second.order_id).unwrap().captured, None);
     assert_eq!(
         k.observe_capture(ctx(4), observation(&first, 1)).unwrap(),
         ObservationOutcome::PaymentConfirmed

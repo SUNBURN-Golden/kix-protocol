@@ -16,9 +16,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use kix_types::{AssetAmount, Hash32, KixId};
 
-// V2 adds first-capture capacity reservation before external-send authorization.
-// V1 input histories must not be silently replayed under this changed reducer.
-pub const SEMANTICS_VERSION: u16 = 2;
+// V4 quarantines bound operations independently of evidence capacity; unbound
+// identities block future binding only while their conflict evidence is retained.
+// Earlier inputs must not be silently replayed under the changed semantics.
+pub const SEMANTICS_VERSION: u16 = 4;
 pub const MAX_SEATS: u16 = 4_096;
 pub const MAX_BUNDLE: u16 = 64;
 
@@ -38,8 +39,11 @@ pub struct ExecutionFence {
 
 /// Supplied by an ordered driver, not independently read from replica clocks.
 /// Every accepted state command advances logical time, including an expiry
-/// check that releases nothing and a duplicate observation. Errors change no
-/// state. An existing reservation result lookup is read-only: it checks scope,
+/// check that releases nothing and a duplicate observation. A conflict returning
+/// Capacity still quarantines bound operations and advances time; its new
+/// evidence and unbound identity are not retained. Other errors change no state.
+/// A reservation lookup is read-only:
+/// it checks scope,
 /// semantics and payload equality, but neither checks nor advances time/fence.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Context {
@@ -293,8 +297,9 @@ pub struct Kernel {
     commands: BTreeMap<CommandId, CommandRecord>,
     orders: BTreeMap<KixId, Order>,
     operations: BTreeMap<ProviderOperation, KixId>,
-    // Each retained conflict contributes at most two identities. The observation
-    // limit therefore bounds this sticky set even when an operation is unbound.
+    // Only bound operations: this is a subset of operations, hence bounded by
+    // orders. Unbound identities are checked against retained conflicts at
+    // reservation time; rejected evidence never grows this set.
     quarantined_operations: BTreeSet<ProviderOperation>,
     observations: BTreeMap<EventKey, (CaptureObservation, ObservationOutcome)>,
     conflicts: Vec<CaptureObservation>,
@@ -403,7 +408,14 @@ impl Kernel {
             Some(Rejection::InvalidRequest)
         } else if self.orders.contains_key(&request.order_id) {
             Some(Rejection::OrderExists)
-        } else if self.quarantined_operations.contains(&request.payment) {
+        } else if self.quarantined_operations.contains(&request.payment)
+            || self
+                .conflicts
+                .iter()
+                .any(|conflict| conflict.operation == request.payment)
+        {
+            // Retained evidence blocks future binding of an unbound identity.
+            // The inbox must reconcile evidence the kernel could not retain.
             Some(Rejection::OperationQuarantined)
         } else if self.operations.contains_key(&request.payment) {
             Some(Rejection::OperationAlreadyBound)
@@ -521,6 +533,10 @@ impl Kernel {
     /// Accept a bound historical fact under the current driver's execution fence.
     /// Does not compare the intent's old owner generation to the new owner.
     /// A return marker is NOT an authorized or executed refund.
+    /// On a conflicting event, Capacity means new evidence was not retained;
+    /// bound-operation quarantine and its ordered time have still been applied.
+    /// Unbound identities are blocked at reserve only if the conflict is retained.
+    /// Callers must not interpret this error as rollback of the safety transition.
     pub fn observe_capture(
         &mut self,
         ctx: Context,
@@ -538,26 +554,21 @@ impl Kernel {
                 return Ok(*result);
             }
             let affected_operations = [original.operation, observation.operation];
+            // Bound-order safety takes effect even if no evidence slot is available.
+            for operation in affected_operations {
+                self.quarantine_bound(operation);
+            }
+            self.now_ms = ctx.now_ms;
             if !self.conflicts.contains(&observation) {
                 // A conflicting event is not an applied first capture and
                 // therefore may not spend any operation's promised slot.
                 if self.observation_slots_used() >= self.limits.observations {
                     return Err(KernelError::Capacity);
                 }
+                // This retained record is also the reserve-time quarantine for
+                // an unbound operation. No speculative identity set is grown.
                 self.conflicts.push(observation);
             }
-            // Retain the original fact and quarantine every bound order named
-            // by the conflict. Unbound operations must not later gain a fresh
-            // order binding. Repeated evidence consumes no additional capacity.
-            for operation in affected_operations {
-                self.quarantined_operations.insert(operation);
-                if let Some(order_id) = self.operations.get(&operation)
-                    && let Some(order) = self.orders.get_mut(order_id)
-                {
-                    order.review_required = true;
-                }
-            }
-            self.now_ms = ctx.now_ms;
             return Ok(ObservationOutcome::Conflict);
         }
         let has_reserved_slot = self.reserved_observations.contains(&observation.operation);
@@ -627,6 +638,18 @@ impl Kernel {
     }
     pub fn reserved_observation_count(&self) -> usize {
         self.reserved_observations.len()
+    }
+    /// Number of quarantined bound operations; unbound evidence lives in conflicts.
+    pub fn quarantined_operation_count(&self) -> usize {
+        self.quarantined_operations.len()
+    }
+    fn quarantine_bound(&mut self, operation: ProviderOperation) {
+        if let Some(order_id) = self.operations.get(&operation)
+            && let Some(order) = self.orders.get_mut(order_id)
+        {
+            order.review_required = true;
+            self.quarantined_operations.insert(operation);
+        }
     }
     fn observation_slots_used(&self) -> usize {
         self.observations

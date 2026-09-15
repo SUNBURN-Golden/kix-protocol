@@ -54,7 +54,7 @@ Ordered input fixes admitted time, validated external observations and all nonde
 
 Log envelopes must separately bind wire schema, kernel semantics version, policy/asset snapshots, ownership generation and application decision. Snapshots identify state version and committed cut. A software upgrade needs a logged activation boundary, old-version replay or a validated state migration, mixed-version admission rules and rollback rules. BCS equality alone does not establish equal business semantics.
 
-R1 accepts semantics version 1 and rejects other versions. Its replay test reconstructs in-memory state from the same ordered inputs. This is NOT disk, upgrade, cluster-replay or leader-crash verification.
+The revised R1 A working-copy patch accepts semantics version 4 and rejects other versions: bound-operation quarantine applies before conflict capacity checks, while unbound quarantine requires retained evidence; see the review addendum below. Its replay test reconstructs in-memory state from the same ordered inputs. This is NOT disk, upgrade, cluster-replay or leader-crash verification.
 
 ## 6. External effects, observations and UNKNOWN
 
@@ -112,3 +112,33 @@ The user's 2026-09-15 maximum-performance architecture review supplies the desig
 - Ready/persistence contract: https://tikv.github.io/doc/raft/raw_node/struct.RawNode.html
 - Historical plans: ../PROTOCOL_MASTERPLAN_V23.md
 - Current execution contract: ../../runtime/ARCHITECTURE.toml
+
+## R1 review addendum: quarantine, reserved capacity and unmatched facts
+
+This addendum is limited to R1 business rules. It neither selects a storage engine nor authorizes R2 implementation.
+
+### A — safety quarantine before evidence retention
+
+A conflicting provider/account/event identity quarantines every already bound operation named by the original and incoming facts before checking whether the conflicting evidence fits the observation budget. Capacity in this path means the new evidence and any unbound identity were not retained; bound-order quarantine and ordered time remain applied. It is not a no-state-change result and must not be treated as a rolled-back safety transition or provider receipt ACK.
+
+The earlier A working copy had an unsafe scope-wide overflow latch: arbitrary unbound identities in rejected evidence could permanently fence unrelated orders. The revised patch removes that field, all scope-wide overflow checks and mass review assignment. The explicit quarantine set now contains bound operations only, so its size cannot exceed the actual order count. No overflow release transition is needed for the removed mechanism; individual review resolution and record reclamation remain unimplemented.
+
+An unbound identity blocks future reservation only if its conflicting evidence was actually retained. Before a new binding or inventory mutation, reserve checks the complete provider/account/operation identity against retained conflicts as well as bound quarantine. Unbound quarantine is derived from those records, with at most one distinct incoming identity per retained conflict, and is bounded by the evidence budget rather than by order count. Rejected evidence creates no speculative identity entry. Consequently an identity from unretained evidence can still bind later; the kernel alone cannot detect a fact it did not retain. The adapter inbox reconciliation contract remains required and unimplemented. Semantics version 4 separates this behavior from the prior A working copy; no old-state migration is implemented.
+
+Event identity must describe one canonical observation in this kernel. An adapter for a batch webhook must use a stable per-item identity rather than blindly reuse its delivery event ID for different operations. Exact same-payload replay is not a conflict. Removing overflow does not implement or verify provider-specific batch normalization.
+
+### B — decided responsibility: adapter durable inbox (not implemented here)
+
+인증된 제공자 관측의 수신 원문, provider/account/event/operation 식별자, 원문 해시와 검증 결과는 커널 호출 및 제공자 수신 ACK 이전에 어댑터의 durable inbox에 내구성 있게 보존해야 한다. 커널의 Err(UnknownOperation)은 업무 적용 보류를 뜻한다. 해당 inbox 항목은 UNMATCHED로 유지하며 삭제하거나 처리 완료로 표시하지 않는다. 권위 있는 operation-order 결합을 확인한 뒤 동일 원문으로 대사·재처리하며, 주문을 임의 생성하거나 취소·만료된 권리를 부활시키지 않는다. 동일 이벤트 식별자의 다른 원문은 덮어쓰지 않고 별도 상충 증거로 보존한다. 인박스 보존 실패·용량 부족 시 수신 ACK를 보내지 않고 명시적으로 역압력을 적용한다.
+
+The kernel can return UnknownOperation without storing that payload. The inbox contract is the required custody location, not evidence that an inbox already exists. This patch adds no durable inbox, provider authentication, storage, or ACK implementation. End-to-end external-success preservation remains unimplemented until that responsibility is satisfied and tested.
+
+### Reserved observation release — proposal only; no release transition implemented
+
+Current reservation removal occurs only when a supported new-event bound capture is retained. Capture converts reserved capacity into stored-evidence occupancy and does not reclaim the total evidence budget. Expiry/cancellation/owner movement alone never releases an UNKNOWN operation's slot.
+
+Proposed release requires authenticated, operation-scoped terminal failure or final void evidence under a provider contract that rules out later execution, together with proof that no executable attempt remains and a fence against retransmission of the closed operation. A network error, one failed attempt, a cancellation request, a single not-found response, or elapsed time is insufficient.
+
+Terminal outcome, stable operation identity, evidence reference and an idempotent closed-operation marker must be preserved before/in the same authoritative transition that releases the reservation exactly once. Anomalous late facts remain the inbox's reconciliation responsibility and must not reopen an expired order or re-enable sending. If those finality conditions cannot be established, the slot remains UNKNOWN and the scope applies backpressure. A separate retained-evidence lifecycle is also required for reclaiming total observation capacity; deleting a reservation alone does not solve retained-record exhaustion.
+
+This section is a proposed release contract only. No failure/void command, release method, garbage collection, inbox handoff implementation or timeout-based release is introduced.

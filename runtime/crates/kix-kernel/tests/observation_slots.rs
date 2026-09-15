@@ -156,18 +156,18 @@ fn conflicting_event_cannot_spend_slot_reserved_for_capture() {
     k.reserve(ctx(2), second.clone()).unwrap();
     k.observe_capture(ctx(3), capture(&first, 1)).unwrap();
     k.mark_payment_unknown(ctx(4), second.order_id).unwrap();
-    let before = k.clone();
     assert_eq!(
         k.observe_capture(ctx(5), capture(&second, 1)),
         Err(KernelError::Capacity)
     );
-    assert_eq!(k, before);
+    assert!(k.order(first.order_id).unwrap().review_required);
+    assert!(k.order(second.order_id).unwrap().review_required);
     assert_eq!(k.reserved_observation_count(), 1);
     assert!(k.conflicts().is_empty());
     assert_eq!(k.order(second.order_id).unwrap().captured, None);
     assert_eq!(
         k.observe_capture(ctx(6), capture(&second, 2)).unwrap(),
-        ObservationOutcome::PaymentConfirmed
+        ObservationOutcome::Review
     );
     assert_eq!(k.reserved_observation_count(), 0);
 }
@@ -298,16 +298,14 @@ fn captured_operation_does_not_reserve_again_and_exact_event_replay_needs_no_slo
 }
 
 #[test]
-fn full_budget_new_conflict_remains_rejected_without_quarantine() {
-    // This records the remaining A limitation, rather than claiming the new
-    // send admission reservation also persists conflicts at full capacity.
+fn full_budget_new_conflict_quarantines_without_retaining_evidence() {
+    // Evidence retention can fail without undoing the safety quarantine.
     let mut k = kernel(1);
     let first = request(3, 0);
     let second = request(4, 1);
     k.reserve(ctx(1), first.clone()).unwrap();
     k.reserve(ctx(2), second.clone()).unwrap();
     k.observe_capture(ctx(3), capture(&first, 1)).unwrap();
-    let before = k.clone();
     let result = k.observe_capture(ctx(4), capture(&second, 1));
     println!("A full-budget conflict -> {result:?}");
     println!(
@@ -318,9 +316,8 @@ fn full_budget_new_conflict_remains_rejected_without_quarantine() {
         k.conflicts().len()
     );
     assert_eq!(result, Err(KernelError::Capacity));
-    assert_eq!(k, before);
-    assert!(!k.order(first.order_id).unwrap().review_required);
-    assert!(!k.order(second.order_id).unwrap().review_required);
+    assert!(k.order(first.order_id).unwrap().review_required);
+    assert!(k.order(second.order_id).unwrap().review_required);
     assert!(k.conflicts().is_empty());
 }
 
@@ -359,7 +356,7 @@ fn fresh_unbound_capture_remains_unstored_and_later_binding_is_not_reconciled() 
 
 #[test]
 fn previous_semantics_version_is_rejected_without_silent_replay_change() {
-    assert_eq!(SEMANTICS_VERSION, 2);
+    assert_eq!(SEMANTICS_VERSION, 4);
     let mut k = kernel(1);
     let before = k.clone();
     assert_eq!(
