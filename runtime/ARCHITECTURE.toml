@@ -1,5 +1,5 @@
-version = "kix-runtime-architecture:5"
-stage = "KTX-R0-R1-transition-kernel"
+version = "kix-runtime-architecture:6"
+stage = "KTX-R2A-registered-local-replay"
 authority_adr = "docs/adr/0001-ktx-authority-commit-recovery.md"
 masterplan = "docs/PROTOCOL_MASTERPLAN_V24.md"
 legacy_reference_root = "reference/v0.3-rc1"
@@ -20,7 +20,7 @@ legacy_commerce_schema = "kix:commerce:2"
 
 [execution]
 primary_target = "replicated-ktx"
-implemented = "io-free-single-shard-transition-kernel"
+implemented = "io-free-kernel-with-local-replay-harness"
 production_enabled = false
 durable_driver_implemented = false
 consensus_candidate = "raft-rs"
@@ -46,6 +46,17 @@ snapshot_log_replay_required = true
 whole_region_rpo_zero_claimed = false
 actual_crash_history_required = true
 performance_claim_from_unit_tests = false
+
+[local_replay]
+implemented = true
+backend = "single-host-fsync-test-harness"
+registered_entry_points = true
+receipt = "local-fsync-not-quorum-ack"
+quorum_ack = false
+state_snapshot_implemented = false
+automatic_torn_tail_truncation = false
+complete_prefix_rollback_detected = false
+real_process_crash_tests = true
 
 [hot_path]
 python = false

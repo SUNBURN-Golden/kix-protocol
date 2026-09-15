@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""KTX architecture v5 declaration/dependency gate, not a performance proof.
+"""KTX architecture v6 declaration/dependency gate, not a performance proof.
 
 Behavior is exercised by cargo tests. Actual durability, fault histories and
 performance are future gates, explicitly NOT certified by this script.
@@ -30,8 +30,8 @@ def expected(actual: dict, values: dict, label: str) -> None:
 def main() -> int:
     data = tomllib.loads((ROOT / "runtime/ARCHITECTURE.toml").read_text())
     expected(data, {
-        "version": "kix-runtime-architecture:5",
-        "stage": "KTX-R0-R1-transition-kernel",
+        "version": "kix-runtime-architecture:6",
+        "stage": "KTX-R2A-registered-local-replay",
         "authority_adr": "docs/adr/0001-ktx-authority-commit-recovery.md",
         "masterplan": "docs/PROTOCOL_MASTERPLAN_V24.md",
         "legacy_reference_root": "reference/v0.3-rc1",
@@ -46,7 +46,7 @@ def main() -> int:
         "legacy_commerce_schema": "kix:commerce:2",
     }, "RUNTIME")
     expected(data["execution"], {
-        "primary_target": "replicated-ktx", "implemented": "io-free-single-shard-transition-kernel",
+        "primary_target": "replicated-ktx", "implemented": "io-free-kernel-with-local-replay-harness",
         "production_enabled": False, "durable_driver_implemented": False,
         "consensus_candidate": "raft-rs", "authority": "scope-assigned-single-writer",
         "profiles": ["DelegatedExecution", "NativeChainExecution"],
@@ -64,6 +64,13 @@ def main() -> int:
         "whole_region_rpo_zero_claimed": False, "actual_crash_history_required": True,
         "performance_claim_from_unit_tests": False,
     }, "DURABILITY")
+    expected(data["local_replay"], {
+        "implemented": True, "backend": "single-host-fsync-test-harness",
+        "registered_entry_points": True, "receipt": "local-fsync-not-quorum-ack",
+        "quorum_ack": False, "state_snapshot_implemented": False,
+        "automatic_torn_tail_truncation": False, "complete_prefix_rollback_detected": False,
+        "real_process_crash_tests": True,
+    }, "LOCAL_REPLAY")
     for key in (
         "python", "node", "sqlite", "dataframe_engine", "giant_json_state",
         "external_call_inside_db_transaction", "microservice_hop_required",
@@ -158,9 +165,12 @@ def main() -> int:
         "runtime/ONSALE_ADMISSION_CONTROL.md", "runtime/native_gpu/include/kix_gpu.h",
         "runtime/crates/kix-bcs1/tests/golden_vectors.rs",
         "runtime/crates/kix-kernel/tests/transitions.rs", "docs/PROTOCOL_MASTERPLAN_V23.md",
+        "runtime/crates/kix-ktx-wire/src/registry.rs",
+        "runtime/crates/kix-ktx-wire/tests/golden_vectors.rs",
+        "runtime/crates/kix-journal-local/tests/recovery.rs",
     ]
     cargo = tomllib.loads((ROOT / "runtime/Cargo.toml").read_text())
-    for crate in ("kix-types", "kix-bcs1", "kix-feature-ir", "kix-feature-semantics", "kix-kernel"):
+    for crate in ("kix-types", "kix-bcs1", "kix-feature-ir", "kix-feature-semantics", "kix-kernel", "kix-ktx-wire", "kix-journal-local"):
         required.append(f"runtime/crates/{crate}/src/lib.rs")
         require(f"crates/{crate}" in cargo["workspace"]["members"], f"CRATE_NOT_IN_WORKSPACE:{crate}")
     for rel in required:
@@ -173,7 +183,7 @@ def main() -> int:
     require(not types.get("dependencies"), "KERNEL_TRANSITIVE_DEPENDENCY_DRIFT")
     for package in (kernel, types):
         require(not package.get("target") and not package.get("build-dependencies"), "KERNEL_HIDDEN_DEPENDENCY_DRIFT")
-    print("architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified")
+    print("architecture v6 + KTX-R1 dependency gate OK; durability/performance NOT certified")
     return 0
 
 

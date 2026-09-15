@@ -27,13 +27,13 @@ jobs:
         run: |
           python3 scripts/verify_runtime_architecture.py
           python3 scripts/test_runtime_architecture.py
-      - name: Compile and test kernel transitions
+      - name: Compile and test kernel, registered wire and local recovery
         run: |
           set -o pipefail
           mkdir -p .local/verification/ktx
-          cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked 2>&1 | tee .local/verification/ktx/kernel-tests.log
+          cargo test --manifest-path runtime/Cargo.toml -p kix-kernel -p kix-ktx-wire -p kix-journal-local --locked 2>&1 | tee .local/verification/ktx/kernel-tests.log
       - name: Clippy
-        run: cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked -- -D warnings
+        run: cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel -p kix-ktx-wire -p kix-journal-local --all-targets --locked -- -D warnings
       - name: Formatting
         run: cargo fmt --manifest-path runtime/Cargo.toml --all -- --check
       - name: Dependency evidence
@@ -41,7 +41,7 @@ jobs:
         run: |
           mkdir -p .local/verification/ktx
           cargo tree --manifest-path runtime/Cargo.toml -p kix-kernel --edges normal --locked > .local/verification/ktx/dependencies.txt
-          sha256sum runtime/Cargo.lock runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/transitions.rs > .local/verification/ktx/source-sha256.txt
+          sha256sum runtime/Cargo.lock runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/transitions.rs runtime/crates/kix-ktx-wire/src/lib.rs runtime/crates/kix-ktx-wire/src/registry.rs runtime/crates/kix-journal-local/src/lib.rs > .local/verification/ktx/source-sha256.txt
           git rev-parse HEAD > .local/verification/ktx/tested-commit.txt
       - name: Preserve review artifacts
         if: always()

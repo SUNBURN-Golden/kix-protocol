@@ -36,6 +36,9 @@ class ArchitectureGateTests(unittest.TestCase):
 
     def test_invalid_contract_values(self) -> None:
         mutations = [
+            ('quorum_ack = false', 'quorum_ack = true'),
+            ('automatic_torn_tail_truncation = false', 'automatic_torn_tail_truncation = true'),
+            ('complete_prefix_rollback_detected = false', 'complete_prefix_rollback_detected = true'),
             ('production_enabled = false', 'production_enabled = true'),
             ('production_enabled = false', 'production_enabled = 0'),
             ('consumer_truth = false', 'consumer_truth = 0'),
@@ -62,7 +65,10 @@ class ArchitectureGateTests(unittest.TestCase):
         self.contract.write_text(self.original)
 
     def test_missing_lock_or_golden_vector(self) -> None:
-        for relative in ("runtime/Cargo.lock", "runtime/crates/kix-bcs1/tests/golden_vectors.rs"):
+        for relative in ("runtime/Cargo.lock", "runtime/crates/kix-bcs1/tests/golden_vectors.rs",
+                         "runtime/crates/kix-ktx-wire/src/registry.rs",
+                         "runtime/crates/kix-ktx-wire/tests/golden_vectors.rs",
+                         "runtime/crates/kix-journal-local/tests/recovery.rs"):
             path = self.root / relative
             original = path.read_bytes()
             with self.subTest(missing=relative):

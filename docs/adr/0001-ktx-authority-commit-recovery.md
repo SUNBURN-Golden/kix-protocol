@@ -95,6 +95,8 @@ Keep a SQL-authoritative comparison route on disjoint test inventory. Compare eq
 ## 10. Implementation status and exits
 
 R0: this ADR + masterplan 2.4 + architecture v5.
+
+R2-A adds architecture v6 and a local synchronization/replay harness without changing the assigned authority or the target quorum ACK. Registered GenesisV1, CommandV1 and CommandResult bind initial state, ordered input and result encoding. The local log persists commands before apply and reconstructs the initial result and intent by pinned deterministic replay. Complete unacknowledged tails can be adopted only after validation and resynchronization; torn/corrupt tails fail closed. This is not a state snapshot or quorum implementation. R2-B retains Raft/storage integration, complete-state snapshot/compaction, membership, independent checkpoint and separate-process quorum histories.
 R1: pure single-shard Rust transitions and bounded in-memory state; no durable server.
 R2: registered command/snapshot schemas + mature storage/consensus integration + actual crash histories; PostgreSQL baseline comparison.
 R3: authenticated registry/policy/provider adapters; complete Order/Payment/Obligation/refund/outbox model.

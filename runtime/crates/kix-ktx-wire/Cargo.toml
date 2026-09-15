@@ -1,0 +1,11 @@
+[package]
+name = "kix-ktx-wire"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+kix-bcs1 = { path = "../kix-bcs1" }
+kix-kernel = { path = "../kix-kernel" }
+kix-types = { path = "../kix-types" }
+serde = { version = "=1.0.229", features = ["derive"] }

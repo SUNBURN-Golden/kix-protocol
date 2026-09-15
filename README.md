@@ -7,7 +7,7 @@
 
 ## 구현과 목표의 구분
 
-현재 실제 Rust workspace는 `kix-types`, `kix-bcs1`, `kix-feature-ir`, `kix-feature-semantics`, 새 `kix-kernel`입니다. 커널은 단일 shard의 결정론적 메모리 내 전이와 회귀 테스트입니다. **복제 저장소·durable ACK·운영 결제 엔진·배포된 KTX·성능 우위는 아직 없습니다.**
+현재 실제 Rust workspace는 `kix-types`, `kix-bcs1`, `kix-feature-ir`, `kix-feature-semantics`, `kix-kernel`, `kix-ktx-wire`, `kix-journal-local`입니다. 커널은 단일 shard의 결정론적 전이이며, 등록된 초기 상태·명령·결과와 파일 동기화·로그 재생을 수행하는 로컬 검증 경로가 있습니다. **복제 저장소·quorum ACK·상태 snapshot·운영 결제 엔진·배포된 KTX·성능 우위는 아직 없습니다.**
 
 목표는 edge/admission → 지역별 격리 cell → Rust KTX replicated shard → 외부 PG/체인 어댑터 → 검증된 관측입니다. PostgreSQL은 projection/control 후보이며, SQL 정본 비교는 별도 재고에서만 수행합니다. 같은 재고에 두 writer를 두지 않습니다. 배타적 위임 실행과 체인 직접 실행을 구분하고, 예약 완료·결제 사실·체인 발행 완료를 동일시하지 않습니다.
 
@@ -25,7 +25,7 @@
 
 | 경로 | 역할 |
 |---|---|
-| `runtime/` | Rust 실행/코덱/의미론 및 v5 계약 |
+| `runtime/` | Rust 실행/코덱/의미론 및 v6 계약 |
 | `docs/adr/` | 정본·원자성·복구 결정 |
 | `reference/` | 역사적 Python/Node/SQLite·Move·ZK 회귀/장애 fixture |
 | `scripts/`, `.github/workflows/`, `.devcontainer/` | 검증·CI·Codespaces 도구 |
@@ -39,7 +39,7 @@ cargo test --manifest-path runtime/Cargo.toml --workspace --locked
 cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings
 ```
 
-Rust toolchain은 `rust-toolchain.toml`의 1.98.1입니다. 전체 CI는 기존 `protocol.yml`과 새 `ktx-kernel.yml`을 구분해 검사합니다. 구 SHA의 성공을 새 SHA의 성공으로 계산하지 않습니다. R1의 메모리 내 재생은 실제 crash-recovery 증거가 아닙니다.
+Rust toolchain은 `rust-toolchain.toml`의 1.98.1입니다. 전체 CI는 기존 `protocol.yml`과 새 `ktx-kernel.yml`을 구분해 검사합니다. 구 SHA의 성공을 새 SHA의 성공으로 계산하지 않습니다. R1의 메모리 내 재생과 R2-A의 실제 파일·프로세스 종료 후 복구를 구분합니다. R2-A도 전원 장애·복제 quorum 내구성의 증거는 아닙니다.
 
 기존 fixture/localnet 회귀는 계속 실행합니다.
 

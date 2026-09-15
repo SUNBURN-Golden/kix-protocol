@@ -6,4 +6,6 @@ members = [
     "crates/kix-feature-ir",
     "crates/kix-bcs1",
     "crates/kix-kernel",
+    "crates/kix-ktx-wire",
+    "crates/kix-journal-local",
 ]

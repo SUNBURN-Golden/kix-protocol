@@ -1,6 +1,6 @@
-# KIX production runtime — KTX-R0/R1
+# KIX production runtime — KTX-R2-A
 
-Current authority: [masterplan 2.4](../docs/PROTOCOL_MASTERPLAN_V24.md), [ADR-0001](../docs/adr/0001-ktx-authority-commit-recovery.md), and architecture contract v5. The PostgreSQL-only design in 2.3 is historical/comparison scope, not the mandatory path for every future transaction.
+Current authority: [masterplan 2.4](../docs/PROTOCOL_MASTERPLAN_V24.md), [ADR-0001](../docs/adr/0001-ktx-authority-commit-recovery.md), and architecture contract v6. The PostgreSQL-only design in 2.3 is historical/comparison scope, not the mandatory path for every future transaction.
 
 ## Implemented
 
@@ -8,10 +8,12 @@ Current authority: [masterplan 2.4](../docs/PROTOCOL_MASTERPLAN_V24.md), [ADR-00
 - `kix-bcs1`: actual canonical codec and fixed S07-A golden vector, unchanged.
 - `kix-feature-ir` / `kix-feature-semantics`: validated analytical plans and reference semantics, not transaction authority.
 - `kix-kernel`: pure deterministic single-shard transitions, bounded records, stable command identity, segment/GA reservations, minimal order/external intent, local fences, UNKNOWN and capture observation model.
+- `kix-ktx-wire`: closed registration of genesis, command and result schemas with fixed golden bytes/hash, independent of the kernel's dependency graph.
+- `kix-journal-local`: local fsync-before-apply and streaming genesis/log replay, checksums/sequence/limits, exclusive file locking and real process-kill regression. A LocalReceipt is not the production quorum ACK.
 
 ## Not implemented
 
-The kernel has no persistence, network, cryptographic input authentication, durable ACK, consensus integration, cluster handoff, deployment, or performance evidence. `replace_owner` and `cancel_scope` are local state-model operations, not distributed protocols. ReturnRequired is not refund execution. The kernel models one positive-priced full-capture operation per order; general commerce remains R3 work.
+The pure kernel still has no I/O. The local journal is a storage test harness, not a replicated service. Network, cryptographic input authentication, quorum ACK, consensus integration, state snapshots/compaction, cluster handoff, deployment and performance superiority remain unimplemented. `replace_owner` and `cancel_scope` are local state-model operations, not distributed protocols. ReturnRequired is not refund execution. The kernel models one positive-priced full-capture operation per order; general commerce remains R3 work.
 
 ## Target
 

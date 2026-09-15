@@ -93,10 +93,30 @@ name = "kix-feature-semantics"
 version = "0.1.0"
 
 [[package]]
+name = "kix-journal-local"
+version = "0.1.0"
+dependencies = [
+ "kix-bcs1",
+ "kix-kernel",
+ "kix-ktx-wire",
+ "kix-types",
+]
+
+[[package]]
 name = "kix-kernel"
 version = "0.1.0"
 dependencies = [
  "kix-types",
+]
+
+[[package]]
+name = "kix-ktx-wire"
+version = "0.1.0"
+dependencies = [
+ "kix-bcs1",
+ "kix-kernel",
+ "kix-types",
+ "serde",
 ]
 
 [[package]]
