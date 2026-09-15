@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/kix-types",
+    "crates/kix-feature-semantics",
+    "crates/kix-feature-ir",
+]

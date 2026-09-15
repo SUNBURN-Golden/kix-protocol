@@ -1,27 +1,60 @@
 # KIX Protocol
 
-**최신 개발 기준:** PR 계보를 연결한 S06 `974d8e4` 위의 S06.1 기반 보완. [개발계획 2.2](docs/PROTOCOL_MASTERPLAN_V2.md), [S06.1 범위](docs/FOUNDATION_S061.md), [공통 바이트·해시 규격](docs/CANONICAL_ENCODING_V1.md)을 먼저 확인하세요. Python/TypeScript 계산 계약은 Commerce v2를 사용합니다. 계산 도구는 실제 지급 권한을 만들지 않으며 S05 복원은 조회·대사 전용입니다.
+**최신 개발 기준:** S06.1 `d5cf004` 위의 **S06.2 greenfield production architecture reset**. [개발계획 2.3](docs/PROTOCOL_MASTERPLAN_V23.md), [S06.2 실행 구조](docs/RUNTIME_ARCHITECTURE_S062.md), [KIX-BCS1](runtime/CANONICAL_BINARY_BCS_V1.md), [production Sui topology](runtime/MOVE_PRODUCTION_TOPOLOGY.md), [AI/GPU data plane](runtime/AI_GPU_DATA_PLANE.md)을 먼저 확인하세요. 기존 Python/Node/SQLite rc1과 CE1/shared-Show는 역사적 regression/fault fixture이며 새 production 설계권한이 아닙니다. S07 production은 `runtime/`의 Rust modular monolith + Tokio + PostgreSQL 18에서 시작합니다.
 
 티켓의 발행·구매·공식 리셀·입장·환불·배분·정산을 연결하는 프로토콜 연구·개발 저장소다.
 
-현재 개발 기준은 **v0.3-rc1 + S05 조회 전용 복원 + S06 계산·보류 기록 + S06.1 결정론·실행 입력 계약(2026-09-14)**이다. KIX는 예매·리셀·검표·금융·마케팅 서비스가 연결하는 티켓 권리·거래·정산 프로토콜이다. S03은 호출 직전 확인값이 남은 최초 지급을 현재 근거에 따라 재개하거나 보류한다. 저장 유실의 근본 원인과 독립 저장 내구성은 미해결이다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 범위·실행·제한](docs/PAID_RECOVERY.md)을 따른다.
+현재 개발 기준은 **v0.3-rc1 역사적 fixture + S05 조회 전용 복원 + S06 계산·보류 기록 + S06.1 결정론 계약 + S06.2 greenfield production runtime/data-plane 경계(2026-09-15)**다. 저장 유실의 근본 원인과 독립 저장 내구성은 미해결이다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 범위·실행·제한](docs/PAID_RECOVERY.md)을 따른다.
 
-기준 커밋 `2658a43`의 Groth16 설정에는 회로별 기여가 빠져 있었다. 당시 공개 증명·검증키만으로 공개 입력과 증명을 함께 조정해 검증을 통과하는 결함을 재현했다. 이 브랜치는 회로별 기여·검증, 기존 키 거절, 조작 증명과 폐기·취소 경계의 회귀 검사를 추가한다. 과거 검증 수락 기록을 보안 보장으로 해석하지 않는다. [보완 결과](docs/PROTOCOL_HARDENING.md)를 먼저 읽는다.
+기준 커밋 `2658a43`의 Groth16 설정에는 회로별 기여가 빠져 있었다. 당시 공개 증명·검증키만으로 공개 입력과 증명을 함께 조정해 검증을 통과하는 결함을 재현했다. 이후 회로별 기여·검증, 기존 키 거절, 조작 증명과 폐기·취소 경계 회귀를 추가했다. 과거 검증 수락 기록을 보안 보장으로 해석하지 않는다. [보완 결과](docs/PROTOCOL_HARDENING.md)를 먼저 읽는다.
+
+## production architecture
+
+```text
+Client
+  |
+Rust KIX modular monolith + Tokio
+  |
+  +--> Rust kernel
+  +--> PostgreSQL 18 narrow OLTP
+  +--> Executor --> Sui gRPC / PG / Bank / FX
+                         |
+                  observation stream
+                         |
+                    Rust reducer
+
+committed facts --> Arrow --> Parquet
+                         |
+               +---------+---------+
+               |                   |
+          Polars Lazy           DuckDB
+        CPU Rust streaming       SQL
+               |
+         cudf-polars GPU
+               |
+              AI/ML
+```
+
+- production canonical identity: **KIX-BCS1**, not JSON CE1.
+- production Move: immutable `ShowConfig` + independent inventory/right/sale/payment objects + sharded admission/nullifier state.
+- Polars/DuckDB/cuDF: columnar analytics/AI plane이며 OLTP authority가 아님.
+- Python/Node/SQLite reference: historical regression/fault fixture.
 
 ## 구성
 
 | 경로 | 내용 |
 |---|---|
-| `reference/v0.3-rc1/` | 현재 참조 구현, Sui Move, 독립 클라이언트, ZK 회로 |
+| `runtime/` | S07+ Rust production runtime, KIX-BCS1, performance/AI data-plane contracts |
+| `reference/v0.3-rc1/` | 역사적 Python/Node/SQLite, legacy Sui Move, 독립 클라이언트, ZK regression fixture |
 | `reference/v0.1/`, `reference/v0.2/` | 이전 기준 모형 보존 |
 | `reviews/` | v0.1·v0.2 검토와 재현 자료 |
 | `scripts/`, `.devcontainer/`, `.github/workflows/` | 설치·검증 자동화, Codespaces 구성, CI |
-| `validation/2026-09-11/` | 실제 실행 로그, 체인 영수증, 공개 증명·검증키 |
-| `docs/` | 실행 방법, 검증 범위, 변경 근거, 후속 개발 계획 |
+| `validation/` | 역사적 실제 실행 로그·영수증·검증 자료 |
+| `docs/` | 실행 방법, 검증 범위, 변경 근거, 개발 계획 |
 
 ## 실행
 
-Linux x86_64, Python 3.12, Node 24 환경에서 저장소 루트 기준:
+기존 fixture/localnet 회귀:
 
 ```bash
 bash scripts/bootstrap.sh
@@ -29,56 +62,75 @@ source scripts/env.sh
 python scripts/verify_runtime.py
 python scripts/run_localnet.py
 python scripts/run_localnet.py --paid
-```
-
-실제 Groth16 생성·검증을 포함하는 비공개 경로:
-
-```bash
 npm --prefix reference/v0.3-rc1/client run setup:zk
 npm --prefix reference/v0.3-rc1/client run test:zk
 python scripts/run_localnet.py --private
 ```
 
-GitHub에서 **검토하려는 PR의 브랜치를 선택한 뒤 Code → Codespaces**로 설치 구성을 사용할 수 있다. 미병합 변경은 `main`에 포함되지 않는다. 설정 파일은 추가했으나 별도 Codespace 인스턴스를 생성한 것은 아니다. 상세 조건은 [개발 환경 안내](docs/DEVELOPMENT.md)를 따른다.
+production architecture/Rust boundary:
+
+```bash
+python scripts/verify_runtime_architecture.py
+cargo test --manifest-path runtime/Cargo.toml --workspace
+```
+
+Rust toolchain은 `rust-toolchain.toml`의 1.98.1로 고정한다. S07 business persistence와 actual KIX-BCS1 codec/production Move objects는 아직 구현 전이다.
 
 ## 확인된 범위
 
 | 확인 항목 | 확인 범위·근거 |
 |---|---|
-| Python 모형·저장 경계·복구 검사 | S06.1 Python 207개를 Python 3.12.14/SQLite 3.53.1과 Python 3.12.3/SQLite 3.45.1에서 직접 통과. [직접 검증 기록](validation/2026-09-14-foundation/README.md) |
-| 새 계산 계약의 언어 간 일치 | 두 Python 환경과 Node 24 TypeScript에서 고정 바이트·해시·자산·배정·견적·반환안 및 잘못된 입력의 거절 확인 |
-| Sui Move / ZK 회로 | Move 검사 3개 통과, 회로 2개 컴파일 |
-| 공개 경로 | 발행·이전 후 별도 프로세스 복구·소비, 이전 소유자·중복 사용 거절 |
-| 유상 리셀 연결 | 실제 Sui 이전·실패 영수증과 독립 모의 PG·은행 연결. 초기 응답 유실·중복·늦은 지급 3개, S03 복구 2개, S05 archive 2개 여정을 CI에 포함 |
-| 비공개 경로 | 노트 생성·소비 증명 생성, Sui의 Groth16 검증 수락 |
-| 비공개 오류 경로 | 다른 검표 문맥·다른 검증키 객체·중복 소비가 실제 체인에서 거절됨 |
+| Python 모형·저장 경계·복구 검사 | S06.1 Python 207개를 복수 Python/SQLite 환경에서 통과한 역사적 regression 근거 |
+| CE1 계산 계약 | Python/TypeScript에서 Commerce v2 고정 바이트·해시·배정·견적·반환안 일치. **production KIX-BCS1 보장은 아님** |
+| S06.2 runtime 경계 | Rust 1.98.1 workspace와 architecture checker. 최종 S06.2 SHA에서 전체 CI로 판정 |
+| Sui Move / ZK 회귀 | 기존 Move/회로/public/paid/private localnet regression 유지 |
+| storage/recovery | S03/S05/S06의 제한된 지급 복구·archive 회귀 유지 |
 
-표의 체인 실행 설명은 기존 여정의 범위다. 계보 보완 S06 `974d8e4`의 [새 CI](https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/34830584614)는 성공했으며, S06.1의 전체 CI는 S06.1 PR의 최종 SHA에 대해 별도로 확인한다. 이 로컬넷은 검증자 1개이며 RPC를 신뢰한다. 확인한 독립성은 설정 프로세스 종료 뒤 다른 프로세스가 백업과 체인 자료로 진행하는 범위다. 실제 PG·은행 연결, 다중 노드 장애 내성, 상용 KIX 서비스 전체 중단, 실서비스 익명성은 검증하지 않았다. ZK 설정은 단일 주체가 만든 시험용이며 현재 Move 공연 정원과 비공개 모형은 16슬롯이다.
+현재 legacy chain fixture는 16-slot shared Show이고 RPC를 신뢰한다. 이것을 production throughput/topology로 해석하지 않는다. production ZK setup, independent checkpoint verification, 실제 PG·은행, remote durability는 미완료다.
 
-기존 선택 변이 14개 결과는 rc1 원자료를 보존했으며 이번 실행에서 재검사하지 않았다. 이전 `results/verification.json`과 [2026-09-11 실행 보고](docs/RUNTIME_VALIDATION.md)는 당시 기록이다. ZK 보완 후 근거는 [보완 결과](docs/PROTOCOL_HARDENING.md)와 `validation/2026-09-13/`이다.
+## 주요 문서
 
-## 문서
+- [개발계획 2.3 — Greenfield production protocol](docs/PROTOCOL_MASTERPLAN_V23.md)
+- [S06.2 greenfield production architecture](docs/RUNTIME_ARCHITECTURE_S062.md)
+- [KIX Binary Canonical Encoding v1](runtime/CANONICAL_BINARY_BCS_V1.md)
+- [Production Sui object topology](runtime/MOVE_PRODUCTION_TOPOLOGY.md)
+- [Runtime performance profile](runtime/PERFORMANCE_PROFILE.md)
+- [AI / GPU data plane](runtime/AI_GPU_DATA_PLANE.md)
+- [개발계획 2.2 — historical](docs/PROTOCOL_MASTERPLAN_V2.md)
+- [S06.1 historical foundation](docs/FOUNDATION_S061.md)
+- [CE1 historical/compatibility encoding](docs/CANONICAL_ENCODING_V1.md)
+- [저장 기록 유실 조사](docs/STORAGE_INVESTIGATION.md)
+- [프로토콜 보안 보완](docs/PROTOCOL_HARDENING.md)
 
-- [개발 환경과 재실행](docs/DEVELOPMENT.md)
-- [실행 결과와 보장 범위](docs/RUNTIME_VALIDATION.md)
-- [v0.3-rc1 원래 구현 보고](reference/v0.3-rc1/KIX_v0.3_rc1_구현결과와_실행조건.md)
-- [가져온 자료의 원본 해시](docs/source-imports-2026-09-11.json)
-- [rc1 이후 소스 수정](docs/runtime-changes-from-rc1.patch)
-- [현재 개발계획 2.2](docs/PROTOCOL_MASTERPLAN_V2.md) / [이전 로드맵 기록](docs/ROADMAP.md)
-- [프로토콜 통합의 다음 구현 계약](docs/PROTOCOL_INTEGRATION_NEXT.md)
-- [첫 유상 리셀 통합과 남은 범위](docs/PAID_INTEGRATION.md)
-- [저장 기록 유실 조사와 지급 판단 차단](docs/STORAGE_INVESTIGATION.md)
+## S05
+
+Separate-filesystem archive와 reconciliation-only restore를 구현했다. restored workspace는 money execution을 재개하지 않는다. whole-host loss, remote durability, historical storage incident root cause는 미검증이다.
+
+## S06
+
+Asset/Amount, ordered discounts, multi-leg allocation, selected-line refund proposal을 계산-only 계약으로 구현했다. 외부 결제나 지급 권한을 만들지 않는다.
+
+## S06.1
+
+PR 계보, CE1, ASCII machine ID, Python↔TypeScript 결정론, registry-bound AssetAmount와 의미별 integer를 고정했다. 이 결과는 역사적 회귀/compatibility 자산으로 유지한다.
+
+## S06.2 — greenfield reset
+
+성능을 위해 production architecture를 기존 fixture에서 분리하는 수준을 넘어 **새 production design authority를 Rust 쪽으로 이동**한다.
+
+- Rust-first production state machine
+- PostgreSQL 18 typed OLTP
+- KIX-BCS1 production canonical bytes/hash
+- CE1/Python은 compatibility/regression only
+- show-wide shared mutable Move topology 금지
+- immutable ShowConfig, independent Right/SaleIntent/PaymentEvidence, sharded admission/nullifier
+- Rust direct Sui gRPC streaming observation
+- Arrow/Parquet columnar contract
+- Polars Lazy를 feature/ETL의 기본 plan으로 사용
+- DuckDB를 Parquet/Arrow SQL·대사에 사용
+- cudf-polars/libcudf를 GPU feature acceleration에 사용
+- AI/model output은 non-authoritative proposal이며 Rust kernel gate를 다시 통과
+
+S07 Durable Commerce Execution은 이 아키텍처 위에서 처음부터 구현한다.
 
 개인키·백업 비밀번호·비공개 노트·시험용 proving key·로컬 체인 DB는 추적하지 않는다. 공개 배포용 라이선스는 부여하지 않았다.
-
-## S05: separate-filesystem archive and reconciliation-only restore
-
-The follow-up to PR #4 adds separate-filesystem checkpoints and restoration after loss of the original working directory. Restored workspaces cannot submit money. The live mock provider is queried separately; its historical backup never replaces it. See [scope and commands](docs/PAID_ARCHIVE.md) and [blueprint history](docs/BLUEPRINT_20260914.md). The S05 baseline has 142 Python checks; S06 extends the suite to 181. Whole-host loss, remote durability and the historical storage incident root cause remain unverified.
-
-## S06: asset and bundle calculation contracts
-
-Exact asset amounts, ordered discounts, multi-leg payment allocation and selected-line reversal proposals are available through a bounded JSON calculation interface. These are calculation-only contracts: no payment capture, ticket issuance or refund is executed. Recovery HOLD decisions now retain a stable local audit record, including stale-plan and interrupted-write paths. See [implementation boundaries](docs/COMMERCE_CONTRACTS.md) and [historical S06 validation evidence](validation/2026-09-14-commerce/README.md). The current roadmap is [development plan 2.2](docs/PROTOCOL_MASTERPLAN_V2.md).
-
-## S06.1: deterministic contracts before durable commerce
-
-The PR stack now includes the latest S03 ancestry without rewriting existing commits. CE1 pins canonical bytes, ASCII machine IDs, Unicode 15 assigned characters and hash domains; Python and TypeScript independently verify Commerce v2 calculations. AssetAmount records bind the entire selected registry configuration. Distinct integer types and an explicit, disabled-by-default legacy KRW adapter preserve asset and unit boundaries. Existing rc1 hashes and recovery semantics remain unchanged. See [scope and remaining work](docs/FOUNDATION_S061.md) and [207-test and cross-language evidence](validation/2026-09-14-foundation/README.md). S07 persistence, authenticated registries and multi-asset execution are not implemented here.
