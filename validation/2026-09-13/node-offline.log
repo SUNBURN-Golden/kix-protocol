@@ -1,0 +1,12 @@
+✔ holder and private note backup restores without a KIX service (289.269867ms)
+✔ wrong password and modified ciphertext cannot become a valid backup (537.389923ms)
+✔ signed request journal persists exact payload with private file permissions (44.345825ms)
+✔ field encoding is fixed-width, little endian and rejects noncanonical values (0.808813ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1030.620144

@@ -1,0 +1,28 @@
+{
+  "format": "kix-zk-artifacts-v1",
+  "setup": "INSECURE_SINGLE_PARTY_LOCAL_FIXTURE",
+  "curve": "BN254",
+  "depth": 4,
+  "phase2Contributions": {
+    "mint": 1,
+    "spend": 1
+  },
+  "circuits": {
+    "common.circom": "c1c74a755dbe2e25c2682e13b22deff5d9f30988f7d684e21a8a7cfcdc811393",
+    "mint.circom": "5043fb72414dcbe82d316ce2481300afb7106abb1c620b3a11fca0c37622d9ef",
+    "spend.circom": "307005dedb4d8913659891cf93e531c1b3c8f9c365cc9210710cdae24491dbd2"
+  },
+  "files": {
+    "mint.r1cs": "a4654831ab2e20d12b0bf61944daa1b555fcc5e47166fae788af9b0074b08571",
+    "mint.zkey": "f2c8935d98649f738f94d5773edcd3fa14c7525defc6abea553c805926328360",
+    "mint.vkey.json": "3928758fa8dba2235a3d651e8217c3a2fccb0f968a391195f3443a1b9f9abac0",
+    "mint.vk.bin": "764ad252613e97f7e6867d1d7e1868b6cf1fd1b4e36c53a2551b75dfbabce053",
+    "mint_js/mint.wasm": "f7a24059b60c419c8ec3c9019441e53b092f5dc680d0303e2eee53e896d3a4e0",
+    "spend.r1cs": "7dd3be1e62d5de3461742484222964c0faa394eaae0826ff7510637ebe4a6f3f",
+    "spend.zkey": "77be2a9617c44553d14e78c9045a2f170abab37ebb6081afd128b970457927ac",
+    "spend.vkey.json": "4b01e6308f758ede4764b641edff1787543ce7d763fa878b4df782960282cba5",
+    "spend.vk.bin": "2eca0bcced6c1f9cf9855bf5eb70a7a621c6ce40c3e696d19c3841847d31b463",
+    "spend_js/spend.wasm": "272216096dcc17d569b543900b35f3899192635888b9a71f7875ae385dab123d"
+  },
+  "suiSerializationVerified": false
+}

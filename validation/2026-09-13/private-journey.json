@@ -1,0 +1,104 @@
+{
+  "status": "PASSED_ACTUAL_LOCALNET",
+  "chain": "FfQYEDeKjzzR3trRqofUcNchodX9UXqipL7pXAogyUG8",
+  "packageId": "0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6",
+  "authority": "SUI_MOVE",
+  "coordinatorSetupProcessExited": true,
+  "kixServicesCalled": 0,
+  "independentProcessRecovered": true,
+  "zk": true,
+  "ownGas": true,
+  "oldOwner": {
+    "reason": "previous holder",
+    "result": "ONCHAIN_REJECTED",
+    "digest": "AJQPpmsLEcHagTdHt5jvAbybxoejqTCuZi4nAib7CqZ7",
+    "module": "rights",
+    "abortCode": "1"
+  },
+  "replay": {
+    "reason": "private second consumption",
+    "result": "ONCHAIN_REJECTED",
+    "digest": "7kaBCiTjnVLV5WWFtWKXAzoLLM3hgCZDKJagvUzjtrHF",
+    "module": "rights",
+    "abortCode": "8"
+  },
+  "consumeDigest": "7uje9tNQPRhnG1xKgz4nzaBPbVFPhNzYxRGWbgQjKHi6",
+  "privacy": {
+    "mintAndSpendProofsAccepted": true,
+    "nullifier": "3655493320365137444659498772177913577515434827941772575794286128952534141993",
+    "changedContext": {
+      "reason": "changed proof context",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "CQyqXejdy75QbhXkMYhi4UyrJXw1ZX7XEdAkNrAtkjF2",
+      "module": "zk_gate",
+      "abortCode": "2"
+    },
+    "wrongKey": {
+      "reason": "wrong verifier object",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "7QbHdjtATiju2ik1yB3UtZczDKd6Smy26edMHpc7Lj35",
+      "module": "rights",
+      "abortCode": "4"
+    },
+    "limitations": [
+      "16-slot demo anonymity set",
+      "shield transition and holder address remain public",
+      "no private resale/refund/unshield/key rotation",
+      "RPC is trusted"
+    ]
+  },
+  "privateBoundaryResults": {
+    "showId": "0x7abb696be38745401137fc40c83ab184c19517ae9c9fc7a174ab631692595f5f",
+    "compensated": {
+      "reason": "compensated nullifier",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "AoL8zHzjdHEz9HTZxw4ZY7HSmpo3gpByi1X26U5Txnof",
+      "module": "zk_gate",
+      "abortCode": "2"
+    },
+    "revocationDigest": "BqtHXHCYBvj7EKy4NioHtqx9h24EnKMd7SXQuWAGYs9C",
+    "oldRevoked": {
+      "reason": "proof predating revocation",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "8o8RgB4VSYRWSH5ze1Lrq9f1hZmrDD1CRjap8AFUDbL4",
+      "module": "zk_gate",
+      "abortCode": "2"
+    },
+    "staleRoot": {
+      "reason": "unrevoked note with stale root",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "2DvKJkkZZKJPYMM26AeaEaE5QQpCy2Thz4wbczK1fNf4",
+      "module": "zk_gate",
+      "abortCode": "2"
+    },
+    "reissue": {
+      "reason": "revoked private slot cannot be reissued",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "AofhD7TE3kChua7j4rh6EDr9ciNNrPRz6RVPgrnW6XSf",
+      "module": "rights",
+      "abortCode": "9"
+    },
+    "unaffectedNoteRecoveredDigest": "DuQJTmvmaybFdWiXqRFJCaJXCrKvCbMNggweC1vZkTBb",
+    "replay": {
+      "reason": "fresh proof second consumption",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "HYWrw11fxKRA3UCEa4nyc1UcW9qgic1N8yBfdtdgvDYG",
+      "module": "rights",
+      "abortCode": "8"
+    },
+    "cancellationDigest": "26FUBfQsLDZdSW2LwaCmGcYUkwREtTc3Ugv5Thkb6iGg",
+    "afterCancel": {
+      "reason": "valid proof after show cancellation",
+      "result": "ONCHAIN_REJECTED",
+      "digest": "8C4TBexHiUsiJvmkdPm9ZdxzaK1SEnAwk7xEmyWvfzV2",
+      "module": "rights",
+      "abortCode": "4"
+    },
+    "finalNullifierCount": 1,
+    "scope": "actual Sui localnet; private reissue remains unsupported"
+  },
+  "limitation": "RPC is trusted; validator/checkpoint proof verification and production KIX shutdown are not implemented.",
+  "localCommitteeSize": 1,
+  "networkFaultToleranceTested": false,
+  "zkLoginBackgroundKeyFetchDisabled": true
+}

@@ -5,11 +5,6 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
-    inputs:
-      run_private:
-        description: Generate local fixture keys and run the private Sui journey
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -41,10 +36,10 @@ jobs:
       - name: Public journey on a disposable local chain
         run: .venv/bin/python scripts/run_localnet.py
       - name: Generate fixture proving artifacts
-        if: github.event_name == 'workflow_dispatch' && inputs.run_private
         run: npm --prefix reference/v0.3-rc1/client run setup:zk
+      - name: Reject compensated proofs with contributed keys
+        run: npm --prefix reference/v0.3-rc1/client run test:zk
       - name: Private journey on a disposable local chain
-        if: github.event_name == 'workflow_dispatch' && inputs.run_private
         run: .venv/bin/python scripts/run_localnet.py --private
       - name: Upload check results only
         if: always()

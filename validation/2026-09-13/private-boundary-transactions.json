@@ -1,0 +1,246 @@
+[
+  {
+    "actorRole": "boundary-issuer",
+    "operation": "cancel_show",
+    "digest": "26FUBfQsLDZdSW2LwaCmGcYUkwREtTc3Ugv5Thkb6iGg",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-issuer",
+    "operation": "create_show",
+    "digest": "FT6WDWEjgLRzFDveLP9RVD6PLLkveYoFo1GfRrH1Dv4h",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-issuer",
+    "operation": "issue",
+    "digest": "AofhD7TE3kChua7j4rh6EDr9ciNNrPRz6RVPgrnW6XSf",
+    "state": "EXECUTED_FAILURE",
+    "status": {
+      "success": false,
+      "error": {
+        "$kind": "MoveAbort",
+        "message": "MoveAbort in 1st command, abort code: 9, in '0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6::rights::issue' (instruction 35)",
+        "command": 0,
+        "MoveAbort": {
+          "abortCode": "9",
+          "location": {
+            "package": "0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6",
+            "module": "rights",
+            "function": 5,
+            "instruction": 35,
+            "functionName": "issue"
+          }
+        }
+      }
+    }
+  },
+  {
+    "actorRole": "boundary-issuer",
+    "operation": "issue",
+    "digest": "BCWWV9aGAYcuJr4aF9qukitN1AFe9nC21jM7GSEZQAJm",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-issuer",
+    "operation": "issue",
+    "digest": "BiDyKK8pUV8CPwUpPPNuQgfue5xbVU5WxmqcdNQtCZYA",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-issuer",
+    "operation": "issue",
+    "digest": "Eym9nMNK1fw7qm3hjRDgPnvrbF5Kp8jgmvUPsMeipyRp",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-issuer",
+    "operation": "revoke",
+    "digest": "BqtHXHCYBvj7EKy4NioHtqx9h24EnKMd7SXQuWAGYs9C",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-holder",
+    "operation": "shield",
+    "digest": "2xtnDWxs9vbSBoNytF3fd9i7QKkesEFSzhUmN4VX2xHX",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-holder",
+    "operation": "shield",
+    "digest": "3KQVHNYLqNnrzbGqGP719js9PT1P1SZDn5QLpCcqiMWp",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-holder",
+    "operation": "shield",
+    "digest": "5Hg9YkSstUKjGRRfYS5Jy4q8NBVZvUxjLhEU9BKDz6jA",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-gate",
+    "operation": "consume_private",
+    "digest": "2DvKJkkZZKJPYMM26AeaEaE5QQpCy2Thz4wbczK1fNf4",
+    "state": "EXECUTED_FAILURE",
+    "status": {
+      "success": false,
+      "error": {
+        "$kind": "MoveAbort",
+        "message": "MoveAbort in 1st command, abort code: 2, in '0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6::zk_gate::verify' (instruction 43)",
+        "command": 0,
+        "MoveAbort": {
+          "abortCode": "2",
+          "location": {
+            "package": "0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6",
+            "module": "zk_gate",
+            "function": 3,
+            "instruction": 43,
+            "functionName": "verify"
+          }
+        }
+      }
+    }
+  },
+  {
+    "actorRole": "boundary-gate",
+    "operation": "consume_private",
+    "digest": "8C4TBexHiUsiJvmkdPm9ZdxzaK1SEnAwk7xEmyWvfzV2",
+    "state": "EXECUTED_FAILURE",
+    "status": {
+      "success": false,
+      "error": {
+        "$kind": "MoveAbort",
+        "message": "MoveAbort in 1st command, abort code: 4, in '0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6::rights::consume_private' (instruction 39)",
+        "command": 0,
+        "MoveAbort": {
+          "abortCode": "4",
+          "location": {
+            "package": "0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6",
+            "module": "rights",
+            "function": 22,
+            "instruction": 39,
+            "functionName": "consume_private"
+          }
+        }
+      }
+    }
+  },
+  {
+    "actorRole": "boundary-gate",
+    "operation": "consume_private",
+    "digest": "8o8RgB4VSYRWSH5ze1Lrq9f1hZmrDD1CRjap8AFUDbL4",
+    "state": "EXECUTED_FAILURE",
+    "status": {
+      "success": false,
+      "error": {
+        "$kind": "MoveAbort",
+        "message": "MoveAbort in 1st command, abort code: 2, in '0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6::zk_gate::verify' (instruction 43)",
+        "command": 0,
+        "MoveAbort": {
+          "abortCode": "2",
+          "location": {
+            "package": "0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6",
+            "module": "zk_gate",
+            "function": 3,
+            "instruction": 43,
+            "functionName": "verify"
+          }
+        }
+      }
+    }
+  },
+  {
+    "actorRole": "boundary-gate",
+    "operation": "consume_private",
+    "digest": "AoL8zHzjdHEz9HTZxw4ZY7HSmpo3gpByi1X26U5Txnof",
+    "state": "EXECUTED_FAILURE",
+    "status": {
+      "success": false,
+      "error": {
+        "$kind": "MoveAbort",
+        "message": "MoveAbort in 1st command, abort code: 2, in '0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6::zk_gate::verify' (instruction 43)",
+        "command": 0,
+        "MoveAbort": {
+          "abortCode": "2",
+          "location": {
+            "package": "0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6",
+            "module": "zk_gate",
+            "function": 3,
+            "instruction": 43,
+            "functionName": "verify"
+          }
+        }
+      }
+    }
+  },
+  {
+    "actorRole": "boundary-gate",
+    "operation": "consume_private",
+    "digest": "DuQJTmvmaybFdWiXqRFJCaJXCrKvCbMNggweC1vZkTBb",
+    "state": "EXECUTED_SUCCESS",
+    "status": {
+      "success": true,
+      "error": null
+    }
+  },
+  {
+    "actorRole": "boundary-gate",
+    "operation": "consume_private",
+    "digest": "HYWrw11fxKRA3UCEa4nyc1UcW9qgic1N8yBfdtdgvDYG",
+    "state": "EXECUTED_FAILURE",
+    "status": {
+      "success": false,
+      "error": {
+        "$kind": "MoveAbort",
+        "message": "MoveAbort in 1st command, abort code: 8, in '0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6::rights::consume_private' (instruction 95)",
+        "command": 0,
+        "MoveAbort": {
+          "abortCode": "8",
+          "location": {
+            "package": "0x25f527d4d68b504068965fc4a85f892daa53e824f127813bf8ee2f77de2931d6",
+            "module": "rights",
+            "function": 22,
+            "instruction": 95,
+            "functionName": "consume_private"
+          }
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "checks": [
+    {
+      "check": "python-tests",
+      "exitCode": 0,
+      "seconds": 1.595
+    },
+    {
+      "check": "node-offline",
+      "exitCode": 0,
+      "seconds": 1.286
+    },
+    {
+      "check": "sdk-import",
+      "exitCode": 0,
+      "seconds": 1.069
+    },
+    {
+      "check": "move-tests",
+      "exitCode": 0,
+      "seconds": 69.222
+    },
+    {
+      "check": "circuit-build",
+      "exitCode": 0,
+      "seconds": 5.777
+    }
+  ],
+  "chainExecuted": false,
+  "proofGenerated": false
+}

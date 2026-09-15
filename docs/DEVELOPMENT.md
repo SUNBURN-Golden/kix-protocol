@@ -48,10 +48,13 @@ python scripts/run_localnet.py
 
 ```bash
 npm --prefix reference/v0.3-rc1/client run setup:zk
+npm --prefix reference/v0.3-rc1/client run test:zk
 python scripts/run_localnet.py --private
 ```
 
-`setup:zk`는 컴파일과 단일 주체 시험용 Powers of Tau/Groth16 설정을 수행한다. 이 산출물은 운영용 신뢰 설정으로 사용할 수 없다. 소스에 적힌 비공개 입력·공개 입력으로 증명을 만들고 Sui에서 실제 검증한다. 잘못된 문맥, 다른 검증키 객체, 중복 소비도 체인 거절을 확인한다.
+`setup:zk`는 컴파일, 단일 주체 시험용 Powers of Tau, mint/spend 각각의 Groth16 기여와 `zkey verify`를 수행한다. 시작할 때 기존 manifest를 무효화하고 모든 단계가 성공해야 새 manifest를 쓴다. 초기 키 또는 기여 기록이 없는 기존 manifest는 클라이언트가 거절한다. 이 검사는 운영용 신뢰 설정이나 다자 참여를 보장하지 않는다.
+
+`test:zk`는 과거 공개 자료의 결함을 먼저 재현한 뒤 새 키에서 정상 증명 수락과 공개 입력·증명 동시 조작 거절을 검사한다. `--private`는 별도 시험 공연에서 실제 체인 조작 거절, 폐기 후 옛 증명 거절, 변경된 루트에 대한 유효 노트의 증명 재생성과 사용, 취소 후 거절을 추가로 검사한다. 폐기된 비공개 슬롯의 재발행은 여전히 금지한다.
 
 개인키·백업 비밀번호·비공개 노트는 `.local/` 및 무시되는 실행 디렉터리에 있으므로 공유하지 않는다. `zk/artifacts/`의 시험용 파라미터도 Git에서 제외했다. 업로드한 검증 자료에는 공개 증명·공개 검증키·선별한 거래 결과만 들어 있다.
 
@@ -65,6 +68,6 @@ python scripts/run_localnet.py --private
 
 ## GitHub Actions
 
-`protocol.yml`은 main push와 PR에서 설치·기본 검사·공개 로컬넷 여정을 수행하도록 구성했다. 수동 실행의 `run_private`를 켜면 시험용 파라미터 생성과 비공개 여정도 추가된다. 설정 파일을 추가한 것과 GitHub runner에서 통과한 것은 별개다. 각 실행 상태는 저장소 Actions에서 확인한다.
+`protocol.yml`은 main push·PR·수동 실행에서 설치·기본 검사·공개 여정·시험용 키 생성·ZK 회귀 검사·비공개 여정을 모두 수행한다. 비공개 검사를 기본적으로 건너뛰던 `run_private` 옵션은 제거했다. 설정 파일을 추가한 것과 GitHub runner에서 통과한 것은 별개다. 각 실행 상태는 저장소 Actions에서 확인한다.
 
 공식 안내: [Sui 설치](https://docs.sui.io/getting-started/onboarding/sui-install), [로컬 네트워크](https://docs.sui.io/getting-started/onboarding/local-network).

@@ -6,7 +6,8 @@
     "test:offline": "node --test offline.test.mjs",
     "journey": "node localnet.mjs",
     "build:circuits": "node compile-circuits.mjs",
-    "setup:zk": "node setup-zk.mjs"
+    "setup:zk": "node setup-zk.mjs",
+    "test:zk": "node zk-regression.mjs"
   },
   "dependencies": {
     "@mysten/sui": "2.30.0",
