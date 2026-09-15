@@ -1,11 +1,14 @@
 # KIX AI / GPU data plane
 
-KIX AI/analytics uses a **KIX-owned Feature IR + Arrow/Parquet interchange**. Production transaction authority remains Rust kernel + PostgreSQL; production GPU execution is native `libcudf`, not Python `cudf-polars`.
+KIX AI/analytics uses a **KIX-owned Feature IR + Arrow/Parquet interchange**. Transaction authority follows the scope's single assigned writer in ADR-0001. In a KTX-authoritative scope, PostgreSQL is a projection, not an additional economic authority. Production GPU execution targets native `libcudf`; Python `cudf-polars` remains conformance tooling.
 
 ## 1. Data flow
 
 ```text
-PostgreSQL committed facts
+Assigned source authority: committed facts
+        |
+        v
+Authenticated source cut + projection watermarks
         |
         v
 Arrow RecordBatch / Parquet
@@ -32,6 +35,8 @@ CPU lazy/streaming      native GPU + RMM
 ```
 
 `cudf-polars` remains a third execution path only for conformance, benchmarks, and rapid prototyping. It is not a production dependency.
+
+An export built from PostgreSQL must identify which source commits its projection contains. Its MVCC snapshot or LSN alone does not establish KTX source completeness. See `AUTHENTICATED_EXPORT.md` and ADR-0001; a separate SQL-authoritative comparison uses separate test resources.
 
 ## 2. Why KIX owns Feature IR
 

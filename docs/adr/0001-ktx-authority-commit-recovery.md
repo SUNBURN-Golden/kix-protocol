@@ -50,7 +50,7 @@ Initial comparison profile: three replicas in independent failure domains within
 
 ## 5. Replay and upgrades
 
-Ordered input fixes admitted time, validated external observations and all nondeterministic inputs. Replicas never independently expire seats using local wall clocks. Validate supplied time and monotonicity at the ordered boundary; the state machine is not a time oracle.
+Ordered input fixes admitted time, validated external observations and all nondeterministic inputs. Replicas never independently expire seats using local wall clocks. Validate supplied time and monotonicity at the ordered boundary; the state machine is not a time oracle. Successful state-command calls advance admitted time even when expiry has not arrived or an observation repeats. Immutable reservation-result lookup is a read-only exception and does not advance time; it still requires caller authentication at ingress.
 
 Log envelopes must separately bind wire schema, kernel semantics version, policy/asset snapshots, ownership generation and application decision. Snapshots identify state version and committed cut. A software upgrade needs a logged activation boundary, old-version replay or a validated state migration, mixed-version admission rules and rollback rules. BCS equality alone does not establish equal business semantics.
 
@@ -62,7 +62,7 @@ Only committed external intents are executable. Commit an in-flight/UNKNOWN tran
 
 Internal fencing stops new internal writes by an old owner; it cannot cancel a request already sent to a provider. Accept validated late facts bound to the original operation even when its submitting owner has changed. The current owner applies those facts under its current execution fence. Rejecting an old command is not the same as discarding an old operation's real success.
 
-Event dedupe and economic-operation dedupe are distinct. Store contradictory evidence, quarantine the affected order/operation and avoid overwriting the original fact. Unknown/unbound/oversize events need a bounded durable inbox/quarantine outside the pure kernel; rejection by R1 is not a license to ACK and discard them. Evidence hashes provide integrity, not provenance authentication.
+Event dedupe and economic-operation dedupe are distinct. Store contradictory evidence, quarantine every order/operation named by both the original and contradictory payloads and avoid overwriting the original fact. An unbound operation named in accepted conflicting evidence cannot later gain a fresh reservation binding. Quarantine blocks a new external-send transition. Later validated facts are still recorded, but a matching amount alone never clears review or automatically authorizes fulfillment. Expiry/cancellation can still establish ReturnRequired while retaining review. Unknown/unbound/oversize events need a bounded durable inbox/quarantine outside the pure kernel; rejection by R1 is not a license to ACK and discard them. Evidence hashes provide integrity, not provenance authentication.
 
 R1 models one full capture operation per positive-priced reservation. Mismatch means review; a matching capture after expiry/cancellation means ReturnRequired, never resurrecting an expired order or releasing inventory now owned by another order. ReturnRequired is a marker, not an authorized refund nor the complete Obligation model. Free orders, multiple intents/captures, partial settlement, refunds and payment allocations remain in the scope of R3.
 

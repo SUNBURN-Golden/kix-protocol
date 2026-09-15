@@ -7,7 +7,7 @@
 //! The future durable driver must log validated commands before applying them
 //! and must not turn these in-memory results into durability claims.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use kix_types::{AssetAmount, Hash32, KixId};
 
@@ -30,6 +30,10 @@ pub struct ExecutionFence {
 }
 
 /// Supplied by an ordered driver, not independently read from replica clocks.
+/// Every accepted state command advances logical time, including an expiry
+/// check that releases nothing and a duplicate observation. Errors change no
+/// state. An existing reservation result lookup is read-only: it checks scope,
+/// semantics and payload equality, but neither checks nor advances time/fence.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Context {
     pub fence: ExecutionFence,
@@ -72,6 +76,7 @@ pub enum Rejection {
     Unavailable,
     OrderExists,
     OperationAlreadyBound,
+    OperationQuarantined,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -119,6 +124,9 @@ pub struct Order {
     pub state: OrderState,
     pub inventory_owned: bool,
     pub captured: Option<AssetAmount>,
+    /// Sticky quarantine: no new external execution may be authorized while set.
+    /// Historical observations remain admissible. A stored result or previously
+    /// confirmed state alone does not authorize downstream rights or payments.
     pub review_required: bool,
 }
 
@@ -278,6 +286,9 @@ pub struct Kernel {
     commands: BTreeMap<CommandId, CommandRecord>,
     orders: BTreeMap<KixId, Order>,
     operations: BTreeMap<ProviderOperation, KixId>,
+    // Each retained conflict contributes at most two identities. The observation
+    // limit therefore bounds this sticky set even when an operation is unbound.
+    quarantined_operations: BTreeSet<ProviderOperation>,
     observations: BTreeMap<EventKey, (CaptureObservation, ObservationOutcome)>,
     conflicts: Vec<CaptureObservation>,
 }
@@ -329,6 +340,7 @@ impl Kernel {
             commands: BTreeMap::new(),
             orders: BTreeMap::new(),
             operations: BTreeMap::new(),
+            quarantined_operations: BTreeSet::new(),
             observations: BTreeMap::new(),
             conflicts: Vec::new(),
         })
@@ -380,6 +392,8 @@ impl Kernel {
             Some(Rejection::InvalidRequest)
         } else if self.orders.contains_key(&request.order_id) {
             Some(Rejection::OrderExists)
+        } else if self.quarantined_operations.contains(&request.payment) {
+            Some(Rejection::OperationQuarantined)
         } else if self.operations.contains_key(&request.payment) {
             Some(Rejection::OperationAlreadyBound)
         } else {
@@ -415,6 +429,8 @@ impl Kernel {
 
     /// Must be committed before an adapter sends the external request. UNKNOWN
     /// is not failure, and expiry alone must not release this reservation.
+    /// Reviewed orders cannot authorize a send, including a retry of UNKNOWN;
+    /// observations of a request already sent must still be recorded separately.
     pub fn mark_payment_unknown(
         &mut self,
         ctx: Context,
@@ -425,7 +441,9 @@ impl Kernel {
             .orders
             .get_mut(&order_id)
             .ok_or(KernelError::UnknownOrder)?;
-        if !matches!(order.state, OrderState::Held | OrderState::PaymentUnknown) {
+        if order.review_required
+            || !matches!(order.state, OrderState::Held | OrderState::PaymentUnknown)
+        {
             return Err(KernelError::InvalidTransition);
         }
         if self.cancelled || ctx.now_ms >= order.request.expires_at_ms {
@@ -442,6 +460,8 @@ impl Kernel {
             .orders
             .get_mut(&order_id)
             .ok_or(KernelError::UnknownOrder)?;
+        // A successful expiry check is an ordered command even before expiry.
+        self.now_ms = ctx.now_ms;
         if ctx.now_ms < order.request.expires_at_ms {
             return Ok(false);
         }
@@ -449,10 +469,8 @@ impl Kernel {
             self.inventory.adjust(order.request.selection, false);
             order.inventory_owned = false;
             order.state = OrderState::Expired;
-            self.now_ms = ctx.now_ms;
             return Ok(true);
         }
-        self.now_ms = ctx.now_ms;
         Ok(false)
     }
 
@@ -496,19 +514,26 @@ impl Kernel {
         );
         if let Some((original, result)) = self.observations.get(&key) {
             if original == &observation {
+                self.now_ms = ctx.now_ms;
                 return Ok(*result);
             }
+            let affected_operations = [original.operation, observation.operation];
             if !self.conflicts.contains(&observation) {
                 if self.observations.len() + self.conflicts.len() >= self.limits.observations {
                     return Err(KernelError::Capacity);
                 }
                 self.conflicts.push(observation);
             }
-            // Conflicting evidence is retained; it does not replace the original.
-            if let Some(order_id) = self.operations.get(&original.operation)
-                && let Some(order) = self.orders.get_mut(order_id)
-            {
-                order.review_required = true;
+            // Retain the original fact and quarantine every bound order named
+            // by the conflict. Unbound operations must not later gain a fresh
+            // order binding. Repeated evidence consumes no additional capacity.
+            for operation in affected_operations {
+                self.quarantined_operations.insert(operation);
+                if let Some(order_id) = self.operations.get(&operation)
+                    && let Some(order) = self.orders.get_mut(order_id)
+                {
+                    order.review_required = true;
+                }
             }
             self.now_ms = ctx.now_ms;
             return Ok(ObservationOutcome::Conflict);
@@ -547,6 +572,11 @@ impl Kernel {
                 }
                 order.state = OrderState::ReturnRequired;
                 ObservationOutcome::ReturnRequired
+            } else if order.review_required {
+                // A later matching fact does not resolve earlier conflicting
+                // evidence or grant permission to issue rights automatically.
+                order.state = OrderState::Review;
+                ObservationOutcome::Review
             } else {
                 order.state = OrderState::PaymentConfirmed;
                 ObservationOutcome::PaymentConfirmed

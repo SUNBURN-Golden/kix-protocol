@@ -11,7 +11,7 @@ An I/O-free deterministic transition model using only `kix-types` and Rust std c
 - One transition applies reservation, minimal order, quote/policy/asset binding, stable external operation and result without whole-state JSON or state cloning.
 - Local execution/business fences and explicit ordered time/semantics version.
 - PaymentUnknown is retained past TTL. Authenticated late bound facts may arrive after ownership change.
-- Capture event and economic operation deduplication are distinct. Preserve conflict evidence and mark review.
+- Capture event and economic operation deduplication are distinct. Preserve conflict evidence and quarantine both named operations, including an operation not yet bound to an order. Quarantine blocks later binding and external-send authorization; matching later evidence never clears review automatically.
 - Matching capture after expiry/cancellation creates ReturnRequired without reviving the old reservation or releasing another order's seats.
 
 ## Hard boundaries
@@ -26,6 +26,6 @@ Memory admission is bounded by configured record counts with fixed-width inputs 
 
 ## Verification
 
-`tests/transitions.rs` contains 24 deterministic regression cases. Actual compilation and run evidence belongs to the exact PR head/CI run, not this count. They test local transitions, not multithreaded competition, disks or a replica cluster.
+`tests/transitions.rs` contains 32 deterministic regression cases after the R1 audit fixes. Successful state commands advance admitted time, including no-op expiry and duplicate observations; immutable reservation-result lookup remains read-only. Actual compilation and run evidence belongs to the exact PR head/CI run, not this count. They test local transitions, not multithreaded competition, disks or a replica cluster.
 
 Next: registered versioned command/snapshot envelopes, mature storage/consensus integration, explicit stable-storage ACK, crash/torn-write/snapshot/leader histories, then real authenticated economic adapters. See ADR-0001 and masterplan 2.4.

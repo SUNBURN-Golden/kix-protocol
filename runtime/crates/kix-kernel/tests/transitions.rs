@@ -348,6 +348,220 @@ fn same_event_different_payload_preserves_conflicting_evidence() {
 }
 
 #[test]
+fn event_conflict_quarantines_both_bound_orders_and_blocks_payment_sending() {
+    for already_submitted in [false, true] {
+        let mut k = engine();
+        let first = reserve(3, 1, 1);
+        let second = reserve(4, 2, 1);
+        k.reserve(ctx(1), first.clone()).unwrap();
+        k.reserve(ctx(2), second.clone()).unwrap();
+        if already_submitted {
+            k.mark_payment_unknown(ctx(3), second.order_id).unwrap();
+        }
+        k.observe_capture(ctx(4), observation(&first, 1)).unwrap();
+        let conflict = observation(&second, 1);
+        assert_eq!(
+            k.observe_capture(ctx(5), conflict.clone()).unwrap(),
+            ObservationOutcome::Conflict
+        );
+        assert_eq!(k.conflicts(), &[conflict]);
+        assert!(k.order(first.order_id).unwrap().review_required);
+        assert!(k.order(second.order_id).unwrap().review_required);
+        assert_eq!(
+            k.order(first.order_id).unwrap().captured,
+            Some(first.amount)
+        );
+        assert_eq!(k.order(second.order_id).unwrap().captured, None);
+        assert_eq!(k.remaining(), 78);
+        let before = k.clone();
+        assert_eq!(
+            k.mark_payment_unknown(ctx(6), second.order_id),
+            Err(KernelError::InvalidTransition)
+        );
+        assert_eq!(k, before);
+    }
+}
+
+#[test]
+fn reviewed_order_preserves_matching_capture_without_normal_confirmation() {
+    let mut k = engine();
+    let first = reserve(3, 1, 1);
+    let second = reserve(4, 2, 1);
+    k.reserve(ctx(1), first.clone()).unwrap();
+    k.reserve(ctx(2), second.clone()).unwrap();
+    k.observe_capture(ctx(3), observation(&first, 1)).unwrap();
+    k.observe_capture(ctx(4), observation(&second, 1)).unwrap();
+    assert_eq!(
+        k.observe_capture(ctx(5), observation(&second, 2)).unwrap(),
+        ObservationOutcome::Review
+    );
+    let order = k.order(second.order_id).unwrap();
+    assert_eq!(order.captured, Some(second.amount));
+    assert_eq!(order.state, OrderState::Review);
+    assert!(order.review_required);
+    assert!(order.inventory_owned);
+    assert_eq!(
+        k.observe_capture(ctx(6), observation(&second, 3)).unwrap(),
+        ObservationOutcome::DuplicateEffect
+    );
+    assert!(k.order(second.order_id).unwrap().review_required);
+    assert_eq!(k.order(second.order_id).unwrap().state, OrderState::Review);
+}
+
+#[test]
+fn reviewed_late_capture_keeps_return_marker_and_review_requirement() {
+    for cancelled in [false, true] {
+        let mut k = engine();
+        let first = reserve(3, 1, 1);
+        let second = reserve(4, 2, 1);
+        k.reserve(ctx(1), first.clone()).unwrap();
+        k.reserve(ctx(2), second.clone()).unwrap();
+        k.observe_capture(ctx(3), observation(&first, 1)).unwrap();
+        k.observe_capture(ctx(4), observation(&second, 1)).unwrap();
+        if cancelled {
+            k.cancel_scope(ctx(5), 2).unwrap();
+        } else {
+            assert!(k.expire(ctx(100), second.order_id).unwrap());
+        }
+        assert_eq!(
+            k.observe_capture(ctx(101), observation(&second, 2))
+                .unwrap(),
+            ObservationOutcome::ReturnRequired
+        );
+        let order = k.order(second.order_id).unwrap();
+        assert_eq!(order.captured, Some(second.amount));
+        assert_eq!(order.state, OrderState::ReturnRequired);
+        assert!(order.review_required);
+        assert!(!order.inventory_owned);
+        assert_eq!(k.remaining(), 79);
+    }
+}
+
+#[test]
+fn retained_cross_order_conflict_replays_at_capacity_without_duplicate_evidence() {
+    let mut cap = limits();
+    cap.observations = 2;
+    let mut k = Kernel::new(id(9), fence(), 1, Inventory::seats(&[10]).unwrap(), cap).unwrap();
+    let first = reserve(3, 1, 1);
+    let second = reserve(4, 2, 1);
+    k.reserve(ctx(1), first.clone()).unwrap();
+    k.reserve(ctx(2), second.clone()).unwrap();
+    k.observe_capture(ctx(3), observation(&first, 1)).unwrap();
+    let conflict = observation(&second, 1);
+    for time in [4, 5] {
+        assert_eq!(
+            k.observe_capture(ctx(time), conflict.clone()).unwrap(),
+            ObservationOutcome::Conflict
+        );
+    }
+    assert_eq!(k.observation_count(), 1);
+    assert_eq!(k.conflicts(), &[conflict]);
+    assert!(k.order(first.order_id).unwrap().review_required);
+    assert!(k.order(second.order_id).unwrap().review_required);
+}
+
+#[test]
+fn conflict_capacity_failure_does_not_partially_quarantine_or_discard_original() {
+    let mut cap = limits();
+    cap.observations = 1;
+    let mut k = Kernel::new(id(9), fence(), 1, Inventory::seats(&[10]).unwrap(), cap).unwrap();
+    let first = reserve(3, 1, 1);
+    let second = reserve(4, 2, 1);
+    k.reserve(ctx(1), first.clone()).unwrap();
+    k.reserve(ctx(2), second.clone()).unwrap();
+    k.observe_capture(ctx(3), observation(&first, 1)).unwrap();
+    let before = k.clone();
+    assert_eq!(
+        k.observe_capture(ctx(4), observation(&second, 1)),
+        Err(KernelError::Capacity)
+    );
+    assert_eq!(k, before);
+    assert_eq!(
+        k.observe_capture(ctx(4), observation(&first, 1)).unwrap(),
+        ObservationOutcome::PaymentConfirmed
+    );
+}
+
+#[test]
+fn conflict_naming_unbound_operation_blocks_future_binding_without_changing_replays() {
+    let mut k = engine();
+    let first = reserve(3, 1, 1);
+    let second = reserve(4, 2, 1);
+    let original = k.reserve(ctx(1), first.clone()).unwrap();
+    k.observe_capture(ctx(2), observation(&first, 1)).unwrap();
+    let conflict = observation(&second, 1);
+    assert_eq!(
+        k.observe_capture(ctx(3), conflict.clone()).unwrap(),
+        ObservationOutcome::Conflict
+    );
+    assert_eq!(k.conflicts(), &[conflict]);
+    assert!(k.order(first.order_id).unwrap().review_required);
+    assert_eq!(k.order(second.order_id), None);
+    let rejected = k.reserve(ctx(4), second.clone()).unwrap();
+    assert_eq!(
+        rejected.original,
+        ReserveOutcome::Rejected(Rejection::OperationQuarantined)
+    );
+    assert_eq!(k.order_count(), 1);
+    assert_eq!(k.remaining(), 79);
+    assert_eq!(
+        k.reserve(ctx(5), first).unwrap().original,
+        original.original
+    );
+    assert_eq!(
+        k.reserve(ctx(5), second).unwrap().original,
+        rejected.original
+    );
+}
+
+#[test]
+fn accepted_expiry_check_advances_time_but_reservation_result_lookup_does_not() {
+    let mut k = engine();
+    let mut first = reserve(3, 1, 1);
+    first.expires_at_ms = 1_000;
+    k.reserve(ctx(1), first.clone()).unwrap();
+    assert!(!k.expire(ctx(500), first.order_id).unwrap());
+    let mut second = reserve(4, 2, 1);
+    second.expires_at_ms = 600;
+    let before = k.clone();
+    assert_eq!(
+        k.reserve(ctx(300), second.clone()),
+        Err(KernelError::ClockRegression)
+    );
+    assert_eq!(k, before);
+    assert!(k.reserve(ctx(2_000), first.clone()).unwrap().replayed);
+    assert!(k.reserve(ctx(0), first).unwrap().replayed);
+    assert_eq!(k, before);
+    held(k.reserve(ctx(501), second).unwrap(), 4);
+}
+
+#[test]
+fn accepted_duplicate_observation_advances_time_without_reapplying_capture() {
+    let mut k = engine();
+    let first = reserve(3, 1, 1);
+    k.reserve(ctx(1), first.clone()).unwrap();
+    k.observe_capture(ctx(2), observation(&first, 1)).unwrap();
+    assert_eq!(
+        k.observe_capture(ctx(500), observation(&first, 1)).unwrap(),
+        ObservationOutcome::PaymentConfirmed
+    );
+    assert_eq!(k.observation_count(), 1);
+    assert_eq!(
+        k.order(first.order_id).unwrap().captured,
+        Some(first.amount)
+    );
+    assert_eq!(k.remaining(), 79);
+    let mut second = reserve(4, 2, 1);
+    second.expires_at_ms = 600;
+    let before = k.clone();
+    assert_eq!(
+        k.reserve(ctx(300), second),
+        Err(KernelError::ClockRegression)
+    );
+    assert_eq!(k, before);
+}
+
+#[test]
 fn mismatched_asset_or_registry_is_recorded_for_review_not_paid() {
     let mut k = engine();
     let r = reserve(3, 1, 1);

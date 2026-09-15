@@ -13,7 +13,8 @@
 | 대상 | 상태 |
 |---|---|
 | S07-A BCS 코덱·고정 vector | 보존. 기존 bytes/hash 변경 없음 |
-| 기본 schema 등록/locked build | 별도 마감 항목. 복잡한 운영 거버넌스와 구별 |
+| Cargo.lock / locked CI | R0/R1에서 완료. 의존성 해석 고정이며 전체 바이너리 재현성과 구별 |
+| 기본 schema 등록 | R2 마감 항목. 복잡한 운영 거버넌스와 구별 |
 | KTX-R0 권한·커밋·복구 계약 | 이 변경에서 작성 |
 | KTX-R1 단일 shard Rust 커널 | 이 변경에서 구현. 메모리 내 전이/회귀만 |
 | replicated log/ACK/snapshot/복구 | 미구현, R2 |
