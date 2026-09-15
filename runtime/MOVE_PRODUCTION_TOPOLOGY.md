@@ -38,7 +38,7 @@ Immutable VerifierConfig / Policy commitments
 
 좌석/재고 확보 때문에 필요한 mutable contention은 최소 단위로 쪼갠다.
 
-- 지정석: 가능한 한 seat별 `InventoryCell` 또는 충분히 작은 shard.
+- 지정석: 한 좌석당 하나의 `InventoryCell`. 일반 mutable shard로 여러 지정석을 묶지 않는다.
 - 비지정 수량형: hash/range 기반 `InventoryShard` 여러 개로 나눠 단일 counter를 피한다.
 - Order는 필요한 cell/shard만 touch한다.
 - shard 수와 분할 규칙은 production benchmark로 확정한다.
@@ -105,11 +105,13 @@ private admission의 global `notes/nullifiers/spent_challenges` vector를 produc
 
 공연 전체 취소는 실제 전역 상태이므로 별도 control primitive가 필요할 수 있다. 하지만 일반 order/sale/admission transaction마다 mutable cancellation object를 write해서 global bottleneck을 만들지 않는다.
 
-가능한 구조:
+S08 구현에서 검증할 기준 구조:
 
-- immutable `ShowConfig` + optional versioned `ShowControlEpoch`
-- transaction은 control epoch를 read/check하되, 일반 거래마다 mutation하지 않는다.
-- cancellation 발생 시 새 terminal epoch/commitment를 만들어 신규 거래를 막고, 기존 권리/환불 의무는 off-chain Order/Obligation과 chain commitments로 대사한다.
+- immutable `ShowConfig`에 권위 있는 `ShowControl` object id를 고정한다. `ShowControl`은 organizer 권한으로만 epoch/cancelled 상태를 바꿀 수 있다.
+- 판매/이전/입장 등 취소 영향을 받는 거래는 그 정확한 control object의 현재 상태를 read/check하고, cancelled가 아니며 요청의 expected epoch가 현재 epoch와 같은지 검사해야 한다. 일반 거래는 control을 mutate하지 않는다.
+- 요청자가 제출한 과거 immutable epoch commitment만으로 현재성을 승인하지 않는다. 새 epoch 생성만으로 과거 epoch가 자동 폐기된다고 간주하지 않는다.
+- 취소는 권위 object의 상태를 갱신해야 하며, 기존 권리/환불 의무는 off-chain Order/Obligation과 chain commitments로 대사한다.
+- 이는 구현 예정 설계다. 실제 Sui에서 취소와 거래의 순서·read 경계·처리량을 확인해야 하며, 성능 때문에 현재성 검사를 생략하는 경로는 허용하지 않는다.
 
 ## 9. S07/S08 경계
 
@@ -123,5 +125,8 @@ production Move 구현 단계에서는 다음을 gate로 둔다.
 4. admission shard A의 spend가 shard B의 mutable object를 요구하지 않는다.
 5. throughput/latency benchmark에서 shard count별 contention을 측정한다.
 6. chain object identity와 off-chain KIX-BCS1 Order/Sale/Payment commitments를 exact bind한다.
+7. 취소 완료 후 과거 epoch/commitment로 제출한 거래를 거절하고, control id 대체·누락 및 취소와의 경합을 시험한다.
+8. `[1,2]`와 `[2,3]` 연석 요청이 경쟁할 때 중복 배정과 묶음 부분 성공을 거절한다. row-local single writer의 보장을 DB reservation commit·결제 observation·chain execution의 보장과 구분하고, 단계별 실패/대사 경로를 시험한다.
+9. GA shard token 재발급은 원래 queue position을 보존하며 이전 token을 무효화해야 한다. 구/신 token의 동시 소비가 capacity를 두 번 차감하지 못하는지 실제 경합으로 확인한다.
 
 기존 shared-Show Move 코드는 지우지 않고 역사적 fixture로 남길 수 있으나 production API가 이를 import/호출하는 경로는 만들지 않는다.

@@ -1,0 +1,28 @@
+{
+  "baseline_commit": "0bbc9b9cd421b386a542a8ed4351fb6aaeff907a",
+  "security_main_commit": "eff0f44f28d0232c6177c40b2f2feb2aa951ae09",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "before": {
+    "test_passed": 3,
+    "test_failed": 5,
+    "exit_code": 101
+  },
+  "after": {
+    "test_passed": 43,
+    "test_failed": 0,
+    "exit_code": 0
+  },
+  "sha256": {
+    "rust-toolchain.toml": "2ca9bd8c09dbcda0b3644412530df2c49b1f4db05400492d093868f1bd31a884",
+    "runtime/Cargo.toml": "01914b1d288d6c0cf69bca524b65e1b4bdef7ae4a35836aecaded2992683762f",
+    "runtime/crates/kix-feature-ir/Cargo.toml": "d44c87caf97893a20d2e154dea3690b78bb360eb7ba72927aa0eef6da5c42836",
+    "runtime/crates/kix-feature-ir/src/lib.rs": "8895ce95746e69f9377754cc2e8ce1a83f555539b4c15ef21d1e738293561914",
+    "runtime/crates/kix-feature-ir/src/validation.rs": "7111ebadf03b69155706c69a58e5e46bbbfb082c4346d5f9f04e2e10b335a22e",
+    "runtime/crates/kix-feature-ir/tests/audit_regressions.rs": "e94d6166507de80b751a19bbaac7cb295548f039d8a006ed561cb1b872b5ee48",
+    "runtime/crates/kix-feature-ir/tests/schema_bound.rs": "8d934b2e93646702ae242b7489366c296bf2d7e1246361a72fdfa87703d269b9",
+    "runtime/crates/kix-feature-semantics/Cargo.toml": "06cfbeda65b632272643d77edf7875306407db17f1e74fb1309416a075fec860",
+    "runtime/crates/kix-feature-semantics/src/lib.rs": "5d125a3b512c80fb7540f413293be450ae844b96be8552b31bff7b6b95b6d983",
+    "runtime/crates/kix-types/Cargo.toml": "82a4c3d42d6f60f4fb8d03719f24ab319aa39188c3b7ade2d4ef625e402f0892",
+    "runtime/crates/kix-types/src/lib.rs": "249a5b22e6906834d7995894a3a00255c07f49415daaad7a2410f7675cbc6fad"
+  }
+}

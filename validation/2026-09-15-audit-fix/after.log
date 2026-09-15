@@ -1,0 +1,93 @@
+   Compiling kix-feature-ir v0.1.0 (/workspace/scratch/de151d30e12f/kix-protocol/runtime/crates/kix-feature-ir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_feature_ir-5cf2adb8a7185769)
+
+running 5 tests
+test tests::engine_neutral_plan_validates_with_explicit_semantics ... ok
+test tests::fast64_profile_is_bound_to_asset_and_registry_version ... ok
+test tests::empty_plan_is_rejected ... ok
+test tests::mean_is_terminal_and_empty_is_null ... ok
+test tests::terminal_f64_must_be_final_except_limit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audit_regressions.rs (runtime/target/debug/deps/audit_regressions-0ad3733de7ee4d35)
+
+running 8 tests
+test audit_a02_filter_must_reject_nonterminal_f64 ... ok
+test audit_a04_projection_kind_must_match_literal_type ... ok
+test audit_a04_sum_requires_an_input_column ... ok
+test audit_control_integer_comparison_filter_is_allowed ... ok
+test audit_a04_filter_requires_a_boolean_expression ... ok
+test audit_control_single_terminal_divide_then_limit_is_allowed ... ok
+test audit_a03_terminal_divide_must_reject_nested_divide ... ok
+test audit_control_count_star_may_omit_an_input ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/schema_bound.rs (runtime/target/debug/deps/schema_bound-f016d7a40f76c5d9)
+
+running 18 tests
+test catalog_resolution_checks_identity_version_and_duplicates ... ok
+test column_types_are_checked_inside_all_operators ... ok
+test duplicate_output_and_key_ids_are_rejected ... ok
+test aggregate_input_and_output_kinds_must_match_contract ... ok
+test group_output_contains_only_keys_and_aggregate_results ... ok
+test fast64_rejects_wrong_asset_version_or_hash_at_export ... ok
+test excessively_nested_expression_is_rejected_without_unbounded_walk ... ok
+test inner_and_left_join_output_include_right_columns ... ok
+test joins_require_existing_matching_keys_and_unambiguous_output_ids ... ok
+test missing_columns_are_rejected_in_expressions_aggregates_and_keys ... ok
+test mixed_signed_unsigned_arithmetic_requires_explicit_future_conversion ... ok
+test nested_f64_in_either_operand_and_boolean_wrappers_is_rejected ... ok
+test only_count_star_can_omit_input ... ok
+test projection_drops_source_columns_and_does_not_allow_sibling_alias_reuse ... ok
+test source_f64_is_rejected_even_for_limit_only_plan ... ok
+test semi_and_anti_join_output_exclude_right_columns ... ok
+test terminal_mean_can_only_be_followed_by_limits ... ok
+test valid_integer_expression_can_feed_terminal_division ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_feature_semantics-913e2b171372b7f7)
+
+running 6 tests
+test tests::aggregate_empty_semantics_are_fixed ... ok
+test tests::category_equality_is_semantic_not_dictionary_position ... ok
+test tests::divide_by_zero_and_null_produce_null ... ok
+test tests::filter_null_is_dropped ... ok
+test tests::non_finite_terminal_values_are_rejected ... ok
+test tests::null_join_semantics_are_explicit ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_types-360fe9615c5dacc8)
+
+running 6 tests
+test tests::amount_cannot_lose_asset_or_registry_context ... ok
+test tests::asset_identity_is_binary_first ... ok
+test tests::bcs_header_types_cannot_be_zero ... ok
+test tests::hash_parser_is_compatibility_only_and_strict ... ok
+test tests::production_id_is_fixed_128_bits ... ok
+test tests::semantic_integer_types_keep_distinct_ranges ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_feature_ir
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_feature_semantics
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_types
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

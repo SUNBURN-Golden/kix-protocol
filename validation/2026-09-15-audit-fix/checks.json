@@ -1,0 +1,49 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace"
+    ],
+    "exit_code": 0,
+    "output": "after.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "output": "    Checking kix-feature-ir v0.1.0 (/workspace/scratch/de151d30e12f/kix-protocol/runtime/crates/kix-feature-ir)\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/verify_runtime_architecture.py"
+    ],
+    "exit_code": 0,
+    "output": "runtime architecture contract v4 OK\n"
+  }
+]

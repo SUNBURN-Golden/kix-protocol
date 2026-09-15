@@ -8,7 +8,10 @@ use kix_feature_semantics::{
     AggregateKind, DivideByZeroPolicy, EmptyAggregatePolicy, NullEquality, NullKeyPolicy,
     NullOrder, NullPredicatePolicy, NullValuePolicy, OverflowPolicy, SortStability, empty_policy,
 };
-use kix_types::{AssetId, KixId, RegistryVersion};
+use kix_types::{AssetAmount, AssetId, Hash32, KixId, RegistryVersion};
+
+mod validation;
+pub use validation::{ColumnSchema, DatasetSchema, ValidatedFeaturePlan};
 
 pub const FEATURE_IR_VERSION: u16 = 1;
 
@@ -23,6 +26,15 @@ pub enum FeatureIrError {
     AggregatePolicyMismatch,
     Fast64ProfileOutOfRange,
     Fast64AmountOutOfRange,
+    Fast64IdentityMismatch,
+    ExpressionTypeMismatch,
+    AggregateInputRequired,
+    DuplicateColumn,
+    UnknownColumn,
+    UnknownDataset,
+    InvalidSchema,
+    TerminalF64Input,
+    PlanTooComplex,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -183,87 +195,6 @@ pub struct FeaturePlanV1 {
     pub stages: Vec<Stage>,
 }
 
-fn contains_divide_to_f64(expr: &Expr) -> bool {
-    match expr {
-        Expr::DivideToF64 { .. } => true,
-        Expr::Compare { left, right, .. } | Expr::Arithmetic { left, right, .. } => {
-            contains_divide_to_f64(left) || contains_divide_to_f64(right)
-        }
-        Expr::And(left, right) | Expr::Or(left, right) => {
-            contains_divide_to_f64(left) || contains_divide_to_f64(right)
-        }
-        Expr::Not(inner) => contains_divide_to_f64(inner),
-        Expr::Column(_) | Expr::Literal(_) => false,
-    }
-}
-
-fn stage_produces_terminal_f64(stage: &Stage) -> Result<bool, FeatureIrError> {
-    match stage {
-        Stage::Project(items) => {
-            for item in items {
-                let root_divide = matches!(item.expr, Expr::DivideToF64 { .. });
-                if root_divide != (item.output_kind == OutputKind::TerminalF64) {
-                    return Err(FeatureIrError::TerminalF64KindMismatch);
-                }
-                if !root_divide && contains_divide_to_f64(&item.expr) {
-                    return Err(FeatureIrError::TerminalF64MustBeFinal);
-                }
-            }
-            Ok(items
-                .iter()
-                .any(|item| item.output_kind == OutputKind::TerminalF64))
-        }
-        Stage::GroupBy { aggregates, .. } => {
-            for aggregate in aggregates {
-                let is_mean = aggregate.op == AggregateOp::Mean;
-                if is_mean != (aggregate.output_kind == OutputKind::TerminalF64) {
-                    return Err(FeatureIrError::TerminalF64KindMismatch);
-                }
-                if aggregate.empty_policy != empty_policy(aggregate.op.semantics_kind()) {
-                    return Err(FeatureIrError::AggregatePolicyMismatch);
-                }
-            }
-            Ok(aggregates
-                .iter()
-                .any(|aggregate| aggregate.output_kind == OutputKind::TerminalF64))
-        }
-        _ => Ok(false),
-    }
-}
-
-impl FeaturePlanV1 {
-    pub fn validate(&self) -> Result<(), FeatureIrError> {
-        if self.stages.is_empty() {
-            return Err(FeatureIrError::EmptyPlan);
-        }
-        for (index, stage) in self.stages.iter().enumerate() {
-            match stage {
-                Stage::Project(items) if items.is_empty() => {
-                    return Err(FeatureIrError::EmptyProjection);
-                }
-                Stage::GroupBy {
-                    keys, aggregates, ..
-                } if keys.is_empty() && aggregates.is_empty() => {
-                    return Err(FeatureIrError::EmptyGroupKeysAndAggregates);
-                }
-                Stage::Sort { by, .. } if by.is_empty() => {
-                    return Err(FeatureIrError::InvalidStage);
-                }
-                _ => {}
-            }
-
-            if stage_produces_terminal_f64(stage)?
-                && self.stages[index + 1..]
-                    .iter()
-                    .any(|later| !matches!(later, Stage::Limit(_)))
-            {
-                return Err(FeatureIrError::TerminalF64MustBeFinal);
-            }
-        }
-        Ok(())
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MoneyProfileKey {
     pub asset_id: AssetId,
@@ -272,13 +203,17 @@ pub struct MoneyProfileKey {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Fast64MoneyProfile {
-    pub key: MoneyProfileKey,
+    key: MoneyProfileKey,
+    registry_hash: Hash32,
     execution_max_atoms: i64,
 }
 
 impl Fast64MoneyProfile {
+    /// Checks a supplied registry claim, not its authenticity. S07-D must
+    /// obtain these values from an authenticated registry snapshot.
     pub fn checked(
         key: MoneyProfileKey,
+        registry_hash: Hash32,
         execution_max_atoms: u128,
     ) -> Result<Self, FeatureIrError> {
         if execution_max_atoms > i64::MAX as u128 {
@@ -286,15 +221,31 @@ impl Fast64MoneyProfile {
         }
         Ok(Self {
             key,
+            registry_hash,
             execution_max_atoms: execution_max_atoms as i64,
         })
+    }
+
+    pub const fn key(self) -> MoneyProfileKey {
+        self.key
+    }
+
+    pub const fn registry_hash(self) -> Hash32 {
+        self.registry_hash
     }
 
     pub const fn execution_max_atoms(self) -> i64 {
         self.execution_max_atoms
     }
 
-    pub fn export_atoms(self, atoms: u128) -> Result<i64, FeatureIrError> {
+    pub fn export_amount(self, amount: AssetAmount) -> Result<i64, FeatureIrError> {
+        if amount.asset_id() != self.key.asset_id
+            || amount.registry_version() != self.key.registry_version
+            || amount.registry_hash() != self.registry_hash
+        {
+            return Err(FeatureIrError::Fast64IdentityMismatch);
+        }
+        let atoms = amount.atoms();
         if atoms > self.execution_max_atoms as u128 {
             return Err(FeatureIrError::Fast64AmountOutOfRange);
         }
@@ -427,18 +378,22 @@ mod tests {
                 asset_id: asset,
                 registry_version: v2,
             },
+            Hash32::from_bytes([4; 32]),
             i64::MAX as u128,
         )
         .unwrap();
-        assert_eq!(p2.export_atoms(100).unwrap(), 100);
-        assert_eq!(p2.key.registry_version, v2);
-        assert_ne!(p2.key.registry_version, v3);
+        let amount =
+            AssetAmount::checked(asset, 100, 100, v2, Hash32::from_bytes([4; 32])).unwrap();
+        assert_eq!(p2.export_amount(amount).unwrap(), 100);
+        assert_eq!(p2.key().registry_version, v2);
+        assert_ne!(p2.key().registry_version, v3);
         assert_eq!(
             Fast64MoneyProfile::checked(
                 MoneyProfileKey {
                     asset_id: asset,
                     registry_version: v3,
                 },
+                Hash32::from_bytes([4; 32]),
                 i64::MAX as u128 + 1,
             ),
             Err(FeatureIrError::Fast64ProfileOutOfRange)

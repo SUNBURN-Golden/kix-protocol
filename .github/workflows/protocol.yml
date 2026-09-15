@@ -47,6 +47,7 @@ jobs:
         run: |
           cargo fmt --manifest-path runtime/Cargo.toml --all -- --check
           cargo test --manifest-path runtime/Cargo.toml --workspace
+          cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets -- -D warnings
       - name: Storage continuity and deliberate rollback probes
         run: |
           .venv/bin/python scripts/probe_paid_storage.py --python /usr/bin/python3 --directory .local/storage-probe --cycles 3 --report .local/verification/storage-probe.json

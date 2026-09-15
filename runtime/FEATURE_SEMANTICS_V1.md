@@ -92,6 +92,8 @@ Fast64 허용 조건:
 
 두 조건을 export마다 모두 assert한다. registry version이 바뀌어 `executionMaxAtoms`가 커지면 과거 Fast64 판정을 새 버전에 자동 승계하지 않는다.
 
+Rust 변환 경계는 `export_amount(AssetAmount)`이며 raw `u128` 변환 API를 제공하지 않는다. 프로파일의 key/hash는 private이고, amount의 asset id·registry version·registry hash가 모두 일치해야 범위 검사를 진행한다. `Fast64MoneyProfile::checked`는 전달된 주장값의 범위만 검사한다. 레지스트리의 서명/권한/내용 인증은 구현하지 않았으며 S07-D authenticated snapshot 경계에서 완료해야 한다.
+
 `MoneyWide128`은 lossless export만 허용한다. v1 feature IR에서 `SUM/MEAN/Arithmetic(MoneyWide128)`은 unsupported이며 fail closed 한다. 묵시적 truncate/saturate/float 변환은 금지한다.
 
 ## 7. Category / Dictionary semantics
@@ -123,3 +125,16 @@ Polars/RAPIDS/libcudf 버전 업그레이드는 다음을 통과해야 한다.
 6. category dictionary 재인코딩 fixture 통과
 
 Feature semantics를 바꾸려면 engine upgrade가 아니라 `KIX Feature Semantics v2`를 만든다.
+
+## 10. Validator boundary — 2026-09-15 audit remediation
+
+- `validate()`는 구조 및 추론 가능한 타입의 사전 검사다. source schema가 없으면 외부 컬럼의 존재/타입을 확정할 수 없으므로 실행 승인으로 사용하지 않는다.
+- backend는 `validate_with_schemas(catalog)`가 반환한 `ValidatedFeaturePlan`을 받아야 한다. catalog는 plan 요청과 별도로 신뢰할 수 있는 export/catalog 경계에서 공급한다. 이 검증기는 catalog 인증 자체를 구현하지 않는다.
+- source 및 join-right dataset id/schema version, 컬럼 존재, 표현식 입력/결과 타입, 출력 id 중복, aggregate 입력과 결과, join/group/sort key를 검사한다. F64가 있는 입력 schema는 거절한다.
+- 모든 표현식은 같은 재귀 검사를 거친다. `DIVIDE_TO_F64`는 Project 루트에만 허용하며 두 피연산자는 같은 정수 타입이어야 한다. 내부 나눗셈과 필터의 F64 사용은 거절한다. 암묵적 I64/U64 coercion도 허용하지 않는다.
+- Project 항목은 모두 stage 입력을 참조한다. 같은 Project의 앞선 alias는 입력이 아니며, 출력에 없는 원래 컬럼은 다음 stage에서 사라진다.
+- GroupBy 출력은 key + aggregate다. COUNT는 U64이고 입력 생략은 COUNT(*)에만 허용한다. SUM은 같은 정수 타입을 보존하며 MEAN은 정수 입력에서 terminal F64를 만든다.
+- Inner/Left join은 양쪽 컬럼을 출력하며 충돌하는 ColumnId는 거절한다. Semi/Anti join은 왼쪽 컬럼만 출력한다. 데이터셋 간 컬럼 id 할당/사전 projection으로 모호성을 제거해야 한다.
+- F64 생성 후에는 Limit만 허용한다. plan은 최대 1,024 stages, 표현식은 깊이 64 및 총 100,000 nodes를 허용한다. wire 크기/파서 할당 제한은 별도의 구현 gate다.
+
+이 변경은 검증기 구현이며 Polars compiler, 데이터 인증, 실제 CPU/GPU 실행 또는 conformance 완료를 의미하지 않는다.

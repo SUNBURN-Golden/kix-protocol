@@ -2,6 +2,8 @@
 
 작성일: 2026-09-15. 과거 검증/사고 기록은 보존하지만 Python/SQLite/CE1/shared-Show를 production 제약으로 두지 않는다. Production 설계권한은 Rust runtime, KIX-BCS1, typed PostgreSQL, mode-specific Sui inventory topology와 이 계획이다.
 
+감사 후 보완: [2026-09-15 실행 근거와 미완료 항목](../validation/2026-09-15-audit-fix/README.md). ZK 보안 PR #1은 main `eff0f44f28d0232c6177c40b2f2feb2aa951ae09`에 단독 병합했다. FeatureIR의 F64 우회 및 schema/type 검증과 Fast64 변환 identity 대조를 보완했다. 이는 S07 구현이나 운영 승인으로 계산하지 않는다. 다음 구현은 아래 S07-A codec부터 진행한다.
+
 ## 1. 목표
 
 고성능 권리·주문·결제·정산 프로토콜을 Rust-first로 구현한다. correctness, replay/unknown-outcome 안전성, 감사 가능성을 유지하면서 transaction path와 AI/data path를 각각 가장 적합한 엔진에 배치한다.
