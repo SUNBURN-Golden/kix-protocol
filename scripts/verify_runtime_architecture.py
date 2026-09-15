@@ -181,6 +181,8 @@ def main() -> int:
         "runtime/crates/kix-types/src/lib.rs",
         "runtime/crates/kix-feature-semantics/src/lib.rs",
         "runtime/crates/kix-feature-ir/src/lib.rs",
+        "runtime/crates/kix-bcs1/src/lib.rs",
+        "runtime/crates/kix-bcs1/tests/golden_vectors.rs",
         "docs/PROTOCOL_MASTERPLAN_V23.md",
     ]
     for rel in required:
@@ -190,8 +192,9 @@ def main() -> int:
     require('"crates/kix-types"' in cargo, "KIX_TYPES_NOT_IN_WORKSPACE")
     require('"crates/kix-feature-semantics"' in cargo, "FEATURE_SEMANTICS_NOT_IN_WORKSPACE")
     require('"crates/kix-feature-ir"' in cargo, "FEATURE_IR_NOT_IN_WORKSPACE")
+    require('"crates/kix-bcs1"' in cargo, "KIX_BCS1_NOT_IN_WORKSPACE")
 
-    print("runtime architecture contract v4 OK")
+    print("runtime architecture contract v4 + S07-A codec gate OK")
     return 0
 
 
