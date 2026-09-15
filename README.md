@@ -1,60 +1,47 @@
 # KIX Protocol
 
-**최신 개발 기준:** S06.1 `d5cf004` 위의 **S06.2 greenfield production architecture reset**. [개발계획 2.3](docs/PROTOCOL_MASTERPLAN_V23.md), [S06.2 실행 구조](docs/RUNTIME_ARCHITECTURE_S062.md), [KIX-BCS1](runtime/CANONICAL_BINARY_BCS_V1.md), [production Sui topology](runtime/MOVE_PRODUCTION_TOPOLOGY.md), [AI/GPU data plane](runtime/AI_GPU_DATA_PLANE.md)을 먼저 확인하세요. 기존 Python/Node/SQLite rc1과 CE1/shared-Show는 역사적 regression/fault fixture이며 새 production 설계권한이 아닙니다. S07 production은 `runtime/`의 Rust modular monolith + Tokio + PostgreSQL 18에서 시작합니다.
+**현재 개발 기준: [개발계획 2.4 — KTX 실행 기반 재설계](docs/PROTOCOL_MASTERPLAN_V24.md).**
+[권한·커밋·복구 ADR](docs/adr/0001-ktx-authority-commit-recovery.md)과 [runtime](runtime/README.md)을 먼저 확인하세요. S07-A `98d5f637…`의 Rust 타입·BCS·분석 의미론과 기존 보안/장애 회귀를 보존하면서 production 실행 기반을 새로 구축합니다. 기존 Python 기능도 필요한 업무 의미와 안전 보장을 Rust로 재구축하며, 아직 없던 영속 모델을 함께 구현합니다.
 
-티켓의 발행·구매·공식 리셀·입장·환불·배분·정산을 연결하는 프로토콜 연구·개발 저장소다.
+티켓의 발행·구매·공식 리셀·입장·환불·배분·정산을 연결하는 프로토콜 연구·개발 저장소입니다.
 
-현재 개발 기준은 **v0.3-rc1 역사적 fixture + S05 조회 전용 복원 + S06 계산·보류 기록 + S06.1 결정론 계약 + S06.2 greenfield production runtime/data-plane 경계(2026-09-15)**다. 저장 유실의 근본 원인과 독립 저장 내구성은 미해결이다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 범위·실행·제한](docs/PAID_RECOVERY.md)을 따른다.
+## 구현과 목표의 구분
 
-기준 커밋 `2658a43`의 Groth16 설정에는 회로별 기여가 빠져 있었다. 당시 공개 증명·검증키만으로 공개 입력과 증명을 함께 조정해 검증을 통과하는 결함을 재현했다. 이후 회로별 기여·검증, 기존 키 거절, 조작 증명과 폐기·취소 경계 회귀를 추가했다. 과거 검증 수락 기록을 보안 보장으로 해석하지 않는다. [보완 결과](docs/PROTOCOL_HARDENING.md)를 먼저 읽는다.
+현재 실제 Rust workspace는 `kix-types`, `kix-bcs1`, `kix-feature-ir`, `kix-feature-semantics`, 새 `kix-kernel`입니다. 커널은 단일 shard의 결정론적 메모리 내 전이와 회귀 테스트입니다. **복제 저장소·durable ACK·운영 결제 엔진·배포된 KTX·성능 우위는 아직 없습니다.**
 
-## production architecture
+목표는 edge/admission → 지역별 격리 cell → Rust KTX replicated shard → 외부 PG/체인 어댑터 → 검증된 관측입니다. PostgreSQL은 projection/control 후보이며, SQL 정본 비교는 별도 재고에서만 수행합니다. 같은 재고에 두 writer를 두지 않습니다. 배타적 위임 실행과 체인 직접 실행을 구분하고, 예약 완료·결제 사실·체인 발행 완료를 동일시하지 않습니다.
 
-```text
-Client
-  |
-Rust KIX modular monolith + Tokio
-  |
-  +--> Rust kernel
-  +--> PostgreSQL 18 narrow OLTP
-  +--> Executor --> Sui gRPC / PG / Bank / FX
-                         |
-                  observation stream
-                         |
-                    Rust reducer
+## 보존하는 자산
 
-committed facts --> Arrow --> Parquet
-                         |
-               +---------+---------+
-               |                   |
-          Polars Lazy           DuckDB
-        CPU Rust streaming       SQL
-               |
-         cudf-polars GPU
-               |
-              AI/ML
-```
+- S07-A: 실제 KIX-BCS1 encode/decode/SHA-256 및 고정 golden vector.
+- S06.2: Rust 타입, FeatureIR 재귀/스키마 검증, Fast64 asset/version/hash 대조.
+- S06/S06.1: 계산-only 가격·배정·반환안과 Python↔TypeScript CE1 회귀. production BCS와 namespace가 다릅니다.
+- S03/S05: 제한된 지급 복구·별도 archive·조회 전용 복원. whole-host/remote durability와 과거 유실 원인 규명은 완료되지 않았습니다.
+- Sui/Move/ZK: 기존 로컬넷과 보안 회귀. 16-slot shared Show는 production topology가 아닙니다.
 
-- production canonical identity: **KIX-BCS1**, not JSON CE1.
-- production Move: immutable `ShowConfig` + independent inventory/right/sale/payment objects + sharded admission/nullifier state.
-- Polars/DuckDB/cuDF: columnar analytics/AI plane이며 OLTP authority가 아님.
-- Python/Node/SQLite reference: historical regression/fault fixture.
+기준 `2658a43`의 Groth16 설정 결함과 후속 기여·검증·조작 증명 거절 기록은 [보안 보완 문서](docs/PROTOCOL_HARDENING.md)에 보존합니다. 보안 PR #1은 main `eff0f44…`에 별도 반영됐습니다. 시험용 설정이 운영 ZK 신뢰 설정이나 키 이관을 완료했다는 뜻은 아닙니다.
 
 ## 구성
 
-| 경로 | 내용 |
+| 경로 | 역할 |
 |---|---|
-| `runtime/` | S07+ Rust production runtime, KIX-BCS1, performance/AI data-plane contracts |
-| `reference/v0.3-rc1/` | 역사적 Python/Node/SQLite, legacy Sui Move, 독립 클라이언트, ZK regression fixture |
-| `reference/v0.1/`, `reference/v0.2/` | 이전 기준 모형 보존 |
-| `reviews/` | v0.1·v0.2 검토와 재현 자료 |
-| `scripts/`, `.devcontainer/`, `.github/workflows/` | 설치·검증 자동화, Codespaces 구성, CI |
-| `validation/` | 역사적 실제 실행 로그·영수증·검증 자료 |
-| `docs/` | 실행 방법, 검증 범위, 변경 근거, 개발 계획 |
+| `runtime/` | Rust 실행/코덱/의미론 및 v5 계약 |
+| `docs/adr/` | 정본·원자성·복구 결정 |
+| `reference/` | 역사적 Python/Node/SQLite·Move·ZK 회귀/장애 fixture |
+| `scripts/`, `.github/workflows/`, `.devcontainer/` | 검증·CI·Codespaces 도구 |
+| `validation/`, `reviews/` | 실제 실행 근거와 역사적 감사 자료 |
 
-## 실행
+## 검증
 
-기존 fixture/localnet 회귀:
+```bash
+python scripts/verify_runtime_architecture.py
+cargo test --manifest-path runtime/Cargo.toml --workspace --locked
+cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings
+```
+
+Rust toolchain은 `rust-toolchain.toml`의 1.98.1입니다. 전체 CI는 기존 `protocol.yml`과 새 `ktx-kernel.yml`을 구분해 검사합니다. 구 SHA의 성공을 새 SHA의 성공으로 계산하지 않습니다. R1의 메모리 내 재생은 실제 crash-recovery 증거가 아닙니다.
+
+기존 fixture/localnet 회귀는 계속 실행합니다.
 
 ```bash
 bash scripts/bootstrap.sh
@@ -67,70 +54,10 @@ npm --prefix reference/v0.3-rc1/client run test:zk
 python scripts/run_localnet.py --private
 ```
 
-production architecture/Rust boundary:
+## 문서
 
-```bash
-python scripts/verify_runtime_architecture.py
-cargo test --manifest-path runtime/Cargo.toml --workspace
-```
+[개발계획 2.4](docs/PROTOCOL_MASTERPLAN_V24.md) · [권한 ADR](docs/adr/0001-ktx-authority-commit-recovery.md) · [BCS](runtime/CANONICAL_BINARY_BCS_V1.md) · [Move topology](runtime/MOVE_PRODUCTION_TOPOLOGY.md) · [export](runtime/AUTHENTICATED_EXPORT.md) · [성능 계약](runtime/PERFORMANCE_PROFILE.md) · [AI/GPU](runtime/AI_GPU_DATA_PLANE.md).
 
-Rust toolchain은 `rust-toolchain.toml`의 1.98.1로 고정한다. S07 business persistence와 actual KIX-BCS1 codec/production Move objects는 아직 구현 전이다.
+이전 [개발계획 2.3](docs/PROTOCOL_MASTERPLAN_V23.md) 및 [S06.2](docs/RUNTIME_ARCHITECTURE_S062.md)는 역사적 설계/비교 기준입니다. 새 권위 모델은 ADR-0001을 따르며 하위 문서의 보안·타입·현재성 요구는 유지합니다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 제한](docs/PAID_RECOVERY.md)은 미해결 사항을 별도로 추적합니다.
 
-## 확인된 범위
-
-| 확인 항목 | 확인 범위·근거 |
-|---|---|
-| Python 모형·저장 경계·복구 검사 | S06.1 Python 207개를 복수 Python/SQLite 환경에서 통과한 역사적 regression 근거 |
-| CE1 계산 계약 | Python/TypeScript에서 Commerce v2 고정 바이트·해시·배정·견적·반환안 일치. **production KIX-BCS1 보장은 아님** |
-| S06.2 runtime 경계 | Rust 1.98.1 workspace와 architecture checker. 최종 S06.2 SHA에서 전체 CI로 판정 |
-| Sui Move / ZK 회귀 | 기존 Move/회로/public/paid/private localnet regression 유지 |
-| storage/recovery | S03/S05/S06의 제한된 지급 복구·archive 회귀 유지 |
-
-현재 legacy chain fixture는 16-slot shared Show이고 RPC를 신뢰한다. 이것을 production throughput/topology로 해석하지 않는다. production ZK setup, independent checkpoint verification, 실제 PG·은행, remote durability는 미완료다.
-
-## 주요 문서
-
-- [개발계획 2.3 — Greenfield production protocol](docs/PROTOCOL_MASTERPLAN_V23.md)
-- [S06.2 greenfield production architecture](docs/RUNTIME_ARCHITECTURE_S062.md)
-- [KIX Binary Canonical Encoding v1](runtime/CANONICAL_BINARY_BCS_V1.md)
-- [Production Sui object topology](runtime/MOVE_PRODUCTION_TOPOLOGY.md)
-- [Runtime performance profile](runtime/PERFORMANCE_PROFILE.md)
-- [AI / GPU data plane](runtime/AI_GPU_DATA_PLANE.md)
-- [개발계획 2.2 — historical](docs/PROTOCOL_MASTERPLAN_V2.md)
-- [S06.1 historical foundation](docs/FOUNDATION_S061.md)
-- [CE1 historical/compatibility encoding](docs/CANONICAL_ENCODING_V1.md)
-- [저장 기록 유실 조사](docs/STORAGE_INVESTIGATION.md)
-- [프로토콜 보안 보완](docs/PROTOCOL_HARDENING.md)
-
-## S05
-
-Separate-filesystem archive와 reconciliation-only restore를 구현했다. restored workspace는 money execution을 재개하지 않는다. whole-host loss, remote durability, historical storage incident root cause는 미검증이다.
-
-## S06
-
-Asset/Amount, ordered discounts, multi-leg allocation, selected-line refund proposal을 계산-only 계약으로 구현했다. 외부 결제나 지급 권한을 만들지 않는다.
-
-## S06.1
-
-PR 계보, CE1, ASCII machine ID, Python↔TypeScript 결정론, registry-bound AssetAmount와 의미별 integer를 고정했다. 이 결과는 역사적 회귀/compatibility 자산으로 유지한다.
-
-## S06.2 — greenfield reset
-
-성능을 위해 production architecture를 기존 fixture에서 분리하는 수준을 넘어 **새 production design authority를 Rust 쪽으로 이동**한다.
-
-- Rust-first production state machine
-- PostgreSQL 18 typed OLTP
-- KIX-BCS1 production canonical bytes/hash
-- CE1/Python은 compatibility/regression only
-- show-wide shared mutable Move topology 금지
-- immutable ShowConfig, independent Right/SaleIntent/PaymentEvidence, sharded admission/nullifier
-- Rust direct Sui gRPC streaming observation
-- Arrow/Parquet columnar contract
-- Polars Lazy를 feature/ETL의 기본 plan으로 사용
-- DuckDB를 Parquet/Arrow SQL·대사에 사용
-- cudf-polars/libcudf를 GPU feature acceleration에 사용
-- AI/model output은 non-authoritative proposal이며 Rust kernel gate를 다시 통과
-
-S07 Durable Commerce Execution은 이 아키텍처 위에서 처음부터 구현한다.
-
-개인키·백업 비밀번호·비공개 노트·시험용 proving key·로컬 체인 DB는 추적하지 않는다. 공개 배포용 라이선스는 부여하지 않았다.
+개인키·비공개 노트·proving key·로컬 체인 DB는 추적하지 않습니다. 실제 PG/은행 계약, 독립 checkpoint 검증, 운영 ZK 설정, 원격 내구성 및 branch protection은 독립 완료조건입니다. 공개 배포용 라이선스는 부여하지 않았습니다.

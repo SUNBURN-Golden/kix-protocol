@@ -1,19 +1,51 @@
-version = "kix-runtime-architecture:4"
-stage = "S06.2-greenfield-semantic-audit-gate"
+version = "kix-runtime-architecture:5"
+stage = "KTX-R0-R1-transition-kernel"
+authority_adr = "docs/adr/0001-ktx-authority-commit-recovery.md"
+masterplan = "docs/PROTOCOL_MASTERPLAN_V24.md"
 legacy_reference_root = "reference/v0.3-rc1"
 legacy_reference_role = "historical-regression-fixture-only"
 production_runtime_root = "runtime"
 production_language = "rust"
-deployment_model = "modular-monolith"
+deployment_model = "regional-cells-modular-monolith"
 async_runtime = "tokio"
 internal_transport = "in-process-typed-calls"
 oltp_database = "postgresql"
 oltp_major = 18
 oltp_minor_policy = "latest-supported-minor"
+database_role = "projection-control-or-isolated-comparison-authority"
 database_driver_profile = "direct-prepared-binary-no-orm"
 production_canonical_profile = "KIX-BCS1"
 legacy_canonical_profile = "CE1"
 legacy_commerce_schema = "kix:commerce:2"
+
+[execution]
+primary_target = "replicated-ktx"
+implemented = "io-free-single-shard-transition-kernel"
+production_enabled = false
+durable_driver_implemented = false
+consensus_candidate = "raft-rs"
+authority = "scope-assigned-single-writer"
+profiles = ["DelegatedExecution", "NativeChainExecution"]
+delegated_execution_enabled = false
+exclusive_grant_required = true
+same_resource_dual_write = false
+command_identity = "stable-scope-principal-command-id"
+execution_fence_in_command_identity = false
+payload_comparison = "immutable-typed-payload-separate-from-key"
+old_bound_observations_preserved = true
+unknown_is_failure = false
+cancellation_barrier_binds_placement = true
+replay_semantics_version_required = true
+
+[durability]
+ack_contract = "stable-quorum-commit-and-recoverable-result"
+in_memory_apply_is_durable_ack = false
+result_and_intent_in_same_commit = true
+dedupe_moves_with_inventory = true
+snapshot_log_replay_required = true
+whole_region_rpo_zero_claimed = false
+actual_crash_history_required = true
+performance_claim_from_unit_tests = false
 
 [hot_path]
 python = false
@@ -68,19 +100,23 @@ payment_evidence = "independent-per-payment-evidence"
 admission_nullifier_state = "sharded-by-show-epoch"
 show_wide_compensation_fence = false
 per_sale_terminal_fence_required = true
+reservation_is_chain_finality = false
 
 [inventory]
 reserved_seating = "one-seat-one-contention-cell-no-general-shard"
 general_admission = "fixed-capacity-shards"
+offchain_owner = "logical-row-or-actual-contiguous-segment"
 ga_capacity_invariant = "sum-initial-shard-capacity-equals-immutable-total"
 waiting_room_role = "admission-control-and-ga-shard-router-not-authority"
 waiting_room_effective_remaining = "observed-remaining-minus-outstanding-unexpired-tokens"
 queue_position_preserved_on_reshard = true
 reshard_changes_queue_rank = false
-chain_capacity_is_authority = true
+capacity_authority = "explicit-execution-profile"
+row_equals_replication_group = false
 
 [storage]
-typed_relational_state = true
+authority_state = "deterministic-shard-state-plus-log"
+typed_relational_projection = true
 append_only_observations = true
 append_only_journal = true
 transactional_outbox = true
@@ -96,12 +132,14 @@ process_local_cache = true
 cache_is_authority = false
 
 [export]
-economic_authority = "postgresql"
+economic_authority = "scope-assigned-single-writer"
 consumer_truth = false
 manifest = "ExportManifestV1"
-full_export_consistency = "repeatable-read-mvcc-snapshot"
-multireader_snapshot = "postgres-exported-snapshot"
-incremental_cursor = "wal-lsn-or-equivalent-durable-cursor"
+full_export_consistency = "source-consistent-cut-plus-projection-watermarks"
+projection_full_consistency = "repeatable-read-mvcc-snapshot"
+multireader_snapshot = "postgres-exported-snapshot-for-projection"
+incremental_cursor = "source-shard-commit-and-projection-cursor"
+projection_lsn_is_source_commit = false
 snapshot_and_lsn_are_distinct = true
 row_count_required = true
 per_file_hash_required = true
@@ -109,12 +147,13 @@ manifest_hash_required = true
 source_schema_version_required = true
 export_schema_version_required = true
 partial_export_fail_closed = true
+cross_shard_consistent_cut_required = true
 
 [analytics]
 online_transaction_dependency = false
 archive_format = "parquet"
 memory_format = "arrow"
-economic_authority = "postgresql"
+economic_authority = "scope-assigned-single-writer"
 audit_engine = "duckdb"
 audit_source = "authenticated-export-only"
 feature_ir = "kix-feature-ir-v1"

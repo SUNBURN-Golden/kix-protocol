@@ -1,186 +1,74 @@
-# KIX runtime performance profile
+# KIX runtime performance profile — KTX v5
 
-KIX optimizes end-to-end throughput/latency without weakening economic correctness. Transaction authority, audit, feature execution and GPU acceleration are separate roles.
+No measured KTX throughput or floor is claimed. R1 is a pure single-shard transition kernel; it has no durable storage, deployed cells, or performance harness. This document defines R2/R4/R6 acceptance, not completed results. Authority/finality follows [ADR-0001](../docs/adr/0001-ktx-authority-commit-recovery.md).
 
-## 1. OLTP core
+## 1. Equal-guarantee comparison
 
-Production baseline: Rust + Tokio + PostgreSQL 18.x, prepared/binary direct DB access, narrow typed tables, aggregate-local OCC/CAS.
+Compare the replicated KTX target with an isolated SQL-authoritative PostgreSQL 18 profile on disjoint inventory. Do not serialize both engines in one purchase or run two writers against the same resource. Use the same business invariants, stable command identity, external UNKNOWN semantics, successful ACK meaning, failure domain, stable-storage policy, authentication work, workload and reporting windows.
 
-Forbidden on the commerce hot path:
+A three-replica single-region profile must not claim whole-region RPO=0. Majority loss cannot produce new successful writes. RAM/page-cache ACK performance is not durable-commit performance. NativeChainExecution includes required chain finality; delegated contractual completion is reported separately.
 
-- Python/Node/SQLite authority;
-- DataFrame engines;
-- giant mutable JSON/JSONB state;
-- global sequence/balance hot rows;
-- external RPC while a DB transaction is open;
-- microservice hops without measured scaling need.
+Prohibited hot path: Python/Node/SQLite authority, DataFrame mutation, giant mutable JSON, global sequence/balance hot rows, external RPC inside open DB transactions, microservice hops without measured need.
 
-## 2. On-sale burst performance
+## 2. Metrics and workload
 
-Average TPS is not the only target. Benchmark the opening burst explicitly.
+Ceiling = sustained correct durable goodput within latency objectives. Floor = defined low-load, hotspot, burst, background-recovery and provider-delay scenarios, not availability under arbitrary majority failure.
 
-Track:
+Record scheduled arrival and actual completion with open-loop generation plus user-behavior replay. Report successful reservation/payment/issuance, rejection, queueing and retry separately. Preserve raw histograms and failure times. Do not hide overload by allowing the generator to wait for responses and reduce offered load.
 
-- waiting-room queue latency;
-- admitted requests/sec;
-- PostgreSQL pool utilization/saturation;
-- retry amplification;
-- reservation success/failure by inventory mode;
-- GA shard imbalance/reissue count;
-- preserved queue-position violations = 0.
+Pin CPU/RAM/NUMA/NIC, kernel/runtime/compiler, dependencies, storage/fsync mode, replica placement, workload distribution, object sizes, batch count/bytes/max wait and raw measurement configuration. Runtime lockfile is required. Dependency pinning does not make a shared hosted CI runner a stable performance machine.
 
-Reserved seating uses one-seat contention units. GA uses fixed-capacity shards and waiting-room shard routing; chain/inventory capacity remains authority.
+## 3. Mandatory fault/load matrix
 
-## 3. Canonical bytes
+| Scenario | Required observation |
+|---|---|
+| 1–4 seat bundles, aisles, word boundary | no overlap; all-or-none in declared commit unit |
+| same command/payload and altered payload | original result vs explicit conflict |
+| owner movement with response loss | same command identity; transfer dedupe/intents |
+| ACK then leader crash/restart | recovered original result under declared failure model |
+| snapshot install/compaction/catchup/torn write | evidence-preserving recovery and bounded foreground impact |
+| low load and saturated batching | latency floor as well as durable goodput |
+| hot row plus unrelated show/shard | locality of contention and failure impact |
+| provider delay, duplicates, late success | UNKNOWN preserved, one economic effect, obligations retained |
+| cancellation and authority split/movement | placement-bound barrier and no missed writer |
+| refund/reopen and old edge | invalidation and no permanent SOLD negative cache |
+| cross-shard coordinator failure | durable decision, no unsafe unilateral abort |
+| PG/chain/export prolonged delay | bounded backlog/retained WAL; scoped admission reduction |
 
-Production signing/hash/snapshot identity is KIX-BCS1. JSON/CE1 is compatibility/regression only. Typed in-process calls do not serialize on every function boundary.
+A semantic unit test is not an actual process crash, disk corruption, network partition or linearizability-history test. Enable a dedicated controlled performance/fault runner only once the harness exists. Current CI must not fabricate a performance pass.
 
-Benchmarks: encode/decode/hash throughput, heap allocation count, encoded size, BCS vs legacy JSON.
+## 4. Resource budgets
 
-## 4. IDs and money
+Track cell/shard/provider queue count/bytes/age, active sessions, HOLD count, uncertain external operations, observation lag, outbox age, source log retention, projection lag and recovery I/O. Reserve service for completion/cancel/expiry/reconciliation without permanently starving new work. Limit telemetry cardinality while retaining mandatory economic evidence.
 
-- KIX ID: fixed 128-bit.
-- Asset/hash identity: fixed 256-bit.
-- protocol money: u128 atoms + asset/registry context.
-- Fast64 profile key: `(asset_id, registry_version)`.
-- Fast64 export invariant: `atoms <= executionMaxAtoms(registryVersion) <= i64::MAX`.
-- Wide128 feature arithmetic: unsupported/fail closed in Semantics v1.
-- overflow/profile mismatch: reject, never truncate.
+## 5. Canonical bytes, identity and money
 
-## 5. Sui
+KIX-BCS1 signing/hash/snapshot identity is preserved; JSON/CE1 stays compatibility/regression. In-process calls are typed and need not serialize at every function boundary. Compare encoder/decoder/hash CPU, copies, allocations and sizes. Use canonical_bytes_and_hash where appropriate; never change golden bytes/hash for an optimization without an explicit new schema.
 
-Rust direct gRPC + streaming checkpoint watcher. Production object topology is immutable ShowConfig, mode-specific inventory, independent right/sale/payment objects and sharded admission/nullifier state. No show-wide mutable hot object/fence.
+IDs remain fixed 128-bit, asset/hash 256-bit, money u128 plus registry identity. Fast64 requires `(asset_id, registry_version)` and `atoms <= executionMaxAtoms(registryVersion) <= i64::MAX`, with registry hash checked. Wide128 analytical arithmetic stays unsupported/fail-closed in Semantics v1. Never truncate out-of-profile input.
 
-## 6. Authenticated export
+## 6. Chain and export
 
-PostgreSQL is economic authority. DuckDB/Polars/libcudf consume authenticated evidence exports.
+Rust gRPC/checkpoint adapters replace Node subprocess in production. Independent inventory/right/sale/payment objects and sharded nullifier state replace shared-Show fixture topology. Private proof/nullifier authority prerequisites remain synchronous with permission, not analytics.
 
-Full export:
-- REPEATABLE READ MVCC snapshot;
-- exported/imported snapshot for multi-reader export;
-- snapshot identity is not WAL LSN.
+Exports use source-consistent cuts and projection-applied source watermarks. PostgreSQL MVCC snapshot and LSN remain distinct. A projection LSN is not KTX source finality. Benchmark complete/authenticated export throughput; never remove manifest hashes/row counts/source authentication to improve speed. Cross-shard cuts include coordinator decisions.
 
-Incremental export:
-- WAL LSN or equivalent durable cursor;
-- explicit cursor boundary semantics;
-- stable event identity for replay/dedupe.
+## 7. Preserved analytical semantics
 
-Benchmark export completeness and throughput, but never trade away row-count/hash/manifest verification for speed.
+FeatureIR is representation; pure-Rust Feature Semantics v1 is the engine-independent reference. Retain null filter/join/group behavior, sort null/stability, aggregate empty/null/overflow, finite terminal-only F64, divide-by-zero NULL, logical decoded category equality and version-bound Fast64. Polars Rust conformance is required on upgrades; native libcudf must pass the same meaning before enablement.
 
-## 7. KIX Feature IR + Semantics v1
+Polars lazy/streaming handles CPU ETL over authenticated Arrow/Parquet. DuckDB handles audit/forensic SQL over verified manifests. Neither query results nor DataFrame mutations create economic truth. Trace discrepancies to source cuts, projection lag, export completeness, mapping and query semantics.
 
-`kix-feature-ir` defines representation. `kix-feature-semantics` defines engine-independent behavior. Upstream defaults are not semantic authority.
+## 8. Native GPU crossover gate
 
-Semantic fixture areas include:
+The target remains native libcudf behind the KIX C ABI and Arrow C Device, with long-lived contexts, streams and RMM pools. Python cudf-polars is drafting/conformance/benchmark tooling only, with raise_on_fail/no fallback. It is not a commerce runtime dependency.
 
-- null filter/join/group behavior;
-- sort null order and stability;
-- aggregate empty/null/overflow behavior;
-- terminal-only finite F64;
-- divide-by-zero -> NULL;
-- category comparison by decoded logical value;
-- registry-version-bound Fast64.
+GPUCrossoverProfile pins workload/dataset, CPU/RAM, GPU/VRAM, PCIe/NVLink, Polars/RAPIDS/libcudf/cudf-polars/CUDA versions, row counts/bytes, CPU/GPU wall time, host/device transfers, fallback count and allocation/spill. Native work is justified when one workload family wins at three consecutive scales with zero fallback. No global row-count crossover constant.
 
-Pure-Rust semantics is the reference. Polars Rust must pass conformance on every version upgrade. Native libcudf must pass the same suite before production enablement.
+CPU interchange is Arrow, durable analytical data Parquet, device interchange Arrow C Device. Fixed binary widths, timestamps/timezone, category vocabulary and Wide128 lossless representation remain explicit. Row groups/compression/sort order are workload-specific measurements.
 
-## 8. Polars Rust CPU backend
+## 9. AI and optimization
 
-Polars Rust lazy/streaming is the default CPU feature/ETL executor over authenticated Arrow/Parquet datasets.
+Advisory AI runs after commit. Gated inference uses durable pending intent, external feature/inference work and a new validated kernel command. Model output is never authority. Analytics/GPU/backup/recovery resources are budgeted separately.
 
-Use for recurring typed ETL and feature generation. Never use it as Order/Payment/Refund mutation authority or economic reconciliation authority.
-
-## 9. DuckDB audit backend
-
-DuckDB executes audit/forensic/reconciliation SQL over **verified ExportManifestV1 datasets**.
-
-```text
-PostgreSQL = truth
-DuckDB = audit executor over evidence
-```
-
-A DuckDB mismatch triggers investigation of export provenance, type mapping and query semantics; it never creates a second economic truth.
-
-## 10. Native libcudf GPU target
-
-The future production GPU backend is native C++ `libcudf` behind `native_gpu/include/kix_gpu.h`. It is not an S07 dependency.
-
-Execution target:
-
-```text
-KIX Feature IR + Semantics
- -> Rust safe wrapper
- -> stable KIX C ABI
- -> long-lived libcudf context
- -> CUDA streams + persistent RMM pool
- -> ArrowDeviceArray output
-```
-
-Native implementation requires a pinned NVIDIA/CUDA/RAPIDS CI lane and semantics conformance before enablement.
-
-## 11. cudf-polars role
-
-`cudf-polars` is not production infrastructure. Use it as:
-
-- semantics drafting aid by studying its Polars->libcudf translations;
-- conformance participant where supported;
-- benchmark/crossover proxy;
-- rapid prototype/offline research tool.
-
-Use `raise_on_fail` or equivalent no-fallback mode for GPU benchmark work. Silent CPU fallback is never counted as GPU performance.
-
-## 12. GPUCrossoverProfile
-
-There is no global row-count threshold.
-
-Each profile records at least:
-
-```text
-featurePlanId / workload family
-dataset profile
-CPU model / RAM
-GPU model / VRAM
-PCIe or NVLink topology
-Polars version
-RAPIDS/libcudf/cudf-polars version
-CUDA version
-row counts / bytes per scale
-wall-clock CPU and GPU
-host->device and device->host bytes
-fallback count
-memory spill/allocation metrics
-```
-
-A native GPU implementation is justified only after the same workload family shows GPU wins at **three consecutive scales with fallback count = 0** on a pinned profile. The measured crossover is evidence, not a permanent architecture constant.
-
-## 13. Arrow / Parquet
-
-- CPU interchange: Arrow;
-- device interchange target: Arrow C Device;
-- durable analytics/training: Parquet;
-- UUID: fixed binary(16);
-- asset/digest: fixed binary(32);
-- Fast64 money: i64 atoms + asset/registry-version columns;
-- Wide128: lossless representation only;
-- category/dictionary physical encoding is not semantic identity.
-
-Dataset partitioning, row groups, compression and sort order are benchmarked per workload.
-
-## 14. AI realtime
-
-AI never executes inside an open DB transaction. Advisory mode runs after commit. Gated mode commits durable pending/intent state, performs feature/inference work, then enters a new Rust command. Model outputs remain non-authoritative.
-
-## 15. benchmark suite
-
-OLTP: create-order, observation ingest, concurrent refund reservation, journal/outbox append, SQL round trips, allocations.
-
-On-sale: waiting-room latency, admitted RPS, DB pool saturation, retry amplification, reserved-seat contention, GA shard routing/reissue fairness.
-
-Chain: independent sale throughput, shard contention, checkpoint lag.
-
-Export/audit: full-snapshot throughput/consistency, incremental CDC completeness, manifest verification, DuckDB query reproducibility.
-
-Feature: pure-Rust reference vs Polars conformance.
-
-GPU: cudf-polars crossover proxy first; later native libcudf, Arrow device transfer, RMM pool/spill, stream behavior and conformance.
-
-No performance claim is made without pinned hardware, dataset/query profile and reproducible benchmark configuration.
+Only after correctness and fault-history gates pass compare core pinning, NUMA, io_uring, batching/allocation and NIC/DPDK options under the same guarantees. Maximum in-memory loop rate is not end-to-end purchased-right throughput.

@@ -1,37 +1,30 @@
-# KIX production runtime
+# KIX production runtime — KTX-R0/R1
 
-`runtime/` is the S07+ production design authority. Historical Python/Node/SQLite and the shared-Show Move code under `reference/` remain regression/fault fixtures only.
+Current authority: [masterplan 2.4](../docs/PROTOCOL_MASTERPLAN_V24.md), [ADR-0001](../docs/adr/0001-ktx-authority-commit-recovery.md), and architecture contract v5. The PostgreSQL-only design in 2.3 is historical/comparison scope, not the mandatory path for every future transaction.
 
-## Core production path
+## Implemented
 
-- Rust modular monolith + Tokio.
-- PostgreSQL 18 typed OLTP authority.
-- KIX-BCS1 for canonical signing/hash/snapshot identity.
-- Direct Sui gRPC observation/execution boundaries.
-- Immutable ShowConfig + independent inventory/right/sale/payment objects + sharded admission state.
-- No Python/Node/SQLite/DataFrame engine in the commerce hot path.
+- `kix-types`: fixed-width IDs, versioned asset-bound u128 money and headers.
+- `kix-bcs1`: actual canonical codec and fixed S07-A golden vector, unchanged.
+- `kix-feature-ir` / `kix-feature-semantics`: validated analytical plans and reference semantics, not transaction authority.
+- `kix-kernel`: pure deterministic single-shard transitions, bounded records, stable command identity, segment/GA reservations, minimal order/external intent, local fences, UNKNOWN and capture observation model.
 
-## Data / AI path
+## Not implemented
 
-The analytical plane is columnar but is not transaction authority.
+The kernel has no persistence, network, cryptographic input authentication, durable ACK, consensus integration, cluster handoff, deployment, or performance evidence. `replace_owner` and `cancel_scope` are local state-model operations, not distributed protocols. ReturnRequired is not refund execution. The kernel models one positive-priced full-capture operation per order; general commerce remains R3 work.
 
-```text
-Arrow/Parquet -> KIX Feature IR v1
-                  |            |
-                  v            v
-        Polars Rust CPU    libcudf native GPU
-                                |
-                         Arrow C Device
+## Target
+
+Regional transaction cells contain core-local shards with replicated durable commits. Delegated inventory requires a proved exclusive grant and remains disabled. Native chain rights still wait for actual chain finality. PostgreSQL can serve projections/control data or an isolated SQL-authoritative comparison profile; never dual-write the same authority scope.
+
+Adapters authenticate registry/policy/provider/chain facts and submit ordered commands. They perform external I/O outside the kernel. Analytics/GPU/export have separate resource budgets. Native libcudf remains a measured future backend, never a Python dependency in the commerce path.
+
+## Tests
+
+```bash
+python scripts/verify_runtime_architecture.py
+cargo test --manifest-path runtime/Cargo.toml --workspace --locked
+cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings
 ```
 
-`cudf-polars` is conformance/benchmark/prototyping tooling only. Production GPU execution is native libcudf through the stable KIX C ABI described in `NATIVE_GPU_EXECUTION.md`.
-
-## crates
-
-- `kix-types` — binary-first KIX IDs, asset/hash identity, registry-bound money, KIX-BCS1 headers/counters.
-- `kix-feature-ir` — engine-neutral feature/query plan shared by Polars Rust and libcudf backends.
-- `kix-kernel` — S07 deterministic commerce state machine (next).
-- `kix-store-postgres` — S07 typed PostgreSQL transactions/OCC/journal/outbox (next).
-- `kix-executor`, `kix-sui`, `kix-provider`, `kix-api` — follow-on runtime boundaries.
-
-Production hot path forbids giant mutable JSON state, global sequence/balance hot rows, external RPC inside DB transactions, and microservice hops without measured need.
+Historical Python/Node/SQLite and shared-Show Move under `reference/` remain regression/fault fixtures only. A Python test runner is not a Python production engine. Preserve its safety guarantees in Rust, not its storage topology.

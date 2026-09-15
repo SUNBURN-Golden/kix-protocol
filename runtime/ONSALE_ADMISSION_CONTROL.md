@@ -1,66 +1,55 @@
-# KIX on-sale admission control and inventory routing
+# KIX on-sale admission control and inventory routing — v5
 
-KIX 티켓 오픈 성능은 평균 TPS보다 burst admission을 먼저 통제해야 한다. Waiting room은 load-control 및 GA shard router지만 inventory correctness authority는 아니다.
+정본은 [ADR-0001](../docs/adr/0001-ktx-authority-commit-recovery.md)의 실행 모드/배타 범위로 결정한다. Waiting room은 load-control 및 GA routing이며 재고 권위를 만들지 않는다. 아래는 KTX-R4의 구현 계약이다. 현재 R1 커널에 edge/queue/scheduler가 구현됐다는 뜻이 아니다.
 
-## 1. Inventory mode를 지금 분리
+## 1. 재고와 실행 단위
 
-```text
-ReservedSeating
-GeneralAdmissionSharded
-```
+ReservedSeating와 GeneralAdmissionSharded를 분리한다. 온체인 지정석은 단일-seat contention cell을 유지한다. 오프체인 writer는 행/실제 연속 구간을 소유하고 여러 구간을 실행/복제 shard에 묶을 수 있다. 행 하나당 thread/Raft group 하나를 요구하지 않는다.
 
-### ReservedSeating
+GA는 생성 시 `sum(initialShardCapacity) == immutableTotalCapacity`를 검증한다. 권위 shard는 capacity를 독립 강제한다. 전역 mutable capacity hot row를 만들지 않는다. 동시 소비 가능 자원을 단순 캐시 수치로 승인하지 않는다.
 
-- 지정석 1개 = 독립 `InventoryCell` 또는 동등한 단일-seat 경쟁 단위.
-- 일반 판매 경로에서 여러 인기 좌석을 한 mutable shard에 묶지 않는다.
-- 동일 좌석에 대한 경쟁은 본질적으로 직렬화되지만 다른 좌석은 독립 병렬 처리된다.
+## 2. 상태와 비용을 분리
 
-### GeneralAdmissionSharded
+Waiting users는 queue token + coarse versioned artifact를 받으며 좌석 스트림을 받지 않는다. Admitted buyers는 홈 권위/세대에 결합된 제한된 세션 상태와 bounded snapshot/delta를 사용한다. Audit evidence는 온라인 스케줄러와 별도로 보존한다.
 
-- 총량형 재고를 여러 `InventoryShard`로 분할한다.
-- 생성 시 `sum(initialShardCapacity) == immutableTotalCapacity`를 검증한다.
-- 각 shard는 `reserved <= capacity`를 독립적으로 강제한다.
-- 일반 구매 경로에서 global mutable capacity counter를 두지 않는다.
+live scheduling state의 목표와 전체 장기 저장량을 혼동하지 않는다. 정산/환불/재시도/공정성 증거는 거래/보존기간에 따라 증가한다. active session cap, records, bytes와 보존 전략을 각각 정의한다.
 
-## 2. Waiting room 역할
-
-Waiting room은 두 일을 한다.
-
-1. backend/PostgreSQL/chain으로 들어가는 유입 속도 제어
-2. GA token 발급 시 현재 추정 여유가 있는 shard로 라우팅
-
-Waiting room의 `effectiveRemaining`은 최적화용 추정치다.
+## 3. Router의 추정과 정본
 
 ```text
-effectiveRemaining
- = observedShardRemaining
- - outstandingUnexpiredTokens
+effectiveRemaining = observedShardRemaining - outstandingUnexpiredTokens
 ```
 
-실제 capacity authority는 inventory state/chain이다. Waiting room이 stale하면 shard reservation이 fail closed 할 수 있다.
+이는 routing hint다. 실제 reservation은 해당 실행 모드의 권위 경계를 통과한다. NativeChainExecution에서 local HOLD는 체인 재고/발행 확정이 아니다. DelegatedExecution은 grant 검증 전 비활성이다. PostgreSQL pool을 무제한 유입 버퍼로 사용하지 않는다.
 
-## 3. Admission token
-
-최소 binding:
+## 4. Admission token
 
 ```text
-showId
-queueTicketId
-queuePositionIdentity
-inventoryEpoch
-inventoryMode
-shardId (GA only)
-nonce
-issuedAt
-expiresAt
-signature/keyVersion
+showId / queueTicketId / queuePositionIdentity
+inventoryEpoch / inventoryMode / authorityPlacementVersion
+shardId (GA routing) / nonce / issuedAt / expiresAt / signature/keyVersion
 ```
 
-토큰은 다른 show/epoch/shard로 재사용할 수 없다. ReservedSeating에서는 seat choice/reservation identity를 별도로 bind할 수 있다.
+다른 show/epoch/scope로 token을 재사용하지 못한다. 서명된 attempt_no만으로 outstanding=1이나 전 세계 single execution을 주장하지 않는다. admitted session의 제한된 서버 상태와 원자적 검사로 이를 강제한다.
 
-## 4. Queue-position preserving reissue
+CommandIdentity는 stable business scope + authenticated principal + client_command_id다. owner generation이나 routing 변경으로 동일 명령이 새 명령이 되지 않는다. fingerprint는 원래 payload와 따로 저장하며 payload를 key에 섞어 변조 명령에 새 identity를 주지 않는다.
 
-GA에서 token을 발급했지만 실제 reservation 시 shard가 full이면:
+## 5. 재시도와 availability hints
+
+```text
+bounded parsing/authentication/routing
+ -> existing command result or in-flight coalescing
+ -> eligibility for a NEW attempt
+ -> versioned negative hint
+ -> authoritative decision
+ -> durable commit / truthful result
+```
+
+같은 key의 payload가 다르면 충돌로 거절한다. 최초 성공 응답 유실 뒤 bitmap HELD만 보고 새 실패를 응답하지 않는다. 최초 결과와 현재 예약 만료 여부는 별도다. 결과 조회도 인증/권한 검사와 durable proof 경계를 유지한다.
+
+SOLD는 refund/reopen으로 바뀔 수 있다. 공개 뷰는 inventory epoch, segment version, source commit position, expiry를 포함한다. stale negative hint는 영구 재고 판정이나 자동적인 idempotent business outcome이 아니다. 재공개/무효화와 retry/query 경로를 별도 보장한다.
+
+## 6. Queue-position preserving reissue
 
 ```text
 old token -> terminal REPLACED/EXPIRED
@@ -68,44 +57,16 @@ new token -> same queueTicketId + same queuePositionIdentity
              new shardId + new nonce + new expiry
 ```
 
-**재발급은 원래 queue 위치를 보존하고 shard만 바꾼다.** 사용자를 waiting room 맨 뒤로 보내지 않는다.
+재발급은 원래 순위를 유지하며 사용자를 뒤로 보내지 않는다. 구/신 token 동시 소비는 한 번의 용량 소비만 만들 수 있어야 한다. 단순 uniform random 대신 capacity-aware/power-of-two choices 등을 후보로 비교하되 재고 정합성과 순위 보존 조건은 바뀌지 않는다.
 
-이 규칙은 fairness contract다. shard routing 오차는 지연으로 보일 수는 있어도 순위 박탈로 보이면 안 된다.
+## 7. 실행·관측·복구 예산
 
-## 5. Shard selection
+cell/shard/provider별 request count, payload bytes, 최대 queue wait, outstanding external operations, HOLD 수, retry budget을 제한한다. 신규 claim 폭주가 payment observations, 만료, 취소 fence, 복구, 환불 예약을 굶기지 않도록 별도 예산과 공정 스케줄링을 둔다. 반대로 무제한 strict priority도 금지한다.
 
-단순 uniform random을 기본으로 하지 않는다. 초기 후보는 capacity-aware routing이다.
+group commit은 count/bytes/max wait 중 먼저 도달한 경계로 제안한다. 저부하에서 큰 배치를 기다리는 latency를 숨기지 않는다. PG/chain/export backlog age/bytes와 retained WAL에 상한을 두고 영향 제공자/판매 범위의 신규 의도를 줄인다. UNKNOWN 작업을 다른 PG에 새 요청으로 우회하지 않는다.
 
-예:
+## 8. Audit/fairness
 
-```text
-candidate shards with effectiveRemaining > 0
- -> sample/select
- -> prefer larger effectiveRemaining
-```
+append-only evidence에 queueTicketId, queuePositionIdentity, admission/reissue sequence, old/new shard, reason, issued/expiresAt, final reservation outcome을 보존한다. 필수 증거를 telemetry sampling으로 제거하지 않는다. 메트릭에 request/user/seat별 무한 label cardinality를 만들지 않는다.
 
-power-of-two choices 같은 경량 알고리즘을 benchmark 후보로 둔다. 알고리즘을 바꾸더라도 queue-position-preserving reissue와 chain capacity authority는 바뀌지 않는다.
-
-## 6. Admission control
-
-- waiting room 밖 요청은 bounded admission gate를 통과하지 못하면 빠르게 거절/재대기시킨다.
-- Postgres connection pool을 무한 queue로 사용하지 않는다.
-- client retry는 stable command/idempotency identity를 사용한다.
-- admission token replay/duplicate submit은 동일 경제효과를 두 번 만들 수 없다.
-- burst benchmark는 평균 TPS가 아니라 queue latency, admitted RPS, reservation success, retry amplification, DB pool saturation을 함께 측정한다.
-
-## 7. Audit/fairness
-
-다음은 append-only evidence로 남긴다.
-
-```text
-queueTicketId
-queuePositionIdentity
-admission/reissue sequence
-old/new shardId
-reason = SHARD_FULL | TOKEN_EXPIRED | ROUTER_REFRESH | ...
-issuedAt/expiresAt
-final reservation outcome
-```
-
-운영자는 '왜 이 사용자의 shard가 바뀌었는가'와 '원래 대기 순위를 유지했는가'를 설명할 수 있어야 한다.
+시험은 queue latency/admitted RPS/retry amplification/durable reservation success/GA reissue/순위 위반/각 queue saturation/완료 작업 지연을 분리한다. reject RPS를 purchase TPS라고 표기하지 않는다.

@@ -23,26 +23,29 @@ jobs:
         with:
           toolchain: '1.98.1'
           components: rustfmt, clippy
+      - name: Architecture and declared dependency boundary
+        run: python3 scripts/verify_runtime_architecture.py
       - name: Compile and test kernel transitions
-        run: cargo test --manifest-path runtime/Cargo.toml -p kix-kernel
+        run: |
+          set -o pipefail
+          mkdir -p .local/verification/ktx
+          cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked 2>&1 | tee .local/verification/ktx/kernel-tests.log
       - name: Clippy
-        run: cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets -- -D warnings
+        run: cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked -- -D warnings
       - name: Formatting
         run: cargo fmt --manifest-path runtime/Cargo.toml --all -- --check
-      - name: Dependency and formatting review material
+      - name: Dependency evidence
         if: always()
         run: |
-          echo KTX_LOCK_BEGIN
-          test ! -f runtime/Cargo.lock || cat runtime/Cargo.lock
-          echo KTX_LOCK_END
-          cargo fmt --manifest-path runtime/Cargo.toml --all
-          git diff -- runtime/
+          mkdir -p .local/verification/ktx
+          cargo tree --manifest-path runtime/Cargo.toml -p kix-kernel --edges normal --locked > .local/verification/ktx/dependencies.txt
+          sha256sum runtime/Cargo.lock runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/transitions.rs > .local/verification/ktx/source-sha256.txt
+          git rev-parse HEAD > .local/verification/ktx/tested-commit.txt
       - name: Preserve review artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: ktx-review-${{ github.sha }}
-          path: |
-            runtime/Cargo.lock
-            runtime/crates/kix-kernel/
+          name: ktx-verification-${{ github.sha }}
+          path: .local/verification/ktx/
+          include-hidden-files: true
           retention-days: 14

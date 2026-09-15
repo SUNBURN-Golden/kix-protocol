@@ -153,7 +153,10 @@ pub enum Inventory {
         segments: Vec<(u16, u16)>,
         occupied: Vec<u64>,
     },
-    GeneralAdmission { capacity: u32, remaining: u32 },
+    GeneralAdmission {
+        capacity: u32,
+        remaining: u32,
+    },
 }
 
 impl Inventory {
@@ -164,7 +167,9 @@ impl Inventory {
         let mut end = 0_u16;
         let mut segments = Vec::with_capacity(segment_lengths.len());
         for &length in segment_lengths {
-            let next = end.checked_add(length).ok_or(KernelError::InvalidConfiguration)?;
+            let next = end
+                .checked_add(length)
+                .ok_or(KernelError::InvalidConfiguration)?;
             if length == 0 || next > MAX_SEATS {
                 return Err(KernelError::InvalidConfiguration);
             }
@@ -181,21 +186,25 @@ impl Inventory {
         if capacity == 0 {
             return Err(KernelError::InvalidConfiguration);
         }
-        Ok(Self::GeneralAdmission { capacity, remaining: capacity })
+        Ok(Self::GeneralAdmission {
+            capacity,
+            remaining: capacity,
+        })
     }
 
     fn check(&self, selection: Selection) -> Result<(), Rejection> {
         match (self, selection) {
             (Self::Seats { segments, occupied }, Selection::Seats { first, count }) => {
                 let end = first.checked_add(count).ok_or(Rejection::InvalidRequest)?;
-                if count == 0 || count > MAX_BUNDLE
+                if count == 0
+                    || count > MAX_BUNDLE
                     || !segments.iter().any(|&(lo, hi)| first >= lo && end <= hi)
                 {
                     return Err(Rejection::InvalidRequest);
                 }
-                if (first..end).any(|seat| {
-                    occupied[usize::from(seat) / 64] & (1_u64 << (seat % 64)) != 0
-                }) {
+                if (first..end)
+                    .any(|seat| occupied[usize::from(seat) / 64] & (1_u64 << (seat % 64)) != 0)
+                {
                     return Err(Rejection::Unavailable);
                 }
                 Ok(())
@@ -220,11 +229,19 @@ impl Inventory {
                 for seat in first..first + count {
                     let word = &mut occupied[usize::from(seat) / 64];
                     let mask = 1_u64 << (seat % 64);
-                    if acquire { *word |= mask; } else { *word &= !mask; }
+                    if acquire {
+                        *word |= mask;
+                    } else {
+                        *word &= !mask;
+                    }
                 }
             }
             (Self::GeneralAdmission { remaining, .. }, Selection::GeneralAdmission { count }) => {
-                if acquire { *remaining -= count; } else { *remaining += count; }
+                if acquire {
+                    *remaining -= count;
+                } else {
+                    *remaining += count;
+                }
             }
             _ => unreachable!("validated inventory selection"),
         }
@@ -273,29 +290,47 @@ impl Kernel {
         inventory: Inventory,
         limits: Limits,
     ) -> Result<Self, KernelError> {
-        if fence.generation == 0 || business_epoch == 0
-            || limits.commands == 0 || limits.orders == 0 || limits.observations == 0
+        if fence.generation == 0
+            || business_epoch == 0
+            || limits.commands == 0
+            || limits.orders == 0
+            || limits.observations == 0
         {
             return Err(KernelError::InvalidConfiguration);
         }
         // Do not accept caller-constructed bitmap or capacity inconsistencies.
         match &inventory {
             Inventory::Seats { segments, occupied } => {
-                let lengths: Vec<u16> = segments.iter().map(|&(lo, hi)| hi.saturating_sub(lo)).collect();
+                let lengths: Vec<u16> = segments
+                    .iter()
+                    .map(|&(lo, hi)| hi.saturating_sub(lo))
+                    .collect();
                 if Inventory::seats(&lengths)? != inventory || occupied.iter().any(|&v| v != 0) {
                     return Err(KernelError::InvalidConfiguration);
                 }
             }
-            Inventory::GeneralAdmission { capacity, remaining } => {
+            Inventory::GeneralAdmission {
+                capacity,
+                remaining,
+            } => {
                 if *capacity == 0 || capacity != remaining {
                     return Err(KernelError::InvalidConfiguration);
                 }
             }
         }
         Ok(Self {
-            scope, fence, business_epoch, cancelled: false, now_ms: 0, inventory, limits,
-            commands: BTreeMap::new(), orders: BTreeMap::new(), operations: BTreeMap::new(),
-            observations: BTreeMap::new(), conflicts: Vec::new(),
+            scope,
+            fence,
+            business_epoch,
+            cancelled: false,
+            now_ms: 0,
+            inventory,
+            limits,
+            commands: BTreeMap::new(),
+            orders: BTreeMap::new(),
+            operations: BTreeMap::new(),
+            observations: BTreeMap::new(),
+            conflicts: Vec::new(),
         })
     }
 
@@ -303,27 +338,43 @@ impl Kernel {
         if ctx.semantics_version != SEMANTICS_VERSION {
             return Err(KernelError::UnsupportedSemantics);
         }
-        if ctx.fence != self.fence { return Err(KernelError::ExecutionFenced); }
-        if ctx.now_ms < self.now_ms { return Err(KernelError::ClockRegression); }
+        if ctx.fence != self.fence {
+            return Err(KernelError::ExecutionFenced);
+        }
+        if ctx.now_ms < self.now_ms {
+            return Err(KernelError::ClockRegression);
+        }
         Ok(())
     }
 
-    pub fn reserve(&mut self, ctx: Context, request: Reserve) -> Result<AppliedReservation, KernelError> {
+    pub fn reserve(
+        &mut self,
+        ctx: Context,
+        request: Reserve,
+    ) -> Result<AppliedReservation, KernelError> {
         if ctx.semantics_version != SEMANTICS_VERSION {
             return Err(KernelError::UnsupportedSemantics);
         }
-        if request.id.scope != self.scope { return Err(KernelError::WrongScope); }
+        if request.id.scope != self.scope {
+            return Err(KernelError::WrongScope);
+        }
         // Full typed payload equality is collision-free; wire fingerprints are
         // a future adapter optimization, never part of the command identity.
         if let Some(record) = self.commands.get(&request.id) {
-            if record.request != request { return Err(KernelError::CommandConflict); }
-            return Ok(AppliedReservation { original: record.result, replayed: true });
+            if record.request != request {
+                return Err(KernelError::CommandConflict);
+            }
+            return Ok(AppliedReservation {
+                original: record.result,
+                replayed: true,
+            });
         }
         self.context(ctx)?;
         if self.commands.len() >= self.limits.commands || self.orders.len() >= self.limits.orders {
             return Err(KernelError::Capacity);
         }
-        let rejection = if self.cancelled || request.expected_business_epoch != self.business_epoch {
+        let rejection = if self.cancelled || request.expected_business_epoch != self.business_epoch
+        {
             Some(Rejection::BusinessFenced)
         } else if request.expires_at_ms <= ctx.now_ms || request.amount.atoms() == 0 {
             Some(Rejection::InvalidRequest)
@@ -340,23 +391,40 @@ impl Kernel {
         } else {
             self.inventory.adjust(request.selection, true);
             self.operations.insert(request.payment, request.order_id);
-            self.orders.insert(request.order_id, Order {
-                request: request.clone(), submitted_under: ctx.fence,
-                state: OrderState::Held, inventory_owned: true,
-                captured: None, review_required: false,
-            });
+            self.orders.insert(
+                request.order_id,
+                Order {
+                    request: request.clone(),
+                    submitted_under: ctx.fence,
+                    state: OrderState::Held,
+                    inventory_owned: true,
+                    captured: None,
+                    review_required: false,
+                },
+            );
             ReserveOutcome::Held(request.order_id)
         };
-        self.commands.insert(request.id, CommandRecord { request, result });
+        self.commands
+            .insert(request.id, CommandRecord { request, result });
         self.now_ms = ctx.now_ms;
-        Ok(AppliedReservation { original: result, replayed: false })
+        Ok(AppliedReservation {
+            original: result,
+            replayed: false,
+        })
     }
 
     /// Must be committed before an adapter sends the external request. UNKNOWN
     /// is not failure, and expiry alone must not release this reservation.
-    pub fn mark_payment_unknown(&mut self, ctx: Context, order_id: KixId) -> Result<(), KernelError> {
+    pub fn mark_payment_unknown(
+        &mut self,
+        ctx: Context,
+        order_id: KixId,
+    ) -> Result<(), KernelError> {
         self.context(ctx)?;
-        let order = self.orders.get_mut(&order_id).ok_or(KernelError::UnknownOrder)?;
+        let order = self
+            .orders
+            .get_mut(&order_id)
+            .ok_or(KernelError::UnknownOrder)?;
         if !matches!(order.state, OrderState::Held | OrderState::PaymentUnknown) {
             return Err(KernelError::InvalidTransition);
         }
@@ -370,8 +438,13 @@ impl Kernel {
 
     pub fn expire(&mut self, ctx: Context, order_id: KixId) -> Result<bool, KernelError> {
         self.context(ctx)?;
-        let order = self.orders.get_mut(&order_id).ok_or(KernelError::UnknownOrder)?;
-        if ctx.now_ms < order.request.expires_at_ms { return Ok(false); }
+        let order = self
+            .orders
+            .get_mut(&order_id)
+            .ok_or(KernelError::UnknownOrder)?;
+        if ctx.now_ms < order.request.expires_at_ms {
+            return Ok(false);
+        }
         if order.state == OrderState::Held && order.inventory_owned {
             self.inventory.adjust(order.request.selection, false);
             order.inventory_owned = false;
@@ -386,7 +459,9 @@ impl Kernel {
     /// Local state-model fence only: NOT a cluster-wide cancellation barrier.
     pub fn cancel_scope(&mut self, ctx: Context, next_epoch: u64) -> Result<(), KernelError> {
         self.context(ctx)?;
-        if next_epoch <= self.business_epoch { return Err(KernelError::InvalidTransition); }
+        if next_epoch <= self.business_epoch {
+            return Err(KernelError::InvalidTransition);
+        }
         self.business_epoch = next_epoch;
         self.cancelled = true;
         self.now_ms = ctx.now_ms;
@@ -397,7 +472,9 @@ impl Kernel {
     /// membership, old-writer fencing, and state transfer are NOT implemented.
     pub fn replace_owner(&mut self, ctx: Context, next: ExecutionFence) -> Result<(), KernelError> {
         self.context(ctx)?;
-        if next.generation <= self.fence.generation { return Err(KernelError::InvalidTransition); }
+        if next.generation <= self.fence.generation {
+            return Err(KernelError::InvalidTransition);
+        }
         self.fence = next;
         self.now_ms = ctx.now_ms;
         Ok(())
@@ -412,9 +489,15 @@ impl Kernel {
         observation: CaptureObservation,
     ) -> Result<ObservationOutcome, KernelError> {
         self.context(ctx)?;
-        let key = (observation.operation.provider, observation.operation.account, observation.event_id);
+        let key = (
+            observation.operation.provider,
+            observation.operation.account,
+            observation.event_id,
+        );
         if let Some((original, result)) = self.observations.get(&key) {
-            if original == &observation { return Ok(*result); }
+            if original == &observation {
+                return Ok(*result);
+            }
             if !self.conflicts.contains(&observation) {
                 if self.observations.len() + self.conflicts.len() >= self.limits.observations {
                     return Err(KernelError::Capacity);
@@ -422,8 +505,10 @@ impl Kernel {
                 self.conflicts.push(observation);
             }
             // Conflicting evidence is retained; it does not replace the original.
-            if let Some(order_id) = self.operations.get(&original.operation) {
-                if let Some(order) = self.orders.get_mut(order_id) { order.review_required = true; }
+            if let Some(order_id) = self.operations.get(&original.operation)
+                && let Some(order) = self.orders.get_mut(order_id)
+            {
+                order.review_required = true;
             }
             self.now_ms = ctx.now_ms;
             return Ok(ObservationOutcome::Conflict);
@@ -431,8 +516,14 @@ impl Kernel {
         if self.observations.len() + self.conflicts.len() >= self.limits.observations {
             return Err(KernelError::Capacity);
         }
-        let order_id = self.operations.get(&observation.operation).ok_or(KernelError::UnknownOperation)?;
-        let order = self.orders.get_mut(order_id).ok_or(KernelError::UnknownOrder)?;
+        let order_id = self
+            .operations
+            .get(&observation.operation)
+            .ok_or(KernelError::UnknownOperation)?;
+        let order = self
+            .orders
+            .get_mut(order_id)
+            .ok_or(KernelError::UnknownOrder)?;
         let result = if let Some(captured) = order.captured {
             if captured == observation.amount {
                 ObservationOutcome::DuplicateEffect
@@ -446,7 +537,8 @@ impl Kernel {
                 order.state = OrderState::Review;
                 order.review_required = true;
                 ObservationOutcome::Review
-            } else if self.cancelled || ctx.now_ms >= order.request.expires_at_ms
+            } else if self.cancelled
+                || ctx.now_ms >= order.request.expires_at_ms
                 || order.state == OrderState::Expired
             {
                 if order.inventory_owned {
@@ -465,9 +557,19 @@ impl Kernel {
         Ok(result)
     }
 
-    pub fn order(&self, id: KixId) -> Option<&Order> { self.orders.get(&id) }
-    pub fn remaining(&self) -> u32 { self.inventory.remaining() }
-    pub fn order_count(&self) -> usize { self.orders.len() }
-    pub fn observation_count(&self) -> usize { self.observations.len() }
-    pub fn conflicts(&self) -> &[CaptureObservation] { &self.conflicts }
+    pub fn order(&self, id: KixId) -> Option<&Order> {
+        self.orders.get(&id)
+    }
+    pub fn remaining(&self) -> u32 {
+        self.inventory.remaining()
+    }
+    pub fn order_count(&self) -> usize {
+        self.orders.len()
+    }
+    pub fn observation_count(&self) -> usize {
+        self.observations.len()
+    }
+    pub fn conflicts(&self) -> &[CaptureObservation] {
+        &self.conflicts
+    }
 }
