@@ -6,72 +6,127 @@ on:
 permissions:
   contents: read
 jobs:
-  preserve-reviewed-experiment:
+  verify-main-baseline:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: d5b9f2d67b5532fa35464c8557e88f70be300888
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
+        with:
+          toolchain: '1.98.1'
+          components: rustfmt, clippy
+      - name: Verify main ancestry, complete trees, locked blobs and no PR11 inclusion
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          test "$(git rev-parse HEAD)" = d5b9f2d67b5532fa35464c8557e88f70be300888
+          test "$(git rev-parse HEAD^{tree})" = c3b02085650ad394283f3325cf5dd87664c66ddb
+          test "$(git rev-parse bf6c2be37e8c55778f4fe378634f7895fd69a327^{tree})" = "$(git rev-parse 0cb65749492bf78e6cea00d3c9c7eee4f891827d^{tree})"
+          test "$(git diff --name-only 0cb65749492bf78e6cea00d3c9c7eee4f891827d HEAD)" = docs/status/PR11_PRESERVATION.md
+          test "$(git hash-object runtime/crates/kix-kernel/src/lib.rs)" = 69564b166f0c27f9af5d8422f0a466b18d74c20f
+          test "$(git hash-object runtime/crates/kix-kernel/tests/quarantine_capacity.rs)" = b607996c83a119c349f1cc90469ac1ba82764e20
+          if git merge-base --is-ancestor 55a3df4968f5684bb4cb9e3c9781ab5f00165235 HEAD; then
+            echo 'ERROR: experimental PR11 unexpectedly included'; exit 1
+          fi
+          test ! -d runtime/crates/kix-journal-local
+          test ! -d runtime/crates/kix-ktx-wire
+          git rev-parse HEAD HEAD^{tree} > evidence/main-commit-tree.txt
+          git rev-list --parents c8267d1c2bdbcd732aa46401fe059b92d8ae72a6..0cb65749492bf78e6cea00d3c9c7eee4f891827d > evidence/pr12-pr13-parents.txt
+          git diff --stat 0cb65749492bf78e6cea00d3c9c7eee4f891827d HEAD > evidence/final-main-diff.txt
+          git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs docs/status/PR11_PRESERVATION.md > evidence/locked-and-document-blobs.txt
+          rustc --version > evidence/toolchain.txt
+          cargo --version >> evidence/toolchain.txt
+          python3 scripts/verify_runtime_architecture.py > evidence/architecture.log 2>&1
+          python3 scripts/test_runtime_architecture.py > evidence/architecture-tests.log 2>&1
+      - name: Run unchanged main workspace tests, lint and format
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path runtime/Cargo.toml --workspace --locked 2>&1 | tee evidence/workspace-tests.log
+          cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings 2>&1 | tee evidence/clippy.log
+          cargo fmt --manifest-path runtime/Cargo.toml --all -- --check 2>&1 | tee evidence/fmt.log
+          git diff --exit-code
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: exact-main-baseline-check-${{ github.run_id }}
+          path: |
+            evidence/
+            .local/verification/ktx/
+          include-hidden-files: true
+          retention-days: 30
+  baseline-tag:
+    needs: verify-main-baseline
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       contents: write
       actions: read
     steps:
-      - name: Publish reviewed annotated tag without modifying an existing ref
+      - name: Publish baseline only after exact main full protocol CI succeeds
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          import json, os, pathlib, urllib.request, urllib.error
+          python3 -u - <<'PY'
+          import json, os, pathlib, time, urllib.request, urllib.error
           base='https://api.github.com/repos/BeautifulMind-JT/kix-protocol/'
           headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          target='d5b9f2d67b5532fa35464c8557e88f70be300888'
+          tree='c3b02085650ad394283f3325cf5dd87664c66ddb'
           def api(path,data=None):
               req=urllib.request.Request(base+path,data=None if data is None else json.dumps(data).encode(),headers=headers,method='GET' if data is None else 'POST')
-              with urllib.request.urlopen(req) as r:return json.load(r)
-          run=api('actions/runs/35079017799')
-          assert run['head_sha']=='78f7f80e22f35b8a8cfae56cbded38f3caf22331' and run['status']=='completed' and run['conclusion']=='success'
-          target='55a3df4968f5684bb4cb9e3c9781ab5f00165235'
-          tree='38901ede6a20dc67025014116ea92c0ea35f8bf5'
+              with urllib.request.urlopen(req,timeout=30) as r:return json.load(r)
           assert api('git/commits/'+target)['tree']['sha']==tree
-          name='kix-exp-r2a-local-journal-v1-20260916-r2'
+          selected=None
+          for attempt in range(80):
+              assert api('git/ref/heads/main')['object']['sha']==target, 'main moved; no tag will be issued'
+              runs=api('actions/runs?event=push&head_sha='+target+'&per_page=20')['workflow_runs']
+              matches=[r for r in runs if r['path']=='.github/workflows/protocol.yml' and r['head_sha']==target and r['head_branch']=='main']
+              if matches:
+                  r=max(matches,key=lambda r:r['id'])
+                  print(json.dumps({'main_ci':r['id'],'status':r['status'],'conclusion':r['conclusion']}),flush=True)
+                  if r['status']=='completed':
+                      assert r['conclusion']=='success', 'main protocol CI not successful; baseline tag prohibited'
+                      selected=r;break
+              time.sleep(20)
+          assert selected is not None, 'no verified main success within this operation; no tag issued'
+          exp=api('git/ref/tags/kix-exp-r2a-local-journal-v1-20260916-r2')
+          expobj=api('git/tags/'+exp['object']['sha'])
+          assert expobj['object']['sha']=='55a3df4968f5684bb4cb9e3c9781ab5f00165235'
+          name='kix-r1-v4-verification-baseline-20260916'
           try:
               existing=api('git/ref/tags/'+name)
           except urllib.error.HTTPError as e:
               if e.code!=404:raise
           else:
               raise RuntimeError('Existing ref will not be changed: '+existing['ref'])
-          message='''PR #11 experimental preservation, corrected cold-build evidence. NOT merged into main.
-          Target commit: 55a3df4968f5684bb4cb9e3c9781ab5f00165235
-          Target tree: 38901ede6a20dc67025014116ea92c0ea35f8bf5
-          Kernel semantics: 1. Main R1 kernel semantics: 4.
-          Crates: kix-types, kix-feature-semantics, kix-feature-ir, kix-bcs1, kix-kernel, kix-ktx-wire, kix-journal-local.
-          Original successful CI: 34938172828 (KTX), 34938172791 (full protocol).
-          Actual isolated cold-build diagnostic: 35079017799, operations commit 78f7f80e22f35b8a8cfae56cbded38f3caf22331.
-          Separate initially absent CARGO_TARGET_DIR per profile; CARGO_INCREMENTAL=0; both kernel builds observed.
-          The only disposable worktree source change was overlaying existing kernel blob 69564b166f0c27f9af5d8422f0a466b18d74c20f from 0cb65749492bf78e6cea00d3c9c7eee4f891827d. Wire, registry, golden, journal and tests remained byte-identical.
-          Original v1: wire golden 9 passed; journal 1 library + 13 recovery passed, 2 subprocess helpers ignored at top level.
-          Locked-v4 overlay: wire golden 4 passed / 5 failed, exit 101. Three failures: BodyEncode; two: UnsupportedSemantics.
-          Failed tests:
-          every_action_preserves_context_and_fixed_width_payloads
-          genesis_validates_layout_limits_and_semantics_without_accepting_preoccupied_state
-          independently_calculated_genesis_command_and_result_vectors
-          ordered_wire_replay_recovers_original_result_intent_owner_and_late_capture
-          wire_replay_retains_unbound_operation_quarantine_and_recorded_rejection
-          Locked-v4 journal: 1 library + 13 recovery passed, 2 top-level helper ignores. These tests create inputs using current SEMANTICS_VERSION; not evidence of v1-log migration to v4 or complete v4 reservation/quarantine recovery coverage.
-          Artifact: 10439546137 / pr11-v4-cold-compatibility-35079017799.
-          Artifact SHA-256: ea1d734e9a06f430875fb86ddc42be39d5bea723605338dc70de3f5b0bca4a35.
-          Integration (a) is a separately approved future task, previously estimated 16-26 person-days for its limited model-1 scope; lifecycle overlap must be closed and estimate refined first. R2 and (a) remain prohibited. No kernel or journal fix, no branch deletion.
-          Supersedes kix-exp-r2a-local-journal-v1-20260916 for acceptance evidence. That first tag targets the same v1 source but cites an unaccepted shared-build-directory run 35078643445; it remains unchanged for traceability. Do not use its all-pass overlay statement.
-          '''
-          message='\n'.join(line.strip() for line in message.splitlines())+'\n'
+          message='R1 v4 + verification apparatus baseline. NOT completed integration, NOT R2 completion, NOT production approval.\n'
+          message+='Target main commit: '+target+'\nTarget tree: '+tree+'\n'
+          message+='Locked kernel blob: 69564b166f0c27f9af5d8422f0a466b18d74c20f\nLocked quarantine test blob: b607996c83a119c349f1cc90469ac1ba82764e20\n'
+          message+='Exact-main full protocol push CI: '+str(selected['id'])+' completed/success; '+selected['html_url']+'\n'
+          message+='Exact-main workspace tests/clippy/fmt/architecture check job succeeded in operation run '+os.environ['GITHUB_RUN_ID']+'.\n'
+          message+='PR12 merge 31e60b2269e90cba6da9a1a41dacf039f5662c30; PR13 merge bf6c2be37e8c55778f4fe378634f7895fd69a327. Merge tree equalled reviewed PR13 tree 59746105a8e1b82b0109bb958e6f9104abb70f39. Final main adds only docs/status/PR11_PRESERVATION.md.\n'
+          message+='PR11 remains unmerged and archived at kix-exp-r2a-local-journal-v1-20260916-r2, target 55a3df4968f5684bb4cb9e3c9781ab5f00165235. Its semantics1 differs from this semantics4. See cold compatibility run35079017799.\n'
+          message+='No branch deletion, kernel edit, index/hygiene changes, protection setting, R2 or integration(a) execution. Annotated tag is unsigned and does not itself enforce immutability.\n'
+          assert api('git/ref/heads/main')['object']['sha']==target
           tag=api('git/tags',{'tag':name,'message':message,'object':target,'type':'commit'})
           ref=api('git/refs',{'ref':'refs/tags/'+name,'sha':tag['sha']})
-          verified=api('git/tags/'+ref['object']['sha'])
-          assert verified['object']['sha']==target and verified['message'].strip()==message.strip()
-          pathlib.Path('tag-result.json').write_text(json.dumps({'ref':ref,'tag':verified},indent=2)+'\n')
-          print(json.dumps({'tag':name,'tag_object':tag['sha'],'target_commit':target,'published':True},indent=2))
+          verify=api('git/tags/'+ref['object']['sha'])
+          assert verify['object']['sha']==target and verify['message'].strip()==message.strip()
+          result={'ref':ref,'tag':verify,'main_protocol_ci':{k:selected[k] for k in ('id','head_sha','head_branch','event','status','conclusion','html_url')},'exact_main_check_run':os.environ['GITHUB_RUN_ID']}
+          pathlib.Path('baseline-tag-result.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps({'published':name,'tag_object':tag['sha'],'commit':target,'main_ci':selected['id']},indent=2))
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: corrected-experimental-tag-${{ github.run_id }}
-          path: tag-result.json
+          name: baseline-tag-${{ github.run_id }}
+          path: baseline-tag-result.json
           retention-days: 30
