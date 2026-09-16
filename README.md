@@ -1,63 +1,74 @@
 # KIX Protocol
 
-**현재 개발 기준: [개발계획 2.4 — KTX 실행 기반 재설계](docs/PROTOCOL_MASTERPLAN_V24.md).**
-[권한·커밋·복구 ADR](docs/adr/0001-ktx-authority-commit-recovery.md)과 [runtime](runtime/README.md)을 먼저 확인하세요. S07-A `98d5f637…`의 Rust 타입·BCS·분석 의미론과 기존 보안/장애 회귀를 보존하면서 production 실행 기반을 새로 구축합니다. 기존 Python 기능도 필요한 업무 의미와 안전 보장을 Rust로 재구축하며, 아직 없던 영속 모델을 함께 구현합니다.
+KIX는 티켓 권리·거래 프로토콜을 중심으로 예매, 공식 리셀, 검표, 환불·정산, 금융 근거와 마케팅을 연결하는 연구·개발 프로젝트입니다. 승인된 권위 모델은 **모델 1 — 체인 권위 / 오프체인 위임 실행**이며, 기존 검증 자산을 계승해 Rust 운영 구현을 구축합니다. 현재 R1 v4는 메모리 내 거래 전이와 검증 장치의 기준선이지, 실제 체인 위임·회수, 내구성 있는 경제 엔진 또는 production 운영의 완성본이 아닙니다.
 
-티켓의 발행·구매·공식 리셀·입장·환불·배분·정산을 연결하는 프로토콜 연구·개발 저장소입니다.
+## 1. 현재 기준
 
-## 구현과 목표의 구분
+**현행 개발계획 정본은 [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md)입니다.** 승인·금지 범위와 다음 순서는 이 문서를 따릅니다. V24는 현행 정본이 아닙니다.
 
-현재 실제 Rust workspace는 `kix-types`, `kix-bcs1`, `kix-feature-ir`, `kix-feature-semantics`, 새 `kix-kernel`입니다. 커널은 단일 shard의 결정론적 메모리 내 전이와 회귀 테스트입니다. **복제 저장소·durable ACK·운영 결제 엔진·배포된 KTX·성능 우위는 아직 없습니다.**
+- 고정 R1 기준선: [`kix-r1-v4-verification-baseline-20260916`](https://github.com/BeautifulMind-JT/kix-protocol/tree/kix-r1-v4-verification-baseline-20260916).
+- 이번 문서 작업 시작 시 확인한 **main HEAD**: `d5b9f2d67b5532fa35464c8557e88f70be300888`. 이 값은 기준 스냅샷이며, 이 문서 변경 뒤에도 영원히 최신 HEAD라는 뜻이 아닙니다.
+- 실제 다음 작업은 [현재 main](https://github.com/BeautifulMind-JT/kix-protocol/tree/main)의 HEAD를 다시 확인하고 시작합니다. 태그·검토 SHA·실험 보존본의 용도는 [기준표](docs/status/BASELINES.md)에서 한 번에 확인합니다.
 
-목표는 edge/admission → 지역별 격리 cell → Rust KTX replicated shard → 외부 PG/체인 어댑터 → 검증된 관측입니다. PostgreSQL은 projection/control 후보이며, SQL 정본 비교는 별도 재고에서만 수행합니다. 같은 재고에 두 writer를 두지 않습니다. 배타적 위임 실행과 체인 직접 실행을 구분하고, 예약 완료·결제 사실·체인 발행 완료를 동일시하지 않습니다.
+**이 루트 README의 역할:** 처음 온 독자가 프로젝트·현재 기준·금지 범위·읽는 순서를 확인하는 입구입니다.
+**[docs/README.md](docs/README.md)의 역할:** 동일한 정본 아래 계약·검증·기록을 찾는 문서 색인입니다. 별도의 개발계획이 아닙니다.
 
-## 보존하는 자산
+## 2. 변경 금지 파일
 
-- S07-A: 실제 KIX-BCS1 encode/decode/SHA-256 및 고정 golden vector.
-- S06.2: Rust 타입, FeatureIR 재귀/스키마 검증, Fast64 asset/version/hash 대조.
-- S06/S06.1: 계산-only 가격·배정·반환안과 Python↔TypeScript CE1 회귀. production BCS와 namespace가 다릅니다.
-- S03/S05: 제한된 지급 복구·별도 archive·조회 전용 복원. whole-host/remote durability와 과거 유실 원인 규명은 완료되지 않았습니다.
-- Sui/Move/ZK: 기존 로컬넷과 보안 회귀. 16-slot shared Show는 production topology가 아닙니다.
+| 파일 | 잠금 Git blob | 잠금 이유 |
+|---|---|---|
+| `runtime/crates/kix-kernel/src/lib.rs` | `69564b166f0c27f9af5d8422f0a466b18d74c20f` | 검토한 R1 v4 동작을 고정해 모델·불변식·측정 결과의 기준이 움직이지 않게 함 |
+| `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `b607996c83a119c349f1cc90469ac1ba82764e20` | 만석에서도 bound 격리를 보존하는 검토 회귀를 고정 |
 
-기준 `2658a43`의 Groth16 설정 결함과 후속 기여·검증·조작 증명 거절 기록은 [보안 보완 문서](docs/PROTOCOL_HARDENING.md)에 보존합니다. 보안 PR #1은 main `eff0f44…`에 별도 반영됐습니다. 시험용 설정이 운영 ZK 신뢰 설정이나 키 이관을 완료했다는 뜻은 아닙니다.
+주석·명칭·포맷·자동 수정·임시 mutation도 잠금 예외가 아닙니다. 현재 CI는 테스트를 통해 두 blob을 대조합니다. [강제 경로와 한계](docs/status/LOCK_ENFORCEMENT.md)를 읽으세요. 테스트 검사는 브랜치 보호·필수 상태 검사 설정과 다릅니다.
 
-## 구성
+## 3. 금지·보류 작업
 
-| 경로 | 역할 |
+| 작업 | 현재 판단 | 근거 |
+|---|---|---|
+| R2 및 자체 복제·저장·로그 신규 구현 | **금지 유지** | [개발계획 §1·§5](docs/DEVELOPMENT_PLAN.md), [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md) |
+| (a) PR #11의 wire·저널을 v4 위로 통합 | **착수 승인 없음** | [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [#11 태그 보존·호환성](docs/status/PR11_PRESERVATION.md) |
+| 명칭·죽은 코드·브랜치·태그·Cargo/CI/lint 등 위생 일괄 실행 | **목록만 유지, 실행 금지** | [코드 위생 목록](docs/CODE_HYGIENE_BACKLOG.md), [개발계획 §1](docs/DEVELOPMENT_PLAN.md) |
+| 색인 변경·새 종결/회수/해제 전이 | **첫 묶음에서 제외** | [개발계획 §5·§6.3](docs/DEVELOPMENT_PLAN.md), [수명 계약 초안](docs/contracts/STATE_LIFECYCLE.md) |
+
+KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단계 schema·SDK에서 별도 승인 후 KIX Runtime으로 바꿀 예정**이며, 지금 일괄 치환하지 않습니다.
+
+## 4. 승인된 다음 작업
+
+현재 승인된 것은 **첫 묶음의 잔여 검토·보완**입니다. 잠금 v4의 비교 모델·계약 불변식 검사 검토, LC-FACT/LC-CUT/LC-TERM 수명 계약의 미정 입력 정리, 별도 성능 하네스·측정 계약의 검토를 진행합니다. 구체적인 열린 항목과 답할 주체는 [FIRST_BATCH_OPEN_INPUTS](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md)를 따릅니다.
+
+PG 후보 조사·담당자 질문지 작성은 자료 조사 범위입니다. 제공자 선택·사업 조건·운영 승인·계약 확정이나 실제 연동 실행을 자동 승인하지 않습니다. 모델 1 확정도 (a)·R2 착수로 확대하지 않습니다.
+
+기존 E-4 비교 모델은 커널 소스를 참고해 작성했습니다. 두 구현의 일치와 계약 불변식 검증은 구분하며, [검증 범위·한계](docs/contracts/CONTRACT_INVARIANTS.md)를 유지합니다. 실제 은행 자금·체인 위임·분산 내구성을 검증했다는 뜻이 아닙니다.
+
+## 5. 읽는 순서
+
+1. [DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) — 현행 승인·금지·단계, **4단계 비교 정본은 §9 한 곳**.
+2. [BASELINES.md](docs/status/BASELINES.md) — 지금 쓰는 main과 고정·역사 기준을 구분.
+3. [AUTHORITY_MODEL_1.md](docs/decisions/AUTHORITY_MODEL_1.md) — 승인된 모델과 현재 구현의 차이.
+4. [STATE_LIFECYCLE.md](docs/contracts/STATE_LIFECYCLE.md) / [열린 입력](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md) — 초안이며 미정 입력이 남음.
+5. [CONTRACT_INVARIANTS.md](docs/contracts/CONTRACT_INVARIANTS.md) / [첫 묶음 증거](validation/2026-09-16-first-batch/README.md) — 무엇을 검사했고 검사하지 않았는지.
+6. [PERFORMANCE_MEASUREMENT.md](docs/contracts/PERFORMANCE_MEASUREMENT.md) / [V4-SMOKE-001](docs/contracts/PERFORMANCE_BASELINE_V4.md) — 장치와 고정 조건; production 성능 실측 아님.
+7. [Runtime 범위](runtime/README.md), [잠금 강제](docs/status/LOCK_ENFORCEMENT.md), [32개 상태표](docs/status/ORIGINAL_32_STATUS.md), [부분 앵커](docs/status/PARTIAL_ANCHOR_COUNTS.md).
+
+## 6. 역사 문서 — 현행 계획 아님
+
+아래 문서는 직접 열어도 첫 줄에서 역사 자료임을 표시합니다. 과거 본문은 보존하되 그 안의 ‘현재’, ‘다음’, ‘즉시 진행’을 오늘의 승인으로 읽지 않습니다.
+
+| 문서 | 용도 |
 |---|---|
-| `runtime/` | Rust 실행/코덱/의미론 및 v5 계약 |
-| `docs/adr/` | 정본·원자성·복구 결정 |
-| `reference/` | 역사적 Python/Node/SQLite·Move·ZK 회귀/장애 fixture |
-| `scripts/`, `.github/workflows/`, `.devcontainer/` | 검증·CI·Codespaces 도구 |
-| `validation/`, `reviews/` | 실제 실행 근거와 역사적 감사 자료 |
+| [PROTOCOL_MASTERPLAN_V24.md](docs/PROTOCOL_MASTERPLAN_V24.md) | **현행 아님** — 이전 2.4 실행·저장 로드맵 |
+| [PROTOCOL_MASTERPLAN_V23.md](docs/PROTOCOL_MASTERPLAN_V23.md) | **현행 아님** — 이전 2.3 PostgreSQL 중심 계획 |
+| [PROTOCOL_MASTERPLAN_V2.md](docs/PROTOCOL_MASTERPLAN_V2.md) | **현행 아님** — 이전 2.2 포괄 프로토콜 계획 |
+| [BLUEPRINT_20260914.md](docs/BLUEPRINT_20260914.md) | **현행 아님** — 2026-09-14 단계·상품 블루프린트 |
+| [ROADMAP.md](docs/ROADMAP.md) | **현행 아님** — 2026-09-13 로드맵 |
+| [ROADMAP-v0.1.md](docs/ROADMAP-v0.1.md) | **현행 아님** — 2026-09-11 초기 로드맵 |
+| [PROTOCOL_INTEGRATION_NEXT.md](docs/PROTOCOL_INTEGRATION_NEXT.md) | **현행 아님** — 이전 다음 통합 계획 |
+| [RUNTIME_ARCHITECTURE_S062.md](docs/RUNTIME_ARCHITECTURE_S062.md) | **현행 아님** — S06.2 당시 실행 구조·후속 순서 |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | **현행 아님** — historical fixture의 2026-09-11 개발 환경 안내 |
 
-## 검증
+[ADR-0001](docs/adr/0001-ktx-authority-commit-recovery.md)의 안전 관계, [보안 보완](docs/PROTOCOL_HARDENING.md), [저장 조사](docs/STORAGE_INVESTIGATION.md), [복구 제한](docs/PAID_RECOVERY.md)과 [archive 제한](docs/PAID_ARCHIVE.md)은 별도 근거입니다. 옛 계획의 효력 폐기가 그 안전 조건·실패 기록·미해결 사항을 지운다는 뜻은 아닙니다.
 
-```bash
-python scripts/verify_runtime_architecture.py
-cargo test --manifest-path runtime/Cargo.toml --workspace --locked
-cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings
-```
+`reference/`, `validation/`, `reviews/`의 과거 코드·실험은 보존 자산입니다. Python/Node 시험 도구를 사용하는 것과 Python 운영 엔진을 채택하는 것은 다릅니다. 원본 증거를 현재 결과로 재라벨링하지 않습니다.
 
-Rust toolchain은 `rust-toolchain.toml`의 1.98.1입니다. 전체 CI는 기존 `protocol.yml`과 새 `ktx-kernel.yml`을 구분해 검사합니다. 구 SHA의 성공을 새 SHA의 성공으로 계산하지 않습니다. R1의 메모리 내 재생은 실제 crash-recovery 증거가 아닙니다.
-
-기존 fixture/localnet 회귀는 계속 실행합니다.
-
-```bash
-bash scripts/bootstrap.sh
-source scripts/env.sh
-python scripts/verify_runtime.py
-python scripts/run_localnet.py
-python scripts/run_localnet.py --paid
-npm --prefix reference/v0.3-rc1/client run setup:zk
-npm --prefix reference/v0.3-rc1/client run test:zk
-python scripts/run_localnet.py --private
-```
-
-## 문서
-
-[개발계획 2.4](docs/PROTOCOL_MASTERPLAN_V24.md) · [권한 ADR](docs/adr/0001-ktx-authority-commit-recovery.md) · [BCS](runtime/CANONICAL_BINARY_BCS_V1.md) · [Move topology](runtime/MOVE_PRODUCTION_TOPOLOGY.md) · [export](runtime/AUTHENTICATED_EXPORT.md) · [성능 계약](runtime/PERFORMANCE_PROFILE.md) · [AI/GPU](runtime/AI_GPU_DATA_PLANE.md).
-
-이전 [개발계획 2.3](docs/PROTOCOL_MASTERPLAN_V23.md) 및 [S06.2](docs/RUNTIME_ARCHITECTURE_S062.md)는 역사적 설계/비교 기준입니다. 새 권위 모델은 ADR-0001을 따르며 하위 문서의 보안·타입·현재성 요구는 유지합니다. [저장 조사](docs/STORAGE_INVESTIGATION.md)와 [복구 제한](docs/PAID_RECOVERY.md)은 미해결 사항을 별도로 추적합니다.
-
-개인키·비공개 노트·proving key·로컬 체인 DB는 추적하지 않습니다. 실제 PG/은행 계약, 독립 checkpoint 검증, 운영 ZK 설정, 원격 내구성 및 branch protection은 독립 완료조건입니다. 공개 배포용 라이선스는 부여하지 않았습니다.
+개인키·비공개 노트·proving key·로컬 체인 DB를 제출하지 않습니다. 공개 배포용 라이선스는 부여하지 않았습니다.

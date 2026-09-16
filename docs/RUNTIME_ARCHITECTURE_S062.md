@@ -1,3 +1,10 @@
+> **현행 계획 폐기 표시 — 이 문서는 역사 자료이며 현재 작업 승인이 아닙니다.**
+> 이 문서의 다음 단계·즉시 실행·자동 진행 지시는 현행 승인으로 사용하지 않습니다.
+> 특히 자동 R2 진행은 현재 금지이며, (a) 통합은 보류, 위생 일괄 실행도 금지입니다.
+> **현행 정본: `docs/DEVELOPMENT_PLAN.md` — [현재 승인·금지 범위](DEVELOPMENT_PLAN.md).**
+> 본문은 S06.2 당시 실행 구조·후속 순서의 기록으로 보존합니다. 과거 검증·실패·안전 조건을 삭제하거나 무효라고 판정하는 표시가 아닙니다.
+> 표시 전 원문: commit `d5b9f2d67b5532fa35464c8557e88f70be300888`, Git blob `faf41fca3ac0a4ed838ae269816dbc53510cbbd9`. 아래 원문 바이트는 변경하지 않았습니다.
+
 # S06.2 — Greenfield production architecture reset before S07
 
 작성 기준: 2026-09-15. 기존 Python/SQLite/CE1/shared-Show 구현을 production 설계권한으로 유지하지 않는다. 과거 코드는 regression/fault fixture다.
