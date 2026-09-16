@@ -1,0 +1,7 @@
+{
+  "python": "3.12.14",
+  "sqlite": "3.53.1",
+  "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+  "exitCode": 0,
+  "command": "-m unittest discover -v"
+}

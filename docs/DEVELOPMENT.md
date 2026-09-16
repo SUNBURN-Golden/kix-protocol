@@ -30,7 +30,7 @@ source scripts/env.sh
 python scripts/verify_runtime.py
 ```
 
-Python 88개, Node 오프라인 4개, SDK import, Move 검사 3개, 회로 2개 컴파일을 실행한다. 로그는 `.local/verification/`에 쓴다. 이 명령 자체는 체인 거래나 증명 생성을 수행하지 않으며, 결과 JSON도 이를 구분한다.
+Python 96개, Node 오프라인 4개, SDK import, Move 검사 3개, 회로 2개 컴파일을 실행한다. 로그는 `.local/verification/`에 쓴다. 이 명령 자체는 체인 거래나 증명 생성을 수행하지 않으며, 결과 JSON도 이를 구분한다.
 
 Move 명령의 `--build-env mainnet`은 고정한 프레임워크의 주소 해석을 위한 빌드 환경 이름이다. 로컬 여정의 실제 거래 대상은 `127.0.0.1`뿐이다. 메인넷·테스트넷 거래나 실제 돈을 사용하는 명령은 포함하지 않았다.
 
@@ -45,6 +45,8 @@ python scripts/run_localnet.py
 발행·이전 후 설정 프로세스가 종료되고, 새 프로세스가 보유자 백업을 복구해 별도 검표자 키로 권리를 사용한다. 이전 소유자와 중복 사용의 거절은 SDK의 사전 시뮬레이션 오류가 아니라 **실제 실패 거래 영수증·Move 모듈·abort code**로 확인한다.
 
 ## 비공개 권리 여정
+
+유상 리셀·정산의 별도 공개 시험은 `python scripts/run_localnet.py --paid`로 실행한다. 실제 Sui와 독립 모의 PG·은행을 연결하며 ZK 파일을 요구하지 않는다. [실행 범위와 경계](PAID_INTEGRATION.md)를 참고한다.
 
 ```bash
 npm --prefix reference/v0.3-rc1/client run setup:zk
@@ -68,6 +70,6 @@ python scripts/run_localnet.py --private
 
 ## GitHub Actions
 
-`protocol.yml`은 main push·PR·수동 실행에서 설치·기본 검사·공개 여정·시험용 키 생성·ZK 회귀 검사·비공개 여정을 모두 수행한다. 비공개 검사를 기본적으로 건너뛰던 `run_private` 옵션은 제거했다. 설정 파일을 추가한 것과 GitHub runner에서 통과한 것은 별개다. 각 실행 상태는 저장소 Actions에서 확인한다.
+`protocol.yml`은 main push·PR·수동 실행에서 설치·기본 검사·공개 여정·유상 리셀 통합·시험용 키 생성·ZK 회귀 검사·비공개 여정을 모두 수행한다. 비공개 검사를 기본적으로 건너뛰던 `run_private` 옵션은 제거했다. 설정 파일을 추가한 것과 GitHub runner에서 통과한 것은 별개다. 각 실행 상태는 저장소 Actions에서 확인한다.
 
 공식 안내: [Sui 설치](https://docs.sui.io/getting-started/onboarding/sui-install), [로컬 네트워크](https://docs.sui.io/getting-started/onboarding/local-network).

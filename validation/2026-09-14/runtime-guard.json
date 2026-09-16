@@ -1,0 +1,10 @@
+{
+  "result": {
+    "ok": false,
+    "error": "PAID_FIXTURE_REQUIRES_PYTHON_3_12_SQLITE_3_45_1",
+    "python": "3.12.14",
+    "sqlite": "3.53.1"
+  },
+  "exitCode": 2,
+  "financialDirectoryCreated": false
+}

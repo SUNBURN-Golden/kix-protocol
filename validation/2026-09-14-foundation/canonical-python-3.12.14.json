@@ -1,0 +1,43 @@
+{
+  "actualChainCalls": 0,
+  "actualPGCalls": 0,
+  "commerceSchema": "kix:commerce:2",
+  "encodingVersion": "kix:canonical-encoding:1",
+  "evidenceClass": "CALCULATION_ONLY",
+  "fixtureSha256": "e6fd3ba9b25df90ade36252786d3f55ea5544761f9988f651fd9ed46346b39ef",
+  "format": "kix-canonical-validation-v1",
+  "ledgerMutations": 0,
+  "limitations": [
+    "Fixtures validate CE1 and bounded calculation parity.",
+    "No signature, external payment evidence, execution permission or persistence is established."
+  ],
+  "nodeVersion": "v24.19.0",
+  "python": {
+    "allocationVectors": 6,
+    "assetVectors": 3,
+    "commerceVectors": 5,
+    "encodingVectors": 13,
+    "invalidCommerceVectors": 13,
+    "invalidMachineIds": 10,
+    "invalidWireVectors": 36
+  },
+  "pythonVersion": "3.12.14",
+  "result": "PASS",
+  "typescript": {
+    "counts": {
+      "allocation": 6,
+      "asset": 3,
+      "commerce": 5,
+      "encoding": 13,
+      "invalidCommerce": 13,
+      "invalidMachineId": 10,
+      "invalidWire": 36,
+      "invariants": 36
+    },
+    "implementation": "independent-typescript-ce1-commerce-v2",
+    "result": "PASS",
+    "status": "passed"
+  },
+  "unicodeTableSha256": "7a4a0f8ea869cca7bc3d88d93d85d3f104b52a807bb4c112171c8d232c09f90c",
+  "unicodeVersion": "15.0.0"
+}

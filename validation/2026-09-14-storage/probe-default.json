@@ -1,0 +1,20 @@
+{
+  "format": "kix-storage-probe-v1",
+  "money": "MOCK",
+  "chain": "SYNTHETIC",
+  "naturalFailureReproduced": false,
+  "result": "NO_FAILURE_REPRODUCED",
+  "runtime": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1"
+  },
+  "sourceSha256": {
+    "scripts/probe_paid_storage.py": "fc548836282072de4408bb5ad3b252ee4482c7c3ab684725d8acb011a9cdf560",
+    "reference/v0.3-rc1/paid_integration.py": "55bb423115c8287524841c3d5bb458e7169acbe94c1d2b478b9740fe21745384",
+    "reference/v0.3-rc1/core.py": "476757febe1f3f8a0923cc803943c5bf35d61766568c0db95a66e8debec77fd7",
+    "reference/v0.3-rc1/mock_provider.py": "ec22008417615453b42bfb319e44f2e2abc0119490796bddd3c52667d319abd7",
+    "reference/v0.3-rc1/storage_receipt.py": "bc16c3389d2fbed689c60289a19c71e95ceb4fba92f455cb12a5186042cafc19"
+  },
+  "commands": 66,
+  "historicalRootCauseEstablished": false
+}

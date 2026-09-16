@@ -1,0 +1,55 @@
+   Compiling kix-types v0.0.0 (/tmp/kix-audit-baseline/runtime/crates/kix-types)
+   Compiling kix-feature-semantics v0.1.0 (/tmp/kix-audit-baseline/runtime/crates/kix-feature-semantics)
+   Compiling kix-feature-ir v0.1.0 (/tmp/kix-audit-baseline/runtime/crates/kix-feature-ir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running tests/audit_regressions.rs (runtime/target/debug/deps/audit_regressions-0ad3733de7ee4d35)
+
+running 8 tests
+test audit_a03_terminal_divide_must_reject_nested_divide ... FAILED
+test audit_a04_filter_requires_a_boolean_expression ... FAILED
+test audit_a02_filter_must_reject_nonterminal_f64 ... FAILED
+test audit_a04_sum_requires_an_input_column ... FAILED
+test audit_control_count_star_may_omit_an_input ... ok
+test audit_control_integer_comparison_filter_is_allowed ... ok
+test audit_a04_projection_kind_must_match_literal_type ... FAILED
+test audit_control_single_terminal_divide_then_limit_is_allowed ... ok
+
+failures:
+
+---- audit_a03_terminal_divide_must_reject_nested_divide stdout ----
+
+thread 'audit_a03_terminal_divide_must_reject_nested_divide' (126) panicked at crates/kix-feature-ir/tests/audit_regressions.rs:71:5:
+Terminal root divide accepted another f64 operation as an operand
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- audit_a04_filter_requires_a_boolean_expression stdout ----
+
+thread 'audit_a04_filter_requires_a_boolean_expression' (127) panicked at crates/kix-feature-ir/tests/audit_regressions.rs:85:5:
+Filter accepted an i64 literal
+
+---- audit_a02_filter_must_reject_nonterminal_f64 stdout ----
+
+thread 'audit_a02_filter_must_reject_nonterminal_f64' (125) panicked at crates/kix-feature-ir/tests/audit_regressions.rs:57:5:
+Filter accepted f64 calculations before the terminal output
+
+---- audit_a04_sum_requires_an_input_column stdout ----
+
+thread 'audit_a04_sum_requires_an_input_column' (129) panicked at crates/kix-feature-ir/tests/audit_regressions.rs:116:5:
+SUM accepted a missing input
+
+---- audit_a04_projection_kind_must_match_literal_type stdout ----
+
+thread 'audit_a04_projection_kind_must_match_literal_type' (128) panicked at crates/kix-feature-ir/tests/audit_regressions.rs:95:5:
+Projection declared an i64 result for a boolean literal
+
+
+failures:
+    audit_a02_filter_must_reject_nonterminal_f64
+    audit_a03_terminal_divide_must_reject_nested_divide
+    audit_a04_filter_requires_a_boolean_expression
+    audit_a04_projection_kind_must_match_literal_type
+    audit_a04_sum_requires_an_input_column
+
+test result: FAILED. 3 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p kix-feature-ir --test audit_regressions`

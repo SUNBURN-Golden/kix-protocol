@@ -1,0 +1,236 @@
+version = "kix-runtime-architecture:5"
+stage = "KTX-R0-R1-transition-kernel"
+authority_adr = "docs/adr/0001-ktx-authority-commit-recovery.md"
+masterplan = "docs/PROTOCOL_MASTERPLAN_V24.md"
+legacy_reference_root = "reference/v0.3-rc1"
+legacy_reference_role = "historical-regression-fixture-only"
+production_runtime_root = "runtime"
+production_language = "rust"
+deployment_model = "regional-cells-modular-monolith"
+async_runtime = "tokio"
+internal_transport = "in-process-typed-calls"
+oltp_database = "postgresql"
+oltp_major = 18
+oltp_minor_policy = "latest-supported-minor"
+database_role = "projection-control-or-isolated-comparison-authority"
+database_driver_profile = "direct-prepared-binary-no-orm"
+production_canonical_profile = "KIX-BCS1"
+legacy_canonical_profile = "CE1"
+legacy_commerce_schema = "kix:commerce:2"
+
+[execution]
+primary_target = "replicated-ktx"
+implemented = "io-free-single-shard-transition-kernel"
+production_enabled = false
+durable_driver_implemented = false
+consensus_candidate = "raft-rs"
+authority = "scope-assigned-single-writer"
+profiles = ["DelegatedExecution", "NativeChainExecution"]
+delegated_execution_enabled = false
+exclusive_grant_required = true
+same_resource_dual_write = false
+command_identity = "stable-scope-principal-command-id"
+execution_fence_in_command_identity = false
+payload_comparison = "immutable-typed-payload-separate-from-key"
+old_bound_observations_preserved = true
+unknown_is_failure = false
+cancellation_barrier_binds_placement = true
+replay_semantics_version_required = true
+
+[durability]
+ack_contract = "stable-quorum-commit-and-recoverable-result"
+in_memory_apply_is_durable_ack = false
+result_and_intent_in_same_commit = true
+dedupe_moves_with_inventory = true
+snapshot_log_replay_required = true
+whole_region_rpo_zero_claimed = false
+actual_crash_history_required = true
+performance_claim_from_unit_tests = false
+
+[hot_path]
+python = false
+node = false
+sqlite = false
+dataframe_engine = false
+giant_json_state = false
+external_call_inside_db_transaction = false
+microservice_hop_required = false
+global_application_sequence = false
+global_balance_row = false
+dynamic_policy_parsing_per_request = false
+legacy_reference_is_design_authority = false
+
+[wire]
+internal_canonical_encoding = "bcs"
+framing = "versioned-domain-separated-kix-bcs1"
+json_is_signing_identity = false
+json_edge_allowed = true
+protobuf_transport_allowed = true
+bcs_schema_registry_required = true
+cross_language_golden_vectors_required = true
+
+[identifiers]
+protocol_generated_storage = "uuid-v7-128"
+canonical_binary_form = "fixed-width-where-possible"
+legacy_wire_form = "ce1-ascii"
+external_provider_ids = "opaque-bounded-text"
+
+[money]
+protocol_atoms = "u128"
+initial_postgres_fast_lane = "signed-bigint"
+fast_lane_profile_key = "asset-id-plus-registry-version"
+fast_lane_requires_registry_execution_profile = true
+fast_lane_guard = "atoms<=executionMaxAtoms(registryVersion)<=i64::MAX"
+wide128_feature_arithmetic = "unsupported-fail-closed"
+out_of_profile_behavior = "reject-never-truncate"
+float = false
+
+[chain]
+production_transport = "sui-grpc"
+observation_mode = "streaming-checkpoint-watcher"
+node_subprocess = false
+legacy_shared_show_role = "fixture-only"
+production_topology = "independent-object-sharded-v1"
+show_wide_mutable_hot_object = false
+show_config = "immutable"
+inventory = "mode-specific-reserved-seat-or-ga-shard"
+right = "independent-owned-object"
+sale_intent = "independent-per-sale-object"
+payment_evidence = "independent-per-payment-evidence"
+admission_nullifier_state = "sharded-by-show-epoch"
+show_wide_compensation_fence = false
+per_sale_terminal_fence_required = true
+reservation_is_chain_finality = false
+
+[inventory]
+reserved_seating = "one-seat-one-contention-cell-no-general-shard"
+general_admission = "fixed-capacity-shards"
+offchain_owner = "logical-row-or-actual-contiguous-segment"
+ga_capacity_invariant = "sum-initial-shard-capacity-equals-immutable-total"
+waiting_room_role = "admission-control-and-ga-shard-router-not-authority"
+waiting_room_effective_remaining = "observed-remaining-minus-outstanding-unexpired-tokens"
+queue_position_preserved_on_reshard = true
+reshard_changes_queue_rank = false
+capacity_authority = "explicit-execution-profile"
+row_equals_replication_group = false
+
+[storage]
+authority_state = "deterministic-shard-state-plus-log"
+typed_relational_projection = true
+append_only_observations = true
+append_only_journal = true
+transactional_outbox = true
+asset_identity_required = true
+registry_version_required = true
+policy_version_required = true
+aggregate_local_versions = true
+
+[policy]
+immutable_versions = true
+runtime_form = "prevalidated-precompiled-plan"
+process_local_cache = true
+cache_is_authority = false
+
+[export]
+economic_authority = "scope-assigned-single-writer"
+consumer_truth = false
+manifest = "ExportManifestV1"
+full_export_consistency = "source-consistent-cut-plus-projection-watermarks"
+projection_full_consistency = "repeatable-read-mvcc-snapshot"
+multireader_snapshot = "postgres-exported-snapshot-for-projection"
+incremental_cursor = "source-shard-commit-and-projection-cursor"
+projection_lsn_is_source_commit = false
+snapshot_and_lsn_are_distinct = true
+row_count_required = true
+per_file_hash_required = true
+manifest_hash_required = true
+source_schema_version_required = true
+export_schema_version_required = true
+partial_export_fail_closed = true
+cross_shard_consistent_cut_required = true
+
+[analytics]
+online_transaction_dependency = false
+archive_format = "parquet"
+memory_format = "arrow"
+economic_authority = "scope-assigned-single-writer"
+audit_engine = "duckdb"
+audit_source = "authenticated-export-only"
+feature_ir = "kix-feature-ir-v1"
+feature_semantics = "kix-feature-semantics-v1"
+reference_semantics = "pure-rust"
+cpu_dataframe_engine = "polars-rust-lazy-streaming"
+gpu_production_engine = "libcudf-native"
+cudf_polars_role = "drafting-aid-conformance-benchmark-crossover-proxy"
+pandas_runtime_dependency = false
+duckdb_is_oltp_authority = false
+polars_is_oltp_authority = false
+cudf_is_oltp_authority = false
+polars_conformance_required = true
+libcudf_conformance_required_when_enabled = true
+
+[feature_semantics]
+filter_null_predicate = "drop"
+join_null_equality = "explicit-per-plan"
+group_null_keys = "explicit-per-plan"
+sort_null_order = "explicit-per-plan"
+sort_stability = "explicit-per-plan"
+aggregate_null_policy = "explicit-per-plan"
+integer_overflow = "error"
+empty_count = "zero"
+empty_sum_min_max_mean = "null"
+divide_by_zero = "null"
+f64_mode = "terminal-only-finite"
+f64_join_key = false
+f64_group_key = false
+f64_sort_key = false
+f64_identity_key = false
+f64_generation = "mean-or-divide-to-f64-only"
+nan_or_inf = "bug-fail-closed"
+category_conformance = "decoded-logical-values-not-dictionary-index"
+
+[gpu_native]
+python_required = false
+bridge = "c-abi-arrow-c-device"
+execution_model = "persistent-native-worker-per-gpu"
+planner = "kix-feature-ir-v1"
+semantics = "kix-feature-semantics-v1"
+engine = "libcudf"
+memory_resource = "rmm"
+stream_aware = true
+same_process_zero_copy_preferred = true
+arrow_device_array_required = true
+fallback_to_python = false
+cudf_polars_conformance_required = true
+
+[gpu_crossover]
+profile = "GPUCrossoverProfile"
+single_global_threshold = false
+measurement_proxy = "cudf-polars-raise-on-fail"
+native_enable_gate = "gpu-wins-three-consecutive-scales-with-zero-fallback"
+hardware_and_versions_pinned = true
+
+[ai_data_plane]
+core_availability_depends_on_gpu = false
+oltp_direct_training_scan = false
+memory_batch_format = "arrow"
+durable_dataset_format = "parquet"
+feature_schema_versioned = true
+point_in_time_features = true
+model_output_is_authority = false
+model_output_requires_kernel_validation = true
+primary_feature_ir = "kix-feature-ir-v1"
+feature_semantics = "kix-feature-semantics-v1"
+cpu_feature_backend = "polars-rust"
+gpu_feature_backend = "libcudf-native"
+sql_audit_backend = "duckdb"
+device_interchange = "arrow-c-device"
+gpu_memory_pooling = true
+multi_gpu_engines = "native-spmd-or-ray-dask-only-after-benchmark"
+
+[compatibility]
+legacy_python_core_role = "historical-regression-fixture-only"
+legacy_node_client_role = "localnet-and-regression-fixture-only"
+legacy_ce1_role = "compatibility-and-regression-only"
+legacy_krw_adapter_role = "explicit-compatibility-only"
+legacy_cudf_polars_role = "drafting-aid-conformance-benchmark-crossover-proxy"

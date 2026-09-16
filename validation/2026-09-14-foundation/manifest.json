@@ -1,0 +1,37 @@
+{
+  "format": "kix-s061-validation-v1",
+  "baseCommit": "974d8e4875c5128266aaefa830bdfcd33cf89534",
+  "sourceSha256": {
+    ".github/workflows/protocol.yml": "9e434f2b44e529f9622c20ceaf18a35203de2cb39669a3cc96958ad3f0726cfd",
+    "reference/v0.3-rc1/assets.py": "fa2321d16f2d89c0b1dd05492adfcb1d5d4791e0e12ed4062f560a741880e54b",
+    "reference/v0.3-rc1/canonical_encoding.py": "5a5163d3ff2e721030892fda22d6984c93d1e6610ecc617b005a3c7e19712e56",
+    "reference/v0.3-rc1/client/canonical_encoding.ts": "2fb4e22f7bb14e89a2e7868845aaae180c4f33f3fd258ce210ca83b16d3b190b",
+    "reference/v0.3-rc1/client/commerce_v2.ts": "cdbbb47694d4cf2a863931f230c405c7058667396748f96201d1133baced1bd3",
+    "reference/v0.3-rc1/client/verify_canonical.ts": "0e302bd4f71080a3dc81a8d5d2cdc8163e484561b57b9316833f177ed1a94677",
+    "reference/v0.3-rc1/commerce.py": "b61d2f90b089cc59a37d9bdaf56273cb9291216aa23424433d289da6b13adad7",
+    "reference/v0.3-rc1/commerce_driver.py": "91cc737dd6cb1d05971018b33abf1e85cd5b1f0228a27b95e50323b2178708a0",
+    "reference/v0.3-rc1/execution_contracts.py": "1eef22a098e9a76788df7d70ef45e6b8236749d50008b1f662aa188d6529112f",
+    "reference/v0.3-rc1/fixtures/canonical_encoding_v1.json": "e6fd3ba9b25df90ade36252786d3f55ea5544761f9988f651fd9ed46346b39ef",
+    "reference/v0.3-rc1/fixtures/unicode15_assigned_ranges.json": "7a4a0f8ea869cca7bc3d88d93d85d3f104b52a807bb4c112171c8d232c09f90c",
+    "reference/v0.3-rc1/test_assets.py": "394c72ded7aaceb426822a6b5455f678567f78aa622f7f9aba2c12a2ecb96cdd",
+    "reference/v0.3-rc1/test_canonical_encoding.py": "c339dd87c757383e85a6ca5c3c4ef891051bb2af8932a892b18c6c661ed38244",
+    "reference/v0.3-rc1/test_commerce.py": "06a66d75447b436f38f64757310b77ba5544ec8e2018dd2f6a5915cfbb039eaf",
+    "reference/v0.3-rc1/test_commerce_driver.py": "7eb92f694cda89b831ae1f50e9a94ca07a6d06f361c8e371f06d7fc10dcc69ee",
+    "reference/v0.3-rc1/test_execution_contracts.py": "010dbe499408d128d0d1f58709b1c6a450315ca00183ec3c03ab2496d64a9344",
+    "scripts/verify_canonical.py": "7f40b5a90d2342fdfdfe628bafd0460405f1943539ff388fc6d6d5b5afdd4cab",
+    "scripts/verify_commerce.py": "7b210869f6755ae39407d261ed90b01b8c3f38e69f194ad82f1afa7607918f64"
+  },
+  "artifactSha256": {
+    "README.md": "852fa402201885f3fca06227ea47720c79b9910c4812b1d3ac2cfc9cbe540b8f",
+    "canonical-python-3.12.14.json": "f6102ee32a0fb8f0d4e046ab2087341e11bd18c6de3ce543a1ce2cea4aeefc74",
+    "canonical-python-3.12.3.json": "29876d58c3bd964fbea727b6e0eb306e0384fe5252e2e854f43bd87256cd05c1",
+    "commerce-v2.json": "e71337163712579efbb61e86870e4a49b80b8e796e743bf18d965f126c3c7db6",
+    "python-3.12.14.log": "fccb0ca5ae1fad2dc1092ce75be51906880222f39e8999e11d24a780242845b2",
+    "python-3.12.3.log": "1fa068c8f8caf5e9ade632122edd76331d349412c2e236569843e4c2724a9e5c",
+    "python-tests.json": "4d3926dc645eff6f305f76673417dda7d87a5112f5d8784e26ef415df736f20e",
+    "stack.json": "1dea0acbee045a236b6ca5545e3c5cea8470cc4928ee5b13c3c3117eb649abc8"
+  },
+  "pythonTestsPerEnvironment": 207,
+  "calculationOnly": true,
+  "finalHeadCi": "Confirm exact S06.1 head and its new Actions run in the pull request."
+}

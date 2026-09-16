@@ -1,0 +1,2518 @@
+{
+  "format": "kix-ce1-golden-v1",
+  "encodingVersion": "kix:canonical-encoding:1",
+  "commerceSchema": "kix:commerce:2",
+  "hashFraming": "UTF8(KIX-CE1) || 00 || ASCII(domain) || 00 || canonicalUtf8",
+  "encodingVectors": [
+    {
+      "name": "empty-object",
+      "value": {},
+      "canonicalUtf8": "{}",
+      "domain": "kix:golden:1",
+      "hash": "c0f6818320fdf0d17cea697ab6ea2f21a1af6f5e3695f17d0949d060bd237aef"
+    },
+    {
+      "name": "null",
+      "value": null,
+      "canonicalUtf8": "null",
+      "domain": "kix:golden:1",
+      "hash": "934c072d38bf2e0a3ce7ec663329b91f2b30bdee02b179a2477b9011716c3a7d"
+    },
+    {
+      "name": "array-order",
+      "value": [
+        3,
+        2,
+        1,
+        true,
+        false,
+        null
+      ],
+      "canonicalUtf8": "[3,2,1,true,false,null]",
+      "domain": "kix:golden:1",
+      "hash": "41e9a609648a440c008b1fe427f52208e1bce74d2b3ab6e9b52f01044542211b"
+    },
+    {
+      "name": "safe-integer-edges",
+      "value": {
+        "min": -9007199254740991,
+        "zero": 0,
+        "max": 9007199254740991
+      },
+      "canonicalUtf8": "{\"max\":9007199254740991,\"min\":-9007199254740991,\"zero\":0}",
+      "domain": "kix:golden:1",
+      "hash": "15f804f4d6cdbd16e7c07dca82e67bf9259c11aed5b85caba3c45ae8df848199"
+    },
+    {
+      "name": "money-strings",
+      "value": {
+        "u128Max": "340282366920938463463374607431768211455",
+        "beyondSafe": "9007199254740993"
+      },
+      "canonicalUtf8": "{\"beyondSafe\":\"9007199254740993\",\"u128Max\":\"340282366920938463463374607431768211455\"}",
+      "domain": "kix:golden:1",
+      "hash": "16ffbabd272f02804f0798ff4e470267bf41be45a837741d8810bd9f5a1b7e2c"
+    },
+    {
+      "name": "numeric-key-order",
+      "value": {
+        "2": "two",
+        "10": "ten",
+        "Z": 0,
+        "_": 1,
+        "a": 2
+      },
+      "canonicalUtf8": "{\"10\":\"ten\",\"2\":\"two\",\"Z\":0,\"_\":1,\"a\":2}",
+      "domain": "kix:golden:1",
+      "hash": "583566e8e4ec93729afab20495da6c70df77d9ec0d1daac8d1f83a60d8bb6fff"
+    },
+    {
+      "name": "unicode-display",
+      "value": {
+        "display": "Caf\u00e9 \ud55c\uae00 \ud83d\ude00",
+        "privateAndSupplementary": "\ue000\ud800\udc00"
+      },
+      "canonicalUtf8": "{\"display\":\"Caf\u00e9 \ud55c\uae00 \ud83d\ude00\",\"privateAndSupplementary\":\"\ue000\ud800\udc00\"}",
+      "domain": "kix:golden:1",
+      "hash": "071240d61b44b275c9d2b18219a181add8f7db70355f50f84dc33b2751c525f7"
+    },
+    {
+      "name": "exact-escaping",
+      "value": {
+        "text": "quote\" slash/ backslash\\ controls\b\t\n\f\r\u0000\u001f separator\u2028\u2029"
+      },
+      "canonicalUtf8": "{\"text\":\"quote\\\" slash/ backslash\\\\ controls\\b\\t\\n\\f\\r\\u0000\\u001f separator\u2028\u2029\"}",
+      "domain": "kix:golden:1",
+      "hash": "2d8f9dd0e817a4f59a3aa848feac151df68d5d6e61370174122d418611ae737e"
+    },
+    {
+      "name": "nested-order",
+      "value": {
+        "z": {
+          "2": "b",
+          "10": "a"
+        },
+        "a": [
+          {
+            "z": 1,
+            "a": 2
+          },
+          {
+            "a": 3
+          }
+        ]
+      },
+      "canonicalUtf8": "{\"a\":[{\"a\":2,\"z\":1},{\"a\":3}],\"z\":{\"10\":\"a\",\"2\":\"b\"}}",
+      "domain": "kix:golden:1",
+      "hash": "ddfa015e15b3ddebbe1ecb3c8408104c6eea7d9e8849702c0958f2eeeb021aca"
+    },
+    {
+      "name": "visible-punctuation-keys",
+      "value": {
+        "\\": "backslash",
+        "\"": "quote",
+        "!": "bang",
+        "~": "tilde"
+      },
+      "canonicalUtf8": "{\"!\":\"bang\",\"\\\"\":\"quote\",\"\\\\\":\"backslash\",\"~\":\"tilde\"}",
+      "domain": "kix:golden:1",
+      "hash": "93cd63da599eabc9969f99f421429d18c77490a15a88559492daf6fc2eef0934"
+    },
+    {
+      "name": "domain-separation",
+      "value": {},
+      "canonicalUtf8": "{}",
+      "domain": "kix:golden:other:1",
+      "hash": "33a0151711fe9268b198f818d7e8c08a9478f0246abed8ffcdaac6b2ab74f717"
+    },
+    {
+      "name": "typed-context-u128-timestamp",
+      "value": {
+        "amountRecord": {
+          "schemaVersion": "kix:execution-amount:1",
+          "assetRegistryVersion": "7",
+          "source": "fixture-registry",
+          "domain": "kix:fixture:typed-input:1",
+          "registryHash": "87fa08fafa12aef6d27eab1af04a23dbdd811a7c4579b7d9373bb248aefd46a2",
+          "asset": {
+            "namespace": "fixture-token",
+            "reference": "sui:localnet:package::coin::USDC",
+            "decimals": 6,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "amount": {
+            "assetId": "asset-v2-e8b55b95b40bd0e8dcd41d8bcc159d4f89f5387f6b1ba0cb3cefbbe0020846b8",
+            "atoms": "340282366920938463463374607431768211455"
+          }
+        },
+        "timestampMs": "9223372036854775807",
+        "version": "4294967295"
+      },
+      "canonicalUtf8": "{\"amountRecord\":{\"amount\":{\"assetId\":\"asset-v2-e8b55b95b40bd0e8dcd41d8bcc159d4f89f5387f6b1ba0cb3cefbbe0020846b8\",\"atoms\":\"340282366920938463463374607431768211455\"},\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"assetRegistryVersion\":\"7\",\"domain\":\"kix:fixture:typed-input:1\",\"registryHash\":\"87fa08fafa12aef6d27eab1af04a23dbdd811a7c4579b7d9373bb248aefd46a2\",\"schemaVersion\":\"kix:execution-amount:1\",\"source\":\"fixture-registry\"},\"timestampMs\":\"9223372036854775807\",\"version\":\"4294967295\"}",
+      "domain": "kix:golden:typed-input:1",
+      "hash": "c8b4ba21623daf4090d9b6361d7f53c0006de5cb6b04adb2480f640a8953e211"
+    },
+    {
+      "name": "typed-registry-context",
+      "value": {
+        "assetRegistryVersion": "7",
+        "source": "fixture-registry",
+        "domain": "kix:fixture:typed-input:1",
+        "assets": [
+          {
+            "namespace": "fixture-token",
+            "reference": "sui:localnet:package::coin::USDC",
+            "decimals": 6,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          }
+        ]
+      },
+      "canonicalUtf8": "{\"assetRegistryVersion\":\"7\",\"assets\":[{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"}],\"domain\":\"kix:fixture:typed-input:1\",\"source\":\"fixture-registry\"}",
+      "domain": "kix:asset-registry-context:1",
+      "hash": "87fa08fafa12aef6d27eab1af04a23dbdd811a7c4579b7d9373bb248aefd46a2"
+    }
+  ],
+  "invalidWireVectors": [
+    {
+      "name": "duplicate-root",
+      "wire": "{\"a\":1,\"a\":2}"
+    },
+    {
+      "name": "duplicate-nested",
+      "wire": "{\"x\":[{\"a\":1,\"a\":2}]}"
+    },
+    {
+      "name": "escaped-duplicate",
+      "wire": "{\"a\":1,\"\\u0061\":2}"
+    },
+    {
+      "name": "negative-zero",
+      "wire": "-0"
+    },
+    {
+      "name": "positive-decimal",
+      "wire": "1.0"
+    },
+    {
+      "name": "negative-zero-decimal",
+      "wire": "-0.0"
+    },
+    {
+      "name": "exponent",
+      "wire": "1e0"
+    },
+    {
+      "name": "exponent-zero",
+      "wire": "0E0"
+    },
+    {
+      "name": "unsafe-positive",
+      "wire": "9007199254740992"
+    },
+    {
+      "name": "unsafe-rounded",
+      "wire": "9007199254740993"
+    },
+    {
+      "name": "unsafe-negative",
+      "wire": "-9007199254740992"
+    },
+    {
+      "name": "u128-number",
+      "wire": "340282366920938463463374607431768211455"
+    },
+    {
+      "name": "nan",
+      "wire": "NaN"
+    },
+    {
+      "name": "infinity",
+      "wire": "Infinity"
+    },
+    {
+      "name": "negative-infinity",
+      "wire": "-Infinity"
+    },
+    {
+      "name": "decomposed-nfc",
+      "wire": "{\"text\":\"e\\u0301\"}"
+    },
+    {
+      "name": "surrogate-high",
+      "wire": "\"\\ud800\""
+    },
+    {
+      "name": "surrogate-low",
+      "wire": "\"\\udfff\""
+    },
+    {
+      "name": "empty-key",
+      "wire": "{\"\":1}"
+    },
+    {
+      "name": "space-key",
+      "wire": "{\"a b\":1}"
+    },
+    {
+      "name": "control-key",
+      "wire": "{\"a\\u0000b\":1}"
+    },
+    {
+      "name": "unicode-key",
+      "wire": "{\"\u00e9\":1}"
+    },
+    {
+      "name": "ordering-private-key",
+      "wire": "{\"\\ue000\":1}"
+    },
+    {
+      "name": "ordering-supplementary-key",
+      "wire": "{\"\\ud800\\udc00\":1}"
+    },
+    {
+      "name": "long-key",
+      "wire": "{\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\":1}"
+    },
+    {
+      "name": "depth-overflow",
+      "wire": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"
+    },
+    {
+      "name": "trailing-value",
+      "wire": "{} {}"
+    },
+    {
+      "name": "leading-zero",
+      "wire": "01"
+    },
+    {
+      "name": "plus-token",
+      "wire": "+1"
+    },
+    {
+      "name": "utf8-bom",
+      "wire": "\ufeff{}"
+    },
+    {
+      "name": "trailing-comma",
+      "wire": "{\"a\":1,}"
+    },
+    {
+      "name": "raw-control",
+      "wire": "\"a\nb\""
+    },
+    {
+      "name": "post15-todhri-composition",
+      "wire": "\"\\ud801\\uddd2\\u0307\""
+    },
+    {
+      "name": "post15-tulu-composition",
+      "wire": "\"\\ud804\\udf82\\ud804\\udfc9\""
+    },
+    {
+      "name": "unassigned-scalar",
+      "wire": "\"\\u0378\""
+    },
+    {
+      "name": "noncharacter-scalar",
+      "wire": "\"\\uffff\""
+    }
+  ],
+  "invalidMachineIds": [
+    "",
+    "\u00e9",
+    "e\u0301",
+    "\ue000",
+    "\ud800\udc00",
+    "a b",
+    "a@b",
+    "a\u0000b",
+    "-start",
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  ],
+  "allocationVectors": [
+    {
+      "name": "ascii-tie",
+      "total": "2",
+      "capacities": {
+        "C": "1",
+        "B": "1",
+        "A": "1"
+      },
+      "expected": {
+        "A": "1",
+        "B": "1",
+        "C": "0"
+      }
+    },
+    {
+      "name": "numeric-lexical-tie",
+      "total": "1",
+      "capacities": {
+        "2": "1",
+        "10": "1"
+      },
+      "expected": {
+        "10": "1",
+        "2": "0"
+      }
+    },
+    {
+      "name": "qualified-ascii-tie",
+      "total": "2",
+      "capacities": {
+        "a-": "1",
+        "Z": "1",
+        "A": "1"
+      },
+      "expected": {
+        "A": "1",
+        "Z": "1",
+        "a-": "0"
+      }
+    },
+    {
+      "name": "zero-capacity",
+      "total": "0",
+      "capacities": {
+        "B": "0",
+        "A": "0"
+      },
+      "expected": {
+        "A": "0",
+        "B": "0"
+      }
+    },
+    {
+      "name": "unequal-remainder",
+      "total": "7",
+      "capacities": {
+        "C": "31",
+        "A": "11",
+        "B": "19"
+      },
+      "expected": {
+        "A": "1",
+        "B": "2",
+        "C": "4"
+      }
+    },
+    {
+      "name": "exact-bigint",
+      "total": "1267650600228229401496703205377",
+      "capacities": {
+        "B": "1267650600228229401496703205376",
+        "A": "1267650600228229401496703205376"
+      },
+      "expected": {
+        "A": "633825300114114700748351602689",
+        "B": "633825300114114700748351602688"
+      }
+    }
+  ],
+  "assetVectors": [
+    {
+      "spec": {
+        "namespace": "fiat",
+        "reference": "KRW",
+        "decimals": 0,
+        "maxAtoms": "340282366920938463463374607431768211455"
+      },
+      "assetId": "asset-v2-84bcd73db29492613d22fbdf98e4d2676a514bf3256f933f45b549725fc55fc5"
+    },
+    {
+      "spec": {
+        "namespace": "fixture-token",
+        "reference": "sui:localnet:package::coin::USDC",
+        "decimals": 6,
+        "maxAtoms": "340282366920938463463374607431768211455"
+      },
+      "assetId": "asset-v2-e8b55b95b40bd0e8dcd41d8bcc159d4f89f5387f6b1ba0cb3cefbbe0020846b8"
+    },
+    {
+      "spec": {
+        "namespace": "fiat",
+        "reference": "USD",
+        "decimals": 2,
+        "maxAtoms": "340282366920938463463374607431768211455"
+      },
+      "assetId": "asset-v2-c0cdba049bc4a548fcadce0c7e66ba10ab1312483be28b8df89229959cdfe64a"
+    }
+  ],
+  "commerceVectors": [
+    {
+      "name": "bundle-discount-split-refund",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "bundle",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "10000"
+            }
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "20000"
+            }
+          },
+          {
+            "lineId": "L3",
+            "inventoryId": "inventory-L3",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "30000"
+            }
+          }
+        ],
+        "discounts": [
+          {
+            "ruleId": "coupon",
+            "bearerRef": "organizer",
+            "kind": "FIXED",
+            "value": "6000",
+            "eligibleLineIds": [
+              "L1",
+              "L2",
+              "L3"
+            ],
+            "capAtoms": null
+          },
+          {
+            "ruleId": "member",
+            "bearerRef": "platform",
+            "kind": "BPS",
+            "value": "1000",
+            "eligibleLineIds": [
+              "L1",
+              "L2",
+              "L3"
+            ],
+            "capAtoms": null
+          }
+        ]
+      },
+      "legs": [
+        {
+          "legId": "card",
+          "providerRef": "fixture-pg",
+          "routeRef": "original:card",
+          "amount": {
+            "asset": {
+              "namespace": "fiat",
+              "reference": "KRW",
+              "decimals": 0,
+              "maxAtoms": "340282366920938463463374607431768211455"
+            },
+            "atoms": "30000"
+          }
+        },
+        {
+          "legId": "bank",
+          "providerRef": "fixture-pg",
+          "routeRef": "original:bank",
+          "amount": {
+            "asset": {
+              "namespace": "fiat",
+              "reference": "KRW",
+              "decimals": 0,
+              "maxAtoms": "340282366920938463463374607431768211455"
+            },
+            "atoms": "18600"
+          }
+        }
+      ],
+      "now": 999,
+      "refundLineIds": [
+        "L2"
+      ],
+      "expectedQuote": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "request": {
+          "discounts": [
+            {
+              "bearerRef": "organizer",
+              "capAtoms": null,
+              "eligibleLineIds": [
+                "L1",
+                "L2",
+                "L3"
+              ],
+              "kind": "FIXED",
+              "ruleId": "coupon",
+              "value": "6000"
+            },
+            {
+              "bearerRef": "platform",
+              "capAtoms": null,
+              "eligibleLineIds": [
+                "L1",
+                "L2",
+                "L3"
+              ],
+              "kind": "BPS",
+              "ruleId": "member",
+              "value": "1000"
+            }
+          ],
+          "expiresAt": 1000,
+          "lines": [
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "10000"
+              },
+              "inventoryId": "inventory-L1",
+              "lineId": "L1"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "20000"
+              },
+              "inventoryId": "inventory-L2",
+              "lineId": "L2"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "30000"
+              },
+              "inventoryId": "inventory-L3",
+              "lineId": "L3"
+            }
+          ],
+          "orderId": "bundle",
+          "orderVersion": 1,
+          "policyRef": "frozen-price-v1",
+          "schemaVersion": "kix:commerce:2",
+          "scope": {
+            "eventId": "show",
+            "issuerId": "issuer",
+            "performanceId": "evening"
+          }
+        },
+        "asset": {
+          "namespace": "fiat",
+          "reference": "KRW",
+          "decimals": 0,
+          "maxAtoms": "340282366920938463463374607431768211455"
+        },
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "grossAtoms": "10000",
+            "discountAtoms": "1900",
+            "payableAtoms": "8100",
+            "discounts": [
+              {
+                "ruleId": "coupon",
+                "bearerRef": "organizer",
+                "atoms": "1000"
+              },
+              {
+                "ruleId": "member",
+                "bearerRef": "platform",
+                "atoms": "900"
+              }
+            ]
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "grossAtoms": "20000",
+            "discountAtoms": "3800",
+            "payableAtoms": "16200",
+            "discounts": [
+              {
+                "ruleId": "coupon",
+                "bearerRef": "organizer",
+                "atoms": "2000"
+              },
+              {
+                "ruleId": "member",
+                "bearerRef": "platform",
+                "atoms": "1800"
+              }
+            ]
+          },
+          {
+            "lineId": "L3",
+            "inventoryId": "inventory-L3",
+            "grossAtoms": "30000",
+            "discountAtoms": "5700",
+            "payableAtoms": "24300",
+            "discounts": [
+              {
+                "ruleId": "coupon",
+                "bearerRef": "organizer",
+                "atoms": "3000"
+              },
+              {
+                "ruleId": "member",
+                "bearerRef": "platform",
+                "atoms": "2700"
+              }
+            ]
+          }
+        ],
+        "totals": {
+          "grossAtoms": "60000",
+          "discountAtoms": "11400",
+          "payableAtoms": "48600"
+        },
+        "quoteHash": "5bf8cfcf0578822ee8bec14c10aef0f75d835b6ffe9f1abb7457d3f742085a47"
+      },
+      "expectedPlan": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "quoteHash": "5bf8cfcf0578822ee8bec14c10aef0f75d835b6ffe9f1abb7457d3f742085a47",
+        "checkedAt": 999,
+        "legs": [
+          {
+            "legId": "card",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:card",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "30000"
+            },
+            "allocations": {
+              "L1": "5000",
+              "L2": "10000",
+              "L3": "15000"
+            }
+          },
+          {
+            "legId": "bank",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:bank",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "18600"
+            },
+            "allocations": {
+              "L1": "3100",
+              "L2": "6200",
+              "L3": "9300"
+            }
+          }
+        ],
+        "planHash": "fc4e1a1b2c0af93821c3232134497a2a8608194085504e4916c4d4a5aeb34fc0"
+      },
+      "expectedProposal": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "policy": "FROZEN_LINE_PRICE_FULL_REVERSAL_V1",
+        "quoteHash": "5bf8cfcf0578822ee8bec14c10aef0f75d835b6ffe9f1abb7457d3f742085a47",
+        "planHash": "fc4e1a1b2c0af93821c3232134497a2a8608194085504e4916c4d4a5aeb34fc0",
+        "lineIds": [
+          "L2"
+        ],
+        "grossReversed": {
+          "asset": {
+            "namespace": "fiat",
+            "reference": "KRW",
+            "decimals": 0,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "20000"
+        },
+        "customerRefund": {
+          "asset": {
+            "namespace": "fiat",
+            "reference": "KRW",
+            "decimals": 0,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "16200"
+        },
+        "originalRoutes": [
+          {
+            "legId": "card",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:card",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "10000"
+            },
+            "allocations": {
+              "L2": "10000"
+            }
+          },
+          {
+            "legId": "bank",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:bank",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "6200"
+            },
+            "allocations": {
+              "L2": "6200"
+            }
+          }
+        ],
+        "discountBurdenReversal": {
+          "organizer": "2000",
+          "platform": "1800"
+        },
+        "executionAuthorized": false,
+        "requiredEvidence": [
+          "CONFIRMED_ORIGINAL_PAYMENTS",
+          "CURRENT_LINE_RIGHT_STATE",
+          "REFUND_POLICY_AUTHORITY",
+          "UNRESOLVED_REFUND_RESERVATIONS",
+          "CURRENT_PROVIDER_REFUNDABLE_CAPACITY"
+        ],
+        "proposalHash": "c757a571713a3ff75010184d2e4bac498b0ff3ebf81c8edc4976d0713491e732"
+      },
+      "quoteCanonicalUtf8": "{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"lines\":[{\"discountAtoms\":\"1900\",\"discounts\":[{\"atoms\":\"1000\",\"bearerRef\":\"organizer\",\"ruleId\":\"coupon\"},{\"atoms\":\"900\",\"bearerRef\":\"platform\",\"ruleId\":\"member\"}],\"grossAtoms\":\"10000\",\"inventoryId\":\"inventory-L1\",\"lineId\":\"L1\",\"payableAtoms\":\"8100\"},{\"discountAtoms\":\"3800\",\"discounts\":[{\"atoms\":\"2000\",\"bearerRef\":\"organizer\",\"ruleId\":\"coupon\"},{\"atoms\":\"1800\",\"bearerRef\":\"platform\",\"ruleId\":\"member\"}],\"grossAtoms\":\"20000\",\"inventoryId\":\"inventory-L2\",\"lineId\":\"L2\",\"payableAtoms\":\"16200\"},{\"discountAtoms\":\"5700\",\"discounts\":[{\"atoms\":\"3000\",\"bearerRef\":\"organizer\",\"ruleId\":\"coupon\"},{\"atoms\":\"2700\",\"bearerRef\":\"platform\",\"ruleId\":\"member\"}],\"grossAtoms\":\"30000\",\"inventoryId\":\"inventory-L3\",\"lineId\":\"L3\",\"payableAtoms\":\"24300\"}],\"quoteHash\":\"5bf8cfcf0578822ee8bec14c10aef0f75d835b6ffe9f1abb7457d3f742085a47\",\"request\":{\"discounts\":[{\"bearerRef\":\"organizer\",\"capAtoms\":null,\"eligibleLineIds\":[\"L1\",\"L2\",\"L3\"],\"kind\":\"FIXED\",\"ruleId\":\"coupon\",\"value\":\"6000\"},{\"bearerRef\":\"platform\",\"capAtoms\":null,\"eligibleLineIds\":[\"L1\",\"L2\",\"L3\"],\"kind\":\"BPS\",\"ruleId\":\"member\",\"value\":\"1000\"}],\"expiresAt\":1000,\"lines\":[{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"10000\"},\"inventoryId\":\"inventory-L1\",\"lineId\":\"L1\"},{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"20000\"},\"inventoryId\":\"inventory-L2\",\"lineId\":\"L2\"},{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"30000\"},\"inventoryId\":\"inventory-L3\",\"lineId\":\"L3\"}],\"orderId\":\"bundle\",\"orderVersion\":1,\"policyRef\":\"frozen-price-v1\",\"schemaVersion\":\"kix:commerce:2\",\"scope\":{\"eventId\":\"show\",\"issuerId\":\"issuer\",\"performanceId\":\"evening\"}},\"schemaVersion\":\"kix:commerce:2\",\"totals\":{\"discountAtoms\":\"11400\",\"grossAtoms\":\"60000\",\"payableAtoms\":\"48600\"}}",
+      "planCanonicalUtf8": "{\"checkedAt\":999,\"evidenceClass\":\"CALCULATION_ONLY\",\"legs\":[{\"allocations\":{\"L1\":\"5000\",\"L2\":\"10000\",\"L3\":\"15000\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"30000\"},\"legId\":\"card\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:card\"},{\"allocations\":{\"L1\":\"3100\",\"L2\":\"6200\",\"L3\":\"9300\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"18600\"},\"legId\":\"bank\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:bank\"}],\"planHash\":\"fc4e1a1b2c0af93821c3232134497a2a8608194085504e4916c4d4a5aeb34fc0\",\"quoteHash\":\"5bf8cfcf0578822ee8bec14c10aef0f75d835b6ffe9f1abb7457d3f742085a47\",\"schemaVersion\":\"kix:commerce:2\"}",
+      "proposalCanonicalUtf8": "{\"customerRefund\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"16200\"},\"discountBurdenReversal\":{\"organizer\":\"2000\",\"platform\":\"1800\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"executionAuthorized\":false,\"grossReversed\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"20000\"},\"lineIds\":[\"L2\"],\"originalRoutes\":[{\"allocations\":{\"L2\":\"10000\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"10000\"},\"legId\":\"card\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:card\"},{\"allocations\":{\"L2\":\"6200\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"6200\"},\"legId\":\"bank\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:bank\"}],\"planHash\":\"fc4e1a1b2c0af93821c3232134497a2a8608194085504e4916c4d4a5aeb34fc0\",\"policy\":\"FROZEN_LINE_PRICE_FULL_REVERSAL_V1\",\"proposalHash\":\"c757a571713a3ff75010184d2e4bac498b0ff3ebf81c8edc4976d0713491e732\",\"quoteHash\":\"5bf8cfcf0578822ee8bec14c10aef0f75d835b6ffe9f1abb7457d3f742085a47\",\"requiredEvidence\":[\"CONFIRMED_ORIGINAL_PAYMENTS\",\"CURRENT_LINE_RIGHT_STATE\",\"REFUND_POLICY_AUTHORITY\",\"UNRESOLVED_REFUND_RESERVATIONS\",\"CURRENT_PROVIDER_REFUNDABLE_CAPACITY\"],\"schemaVersion\":\"kix:commerce:2\"}"
+    },
+    {
+      "name": "numeric-key-discount-payment-ties",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "ties",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "Z",
+            "inventoryId": "inventory-Z",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "3"
+            }
+          },
+          {
+            "lineId": "2",
+            "inventoryId": "inventory-2",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "3"
+            }
+          },
+          {
+            "lineId": "10",
+            "inventoryId": "inventory-10",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "3"
+            }
+          }
+        ],
+        "discounts": [
+          {
+            "ruleId": "tie",
+            "bearerRef": "sponsor",
+            "kind": "FIXED",
+            "value": "2",
+            "eligibleLineIds": [
+              "Z",
+              "2",
+              "10"
+            ],
+            "capAtoms": null
+          }
+        ]
+      },
+      "legs": [
+        {
+          "legId": "first",
+          "providerRef": "fixture-pg",
+          "routeRef": "original:first",
+          "amount": {
+            "asset": {
+              "namespace": "fiat",
+              "reference": "KRW",
+              "decimals": 0,
+              "maxAtoms": "340282366920938463463374607431768211455"
+            },
+            "atoms": "1"
+          }
+        },
+        {
+          "legId": "second",
+          "providerRef": "fixture-pg",
+          "routeRef": "original:second",
+          "amount": {
+            "asset": {
+              "namespace": "fiat",
+              "reference": "KRW",
+              "decimals": 0,
+              "maxAtoms": "340282366920938463463374607431768211455"
+            },
+            "atoms": "6"
+          }
+        }
+      ],
+      "now": 999,
+      "refundLineIds": [
+        "2",
+        "10"
+      ],
+      "expectedQuote": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "request": {
+          "discounts": [
+            {
+              "bearerRef": "sponsor",
+              "capAtoms": null,
+              "eligibleLineIds": [
+                "Z",
+                "2",
+                "10"
+              ],
+              "kind": "FIXED",
+              "ruleId": "tie",
+              "value": "2"
+            }
+          ],
+          "expiresAt": 1000,
+          "lines": [
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "3"
+              },
+              "inventoryId": "inventory-Z",
+              "lineId": "Z"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "3"
+              },
+              "inventoryId": "inventory-2",
+              "lineId": "2"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "3"
+              },
+              "inventoryId": "inventory-10",
+              "lineId": "10"
+            }
+          ],
+          "orderId": "ties",
+          "orderVersion": 1,
+          "policyRef": "frozen-price-v1",
+          "schemaVersion": "kix:commerce:2",
+          "scope": {
+            "eventId": "show",
+            "issuerId": "issuer",
+            "performanceId": "evening"
+          }
+        },
+        "asset": {
+          "namespace": "fiat",
+          "reference": "KRW",
+          "decimals": 0,
+          "maxAtoms": "340282366920938463463374607431768211455"
+        },
+        "lines": [
+          {
+            "lineId": "10",
+            "inventoryId": "inventory-10",
+            "grossAtoms": "3",
+            "discountAtoms": "1",
+            "payableAtoms": "2",
+            "discounts": [
+              {
+                "ruleId": "tie",
+                "bearerRef": "sponsor",
+                "atoms": "1"
+              }
+            ]
+          },
+          {
+            "lineId": "2",
+            "inventoryId": "inventory-2",
+            "grossAtoms": "3",
+            "discountAtoms": "1",
+            "payableAtoms": "2",
+            "discounts": [
+              {
+                "ruleId": "tie",
+                "bearerRef": "sponsor",
+                "atoms": "1"
+              }
+            ]
+          },
+          {
+            "lineId": "Z",
+            "inventoryId": "inventory-Z",
+            "grossAtoms": "3",
+            "discountAtoms": "0",
+            "payableAtoms": "3",
+            "discounts": []
+          }
+        ],
+        "totals": {
+          "grossAtoms": "9",
+          "discountAtoms": "2",
+          "payableAtoms": "7"
+        },
+        "quoteHash": "c74034196de2d6030a6d341644524a4f648650365f1454069fe7f95eb99a679b"
+      },
+      "expectedPlan": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "quoteHash": "c74034196de2d6030a6d341644524a4f648650365f1454069fe7f95eb99a679b",
+        "checkedAt": 999,
+        "legs": [
+          {
+            "legId": "first",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:first",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            },
+            "allocations": {
+              "10": "0",
+              "2": "0",
+              "Z": "1"
+            }
+          },
+          {
+            "legId": "second",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:second",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "6"
+            },
+            "allocations": {
+              "10": "2",
+              "2": "2",
+              "Z": "2"
+            }
+          }
+        ],
+        "planHash": "a68f9bab25863a26cd51754c88f432523249c9273ab68800476f323f7d98d164"
+      },
+      "expectedProposal": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "policy": "FROZEN_LINE_PRICE_FULL_REVERSAL_V1",
+        "quoteHash": "c74034196de2d6030a6d341644524a4f648650365f1454069fe7f95eb99a679b",
+        "planHash": "a68f9bab25863a26cd51754c88f432523249c9273ab68800476f323f7d98d164",
+        "lineIds": [
+          "10",
+          "2"
+        ],
+        "grossReversed": {
+          "asset": {
+            "namespace": "fiat",
+            "reference": "KRW",
+            "decimals": 0,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "6"
+        },
+        "customerRefund": {
+          "asset": {
+            "namespace": "fiat",
+            "reference": "KRW",
+            "decimals": 0,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "4"
+        },
+        "originalRoutes": [
+          {
+            "legId": "second",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:second",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "4"
+            },
+            "allocations": {
+              "10": "2",
+              "2": "2"
+            }
+          }
+        ],
+        "discountBurdenReversal": {
+          "sponsor": "2"
+        },
+        "executionAuthorized": false,
+        "requiredEvidence": [
+          "CONFIRMED_ORIGINAL_PAYMENTS",
+          "CURRENT_LINE_RIGHT_STATE",
+          "REFUND_POLICY_AUTHORITY",
+          "UNRESOLVED_REFUND_RESERVATIONS",
+          "CURRENT_PROVIDER_REFUNDABLE_CAPACITY"
+        ],
+        "proposalHash": "419e82fa6e0a216ae7ae681f33e427ba09b6c8d3b3b21fbd8ec15e43e46b5f5d"
+      },
+      "quoteCanonicalUtf8": "{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"lines\":[{\"discountAtoms\":\"1\",\"discounts\":[{\"atoms\":\"1\",\"bearerRef\":\"sponsor\",\"ruleId\":\"tie\"}],\"grossAtoms\":\"3\",\"inventoryId\":\"inventory-10\",\"lineId\":\"10\",\"payableAtoms\":\"2\"},{\"discountAtoms\":\"1\",\"discounts\":[{\"atoms\":\"1\",\"bearerRef\":\"sponsor\",\"ruleId\":\"tie\"}],\"grossAtoms\":\"3\",\"inventoryId\":\"inventory-2\",\"lineId\":\"2\",\"payableAtoms\":\"2\"},{\"discountAtoms\":\"0\",\"discounts\":[],\"grossAtoms\":\"3\",\"inventoryId\":\"inventory-Z\",\"lineId\":\"Z\",\"payableAtoms\":\"3\"}],\"quoteHash\":\"c74034196de2d6030a6d341644524a4f648650365f1454069fe7f95eb99a679b\",\"request\":{\"discounts\":[{\"bearerRef\":\"sponsor\",\"capAtoms\":null,\"eligibleLineIds\":[\"Z\",\"2\",\"10\"],\"kind\":\"FIXED\",\"ruleId\":\"tie\",\"value\":\"2\"}],\"expiresAt\":1000,\"lines\":[{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"3\"},\"inventoryId\":\"inventory-Z\",\"lineId\":\"Z\"},{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"3\"},\"inventoryId\":\"inventory-2\",\"lineId\":\"2\"},{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"3\"},\"inventoryId\":\"inventory-10\",\"lineId\":\"10\"}],\"orderId\":\"ties\",\"orderVersion\":1,\"policyRef\":\"frozen-price-v1\",\"schemaVersion\":\"kix:commerce:2\",\"scope\":{\"eventId\":\"show\",\"issuerId\":\"issuer\",\"performanceId\":\"evening\"}},\"schemaVersion\":\"kix:commerce:2\",\"totals\":{\"discountAtoms\":\"2\",\"grossAtoms\":\"9\",\"payableAtoms\":\"7\"}}",
+      "planCanonicalUtf8": "{\"checkedAt\":999,\"evidenceClass\":\"CALCULATION_ONLY\",\"legs\":[{\"allocations\":{\"10\":\"0\",\"2\":\"0\",\"Z\":\"1\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"1\"},\"legId\":\"first\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:first\"},{\"allocations\":{\"10\":\"2\",\"2\":\"2\",\"Z\":\"2\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"6\"},\"legId\":\"second\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:second\"}],\"planHash\":\"a68f9bab25863a26cd51754c88f432523249c9273ab68800476f323f7d98d164\",\"quoteHash\":\"c74034196de2d6030a6d341644524a4f648650365f1454069fe7f95eb99a679b\",\"schemaVersion\":\"kix:commerce:2\"}",
+      "proposalCanonicalUtf8": "{\"customerRefund\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"4\"},\"discountBurdenReversal\":{\"sponsor\":\"2\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"executionAuthorized\":false,\"grossReversed\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"6\"},\"lineIds\":[\"10\",\"2\"],\"originalRoutes\":[{\"allocations\":{\"10\":\"2\",\"2\":\"2\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"4\"},\"legId\":\"second\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:second\"}],\"planHash\":\"a68f9bab25863a26cd51754c88f432523249c9273ab68800476f323f7d98d164\",\"policy\":\"FROZEN_LINE_PRICE_FULL_REVERSAL_V1\",\"proposalHash\":\"419e82fa6e0a216ae7ae681f33e427ba09b6c8d3b3b21fbd8ec15e43e46b5f5d\",\"quoteHash\":\"c74034196de2d6030a6d341644524a4f648650365f1454069fe7f95eb99a679b\",\"requiredEvidence\":[\"CONFIRMED_ORIGINAL_PAYMENTS\",\"CURRENT_LINE_RIGHT_STATE\",\"REFUND_POLICY_AUTHORITY\",\"UNRESOLVED_REFUND_RESERVATIONS\",\"CURRENT_PROVIDER_REFUNDABLE_CAPACITY\"],\"schemaVersion\":\"kix:commerce:2\"}"
+    },
+    {
+      "name": "u128-aggregate-exact",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "u128",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fixture-token",
+                "reference": "sui:localnet:package::coin::USDC",
+                "decimals": 6,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "340282366920938463463365600232513470462"
+            }
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "gross": {
+              "asset": {
+                "namespace": "fixture-token",
+                "reference": "sui:localnet:package::coin::USDC",
+                "decimals": 6,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "9007199254740993"
+            }
+          }
+        ],
+        "discounts": []
+      },
+      "legs": [
+        {
+          "legId": "small",
+          "providerRef": "fixture-pg",
+          "routeRef": "original:small",
+          "amount": {
+            "asset": {
+              "namespace": "fixture-token",
+              "reference": "sui:localnet:package::coin::USDC",
+              "decimals": 6,
+              "maxAtoms": "340282366920938463463374607431768211455"
+            },
+            "atoms": "9007199254740993"
+          }
+        },
+        {
+          "legId": "large",
+          "providerRef": "fixture-pg",
+          "routeRef": "original:large",
+          "amount": {
+            "asset": {
+              "namespace": "fixture-token",
+              "reference": "sui:localnet:package::coin::USDC",
+              "decimals": 6,
+              "maxAtoms": "340282366920938463463374607431768211455"
+            },
+            "atoms": "340282366920938463463365600232513470462"
+          }
+        }
+      ],
+      "now": 999,
+      "refundLineIds": [
+        "L2"
+      ],
+      "expectedQuote": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "request": {
+          "discounts": [],
+          "expiresAt": 1000,
+          "lines": [
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 6,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fixture-token",
+                  "reference": "sui:localnet:package::coin::USDC"
+                },
+                "atoms": "340282366920938463463365600232513470462"
+              },
+              "inventoryId": "inventory-L1",
+              "lineId": "L1"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 6,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fixture-token",
+                  "reference": "sui:localnet:package::coin::USDC"
+                },
+                "atoms": "9007199254740993"
+              },
+              "inventoryId": "inventory-L2",
+              "lineId": "L2"
+            }
+          ],
+          "orderId": "u128",
+          "orderVersion": 1,
+          "policyRef": "frozen-price-v1",
+          "schemaVersion": "kix:commerce:2",
+          "scope": {
+            "eventId": "show",
+            "issuerId": "issuer",
+            "performanceId": "evening"
+          }
+        },
+        "asset": {
+          "namespace": "fixture-token",
+          "reference": "sui:localnet:package::coin::USDC",
+          "decimals": 6,
+          "maxAtoms": "340282366920938463463374607431768211455"
+        },
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "grossAtoms": "340282366920938463463365600232513470462",
+            "discountAtoms": "0",
+            "payableAtoms": "340282366920938463463365600232513470462",
+            "discounts": []
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "grossAtoms": "9007199254740993",
+            "discountAtoms": "0",
+            "payableAtoms": "9007199254740993",
+            "discounts": []
+          }
+        ],
+        "totals": {
+          "grossAtoms": "340282366920938463463374607431768211455",
+          "discountAtoms": "0",
+          "payableAtoms": "340282366920938463463374607431768211455"
+        },
+        "quoteHash": "263287e4679f0a0009e3b47d621492cc6c21a4c27e31161c31f4aea4a041fc39"
+      },
+      "expectedPlan": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "quoteHash": "263287e4679f0a0009e3b47d621492cc6c21a4c27e31161c31f4aea4a041fc39",
+        "checkedAt": 999,
+        "legs": [
+          {
+            "legId": "small",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:small",
+            "amount": {
+              "asset": {
+                "namespace": "fixture-token",
+                "reference": "sui:localnet:package::coin::USDC",
+                "decimals": 6,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "9007199254740993"
+            },
+            "allocations": {
+              "L1": "9007199254740993",
+              "L2": "0"
+            }
+          },
+          {
+            "legId": "large",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:large",
+            "amount": {
+              "asset": {
+                "namespace": "fixture-token",
+                "reference": "sui:localnet:package::coin::USDC",
+                "decimals": 6,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "340282366920938463463365600232513470462"
+            },
+            "allocations": {
+              "L1": "340282366920938463463356593033258729469",
+              "L2": "9007199254740993"
+            }
+          }
+        ],
+        "planHash": "77d589bff704d50ceee41d407e4b7cd3b55479748146f0dd38c7841fe4f2cc65"
+      },
+      "expectedProposal": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "policy": "FROZEN_LINE_PRICE_FULL_REVERSAL_V1",
+        "quoteHash": "263287e4679f0a0009e3b47d621492cc6c21a4c27e31161c31f4aea4a041fc39",
+        "planHash": "77d589bff704d50ceee41d407e4b7cd3b55479748146f0dd38c7841fe4f2cc65",
+        "lineIds": [
+          "L2"
+        ],
+        "grossReversed": {
+          "asset": {
+            "namespace": "fixture-token",
+            "reference": "sui:localnet:package::coin::USDC",
+            "decimals": 6,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "9007199254740993"
+        },
+        "customerRefund": {
+          "asset": {
+            "namespace": "fixture-token",
+            "reference": "sui:localnet:package::coin::USDC",
+            "decimals": 6,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "9007199254740993"
+        },
+        "originalRoutes": [
+          {
+            "legId": "large",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:large",
+            "amount": {
+              "asset": {
+                "namespace": "fixture-token",
+                "reference": "sui:localnet:package::coin::USDC",
+                "decimals": 6,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "9007199254740993"
+            },
+            "allocations": {
+              "L2": "9007199254740993"
+            }
+          }
+        ],
+        "discountBurdenReversal": {},
+        "executionAuthorized": false,
+        "requiredEvidence": [
+          "CONFIRMED_ORIGINAL_PAYMENTS",
+          "CURRENT_LINE_RIGHT_STATE",
+          "REFUND_POLICY_AUTHORITY",
+          "UNRESOLVED_REFUND_RESERVATIONS",
+          "CURRENT_PROVIDER_REFUNDABLE_CAPACITY"
+        ],
+        "proposalHash": "ee1bc2f35c79c459cb37b5faae83c86856ddeaaac543b6ee96083a5cb9f057b7"
+      },
+      "quoteCanonicalUtf8": "{\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"lines\":[{\"discountAtoms\":\"0\",\"discounts\":[],\"grossAtoms\":\"340282366920938463463365600232513470462\",\"inventoryId\":\"inventory-L1\",\"lineId\":\"L1\",\"payableAtoms\":\"340282366920938463463365600232513470462\"},{\"discountAtoms\":\"0\",\"discounts\":[],\"grossAtoms\":\"9007199254740993\",\"inventoryId\":\"inventory-L2\",\"lineId\":\"L2\",\"payableAtoms\":\"9007199254740993\"}],\"quoteHash\":\"263287e4679f0a0009e3b47d621492cc6c21a4c27e31161c31f4aea4a041fc39\",\"request\":{\"discounts\":[],\"expiresAt\":1000,\"lines\":[{\"gross\":{\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"atoms\":\"340282366920938463463365600232513470462\"},\"inventoryId\":\"inventory-L1\",\"lineId\":\"L1\"},{\"gross\":{\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"atoms\":\"9007199254740993\"},\"inventoryId\":\"inventory-L2\",\"lineId\":\"L2\"}],\"orderId\":\"u128\",\"orderVersion\":1,\"policyRef\":\"frozen-price-v1\",\"schemaVersion\":\"kix:commerce:2\",\"scope\":{\"eventId\":\"show\",\"issuerId\":\"issuer\",\"performanceId\":\"evening\"}},\"schemaVersion\":\"kix:commerce:2\",\"totals\":{\"discountAtoms\":\"0\",\"grossAtoms\":\"340282366920938463463374607431768211455\",\"payableAtoms\":\"340282366920938463463374607431768211455\"}}",
+      "planCanonicalUtf8": "{\"checkedAt\":999,\"evidenceClass\":\"CALCULATION_ONLY\",\"legs\":[{\"allocations\":{\"L1\":\"9007199254740993\",\"L2\":\"0\"},\"amount\":{\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"atoms\":\"9007199254740993\"},\"legId\":\"small\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:small\"},{\"allocations\":{\"L1\":\"340282366920938463463356593033258729469\",\"L2\":\"9007199254740993\"},\"amount\":{\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"atoms\":\"340282366920938463463365600232513470462\"},\"legId\":\"large\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:large\"}],\"planHash\":\"77d589bff704d50ceee41d407e4b7cd3b55479748146f0dd38c7841fe4f2cc65\",\"quoteHash\":\"263287e4679f0a0009e3b47d621492cc6c21a4c27e31161c31f4aea4a041fc39\",\"schemaVersion\":\"kix:commerce:2\"}",
+      "proposalCanonicalUtf8": "{\"customerRefund\":{\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"atoms\":\"9007199254740993\"},\"discountBurdenReversal\":{},\"evidenceClass\":\"CALCULATION_ONLY\",\"executionAuthorized\":false,\"grossReversed\":{\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"atoms\":\"9007199254740993\"},\"lineIds\":[\"L2\"],\"originalRoutes\":[{\"allocations\":{\"L2\":\"9007199254740993\"},\"amount\":{\"asset\":{\"decimals\":6,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fixture-token\",\"reference\":\"sui:localnet:package::coin::USDC\"},\"atoms\":\"9007199254740993\"},\"legId\":\"large\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:large\"}],\"planHash\":\"77d589bff704d50ceee41d407e4b7cd3b55479748146f0dd38c7841fe4f2cc65\",\"policy\":\"FROZEN_LINE_PRICE_FULL_REVERSAL_V1\",\"proposalHash\":\"ee1bc2f35c79c459cb37b5faae83c86856ddeaaac543b6ee96083a5cb9f057b7\",\"quoteHash\":\"263287e4679f0a0009e3b47d621492cc6c21a4c27e31161c31f4aea4a041fc39\",\"requiredEvidence\":[\"CONFIRMED_ORIGINAL_PAYMENTS\",\"CURRENT_LINE_RIGHT_STATE\",\"REFUND_POLICY_AUTHORITY\",\"UNRESOLVED_REFUND_RESERVATIONS\",\"CURRENT_PROVIDER_REFUNDABLE_CAPACITY\"],\"schemaVersion\":\"kix:commerce:2\"}"
+    },
+    {
+      "name": "fully-discounted-no-routes",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "free",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          },
+          {
+            "lineId": "L3",
+            "inventoryId": "inventory-L3",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": [
+          {
+            "ruleId": "full",
+            "bearerRef": "sponsor",
+            "kind": "FIXED",
+            "value": "3",
+            "eligibleLineIds": [
+              "L1",
+              "L2",
+              "L3"
+            ],
+            "capAtoms": null
+          }
+        ]
+      },
+      "legs": [],
+      "now": 999,
+      "refundLineIds": [
+        "L3",
+        "L1"
+      ],
+      "expectedQuote": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "request": {
+          "discounts": [
+            {
+              "bearerRef": "sponsor",
+              "capAtoms": null,
+              "eligibleLineIds": [
+                "L1",
+                "L2",
+                "L3"
+              ],
+              "kind": "FIXED",
+              "ruleId": "full",
+              "value": "3"
+            }
+          ],
+          "expiresAt": 1000,
+          "lines": [
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "1"
+              },
+              "inventoryId": "inventory-L1",
+              "lineId": "L1"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "1"
+              },
+              "inventoryId": "inventory-L2",
+              "lineId": "L2"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "1"
+              },
+              "inventoryId": "inventory-L3",
+              "lineId": "L3"
+            }
+          ],
+          "orderId": "free",
+          "orderVersion": 1,
+          "policyRef": "frozen-price-v1",
+          "schemaVersion": "kix:commerce:2",
+          "scope": {
+            "eventId": "show",
+            "issuerId": "issuer",
+            "performanceId": "evening"
+          }
+        },
+        "asset": {
+          "namespace": "fiat",
+          "reference": "KRW",
+          "decimals": 0,
+          "maxAtoms": "340282366920938463463374607431768211455"
+        },
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "grossAtoms": "1",
+            "discountAtoms": "1",
+            "payableAtoms": "0",
+            "discounts": [
+              {
+                "ruleId": "full",
+                "bearerRef": "sponsor",
+                "atoms": "1"
+              }
+            ]
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "grossAtoms": "1",
+            "discountAtoms": "1",
+            "payableAtoms": "0",
+            "discounts": [
+              {
+                "ruleId": "full",
+                "bearerRef": "sponsor",
+                "atoms": "1"
+              }
+            ]
+          },
+          {
+            "lineId": "L3",
+            "inventoryId": "inventory-L3",
+            "grossAtoms": "1",
+            "discountAtoms": "1",
+            "payableAtoms": "0",
+            "discounts": [
+              {
+                "ruleId": "full",
+                "bearerRef": "sponsor",
+                "atoms": "1"
+              }
+            ]
+          }
+        ],
+        "totals": {
+          "grossAtoms": "3",
+          "discountAtoms": "3",
+          "payableAtoms": "0"
+        },
+        "quoteHash": "40ef14423192004d89f9b49d4882f2058a937494c72a37f29b27958d9d19f84b"
+      },
+      "expectedPlan": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "quoteHash": "40ef14423192004d89f9b49d4882f2058a937494c72a37f29b27958d9d19f84b",
+        "checkedAt": 999,
+        "legs": [],
+        "planHash": "b3252d83e3e249b8286956fa854af716df4cec50d7128f46ae20508eba3dc2c3"
+      },
+      "expectedProposal": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "policy": "FROZEN_LINE_PRICE_FULL_REVERSAL_V1",
+        "quoteHash": "40ef14423192004d89f9b49d4882f2058a937494c72a37f29b27958d9d19f84b",
+        "planHash": "b3252d83e3e249b8286956fa854af716df4cec50d7128f46ae20508eba3dc2c3",
+        "lineIds": [
+          "L1",
+          "L3"
+        ],
+        "grossReversed": {
+          "asset": {
+            "namespace": "fiat",
+            "reference": "KRW",
+            "decimals": 0,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "2"
+        },
+        "customerRefund": {
+          "asset": {
+            "namespace": "fiat",
+            "reference": "KRW",
+            "decimals": 0,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "0"
+        },
+        "originalRoutes": [],
+        "discountBurdenReversal": {
+          "sponsor": "2"
+        },
+        "executionAuthorized": false,
+        "requiredEvidence": [
+          "CONFIRMED_ORIGINAL_PAYMENTS",
+          "CURRENT_LINE_RIGHT_STATE",
+          "REFUND_POLICY_AUTHORITY",
+          "UNRESOLVED_REFUND_RESERVATIONS",
+          "CURRENT_PROVIDER_REFUNDABLE_CAPACITY"
+        ],
+        "proposalHash": "19b20e7162c5ad8c20e04cc6ee742baa17ad6c3c8fd354c5cc54e95da68d8009"
+      },
+      "quoteCanonicalUtf8": "{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"lines\":[{\"discountAtoms\":\"1\",\"discounts\":[{\"atoms\":\"1\",\"bearerRef\":\"sponsor\",\"ruleId\":\"full\"}],\"grossAtoms\":\"1\",\"inventoryId\":\"inventory-L1\",\"lineId\":\"L1\",\"payableAtoms\":\"0\"},{\"discountAtoms\":\"1\",\"discounts\":[{\"atoms\":\"1\",\"bearerRef\":\"sponsor\",\"ruleId\":\"full\"}],\"grossAtoms\":\"1\",\"inventoryId\":\"inventory-L2\",\"lineId\":\"L2\",\"payableAtoms\":\"0\"},{\"discountAtoms\":\"1\",\"discounts\":[{\"atoms\":\"1\",\"bearerRef\":\"sponsor\",\"ruleId\":\"full\"}],\"grossAtoms\":\"1\",\"inventoryId\":\"inventory-L3\",\"lineId\":\"L3\",\"payableAtoms\":\"0\"}],\"quoteHash\":\"40ef14423192004d89f9b49d4882f2058a937494c72a37f29b27958d9d19f84b\",\"request\":{\"discounts\":[{\"bearerRef\":\"sponsor\",\"capAtoms\":null,\"eligibleLineIds\":[\"L1\",\"L2\",\"L3\"],\"kind\":\"FIXED\",\"ruleId\":\"full\",\"value\":\"3\"}],\"expiresAt\":1000,\"lines\":[{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"1\"},\"inventoryId\":\"inventory-L1\",\"lineId\":\"L1\"},{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"1\"},\"inventoryId\":\"inventory-L2\",\"lineId\":\"L2\"},{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"1\"},\"inventoryId\":\"inventory-L3\",\"lineId\":\"L3\"}],\"orderId\":\"free\",\"orderVersion\":1,\"policyRef\":\"frozen-price-v1\",\"schemaVersion\":\"kix:commerce:2\",\"scope\":{\"eventId\":\"show\",\"issuerId\":\"issuer\",\"performanceId\":\"evening\"}},\"schemaVersion\":\"kix:commerce:2\",\"totals\":{\"discountAtoms\":\"3\",\"grossAtoms\":\"3\",\"payableAtoms\":\"0\"}}",
+      "planCanonicalUtf8": "{\"checkedAt\":999,\"evidenceClass\":\"CALCULATION_ONLY\",\"legs\":[],\"planHash\":\"b3252d83e3e249b8286956fa854af716df4cec50d7128f46ae20508eba3dc2c3\",\"quoteHash\":\"40ef14423192004d89f9b49d4882f2058a937494c72a37f29b27958d9d19f84b\",\"schemaVersion\":\"kix:commerce:2\"}",
+      "proposalCanonicalUtf8": "{\"customerRefund\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"0\"},\"discountBurdenReversal\":{\"sponsor\":\"2\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"executionAuthorized\":false,\"grossReversed\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"2\"},\"lineIds\":[\"L1\",\"L3\"],\"originalRoutes\":[],\"planHash\":\"b3252d83e3e249b8286956fa854af716df4cec50d7128f46ae20508eba3dc2c3\",\"policy\":\"FROZEN_LINE_PRICE_FULL_REVERSAL_V1\",\"proposalHash\":\"19b20e7162c5ad8c20e04cc6ee742baa17ad6c3c8fd354c5cc54e95da68d8009\",\"quoteHash\":\"40ef14423192004d89f9b49d4882f2058a937494c72a37f29b27958d9d19f84b\",\"requiredEvidence\":[\"CONFIRMED_ORIGINAL_PAYMENTS\",\"CURRENT_LINE_RIGHT_STATE\",\"REFUND_POLICY_AUTHORITY\",\"UNRESOLVED_REFUND_RESERVATIONS\",\"CURRENT_PROVIDER_REFUNDABLE_CAPACITY\"],\"schemaVersion\":\"kix:commerce:2\"}"
+    },
+    {
+      "name": "capped-stacked-discounts",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "cap",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "11"
+            }
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "19"
+            }
+          },
+          {
+            "lineId": "L3",
+            "inventoryId": "inventory-L3",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "31"
+            }
+          }
+        ],
+        "discounts": [
+          {
+            "ruleId": "rate",
+            "bearerRef": "platform",
+            "kind": "BPS",
+            "value": "9999",
+            "eligibleLineIds": [
+              "L3",
+              "L2",
+              "L1"
+            ],
+            "capAtoms": "7"
+          },
+          {
+            "ruleId": "fixed",
+            "bearerRef": "organizer",
+            "kind": "FIXED",
+            "value": "1",
+            "eligibleLineIds": [
+              "L1",
+              "L2"
+            ],
+            "capAtoms": null
+          }
+        ]
+      },
+      "legs": [
+        {
+          "legId": "a",
+          "providerRef": "fixture-pg",
+          "routeRef": "original:a",
+          "amount": {
+            "asset": {
+              "namespace": "fiat",
+              "reference": "KRW",
+              "decimals": 0,
+              "maxAtoms": "340282366920938463463374607431768211455"
+            },
+            "atoms": "20"
+          }
+        },
+        {
+          "legId": "b",
+          "providerRef": "fixture-pg",
+          "routeRef": "original:b",
+          "amount": {
+            "asset": {
+              "namespace": "fiat",
+              "reference": "KRW",
+              "decimals": 0,
+              "maxAtoms": "340282366920938463463374607431768211455"
+            },
+            "atoms": "33"
+          }
+        }
+      ],
+      "now": 999,
+      "refundLineIds": [
+        "L1",
+        "L3"
+      ],
+      "expectedQuote": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "request": {
+          "discounts": [
+            {
+              "bearerRef": "platform",
+              "capAtoms": "7",
+              "eligibleLineIds": [
+                "L3",
+                "L2",
+                "L1"
+              ],
+              "kind": "BPS",
+              "ruleId": "rate",
+              "value": "9999"
+            },
+            {
+              "bearerRef": "organizer",
+              "capAtoms": null,
+              "eligibleLineIds": [
+                "L1",
+                "L2"
+              ],
+              "kind": "FIXED",
+              "ruleId": "fixed",
+              "value": "1"
+            }
+          ],
+          "expiresAt": 1000,
+          "lines": [
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "11"
+              },
+              "inventoryId": "inventory-L1",
+              "lineId": "L1"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "19"
+              },
+              "inventoryId": "inventory-L2",
+              "lineId": "L2"
+            },
+            {
+              "gross": {
+                "asset": {
+                  "decimals": 0,
+                  "maxAtoms": "340282366920938463463374607431768211455",
+                  "namespace": "fiat",
+                  "reference": "KRW"
+                },
+                "atoms": "31"
+              },
+              "inventoryId": "inventory-L3",
+              "lineId": "L3"
+            }
+          ],
+          "orderId": "cap",
+          "orderVersion": 1,
+          "policyRef": "frozen-price-v1",
+          "schemaVersion": "kix:commerce:2",
+          "scope": {
+            "eventId": "show",
+            "issuerId": "issuer",
+            "performanceId": "evening"
+          }
+        },
+        "asset": {
+          "namespace": "fiat",
+          "reference": "KRW",
+          "decimals": 0,
+          "maxAtoms": "340282366920938463463374607431768211455"
+        },
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "grossAtoms": "11",
+            "discountAtoms": "1",
+            "payableAtoms": "10",
+            "discounts": [
+              {
+                "ruleId": "rate",
+                "bearerRef": "platform",
+                "atoms": "1"
+              }
+            ]
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "grossAtoms": "19",
+            "discountAtoms": "3",
+            "payableAtoms": "16",
+            "discounts": [
+              {
+                "ruleId": "rate",
+                "bearerRef": "platform",
+                "atoms": "2"
+              },
+              {
+                "ruleId": "fixed",
+                "bearerRef": "organizer",
+                "atoms": "1"
+              }
+            ]
+          },
+          {
+            "lineId": "L3",
+            "inventoryId": "inventory-L3",
+            "grossAtoms": "31",
+            "discountAtoms": "4",
+            "payableAtoms": "27",
+            "discounts": [
+              {
+                "ruleId": "rate",
+                "bearerRef": "platform",
+                "atoms": "4"
+              }
+            ]
+          }
+        ],
+        "totals": {
+          "grossAtoms": "61",
+          "discountAtoms": "8",
+          "payableAtoms": "53"
+        },
+        "quoteHash": "6e2d2a223bbc91cafc23c6ebbfbb4d486ffc61bf1445115bf6e4951fbf59b9d7"
+      },
+      "expectedPlan": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "quoteHash": "6e2d2a223bbc91cafc23c6ebbfbb4d486ffc61bf1445115bf6e4951fbf59b9d7",
+        "checkedAt": 999,
+        "legs": [
+          {
+            "legId": "a",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:a",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "20"
+            },
+            "allocations": {
+              "L1": "4",
+              "L2": "6",
+              "L3": "10"
+            }
+          },
+          {
+            "legId": "b",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:b",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "33"
+            },
+            "allocations": {
+              "L1": "6",
+              "L2": "10",
+              "L3": "17"
+            }
+          }
+        ],
+        "planHash": "32e64d25194b073cf7a42680c3841e2b79759555fc60be4462082a2dbbc1e615"
+      },
+      "expectedProposal": {
+        "schemaVersion": "kix:commerce:2",
+        "evidenceClass": "CALCULATION_ONLY",
+        "policy": "FROZEN_LINE_PRICE_FULL_REVERSAL_V1",
+        "quoteHash": "6e2d2a223bbc91cafc23c6ebbfbb4d486ffc61bf1445115bf6e4951fbf59b9d7",
+        "planHash": "32e64d25194b073cf7a42680c3841e2b79759555fc60be4462082a2dbbc1e615",
+        "lineIds": [
+          "L1",
+          "L3"
+        ],
+        "grossReversed": {
+          "asset": {
+            "namespace": "fiat",
+            "reference": "KRW",
+            "decimals": 0,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "42"
+        },
+        "customerRefund": {
+          "asset": {
+            "namespace": "fiat",
+            "reference": "KRW",
+            "decimals": 0,
+            "maxAtoms": "340282366920938463463374607431768211455"
+          },
+          "atoms": "37"
+        },
+        "originalRoutes": [
+          {
+            "legId": "a",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:a",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "14"
+            },
+            "allocations": {
+              "L1": "4",
+              "L3": "10"
+            }
+          },
+          {
+            "legId": "b",
+            "providerRef": "fixture-pg",
+            "routeRef": "original:b",
+            "amount": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "23"
+            },
+            "allocations": {
+              "L1": "6",
+              "L3": "17"
+            }
+          }
+        ],
+        "discountBurdenReversal": {
+          "platform": "5"
+        },
+        "executionAuthorized": false,
+        "requiredEvidence": [
+          "CONFIRMED_ORIGINAL_PAYMENTS",
+          "CURRENT_LINE_RIGHT_STATE",
+          "REFUND_POLICY_AUTHORITY",
+          "UNRESOLVED_REFUND_RESERVATIONS",
+          "CURRENT_PROVIDER_REFUNDABLE_CAPACITY"
+        ],
+        "proposalHash": "3f38c8dcce5edf098b47fcd9eae6e9deb6f220f5fd928e53b1f4130278a26de5"
+      },
+      "quoteCanonicalUtf8": "{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"lines\":[{\"discountAtoms\":\"1\",\"discounts\":[{\"atoms\":\"1\",\"bearerRef\":\"platform\",\"ruleId\":\"rate\"}],\"grossAtoms\":\"11\",\"inventoryId\":\"inventory-L1\",\"lineId\":\"L1\",\"payableAtoms\":\"10\"},{\"discountAtoms\":\"3\",\"discounts\":[{\"atoms\":\"2\",\"bearerRef\":\"platform\",\"ruleId\":\"rate\"},{\"atoms\":\"1\",\"bearerRef\":\"organizer\",\"ruleId\":\"fixed\"}],\"grossAtoms\":\"19\",\"inventoryId\":\"inventory-L2\",\"lineId\":\"L2\",\"payableAtoms\":\"16\"},{\"discountAtoms\":\"4\",\"discounts\":[{\"atoms\":\"4\",\"bearerRef\":\"platform\",\"ruleId\":\"rate\"}],\"grossAtoms\":\"31\",\"inventoryId\":\"inventory-L3\",\"lineId\":\"L3\",\"payableAtoms\":\"27\"}],\"quoteHash\":\"6e2d2a223bbc91cafc23c6ebbfbb4d486ffc61bf1445115bf6e4951fbf59b9d7\",\"request\":{\"discounts\":[{\"bearerRef\":\"platform\",\"capAtoms\":\"7\",\"eligibleLineIds\":[\"L3\",\"L2\",\"L1\"],\"kind\":\"BPS\",\"ruleId\":\"rate\",\"value\":\"9999\"},{\"bearerRef\":\"organizer\",\"capAtoms\":null,\"eligibleLineIds\":[\"L1\",\"L2\"],\"kind\":\"FIXED\",\"ruleId\":\"fixed\",\"value\":\"1\"}],\"expiresAt\":1000,\"lines\":[{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"11\"},\"inventoryId\":\"inventory-L1\",\"lineId\":\"L1\"},{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"19\"},\"inventoryId\":\"inventory-L2\",\"lineId\":\"L2\"},{\"gross\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"31\"},\"inventoryId\":\"inventory-L3\",\"lineId\":\"L3\"}],\"orderId\":\"cap\",\"orderVersion\":1,\"policyRef\":\"frozen-price-v1\",\"schemaVersion\":\"kix:commerce:2\",\"scope\":{\"eventId\":\"show\",\"issuerId\":\"issuer\",\"performanceId\":\"evening\"}},\"schemaVersion\":\"kix:commerce:2\",\"totals\":{\"discountAtoms\":\"8\",\"grossAtoms\":\"61\",\"payableAtoms\":\"53\"}}",
+      "planCanonicalUtf8": "{\"checkedAt\":999,\"evidenceClass\":\"CALCULATION_ONLY\",\"legs\":[{\"allocations\":{\"L1\":\"4\",\"L2\":\"6\",\"L3\":\"10\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"20\"},\"legId\":\"a\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:a\"},{\"allocations\":{\"L1\":\"6\",\"L2\":\"10\",\"L3\":\"17\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"33\"},\"legId\":\"b\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:b\"}],\"planHash\":\"32e64d25194b073cf7a42680c3841e2b79759555fc60be4462082a2dbbc1e615\",\"quoteHash\":\"6e2d2a223bbc91cafc23c6ebbfbb4d486ffc61bf1445115bf6e4951fbf59b9d7\",\"schemaVersion\":\"kix:commerce:2\"}",
+      "proposalCanonicalUtf8": "{\"customerRefund\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"37\"},\"discountBurdenReversal\":{\"platform\":\"5\"},\"evidenceClass\":\"CALCULATION_ONLY\",\"executionAuthorized\":false,\"grossReversed\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"42\"},\"lineIds\":[\"L1\",\"L3\"],\"originalRoutes\":[{\"allocations\":{\"L1\":\"4\",\"L3\":\"10\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"14\"},\"legId\":\"a\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:a\"},{\"allocations\":{\"L1\":\"6\",\"L3\":\"17\"},\"amount\":{\"asset\":{\"decimals\":0,\"maxAtoms\":\"340282366920938463463374607431768211455\",\"namespace\":\"fiat\",\"reference\":\"KRW\"},\"atoms\":\"23\"},\"legId\":\"b\",\"providerRef\":\"fixture-pg\",\"routeRef\":\"original:b\"}],\"planHash\":\"32e64d25194b073cf7a42680c3841e2b79759555fc60be4462082a2dbbc1e615\",\"policy\":\"FROZEN_LINE_PRICE_FULL_REVERSAL_V1\",\"proposalHash\":\"3f38c8dcce5edf098b47fcd9eae6e9deb6f220f5fd928e53b1f4130278a26de5\",\"quoteHash\":\"6e2d2a223bbc91cafc23c6ebbfbb4d486ffc61bf1445115bf6e4951fbf59b9d7\",\"requiredEvidence\":[\"CONFIRMED_ORIGINAL_PAYMENTS\",\"CURRENT_LINE_RIGHT_STATE\",\"REFUND_POLICY_AUTHORITY\",\"UNRESOLVED_REFUND_RESERVATIONS\",\"CURRENT_PROVIDER_REFUNDABLE_CAPACITY\"],\"schemaVersion\":\"kix:commerce:2\"}"
+    }
+  ],
+  "invalidCommerceVectors": [
+    {
+      "name": "old-schema",
+      "request": {
+        "schemaVersion": "kix:commerce:1",
+        "orderId": "invalid",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "null-schema",
+      "request": {
+        "schemaVersion": null,
+        "orderId": "invalid",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "null-order",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": null,
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "null-scope",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "invalid",
+        "orderVersion": 1,
+        "scope": null,
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "null-lines",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "invalid",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": null,
+        "discounts": []
+      }
+    },
+    {
+      "name": "null-discounts",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "invalid",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": null
+      }
+    },
+    {
+      "name": "unicode-id-private",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "\ue000",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "unicode-id-supplementary",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "\ud800\udc00",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "unicode-id-nfc",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "\u00e9",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "unicode-asset-private",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "invalid",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "\ue000",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "unicode-asset-supplementary",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "invalid",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "\ud800\udc00",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "unicode-asset-nfc",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "invalid",
+        "orderVersion": 1,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "\u00e9",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "1"
+            }
+          }
+        ],
+        "discounts": []
+      }
+    },
+    {
+      "name": "order-version-u32-overflow",
+      "request": {
+        "schemaVersion": "kix:commerce:2",
+        "orderId": "bundle",
+        "orderVersion": 4294967296,
+        "scope": {
+          "issuerId": "issuer",
+          "eventId": "show",
+          "performanceId": "evening"
+        },
+        "policyRef": "frozen-price-v1",
+        "expiresAt": 1000,
+        "lines": [
+          {
+            "lineId": "L1",
+            "inventoryId": "inventory-L1",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "10000"
+            }
+          },
+          {
+            "lineId": "L2",
+            "inventoryId": "inventory-L2",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "20000"
+            }
+          },
+          {
+            "lineId": "L3",
+            "inventoryId": "inventory-L3",
+            "gross": {
+              "asset": {
+                "namespace": "fiat",
+                "reference": "KRW",
+                "decimals": 0,
+                "maxAtoms": "340282366920938463463374607431768211455"
+              },
+              "atoms": "30000"
+            }
+          }
+        ],
+        "discounts": [
+          {
+            "ruleId": "coupon",
+            "bearerRef": "organizer",
+            "kind": "FIXED",
+            "value": "6000",
+            "eligibleLineIds": [
+              "L1",
+              "L2",
+              "L3"
+            ],
+            "capAtoms": null
+          },
+          {
+            "ruleId": "member",
+            "bearerRef": "platform",
+            "kind": "BPS",
+            "value": "1000",
+            "eligibleLineIds": [
+              "L1",
+              "L2",
+              "L3"
+            ],
+            "capAtoms": null
+          }
+        ]
+      }
+    }
+  ]
+}

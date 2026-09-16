@@ -1,0 +1,916 @@
+{
+  "format": "kix-s05-evidence-v1",
+  "result": "PASSED",
+  "chain": "SYNTHETIC",
+  "money": "MOCK",
+  "protectedFailure": "ORIGINAL_WORKING_DIRECTORY_LOSS",
+  "wholeHostLossTested": false,
+  "historicalRootCauseEstablished": false,
+  "archiveRollbackProtectionEstablished": false,
+  "cases": [
+    {
+      "injectedFailure": "before",
+      "sourceRemoved": true,
+      "separateFilesystem": true,
+      "deviceIds": {
+        "source": 28,
+        "archive": 27,
+        "provider": 27
+      },
+      "latestCheckpoint": {
+        "checkpoint": "3b64afc7cc49f885ed3ed48693d670cc1a8cbd2a4147f5cf5c76e877378d4c98",
+        "sequence": 3
+      },
+      "report": {
+        "format": "kix-archive-reconciliation-v1",
+        "checkpoint": {
+          "checkpoint": "3b64afc7cc49f885ed3ed48693d670cc1a8cbd2a4147f5cf5c76e877378d4c98",
+          "sequence": 3
+        },
+        "decision": "HOLD",
+        "moneyExecutionAllowed": false,
+        "providerSource": "EXTERNAL_LIVE_MOCK_DATABASE",
+        "originalState": {
+          "databases": {
+            "mock-provider.sqlite": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291",
+            "projection.sqlite": "1a660ce6938d4aa4e3164d23fa20afe5bf17bad9992aa13372a1a72db954fd72"
+          },
+          "records": {
+            "storage-command-pending.json": {
+              "execution": {
+                "boundary": "BEFORE_PROVIDER_CALL",
+                "databases": {
+                  "mock-provider.sqlite": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291",
+                  "projection.sqlite": "1a660ce6938d4aa4e3164d23fa20afe5bf17bad9992aa13372a1a72db954fd72"
+                },
+                "effectId": "payout",
+                "permit": {
+                  "attempt": 1,
+                  "contract": "fixture:stable-key-replay:1h:v1",
+                  "dispatchDecision": "SUBMIT_SAME_REQUEST",
+                  "effectId": "payout",
+                  "idempotencyKey": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+                  "requestBytes": "{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+                  "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d"
+                },
+                "providerRows": [
+                  [
+                    "35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a",
+                    "1ef6e5af1aaedc90918765f338d81c1425ff18d9355917ca2ea4e4d60f2abdca",
+                    "{\"amount\":120000,\"bindingHash\":\"933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3\",\"buyer\":\"buyer\",\"currency\":\"KRW\",\"kind\":\"CAPTURE\",\"orderId\":\"kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+                    "{\"economicExecutions\":1,\"funds\":false,\"idempotencyKey\":\"35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a\",\"operationId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"provenance\":\"MOCK_PROVIDER_ONLY\",\"request\":{\"amount\":120000,\"bindingHash\":\"933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3\",\"buyer\":\"buyer\",\"currency\":\"KRW\",\"kind\":\"CAPTURE\",\"orderId\":\"kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"},\"requestHash\":\"1ef6e5af1aaedc90918765f338d81c1425ff18d9355917ca2ea4e4d60f2abdca\",\"settlement\":true,\"status\":\"SUCCESS\"}",
+                    1
+                  ]
+                ],
+                "replayUntil": 1789371396.4942377
+              },
+              "format": "kix-local-storage-pending-v1",
+              "previousReceiptHash": "4d1ab006df6445353e9c01ea9d39efb53a7859ce73d5c21436dd1bbbcefc0045",
+              "request": {
+                "action": "send_effect",
+                "archive": {
+                  "root": "/dev/shm/kix-vault-test-cffqc55p/archive",
+                  "stream": "fixture-one"
+                },
+                "directory": "/tmp/tmpwaspw0rc/state",
+                "endpoint": "http://127.0.0.1:9000",
+                "params": {
+                  "eid": "payout"
+                }
+              },
+              "requestHash": "2fe0c54d504cc2114b3dd60400aa3d2569004a3331dbdcf26a47607042ce7227"
+            },
+            "storage-receipt.json": {
+              "databases": {
+                "mock-provider.sqlite": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291",
+                "projection.sqlite": "04299828fc67e03d848c35f3b00005c7f2ef566b7a4d8de0a99227546da9822f"
+              },
+              "format": "kix-local-storage-receipt-v1",
+              "requestHash": "af4e963645a38ab939bf25661430e7750ab9164b65164e849bb974dafe1b5017",
+              "sequence": 1
+            }
+          }
+        },
+        "evidenceScope": "TRUSTED_LOCAL_PROVIDER_AND_SUI_RPC",
+        "plan": {
+          "format": "kix-local-recovery-plan-v1",
+          "observedAt": 1789367796.5383213,
+          "decision": "REPLAY_SAME_REQUEST",
+          "reason": "SAME_KEY_CONTRACT_AND_CURRENT_GUARDS_VALID",
+          "followUp": "Preserve evidence; reconcile source records before retry.",
+          "providerContract": {
+            "id": "kix-mock:stable-key:v1",
+            "scope": {
+              "provider": "kix-mock",
+              "environment": "local-fixture",
+              "merchant": "kix-fixture",
+              "channel": "simulated"
+            },
+            "replaySafe": true,
+            "retention": "UNLIMITED_FIXTURE",
+            "executionWindowSeconds": 3600
+          },
+          "source": "LOCAL_FIXTURE_ONLY",
+          "pendingHash": "7b80685377325e1fcdb258dec03fe9d51bcefe1a1b64ae8da01bfcdca695d56e",
+          "originalCommand": {
+            "action": "send_effect",
+            "archive": {
+              "root": "/dev/shm/kix-vault-test-cffqc55p/archive",
+              "stream": "fixture-one"
+            },
+            "directory": "/tmp/tmpwaspw0rc/state",
+            "endpoint": "http://127.0.0.1:9000",
+            "params": {
+              "eid": "payout"
+            }
+          },
+          "databases": {
+            "projection.sqlite": "1a660ce6938d4aa4e3164d23fa20afe5bf17bad9992aa13372a1a72db954fd72",
+            "mock-provider.sqlite": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291"
+          },
+          "effectId": "payout",
+          "tradeId": "resale",
+          "originalRequest": {
+            "amount": 114000,
+            "attemptId": "payout:attempt:1",
+            "beneficiary": "seller",
+            "beneficiaryAccountRef": "fixture-account:seller",
+            "contractRef": "fixture:payout:v1",
+            "currency": "KRW",
+            "effectId": "payout",
+            "kind": "PAYOUT",
+            "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+            "routeProfile": "BANK_PAYOUT_FIXTURE",
+            "scope": {
+              "channel": "simulated",
+              "environment": "local-fixture",
+              "merchant": "kix-fixture",
+              "provider": "kix-mock"
+            },
+            "tradeId": "resale"
+          },
+          "requestBytes": "{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+          "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+          "idempotencyKey": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+          "binding": {
+            "amount": 120000,
+            "buyer": "buyer",
+            "chain": "fixture-chain",
+            "currency": "KRW",
+            "expectedVersion": 1,
+            "expiresMs": "1900000000000",
+            "format": "kix-paid-localnet-v1",
+            "generation": 1,
+            "organizer": "organizer",
+            "organizerBps": 200,
+            "packageId": "fixture-package",
+            "platformBps": 300,
+            "policyHash": "b084518631e5db28aecf3eebd0d88b50fdf51cf3e59da48cfdb1dc3537cd7dd7",
+            "resaleCap": 150000,
+            "seller": "seller",
+            "showId": "show",
+            "slot": 0,
+            "termsHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "ticketId": "ticket",
+            "tradeId": "resale"
+          },
+          "submission": {
+            "bindingHash": "933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3",
+            "digest": "fixture-signed-digest"
+          },
+          "ledger": {
+            "effect": {
+              "allocation": "resale-0",
+              "allocationVersion": 1,
+              "amount": 114000,
+              "appliedAmount": 0,
+              "attemptId": "payout:attempt:1",
+              "beneficiary": "seller",
+              "cashRoute": true,
+              "confirmed": false,
+              "confirmedAmount": 0,
+              "conflict": false,
+              "contractRef": "fixture:payout:v1",
+              "currency": "KRW",
+              "customerCreditConfirmed": 0,
+              "dispatch": {
+                "attempts": 1,
+                "claimGeneration": 1,
+                "firstIntentAt": 0,
+                "idempotencyUntil": 3600,
+                "leaseUntil": 60,
+                "lookup": null,
+                "permits": [
+                  {
+                    "at": 0,
+                    "generation": 1,
+                    "operation": "dispatch-payout"
+                  }
+                ],
+                "worker": "local-adapter"
+              },
+              "fundingBasis": "CONFIRMED_POOL_CASH",
+              "fundsAmount": 0,
+              "fundsObserved": false,
+              "idempotencyKey": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+              "kind": "PAYOUT",
+              "owed": "payable:resale-0",
+              "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+              "pool": "7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f",
+              "providerOperationId": null,
+              "request": {
+                "amount": 114000,
+                "attemptId": "payout:attempt:1",
+                "beneficiary": "seller",
+                "beneficiaryAccountRef": "fixture-account:seller",
+                "contractRef": "fixture:payout:v1",
+                "currency": "KRW",
+                "effectId": "payout",
+                "kind": "PAYOUT",
+                "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+                "routeProfile": "BANK_PAYOUT_FIXTURE",
+                "scope": {
+                  "channel": "simulated",
+                  "environment": "local-fixture",
+                  "merchant": "kix-fixture",
+                  "provider": "kix-mock"
+                },
+                "tradeId": "resale"
+              },
+              "requestBytes": "{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+              "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+              "requiredEvidence": [
+                "PROVIDER_SUCCESS",
+                "BANK_DEBIT_OBSERVED"
+              ],
+              "retryOf": null,
+              "returned": 0,
+              "routeProfile": "BANK_PAYOUT_FIXTURE",
+              "sent": true,
+              "state": "OUTCOME_UNKNOWN",
+              "trade": "resale"
+            },
+            "trade": {
+              "accepted": true,
+              "allocationVersion": 1,
+              "allocations": [
+                {
+                  "amount": 114000,
+                  "id": "resale-0",
+                  "paid": 0,
+                  "payee": "seller",
+                  "recovered": 0,
+                  "returned": 0
+                },
+                {
+                  "amount": 2400,
+                  "id": "resale-1",
+                  "paid": 0,
+                  "payee": "organizer",
+                  "recovered": 0,
+                  "returned": 0
+                },
+                {
+                  "amount": 3600,
+                  "id": "resale-2",
+                  "paid": 0,
+                  "payee": "platform",
+                  "recovered": 0,
+                  "returned": 0
+                }
+              ],
+              "amount": 120000,
+              "buyer": "buyer",
+              "captured": true,
+              "currency": "KRW",
+              "event": "show",
+              "expectedAdmissionEpoch": 1,
+              "expectedVersion": 1,
+              "expiresAt": 900,
+              "externalOrderId": "kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE",
+              "id": "resale",
+              "kind": "RESALE",
+              "listingId": null,
+              "originalCancelled": 0,
+              "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+              "policyHash": "b084518631e5db28aecf3eebd0d88b50fdf51cf3e59da48cfdb1dc3537cd7dd7",
+              "pool": "7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f",
+              "refundDue": 0,
+              "refunded": 0,
+              "reversalPlanned": false,
+              "reversalRequested": false,
+              "seller": "seller",
+              "settled": 120000,
+              "settlementGross": 120000,
+              "status": "COMMITTED",
+              "termsHash": "e4b31bf33e85a536c91311bc47757c8aebdca4ea2b9703e888d69b73896aab06",
+              "ticket": "right-10c6980a8391d98e26f8d17539deb8997e7985f46a517a753f3e48565fca03c3"
+            },
+            "balances": {
+              "funds:7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f": 120000,
+              "held:resale": 0,
+              "payable:resale-0": -114000,
+              "payable:resale-1": -2400,
+              "payable:resale-2": -3600,
+              "pg:resale": 0
+            },
+            "commandSequence": 12
+          },
+          "replayUntil": 1789371396.4942377,
+          "providerRows": [
+            [
+              "35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a",
+              "1ef6e5af1aaedc90918765f338d81c1425ff18d9355917ca2ea4e4d60f2abdca",
+              "{\"amount\":120000,\"bindingHash\":\"933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3\",\"buyer\":\"buyer\",\"currency\":\"KRW\",\"kind\":\"CAPTURE\",\"orderId\":\"kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+              "{\"economicExecutions\":1,\"funds\":false,\"idempotencyKey\":\"35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a\",\"operationId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"provenance\":\"MOCK_PROVIDER_ONLY\",\"request\":{\"amount\":120000,\"bindingHash\":\"933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3\",\"buyer\":\"buyer\",\"currency\":\"KRW\",\"kind\":\"CAPTURE\",\"orderId\":\"kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"},\"requestHash\":\"1ef6e5af1aaedc90918765f338d81c1425ff18d9355917ca2ea4e4d60f2abdca\",\"settlement\":true,\"status\":\"SUCCESS\"}",
+              1
+            ]
+          ],
+          "providerResult": null,
+          "providerLookup": {
+            "scope": {
+              "provider": "kix-mock",
+              "environment": "local-fixture",
+              "merchant": "kix-fixture",
+              "channel": "simulated"
+            },
+            "key": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+            "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+            "result": "NOT_FOUND"
+          },
+          "chain": {
+            "bindingHash": "933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3",
+            "sale": {
+              "state": "EXECUTED_SUCCESS",
+              "digest": "fixture-signed-digest",
+              "rawHash": "fixture-raw-hash",
+              "allocation": {
+                "seller_due": 114000,
+                "organizer_due": 2400,
+                "platform_due": 3600
+              }
+            },
+            "showOpen": true,
+            "objectVersion": "2",
+            "source": "SYNTHETIC_CHAIN_TEST"
+          },
+          "planId": "c5444aadbe90cc751e8659e540b1869bb0dd7cc2db569ad215993e7322fa36a2"
+        },
+        "providerHash": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291",
+        "reason": "RESTORED_WRITER_NOT_AUTHORIZED",
+        "reportHash": "f334c386e9f32e0da5b75bbda9c21dfa19621d62f073ab96f89b4517cdfd2e89"
+      },
+      "repeatedRestore": true,
+      "repeatedReconciliationChangedProvider": false,
+      "moneyExecutionAllowed": false
+    },
+    {
+      "injectedFailure": "after",
+      "sourceRemoved": true,
+      "separateFilesystem": true,
+      "deviceIds": {
+        "source": 28,
+        "archive": 27,
+        "provider": 27
+      },
+      "latestCheckpoint": {
+        "checkpoint": "578ebb083b337ff41af4715ccd71681fb5ecb26b124ef1d461547beca1188b78",
+        "sequence": 3
+      },
+      "report": {
+        "format": "kix-archive-reconciliation-v1",
+        "checkpoint": {
+          "checkpoint": "578ebb083b337ff41af4715ccd71681fb5ecb26b124ef1d461547beca1188b78",
+          "sequence": 3
+        },
+        "decision": "RECONCILED_VIEW",
+        "moneyExecutionAllowed": false,
+        "providerSource": "EXTERNAL_LIVE_MOCK_DATABASE",
+        "originalState": {
+          "databases": {
+            "mock-provider.sqlite": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291",
+            "projection.sqlite": "1a660ce6938d4aa4e3164d23fa20afe5bf17bad9992aa13372a1a72db954fd72"
+          },
+          "records": {
+            "storage-command-pending.json": {
+              "execution": {
+                "boundary": "BEFORE_PROVIDER_CALL",
+                "databases": {
+                  "mock-provider.sqlite": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291",
+                  "projection.sqlite": "1a660ce6938d4aa4e3164d23fa20afe5bf17bad9992aa13372a1a72db954fd72"
+                },
+                "effectId": "payout",
+                "permit": {
+                  "attempt": 1,
+                  "contract": "fixture:stable-key-replay:1h:v1",
+                  "dispatchDecision": "SUBMIT_SAME_REQUEST",
+                  "effectId": "payout",
+                  "idempotencyKey": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+                  "requestBytes": "{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+                  "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d"
+                },
+                "providerRows": [
+                  [
+                    "35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a",
+                    "1ef6e5af1aaedc90918765f338d81c1425ff18d9355917ca2ea4e4d60f2abdca",
+                    "{\"amount\":120000,\"bindingHash\":\"933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3\",\"buyer\":\"buyer\",\"currency\":\"KRW\",\"kind\":\"CAPTURE\",\"orderId\":\"kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+                    "{\"economicExecutions\":1,\"funds\":false,\"idempotencyKey\":\"35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a\",\"operationId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"provenance\":\"MOCK_PROVIDER_ONLY\",\"request\":{\"amount\":120000,\"bindingHash\":\"933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3\",\"buyer\":\"buyer\",\"currency\":\"KRW\",\"kind\":\"CAPTURE\",\"orderId\":\"kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"},\"requestHash\":\"1ef6e5af1aaedc90918765f338d81c1425ff18d9355917ca2ea4e4d60f2abdca\",\"settlement\":true,\"status\":\"SUCCESS\"}",
+                    1
+                  ]
+                ],
+                "replayUntil": 1789371396.7191443
+              },
+              "format": "kix-local-storage-pending-v1",
+              "previousReceiptHash": "4d1ab006df6445353e9c01ea9d39efb53a7859ce73d5c21436dd1bbbcefc0045",
+              "request": {
+                "action": "send_effect",
+                "archive": {
+                  "root": "/dev/shm/kix-vault-test-9pmhyonu/archive",
+                  "stream": "fixture-one"
+                },
+                "directory": "/tmp/tmpbzc76mbv/state",
+                "endpoint": "http://127.0.0.1:9000",
+                "params": {
+                  "eid": "payout"
+                }
+              },
+              "requestHash": "b6bcab7811d626cc032dc52b8d14af53cd83d5d60b92229f2faec6030891f42b"
+            },
+            "storage-receipt.json": {
+              "databases": {
+                "mock-provider.sqlite": "4d6a2e443250f08002c8598e1e3343f74322a3a4edfd8bf26d14e7bc7a246291",
+                "projection.sqlite": "04299828fc67e03d848c35f3b00005c7f2ef566b7a4d8de0a99227546da9822f"
+              },
+              "format": "kix-local-storage-receipt-v1",
+              "requestHash": "af4e963645a38ab939bf25661430e7750ab9164b65164e849bb974dafe1b5017",
+              "sequence": 1
+            }
+          }
+        },
+        "evidenceScope": "TRUSTED_LOCAL_PROVIDER_AND_SUI_RPC",
+        "plan": {
+          "format": "kix-local-recovery-plan-v1",
+          "observedAt": 1789367796.7624989,
+          "decision": "LINK_EXISTING",
+          "reason": "PROVIDER_EXECUTION_FOUND",
+          "followUp": "Preserve evidence; reconcile source records before retry.",
+          "providerContract": {
+            "id": "kix-mock:stable-key:v1",
+            "scope": {
+              "provider": "kix-mock",
+              "environment": "local-fixture",
+              "merchant": "kix-fixture",
+              "channel": "simulated"
+            },
+            "replaySafe": true,
+            "retention": "UNLIMITED_FIXTURE",
+            "executionWindowSeconds": 3600
+          },
+          "source": "LOCAL_FIXTURE_ONLY",
+          "pendingHash": "5e30ca00f1ee19a1564efa3018943ea0b426d2f57368f8cd1febd1b6c6bbeffd",
+          "originalCommand": {
+            "action": "send_effect",
+            "archive": {
+              "root": "/dev/shm/kix-vault-test-9pmhyonu/archive",
+              "stream": "fixture-one"
+            },
+            "directory": "/tmp/tmpbzc76mbv/state",
+            "endpoint": "http://127.0.0.1:9000",
+            "params": {
+              "eid": "payout"
+            }
+          },
+          "databases": {
+            "projection.sqlite": "1a660ce6938d4aa4e3164d23fa20afe5bf17bad9992aa13372a1a72db954fd72",
+            "mock-provider.sqlite": "7efbaaeb5b2bb16fefc8f192aea916c999626f233218acb9bd7ce1524e4fbb4e"
+          },
+          "effectId": "payout",
+          "tradeId": "resale",
+          "originalRequest": {
+            "amount": 114000,
+            "attemptId": "payout:attempt:1",
+            "beneficiary": "seller",
+            "beneficiaryAccountRef": "fixture-account:seller",
+            "contractRef": "fixture:payout:v1",
+            "currency": "KRW",
+            "effectId": "payout",
+            "kind": "PAYOUT",
+            "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+            "routeProfile": "BANK_PAYOUT_FIXTURE",
+            "scope": {
+              "channel": "simulated",
+              "environment": "local-fixture",
+              "merchant": "kix-fixture",
+              "provider": "kix-mock"
+            },
+            "tradeId": "resale"
+          },
+          "requestBytes": "{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+          "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+          "idempotencyKey": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+          "binding": {
+            "amount": 120000,
+            "buyer": "buyer",
+            "chain": "fixture-chain",
+            "currency": "KRW",
+            "expectedVersion": 1,
+            "expiresMs": "1900000000000",
+            "format": "kix-paid-localnet-v1",
+            "generation": 1,
+            "organizer": "organizer",
+            "organizerBps": 200,
+            "packageId": "fixture-package",
+            "platformBps": 300,
+            "policyHash": "b084518631e5db28aecf3eebd0d88b50fdf51cf3e59da48cfdb1dc3537cd7dd7",
+            "resaleCap": 150000,
+            "seller": "seller",
+            "showId": "show",
+            "slot": 0,
+            "termsHash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "ticketId": "ticket",
+            "tradeId": "resale"
+          },
+          "submission": {
+            "bindingHash": "933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3",
+            "digest": "fixture-signed-digest"
+          },
+          "ledger": {
+            "effect": {
+              "allocation": "resale-0",
+              "allocationVersion": 1,
+              "amount": 114000,
+              "appliedAmount": 0,
+              "attemptId": "payout:attempt:1",
+              "beneficiary": "seller",
+              "cashRoute": true,
+              "confirmed": false,
+              "confirmedAmount": 0,
+              "conflict": false,
+              "contractRef": "fixture:payout:v1",
+              "currency": "KRW",
+              "customerCreditConfirmed": 0,
+              "dispatch": {
+                "attempts": 1,
+                "claimGeneration": 1,
+                "firstIntentAt": 0,
+                "idempotencyUntil": 3600,
+                "leaseUntil": 60,
+                "lookup": null,
+                "permits": [
+                  {
+                    "at": 0,
+                    "generation": 1,
+                    "operation": "dispatch-payout"
+                  }
+                ],
+                "worker": "local-adapter"
+              },
+              "fundingBasis": "CONFIRMED_POOL_CASH",
+              "fundsAmount": 0,
+              "fundsObserved": false,
+              "idempotencyKey": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+              "kind": "PAYOUT",
+              "owed": "payable:resale-0",
+              "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+              "pool": "7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f",
+              "providerOperationId": null,
+              "request": {
+                "amount": 114000,
+                "attemptId": "payout:attempt:1",
+                "beneficiary": "seller",
+                "beneficiaryAccountRef": "fixture-account:seller",
+                "contractRef": "fixture:payout:v1",
+                "currency": "KRW",
+                "effectId": "payout",
+                "kind": "PAYOUT",
+                "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+                "routeProfile": "BANK_PAYOUT_FIXTURE",
+                "scope": {
+                  "channel": "simulated",
+                  "environment": "local-fixture",
+                  "merchant": "kix-fixture",
+                  "provider": "kix-mock"
+                },
+                "tradeId": "resale"
+              },
+              "requestBytes": "{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+              "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+              "requiredEvidence": [
+                "PROVIDER_SUCCESS",
+                "BANK_DEBIT_OBSERVED"
+              ],
+              "retryOf": null,
+              "returned": 0,
+              "routeProfile": "BANK_PAYOUT_FIXTURE",
+              "sent": true,
+              "state": "OUTCOME_UNKNOWN",
+              "trade": "resale"
+            },
+            "trade": {
+              "accepted": true,
+              "allocationVersion": 1,
+              "allocations": [
+                {
+                  "amount": 114000,
+                  "id": "resale-0",
+                  "paid": 0,
+                  "payee": "seller",
+                  "recovered": 0,
+                  "returned": 0
+                },
+                {
+                  "amount": 2400,
+                  "id": "resale-1",
+                  "paid": 0,
+                  "payee": "organizer",
+                  "recovered": 0,
+                  "returned": 0
+                },
+                {
+                  "amount": 3600,
+                  "id": "resale-2",
+                  "paid": 0,
+                  "payee": "platform",
+                  "recovered": 0,
+                  "returned": 0
+                }
+              ],
+              "amount": 120000,
+              "buyer": "buyer",
+              "captured": true,
+              "currency": "KRW",
+              "event": "show",
+              "expectedAdmissionEpoch": 1,
+              "expectedVersion": 1,
+              "expiresAt": 900,
+              "externalOrderId": "kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE",
+              "id": "resale",
+              "kind": "RESALE",
+              "listingId": null,
+              "originalCancelled": 0,
+              "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+              "policyHash": "b084518631e5db28aecf3eebd0d88b50fdf51cf3e59da48cfdb1dc3537cd7dd7",
+              "pool": "7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f",
+              "refundDue": 0,
+              "refunded": 0,
+              "reversalPlanned": false,
+              "reversalRequested": false,
+              "seller": "seller",
+              "settled": 120000,
+              "settlementGross": 120000,
+              "status": "COMMITTED",
+              "termsHash": "e4b31bf33e85a536c91311bc47757c8aebdca4ea2b9703e888d69b73896aab06",
+              "ticket": "right-10c6980a8391d98e26f8d17539deb8997e7985f46a517a753f3e48565fca03c3"
+            },
+            "balances": {
+              "funds:7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f": 120000,
+              "held:resale": 0,
+              "payable:resale-0": -114000,
+              "payable:resale-1": -2400,
+              "payable:resale-2": -3600,
+              "pg:resale": 0
+            },
+            "commandSequence": 12
+          },
+          "replayUntil": 1789371396.7191443,
+          "providerRows": [
+            [
+              "35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a",
+              "1ef6e5af1aaedc90918765f338d81c1425ff18d9355917ca2ea4e4d60f2abdca",
+              "{\"amount\":120000,\"bindingHash\":\"933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3\",\"buyer\":\"buyer\",\"currency\":\"KRW\",\"kind\":\"CAPTURE\",\"orderId\":\"kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+              "{\"economicExecutions\":1,\"funds\":false,\"idempotencyKey\":\"35ff562b748ffd9dc054448d425ca0664ce112210ddf42627499a090ddf2576a\",\"operationId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"provenance\":\"MOCK_PROVIDER_ONLY\",\"request\":{\"amount\":120000,\"bindingHash\":\"933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3\",\"buyer\":\"buyer\",\"currency\":\"KRW\",\"kind\":\"CAPTURE\",\"orderId\":\"kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"},\"requestHash\":\"1ef6e5af1aaedc90918765f338d81c1425ff18d9355917ca2ea4e4d60f2abdca\",\"settlement\":true,\"status\":\"SUCCESS\"}",
+              1
+            ],
+            [
+              "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+              "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+              "{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+              "{\"economicExecutions\":1,\"funds\":true,\"idempotencyKey\":\"4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906\",\"operationId\":\"mock-1243689adf034a33fe60286e6824fd8e7df4f20266766540efe364912b5cf01b\",\"provenance\":\"MOCK_PROVIDER_ONLY\",\"request\":{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"},\"requestHash\":\"2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d\",\"settlement\":false,\"status\":\"SUCCESS\"}",
+              1
+            ]
+          ],
+          "providerResult": {
+            "economicExecutions": 1,
+            "funds": true,
+            "idempotencyKey": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+            "operationId": "mock-1243689adf034a33fe60286e6824fd8e7df4f20266766540efe364912b5cf01b",
+            "provenance": "MOCK_PROVIDER_ONLY",
+            "request": {
+              "amount": 114000,
+              "attemptId": "payout:attempt:1",
+              "beneficiary": "seller",
+              "beneficiaryAccountRef": "fixture-account:seller",
+              "contractRef": "fixture:payout:v1",
+              "currency": "KRW",
+              "effectId": "payout",
+              "kind": "PAYOUT",
+              "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+              "routeProfile": "BANK_PAYOUT_FIXTURE",
+              "scope": {
+                "channel": "simulated",
+                "environment": "local-fixture",
+                "merchant": "kix-fixture",
+                "provider": "kix-mock"
+              },
+              "tradeId": "resale"
+            },
+            "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+            "settlement": false,
+            "status": "SUCCESS"
+          },
+          "providerLookup": {
+            "scope": {
+              "provider": "kix-mock",
+              "environment": "local-fixture",
+              "merchant": "kix-fixture",
+              "channel": "simulated"
+            },
+            "key": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+            "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+            "result": "FOUND"
+          },
+          "chain": {
+            "bindingHash": "933a8b6a33847061d0cd213dce4294923605c7f2d99159b8794c7a8736e321b3",
+            "sale": {
+              "state": "EXECUTED_SUCCESS",
+              "digest": "fixture-signed-digest",
+              "rawHash": "fixture-raw-hash",
+              "allocation": {
+                "seller_due": 114000,
+                "organizer_due": 2400,
+                "platform_due": 3600
+              }
+            },
+            "showOpen": false,
+            "objectVersion": "3",
+            "source": "SYNTHETIC_CHAIN_TEST"
+          },
+          "planId": "dfd0d0450180bde0cc6fdc3a3d6e32f2301a1f14b8ab4123c7c00ff0821a7e28"
+        },
+        "providerHash": "7efbaaeb5b2bb16fefc8f192aea916c999626f233218acb9bd7ce1524e4fbb4e",
+        "view": {
+          "effect": {
+            "allocation": "resale-0",
+            "allocationVersion": 1,
+            "amount": 114000,
+            "appliedAmount": 114000,
+            "attemptId": "payout:attempt:1",
+            "beneficiary": "seller",
+            "cashRoute": true,
+            "confirmed": true,
+            "confirmedAmount": 114000,
+            "conflict": false,
+            "contractRef": "fixture:payout:v1",
+            "currency": "KRW",
+            "customerCreditConfirmed": 0,
+            "dispatch": {
+              "attempts": 1,
+              "claimGeneration": 1,
+              "firstIntentAt": 0,
+              "idempotencyUntil": 3600,
+              "leaseUntil": 60,
+              "lookup": null,
+              "permits": [
+                {
+                  "at": 0,
+                  "generation": 1,
+                  "operation": "dispatch-payout"
+                }
+              ],
+              "worker": "local-adapter"
+            },
+            "fundingBasis": "CONFIRMED_POOL_CASH",
+            "fundsAmount": 114000,
+            "fundsObserved": true,
+            "idempotencyKey": "4a46f17a3cd98cc389f8edf497cb2333bf50c52b0555b585b6429bcef00ad906",
+            "kind": "PAYOUT",
+            "owed": "payable:resale-0",
+            "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+            "pool": "7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f",
+            "providerOperationId": "mock-1243689adf034a33fe60286e6824fd8e7df4f20266766540efe364912b5cf01b",
+            "request": {
+              "amount": 114000,
+              "attemptId": "payout:attempt:1",
+              "beneficiary": "seller",
+              "beneficiaryAccountRef": "fixture-account:seller",
+              "contractRef": "fixture:payout:v1",
+              "currency": "KRW",
+              "effectId": "payout",
+              "kind": "PAYOUT",
+              "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+              "routeProfile": "BANK_PAYOUT_FIXTURE",
+              "scope": {
+                "channel": "simulated",
+                "environment": "local-fixture",
+                "merchant": "kix-fixture",
+                "provider": "kix-mock"
+              },
+              "tradeId": "resale"
+            },
+            "requestBytes": "{\"amount\":114000,\"attemptId\":\"payout:attempt:1\",\"beneficiary\":\"seller\",\"beneficiaryAccountRef\":\"fixture-account:seller\",\"contractRef\":\"fixture:payout:v1\",\"currency\":\"KRW\",\"effectId\":\"payout\",\"kind\":\"PAYOUT\",\"paymentId\":\"mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89\",\"routeProfile\":\"BANK_PAYOUT_FIXTURE\",\"scope\":{\"channel\":\"simulated\",\"environment\":\"local-fixture\",\"merchant\":\"kix-fixture\",\"provider\":\"kix-mock\"},\"tradeId\":\"resale\"}",
+            "requestHash": "2061321c804abf4089d5d76e489f908e70f50e85e935df5a553a708b92fdc43d",
+            "requiredEvidence": [
+              "PROVIDER_SUCCESS",
+              "BANK_DEBIT_OBSERVED"
+            ],
+            "retryOf": null,
+            "returned": 0,
+            "routeProfile": "BANK_PAYOUT_FIXTURE",
+            "sent": true,
+            "state": "DONE",
+            "trade": "resale"
+          },
+          "trade": {
+            "accepted": true,
+            "allocationVersion": 2,
+            "allocations": [
+              {
+                "amount": 114000,
+                "id": "resale-0",
+                "paid": 114000,
+                "payee": "seller",
+                "recovered": 0,
+                "returned": 0
+              },
+              {
+                "amount": 2400,
+                "id": "resale-1",
+                "paid": 0,
+                "payee": "organizer",
+                "recovered": 0,
+                "returned": 0
+              },
+              {
+                "amount": 3600,
+                "id": "resale-2",
+                "paid": 0,
+                "payee": "platform",
+                "recovered": 0,
+                "returned": 0
+              }
+            ],
+            "amount": 120000,
+            "buyer": "buyer",
+            "captured": true,
+            "currency": "KRW",
+            "event": "show",
+            "expectedAdmissionEpoch": 1,
+            "expectedVersion": 1,
+            "expiresAt": 900,
+            "externalOrderId": "kix_k-CW-y2SStH0uSgac3anBXvjrfh0fj6-1Q63kw0T0rE",
+            "id": "resale",
+            "kind": "RESALE",
+            "listingId": null,
+            "originalCancelled": 0,
+            "paymentId": "mock-5d79cd7d76f040f467e5c0ffbfb0240cead6de770b54d3e456ed34b422fcde89",
+            "policyHash": "b084518631e5db28aecf3eebd0d88b50fdf51cf3e59da48cfdb1dc3537cd7dd7",
+            "pool": "7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f",
+            "refundDue": 120000,
+            "refunded": 0,
+            "reversalPlanned": true,
+            "reversalRequested": true,
+            "seller": "seller",
+            "settled": 120000,
+            "settlementGross": 120000,
+            "status": "COMMITTED",
+            "termsHash": "e4b31bf33e85a536c91311bc47757c8aebdca4ea2b9703e888d69b73896aab06",
+            "ticket": "right-10c6980a8391d98e26f8d17539deb8997e7985f46a517a753f3e48565fca03c3"
+          },
+          "balances": {
+            "funds:7b5876cfbdeb7cd379834d33d6f3d7d9c5cbf4b647282eebc25709e1365dc07f": 6000,
+            "held:resale": 0,
+            "in_transit:payout": 0,
+            "payable:resale-0": 0,
+            "payable:resale-1": 0,
+            "payable:resale-2": 0,
+            "pg:resale": 0,
+            "recoverable:resale-0": 114000,
+            "refund:resale": -120000,
+            "refund_classification:resale": 0
+          },
+          "remainingDuties": {
+            "payout": 0,
+            "customerRefund": 120000,
+            "recoveryReceivables": {
+              "recoverable:resale-0": 114000
+            }
+          }
+        },
+        "reportHash": "eda2355735b95a4e04707185203113073f67ad71c79a7245ab10e5edd57e0b39"
+      },
+      "repeatedRestore": true,
+      "repeatedReconciliationChangedProvider": false,
+      "moneyExecutionAllowed": false
+    }
+  ],
+  "sourceSha256": {
+    "reference/v0.3-rc1/paid_archive.py": "604555872f0db621c563ac4ef9e2af85b4c4f8ffdaa4070a589e7d65f6502db2",
+    "reference/v0.3-rc1/archive_driver.py": "91c1c903c8a51403441e7191be6f1a58f53f5c5e468d8ad0962cd7d8dd60cc3c",
+    "reference/v0.3-rc1/storage_receipt.py": "58b42a872f5d4be96b2da0c28ce272ef53585db2c50eca30d021dc12f6bdcbb2",
+    "reference/v0.3-rc1/paid_recovery.py": "7a560135b33d26df73ccfa118fb38592ed66173dada39af4d08d976169c56d1d",
+    "reference/v0.3-rc1/test_paid_archive.py": "5740bc5d28882debecfad01b323997f4673c1f6816cef07fc5b23a1ada38c59a",
+    "reference/v0.3-rc1/client/archive-fixture.mjs": "2ef44a3ad48c1046e19fa81660a2f92d658478f3f6f2c52b6b18d2b6a09be689",
+    "reference/v0.3-rc1/client/localnet-paid.mjs": "55e65c94f19e0c21a3d0d0994cfcf017eea419475ac7e10653a703382978331e",
+    "scripts/verify_paid_archive.py": "ec93b983f2578f89eb7d5fd91527ef9502aade03be7852cc3a1173746a6e45f8"
+  }
+}

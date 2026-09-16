@@ -22,11 +22,20 @@ PROTO = ROOT / 'reference/v0.3-rc1'
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--private', action='store_true', help='Requires client/setup-zk.mjs artifacts')
+    parser.add_argument('--paid', action='store_true', help='Actual public Sui resale with independent mock PG/bank')
     args = parser.parse_args()
+    if args.private and args.paid:
+        raise SystemExit('The paid integration currently supports public rights only.')
+    output_name = 'paid-journey.json' if args.paid else 'private-journey.json' if args.private else 'public-journey.json'
+    # A failed new attempt must not leave an older success as its apparent result.
+    (ROOT / '.local/verification' / output_name).unlink(missing_ok=True)
     if args.private and not (PROTO / 'zk/artifacts/manifest.json').exists():
         raise SystemExit('Run npm --prefix reference/v0.3-rc1/client run setup:zk first.')
     for port in (9000, 9123):
         with socket.socket() as test:
+            # A preceding localnet can leave TIME_WAIT connections after its
+            # process has exited. Reuse permits those, not an active listener.
+            test.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 test.bind(('127.0.0.1', port))
             except OSError:
@@ -44,6 +53,15 @@ def main():
     env['KIX_LOCAL_RPC'] = 'http://127.0.0.1:9000'
     env['KIX_JOURNEY_DIR'] = str(run / 'journey')
     env['KIX_PRIVATE'] = '1' if args.private else '0'
+    env['KIX_PAID'] = '1' if args.paid else '0'
+    env['KIX_PYTHON'] = env.get('KIX_PYTHON', '/usr/bin/python3' if args.paid else sys.executable)
+    if args.paid:
+        # Ubuntu 24.04 system Python is the bounded integration runtime. Fail
+        # before creating a chain if a different environment is selected.
+        subprocess.run([env['KIX_PYTHON'], '-c',
+            'import sys,sqlite3; assert sys.version_info[:2]==(3,12) and sqlite3.sqlite_version=="3.45.1", '
+            '"Paid fixture requires Python 3.12 / SQLite 3.45.1"; '
+            'print("Paid fixture runtime:",sys.version.split()[0],sqlite3.sqlite_version)'], check=True, env=env)
     subprocess.run([sys.executable, str(ROOT / 'scripts/configure_local.py')], check=True)
     print('Local run: ' + str(run), flush=True)
     network = run / 'network'
@@ -105,7 +123,9 @@ def main():
             receipt['zkLoginBackgroundKeyFetchDisabled'] = True
             public_receipts = ROOT / '.local/verification'
             public_receipts.mkdir(parents=True, exist_ok=True)
-            (public_receipts / ('private-journey.json' if args.private else 'public-journey.json')).write_text(
+            if args.paid and receipt.get('paidIntegration', {}).get('status') != 'PASSED_ACTUAL_SUI_MOCK_MONEY':
+                raise RuntimeError('MISSING_PAID_INTEGRATION_RECEIPT')
+            (public_receipts / output_name).write_text(
                 json.dumps(receipt, indent=2) + '\n')
             print(json.dumps(receipt, indent=2), flush=True)
         finally:
