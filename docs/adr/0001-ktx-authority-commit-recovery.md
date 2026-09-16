@@ -3,6 +3,12 @@
 Date: 2026-09-15. Status: accepted design direction; production disabled.
 Baseline: S07-A `98d5f6372b68f875bcb2b670c5998697ecfb76c1` (PR #9).
 
+2026-09-17 scope clarification, base main `94376835ea4fc818619fc79e2be4df7d4947496a`:
+this ADR preserves safety relationships, not an automatic implementation order.
+The accepted authority choice is [model 1](../decisions/AUTHORITY_MODEL_1.md), and
+[DEVELOPMENT_PLAN](../DEVELOPMENT_PLAN.md) is the current approval/sequence authority.
+R2 and integration (a) remain prohibited; no kernel or adapter change is made here.
+
 This ADR supersedes the PostgreSQL-only authority and execution sequencing in masterplan 2.3 / architecture v4. It does not supersede money conservation, asset/registry/policy binding, CE1 namespace separation, ZK hardening, cancellation currentness, or historical fault evidence. Existing reference code is not modified or promoted to a runtime dependency.
 
 ## 1. What is being preserved
@@ -54,9 +60,11 @@ Ordered input fixes admitted time, validated external observations and all nonde
 
 Log envelopes must separately bind wire schema, kernel semantics version, policy/asset snapshots, ownership generation and application decision. Snapshots identify state version and committed cut. A software upgrade needs a logged activation boundary, old-version replay or a validated state migration, mixed-version admission rules and rollback rules. BCS equality alone does not establish equal business semantics.
 
-The revised R1 A working-copy patch accepts semantics version 4 and rejects other versions: bound-operation quarantine applies before conflict capacity checks, while unbound quarantine requires retained evidence; see the review addendum below. Its replay test reconstructs in-memory state from the same ordered inputs. This is NOT disk, upgrade, cluster-replay or leader-crash verification.
+The R1 A revision was published at `b57d49d068c14d1a012e73cbc8c10c8f6ee5d631` and is included in main `94376835ea4fc818619fc79e2be4df7d4947496a`; locked kernel blob `69564b166f0c27f9af5d8422f0a466b18d74c20f`. It accepts semantics version 4 and rejects other versions: bound-operation quarantine applies before conflict capacity checks, while unbound quarantine requires retained evidence; see the review addendum below. Its replay test reconstructs in-memory state from the same ordered inputs. This is NOT disk, upgrade, cluster-replay or leader-crash verification.
 
 ## 6. External effects, observations and UNKNOWN
+
+Provider selection update 2026-09-17: Toss Payments is provisional, ordinary domestic KRW card payments only for payment-method phase 1. Merchant scope for resale/finance and general payment-webhook signature remain unconfirmed. [PG_TOSS_CARD_PROFILE](../contracts/PG_TOSS_CARD_PROFILE.md) records official observations and proposed boundaries; [STATE_LIFECYCLE](../contracts/STATE_LIFECYCLE.md) retains the common definitions. No adapter implementation is authorized. Provider/MID/environment/API-contract version/product/payment-method/operation-kind bind the interpretation of evidence; a card terminal state is not a universal finality rule.
 
 Only committed external intents are executable. Commit an in-flight/UNKNOWN transition before sending. The provider-specific request identity, account scope, endpoint/API version, idempotency retention and reconciliation lookup must be fixed in the adapter contract. A retry of the same external action keeps the original identity. Do not switch PGs to resolve an UNKNOWN action.
 
@@ -93,6 +101,8 @@ Each export records the originating shard commit and projection applied watermar
 Keep a SQL-authoritative comparison route on disjoint test inventory. Compare equal ACK/failure/consistency semantics, successful durable goodput, p50/p99/p99.9, low load, hot rows, recovery and background work. Do not count sold-out rejects or in-memory bitmap operations as purchase TPS. No performance threshold or achieved number is asserted by this ADR.
 
 ## 10. Implementation status and exits
+
+> **Historical sequence as of 2026-09-15, not current authorization.** The R0–R6 list below preserves the earlier plan. In particular R2 is now prohibited and integration (a) is deferred. References to R3/R5 elsewhere in this ADR are historical destination labels, not authorization to start them. Current stages and approved first-batch work are defined in [DEVELOPMENT_PLAN §§1/5](../DEVELOPMENT_PLAN.md). PR #11 is a separately [tag-preserved v1 experiment](../status/PR11_PRESERVATION.md), not part of the locked v4 runtime.
 
 R0: this ADR + masterplan 2.4 + architecture v5.
 R1: pure single-shard Rust transitions and bounded in-memory state; no durable server.
