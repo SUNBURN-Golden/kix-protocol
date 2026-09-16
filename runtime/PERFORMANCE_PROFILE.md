@@ -1,6 +1,9 @@
 # KIX runtime performance profile — KTX v5
 
-No measured KTX throughput or floor is claimed. R1 is a pure single-shard transition kernel; it has no durable storage, deployed cells, or performance harness. This document defines R2/R4/R6 acceptance, not completed results. Authority/finality follows [ADR-0001](../docs/adr/0001-ktx-authority-commit-recovery.md).
+Documentation correction: 2026-09-17, base main `94376835ea4fc818619fc79e2be4df7d4947496a`.
+No production or durable KTX throughput/floor is claimed. R1 is a pure single-shard transition kernel. A **memory-only measurement apparatus exists** at `runtime/crates/kix-kernel/examples/r1_perf_probe.rs`, with `tests/performance_harness.rs` and `tests/support/perf_probe.rs`. It has no production, durable-storage or distributed-fault performance harness, deployed cells or durable ACK.
+
+Current measurement scope and limits are [PERFORMANCE_MEASUREMENT](../docs/contracts/PERFORMANCE_MEASUREMENT.md) and [V4-SMOKE-001](../docs/contracts/PERFORMANCE_BASELINE_V4.md). Shared-CI debug smoke is apparatus evidence, not production p99/TPS or causal reclamation benefit. The R2/R4/R6 matrix below is the historical 2026-09-15 target, not present authorization or completed results. Current authority is model 1 and current work approval follows [DEVELOPMENT_PLAN](../docs/DEVELOPMENT_PLAN.md) and [AUTHORITY_MODEL_1](../docs/decisions/AUTHORITY_MODEL_1.md); R2 and integration (a) remain on hold. [ADR-0001](../docs/adr/0001-ktx-authority-commit-recovery.md) remains a safety-contract reference.
 
 ## 1. Equal-guarantee comparison
 
@@ -35,7 +38,7 @@ Pin CPU/RAM/NUMA/NIC, kernel/runtime/compiler, dependencies, storage/fsync mode,
 | cross-shard coordinator failure | durable decision, no unsafe unilateral abort |
 | PG/chain/export prolonged delay | bounded backlog/retained WAL; scoped admission reduction |
 
-A semantic unit test is not an actual process crash, disk corruption, network partition or linearizability-history test. Enable a dedicated controlled performance/fault runner only once the harness exists. Current CI must not fabricate a performance pass.
+A semantic unit test is not an actual process crash, disk corruption, network partition or linearizability-history test. Enable a dedicated controlled production/durable/fault runner only after the relevant harness exists and that work is separately approved; the existing memory probe does not satisfy that condition. Current CI must not fabricate a performance pass.
 
 ## 4. Resource budgets
 
