@@ -2,7 +2,8 @@
 //! The shared public input/output types are a comparison boundary, not an oracle.
 use kix_kernel::{
     AppliedReservation, CaptureObservation, Context, ExecutionFence, KernelError, Limits,
-    ObservationOutcome, OrderState, ProviderOperation, Rejection, Reserve, ReserveOutcome, Selection,
+    ObservationOutcome, OrderState, ProviderOperation, Rejection, Reserve, ReserveOutcome,
+    Selection,
 };
 use kix_types::{AssetAmount, KixId};
 
@@ -69,7 +70,12 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(scope: KixId, writer: ExecutionFence, layout: InventoryCase, limits: Limits) -> Self {
+    pub fn new(
+        scope: KixId,
+        writer: ExecutionFence,
+        layout: InventoryCase,
+        limits: Limits,
+    ) -> Self {
         let mut segments = Vec::new();
         if let InventoryCase::Seats(lengths) = &layout {
             for (number, &length) in lengths.iter().enumerate() {
@@ -100,10 +106,15 @@ impl Model {
         match self.layout {
             InventoryCase::Seats(_) => self.seats.iter().filter(|v| v.is_none()).count() as u32,
             InventoryCase::Ga(total) => {
-                let used: u32 = self.orders.iter().filter(|o| o.owns).map(|o| match o.input.selection {
-                    Selection::GeneralAdmission { count } => count,
-                    _ => panic!("invalid reference GA order"),
-                }).sum();
+                let used: u32 = self
+                    .orders
+                    .iter()
+                    .filter(|o| o.owns)
+                    .map(|o| match o.input.selection {
+                        Selection::GeneralAdmission { count } => count,
+                        _ => panic!("invalid reference GA order"),
+                    })
+                    .sum();
                 total - used
             }
         }
@@ -127,11 +138,16 @@ impl Model {
     }
 
     fn index(&self, id: KixId) -> Result<usize, KernelError> {
-        self.orders.iter().position(|o| o.input.order_id == id).ok_or(KernelError::UnknownOrder)
+        self.orders
+            .iter()
+            .position(|o| o.input.order_id == id)
+            .ok_or(KernelError::UnknownOrder)
     }
 
     fn bound(&self, operation: ProviderOperation) -> Option<usize> {
-        self.orders.iter().position(|o| o.input.payment == operation)
+        self.orders
+            .iter()
+            .position(|o| o.input.payment == operation)
     }
 
     fn selection_rejection(&self, selection: Selection) -> Option<Rejection> {
@@ -142,7 +158,10 @@ impl Model {
                 if count == 0 || count > 64 || end > self.seats.len() {
                     return Some(Rejection::InvalidRequest);
                 }
-                if self.segments[start..end].iter().any(|v| *v != self.segments[start]) {
+                if self.segments[start..end]
+                    .iter()
+                    .any(|v| *v != self.segments[start])
+                {
                     return Some(Rejection::InvalidRequest);
                 }
                 if self.seats[start..end].iter().any(Option::is_some) {
@@ -165,9 +184,15 @@ impl Model {
 
     fn set_seat_owner(&mut self, request: &Reserve, owner: Option<KixId>) {
         if let Selection::Seats { first, count } = request.selection {
-            for value in &mut self.seats[usize::from(first)..usize::from(first) + usize::from(count)] {
+            for value in
+                &mut self.seats[usize::from(first)..usize::from(first) + usize::from(count)]
+            {
                 if owner.is_none() {
-                    assert_eq!(*value, Some(request.order_id), "reference cannot release another owner");
+                    assert_eq!(
+                        *value,
+                        Some(request.order_id),
+                        "reference cannot release another owner"
+                    );
                 } else {
                     assert!(value.is_none(), "reference cannot overlap owners");
                 }
@@ -176,18 +201,29 @@ impl Model {
         }
     }
 
-    fn reserve(&mut self, ctx: Context, request: Reserve) -> Result<AppliedReservation, KernelError> {
+    fn reserve(
+        &mut self,
+        ctx: Context,
+        request: Reserve,
+    ) -> Result<AppliedReservation, KernelError> {
         if ctx.semantics_version != 4 {
             return Err(KernelError::UnsupportedSemantics);
         }
         if request.id.scope != self.scope {
             return Err(KernelError::WrongScope);
         }
-        if let Some((input, result)) = self.commands.iter().find(|(input, _)| input.id == request.id) {
+        if let Some((input, result)) = self
+            .commands
+            .iter()
+            .find(|(input, _)| input.id == request.id)
+        {
             if input != &request {
                 return Err(KernelError::CommandConflict);
             }
-            return Ok(AppliedReservation { original: *result, replayed: true });
+            return Ok(AppliedReservation {
+                original: *result,
+                replayed: true,
+            });
         }
         self.check_context(ctx)?;
         if self.commands.len() >= self.limits.commands || self.orders.len() >= self.limits.orders {
@@ -197,10 +233,17 @@ impl Model {
             Some(Rejection::BusinessFenced)
         } else if request.amount.atoms() == 0 || request.expires_at_ms <= ctx.now_ms {
             Some(Rejection::InvalidRequest)
-        } else if self.orders.iter().any(|o| o.input.order_id == request.order_id) {
+        } else if self
+            .orders
+            .iter()
+            .any(|o| o.input.order_id == request.order_id)
+        {
             Some(Rejection::OrderExists)
         } else if self.quarantined.contains(&request.payment)
-            || self.conflicts.iter().any(|c| c.operation == request.payment)
+            || self
+                .conflicts
+                .iter()
+                .any(|c| c.operation == request.payment)
         {
             Some(Rejection::OperationQuarantined)
         } else if self.bound(request.payment).is_some() {
@@ -213,23 +256,32 @@ impl Model {
             None => {
                 self.set_seat_owner(&request, Some(request.order_id));
                 self.orders.push(ModelOrder {
-                    input: request.clone(), writer: ctx.fence, phase: OrderState::Held,
-                    owns: true, amount: None, review: false,
+                    input: request.clone(),
+                    writer: ctx.fence,
+                    phase: OrderState::Held,
+                    owns: true,
+                    amount: None,
+                    review: false,
                 });
                 ReserveOutcome::Held(request.order_id)
             }
         };
         self.commands.push((request, result));
         self.time = ctx.now_ms;
-        Ok(AppliedReservation { original: result, replayed: false })
+        Ok(AppliedReservation {
+            original: result,
+            replayed: false,
+        })
     }
 
     fn send(&mut self, ctx: Context, id: KixId) -> Result<(), KernelError> {
         self.check_context(ctx)?;
         let i = self.index(id)?;
         let order = &self.orders[i];
-        if order.review || !matches!(order.phase, OrderState::Held | OrderState::PaymentUnknown)
-            || self.cancelled || ctx.now_ms >= order.input.expires_at_ms
+        if order.review
+            || !matches!(order.phase, OrderState::Held | OrderState::PaymentUnknown)
+            || self.cancelled
+            || ctx.now_ms >= order.input.expires_at_ms
         {
             return Err(KernelError::InvalidTransition);
         }
@@ -250,7 +302,8 @@ impl Model {
         let i = self.index(id)?;
         self.time = ctx.now_ms;
         let release = ctx.now_ms >= self.orders[i].input.expires_at_ms
-            && self.orders[i].phase == OrderState::Held && self.orders[i].owns;
+            && self.orders[i].phase == OrderState::Held
+            && self.orders[i].owns;
         if release {
             let input = self.orders[i].input.clone();
             self.set_seat_owner(&input, None);
@@ -274,11 +327,16 @@ impl Model {
         Ok(())
     }
 
-    fn capture(&mut self, ctx: Context, value: CaptureObservation) -> Result<ObservationOutcome, KernelError> {
+    fn capture(
+        &mut self,
+        ctx: Context,
+        value: CaptureObservation,
+    ) -> Result<ObservationOutcome, KernelError> {
         self.check_context(ctx)?;
         let prior_event = self.events.iter().position(|(old, _)| {
             old.operation.provider == value.operation.provider
-                && old.operation.account == value.operation.account && old.event_id == value.event_id
+                && old.operation.account == value.operation.account
+                && old.event_id == value.event_id
         });
         if let Some(event) = prior_event {
             if self.events[event].0 == value {
@@ -309,7 +367,9 @@ impl Model {
         if !reserved && self.budget() >= self.limits.observations {
             return Err(KernelError::Capacity);
         }
-        let i = self.bound(value.operation).ok_or(KernelError::UnknownOperation)?;
+        let i = self
+            .bound(value.operation)
+            .ok_or(KernelError::UnknownOperation)?;
         let existing = self.orders[i].amount;
         let result = if let Some(first) = existing {
             if first == value.amount {
@@ -324,7 +384,8 @@ impl Model {
                 self.orders[i].phase = OrderState::Review;
                 self.orders[i].review = true;
                 ObservationOutcome::Review
-            } else if self.cancelled || ctx.now_ms >= self.orders[i].input.expires_at_ms
+            } else if self.cancelled
+                || ctx.now_ms >= self.orders[i].input.expires_at_ms
                 || self.orders[i].phase == OrderState::Expired
             {
                 if self.orders[i].owns {
@@ -342,7 +403,8 @@ impl Model {
                 ObservationOutcome::PaymentConfirmed
             }
         };
-        self.promised.retain(|operation| *operation != value.operation);
+        self.promised
+            .retain(|operation| *operation != value.operation);
         self.events.push((value, result));
         self.time = ctx.now_ms;
         Ok(result)

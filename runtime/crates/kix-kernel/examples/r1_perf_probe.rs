@@ -15,10 +15,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("invalid sample count or command limit".into());
     }
     std::fs::create_dir_all(directory)?;
-    for workload in [probe::Workload::Uniform, probe::Workload::HotSeat, probe::Workload::Retry, probe::Workload::Conflict] {
+    for workload in [
+        probe::Workload::Uniform,
+        probe::Workload::HotSeat,
+        probe::Workload::Retry,
+        probe::Workload::Conflict,
+    ] {
         let report = probe::run(workload, count, limit, rate);
-        std::fs::write(directory.join(format!("{}.csv", report.workload)), &report.raw_csv)?;
-        std::fs::write(directory.join(format!("{}.json", report.workload)), report.json(rate, limit))?;
+        std::fs::write(
+            directory.join(format!("{}.csv", report.workload)),
+            &report.raw_csv,
+        )?;
+        std::fs::write(
+            directory.join(format!("{}.json", report.workload)),
+            report.json(rate, limit),
+        )?;
         println!("{}", report.json(rate, limit));
     }
     Ok(())
