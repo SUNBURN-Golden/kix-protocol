@@ -3,7 +3,7 @@
 2026-09-17 LC-TERM 조건·승인 개정. 기준 main
 `73f324a00f345e120014718b67a7c03ecbf1198a`, 이 문서의 변경 전 blob
 `b1575806a97a418e0d6902b171b9dd3409a2d82e`.
-정본은 [STATE_LIFECYCLE](STATE_LIFECYCLE.md) 초안 0.2,
+정본은 [STATE_LIFECYCLE](STATE_LIFECYCLE.md) 초안 0.3,
 개정 ID `LC-TERM-conditions-approval-20260917`의 §§3–7이다.
 [PG_TOSS_CARD_PROFILE](PG_TOSS_CARD_PROFILE.md)의 공개값·출처와 실제 계약 입력을 구분한다.
 이번에는 계약 문서만 수정했으며 실명·상한·개별 종결·구현·PG 호출을 확정하지 않았다.
