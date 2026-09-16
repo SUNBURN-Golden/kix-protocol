@@ -8,6 +8,11 @@ this ADR preserves safety relationships, not an automatic implementation order.
 The accepted authority choice is [model 1](../decisions/AUTHORITY_MODEL_1.md), and
 [DEVELOPMENT_PLAN](../DEVELOPMENT_PLAN.md) is the current approval/sequence authority.
 R2 and integration (a) remain prohibited; no kernel or adapter change is made here.
+LC-TERM update on 2026-09-17: [STATE_LIFECYCLE §5](../contracts/STATE_LIFECYCLE.md)
+is the authority for operational closure: objective conditions, designated approval
+and a durable decision. Provider-guaranteed eternal non-execution is no longer a
+required precondition. External money facts, chain authority, and approval of
+closure are different claims; this update supplies no executable transitions.
 
 This ADR supersedes the PostgreSQL-only authority and execution sequencing in masterplan 2.3 / architecture v4. It does not supersede money conservation, asset/registry/policy binding, CE1 namespace separation, ZK hardening, cancellation currentness, or historical fault evidence. Existing reference code is not modified or promoted to a runtime dependency.
 
@@ -66,7 +71,7 @@ The R1 A revision was published at `b57d49d068c14d1a012e73cbc8c10c8f6ee5d631` an
 
 Provider selection update 2026-09-17: Toss Payments is provisional, ordinary domestic KRW card payments only for payment-method phase 1. Merchant scope for resale/finance and general payment-webhook signature remain unconfirmed. [PG_TOSS_CARD_PROFILE](../contracts/PG_TOSS_CARD_PROFILE.md) records official observations and proposed boundaries; [STATE_LIFECYCLE](../contracts/STATE_LIFECYCLE.md) retains the common definitions. No adapter implementation is authorized. Provider/MID/environment/API-contract version/product/payment-method/operation-kind bind the interpretation of evidence; a card terminal state is not a universal finality rule.
 
-Only committed external intents are executable. Commit an in-flight/UNKNOWN transition before sending. The provider-specific request identity, account scope, endpoint/API version, idempotency retention and reconciliation lookup must be fixed in the adapter contract. A retry of the same external action keeps the original identity. Do not switch PGs to resolve an UNKNOWN action.
+Only committed external intents are executable. Commit an in-flight/UNKNOWN transition before sending. The provider-specific request identity, account scope, endpoint/API version, idempotency retention and reconciliation lookup must be fixed in the adapter contract. Operational closure follows STATE_LIFECYCLE §5 and preserves external uncertainty; it is not a provider guarantee or a change to the current kernel. A retry of the same external action keeps the original identity. Do not switch PGs to resolve an UNKNOWN action.
 
 Internal fencing stops new internal writes by an old owner; it cannot cancel a request already sent to a provider. Accept validated late facts bound to the original operation even when its submitting owner has changed. The current owner applies those facts under its current execution fence. Rejecting an old command is not the same as discarding an old operation's real success.
 
@@ -143,12 +148,39 @@ Event identity must describe one canonical observation in this kernel. An adapte
 
 The kernel can return UnknownOperation without storing that payload. The inbox contract is the required custody location, not evidence that an inbox already exists. This patch adds no durable inbox, provider authentication, storage, or ACK implementation. End-to-end external-success preservation remains unimplemented until that responsibility is satisfied and tested.
 
-### Reserved observation release — proposal only; no release transition implemented
+### Reserved observation release — condition/approval contract; no implementation
 
-Current reservation removal occurs only when a supported new-event bound capture is retained. Capture converts reserved capacity into stored-evidence occupancy and does not reclaim the total evidence budget. Expiry/cancellation/owner movement alone never releases an UNKNOWN operation's slot.
+Revised 2026-09-17, base main `73f324a00f345e120014718b67a7c03ecbf1198a`.
+Earlier text in this section required provider-guaranteed final failure/void ruling
+out all later execution. That requirement is superseded by STATE_LIFECYCLE §5;
+the old exact text remains in Git blob `9d5ce5228045673eb362c5f20cc019a6cd8a5ad1`.
 
-Proposed release requires authenticated, operation-scoped terminal failure or final void evidence under a provider contract that rules out later execution, together with proof that no executable attempt remains and a fence against retransmission of the closed operation. A network error, one failed attempt, a cancellation request, a single not-found response, or elapsed time is insufficient.
+Current capture converts a reserved slot into stored evidence and does not reclaim
+total evidence budget. Expiry/cancellation/owner movement does not release UNKNOWN.
+Future release needs a recorded operational-closure decision satisfying C1–C5,
+valid actor and policy authority, no remaining executable send attempts, and an
+explicit release permission after proven handoff to late-fact custody/capacity.
+No provider assurance of eternal non-execution is required, but evidence cannot
+be fabricated, missing attempts cannot be signed away, and a known capture cannot
+be reclassified as absence. A network error, one not-found or elapsed time alone
+still does not authorize closure or release.
 
-Terminal outcome, stable operation identity, evidence reference and an idempotent closed-operation marker must be preserved before/in the same authoritative transition that releases the reservation exactly once. Anomalous late facts remain the inbox's reconciliation responsibility and must not reopen an expired order or re-enable sending. If those finality conditions cannot be established, the slot remains UNKNOWN and the scope applies backpressure. A separate retained-evidence lifecycle is also required for reclaiming total observation capacity; deleting a reservation alone does not solve retained-record exhaustion.
+An approved closure keeps the original command result, all observed captures and
+provider uncertainty. It does not issue/revoke chain rights, cancel a legal debt,
+remove collateral, clear review, execute a refund or authorize evidence deletion.
+Late authenticated facts create linked corrective/reconciliation records without
+rewriting the old approval; economic effects and compensations remain deduplicated.
 
-This section is a proposed release contract only. No failure/void command, release method, garbage collection, inbox handoff implementation or timeout-based release is introduced.
+Rule-based machine approval and human approval both record actor type, principal,
+rule/grant ID and exact version, condition results, evidence references, scope,
+allowed effects, residual risk and the durable commit boundary. Incomplete
+conditions have no human override. Automatic approval is excluded from paths
+where retaining late facts does not bound the loss, including inventory resales,
+fund/collateral release, duplicate compensation, and unavailable late-fact storage.
+The current enabled automatic scope is zero. A human/organizational policy owner,
+not the AI service itself, authorizes immutable rule versions and revocation.
+
+STATE_LIFECYCLE §§5.3–5.8 define time anchors, 15-day idempotency limits, approval
+races, and separate slot/review/history permissions. The contract version is not
+a new kernel semantics version. No failure/void command, release method, approval
+executor, garbage collection, inbox, adapter or R2 integration is introduced.
