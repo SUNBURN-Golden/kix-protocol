@@ -6,70 +6,72 @@ on:
 permissions:
   contents: read
 jobs:
-  cold-compatibility:
+  preserve-reviewed-experiment:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
-        with:
-          toolchain: '1.98.1'
-      - name: Separate cold builds of original v1 and byte-exact v4 overlay
-        shell: bash
+      - name: Publish reviewed annotated tag without modifying an existing ref
         env:
-          V1: 55a3df4968f5684bb4cb9e3c9781ab5f00165235
-          V4: 0cb65749492bf78e6cea00d3c9c7eee4f891827d
-          LOCKED: 69564b166f0c27f9af5d8422f0a466b18d74c20f
-          CARGO_INCREMENTAL: '0'
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           set -euo pipefail
-          mkdir -p evidence
-          git worktree add --detach "$RUNNER_TEMP/pr11-v1" "$V1"
-          git worktree add --detach "$RUNNER_TEMP/pr11-with-v4" "$V1"
-          git show "$V4:runtime/crates/kix-kernel/src/lib.rs" > "$RUNNER_TEMP/pr11-with-v4/runtime/crates/kix-kernel/src/lib.rs"
-          test "$(git hash-object "$RUNNER_TEMP/pr11-with-v4/runtime/crates/kix-kernel/src/lib.rs")" = "$LOCKED"
-          test "$(git -C "$RUNNER_TEMP/pr11-with-v4" diff --name-only)" = 'runtime/crates/kix-kernel/src/lib.rs'
-          git rev-list --parents c8267d1c2bdbcd732aa46401fe059b92d8ae72a6..0cb65749492bf78e6cea00d3c9c7eee4f891827d > evidence/pr12-pr13-parents.txt
-          git rev-parse HEAD > evidence/operations-commit.txt
-          git rev-parse "$V1^{tree}" > evidence/pr11-tree.txt
-          rustc --version > evidence/toolchain.txt
-          cargo --version >> evidence/toolchain.txt
-          uname -a > evidence/platform.txt
-          for profile in v1 with-v4; do
-            root="$RUNNER_TEMP/pr11-$profile"
-            export CARGO_TARGET_DIR="$RUNNER_TEMP/cold-$profile-target"
-            test ! -e "$CARGO_TARGET_DIR"
-            printf '%s\n' "$CARGO_TARGET_DIR" > "evidence/$profile-target.txt"
-            git -C "$root" status --porcelain > "evidence/$profile-source-status.txt"
-            git -C "$root" hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-ktx-wire/src/lib.rs runtime/crates/kix-ktx-wire/src/registry.rs runtime/crates/kix-ktx-wire/tests/golden_vectors.rs runtime/crates/kix-journal-local/src/lib.rs > "evidence/$profile-source-blobs.txt"
-            grep 'pub const SEMANTICS_VERSION' "$root/runtime/crates/kix-kernel/src/lib.rs" > "evidence/$profile-semantics.txt"
-            set +e
-            cargo test --manifest-path "$root/runtime/Cargo.toml" -p kix-ktx-wire --test golden_vectors --locked -- --nocapture --test-threads=1 > "evidence/$profile-wire.log" 2>&1
-            echo "$?" > "evidence/$profile-wire.exit"
-            cargo test --manifest-path "$root/runtime/Cargo.toml" -p kix-journal-local --locked -- --nocapture --test-threads=1 > "evidence/$profile-journal.log" 2>&1
-            echo "$?" > "evidence/$profile-journal.exit"
-            set -e
-          done
           python3 - <<'PY'
-          import json, os, pathlib, re, subprocess, tomllib
-          out=pathlib.Path('evidence'); rows={}
-          for name in ('v1-wire','v1-journal','with-v4-wire','with-v4-journal'):
-              text=re.sub(r'\x1b\[[0-9;]*m','',(out/(name+'.log')).read_text())
-              rows[name]={'exit_code':int((out/(name+'.exit')).read_text()),'test_results':re.findall(r'(?m)^test result:.*$',text),'failed_tests':sorted(set(re.findall(r'(?m)^    ([A-Za-z_][A-Za-z0-9_:]+)$',text))),'unsupported_semantics_seen':'UnsupportedSemantics' in text,'raw_log':name+'.log','kernel_recompiled':'Compiling kix-kernel' in text,'build_error':'could not compile' in text}
-          assert rows['v1-wire']['exit_code']==0 and rows['v1-journal']['exit_code']==0, rows
-          assert rows['v1-wire']['kernel_recompiled'] and rows['with-v4-wire']['kernel_recompiled'], rows
-          members=tomllib.loads(subprocess.check_output(['git','show',os.environ['V1']+':runtime/Cargo.toml'],text=True))['workspace']['members']
-          result={'scope':'user-requested compatibility diagnostic only; no implementation/integration commit','supersedes_unaccepted_shared_target_run':35078643445,'initial_tag_not_acceptance_evidence':'kix-exp-r2a-local-journal-v1-20260916','v1_commit':os.environ['V1'],'v1_tree':(out/'pr11-tree.txt').read_text().strip(),'v4_source_commit':os.environ['V4'],'locked_kernel':os.environ['LOCKED'],'wire_and_golden_unchanged':True,'separate_empty_target_directories':True,'cargo_incremental':False,'crates':members,'runs':rows,'diagnostic_run':os.environ['GITHUB_RUN_ID'],'operations_commit':os.environ['GITHUB_SHA']}
-          (out/'compatibility.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
-          print(json.dumps(result,ensure_ascii=False,indent=2))
+          import json, os, pathlib, urllib.request, urllib.error
+          base='https://api.github.com/repos/BeautifulMind-JT/kix-protocol/'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          def api(path,data=None):
+              req=urllib.request.Request(base+path,data=None if data is None else json.dumps(data).encode(),headers=headers,method='GET' if data is None else 'POST')
+              with urllib.request.urlopen(req) as r:return json.load(r)
+          run=api('actions/runs/35079017799')
+          assert run['head_sha']=='78f7f80e22f35b8a8cfae56cbded38f3caf22331' and run['status']=='completed' and run['conclusion']=='success'
+          target='55a3df4968f5684bb4cb9e3c9781ab5f00165235'
+          tree='38901ede6a20dc67025014116ea92c0ea35f8bf5'
+          assert api('git/commits/'+target)['tree']['sha']==tree
+          name='kix-exp-r2a-local-journal-v1-20260916-r2'
+          try:
+              existing=api('git/ref/tags/'+name)
+          except urllib.error.HTTPError as e:
+              if e.code!=404:raise
+          else:
+              raise RuntimeError('Existing ref will not be changed: '+existing['ref'])
+          message='''PR #11 experimental preservation, corrected cold-build evidence. NOT merged into main.
+          Target commit: 55a3df4968f5684bb4cb9e3c9781ab5f00165235
+          Target tree: 38901ede6a20dc67025014116ea92c0ea35f8bf5
+          Kernel semantics: 1. Main R1 kernel semantics: 4.
+          Crates: kix-types, kix-feature-semantics, kix-feature-ir, kix-bcs1, kix-kernel, kix-ktx-wire, kix-journal-local.
+          Original successful CI: 34938172828 (KTX), 34938172791 (full protocol).
+          Actual isolated cold-build diagnostic: 35079017799, operations commit 78f7f80e22f35b8a8cfae56cbded38f3caf22331.
+          Separate initially absent CARGO_TARGET_DIR per profile; CARGO_INCREMENTAL=0; both kernel builds observed.
+          The only disposable worktree source change was overlaying existing kernel blob 69564b166f0c27f9af5d8422f0a466b18d74c20f from 0cb65749492bf78e6cea00d3c9c7eee4f891827d. Wire, registry, golden, journal and tests remained byte-identical.
+          Original v1: wire golden 9 passed; journal 1 library + 13 recovery passed, 2 subprocess helpers ignored at top level.
+          Locked-v4 overlay: wire golden 4 passed / 5 failed, exit 101. Three failures: BodyEncode; two: UnsupportedSemantics.
+          Failed tests:
+          every_action_preserves_context_and_fixed_width_payloads
+          genesis_validates_layout_limits_and_semantics_without_accepting_preoccupied_state
+          independently_calculated_genesis_command_and_result_vectors
+          ordered_wire_replay_recovers_original_result_intent_owner_and_late_capture
+          wire_replay_retains_unbound_operation_quarantine_and_recorded_rejection
+          Locked-v4 journal: 1 library + 13 recovery passed, 2 top-level helper ignores. These tests create inputs using current SEMANTICS_VERSION; not evidence of v1-log migration to v4 or complete v4 reservation/quarantine recovery coverage.
+          Artifact: 10439546137 / pr11-v4-cold-compatibility-35079017799.
+          Artifact SHA-256: ea1d734e9a06f430875fb86ddc42be39d5bea723605338dc70de3f5b0bca4a35.
+          Integration (a) is a separately approved future task, previously estimated 16-26 person-days for its limited model-1 scope; lifecycle overlap must be closed and estimate refined first. R2 and (a) remain prohibited. No kernel or journal fix, no branch deletion.
+          Supersedes kix-exp-r2a-local-journal-v1-20260916 for acceptance evidence. That first tag targets the same v1 source but cites an unaccepted shared-build-directory run 35078643445; it remains unchanged for traceability. Do not use its all-pass overlay statement.
+          '''
+          message='\n'.join(line.strip() for line in message.splitlines())+'\n'
+          tag=api('git/tags',{'tag':name,'message':message,'object':target,'type':'commit'})
+          ref=api('git/refs',{'ref':'refs/tags/'+name,'sha':tag['sha']})
+          verified=api('git/tags/'+ref['object']['sha'])
+          assert verified['object']['sha']==target and verified['message'].strip()==message.strip()
+          pathlib.Path('tag-result.json').write_text(json.dumps({'ref':ref,'tag':verified},indent=2)+'\n')
+          print(json.dumps({'tag':name,'tag_object':tag['sha'],'target_commit':target,'published':True},indent=2))
           PY
-      - name: Preserve unmodified raw outputs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: pr11-v4-cold-compatibility-${{ github.run_id }}
-          path: evidence/
+          name: corrected-experimental-tag-${{ github.run_id }}
+          path: tag-result.json
           retention-days: 30
