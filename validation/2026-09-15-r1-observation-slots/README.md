@@ -1,53 +1,96 @@
-# R1 observation-slot fix — 2026-09-15
+# R1 v4 observation-slot and quarantine acceptance evidence
 
-Baseline PR #10 head: `bf460b1f7724c5ad7d561b19a64959383fcec6a8`.
-Scope: R1 business logic only. This supplies no justification for KTX adoption or R2 continuation.
+Documentation correction: 2026-09-16. Scope: document alignment only; no kernel,
+wire, journal, test, dependency, workflow or architecture-code change.
 
-## Exact baseline execution
+## Published implementation baseline
 
-The baseline workspace sources/manifests/lockfile were compared to the Git blob identities of the SHA above. A Rust stdin harness executed the unchanged compiled kernel:
+- PR: [#12](https://github.com/BeautifulMind-JT/kix-protocol/pull/12).
+- Implementation commit: `b57d49d068c14d1a012e73cbc8c10c8f6ee5d631`.
+- Implementation tree: `24b925955ae17942ab25b68b1e5a9111d6983501`.
+- PR test merge: `4584c9ad2a8c886acc3cd0b1e021a5802e6424f3`; same tree.
+- Kernel semantics: **4**, not 2.
 
-```text
-head=bf460b1f7724c5ad7d561b19a64959383fcec6a8
-old_quarantine_repro/conflict=Ok(Conflict)
-old_quarantine_repro/review_a=true,review_b=true
-old_quarantine_repro/send_b=Err(InvalidTransition)
-old_time_repro/expire_500=Ok(false)
-old_time_repro/new_reserve_300=Err(ClockRegression)
-old_time_repro/after_duplicate_at_500/new_reserve_300=Err(ClockRegression)
-A/full_budget_new_conflict=Err(Capacity)
-A/unchanged=true,review_a=false,review_b=false,observations=1,conflicts=0
-A/send_b_with_full_budget=Ok(())
-B/fresh_unbound_capture=Err(UnknownOperation)
-B/unchanged=true,orders=0,observations=0,conflicts=0
-exit_code=0
-```
+| File | Full Git blob |
+|---|---|
+| `runtime/crates/kix-kernel/src/lib.rs` | `69564b166f0c27f9af5d8422f0a466b18d74c20f` |
+| `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `b607996c83a119c349f1cc90469ac1ba82764e20` |
+| `runtime/crates/kix-kernel/tests/observation_slots.rs` | `9dd1413f060a420b3a97896b9451c82574f56d08` |
+| `runtime/crates/kix-kernel/tests/transitions.rs` | `ae5fd6aee210007b2f1ca7f96809c76348aadae4` |
 
-The earlier cross-operation quarantine and no-op/duplicate time defects are already fixed at this baseline. A new conflict at full evidence capacity is not stored or quarantined. A fresh unbound success is not stored anywhere in the kernel. The README's external inbox is a requirement, not implemented storage.
+The first two files remain locked. A later documentation-only head is not a new
+kernel version. Its CI status must be reported against that head separately.
 
-## Change
+## Current v4 behavior
 
-One slot is reserved by complete provider/account/operation identity before the first successful `mark_payment_unknown`. Retries reuse the slot. Stored events + conflicts + reservations stay within the observation limit. Other events and new conflicts cannot spend it. The first bound new-event capture atomically converts its reservation to retained evidence; amount mismatch, cancellation, UNKNOWN expiry, owner changes and prior quarantine do not drop the promised slot.
+Before the first successful `mark_payment_unknown`, the kernel reserves one
+first-capture slot by complete provider/account/operation identity. UNKNOWN
+retries reuse it. Stored events, retained conflicts and reserved slots share the
+observation budget; unrelated observations and new conflicts cannot spend an
+operation's promised slot. A supported first bound capture converts its slot
+into retained evidence. This is not lifecycle reclamation: the total budget used
+does not decrease simply because reserved becomes stored.
 
-```text
-semantics_version=2
-mark_A=Ok(()); reserved=1
-retry_mark_A=Ok(()); reserved=1
-mark_B=Err(Capacity)
-unrelated_capture_B=Err(Capacity); reserved=1
-first_capture_A=Ok(PaymentConfirmed); reserved=0; stored=1
-exit_code=0
-```
+**A new conflicting event at full evidence capacity quarantines the bound
+operations it names and advances ordered time, even when returning
+`Err(KernelError::Capacity)`.** New evidence and unbound identities are not
+retained in that case. Do not interpret every `Err` as a rolled-back state
+transition. The explicit quarantine set contains bound operations only; future
+binding of an unbound operation is blocked only by retained conflict evidence.
+There is no scope-wide overflow latch and no mass review of unrelated orders.
 
-## Verification
+Fresh unbound observations still return `UnknownOperation` without storage, or
+`Capacity` when the budget gate takes precedence. Rejected evidence is not a
+provider-receipt ACK. Durable inbox, source authentication, terminal failure/void
+slot release, review resolution and history reclamation remain unimplemented.
 
-Rust 1.98.1, workspace `cargo test --workspace --locked --offline`: 93 tests passed, including 32 existing kernel transitions and 11 new observation-slot tests. fmt and workspace all-target clippy with warnings denied passed. The previously authorized HashMap/HashSet/RandomState, clock/environment/I/O method restrictions and float-arithmetic deny are included in the kernel.
+## Verification at the published implementation commit
 
-Tests explicitly retain A/B as remaining limitations and do not disguise them as fixed behavior. No state-model oracle, real provider adapter or fault-tolerant storage has been implemented in this patch.
+| Run | Actual head SHA | Final state |
+|---|---|---|
+| [KTX kernel verification 34957674101](https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/34957674101) | `b57d49d068c14d1a012e73cbc8c10c8f6ee5d631` | completed / success |
+| [KIX protocol verification 34957674135](https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/34957674135) | `b57d49d068c14d1a012e73cbc8c10c8f6ee5d631` | completed / success |
 
-## Compatibility and limits
+The full protocol run reached its final state at 2026-09-15 10:37:23 UTC
+(19:37:23 Asia/Seoul). It is no longer in progress.
 
-The admission result changes, so SEMANTICS_VERSION is now 2; version-1 Context inputs are explicitly rejected. A previous test's hard-coded unknown version 2 is now expressed as SEMANTICS_VERSION + 1. Version-1 replay/migration and the separate R2-A branch are not automatically upgraded.
+The preserved KTX CI log reports **51 kernel tests**: 32 transition tests,
+11 observation-slot tests and 8 quarantine-capacity tests. The implementation
+submission separately reports **101 workspace tests** and a clean-target rerun
+of the 8 quarantine tests. Do not call 51 the workspace count, add the rerun to
+the unique-test count, or treat that local report as a new run in this
+2026-09-16 documentation correction. The implementation submission's 20,000-input
+isolation experiment is not a TPS benchmark and was not rerun for this correction.
 
-Only first bound capture capacity is protected. New conflicts at exhausted capacity still return Capacity without quarantine. Fresh unbound captures still return UnknownOperation without storage (Capacity can precede it when full). An upstream delivery must not be acknowledged as durably retained from these results. Retention/GC and unlimited operation are not implemented. No main merge, deployment or external DB change.
+The KTX job passed its architecture/dependency checks, locked tests,
+warnings-denied Clippy and workspace formatting. Its artifact is
+`10391369595`, ZIP SHA-256
+`b863c7a2b41d34a1a9655112c81739962b45f240dacae8011764bd8dc2a6d9b8`.
+It contains the tested commit, source SHA-256 values, dependency tree and raw test
+log. The full protocol CI includes historical Python/SDK/Move/circuit, storage,
+public Sui, actual Sui with mock PG/bank, ZK artifact/compensated-proof rejection,
+and private Sui checks. It does not establish real-money operation, quorum
+persistence, independent state-model conformance or production performance.
 
+## Historical baseline and v2 records — not current acceptance evidence
+
+The former version of this README is preserved byte-for-byte at
+[`history/baseline_v2_384c935010a3.md`](history/baseline_v2_384c935010a3.md).
+Its full Git blob is `384c935010a33c160ccdb26b568ebc7454777f09`.
+It records baseline PR #10 `bf460b1f7724c5ad7d561b19a64959383fcec6a8`
+and the intermediate v2 experiment, including the original raw outputs and the
+93-test workspace report. Those historical statements are not v4 behavior or
+v4 acceptance results. In particular, "without quarantine" at full capacity
+and "SEMANTICS_VERSION is now 2" are historical, superseded descriptions.
+
+No historical logs were edited to look like v4 output. The current correction
+reclassifies the records; it does not claim to rerun the historical experiments.
+
+## PR #11 and the R2 hold
+
+PR #11 at `55a3df4968f5684bb4cb9e3c9781ab5f00165235` is an existing, separate
+semantics-v1 registered-wire/local-journal experiment. It is not included in this
+branch. Its successful replay tests do not prove v4 slot/quarantine recovery.
+Preserving the experiment does not authorize R2 continuation or integration.
+No rebase, main merge, tag, kernel change or R2 implementation is part of this
+correction. Basic v4 lifecycle work and independent E-4 remain open.

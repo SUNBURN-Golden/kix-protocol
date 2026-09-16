@@ -2,6 +2,14 @@
 
 An I/O-free deterministic transition model using only `kix-types` and Rust std collections. This is the first replacement execution kernel, not a production replicated engine.
 
+## Published review baseline
+
+Implementation commit: `b57d49d068c14d1a012e73cbc8c10c8f6ee5d631` (PR #12).
+Locked kernel Git blob: `69564b166f0c27f9af5d8422f0a466b18d74c20f`.
+Locked quarantine-test Git blob: `b607996c83a119c349f1cc90469ac1ba82764e20`.
+The published implementation is semantics version 4. This 2026-09-16
+correction changes documentation only, not the kernel or tests.
+
 ## Implemented meaning
 
 - Stable `(scope, principal, request)` command identity; exact original typed request comparison.
@@ -31,9 +39,20 @@ The budget includes stored event records, stored conflicts and outstanding reser
 
 This protects one first bound capture per authorized operation, not every future external fact. A NEW conflict at full capacity returns `Capacity` after quarantining bound operations and advancing ordered time; new evidence and unbound identities are not retained. The explicit quarantine set contains only bound operations and cannot exceed the actual order count. Unbound quarantine is derived from retained conflicts at reservation time, using the full provider/account/operation identity, and is bounded separately by retained evidence. The prior scope-wide overflow latch and mass review assignment are removed. Unrelated orders remain unaffected by arbitrary identities in rejected evidence. A fresh unbound operation still returns `UnknownOperation` without storage (or `Capacity` if already full), and an unretained unbound identity can later bind because the kernel lacks its evidence. That custody gap is not implemented by this patch. The adapter inbox named above is a requirement, not an implementation in this crate. Do not acknowledge provider receipt or claim universal external-success preservation based on these return values.
 
-The revised A patch uses **semantics version 4**: a conflicting event can quarantine bound orders even when returning Capacity, but unbound quarantine requires retained evidence. Earlier contexts are rejected, and there is no replay migration in this patch. The reference head remains unchanged; these are local working-copy changes. See the ADR review addendum for the decided unmatched-inbox responsibility and the proposed (unimplemented) terminal-outcome slot-release contract. Batch webhook delivery IDs require stable item-level normalization in the adapter; this patch does not implement it.
+The revised A patch uses **semantics version 4**: a conflicting event can quarantine bound orders even when returning Capacity, but unbound quarantine requires retained evidence. Earlier contexts are rejected, and there is no replay migration in this patch. This reviewed v4 implementation was published in PR #12 at `b57d49d068c14d1a012e73cbc8c10c8f6ee5d631`. Subsequent documentation-only corrections do not change the locked source. PR #11 is a separate semantics-v1 local-journal experiment, not an integrated v4 recovery path; its preservation does not lift the R2 hold. See the ADR review addendum for the decided unmatched-inbox responsibility and the proposed (unimplemented) terminal-outcome slot-release contract. Batch webhook delivery IDs require stable item-level normalization in the adapter; this patch does not implement it.
 
 ## Verification
+
+At the published implementation commit, KTX CI `34957674101` and full protocol
+CI `34957674135` both finished **completed / success**. The kernel total is
+**51 tests**: `transitions.rs` 32, `observation_slots.rs` 11 and
+`quarantine_capacity.rs` 8. The implementation submission reports 101 workspace
+tests separately; a repeated clean-target run is not an additional unique test.
+The old v2/93-test report is historical evidence, not the current acceptance
+record. Exact source blobs, run links, artifact identity and unchanged historical
+records are in [the validation record](../../../validation/2026-09-15-r1-observation-slots/README.md).
+No new Rust run is claimed by this documentation correction. Later heads require
+separate CI status reporting.
 
 `tests/transitions.rs` contains 32 deterministic regression cases after the R1 audit fixes. Successful state commands advance admitted time, including no-op expiry and duplicate observations; immutable reservation-result lookup remains read-only. Conflict evidence Capacity now also preserves safety quarantine and its ordered time. Actual compilation and run evidence belongs to the exact PR head/CI run, not this count. They test local transitions, not multithreaded competition, disks or a replica cluster.
 
