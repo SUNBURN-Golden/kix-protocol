@@ -1,0 +1,127 @@
+name: R1 baseline preservation operations
+on:
+  push:
+    branches: [codex/r1-baseline-preservation-20260916]
+    paths: [.github/workflows/r1-preservation-once.yml]
+permissions:
+  contents: read
+concurrency:
+  group: r1-preservation-20260916
+  cancel-in-progress: false
+jobs:
+  compatibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      annotation: ${{ steps.diagnostic.outputs.annotation }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
+        with:
+          toolchain: '1.98.1'
+      - name: Compare unchanged v1 tests with exact locked-v4 source in disposable worktrees
+        id: diagnostic
+        shell: bash
+        env:
+          V1: 55a3df4968f5684bb4cb9e3c9781ab5f00165235
+          V4: 0cb65749492bf78e6cea00d3c9c7eee4f891827d
+          LOCKED: 69564b166f0c27f9af5d8422f0a466b18d74c20f
+          CARGO_TARGET_DIR: ${{ runner.temp }}/r1-compat-target
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          git worktree add --detach "$RUNNER_TEMP/pr11-v1" "$V1"
+          git worktree add --detach "$RUNNER_TEMP/pr11-with-v4" "$V1"
+          git show "$V4:runtime/crates/kix-kernel/src/lib.rs" > "$RUNNER_TEMP/pr11-with-v4/runtime/crates/kix-kernel/src/lib.rs"
+          test "$(git hash-object "$RUNNER_TEMP/pr11-with-v4/runtime/crates/kix-kernel/src/lib.rs")" = "$LOCKED"
+          test "$(git -C "$RUNNER_TEMP/pr11-with-v4" diff --name-only)" = 'runtime/crates/kix-kernel/src/lib.rs'
+          git diff "$V1" "$V4" -- runtime/crates/kix-kernel/src/lib.rs > evidence/source-difference.patch
+          git rev-parse HEAD > evidence/operations-commit.txt
+          git rev-parse "$V1^{tree}" > evidence/pr11-tree.txt
+          rustc --version > evidence/toolchain.txt
+          cargo --version >> evidence/toolchain.txt
+          uname -a > evidence/platform.txt
+          for profile in v1 with-v4; do
+            root="$RUNNER_TEMP/pr11-$profile"
+            git -C "$root" status --porcelain > "evidence/$profile-source-status.txt"
+            git -C "$root" hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-ktx-wire/src/lib.rs runtime/crates/kix-ktx-wire/src/registry.rs runtime/crates/kix-ktx-wire/tests/golden_vectors.rs runtime/crates/kix-journal-local/src/lib.rs > "evidence/$profile-source-blobs.txt"
+            set +e
+            cargo test --manifest-path "$root/runtime/Cargo.toml" -p kix-ktx-wire --test golden_vectors --locked -- --nocapture --test-threads=1 > "evidence/$profile-wire.log" 2>&1
+            echo "$?" > "evidence/$profile-wire.exit"
+            cargo test --manifest-path "$root/runtime/Cargo.toml" -p kix-journal-local --locked -- --nocapture --test-threads=1 > "evidence/$profile-journal.log" 2>&1
+            echo "$?" > "evidence/$profile-journal.exit"
+            set -e
+          done
+          python3 - <<'PY'
+          import base64, json, os, pathlib, re, subprocess, tomllib
+          out=pathlib.Path('evidence')
+          rows={}
+          for name in ('v1-wire','v1-journal','with-v4-wire','with-v4-journal'):
+              text=(out/(name+'.log')).read_text()
+              rows[name]={'exit_code':int((out/(name+'.exit')).read_text()),'test_results':re.findall(r'(?m)^test result:.*$',text),'failed_tests':sorted(set(re.findall(r'(?m)^    ([A-Za-z_][A-Za-z0-9_:]+)$',text))),'unsupported_semantics_seen':'UnsupportedSemantics' in text,'raw_log':name+'.log'}
+          assert rows['v1-wire']['exit_code']==0 and rows['v1-journal']['exit_code']==0, rows
+          members=tomllib.loads(subprocess.check_output(['git','show',os.environ['V1']+':runtime/Cargo.toml'],text=True))['workspace']['members']
+          result={'scope':'one-off compatibility check only; no source fix, no integration commit, no R2 development','v1_commit':os.environ['V1'],'v1_tree':(out/'pr11-tree.txt').read_text().strip(),'v4_source_commit':os.environ['V4'],'locked_kernel':os.environ['LOCKED'],'only_worktree_change':'runtime/crates/kix-kernel/src/lib.rs replaced byte-for-byte with existing locked v4 blob','wire_and_golden_unchanged':True,'crates':members,'runs':rows,'diagnostic_run':os.environ['GITHUB_RUN_ID'],'operations_commit':os.environ['GITHUB_SHA']}
+          (out/'compatibility.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+          annotation='PR #11 preservation only; not merged or adopted.\nKernel semantics: 1. Current main kernel semantics: 4.\nTarget commit: '+result['v1_commit']+'\nTarget tree: '+result['v1_tree']+'\nCrates: '+', '.join(members)+'\nOriginal CI: 34938172828 (KTX), 34938172791 (full protocol).\nActual compatibility run: '+os.environ['GITHUB_RUN_ID']+'\nV4 kernel blob: '+os.environ['LOCKED']+'\nOnly disposable runner worktrees were combined; original wire/golden untouched.\n'
+          for name,row in rows.items():
+              annotation+=name+': exit='+str(row['exit_code'])+'; '+ '; '.join(row['test_results'])+'; failed='+', '.join(row['failed_tests'])+'\n'
+          annotation+='Raw logs and source hashes: artifact pr11-v4-compatibility-'+os.environ['GITHUB_RUN_ID']+'.\nIntegration (a) remains unapproved, estimated 16-26 person-days for the previously specified limited scope, to be re-estimated after lifecycle contracts. No R2 continuation or production guarantee. No branch deletion.\n'
+          (out/'experimental-tag-annotation.txt').write_text(annotation)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('annotation='+base64.b64encode(annotation.encode()).decode()+'\n')
+          print(json.dumps(result,ensure_ascii=False,indent=2))
+          PY
+      - name: Preserve raw diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr11-v4-compatibility-${{ github.run_id }}
+          path: evidence/
+          retention-days: 30
+  preserve-experiment:
+    needs: compatibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Create only the user-authorized annotated experimental tag; never overwrite
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANNOTATION_B64: ${{ needs.compatibility.outputs.annotation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, json, os, pathlib, urllib.request, urllib.error
+          base='https://api.github.com/repos/BeautifulMind-JT/kix-protocol/'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          def api(path,data=None):
+              req=urllib.request.Request(base+path,data=None if data is None else json.dumps(data).encode(),headers=headers,method='GET' if data is None else 'POST')
+              with urllib.request.urlopen(req) as r:return json.load(r)
+          name='kix-exp-r2a-local-journal-v1-20260916'
+          target='55a3df4968f5684bb4cb9e3c9781ab5f00165235'
+          try:
+              existing=api('git/ref/tags/'+name)
+          except urllib.error.HTTPError as e:
+              if e.code!=404:raise
+          else:
+              raise RuntimeError('Ref already exists; refusing overwrite: '+existing['ref'])
+          message=base64.b64decode(os.environ['ANNOTATION_B64']).decode()
+          tag=api('git/tags',{'tag':name,'message':message,'object':target,'type':'commit'})
+          ref=api('git/refs',{'ref':'refs/tags/'+name,'sha':tag['sha']})
+          verified=api('git/tags/'+ref['object']['sha'])
+          assert verified['object']['sha']==target and verified['message'].strip()==message.strip()
+          pathlib.Path('tag-result.json').write_text(json.dumps({'ref':ref,'tag':verified},indent=2)+'\n')
+          print(json.dumps({'tag':name,'tag_object':tag['sha'],'target_commit':target,'published':True},indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: experimental-tag-${{ github.run_id }}
+          path: tag-result.json
+          retention-days: 30
