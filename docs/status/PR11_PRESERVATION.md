@@ -129,3 +129,21 @@ cold-build 정정은 이 문서의 기존 설명을 그대로 따른다. 기존 
 확인 시 원브랜치 `codex/r1-baseline-preservation-20260916`는 같은 commit에 유지됐다.
 이 태그를 유지하면 브랜치 ref 삭제 후에도 해당 tip과 선행 이력을 조회할 수 있지만,
 브랜치 삭제 여부는 사용자가 별도 결정한다. 여기서는 삭제·태그 이동·보호 설정을 하지 않는다.
+
+
+### Release body의 저장소 사본 — CRLF 원문 보존
+
+[Release 390417793의 조회 당시 본문 사본](release-bodies/RELEASE_390417793_BODY_2b358c225256.txt)을
+저장소에 보존한다. 앞선 원격 대조에서 확보한 **UTF-8 원문 4,676바이트** 그대로이며,
+CRLF 75개와 파일 끝의 CRLF도 보존한다. 사본에 설명을 덧붙이거나 LF로 정규화하지 않는다.
+
+| 사본 식별자 | 값 |
+|---|---|
+| 정확한 원문 Git blob | `2b358c225256e8c13c517167c8b1c30156a4383d` |
+| 정확한 원문 SHA-256 | `9f2bef0cba3d1ab036083b5b4a661497082ad62b592c9f7dedc1b54dd8da87e3` |
+| CRLF를 LF로 바꾼 비교용 Git blob | `55e253944f1cf66faa27652680ca7b2a3783b1c3` — 원문 사본의 blob이 아님 |
+
+이는 mutable한 GitHub Release body의 **확인 시점 사본**이다. 이후 웹 본문이 바뀌어도
+사본을 조용히 동기화하거나 같은 바이트라고 주장하지 않는다. 원문 사본을 Git에
+보존하는 것과 lightweight tag에 annotated tag object가 생기는 것은 다르다.
+이 보존은 새 R1 실행 기준선, R2·(a) 착수 승인 또는 브랜치 삭제 실행이 아니다.
