@@ -9,6 +9,7 @@ The accepted authority choice is [model 1](../decisions/AUTHORITY_MODEL_1.md), a
 [DEVELOPMENT_PLAN](../DEVELOPMENT_PLAN.md) is the current approval/sequence authority.
 R2 and integration (a) remain prohibited; no kernel or adapter change is made here.
 LC-TERM update on 2026-09-17: [STATE_LIFECYCLE §5](../contracts/STATE_LIFECYCLE.md)
+(current draft 0.5; alternate-full-scope confirmation 2026-09-17)
 is the authority for operational closure: objective conditions, designated approval
 and a durable decision. Provider-guaranteed eternal non-execution is no longer a
 required precondition. External money facts, chain authority, and approval of
@@ -177,8 +178,18 @@ allowed effects, residual risk and the durable commit boundary. Incomplete
 conditions have no human override. Automatic approval is excluded from paths
 where retaining late facts does not bound the loss, including inventory resales,
 fund/collateral release, duplicate compensation, and unavailable late-fact storage.
-The current enabled automatic scope is zero. A human/organizational policy owner,
-not the AI service itself, authorizes immutable rule versions and revocation.
+The current enabled automatic scope is zero. The designated issuer/primary
+approver is 박준태, and the named alternate is 박명운 이사. The primary grant is
+full within the existing LC-TERM constraints, indefinite and revocable; periodic
+reconfirmation is not required. The alternate has **the same full approval scope**,
+exercisable only during valid A/B succession and within its recorded activation scope.
+This confirmation is included in the unissued initial declaration
+`KIX-LC-TERM-HUMAN-AUTH/g0001`, not a fictitious reissue as g0002.
+Contract 0.4 remains a historical draft; the changed text is version 0.5.
+STATE_LIFECYCLE §5.4 defines generation-bearing IDs,
+event records, sole alternate succession assessment, return by the primary, and
+no approval when both are interested parties. The issuer, not the AI service
+or a succession declaration, controls authority amendments and revocation.
 
 STATE_LIFECYCLE §§5.3–5.8 define time anchors, 15-day idempotency limits, approval
 races, and separate slot/review/history permissions. The contract version is not
