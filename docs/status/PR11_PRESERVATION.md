@@ -89,3 +89,61 @@ R1 잠금은 그대로다.
 그 SHA의 최종 CI를 주석에 기록한 뒤 발행한다. 통합 완료·R2 완료 태그가 아니다.
 브랜치·태그 보호 설정은 조회만 하며, annotated tag 발행을 보호 규칙 적용이나
 암호학적 서명 완료로 설명하지 않는다.
+
+## 2026-09-17 추가 보존 — 일회성 운영 workflow 이력
+
+확인한 main: `1fb0c8b50ac4de5693996412337d36cd6683bdf2`.
+사용자가 GitHub 웹에서 아래 태그와 Pre-release를 발행했다. 이는 위 #11의 v1 소스
+보존 태그와 별개로, 보존·호환성 진단·기준선 태그 발행을 수행한 운영 소스의 보존이다.
+
+| 항목 | 원격 확인값 |
+|---|---|
+| 보존 태그 | `kix-exp-r1-preservation-ops-v1-20260916` |
+| Git ref 유형 | **lightweight** — ref가 commit을 직접 가리킴. 별도 annotated tag object/message 없음 |
+| 대상 commit | `2e43b285e2a07b4af6377ae7f776a550dd884e95` |
+| 대상 tree | `e864de49dcfbb053232ba42b24dbdeab04b43373` |
+| 최종 workflow | `.github/workflows/r1-preservation-once.yml` |
+| workflow Git blob | `492ae8c9d7a3171890cbea2ecdb913519b83c158` |
+| GitHub Release | ID `390417793`, `draft=false`, `prerelease=true`, 조회 시 `immutable=false` |
+| 릴리스 공개시각 | 2026-09-17 12:38:04 KST (`published_at=2026-09-17T03:38:04Z`) |
+
+[발행된 Pre-release와 보존 설명](https://github.com/BeautifulMind-JT/kix-protocol/releases/tag/kix-exp-r1-preservation-ops-v1-20260916).
+설명은 Git tag 주석이 아니라 **GitHub Release의 body**에 있다. tag object SHA에
+commit SHA나 body 파일의 계산상 blob을 대신 적지 않는다. Git tag를 가져오는 것만으로
+이 릴리스 본문까지 Git 객체로 보존되는 것은 아니다.
+
+원 준비본 Git blob은 `2676b5bff0f8d696f18139aebb7e862a965139e3`이다. 준비본에서
+`요청한 태그 이름:` 한 줄을 제거하고 CRLF를 LF로 통일하면 실제 릴리스 본문과 같다.
+확인한 body를 UTF-8 파일로 저장한 계산상 Git blob은
+`2b358c225256e8c13c517167c8b1c30156a4383d`(4,676바이트, CRLF 75개)이며,
+SHA-256은 `9f2bef0cba3d1ab036083b5b4a661497082ad62b592c9f7dedc1b54dd8da87e3`이다.
+줄바꿈 통일 후 비교값은 `55e253944f1cf66faa27652680ca7b2a3783b1c3`이다.
+이 해시는 **조회한 릴리스 본문 스냅샷의 식별자**이지 GitHub tag object SHA가 아니다.
+
+태그가 보존하는 네 고유 commit은 `84cc3ea7763ed6d5e08021e1a9930edd7ff5721d`,
+`78f7f80e22f35b8a8cfae56cbded38f3caf22331`, `521f06f7d9194ffc4eae21bfb13f7e82b6ef9241`,
+`2e43b285e2a07b4af6377ae7f776a550dd884e95`이다. 초기 shared-target 결과의 인수 제외와
+cold-build 정정은 이 문서의 기존 설명을 그대로 따른다. 기존 R1·#11 태그 세 개는
+이전 조회와 같은 tag object를 유지했다. 이번 보존은 현행 실행용·R2·(a) 승인이 아니다.
+
+확인 시 원브랜치 `codex/r1-baseline-preservation-20260916`는 같은 commit에 유지됐다.
+이 태그를 유지하면 브랜치 ref 삭제 후에도 해당 tip과 선행 이력을 조회할 수 있지만,
+브랜치 삭제 여부는 사용자가 별도 결정한다. 여기서는 삭제·태그 이동·보호 설정을 하지 않는다.
+
+
+### Release body의 저장소 사본 — CRLF 원문 보존
+
+[Release 390417793의 조회 당시 본문 사본](release-bodies/RELEASE_390417793_BODY_2b358c225256.txt)을
+저장소에 보존한다. 앞선 원격 대조에서 확보한 **UTF-8 원문 4,676바이트** 그대로이며,
+CRLF 75개와 파일 끝의 CRLF도 보존한다. 사본에 설명을 덧붙이거나 LF로 정규화하지 않는다.
+
+| 사본 식별자 | 값 |
+|---|---|
+| 정확한 원문 Git blob | `2b358c225256e8c13c517167c8b1c30156a4383d` |
+| 정확한 원문 SHA-256 | `9f2bef0cba3d1ab036083b5b4a661497082ad62b592c9f7dedc1b54dd8da87e3` |
+| CRLF를 LF로 바꾼 비교용 Git blob | `55e253944f1cf66faa27652680ca7b2a3783b1c3` — 원문 사본의 blob이 아님 |
+
+이는 mutable한 GitHub Release body의 **확인 시점 사본**이다. 이후 웹 본문이 바뀌어도
+사본을 조용히 동기화하거나 같은 바이트라고 주장하지 않는다. 원문 사본을 Git에
+보존하는 것과 lightweight tag에 annotated tag object가 생기는 것은 다르다.
+이 보존은 새 R1 실행 기준선, R2·(a) 착수 승인 또는 브랜치 삭제 실행이 아니다.

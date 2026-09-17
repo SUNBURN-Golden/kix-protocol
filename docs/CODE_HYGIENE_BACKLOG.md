@@ -58,3 +58,40 @@
 
 구체 라이선스나 특허 적격성·투자 요건을 확정하는 문서가 아니다. 원문 D1의 저장소
 보존 여부도 공개 라이선스 부여와는 다른 결정이다. 위생 일괄 실행 금지는 유지한다.
+
+
+## GitHub Actions Node.js 20 내부 런타임 경고 — (나), 실행하지 않음
+
+확인일: 2026-09-17 (Asia/Seoul). [전체 protocol run 35180715217](https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/35180715217),
+job `105072047798`의 초기 로그에서 Node.js 20 deprecation 경고를 확인했다.
+PR head는 `37504dd43411d331d6e0d9351c86ae0e10ae33f0`, 실제 checkout은 pull_request
+가상 병합 commit `3995d878823727669023fa395819c79a8c227850`이고 두 tree는
+`6edba1a60c14d5b43bf05336294e678b46794fee`로 같다. 당시 workflow blob은
+`62fd4302af952a66c1a6e3fb3b3ea5a1eeebee64`다.
+
+| 분류 | 경고가 지목한 action 참조 | 해당 실행에서 해석된 commit SHA | 영향·후속 검토 |
+|---|---|---|---|
+| 나 | `actions/checkout@v4` | `34e114876b0b11c390a56381ad16ebd13914f8d5` | action 내부 JavaScript 실행 런타임 전환·runner 호환성 검토 |
+| 나 | `actions/setup-python@v5` | `a26af69be951a213d495a4c3e4e4022e16d87065` | Python 설정 action 자체의 JavaScript 런타임. 프로젝트 Python 버전과 별개 |
+| 나 | `actions/setup-node@v4` | `49933ea5288caeca8642d1e84afbd3f7d6820020` | action 내부 런타임과 설치 대상 Node 버전을 분리해 검토 |
+| 나 | `actions/upload-artifact@v4` | `ea165f8d65b6e75b540449e92b4886f43607fa02` | artifact 업로드 action 런타임·산출물 동작 유지 검토 |
+
+해당 경고의 원문(로그 시각 `2026-09-17T04:07:29.8541242Z`):
+
+> Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and will be forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/setup-node@v4, actions/upload-artifact@v4.
+
+경고가 안내한 [공식 변경 공지](https://github.blog/changelog/2026-09-16-deprecation-of-node-20-on-github-actions-runners/)의
+본문은 이번 외부 조회에서 확보하지 못했다. 따라서 강제 전환 일정·최소 runner 버전·
+대체 action 버전은 이 경고만으로 확정하지 않는다. 위 표는 실제 CI 경고와 다운로드
+로그에 근거한 현재 사용값이며, 임의의 업그레이드 버전을 적용하라는 지시가 아니다.
+
+같은 workflow는 `node-version: 24`이고 로그에서 설치된 프로젝트 Node는 `v24.19.0`이다.
+**프로젝트가 Node 20으로 실행됐다는 뜻이 아니라 action 내부 Node 20 경고**다.
+`dtolnay/rust-toolchain@stable`은 이 경고의 대상 목록에 없으며 포함시키지 않는다.
+해당 전체 run은 completed/success였다. 경고를 테스트 실패나 커널 결함으로 분류하지 않는다.
+
+후속 승인 시 지원되는 action 릴리스·고정 방식·최소 runner 조건과 checkout/도구 설치/
+artifact 업로드 동작을 확인하고 기존 전체 회귀·잠금 blob 대조가 유지되는지 검증한다.
+분류는 **(나)**이며, 두 잠금 파일을 변경하지 않고 처리할 수 있는 workflow 유지보수다.
+**이번에는 이 목록과 증거만 추가했다. workflow·action 버전·환경 변수·runner·코드·
+Cargo·설정은 변경하지 않았으며, 위생 일괄 실행·R2·(a) 착수를 승인하지 않는다.**

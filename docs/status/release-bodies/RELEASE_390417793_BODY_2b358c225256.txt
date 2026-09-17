@@ -1,0 +1,75 @@
+KIX R1 일회성 보존 운영 이력 — 현행 실행용 아님
+
+Target commit: 2e43b285e2a07b4af6377ae7f776a550dd884e95
+Target tree: e864de49dcfbb053232ba42b24dbdeab04b43373
+Final workflow path: .github/workflows/r1-preservation-once.yml
+Final workflow Git blob: 492ae8c9d7a3171890cbea2ecdb913519b83c158
+보존 대상 브랜치: codex/r1-baseline-preservation-20260916
+태그 이름의 20260916은 역사적 작업 날짜이며 발행시각을 소급 지정하는 뜻이 아니다.
+
+보존되는 네 고유 커밋 — 시간순, 원 메시지 그대로:
+
+84cc3ea7763ed6d5e08021e1a9930edd7ff5721d
+ops: run requested isolated PR11-v4 compatibility check and preserve v1 tag
+
+78f7f80e22f35b8a8cfae56cbded38f3caf22331
+ops: invalidate shared-target diagnostic and repeat with separate cold builds; no tag publication
+
+521f06f7d9194ffc4eae21bfb13f7e82b6ef9241
+ops: publish corrected v1 preservation tag from reviewed cold-build evidence
+
+2e43b285e2a07b4af6377ae7f776a550dd884e95
+ops: verify exact post-merge main and gate baseline tag on its full push CI
+
+결과가 이미 보존된 main 문서:
+- docs/status/PR11_PRESERVATION.md
+- 확인한 main commit: 1fb0c8b50ac4de5693996412337d36cd6683bdf2
+- 문서 Git blob: 9cf533b69af2d001bc6ce1884987f4c08572fb0a
+- 고정 링크: https://github.com/BeautifulMind-JT/kix-protocol/blob/1fb0c8b50ac4de5693996412337d36cd6683bdf2/docs/status/PR11_PRESERVATION.md
+
+관련 기존 태그 — 이 운영 이력의 target commit과 혼동하지 않음:
+1. kix-exp-r2a-local-journal-v1-20260916-r2
+   Annotated tag object: 1311668253bbbbffdc90f1a9f446c42d43e5fa1f
+   Target commit: 55a3df4968f5684bb4cb9e3c9781ab5f00165235
+   Target tree: 38901ede6a20dc67025014116ea92c0ea35f8bf5
+2. kix-r1-v4-verification-baseline-20260916
+   Annotated tag object: 05d133c9dc4ef8e979391ced4099d2c9415e0124
+   Target commit: d5b9f2d67b5532fa35464c8557e88f70be300888
+   Target tree: c3b02085650ad394283f3325cf5dd87664c66ddb
+   Exact-main full protocol CI: 35079606640
+   일회성 기준선 검사·태그 발행 operation run: 35079754929
+
+초기 공유 빌드 결과의 인수 제외와 cold-build 정정:
+초기 workflow commit 84cc3ea7763ed6d5e08021e1a9930edd7ff5721d의 run
+35078643445는 v1과 v4 overlay에 shared CARGO_TARGET_DIR를 사용했다.
+v4 재컴파일 없이 같은 binary가 사용될 가능성을 배제하지 못했으므로, 그
+all-pass 호환성 결과와 이를 인용한 초기 태그의 주석은 인수 근거에서 제외한다.
+초기 태그 kix-exp-r2a-local-journal-v1-20260916의 object는
+7e6d215031d7ff454b132b8c1ca657455cbc2734이며 원래 v1 commit을 가리킨다.
+해당 태그를 이동하거나 삭제해 정정 이력을 숨기지 않는다.
+
+commit 78f7f80e22f35b8a8cfae56cbded38f3caf22331 / cold-build run 35079017799에서
+처음에 비어 있는 별도 CARGO_TARGET_DIR와 CARGO_INCREMENTAL=0을 사용했고
+두 커널이 재컴파일됐음을 기록했다. 원본 v1 wire golden은 9통과였고, locked-v4
+커널 overlay는 4통과/5실패(exit 101), BodyEncode 3건과 UnsupportedSemantics 2건이다.
+journal library/recovery는 양쪽에서 1+13통과였지만 현재 SEMANTICS_VERSION으로
+fixture를 만들므로 v1 로그 이관이나 모든 v4 슬롯·격리 복원의 증명이 아니다.
+보존 raw artifact: 10439546137 / pr11-v4-cold-compatibility-35079017799.
+기록된 artifact ZIP SHA-256:
+ea1d734e9a06f430875fb86ddc42be39d5bea723605338dc70de3f5b0bca4a35
+이 수치는 역사 자료의 식별자이며 이번 태그 준비에서 그 시험을 재실행한 것은 아니다.
+
+commit 521f06f7d9194ffc4eae21bfb13f7e82b6ef9241는 검토된 cold-build 근거를 담은
+-r2 정정 보존 태그를 발행했다. 마지막 commit 2e43b285e2a07b4af6377ae7f776a550dd884e95는
+고정된 main d5b9f2d67b5532fa35464c8557e88f70be300888의 검사와 전체 push CI를
+통과한 뒤 R1 기준 태그를 발행하는 일회성 workflow다.
+
+현행 실행용·일반화된 CI·거래 기능으로 채택하는 태그가 아니다.
+R2 또는 (a) 통합의 착수·완료 승인, v1/v4 호환성 승인, 운영 준비 승인이 아니다.
+역사적 (a) 견적을 현행 견적이나 독립 R2 추정으로 전용하지 않는다.
+기존 main 코드와 workflow, 기존 R1/#11 태그를 변경하거나 과거 workflow를
+재실행하지 않는다. 이 보존 기록은 브랜치 삭제 승인도 아니며 원브랜치는 유지한다.
+
+잠금 소스 식별자:
+- runtime/crates/kix-kernel/src/lib.rs: 69564b166f0c27f9af5d8422f0a466b18d74c20f
+- runtime/crates/kix-kernel/tests/quarantine_capacity.rs: b607996c83a119c349f1cc90469ac1ba82764e20
