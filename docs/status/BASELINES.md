@@ -42,4 +42,7 @@ R1 기준선 태그가 가리키는 main의 전체 protocol run은 `35079606640`
 exact-main 검증은 operation run `35079754929`에서 target main을 checkout했습니다.
 PR #13 전체 run `35069017150`과 KTX run `35069017358`은 #13 head 대상입니다.
 이전 SHA의 성공을 새 문서 변경 head의 성공으로 자동 표시하지 않습니다.
-태그는 annotated/unsigned이며 문서상 고정과 서버 보호 규칙은 별개입니다.
+위 표의 기존 R1·#11 태그는 annotated/unsigned이며 문서상 고정과 서버 보호 규칙은 별개입니다.
+2026-09-17 추가된 `kix-exp-r1-preservation-ops-v1-20260916`은 운영 이력 보존용
+**lightweight tag + GitHub Pre-release 본문**입니다. 새 개발 기준선으로 세지 않습니다.
+대상 commit·tree·본문 위치와 대조값은 [운영 이력 보존 기록](PR11_PRESERVATION.md)에 있습니다.
