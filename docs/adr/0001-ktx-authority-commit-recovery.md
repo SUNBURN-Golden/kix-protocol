@@ -9,7 +9,8 @@ The accepted authority choice is [model 1](../decisions/AUTHORITY_MODEL_1.md), a
 [DEVELOPMENT_PLAN](../DEVELOPMENT_PLAN.md) is the current approval/sequence authority.
 R2 and integration (a) remain prohibited; no kernel or adapter change is made here.
 LC-TERM update on 2026-09-17: [STATE_LIFECYCLE §5](../contracts/STATE_LIFECYCLE.md)
-(current draft 0.5; alternate-full-scope confirmation 2026-09-17)
+(current draft 0.6; alternate-full-scope confirmation 2026-09-17, ReturnRequired/review
+precedence clarification 2026-09-19)
 is the authority for operational closure: objective conditions, designated approval
 and a durable decision. Provider-guaranteed eternal non-execution is no longer a
 required precondition. External money facts, chain authority, and approval of

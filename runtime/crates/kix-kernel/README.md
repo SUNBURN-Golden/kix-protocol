@@ -22,6 +22,7 @@ correction changes documentation only, not the kernel or tests.
 - Capture event and economic operation deduplication are distinct. Quarantine every already bound operation named by a conflict before checking evidence capacity. An unbound identity blocks future binding only if the conflict evidence is retained. Matching later evidence never clears a bound order's review automatically.
 - Before authorizing the first external send, `mark_payment_unknown` reserves one first-capture observation slot for that operation or returns `Capacity` without changing the order. UNKNOWN retries reuse the reservation. Unrelated events and conflicting evidence cannot spend it.
 - Matching capture after expiry/cancellation creates ReturnRequired without reviving the old reservation or releasing another order's seats.
+- ReturnRequired stays the order's state once it exists; `review_required` is an orthogonal sticky marker that can coexist with it. Later mismatching evidence may return the `Review` outcome and set review, but it keeps ReturnRequired and the retained capture and releases no inventory (STATE_LIFECYCLE 0.6 §5.7.1).
 
 ## Hard boundaries
 
