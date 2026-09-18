@@ -4,7 +4,9 @@ Task: `docs/tasks/DEVIN_FIRST_BATCH_E4_AUDIT.md`.
 Base (`origin/main` at session start): `5fffc196be37425366b2a6ec7faeec1db9bbca46`.
 PR #20 head before this change: `a4ab8d0119daba974dd59a20d3da05d82bd61118`.
 `origin/main` had not moved from the bootstrap base, so the task base is unchanged.
-The exact head SHA carrying this note is reported in the PR summary comment.
+Implementation head: `9e8f4898cb429e1146ea924d6c254b7fd490a3b2`. The final head,
+which adds only the CI-evidence update to this note, is reported in the PR
+closure summary.
 
 This is a test-and-evidence record. No kernel semantics, R2, integration (a),
 storage/log engine, lifecycle release/GC/index, live PG/bank or live Sui work is
@@ -97,8 +99,23 @@ Local machine, `rustc 1.98.1 (48a229cea 2026-09-01)` / `cargo 1.98.1`
 | `python scripts/verify_runtime_architecture.py` | `architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified` |
 | `python scripts/test_runtime_architecture.py` | OK — 7 tests |
 
-These are local runs. GitHub Actions results for the exact head are reported in
-the PR, not claimed here.
+These are local runs.
+
+## Exact-head CI
+
+GitHub Actions for the implementation head
+`9e8f4898cb429e1146ea924d6c254b7fd490a3b2` (the head carrying
+`contract_edge_cases.rs` and the first version of this note):
+
+| Workflow | Job | Run ID | Conclusion |
+|---|---|---|---|
+| KTX kernel verification | `kernel` | 35368755033 | completed / success |
+| KIX protocol verification | `protocol` | 35368755012 | completed / success |
+
+Both run IDs were read back from the GitHub API with
+`head_sha = 9e8f4898cb429e1146ea924d6c254b7fd490a3b2`. This closure commit
+changes only this file; its own CI conclusion is reported in the PR and is not
+claimed by these two run IDs.
 
 ## Not tested / non-claims
 
