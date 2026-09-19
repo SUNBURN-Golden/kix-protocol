@@ -3,8 +3,10 @@
 2026-09-17 대체자 동일 범위·최초 선언 확정. 기준 main
 `3cbb8df3a466fe171d7261f9090c324a458af3f6`, 이 문서의 변경 전 blob
 `26be51051939cfe88f7ff542f355f10ff7a3fcd7`.
-정본은 [STATE_LIFECYCLE](STATE_LIFECYCLE.md) 초안 0.5,
-개정 ID `LC-TERM-alternate-full-scope-20260917`의 §§3–7이다.
+정본은 [STATE_LIFECYCLE](STATE_LIFECYCLE.md) 초안 0.6,
+개정 ID `LC-PRECEDENCE-returnrequired-review-20260919`의 §§3–7이다.
+0.6은 0.5(`LC-TERM-alternate-full-scope-20260917`)의 조건·승인 정의를 계승하고
+ReturnRequired·review 우선순위만 명확화한다(§5.7.1). 아래 입력 집계는 바뀌지 않는다.
 [PG_TOSS_CARD_PROFILE](PG_TOSS_CARD_PROFILE.md)의 공개값·출처와 실제 계약 입력을 구분한다.
 이번에는 대체자 박명운 이사의 범위를 기본 승인자 박준태와 동일한 전체로 확정했다.
 유효한 A/B 승계에서만 행사하며, 미발급 g0001 최초 선언에 포함한다.

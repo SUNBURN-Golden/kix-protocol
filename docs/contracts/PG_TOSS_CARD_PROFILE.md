@@ -185,8 +185,12 @@ API 버전·회신 권한을 보존하고 프로파일/공통 계약의 변경�
 
 ## 9. LC-TERM 변경의 적용 경계 — 2026-09-17
 
-공통 정본은 STATE_LIFECYCLE 초안 **0.5**, 개정 ID
-`LC-TERM-alternate-full-scope-20260917`이다. 운영 종결의 조건·승인 정의는 0.3에서 계승한다. 카드 원천결과 미확인, 처리 흐름 종결,
+공통 정본은 STATE_LIFECYCLE 초안 **0.6**, 개정 ID
+`LC-PRECEDENCE-returnrequired-review-20260919`이다. 0.6은 0.5
+(`LC-TERM-alternate-full-scope-20260917`)를 계승하고 §5.7.1에서 ReturnRequired와
+review_required의 우선순위·직교성만 명확화한다. 불일치 capture의 Review/격리는
+기존 ReturnRequired 상태를 대체하지 않으며 보존된 capture도 지우지 않는다.
+운영 종결의 조건·승인 정의는 0.3에서 계승한다. 카드 원천결과 미확인, 처리 흐름 종결,
 슬롯 인계·기록 회수·review 해제는 서로 다른 상태/허가다. 가능한 PG 증거가 부족하다는
 것과 인증조회 실패/원요청 누락이라는 필수조건 실패를 구분한다. 후자는 사람이 승인해도
 통과시키지 않는다. 이미 승인 이력이 있으면 '없었다'로 종결하지 않는다.
