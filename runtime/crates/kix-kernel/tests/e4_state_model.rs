@@ -513,10 +513,15 @@ fn relation_action(
         Family::P1CommandIdentity => match (rng.below(8), pick(rng, &model.commands)) {
             (0..=2, Some((known, _))) => {
                 if rng.below(3) == 0 {
-                    match rng.below(3) {
+                    match rng.below(4) {
                         0 => ctx.semantics_version = 1,
                         1 => ctx.fence.generation = ctx.fence.generation.saturating_sub(1),
-                        _ => ctx.now_ms = model.time.saturating_sub(1),
+                        2 => ctx.now_ms = model.time.saturating_sub(1),
+                        _ => {
+                            let mut foreign = known.clone();
+                            foreign.id.scope = id(999);
+                            return Action::Reserve(foreign);
+                        }
                     }
                 }
                 Action::Reserve(known.clone())
@@ -535,19 +540,41 @@ fn relation_action(
                         }
                     }
                 }
-                if rng.below(3) == 0 {
-                    ctx.fence.generation = ctx.fence.generation.saturating_sub(1);
+                match rng.below(4) {
+                    0 => ctx.fence.generation = ctx.fence.generation.saturating_sub(1),
+                    1 => ctx.now_ms = model.time.saturating_sub(1),
+                    _ => {}
                 }
                 Action::Reserve(altered)
             }
-            (6, _) => {
-                let mut input = fresh_request(planner, rng, model, ctx.now_ms);
-                input.selection = Selection::Seats {
-                    first: u16::MAX,
-                    count: 1,
-                };
-                Action::Reserve(input)
-            }
+            (6, _) => match rng.below(3) {
+                0 => {
+                    // Unavailable rejection: ask for a selection another order still owns.
+                    let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                    input.selection = pick(rng, &orders_where(model, |o| o.owns))
+                        .map(|o| o.input.selection)
+                        .unwrap_or(Selection::Seats {
+                            first: u16::MAX,
+                            count: 1,
+                        });
+                    Action::Reserve(input)
+                }
+                1 => match pick(rng, &orders_where(model, |o| o.phase == OrderState::Held)) {
+                    Some(order) => {
+                        ctx.now_ms = ctx.now_ms.max(order.input.expires_at_ms);
+                        Action::Expire(order.input.order_id)
+                    }
+                    None => background(planner, rng),
+                },
+                _ => {
+                    let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                    input.selection = Selection::Seats {
+                        first: u16::MAX,
+                        count: 1,
+                    };
+                    Action::Reserve(input)
+                }
+            },
             _ => background(planner, rng),
         },
         Family::P2OperationBinding => match rng.below(8) {
@@ -611,6 +638,11 @@ fn relation_action(
                     }
                     None => background(planner, rng),
                 }
+            }
+            8 => {
+                let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                input.expires_at_ms = ctx.now_ms;
+                Action::Reserve(input)
             }
             _ => background(planner, rng),
         },
@@ -1064,6 +1096,347 @@ fn baseline_corpus_relation_coverage_is_inventoried_not_retuned() {
         format!("baseline cases={CASES} steps={STEPS}\nreached={}\nrequired_classes_not_reached_by_baseline:\n{unreached}", total.to_json()),
     )
     .unwrap();
+}
+
+/// One row of the Task 003-C crosswalk: a frozen Task 001 deterministic test in
+/// `contract_edge_cases.rs` mapped to the observer classes whose generated
+/// witnesses establish the same contract predicate on the reference model.
+struct CrosswalkRow {
+    deterministic_test: &'static str,
+    predicate: &'static str,
+    /// Observer classes that together cover the predicate (family, class).
+    classes: &'static [(Family, &'static str)],
+    /// Subset of `classes` added by Task 003-C; empty when pre-existing evidence sufficed.
+    anchors: &'static [(Family, &'static str)],
+}
+
+fn crosswalk_rows() -> [CrosswalkRow; 8] {
+    use Family::*;
+    [
+        CrosswalkRow {
+            deterministic_test: "rejection_replay_stays_immutable_after_the_blocking_hold_is_released",
+            predicate: "a rejected first result replays read-only even after the blocking hold was released and the selection is free again; only a new command identity can take the released seat",
+            classes: &[
+                (P1CommandIdentity, "replay_of_rejected_first_result"),
+                (P1CommandIdentity, "replay_after_state_changed"),
+                (
+                    P1CommandIdentity,
+                    "rejected_replay_after_unavailable_cause_cleared",
+                ),
+                (
+                    P1CommandIdentity,
+                    "new_identity_holds_selection_rejected_earlier",
+                ),
+            ],
+            anchors: &[
+                (
+                    P1CommandIdentity,
+                    "rejected_replay_after_unavailable_cause_cleared",
+                ),
+                (
+                    P1CommandIdentity,
+                    "new_identity_holds_selection_rejected_earlier",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "altered_payload_conflicts_before_fence_and_clock_guards",
+            predicate: "same identity with an altered payload is CommandConflict and leaves state unchanged even under a stale execution fence or a regressed clock; the unchanged payload still replays",
+            classes: &[
+                (P1CommandIdentity, "altered_payload_conflict"),
+                (P1CommandIdentity, "altered_field_order_id"),
+                (P1CommandIdentity, "altered_field_operation"),
+                (P1CommandIdentity, "altered_field_expiry"),
+                (P1CommandIdentity, "altered_field_selection"),
+                (
+                    P1CommandIdentity,
+                    "altered_payload_conflict_under_stale_fence",
+                ),
+                (
+                    P1CommandIdentity,
+                    "altered_payload_conflict_under_regressed_clock",
+                ),
+                (P1CommandIdentity, "replay_exact"),
+            ],
+            anchors: &[
+                (
+                    P1CommandIdentity,
+                    "altered_payload_conflict_under_stale_fence",
+                ),
+                (
+                    P1CommandIdentity,
+                    "altered_payload_conflict_under_regressed_clock",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "replay_lookup_is_guarded_by_scope_and_semantics_only",
+            predicate: "a known identity under a foreign scope is WrongScope and under another semantics version is UnsupportedSemantics without state change; a regressed clock or a foreign fence does not stop the read-only replay",
+            classes: &[
+                (P1CommandIdentity, "replay_lookup_outranked_by_scope"),
+                (P1CommandIdentity, "replay_lookup_outranked_by_semantics"),
+                (P1CommandIdentity, "replay_under_regressed_clock"),
+                (P1CommandIdentity, "replay_under_stale_fence"),
+            ],
+            anchors: &[
+                (P1CommandIdentity, "replay_lookup_outranked_by_scope"),
+                (P1CommandIdentity, "replay_lookup_outranked_by_semantics"),
+                (P1CommandIdentity, "replay_under_regressed_clock"),
+                (P1CommandIdentity, "replay_under_stale_fence"),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "expiry_instant_is_treated_consistently_by_every_entry_point",
+            predicate: "at now == expires_at the expiry check releases a Held order, a reservation expiring now is InvalidRequest, an external send is InvalidTransition without state change, and a matching capture is ReturnRequired",
+            classes: &[
+                (P3SlotLifecycle, "held_order_expired_at_exact_instant"),
+                (
+                    P3SlotLifecycle,
+                    "reservation_refused_at_exact_expiry_instant",
+                ),
+                (P3SlotLifecycle, "send_refused_at_exact_deadline"),
+                (P6ReturnRequiredReview, "return_required_at_exact_deadline"),
+            ],
+            anchors: &[
+                (P3SlotLifecycle, "held_order_expired_at_exact_instant"),
+                (
+                    P3SlotLifecycle,
+                    "reservation_refused_at_exact_expiry_instant",
+                ),
+                (P3SlotLifecycle, "send_refused_at_exact_deadline"),
+                (P6ReturnRequiredReview, "return_required_at_exact_deadline"),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "unknown_retry_after_the_deadline_keeps_the_reservation_and_its_slot",
+            predicate: "an UNKNOWN send retry at or after the deadline is InvalidTransition and keeps phase, inventory and the reserved slot; the expiry check does not release the UNKNOWN order; a later matching capture consumes that slot into ReturnRequired",
+            classes: &[
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_past_deadline_keeps_reservation",
+                ),
+                (P3SlotLifecycle, "unknown_order_not_released_by_ttl"),
+                (P3SlotLifecycle, "expiry_check_keeps_reservation"),
+                (
+                    P3SlotLifecycle,
+                    "late_capture_converts_reservation_to_return_required",
+                ),
+            ],
+            anchors: &[
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_past_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "late_capture_converts_reservation_to_return_required",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "return_required_is_stable_under_further_late_evidence",
+            predicate: "after ReturnRequired a duplicate matching event is DuplicateEffect without a second inventory release, a mismatching event is Review that sets review while phase and retained capture persist, and an external send is refused without state change",
+            classes: &[
+                (
+                    P6ReturnRequiredReview,
+                    "duplicate_effect_after_return_required",
+                ),
+                (P6ReturnRequiredReview, "no_second_inventory_release"),
+                (
+                    P6ReturnRequiredReview,
+                    "mismatch_after_return_required_keeps_phase",
+                ),
+                (
+                    P6ReturnRequiredReview,
+                    "retained_capture_preserved_under_mismatch",
+                ),
+                (
+                    P6ReturnRequiredReview,
+                    "review_set_while_return_required_persists",
+                ),
+                (P6ReturnRequiredReview, "return_required_order_cannot_send"),
+            ],
+            anchors: &[(P6ReturnRequiredReview, "return_required_order_cannot_send")],
+        },
+        CrosswalkRow {
+            deterministic_test: "bound_quarantine_survives_owner_change_expiry_and_cancellation",
+            predicate: "a conflict naming two bound operations quarantines both orders; owner replacement, an expiry that actually releases the order, and scope cancellation keep the quarantine set and review; the quarantined order still cannot send",
+            classes: &[
+                (P4EventVsEconomic, "conflict_names_two_bound_operations"),
+                (
+                    P5QuarantineEvidence,
+                    "bound_quarantine_survives_owner_replacement",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "bound_quarantine_survives_expiry_release",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "bound_quarantine_survives_scope_cancellation",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "quarantined_order_cannot_send_after_expiry_or_cancellation",
+                ),
+            ],
+            anchors: &[
+                (
+                    P5QuarantineEvidence,
+                    "bound_quarantine_survives_expiry_release",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "quarantined_order_cannot_send_after_expiry_or_cancellation",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "retained_unbound_conflict_bans_the_identity_for_any_future_order",
+            predicate: "a retained conflict naming a bound and an unbound operation quarantines only the bound order; any future order reusing the unbound identity is OperationQuarantined without creating an order or binding; a sibling operation of the same provider/account still binds",
+            classes: &[
+                (P4EventVsEconomic, "conflict_names_bound_and_unbound"),
+                (P5QuarantineEvidence, "retained_unbound_evidence_present"),
+                (P2OperationBinding, "retained_unbound_operation_refused"),
+                (
+                    P5QuarantineEvidence,
+                    "retained_unbound_ban_coexists_with_bound_sibling",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "sibling_of_retained_unbound_ban_bound_independently",
+                ),
+            ],
+            anchors: &[(
+                P5QuarantineEvidence,
+                "sibling_of_retained_unbound_ban_bound_independently",
+            )],
+        },
+    ]
+}
+
+#[derive(Clone, Debug)]
+struct Witness {
+    corpus: String,
+    case: usize,
+    seed: u64,
+    step: u64,
+}
+
+#[derive(Default)]
+struct ClassEvidence {
+    relation_count: u64,
+    relation_first: Option<Witness>,
+    baseline_count: u64,
+    baseline_first: Option<Witness>,
+}
+
+fn record_class_evidence(
+    evidence: &mut std::collections::BTreeMap<(Family, &'static str), ClassEvidence>,
+    coverage: &Coverage,
+    corpus: &str,
+    case: usize,
+    seed: u64,
+    baseline: bool,
+) {
+    for (key, entry) in evidence.iter_mut() {
+        let n = coverage.count(key.0, key.1);
+        if n == 0 {
+            continue;
+        }
+        let witness = Witness {
+            corpus: corpus.to_string(),
+            case,
+            seed,
+            step: coverage.first_step(key.0, key.1).unwrap(),
+        };
+        if baseline {
+            entry.baseline_count += n;
+            entry.baseline_first.get_or_insert(witness);
+        } else {
+            entry.relation_count += n;
+            entry.relation_first.get_or_insert(witness);
+        }
+    }
+}
+
+/// Task 003-C: every frozen Task 001 deterministic predicate must be reached by
+/// the relation-aware generated corpus (unchanged parameters) with a stable
+/// first witness `family/config/seed/step`. The historical baseline corpus is
+/// inventoried alongside, never retuned. No deterministic trace is replayed here.
+#[test]
+fn task_001_deterministic_edge_cases_are_cross_validated_by_generated_witnesses() {
+    let rows = crosswalk_rows();
+    let mut evidence = std::collections::BTreeMap::new();
+    for row in &rows {
+        for key in row.classes {
+            evidence.entry(*key).or_insert_with(ClassEvidence::default);
+        }
+    }
+    let cases = relation_cases();
+    for family in FAMILIES {
+        for (case_no, case) in cases.iter().enumerate() {
+            for seed in 1..=RELATION_SEEDS {
+                let inputs = relation_trace(case, family, seed);
+                let coverage = check_relations_trace(case, &inputs, false, true)
+                    .unwrap_or_else(|failure| panic!("{} seed {seed}: {failure:?}", family.tag()));
+                record_class_evidence(&mut evidence, &coverage, family.tag(), case_no, seed, false);
+            }
+        }
+    }
+    for (case_no, case) in baseline_cases().iter().enumerate() {
+        for seed in 1..=CASES {
+            let inputs = trace(case, seed);
+            let coverage = check_relations_trace(case, &inputs, false, true)
+                .unwrap_or_else(|failure| panic!("baseline seed {seed}: {failure:?}"));
+            record_class_evidence(&mut evidence, &coverage, "baseline", case_no, seed, true);
+        }
+    }
+    let witness_json = |w: &Option<Witness>| match w {
+        Some(w) => format!(
+            "{{\"corpus\":\"{}\",\"config\":{},\"seed\":{},\"step\":{}}}",
+            w.corpus, w.case, w.seed, w.step
+        ),
+        None => "null".to_string(),
+    };
+    let mut unreached = Vec::new();
+    let mut rows_json = String::new();
+    for row in &rows {
+        let mut classes_json = String::new();
+        for (family, class) in row.classes {
+            let entry = &evidence[&(*family, *class)];
+            if entry.relation_count == 0 {
+                unreached.push(format!(
+                    "{}:{}:{class}",
+                    row.deterministic_test,
+                    family.tag()
+                ));
+            }
+            classes_json.push_str(&format!(
+                "{{\"family\":\"{}\",\"class\":\"{class}\",\"anchor\":{},\"relation_count\":{},\"relation_first_witness\":{},\"baseline_count\":{},\"baseline_first_witness\":{}}},",
+                family.tag(),
+                row.anchors.contains(&(*family, *class)),
+                entry.relation_count,
+                witness_json(&entry.relation_first),
+                entry.baseline_count,
+                witness_json(&entry.baseline_first),
+            ));
+        }
+        classes_json.pop();
+        rows_json.push_str(&format!(
+            "{{\"deterministic_test\":\"{}\",\"predicate\":\"{}\",\"classes\":[{classes_json}]}},",
+            row.deterministic_test, row.predicate
+        ));
+    }
+    rows_json.pop();
+    fs::write(evidence_dir().join("e4-deterministic-crosswalk.json"), format!(
+        "{{\"semantics\":4,\"kernel_blob\":\"{LOCKED_KERNEL}\",\"deterministic_source\":\"runtime/crates/kix-kernel/tests/contract_edge_cases.rs\",\"relation_corpus\":{{\"configurations\":{},\"seeds_per_configuration\":{RELATION_SEEDS},\"steps_per_sequence\":{RELATION_STEPS}}},\"baseline_corpus\":{{\"cases\":{CASES},\"steps\":{STEPS}}},\"rows\":[{rows_json}],\"unreached_in_relation_corpus\":{unreached:?},\"scope\":\"generated witnesses reach each mapped predicate class on the source-informed model; not independence, completeness or durability\"}}\n",
+        cases.len(),
+    )).unwrap();
+    assert!(
+        unreached.is_empty(),
+        "crosswalk classes not reached by the relation-aware corpus: {unreached:#?}"
+    );
 }
 
 fn baseline_cases() -> [Case; 4] {

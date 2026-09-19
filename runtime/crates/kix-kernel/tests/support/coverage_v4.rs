@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 
 use kix_kernel::{
     CommandId, KernelError, ObservationOutcome, OrderState, ProviderOperation, Rejection,
-    ReserveOutcome,
+    ReserveOutcome, Selection,
 };
 use kix_types::KixId;
 
@@ -58,6 +58,10 @@ impl Family {
 #[derive(Clone, Debug, Default)]
 pub struct Coverage {
     counts: BTreeMap<(Family, &'static str), u64>,
+    /// Zero-based index of the observed step at which each class was first hit.
+    first_step: BTreeMap<(Family, &'static str), u64>,
+    /// Number of `observe` calls so far.
+    steps: u64,
     /// Number of state-changing accepted steps seen so far.
     mutations: u64,
     /// Mutation counter at the moment each command identity was first recorded.
@@ -74,6 +78,23 @@ fn order(model: &Model, id: KixId) -> Option<&ModelOrder> {
 fn bound_order(model: &Model, operation: ProviderOperation) -> Option<&ModelOrder> {
     let binding = model.binding(operation)?;
     order(model, binding.order_id)
+}
+
+fn selection_free(model: &Model, selection: Selection) -> bool {
+    match selection {
+        Selection::Seats { first, count } => {
+            let start = usize::from(first);
+            let end = start + usize::from(count);
+            count > 0
+                && end <= model.seats.len()
+                && model.seats[start..end].iter().all(Option::is_none)
+        }
+        Selection::GeneralAdmission { count } => count > 0 && count <= model.remaining(),
+    }
+}
+
+fn same_provider_account(a: ProviderOperation, b: ProviderOperation) -> bool {
+    a.provider == b.provider && a.account == b.account
 }
 
 fn public_counts(model: &Model) -> (u32, usize, usize, usize, usize, usize) {
@@ -94,6 +115,17 @@ impl Coverage {
 
     fn hit(&mut self, family: Family, class: &'static str) {
         *self.counts.entry((family, class)).or_insert(0) += 1;
+        self.first_step
+            .entry((family, class))
+            .or_insert(self.steps.saturating_sub(1));
+    }
+
+    /// Zero-based step index of the first hit of `class` within this observer.
+    pub fn first_step(&self, family: Family, class: &str) -> Option<u64> {
+        self.first_step
+            .iter()
+            .find(|((f, c), _)| *f == family && *c == class)
+            .map(|(_, s)| *s)
     }
 
     pub fn count(&self, family: Family, class: &str) -> u64 {
@@ -156,12 +188,13 @@ impl Coverage {
         reply: &Reply,
         post: &Model,
     ) -> Result<(), String> {
+        self.steps += 1;
         let stale_context = step.ctx.fence != pre.writer
             || step.ctx.now_ms < pre.time
             || step.ctx.semantics_version != 4;
         match (&step.action, reply) {
             (Action::Reserve(request), Reply::Reserve(result)) => {
-                self.observe_reserve(pre, request, result, post, stale_context)?
+                self.observe_reserve(pre, step, request, result, post, stale_context)?
             }
             (Action::Send(order_id), Reply::Unit(result)) => {
                 self.observe_send(pre, step.ctx.now_ms, *order_id, result, post)?
@@ -195,6 +228,7 @@ impl Coverage {
     fn observe_reserve(
         &mut self,
         pre: &Model,
+        step: &Step,
         request: &kix_kernel::Reserve,
         result: &Result<kix_kernel::AppliedReservation, KernelError>,
         post: &Model,
@@ -204,6 +238,8 @@ impl Coverage {
             .commands
             .iter()
             .find(|(input, _)| input.id == request.id);
+        let stale_fence = step.ctx.fence != pre.writer;
+        let regressed_clock = step.ctx.now_ms < pre.time;
         match result {
             Ok(applied) if applied.replayed => {
                 let (original_input, original) =
@@ -234,6 +270,20 @@ impl Coverage {
                 }
                 if stale_context {
                     self.hit(Family::P1CommandIdentity, "replay_under_stale_context");
+                }
+                if stale_fence {
+                    self.hit(Family::P1CommandIdentity, "replay_under_stale_fence");
+                }
+                if regressed_clock {
+                    self.hit(Family::P1CommandIdentity, "replay_under_regressed_clock");
+                }
+                if *original == ReserveOutcome::Rejected(Rejection::Unavailable)
+                    && selection_free(pre, request.selection)
+                {
+                    self.hit(
+                        Family::P1CommandIdentity,
+                        "rejected_replay_after_unavailable_cause_cleared",
+                    );
                 }
             }
             Ok(applied) => {
@@ -281,6 +331,26 @@ impl Coverage {
                                 "binding_accepted_while_others_quarantined",
                             );
                         }
+                        if pre.commands.iter().any(|(input, outcome)| {
+                            input.id != request.id
+                                && input.selection == request.selection
+                                && *outcome == ReserveOutcome::Rejected(Rejection::Unavailable)
+                        }) {
+                            self.hit(
+                                Family::P1CommandIdentity,
+                                "new_identity_holds_selection_rejected_earlier",
+                            );
+                        }
+                        if pre.conflicts.iter().any(|c| {
+                            c.operation != request.payment
+                                && same_provider_account(c.operation, request.payment)
+                                && pre.retained_unbound_blocked(c.operation)
+                        }) {
+                            self.hit(
+                                Family::P5QuarantineEvidence,
+                                "sibling_of_retained_unbound_ban_bound_independently",
+                            );
+                        }
                     }
                     ReserveOutcome::Rejected(reason) => {
                         self.hit(Family::P1CommandIdentity, "first_result_rejected");
@@ -289,6 +359,15 @@ impl Coverage {
                         }
                         self.hit(Family::P2OperationBinding, "rejected_no_binding");
                         match reason {
+                            Rejection::InvalidRequest
+                                if request.expires_at_ms == step.ctx.now_ms
+                                    && request.amount.atoms() > 0 =>
+                            {
+                                self.hit(
+                                    Family::P3SlotLifecycle,
+                                    "reservation_refused_at_exact_expiry_instant",
+                                );
+                            }
                             Rejection::OperationAlreadyBound => {
                                 if pre.binding(request.payment).is_none() {
                                     return Err("AlreadyBound without a binding".into());
@@ -349,6 +428,18 @@ impl Coverage {
                         "altered_payload_conflict_under_stale_context",
                     );
                 }
+                if stale_fence {
+                    self.hit(
+                        Family::P1CommandIdentity,
+                        "altered_payload_conflict_under_stale_fence",
+                    );
+                }
+                if regressed_clock {
+                    self.hit(
+                        Family::P1CommandIdentity,
+                        "altered_payload_conflict_under_regressed_clock",
+                    );
+                }
                 if original_input.order_id != request.order_id {
                     self.hit(Family::P1CommandIdentity, "altered_field_order_id");
                 }
@@ -381,9 +472,39 @@ impl Coverage {
                     return Err("known command identity failed a later guard".into());
                 }
                 if known.is_some() {
+                    if public_counts(pre) != public_counts(post)
+                        || pre.commands.len() != post.commands.len()
+                    {
+                        return Err("scope/semantics guard changed state".into());
+                    }
                     self.hit(
                         Family::P1CommandIdentity,
                         "replay_lookup_outranked_by_scope_or_semantics",
+                    );
+                    if matches!(result, Err(KernelError::UnsupportedSemantics)) {
+                        self.hit(
+                            Family::P1CommandIdentity,
+                            "replay_lookup_outranked_by_semantics",
+                        );
+                    }
+                }
+                // A foreign scope changes the command identity itself, so the
+                // recorded command is found by principal/request only.
+                if matches!(result, Err(KernelError::WrongScope))
+                    && pre.commands.iter().any(|(input, _)| {
+                        input.id.scope != request.id.scope
+                            && input.id.principal == request.id.principal
+                            && input.id.request == request.id.request
+                    })
+                {
+                    if public_counts(pre) != public_counts(post)
+                        || pre.commands.len() != post.commands.len()
+                    {
+                        return Err("scope guard changed state".into());
+                    }
+                    self.hit(
+                        Family::P1CommandIdentity,
+                        "replay_lookup_outranked_by_scope",
                     );
                 }
             }
@@ -440,13 +561,53 @@ impl Coverage {
                 self.hit(Family::P3SlotLifecycle, "slot_capacity_refused");
                 self.hit(Family::P7ObservationBudget, "send_refused_at_limit");
             }
-            Err(KernelError::InvalidTransition)
-                if before.review
-                    && matches!(before.phase, OrderState::Held | OrderState::PaymentUnknown)
+            Err(KernelError::InvalidTransition) => {
+                let after = order(post, order_id).ok_or("order vanished")?;
+                if post.reservations != pre.reservations
+                    || after.phase != before.phase
+                    || after.owns != before.owns
+                    || after.review != before.review
+                    || post.remaining() != pre.remaining()
+                {
+                    return Err("refused send changed state".into());
+                }
+                let live = matches!(before.phase, OrderState::Held | OrderState::PaymentUnknown);
+                if before.review && live && !pre.cancelled && step_now < before.input.expires_at_ms
+                {
+                    self.hit(Family::P5QuarantineEvidence, "reviewed_order_cannot_send");
+                }
+                if !before.review
+                    && live
                     && !pre.cancelled
-                    && step_now < before.input.expires_at_ms =>
-            {
-                self.hit(Family::P5QuarantineEvidence, "reviewed_order_cannot_send");
+                    && step_now >= before.input.expires_at_ms
+                {
+                    self.hit(Family::P3SlotLifecycle, "send_refused_past_deadline");
+                    if step_now == before.input.expires_at_ms {
+                        self.hit(Family::P3SlotLifecycle, "send_refused_at_exact_deadline");
+                    }
+                    if before.phase == OrderState::PaymentUnknown
+                        && pre.reservation(operation).is_some()
+                    {
+                        self.hit(
+                            Family::P3SlotLifecycle,
+                            "unknown_retry_refused_past_deadline_keeps_reservation",
+                        );
+                    }
+                }
+                if before.phase == OrderState::ReturnRequired {
+                    self.hit(
+                        Family::P6ReturnRequiredReview,
+                        "return_required_order_cannot_send",
+                    );
+                }
+                if pre.bound_quarantine_contains(operation)
+                    && (pre.cancelled || before.phase == OrderState::Expired)
+                {
+                    self.hit(
+                        Family::P5QuarantineEvidence,
+                        "quarantined_order_cannot_send_after_expiry_or_cancellation",
+                    );
+                }
             }
             Err(_) => {}
         }
@@ -474,6 +635,18 @@ impl Coverage {
             }
             if *released {
                 self.hit(Family::P3SlotLifecycle, "held_order_expired");
+                if step_now == before.input.expires_at_ms {
+                    self.hit(
+                        Family::P3SlotLifecycle,
+                        "held_order_expired_at_exact_instant",
+                    );
+                }
+                if pre.bound_quarantine_contains(before.input.payment) {
+                    self.hit(
+                        Family::P5QuarantineEvidence,
+                        "bound_quarantine_survives_expiry_release",
+                    );
+                }
             }
             if before.phase == OrderState::PaymentUnknown
                 && step_now >= before.input.expires_at_ms
@@ -720,6 +893,21 @@ impl Coverage {
                                 Family::P6ReturnRequiredReview,
                                 "late_matching_capture_return_required",
                             );
+                            if pre.reservation(observation.operation).is_some() {
+                                self.hit(
+                                    Family::P3SlotLifecycle,
+                                    "late_capture_converts_reservation_to_return_required",
+                                );
+                            }
+                            if before.phase != OrderState::Expired
+                                && !pre.cancelled
+                                && step.ctx.now_ms == before.input.expires_at_ms
+                            {
+                                self.hit(
+                                    Family::P6ReturnRequiredReview,
+                                    "return_required_at_exact_deadline",
+                                );
+                            }
                             if before.phase == OrderState::Expired {
                                 self.hit(
                                     Family::P6ReturnRequiredReview,
