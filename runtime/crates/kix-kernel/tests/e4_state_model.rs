@@ -106,7 +106,7 @@ fn compare(kernel: &Kernel, model: &Model) -> Result<(), String> {
     if kernel.remaining() != model.remaining()
         || kernel.order_count() != model.orders.len()
         || kernel.observation_count() != model.events.len()
-        || kernel.reserved_observation_count() != model.promised.len()
+        || kernel.reserved_observation_count() != model.reservations.len()
         || kernel.quarantined_operation_count() != model.quarantined.len()
         || kernel.conflicts() != model.conflicts
     {
@@ -120,7 +120,7 @@ fn compare(kernel: &Kernel, model: &Model) -> Result<(), String> {
             model.remaining(),
             model.orders.len(),
             model.events.len(),
-            model.promised.len(),
+            model.reservations.len(),
             model.quarantined.len()
         ));
     }
@@ -135,7 +135,7 @@ fn compare(kernel: &Kernel, model: &Model) -> Result<(), String> {
             || actual.submitted_under != expected.writer
             || actual.state != expected.phase
             || actual.inventory_owned != expected.owns
-            || actual.captured != expected.amount
+            || actual.captured != expected.captured_amount()
             || actual.review_required != expected.review
         {
             return Err(format!(
@@ -172,6 +172,9 @@ fn check_trace(case: &Case, trace: &[Step], bad_oracle: bool) -> Result<(), Stri
                 "step {index}: {step:?}\nexpected {expected:?}, actual {actual:?}"
             ));
         }
+        model
+            .check_relations()
+            .map_err(|error| format!("step {index}: {step:?}\nmodel relation: {error}"))?;
         compare(&kernel, &model).map_err(|error| format!("step {index}: {step:?}\n{error}"))?;
     }
     Ok(())
@@ -259,7 +262,7 @@ fn trace(case: &Case, seed: u64) -> Vec<Step> {
         } else if choice < 94 {
             let mut observation = if !model.events.is_empty() && rng.below(3) == 0 {
                 model.events[rng.below(model.events.len() as u64) as usize]
-                    .0
+                    .observation
                     .clone()
             } else {
                 let input = if model.orders.is_empty() {
@@ -449,6 +452,141 @@ fn oracle_sensitivity_detects_and_shrinks_missing_full_budget_quarantine() {
     fs::write(evidence_dir().join("e4-oracle-sensitivity.txt"), format!(
         "injection=independent-model-only; kernel unchanged\nexpected mismatch detected\noriginal_steps={}\nshrunk_steps={}\ntrace={minimal:#?}\n", inputs.len(), minimal.len(),
     )).unwrap();
+}
+
+/// Model-only: the explicit schema relations and their consistency checker.
+/// No Kernel call; this is not a second copy of the kernel regressions.
+#[test]
+fn model_schema_relations_are_explicit_and_corruption_is_detected() {
+    let case = Case {
+        layout: InventoryCase::Seats(vec![4]),
+        limits: Limits {
+            commands: 8,
+            orders: 8,
+            observations: 4,
+        },
+    };
+    let (_, mut model) = initial(&case);
+    let held = request(1, Selection::Seats { first: 0, count: 1 }, 100);
+    let unbound = kix_kernel::ProviderOperation {
+        provider: id(850),
+        account: id(851),
+        operation: id(77),
+    };
+    let mut blocked = request(2, Selection::Seats { first: 1, count: 1 }, 100);
+    blocked.payment = unbound;
+    let step = |model: &mut Model, now: u64, action: Action| {
+        let ctx = Context {
+            fence: model.writer,
+            now_ms: now,
+            semantics_version: 4,
+        };
+        model.apply(&Step { ctx, action });
+        model.check_relations().unwrap();
+    };
+
+    step(&mut model, 1, Action::Reserve(held.clone()));
+    assert_eq!(
+        model.binding(held.payment).map(|b| b.order_id),
+        Some(held.order_id)
+    );
+
+    step(&mut model, 2, Action::Send(held.order_id));
+    let reservation = model.reservation(held.payment).expect("reserved slot");
+    assert_eq!(reservation.order_id, held.order_id);
+    step(&mut model, 3, Action::Expire(held.order_id));
+    step(&mut model, 4, Action::Owner(writer(2)));
+    assert_eq!(model.reservation(held.payment), Some(reservation));
+
+    let first = CaptureObservation {
+        event_id: id(500),
+        operation: held.payment,
+        amount: held.amount,
+        evidence_hash: Hash32::from_bytes([60; 32]),
+    };
+    step(&mut model, 200, Action::Capture(first.clone()));
+    assert_eq!(model.reservation(held.payment), None);
+    assert_eq!(model.events.len(), 1);
+    assert_eq!(model.events[0].bound_order, Some(held.order_id));
+    let order = |model: &Model| model.orders[0].clone();
+    assert_eq!(order(&model).phase, kix_kernel::OrderState::ReturnRequired);
+    assert_eq!(order(&model).captured_amount(), Some(held.amount));
+
+    // Later mismatching evidence: review coexists with ReturnRequired (0.6 §5.7.1).
+    let mismatch = CaptureObservation {
+        event_id: id(501),
+        amount: amount(999, 1),
+        ..first.clone()
+    };
+    step(&mut model, 201, Action::Capture(mismatch));
+    assert!(order(&model).review);
+    assert_eq!(order(&model).phase, kix_kernel::OrderState::ReturnRequired);
+    assert_eq!(order(&model).captured_amount(), Some(held.amount));
+
+    // Same event identity, different unbound operation: bound quarantine plus
+    // retained-unbound blocking, without a speculative binding for the identity.
+    let conflict = CaptureObservation {
+        operation: unbound,
+        ..first
+    };
+    step(&mut model, 202, Action::Capture(conflict));
+    assert_eq!(
+        model.quarantined,
+        vec![reference::BoundQuarantine {
+            operation: held.payment,
+            order_id: held.order_id
+        }]
+    );
+    assert_eq!(model.retained_unbound_blocks(), vec![unbound]);
+    assert!(model.retained_unbound_blocked(unbound));
+    assert!(!model.bound_quarantine_contains(unbound));
+    step(&mut model, 203, Action::Reserve(blocked));
+    assert_eq!(model.orders.len(), 1);
+    assert!(model.binding(unbound).is_none());
+
+    // Checker sensitivity on corrupted copies of the model state only.
+    let mut corrupt = model.clone();
+    corrupt.bindings.push(reference::OperationBinding {
+        operation: unbound,
+        order_id: id(4242),
+    });
+    assert!(corrupt.check_relations().is_err());
+
+    let mut corrupt = model.clone();
+    corrupt.reservations.push(reference::SlotReservation {
+        operation: held.payment,
+        order_id: held.order_id,
+    });
+    corrupt.reservations.push(reference::SlotReservation {
+        operation: held.payment,
+        order_id: held.order_id,
+    });
+    assert!(corrupt.check_relations().is_err());
+
+    let mut corrupt = model.clone();
+    corrupt.orders[0].capture = None;
+    assert!(corrupt.check_relations().is_err());
+
+    let mut corrupt = model.clone();
+    corrupt.quarantined.push(reference::BoundQuarantine {
+        operation: unbound,
+        order_id: held.order_id,
+    });
+    assert!(corrupt.check_relations().is_err());
+
+    fs::write(
+        evidence_dir().join("e4-model-schema-relations.txt"),
+        format!(
+            "kernel_calls=0\nbindings={:?}\nreservations={:?}\nbound_quarantine={:?}\nretained_unbound_blocks={:?}\nstored_events={:?}\norders={:?}\n",
+            model.bindings,
+            model.reservations,
+            model.quarantined,
+            model.retained_unbound_blocks(),
+            model.events,
+            model.orders
+        ),
+    )
+    .unwrap();
 }
 
 #[test]

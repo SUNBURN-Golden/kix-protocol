@@ -37,14 +37,77 @@ pub enum Reply {
     Capture(Result<ObservationOutcome, KernelError>),
 }
 
+/// Canonical v4 event identity boundary, kept separate from economic identity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct EventIdentity {
+    pub provider: KixId,
+    pub account: KixId,
+    pub event_id: KixId,
+}
+
+impl EventIdentity {
+    fn of(value: &CaptureObservation) -> Self {
+        Self {
+            provider: value.operation.provider,
+            account: value.operation.account,
+            event_id: value.event_id,
+        }
+    }
+}
+
+/// Explicit one-to-one economic binding between an operation and an accepted order.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OperationBinding {
+    pub operation: ProviderOperation,
+    pub order_id: KixId,
+}
+
+/// Stored accepted event: identity, full payload, named operation, binding and replay outcome.
+#[derive(Clone, Debug)]
+pub struct StoredEvent {
+    pub identity: EventIdentity,
+    pub observation: CaptureObservation,
+    pub operation: ProviderOperation,
+    pub bound_order: Option<KixId>,
+    pub outcome: ObservationOutcome,
+}
+
+/// Reserved first-capture observation slot held by one bound operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SlotReservation {
+    pub operation: ProviderOperation,
+    pub order_id: KixId,
+}
+
+/// Quarantine of an operation that is already bound to an order.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BoundQuarantine {
+    pub operation: ProviderOperation,
+    pub order_id: KixId,
+}
+
+/// First retained economic capture effect of an order.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RetainedCapture {
+    pub amount: AssetAmount,
+    pub identity: EventIdentity,
+}
+
 #[derive(Clone, Debug)]
 pub struct ModelOrder {
     pub input: Reserve,
     pub writer: ExecutionFence,
+    /// Primary lifecycle phase; `review` is an orthogonal sticky predicate.
     pub phase: OrderState,
     pub owns: bool,
-    pub amount: Option<AssetAmount>,
+    pub capture: Option<RetainedCapture>,
     pub review: bool,
+}
+
+impl ModelOrder {
+    pub fn captured_amount(&self) -> Option<AssetAmount> {
+        self.capture.map(|c| c.amount)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -61,10 +124,12 @@ pub struct Model {
     segments: Vec<usize>,
     pub commands: Vec<(Reserve, ReserveOutcome)>,
     pub orders: Vec<ModelOrder>,
-    pub events: Vec<(CaptureObservation, ObservationOutcome)>,
+    /// Authoritative operation to order relation; `orders` keeps the redundant input.
+    pub bindings: Vec<OperationBinding>,
+    pub events: Vec<StoredEvent>,
     pub conflicts: Vec<CaptureObservation>,
-    pub promised: Vec<ProviderOperation>,
-    pub quarantined: Vec<ProviderOperation>,
+    pub reservations: Vec<SlotReservation>,
+    pub quarantined: Vec<BoundQuarantine>,
     /// Oracle-sensitivity control only. Never enabled for conformance tests.
     pub omit_full_quarantine: bool,
 }
@@ -94,9 +159,10 @@ impl Model {
             segments,
             commands: Vec::new(),
             orders: Vec::new(),
+            bindings: Vec::new(),
             events: Vec::new(),
             conflicts: Vec::new(),
-            promised: Vec::new(),
+            reservations: Vec::new(),
             quarantined: Vec::new(),
             omit_full_quarantine: false,
         }
@@ -121,7 +187,59 @@ impl Model {
     }
 
     pub fn budget(&self) -> usize {
-        self.events.len() + self.conflicts.len() + self.promised.len()
+        self.events.len() + self.conflicts.len() + self.reservations.len()
+    }
+
+    pub fn binding(&self, operation: ProviderOperation) -> Option<OperationBinding> {
+        self.bindings
+            .iter()
+            .copied()
+            .find(|b| b.operation == operation)
+    }
+
+    pub fn bound_quarantine_contains(&self, operation: ProviderOperation) -> bool {
+        self.quarantined.iter().any(|q| q.operation == operation)
+    }
+
+    /// Retained conflict evidence naming an operation, bound or not.
+    pub fn conflict_evidence_names(&self, operation: ProviderOperation) -> bool {
+        self.conflicts.iter().any(|c| c.operation == operation)
+    }
+
+    /// Retained evidence about an operation that no order has bound. Never a
+    /// scope-wide latch: it exists only while the conflict itself is retained.
+    pub fn retained_unbound_blocked(&self, operation: ProviderOperation) -> bool {
+        self.conflict_evidence_names(operation) && self.binding(operation).is_none()
+    }
+
+    pub fn retained_unbound_blocks(&self) -> Vec<ProviderOperation> {
+        let mut result: Vec<ProviderOperation> = Vec::new();
+        for conflict in &self.conflicts {
+            if self.retained_unbound_blocked(conflict.operation)
+                && !result.contains(&conflict.operation)
+            {
+                result.push(conflict.operation);
+            }
+        }
+        result
+    }
+
+    /// Future binding is refused either by an explicit bound quarantine or by
+    /// retained conflict evidence naming the operation. An unretained conflict
+    /// leaves no ban behind.
+    pub fn binding_blocked(&self, operation: ProviderOperation) -> bool {
+        self.bound_quarantine_contains(operation) || self.conflict_evidence_names(operation)
+    }
+
+    pub fn reservation(&self, operation: ProviderOperation) -> Option<SlotReservation> {
+        self.reservations
+            .iter()
+            .copied()
+            .find(|r| r.operation == operation)
+    }
+
+    fn order(&self, id: KixId) -> Option<&ModelOrder> {
+        self.orders.iter().find(|o| o.input.order_id == id)
     }
 
     fn check_context(&self, ctx: Context) -> Result<(), KernelError> {
@@ -145,9 +263,10 @@ impl Model {
     }
 
     fn bound(&self, operation: ProviderOperation) -> Option<usize> {
+        let binding = self.binding(operation)?;
         self.orders
             .iter()
-            .position(|o| o.input.payment == operation)
+            .position(|o| o.input.order_id == binding.order_id)
     }
 
     fn selection_rejection(&self, selection: Selection) -> Option<Rejection> {
@@ -239,12 +358,7 @@ impl Model {
             .any(|o| o.input.order_id == request.order_id)
         {
             Some(Rejection::OrderExists)
-        } else if self.quarantined.contains(&request.payment)
-            || self
-                .conflicts
-                .iter()
-                .any(|c| c.operation == request.payment)
-        {
+        } else if self.binding_blocked(request.payment) {
             Some(Rejection::OperationQuarantined)
         } else if self.bound(request.payment).is_some() {
             Some(Rejection::OperationAlreadyBound)
@@ -260,8 +374,12 @@ impl Model {
                     writer: ctx.fence,
                     phase: OrderState::Held,
                     owns: true,
-                    amount: None,
+                    capture: None,
                     review: false,
+                });
+                self.bindings.push(OperationBinding {
+                    operation: request.payment,
+                    order_id: request.order_id,
                 });
                 ReserveOutcome::Held(request.order_id)
             }
@@ -286,11 +404,15 @@ impl Model {
             return Err(KernelError::InvalidTransition);
         }
         let operation = order.input.payment;
-        if !self.promised.contains(&operation) {
+        let order_id = order.input.order_id;
+        if self.reservation(operation).is_none() {
             if self.budget() >= self.limits.observations {
                 return Err(KernelError::Capacity);
             }
-            self.promised.push(operation);
+            self.reservations.push(SlotReservation {
+                operation,
+                order_id,
+            });
         }
         self.orders[i].phase = OrderState::PaymentUnknown;
         self.time = ctx.now_ms;
@@ -333,23 +455,24 @@ impl Model {
         value: CaptureObservation,
     ) -> Result<ObservationOutcome, KernelError> {
         self.check_context(ctx)?;
-        let prior_event = self.events.iter().position(|(old, _)| {
-            old.operation.provider == value.operation.provider
-                && old.operation.account == value.operation.account
-                && old.event_id == value.event_id
-        });
+        let identity = EventIdentity::of(&value);
+        let prior_event = self.events.iter().position(|old| old.identity == identity);
         if let Some(event) = prior_event {
-            if self.events[event].0 == value {
+            if self.events[event].observation == value {
                 self.time = ctx.now_ms;
-                return Ok(self.events[event].1);
+                return Ok(self.events[event].outcome);
             }
             // Error injection is in this independent oracle only, never in the locked kernel.
             if !(self.omit_full_quarantine && self.budget() >= self.limits.observations) {
-                for operation in [self.events[event].0.operation, value.operation] {
+                for operation in [self.events[event].operation, value.operation] {
                     if let Some(i) = self.bound(operation) {
                         self.orders[i].review = true;
-                        if !self.quarantined.contains(&operation) {
-                            self.quarantined.push(operation);
+                        if !self.bound_quarantine_contains(operation) {
+                            let order_id = self.orders[i].input.order_id;
+                            self.quarantined.push(BoundQuarantine {
+                                operation,
+                                order_id,
+                            });
                         }
                     }
                 }
@@ -363,14 +486,14 @@ impl Model {
             }
             return Ok(ObservationOutcome::Conflict);
         }
-        let reserved = self.promised.contains(&value.operation);
+        let reserved = self.reservation(value.operation).is_some();
         if !reserved && self.budget() >= self.limits.observations {
             return Err(KernelError::Capacity);
         }
         let i = self
             .bound(value.operation)
             .ok_or(KernelError::UnknownOperation)?;
-        let existing = self.orders[i].amount;
+        let existing = self.orders[i].captured_amount();
         let result = if let Some(first) = existing {
             if first == value.amount {
                 ObservationOutcome::DuplicateEffect
@@ -379,7 +502,10 @@ impl Model {
                 ObservationOutcome::Review
             }
         } else {
-            self.orders[i].amount = Some(value.amount);
+            self.orders[i].capture = Some(RetainedCapture {
+                amount: value.amount,
+                identity,
+            });
             if value.amount != self.orders[i].input.amount {
                 self.orders[i].phase = OrderState::Review;
                 self.orders[i].review = true;
@@ -403,11 +529,166 @@ impl Model {
                 ObservationOutcome::PaymentConfirmed
             }
         };
-        self.promised
-            .retain(|operation| *operation != value.operation);
-        self.events.push((value, result));
+        self.reservations
+            .retain(|reservation| reservation.operation != value.operation);
+        let bound_order = self.binding(value.operation).map(|b| b.order_id);
+        self.events.push(StoredEvent {
+            identity,
+            operation: value.operation,
+            bound_order,
+            observation: value,
+            outcome: result,
+        });
         self.time = ctx.now_ms;
         Ok(result)
+    }
+
+    /// Relational consistency of the model's own state. Reads no kernel state.
+    pub fn check_relations(&self) -> Result<(), String> {
+        for (index, binding) in self.bindings.iter().enumerate() {
+            let order = self
+                .order(binding.order_id)
+                .ok_or_else(|| format!("binding {binding:?} has no accepted order"))?;
+            if order.input.payment != binding.operation {
+                return Err(format!(
+                    "binding {binding:?} disagrees with {:?}",
+                    order.input
+                ));
+            }
+            if self.bindings[..index].iter().any(|other| {
+                other.operation == binding.operation || other.order_id == binding.order_id
+            }) {
+                return Err(format!("binding {binding:?} is not one to one"));
+            }
+        }
+        if self.bindings.len() != self.orders.len() {
+            return Err(format!(
+                "bindings={} but accepted orders={}",
+                self.bindings.len(),
+                self.orders.len()
+            ));
+        }
+        for order in &self.orders {
+            match self.binding(order.input.payment) {
+                Some(binding) if binding.order_id == order.input.order_id => {}
+                other => {
+                    return Err(format!(
+                        "accepted order {:?} has binding {other:?}",
+                        order.input.order_id
+                    ));
+                }
+            }
+        }
+        for (index, reservation) in self.reservations.iter().enumerate() {
+            match self.binding(reservation.operation) {
+                Some(binding) if binding.order_id == reservation.order_id => {}
+                other => {
+                    return Err(format!(
+                        "reserved slot {reservation:?} has binding {other:?}"
+                    ));
+                }
+            }
+            if self.reservations[..index]
+                .iter()
+                .any(|other| other.operation == reservation.operation)
+            {
+                return Err(format!("reserved slot {reservation:?} is duplicated"));
+            }
+        }
+        for (index, entry) in self.quarantined.iter().enumerate() {
+            let order = match self.binding(entry.operation) {
+                Some(binding) if binding.order_id == entry.order_id => {
+                    self.order(entry.order_id)
+                        .ok_or_else(|| format!("bound quarantine {entry:?} has no order"))?
+                }
+                other => return Err(format!("bound quarantine {entry:?} has binding {other:?}")),
+            };
+            if !order.review {
+                return Err(format!(
+                    "bound quarantine {entry:?} without review predicate"
+                ));
+            }
+            if self.quarantined[..index]
+                .iter()
+                .any(|other| other.operation == entry.operation)
+            {
+                return Err(format!("bound quarantine {entry:?} is duplicated"));
+            }
+        }
+        for operation in self.retained_unbound_blocks() {
+            if self.binding(operation).is_some() {
+                return Err(format!(
+                    "unbound block {operation:?} has a speculative binding"
+                ));
+            }
+            if !self.conflict_evidence_names(operation) {
+                return Err(format!(
+                    "unbound block {operation:?} has no retained evidence"
+                ));
+            }
+            if self.bound_quarantine_contains(operation) {
+                return Err(format!("{operation:?} is both bound and unbound blocked"));
+            }
+        }
+        for (index, event) in self.events.iter().enumerate() {
+            if event.identity != EventIdentity::of(&event.observation)
+                || event.operation != event.observation.operation
+            {
+                return Err(format!("stored event {event:?} lost its identity relation"));
+            }
+            if self.events[..index]
+                .iter()
+                .any(|other| other.identity == event.identity)
+            {
+                return Err(format!("stored event {event:?} duplicates an identity"));
+            }
+            let order_id = event
+                .bound_order
+                .ok_or_else(|| format!("stored event {event:?} has no bound order"))?;
+            match self.binding(event.operation) {
+                Some(binding) if binding.order_id == order_id => {}
+                other => return Err(format!("stored event {event:?} has binding {other:?}")),
+            }
+        }
+        if self.budget() > self.limits.observations {
+            return Err(format!(
+                "observation budget {} exceeds {}",
+                self.budget(),
+                self.limits.observations
+            ));
+        }
+        for order in &self.orders {
+            let first = self
+                .events
+                .iter()
+                .find(|event| event.bound_order == Some(order.input.order_id));
+            match (order.capture, first) {
+                (Some(capture), Some(event)) => {
+                    if capture.amount != event.observation.amount
+                        || capture.identity != event.identity
+                    {
+                        return Err(format!(
+                            "retained capture {capture:?} disagrees with first event {event:?}"
+                        ));
+                    }
+                }
+                (None, None) => {}
+                (capture, event) => {
+                    return Err(format!(
+                        "retained capture {capture:?} disagrees with stored events {event:?}"
+                    ));
+                }
+            }
+            // ReturnRequired is the primary phase; review is orthogonal and may coexist.
+            if order.phase == OrderState::ReturnRequired && (order.capture.is_none() || order.owns)
+            {
+                return Err(format!(
+                    "ReturnRequired order {:?} lost its retained capture or inventory release",
+                    order.input.order_id
+                ));
+            }
+        }
+        Ok(())
     }
 
     pub fn apply(&mut self, step: &Step) -> Reply {
