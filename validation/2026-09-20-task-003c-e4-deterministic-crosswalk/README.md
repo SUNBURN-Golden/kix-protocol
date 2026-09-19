@@ -102,7 +102,7 @@ pre/post state and the kernel result. None is a fixture; no Task 001 trace was c
 | 2 | `P1:altered_payload_conflict_under_stale_fence`, `P1:altered_payload_conflict_under_regressed_clock` | 2 + 3 (P1 arm 3–5 may regress the clock instead of only the fence) |
 | 3 | `P1:replay_lookup_outranked_by_scope`, `P1:replay_lookup_outranked_by_semantics`, `P1:replay_under_stale_fence`, `P1:replay_under_regressed_clock` | 2 + 3 (P1 arm 0–2 may replay a known identity under scope `id(999)`) |
 | 4 | `P3:held_order_expired_at_exact_instant`, `P3:reservation_refused_at_exact_expiry_instant`, `P3:send_refused_at_exact_deadline`, `P6:return_required_at_exact_deadline` | 2 + 3 (P3 arm 8 reserves with `expires_at_ms == now`) |
-| 5 | `P3:unknown_retry_refused_past_deadline_keeps_reservation`, `P3:send_refused_past_deadline`, `P3:late_capture_converts_reservation_to_return_required` | 2 |
+| 5 | `P3:unknown_retry_refused_past_deadline_keeps_reservation` (`now >= expires_at`), `P3:unknown_retry_refused_at_exact_deadline_keeps_reservation` (`now == expires_at`), `P3:unknown_retry_refused_strictly_after_deadline_keeps_reservation` (`now > expires_at`), `P3:send_refused_past_deadline`, `P3:late_capture_converts_reservation_to_return_required` | 2 |
 | 6 | `P6:return_required_order_cannot_send` | 2 |
 | 7 | `P5:bound_quarantine_survives_expiry_release`, `P5:quarantined_order_cannot_send_after_expiry_or_cancellation` | 2 |
 | 8 | `P5:sibling_of_retained_unbound_ban_bound_independently` | 2 |
@@ -181,7 +181,9 @@ later matching capture consumes that slot into ReturnRequired. Families: P3.
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `unknown_retry_refused_past_deadline_keeps_reservation` | yes | — | 46 | P1/0/2/36 | 251 |
+| `unknown_retry_refused_past_deadline_keeps_reservation` (`>=`) | yes | — | 46 | P1/0/2/36 | 251 |
+| `unknown_retry_refused_at_exact_deadline_keeps_reservation` (`==`) | yes | — | 10 | P1/0/2/36 | 7 |
+| `unknown_retry_refused_strictly_after_deadline_keeps_reservation` (`>`) | yes | — | 36 | P2/1/1/19 | 244 |
 | `unknown_order_not_released_by_ttl` | | 135 | 132 | P2/0/6/41 | 270 |
 | `expiry_check_keeps_reservation` | | 232 | 230 | P1/0/1/20 | 569 |
 | `late_capture_converts_reservation_to_return_required` | yes | — | 171 | P2/0/2/36 | 217 |
@@ -248,6 +250,19 @@ and the P2/P5 retained-unbound classes); the baseline corpus was not retuned.
 
 Exact-head KTX kernel and KIX protocol CI for the final task head are recorded in the
 PR #26 closure comment (AGENTS.md §11).
+
+### Independent-review correction (PR #26 comment 5745761933)
+
+The first implementation head mapped row 5 only to the merged `>=` bucket
+`unknown_retry_refused_past_deadline_keeps_reservation` (46 relation / 251 baseline
+hits), which does not machine-prove that both timing regions the deterministic test
+asserts (`now == expires_at` and `now > expires_at`) were reached. The bucket was
+split into two additional precise classes (the merged class is kept unchanged); row 5
+now requires all three to be reached by the relation corpus. Both regions were already
+reached by the existing generators — no further steering was needed:
+`==` 10 relation hits (first P1/0/2/36; baseline 7, first 0/14/91),
+`>` 36 relation hits (first P2/1/1/19; baseline 244, first 0/4/54). All other counts
+in this file are unchanged by the split.
 
 ## Contract findings
 

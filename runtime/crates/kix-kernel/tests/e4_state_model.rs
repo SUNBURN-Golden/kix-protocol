@@ -1215,6 +1215,14 @@ fn crosswalk_rows() -> [CrosswalkRow; 8] {
                     P3SlotLifecycle,
                     "unknown_retry_refused_past_deadline_keeps_reservation",
                 ),
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_at_exact_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_strictly_after_deadline_keeps_reservation",
+                ),
                 (P3SlotLifecycle, "unknown_order_not_released_by_ttl"),
                 (P3SlotLifecycle, "expiry_check_keeps_reservation"),
                 (
@@ -1226,6 +1234,14 @@ fn crosswalk_rows() -> [CrosswalkRow; 8] {
                 (
                     P3SlotLifecycle,
                     "unknown_retry_refused_past_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_at_exact_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_strictly_after_deadline_keeps_reservation",
                 ),
                 (
                     P3SlotLifecycle,

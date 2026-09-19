@@ -592,6 +592,17 @@ impl Coverage {
                             Family::P3SlotLifecycle,
                             "unknown_retry_refused_past_deadline_keeps_reservation",
                         );
+                        if step_now == before.input.expires_at_ms {
+                            self.hit(
+                                Family::P3SlotLifecycle,
+                                "unknown_retry_refused_at_exact_deadline_keeps_reservation",
+                            );
+                        } else {
+                            self.hit(
+                                Family::P3SlotLifecycle,
+                                "unknown_retry_refused_strictly_after_deadline_keeps_reservation",
+                            );
+                        }
                     }
                 }
                 if before.phase == OrderState::ReturnRequired {
