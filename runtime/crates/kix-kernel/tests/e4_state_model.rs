@@ -1,6 +1,8 @@
 #![allow(clippy::disallowed_methods)] // Test-only evidence I/O; production lint rules are unchanged.
 //! E-4: locked v4 versus an independently represented sequential model.
 //! No retention, void, slot-release, chain grant or new kernel transition exists here.
+#[path = "support/coverage_v4.rs"]
+mod coverage;
 #[path = "support/model_v4.rs"]
 mod reference;
 
@@ -8,15 +10,21 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
+use coverage::{Coverage, FAMILIES, Family};
 use kix_kernel::{
     CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel, Limits, Reserve,
     ReserveOutcome, SEMANTICS_VERSION, Selection,
 };
+use kix_kernel::{OrderState, ProviderOperation};
 use kix_types::{AssetAmount, AssetId, Hash32, KixId, RegistryVersion};
 use reference::{Action, InventoryCase, Model, Reply, Step};
 
+// Historical baseline workload (Task 003-A freeze). Do not retune to satisfy a coverage goal.
 const CASES: u64 = 256;
 const STEPS: usize = 128;
+// Additive relation-aware workload (Task 003-B). Separate constants keep the baseline reproducible.
+const RELATION_SEEDS: u64 = 64;
+const RELATION_STEPS: usize = 48;
 const LOCKED_KERNEL: &str = "69564b166f0c27f9af5d8422f0a466b18d74c20f";
 const LOCKED_TEST: &str = "b607996c83a119c349f1cc90469ac1ba82764e20";
 
@@ -306,6 +314,11 @@ fn trace(case: &Case, seed: u64) -> Vec<Step> {
 
 /// Deterministic deletion shrinker. It does not claim parameter or configuration minimization.
 fn shrink(case: &Case, input: &[Step], bad_oracle: bool) -> Vec<Step> {
+    shrink_with(input, |trial| check_trace(case, trial, bad_oracle).is_err())
+}
+
+/// Same deletion strategy against any failing predicate over a trace prefix/subsequence.
+fn shrink_with(input: &[Step], still_fails: impl Fn(&[Step]) -> bool) -> Vec<Step> {
     let mut reduced = input.to_vec();
     let mut span = reduced.len().div_ceil(2).max(1);
     loop {
@@ -314,7 +327,7 @@ fn shrink(case: &Case, input: &[Step], bad_oracle: bool) -> Vec<Step> {
             let end = (offset + span).min(reduced.len());
             let mut trial = reduced.clone();
             trial.drain(offset..end);
-            if check_trace(case, &trial, bad_oracle).is_err() {
+            if still_fails(&trial) {
                 reduced = trial;
             } else {
                 offset += span;
@@ -328,16 +341,733 @@ fn shrink(case: &Case, input: &[Step], bad_oracle: bool) -> Vec<Step> {
     reduced
 }
 
-fn evidence_dir() -> PathBuf {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../.local/verification/ktx");
-    fs::create_dir_all(&path).unwrap();
-    path
+// ---------------------------------------------------------------------------
+// Task 003-B: relation-aware generated coverage (additive; baseline above unchanged).
+// ---------------------------------------------------------------------------
+
+/// A failure of the differential comparison or of a relation property, with
+/// everything needed to replay it from the explicit seed.
+#[derive(Debug)]
+struct RelationFailure {
+    step: usize,
+    kind: &'static str,
+    detail: String,
+}
+
+/// Differential check plus relation-property observation. `kernel` may be `None`
+/// to run the property layer on the model alone (used for checker sensitivity).
+fn check_relations_trace(
+    case: &Case,
+    trace: &[Step],
+    bad_oracle: bool,
+    with_kernel: bool,
+) -> Result<Coverage, RelationFailure> {
+    let (mut kernel, mut model) = initial(case);
+    model.omit_full_quarantine = bad_oracle;
+    let mut coverage = Coverage::new();
+    for (index, step) in trace.iter().enumerate() {
+        let pre = model.clone();
+        let expected = model.apply(step);
+        if with_kernel {
+            let actual = apply(&mut kernel, step);
+            if actual != expected {
+                return Err(RelationFailure {
+                    step: index,
+                    kind: "differential",
+                    detail: format!("{step:?}\nexpected {expected:?}, actual {actual:?}"),
+                });
+            }
+            compare(&kernel, &model).map_err(|error| RelationFailure {
+                step: index,
+                kind: "observable_state",
+                detail: format!("{step:?}\n{error}"),
+            })?;
+        }
+        model.check_relations().map_err(|error| RelationFailure {
+            step: index,
+            kind: "model_relation",
+            detail: format!("{step:?}\n{error}"),
+        })?;
+        coverage
+            .observe(&pre, step, &expected, &model)
+            .map_err(|error| RelationFailure {
+                step: index,
+                kind: "transition_property",
+                detail: format!("{step:?}\nreply {expected:?}\n{error}"),
+            })?;
+    }
+    Ok(coverage)
+}
+
+/// Generator-side bookkeeping that only the generator needs (never a model fact).
+#[derive(Default)]
+struct Planner {
+    fresh: u64,
+    /// Operations named by a conflict that was refused for capacity while unbound.
+    unretained: Vec<ProviderOperation>,
+}
+
+fn operation(number: u64) -> ProviderOperation {
+    ProviderOperation {
+        provider: id(850),
+        account: id(851),
+        operation: id(number),
+    }
+}
+
+fn pick<'a, T>(rng: &mut Generator, items: &'a [T]) -> Option<&'a T> {
+    if items.is_empty() {
+        None
+    } else {
+        Some(&items[rng.below(items.len() as u64) as usize])
+    }
+}
+
+fn free_selection(rng: &mut Generator, model: &Model) -> Option<Selection> {
+    match &model.layout {
+        InventoryCase::Ga(_) => (model.remaining() > 0).then(|| Selection::GeneralAdmission {
+            count: 1 + rng.below(u64::from(model.remaining().min(2))) as u32,
+        }),
+        InventoryCase::Seats(_) => {
+            let free: Vec<u16> = model
+                .seats
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| s.is_none())
+                .map(|(i, _)| i as u16)
+                .collect();
+            pick(rng, &free).map(|first| Selection::Seats {
+                first: *first,
+                count: 1,
+            })
+        }
+    }
+}
+
+fn fresh_request(planner: &mut Planner, rng: &mut Generator, model: &Model, now: u64) -> Reserve {
+    planner.fresh += 1;
+    let number = 1_000 + planner.fresh;
+    let selection = free_selection(rng, model).unwrap_or(Selection::Seats {
+        first: u16::MAX,
+        count: 1,
+    });
+    let mut input = request(number, selection, now + 4 + rng.below(24));
+    input.expected_business_epoch = model.epoch;
+    input
+}
+
+fn capture_for(input: &Reserve, event: u64) -> CaptureObservation {
+    CaptureObservation {
+        event_id: id(event),
+        operation: input.payment,
+        amount: input.amount,
+        evidence_hash: Hash32::from_bytes([60; 32]),
+    }
+}
+
+fn orders_where(
+    model: &Model,
+    predicate: impl Fn(&reference::ModelOrder) -> bool,
+) -> Vec<&reference::ModelOrder> {
+    model.orders.iter().filter(|o| predicate(o)).collect()
+}
+
+/// Family-directed move. Each arm builds an action whose *intended* relation is
+/// named by the family; whether it is reached is decided by the observer, not here.
+fn relation_action(
+    family: Family,
+    planner: &mut Planner,
+    rng: &mut Generator,
+    model: &Model,
+    ctx: &mut Context,
+) -> Action {
+    let fresh_capture_event = |planner: &mut Planner| {
+        planner.fresh += 1;
+        5_000 + planner.fresh
+    };
+    let background = |planner: &mut Planner, rng: &mut Generator| match rng.below(6) {
+        0 | 1 => Action::Reserve(fresh_request(planner, rng, model, ctx.now_ms)),
+        2 => Action::Send(
+            pick(rng, &model.orders)
+                .map(|o| o.input.order_id)
+                .unwrap_or(id(99_999)),
+        ),
+        3 => Action::Expire(
+            pick(rng, &model.orders)
+                .map(|o| o.input.order_id)
+                .unwrap_or(id(99_999)),
+        ),
+        4 => Action::Owner(writer(model.writer.generation + 1)),
+        _ => {
+            let event = fresh_capture_event(planner);
+            match pick(rng, &model.orders) {
+                Some(order) => Action::Capture(capture_for(&order.input, event)),
+                None => Action::Capture(capture_for(
+                    &request(1, Selection::GeneralAdmission { count: 1 }, 9),
+                    event,
+                )),
+            }
+        }
+    };
+    match family {
+        Family::P1CommandIdentity => match (rng.below(8), pick(rng, &model.commands)) {
+            (0..=2, Some((known, _))) => {
+                if rng.below(3) == 0 {
+                    match rng.below(3) {
+                        0 => ctx.semantics_version = 1,
+                        1 => ctx.fence.generation = ctx.fence.generation.saturating_sub(1),
+                        _ => ctx.now_ms = model.time.saturating_sub(1),
+                    }
+                }
+                Action::Reserve(known.clone())
+            }
+            (3..=5, Some((known, _))) => {
+                let mut altered = known.clone();
+                match rng.below(5) {
+                    0 => altered.order_id = id(20_000 + planner.fresh),
+                    1 => altered.amount = amount(1_001, 1),
+                    2 => altered.payment.operation = id(30_000 + planner.fresh),
+                    3 => altered.expires_at_ms += 1,
+                    _ => {
+                        altered.selection = Selection::Seats {
+                            first: u16::MAX,
+                            count: 1,
+                        }
+                    }
+                }
+                if rng.below(3) == 0 {
+                    ctx.fence.generation = ctx.fence.generation.saturating_sub(1);
+                }
+                Action::Reserve(altered)
+            }
+            (6, _) => {
+                let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                input.selection = Selection::Seats {
+                    first: u16::MAX,
+                    count: 1,
+                };
+                Action::Reserve(input)
+            }
+            _ => background(planner, rng),
+        },
+        Family::P2OperationBinding => match rng.below(8) {
+            0 | 1 => {
+                let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                if let Some(binding) = pick(rng, &model.bindings) {
+                    input.payment = binding.operation;
+                }
+                Action::Reserve(input)
+            }
+            2 | 3 => {
+                let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                let blocked: Vec<ProviderOperation> = model
+                    .retained_unbound_blocks()
+                    .into_iter()
+                    .chain(model.quarantined.iter().map(|q| q.operation))
+                    .chain(planner.unretained.iter().copied())
+                    .collect();
+                if let Some(op) = pick(rng, &blocked) {
+                    input.payment = *op;
+                }
+                Action::Reserve(input)
+            }
+            4 | 5 => conflict_action(planner, rng, model),
+            _ => background(planner, rng),
+        },
+        Family::P3SlotLifecycle => match rng.below(10) {
+            0..=2 => Action::Send(
+                pick(
+                    rng,
+                    &orders_where(model, |o| {
+                        matches!(o.phase, OrderState::Held | OrderState::PaymentUnknown)
+                    }),
+                )
+                .map(|o| o.input.order_id)
+                .unwrap_or(id(99_999)),
+            ),
+            3 => {
+                if let Some(order) = pick(
+                    rng,
+                    &orders_where(model, |o| o.phase == OrderState::PaymentUnknown),
+                ) {
+                    ctx.now_ms = ctx.now_ms.max(order.input.expires_at_ms);
+                    Action::Expire(order.input.order_id)
+                } else {
+                    background(planner, rng)
+                }
+            }
+            4 => Action::Cancel(model.epoch + 1),
+            5 => Action::Owner(writer(model.writer.generation + 1)),
+            6 | 7 => {
+                let event = fresh_capture_event(planner);
+                match pick(rng, &model.reservations) {
+                    Some(reservation) => {
+                        let order = model
+                            .orders
+                            .iter()
+                            .find(|o| o.input.order_id == reservation.order_id)
+                            .unwrap();
+                        Action::Capture(capture_for(&order.input, event))
+                    }
+                    None => background(planner, rng),
+                }
+            }
+            _ => background(planner, rng),
+        },
+        Family::P4EventVsEconomic => match rng.below(8) {
+            0 | 1 => match pick(rng, &model.events) {
+                Some(event) => Action::Capture(event.observation.clone()),
+                None => background(planner, rng),
+            },
+            2 | 3 => conflict_action(planner, rng, model),
+            4 | 5 => {
+                let event = fresh_capture_event(planner);
+                match pick(rng, &orders_where(model, |o| o.capture.is_some())) {
+                    Some(order) => {
+                        let mut observation = capture_for(&order.input, event);
+                        if rng.below(2) == 0 {
+                            observation.amount = amount(999, 1);
+                        }
+                        Action::Capture(observation)
+                    }
+                    None => background(planner, rng),
+                }
+            }
+            6 => {
+                let event = fresh_capture_event(planner);
+                let mut observation = capture_for(
+                    &request(1, Selection::GeneralAdmission { count: 1 }, 9),
+                    event,
+                );
+                observation.operation = operation(40_000 + planner.fresh);
+                Action::Capture(observation)
+            }
+            _ => background(planner, rng),
+        },
+        Family::P5QuarantineEvidence => match rng.below(9) {
+            0..=2 => conflict_action(planner, rng, model),
+            3 => {
+                let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                let blocked: Vec<ProviderOperation> = model
+                    .retained_unbound_blocks()
+                    .into_iter()
+                    .chain(planner.unretained.iter().copied())
+                    .collect();
+                if let Some(op) = pick(rng, &blocked) {
+                    input.payment = *op;
+                }
+                Action::Reserve(input)
+            }
+            4 => Action::Send(
+                pick(rng, &orders_where(model, |o| o.review))
+                    .map(|o| o.input.order_id)
+                    .unwrap_or(id(99_999)),
+            ),
+            5 => Action::Owner(writer(model.writer.generation + 1)),
+            6 => Action::Cancel(model.epoch + 1),
+            7 => Action::Expire(
+                pick(rng, &model.quarantined)
+                    .map(|q| q.order_id)
+                    .unwrap_or(id(99_999)),
+            ),
+            _ => background(planner, rng),
+        },
+        Family::P6ReturnRequiredReview => match rng.below(10) {
+            0 | 1 => {
+                // Late matching capture: past the deadline, after expiry release or after cancellation.
+                let event = fresh_capture_event(planner);
+                match pick(rng, &orders_where(model, |o| o.capture.is_none())) {
+                    Some(order) => {
+                        match rng.below(3) {
+                            0 => ctx.now_ms = ctx.now_ms.max(order.input.expires_at_ms),
+                            1 if order.phase == OrderState::Held && !model.cancelled => {
+                                return Action::Cancel(model.epoch + 1);
+                            }
+                            _ => {}
+                        }
+                        Action::Capture(capture_for(&order.input, event))
+                    }
+                    None => background(planner, rng),
+                }
+            }
+            2 => {
+                if let Some(order) =
+                    pick(rng, &orders_where(model, |o| o.phase == OrderState::Held))
+                {
+                    ctx.now_ms = ctx.now_ms.max(order.input.expires_at_ms);
+                    Action::Expire(order.input.order_id)
+                } else {
+                    background(planner, rng)
+                }
+            }
+            3..=5 => {
+                let event = fresh_capture_event(planner);
+                match pick(
+                    rng,
+                    &orders_where(model, |o| o.phase == OrderState::ReturnRequired),
+                ) {
+                    Some(order) => {
+                        let mut observation = capture_for(&order.input, event);
+                        match rng.below(3) {
+                            0 => observation.amount = amount(999, 1),
+                            1 => {
+                                if let Some(stored) = model
+                                    .events
+                                    .iter()
+                                    .find(|e| e.bound_order == Some(order.input.order_id))
+                                {
+                                    observation = stored.observation.clone();
+                                }
+                            }
+                            _ => {}
+                        }
+                        Action::Capture(observation)
+                    }
+                    None => background(planner, rng),
+                }
+            }
+            6 => conflict_action(planner, rng, model),
+            _ => background(planner, rng),
+        },
+        Family::P7ObservationBudget => match rng.below(9) {
+            0 | 1 => Action::Send(
+                pick(
+                    rng,
+                    &orders_where(model, |o| {
+                        matches!(o.phase, OrderState::Held | OrderState::PaymentUnknown)
+                    }),
+                )
+                .map(|o| o.input.order_id)
+                .unwrap_or(id(99_999)),
+            ),
+            2 | 3 => conflict_action(planner, rng, model),
+            4 | 5 => {
+                let event = fresh_capture_event(planner);
+                match pick(rng, &model.orders) {
+                    Some(order) => Action::Capture(capture_for(&order.input, event)),
+                    None => background(planner, rng),
+                }
+            }
+            6 => {
+                let event = fresh_capture_event(planner);
+                match pick(rng, &model.reservations) {
+                    Some(reservation) => {
+                        let order = model
+                            .orders
+                            .iter()
+                            .find(|o| o.input.order_id == reservation.order_id)
+                            .unwrap();
+                        Action::Capture(capture_for(&order.input, event))
+                    }
+                    None => background(planner, rng),
+                }
+            }
+            _ => background(planner, rng),
+        },
+    }
+}
+
+/// Same event identity as a stored event, different payload: names one bound
+/// operation, two bound operations, or a bound plus an unbound operation.
+fn conflict_action(planner: &mut Planner, rng: &mut Generator, model: &Model) -> Action {
+    planner.fresh += 1;
+    let fallback_event = 5_000 + planner.fresh;
+    match pick(rng, &model.events) {
+        Some(event) => {
+            let mut observation = event.observation.clone();
+            match rng.below(4) {
+                0 => observation.evidence_hash = Hash32::from_bytes([61; 32]),
+                1 => observation.amount = amount(999, 1),
+                2 => {
+                    if let Some(binding) = pick(rng, &model.bindings) {
+                        observation.operation = binding.operation;
+                    }
+                    observation.evidence_hash = Hash32::from_bytes([62; 32]);
+                }
+                _ => {
+                    planner.fresh += 1;
+                    observation.operation = operation(40_000 + planner.fresh);
+                }
+            }
+            Action::Capture(observation)
+        }
+        None => match pick(rng, &model.orders) {
+            Some(order) => Action::Capture(capture_for(&order.input, fallback_event)),
+            None => Action::Capture(capture_for(
+                &request(1, Selection::GeneralAdmission { count: 1 }, 9),
+                fallback_event,
+            )),
+        },
+    }
+}
+
+/// Relation-aware trace: family-directed moves consult only the independent model.
+fn relation_trace(case: &Case, family: Family, seed: u64) -> Vec<Step> {
+    let (_, mut model) = initial(case);
+    let mut rng = Generator(seed ^ ((family as u64 + 1) << 56));
+    let mut planner = Planner::default();
+    let mut result = Vec::new();
+    for _ in 0..RELATION_STEPS {
+        let mut ctx = Context {
+            fence: model.writer,
+            now_ms: model.time + rng.below(3),
+            semantics_version: 4,
+        };
+        let action = relation_action(family, &mut planner, &mut rng, &model, &mut ctx);
+        let step = Step { ctx, action };
+        if let (
+            Action::Capture(observation),
+            Reply::Capture(Err(kix_kernel::KernelError::Capacity)),
+        ) = (&step.action, model.apply(&step))
+        {
+            let prior = model.events.iter().any(|e| {
+                e.identity.event_id == observation.event_id
+                    && e.identity.provider == observation.operation.provider
+                    && e.identity.account == observation.operation.account
+            });
+            if prior
+                && model.binding(observation.operation).is_none()
+                && !planner.unretained.contains(&observation.operation)
+            {
+                planner.unretained.push(observation.operation);
+            }
+        }
+        result.push(step);
+    }
+    result
+}
+
+fn relation_cases() -> [Case; 4] {
+    [
+        Case {
+            layout: InventoryCase::Seats(vec![6, 4]),
+            limits: Limits {
+                commands: 64,
+                orders: 24,
+                observations: 12,
+            },
+        },
+        Case {
+            layout: InventoryCase::Ga(5),
+            limits: Limits {
+                commands: 64,
+                orders: 16,
+                observations: 4,
+            },
+        },
+        Case {
+            layout: InventoryCase::Seats(vec![3]),
+            limits: Limits {
+                commands: 64,
+                orders: 8,
+                observations: 2,
+            },
+        },
+        Case {
+            layout: InventoryCase::Seats(vec![2, 2]),
+            limits: Limits {
+                commands: 6,
+                orders: 4,
+                observations: 6,
+            },
+        },
+    ]
+}
+
+/// Classes that must be reached for a family to count as deliberately exercised.
+fn required_classes(family: Family) -> &'static [&'static str] {
+    match family {
+        Family::P1CommandIdentity => &[
+            "first_result_held",
+            "first_result_rejected",
+            "replay_exact",
+            "replay_of_accepted_first_result",
+            "replay_of_rejected_first_result",
+            "replay_after_state_changed",
+            "replay_under_stale_context",
+            "altered_payload_conflict",
+            "altered_payload_conflict_under_stale_context",
+            "altered_field_order_id",
+            "altered_field_amount",
+            "altered_field_operation",
+            "altered_field_expiry",
+            "altered_field_selection",
+            "replay_lookup_outranked_by_scope_or_semantics",
+        ],
+        Family::P2OperationBinding => &[
+            "binding_created",
+            "rejected_no_binding",
+            "reuse_of_bound_operation_rejected",
+            "retained_unbound_operation_refused",
+            "bound_quarantined_operation_refused",
+            "sibling_operation_bound_independently",
+            "unretained_conflict_operation_bound_later",
+            "reserve_refused_for_capacity",
+        ],
+        Family::P3SlotLifecycle => &[
+            "send_reserves_one_slot",
+            "unknown_retry_reuses_reservation",
+            "slot_capacity_refused",
+            "expiry_check_keeps_reservation",
+            "unknown_order_not_released_by_ttl",
+            "held_order_expired",
+            "owner_replacement_keeps_reservation",
+            "scope_cancellation_keeps_reservation",
+            "capture_consumes_own_reservation",
+            "capture_leaves_other_reservations_intact",
+        ],
+        Family::P4EventVsEconomic => &[
+            "identical_event_replay",
+            "same_identity_altered_payload_conflict",
+            "retained_conflict_replayed_without_new_evidence",
+            "conflict_names_one_bound_operation",
+            "conflict_names_two_bound_operations",
+            "conflict_names_bound_and_unbound",
+            "same_operation_new_event_identity",
+            "duplicate_economic_effect",
+            "later_mismatch_raises_review",
+            "first_capture_confirmed",
+            "first_capture_reviewed",
+            "unbound_capture_not_stored",
+        ],
+        Family::P5QuarantineEvidence => &[
+            "bound_conflict_quarantines_order",
+            "bound_quarantine_reconfirmed",
+            "retained_unbound_evidence_present",
+            "retained_unbound_blocks_binding",
+            "retained_unbound_ban_coexists_with_bound_sibling",
+            "unretained_unbound_conflict_at_full_budget",
+            "unretained_conflict_left_no_ban",
+            "binding_accepted_while_others_quarantined",
+            "reviewed_order_cannot_send",
+            "bound_quarantine_survives_owner_replacement",
+            "bound_quarantine_survives_scope_cancellation",
+            "bound_quarantine_survives_expiry_check",
+        ],
+        Family::P6ReturnRequiredReview => &[
+            "late_matching_capture_return_required",
+            "return_required_past_deadline",
+            "return_required_after_expiry_release",
+            "return_required_after_cancellation",
+            "return_required_on_already_reviewed_order",
+            "mismatch_after_return_required_keeps_phase",
+            "retained_capture_preserved_under_mismatch",
+            "duplicate_effect_after_return_required",
+            "no_second_inventory_release",
+            "event_replay_after_return_required",
+            "review_set_while_return_required_persists",
+            "review_predicate_sticky_across_step",
+        ],
+        Family::P7ObservationBudget => &[
+            "reserved_slot_charged_to_budget",
+            "send_refused_at_limit",
+            "conflict_retained",
+            "conflict_admitted_at_last_unit",
+            "conflict_refused_at_limit",
+            "reserved_slot_converted_to_stored_event",
+            "promised_capacity_honoured_at_full_budget",
+            "unreserved_event_stored_within_budget",
+            "unreserved_capture_refused_at_limit",
+            "budget_full_after_step",
+        ],
+    }
 }
 
 #[test]
-fn locked_v4_matches_independent_state_model() {
+fn relation_aware_generated_traces_reach_every_property_family() {
     assert_eq!(SEMANTICS_VERSION, 4);
-    let cases = [
+    let cases = relation_cases();
+    let mut total = Coverage::new();
+    let mut per_family = String::new();
+    for family in FAMILIES {
+        let mut family_coverage = Coverage::new();
+        let mut transitions = 0_u64;
+        for (case_no, case) in cases.iter().enumerate() {
+            for seed in 1..=RELATION_SEEDS {
+                let inputs = relation_trace(case, family, seed);
+                transitions += inputs.len() as u64;
+                match check_relations_trace(case, &inputs, false, true) {
+                    Ok(coverage) => family_coverage.merge(&coverage),
+                    Err(failure) => {
+                        let minimal = shrink_with(&inputs, |trial| {
+                            check_relations_trace(case, trial, false, true).is_err()
+                        });
+                        let report = format!(
+                            "family={}; case={case_no}; seed={seed}; config={case:?}\nstep={}; kind={}\n{}\nshrunk_steps={}\nshrunk={minimal:#?}\n",
+                            family.tag(),
+                            failure.step,
+                            failure.kind,
+                            failure.detail,
+                            minimal.len(),
+                        );
+                        fs::write(evidence_dir().join("e4-relation-failure.txt"), &report).unwrap();
+                        panic!("{report}");
+                    }
+                }
+            }
+        }
+        let missing: Vec<&str> = required_classes(family)
+            .iter()
+            .copied()
+            .filter(|class| family_coverage.count(family, class) == 0)
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "{} traces did not reach {missing:?}; reached {:?}",
+            family.tag(),
+            family_coverage.classes(family)
+        );
+        per_family.push_str(&format!(
+            "{{\"family\":\"{}\",\"configurations\":{},\"seeds_per_configuration\":{RELATION_SEEDS},\"steps_per_sequence\":{RELATION_STEPS},\"compared_transitions\":{transitions},\"required_classes\":{},\"reached\":{}}},",
+            family.tag(),
+            cases.len(),
+            required_classes(family).len(),
+            family_coverage.to_json(),
+        ));
+        total.merge(&family_coverage);
+    }
+    for family in FAMILIES {
+        assert!(total.family_total(family) > 0);
+    }
+    per_family.pop();
+    fs::write(evidence_dir().join("e4-relation-coverage.json"), format!(
+        "{{\"semantics\":4,\"kernel_blob\":\"{LOCKED_KERNEL}\",\"generator\":\"family-directed SplitMix, seed xor family tag; consults the independent model only\",\"baseline_unchanged\":{{\"cases\":{CASES},\"steps\":{STEPS}}},\"families\":[{per_family}],\"total\":{},\"scope\":\"reachability of transition classes in the generated corpus; not completeness, not durability\",\"failures\":0}}\n",
+        total.to_json(),
+    )).unwrap();
+}
+
+/// The baseline corpus is unchanged; this records which relation classes it
+/// reaches only incidentally, so the additive suite can be compared against it.
+#[test]
+fn baseline_corpus_relation_coverage_is_inventoried_not_retuned() {
+    let cases = baseline_cases();
+    let mut total = Coverage::new();
+    for case in &cases {
+        for seed in 1..=CASES {
+            let inputs = trace(case, seed);
+            assert_eq!(inputs.len(), STEPS);
+            let coverage = check_relations_trace(case, &inputs, false, true)
+                .unwrap_or_else(|failure| panic!("baseline seed {seed}: {failure:?}"));
+            total.merge(&coverage);
+        }
+    }
+    let mut unreached = String::new();
+    for family in FAMILIES {
+        for class in required_classes(family) {
+            if total.count(family, class) == 0 {
+                unreached.push_str(&format!("{}:{class}\n", family.tag()));
+            }
+        }
+    }
+    fs::write(
+        evidence_dir().join("e4-baseline-relation-inventory.txt"),
+        format!("baseline cases={CASES} steps={STEPS}\nreached={}\nrequired_classes_not_reached_by_baseline:\n{unreached}", total.to_json()),
+    )
+    .unwrap();
+}
+
+fn baseline_cases() -> [Case; 4] {
+    [
         Case {
             layout: InventoryCase::Seats(vec![70, 10]),
             limits: Limits {
@@ -370,7 +1100,46 @@ fn locked_v4_matches_independent_state_model() {
                 observations: 1,
             },
         },
-    ];
+    ]
+}
+
+/// The property layer is itself sensitive: with the model-only quarantine
+/// omission and no kernel in the loop, a generated P5 trace fails on the
+/// `bound conflict did not quarantine` property and the failure shrinks.
+#[test]
+fn relation_properties_detect_model_only_quarantine_omission_and_shrink() {
+    let case = relation_cases()[2].clone();
+    let mut detected = None;
+    for seed in 1..=RELATION_SEEDS {
+        let inputs = relation_trace(&case, Family::P5QuarantineEvidence, seed);
+        assert!(check_relations_trace(&case, &inputs, false, false).is_ok());
+        if let Err(failure) = check_relations_trace(&case, &inputs, true, false) {
+            detected = Some((seed, inputs, failure));
+            break;
+        }
+    }
+    let (seed, inputs, failure) = detected.expect("a P5 trace reaches the injected omission");
+    assert_eq!(failure.kind, "transition_property");
+    let minimal = shrink_with(&inputs, |trial| {
+        check_relations_trace(&case, trial, true, false).is_err()
+    });
+    assert!(minimal.len() < inputs.len());
+    assert!(check_relations_trace(&case, &minimal, false, false).is_ok());
+    fs::write(evidence_dir().join("e4-relation-property-sensitivity.txt"), format!(
+        "injection=independent-model-only; kernel not in loop; kernel unchanged\nseed={seed}\nfailure={failure:?}\noriginal_steps={}\nshrunk_steps={}\ntrace={minimal:#?}\n", inputs.len(), minimal.len(),
+    )).unwrap();
+}
+
+fn evidence_dir() -> PathBuf {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../.local/verification/ktx");
+    fs::create_dir_all(&path).unwrap();
+    path
+}
+
+#[test]
+fn locked_v4_matches_independent_state_model() {
+    assert_eq!(SEMANTICS_VERSION, 4);
+    let cases = baseline_cases();
     let mut actions = [0_u64; 6];
     for (case_no, case) in cases.iter().enumerate() {
         for seed in 1..=CASES {
@@ -645,6 +1414,7 @@ fn locked_sources_and_new_harness_sources_are_identified() {
     for relative in [
         "tests/e4_state_model.rs",
         "tests/support/model_v4.rs",
+        "tests/support/coverage_v4.rs",
         "tests/performance_harness.rs",
         "tests/support/perf_probe.rs",
         "examples/r1_perf_probe.rs",
