@@ -547,7 +547,28 @@ fn relation_action(
                 }
                 Action::Reserve(altered)
             }
-            (6, _) => match rng.below(3) {
+            (6, _) => match rng.below(4) {
+                3 => {
+                    // New identity reusing the selection and operation of an earlier
+                    // Unavailable rejection once the blocking hold may have cleared.
+                    let rejected: Vec<&Reserve> = model
+                        .commands
+                        .iter()
+                        .filter(|(_, o)| {
+                            *o == ReserveOutcome::Rejected(kix_kernel::Rejection::Unavailable)
+                        })
+                        .map(|(r, _)| r)
+                        .collect();
+                    match pick(rng, &rejected) {
+                        Some(earlier) => {
+                            let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                            input.selection = earlier.selection;
+                            input.payment = earlier.payment;
+                            Action::Reserve(input)
+                        }
+                        None => background(planner, rng),
+                    }
+                }
                 0 => {
                     // Unavailable rejection: ask for a selection another order still owns.
                     let mut input = fresh_request(planner, rng, model, ctx.now_ms);
@@ -1127,6 +1148,11 @@ fn crosswalk_rows() -> [CrosswalkRow; 8] {
                     P1CommandIdentity,
                     "new_identity_holds_selection_rejected_earlier",
                 ),
+                (
+                    P1CommandIdentity,
+                    "new_identity_reholds_same_operation_rejected_unavailable_earlier",
+                ),
+                (P2OperationBinding, "rejected_no_binding"),
             ],
             anchors: &[
                 (
@@ -1135,7 +1161,7 @@ fn crosswalk_rows() -> [CrosswalkRow; 8] {
                 ),
                 (
                     P1CommandIdentity,
-                    "new_identity_holds_selection_rejected_earlier",
+                    "new_identity_reholds_same_operation_rejected_unavailable_earlier",
                 ),
             ],
         },
@@ -1195,7 +1221,12 @@ fn crosswalk_rows() -> [CrosswalkRow; 8] {
                     "reservation_refused_at_exact_expiry_instant",
                 ),
                 (P3SlotLifecycle, "send_refused_at_exact_deadline"),
+                (P3SlotLifecycle, "held_send_refused_at_exact_deadline"),
                 (P6ReturnRequiredReview, "return_required_at_exact_deadline"),
+                (
+                    P6ReturnRequiredReview,
+                    "held_return_required_at_exact_deadline",
+                ),
             ],
             anchors: &[
                 (P3SlotLifecycle, "held_order_expired_at_exact_instant"),
@@ -1203,8 +1234,11 @@ fn crosswalk_rows() -> [CrosswalkRow; 8] {
                     P3SlotLifecycle,
                     "reservation_refused_at_exact_expiry_instant",
                 ),
-                (P3SlotLifecycle, "send_refused_at_exact_deadline"),
-                (P6ReturnRequiredReview, "return_required_at_exact_deadline"),
+                (P3SlotLifecycle, "held_send_refused_at_exact_deadline"),
+                (
+                    P6ReturnRequiredReview,
+                    "held_return_required_at_exact_deadline",
+                ),
             ],
         },
         CrosswalkRow {
@@ -1295,6 +1329,10 @@ fn crosswalk_rows() -> [CrosswalkRow; 8] {
                     P5QuarantineEvidence,
                     "quarantined_order_cannot_send_after_expiry_or_cancellation",
                 ),
+                (
+                    P5QuarantineEvidence,
+                    "quarantined_order_unsendable_after_owner_expiry_cancellation_sequence",
+                ),
             ],
             anchors: &[
                 (
@@ -1303,7 +1341,7 @@ fn crosswalk_rows() -> [CrosswalkRow; 8] {
                 ),
                 (
                     P5QuarantineEvidence,
-                    "quarantined_order_cannot_send_after_expiry_or_cancellation",
+                    "quarantined_order_unsendable_after_owner_expiry_cancellation_sequence",
                 ),
             ],
         },

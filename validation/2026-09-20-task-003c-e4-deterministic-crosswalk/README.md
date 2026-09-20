@@ -48,7 +48,9 @@ byte-for-byte unchanged.
   detection that matches the recorded command by principal/request (a foreign scope
   changes the `CommandId`, so the pre-existing merged class, which looked up by full
   id, only ever observed the semantics guard).
-  No existing class was renamed, removed or re-defined.
+  No existing class was renamed, removed or re-defined. Review #2 added a per-order
+  `quarantine_sequence` history (Quarantined → OwnerReplaced → ExpiryReleased →
+  ScopeCancelled) used only by the cumulative row 7 class.
 - `runtime/crates/kix-kernel/tests/e4_state_model.rs` — new test
   `task_001_deterministic_edge_cases_are_cross_validated_by_generated_witnesses`
   (eight `CrosswalkRow`s, per-class relation/baseline counts and first witnesses,
@@ -98,13 +100,13 @@ pre/post state and the kernel result. None is a fixture; no Task 001 trace was c
 
 | Row | Anchor class(es) added | Remedy tier |
 |---|---|---|
-| 1 | `P1:rejected_replay_after_unavailable_cause_cleared`, `P1:new_identity_holds_selection_rejected_earlier` | 2 (observer) + 3 (steering: P1 arm 6 now also asks for an owned selection → `Unavailable`, and expires a Held order at its deadline so the hold is released) |
+| 1 | `P1:rejected_replay_after_unavailable_cause_cleared`, `P1:new_identity_holds_selection_rejected_earlier`, `P1:new_identity_reholds_same_operation_rejected_unavailable_earlier` (review #2) | 2 (observer) + 3 (steering: P1 arm 6 now also asks for an owned selection → `Unavailable`, expires a Held order at its deadline so the hold is released, and — review #2 — re-issues the selection+operation of an earlier `Unavailable` rejection under a fresh identity) |
 | 2 | `P1:altered_payload_conflict_under_stale_fence`, `P1:altered_payload_conflict_under_regressed_clock` | 2 + 3 (P1 arm 3–5 may regress the clock instead of only the fence) |
 | 3 | `P1:replay_lookup_outranked_by_scope`, `P1:replay_lookup_outranked_by_semantics`, `P1:replay_under_stale_fence`, `P1:replay_under_regressed_clock` | 2 + 3 (P1 arm 0–2 may replay a known identity under scope `id(999)`) |
-| 4 | `P3:held_order_expired_at_exact_instant`, `P3:reservation_refused_at_exact_expiry_instant`, `P3:send_refused_at_exact_deadline`, `P6:return_required_at_exact_deadline` | 2 + 3 (P3 arm 8 reserves with `expires_at_ms == now`) |
+| 4 | `P3:held_order_expired_at_exact_instant`, `P3:reservation_refused_at_exact_expiry_instant`, `P3:send_refused_at_exact_deadline`, `P6:return_required_at_exact_deadline`, and (review #2) the Held-specific `P3:held_send_refused_at_exact_deadline`, `P6:held_return_required_at_exact_deadline` | 2 + 3 (P3 arm 8 reserves with `expires_at_ms == now`) |
 | 5 | `P3:unknown_retry_refused_past_deadline_keeps_reservation` (`now >= expires_at`), `P3:unknown_retry_refused_at_exact_deadline_keeps_reservation` (`now == expires_at`), `P3:unknown_retry_refused_strictly_after_deadline_keeps_reservation` (`now > expires_at`), `P3:send_refused_past_deadline`, `P3:late_capture_converts_reservation_to_return_required` | 2 |
 | 6 | `P6:return_required_order_cannot_send` | 2 |
-| 7 | `P5:bound_quarantine_survives_expiry_release`, `P5:quarantined_order_cannot_send_after_expiry_or_cancellation` | 2 |
+| 7 | `P5:bound_quarantine_survives_expiry_release`, `P5:quarantined_order_cannot_send_after_expiry_or_cancellation`, and (review #2) the cumulative `P5:quarantined_order_unsendable_after_owner_expiry_cancellation_sequence` (per-order ordered history flag) | 2 |
 | 8 | `P5:sibling_of_retained_unbound_ban_bound_independently` | 2 |
 
 Steering. Before steering (observer anchors only, generators unchanged) five anchor
@@ -130,10 +132,12 @@ Families: P1.
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `replay_of_rejected_first_result` | | 2971 | 1830 | P1/0/1/14 | 5638 |
-| `replay_after_state_changed` | | 4466 | 3966 | P1/0/1/4 | 8129 |
-| `rejected_replay_after_unavailable_cause_cleared` | yes | — | 58 | P1/0/3/37 | 67 |
-| `new_identity_holds_selection_rejected_earlier` | yes | — | 12 | P1/0/24/44 | 150 |
+| `replay_of_rejected_first_result` |  | 2971 | 1609 | P1/0/1/14 | 5638 |
+| `replay_after_state_changed` |  | 4466 | 3868 | P1/0/1/4 | 8129 |
+| `rejected_replay_after_unavailable_cause_cleared` | yes | — | 79 | P1/0/9/42 | 67 |
+| `new_identity_holds_selection_rejected_earlier` |  | — | 12 | P1/0/1/39 | 150 |
+| `new_identity_reholds_same_operation_rejected_unavailable_earlier` | yes | — | 4 | P1/0/1/39 | 0 |
+| `rejected_no_binding` (cited 003-B class, not an anchor) |  | 003-B | 10318 | P1/0/1/8 | 11741 |
 
 ### Row 2 — `altered_payload_conflicts_before_fence_and_clock_guards` — **sufficient**
 Predicate: same identity, altered payload → `CommandConflict`, state unchanged, even
@@ -141,14 +145,14 @@ under a stale fence or a regressed clock; the unchanged payload still replays. F
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `altered_payload_conflict` | | 3899 | 4097 | P1/0/1/8 | 14710 |
-| `altered_field_order_id` | | 914 | 905 | P1/0/1/8 | 0 |
-| `altered_field_operation` | | 912 | 886 | P1/0/1/9 | 2188 |
-| `altered_field_expiry` | | 938 | 893 | P1/0/1/27 | 7716 |
-| `altered_field_selection` | | 354 | 517 | P1/0/1/23 | 7346 |
-| `altered_payload_conflict_under_stale_fence` | yes | — | 920 | P1/0/1/11 | 614 |
-| `altered_payload_conflict_under_regressed_clock` | yes | — | 1000 | P1/0/1/9 | 573 |
-| `replay_exact` | | 4466 | 3966 | P1/0/1/4 | 8129 |
+| `altered_payload_conflict` |  | 3899 | 4183 | P1/0/1/10 | 14710 |
+| `altered_field_order_id` |  | 914 | 844 | P1/0/1/10 | 0 |
+| `altered_field_operation` |  | 912 | 878 | P1/0/1/34 | 2188 |
+| `altered_field_expiry` |  | 938 | 956 | P1/0/1/28 | 7716 |
+| `altered_field_selection` |  | 354 | 669 | P1/0/1/24 | 7346 |
+| `altered_payload_conflict_under_stale_fence` | yes | — | 921 | P1/0/1/10 | 614 |
+| `altered_payload_conflict_under_regressed_clock` | yes | — | 1030 | P1/0/1/36 | 573 |
+| `replay_exact` |  | 4466 | 3868 | P1/0/1/4 | 8129 |
 
 ### Row 3 — `replay_lookup_is_guarded_by_scope_and_semantics_only` — **sufficient**
 Predicate: known identity under a foreign scope → `WrongScope`; under another
@@ -157,10 +161,10 @@ stale fence does not stop the read-only replay. Families: P1.
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `replay_lookup_outranked_by_scope` | yes | — | 393 | P1/0/1/46 | 1672 |
-| `replay_lookup_outranked_by_semantics` | yes | — | 388 | P1/0/1/24 | 946 |
-| `replay_under_regressed_clock` | yes | — | 442 | P1/0/1/32 | 330 |
-| `replay_under_stale_fence` | yes | — | 418 | P1/0/2/2 | 318 |
+| `replay_lookup_outranked_by_scope` | yes | — | 356 | P1/0/2/24 | 1672 |
+| `replay_lookup_outranked_by_semantics` | yes | — | 386 | P1/0/1/25 | 946 |
+| `replay_under_regressed_clock` | yes | — | 411 | P1/0/1/9 | 330 |
+| `replay_under_stale_fence` | yes | — | 400 | P1/0/1/6 | 318 |
 
 ### Row 4 — `expiry_instant_is_treated_consistently_by_every_entry_point` — **sufficient**
 Predicate: at `now == expires_at` the expiry check releases a Held order, a reservation
@@ -169,10 +173,12 @@ change, and a matching capture is `ReturnRequired`. Families: P3, P6.
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `P3:held_order_expired_at_exact_instant` | yes | — | 688 | P1/0/1/41 | 46 |
+| `P3:held_order_expired_at_exact_instant` | yes | — | 666 | P1/0/1/11 | 46 |
 | `P3:reservation_refused_at_exact_expiry_instant` | yes | — | 263 | P3/0/1/3 | 1206 |
-| `P3:send_refused_at_exact_deadline` | yes | — | 47 | P1/0/2/36 | 47 |
-| `P6:return_required_at_exact_deadline` | yes | — | 110 | P2/0/35/37 | 19 |
+| `P3:send_refused_at_exact_deadline` |  | — | 46 | P2/0/8/23 | 47 |
+| `P3:held_send_refused_at_exact_deadline` | yes | — | 37 | P2/0/8/23 | 40 |
+| `P6:return_required_at_exact_deadline` |  | — | 110 | P2/0/35/37 | 19 |
+| `P6:held_return_required_at_exact_deadline` | yes | — | 82 | P2/3/62/21 | 11 |
 
 ### Row 5 — `unknown_retry_after_the_deadline_keeps_the_reservation_and_its_slot` — **sufficient**
 Predicate: UNKNOWN send retry at/after the deadline → `InvalidTransition`, phase,
@@ -181,12 +187,12 @@ later matching capture consumes that slot into ReturnRequired. Families: P3.
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `unknown_retry_refused_past_deadline_keeps_reservation` (`>=`) | yes | — | 46 | P1/0/2/36 | 251 |
-| `unknown_retry_refused_at_exact_deadline_keeps_reservation` (`==`) | yes | — | 10 | P1/0/2/36 | 7 |
+| `unknown_retry_refused_past_deadline_keeps_reservation` (`>=`) | yes | — | 45 | P2/0/14/16 | 251 |
+| `unknown_retry_refused_at_exact_deadline_keeps_reservation` (`==`) | yes | — | 9 | P2/0/14/16 | 7 |
 | `unknown_retry_refused_strictly_after_deadline_keeps_reservation` (`>`) | yes | — | 36 | P2/1/1/19 | 244 |
-| `unknown_order_not_released_by_ttl` | | 135 | 132 | P2/0/6/41 | 270 |
-| `expiry_check_keeps_reservation` | | 232 | 230 | P1/0/1/20 | 569 |
-| `late_capture_converts_reservation_to_return_required` | yes | — | 171 | P2/0/2/36 | 217 |
+| `unknown_order_not_released_by_ttl` |  | 135 | 136 | P1/0/21/23 | 270 |
+| `expiry_check_keeps_reservation` |  | 232 | 223 | P1/0/21/23 | 569 |
+| `late_capture_converts_reservation_to_return_required` | yes | — | 175 | P1/0/6/39 | 217 |
 
 ### Row 6 — `return_required_is_stable_under_further_late_evidence` — **sufficient**
 Predicate: after ReturnRequired a duplicate matching event is `DuplicateEffect` with no
@@ -196,12 +202,12 @@ Families: P6.
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `duplicate_effect_after_return_required` | | 488 | 459 | P1/0/18/18 | 76 |
-| `no_second_inventory_release` | | 488 | 459 | P1/0/18/18 | 76 |
-| `mismatch_after_return_required_keeps_phase` | | 203 | 203 | P4/0/6/28 | 13 |
-| `retained_capture_preserved_under_mismatch` | | 203 | 203 | P4/0/6/28 | 13 |
-| `review_set_while_return_required_persists` | | 372 | 372 | P2/0/2/39 | 213 |
-| `return_required_order_cannot_send` | yes | — | 769 | P1/0/22/36 | 475 |
+| `duplicate_effect_after_return_required` |  | 488 | 468 | P1/0/6/28 | 76 |
+| `no_second_inventory_release` |  | 488 | 468 | P1/0/6/28 | 76 |
+| `mismatch_after_return_required_keeps_phase` |  | 203 | 203 | P4/0/6/28 | 13 |
+| `retained_capture_preserved_under_mismatch` |  | 203 | 203 | P4/0/6/28 | 13 |
+| `review_set_while_return_required_persists` |  | 372 | 372 | P2/0/2/39 | 213 |
+| `return_required_order_cannot_send` | yes | — | 770 | P1/0/8/31 | 475 |
 
 ### Row 7 — `bound_quarantine_survives_owner_change_expiry_and_cancellation` — **sufficient**
 Predicate: a conflict naming two bound operations quarantines both orders; owner
@@ -210,11 +216,12 @@ the quarantine set and review; the quarantined order still cannot send. Families
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `P4:conflict_names_two_bound_operations` | | 1505 | 1505 | P2/0/1/28 | 2005 |
-| `P5:bound_quarantine_survives_owner_replacement` | | 2586 | 2586 | P2/0/1/13 | 3438 |
+| `P4:conflict_names_two_bound_operations` |  | 1505 | 1505 | P2/0/1/28 | 2005 |
+| `P5:bound_quarantine_survives_owner_replacement` |  | 2586 | 2586 | P2/0/1/13 | 3438 |
 | `P5:bound_quarantine_survives_expiry_release` | yes | — | 141 | P2/0/6/25 | 195 |
-| `P5:bound_quarantine_survives_scope_cancellation` | | 691 | 691 | P5/0/1/21 | 392 |
-| `P5:quarantined_order_cannot_send_after_expiry_or_cancellation` | yes | — | 892 | P2/1/33/43 | 600 |
+| `P5:bound_quarantine_survives_scope_cancellation` |  | 691 | 691 | P5/0/1/21 | 392 |
+| `P5:quarantined_order_cannot_send_after_expiry_or_cancellation` |  | — | 892 | P2/1/33/43 | 600 |
+| `P5:quarantined_order_unsendable_after_owner_expiry_cancellation_sequence` | yes | — | 13 | P5/0/15/36 | 5 |
 
 ### Row 8 — `retained_unbound_conflict_bans_the_identity_for_any_future_order` — **sufficient**
 Predicate: a retained conflict naming a bound and an unbound operation quarantines only
@@ -224,10 +231,10 @@ same provider/account still binds. Families: P2, P4, P5.
 
 | Class | Anchor | pre | relation | first witness | base |
 |---|---|---|---|---|---|
-| `P4:conflict_names_bound_and_unbound` | | 2685 | 2685 | P2/0/1/18 | 1072 |
-| `P5:retained_unbound_evidence_present` | | 879 | 879 | P2/0/1/18 | 372 |
-| `P2:retained_unbound_operation_refused` | | 418 | 418 | P2/0/1/20 | 0 |
-| `P5:retained_unbound_ban_coexists_with_bound_sibling` | | 418 | 418 | P2/0/1/20 | 0 |
+| `P4:conflict_names_bound_and_unbound` |  | 2685 | 2685 | P2/0/1/18 | 1072 |
+| `P5:retained_unbound_evidence_present` |  | 879 | 879 | P2/0/1/18 | 372 |
+| `P2:retained_unbound_operation_refused` |  | 418 | 418 | P2/0/1/20 | 0 |
+| `P5:retained_unbound_ban_coexists_with_bound_sibling` |  | 418 | 418 | P2/0/1/20 | 0 |
 | `P5:sibling_of_retained_unbound_ban_bound_independently` | yes | — | 688 | P2/0/1/23 | 657 |
 
 `unreached_in_relation_corpus` in `e4-deterministic-crosswalk.json` is `[]`.
@@ -262,7 +269,51 @@ now requires all three to be reached by the relation corpus. Both regions were a
 reached by the existing generators — no further steering was needed:
 `==` 10 relation hits (first P1/0/2/36; baseline 7, first 0/14/91),
 `>` 36 relation hits (first P2/1/1/19; baseline 244, first 0/4/54). All other counts
-in this file are unchanged by the split.
+in this file were unchanged by the split (the P1-stream counts shown above were
+later shifted by the second correction below).
+
+### Independent-review correction #2 (PR #26 comment 5749208479)
+
+Three predicate-level gaps were closed with additive observer classes; every broad
+Task 003-B / first-head class, corpus parameter and gate is kept unchanged, and the
+deterministic corpus, the reference model, the locked files and the task document are
+untouched.
+
+1. **Row 4 (Held-order exact deadline).** `send_refused_at_exact_deadline` is emitted
+   under `Held | PaymentUnknown`, and its first witness (P1/0/2/36) was row 5's UNKNOWN
+   retry, so the Held-order predicate was not machine-gated. Added
+   `P3:held_send_refused_at_exact_deadline` (`before.phase == Held`,
+   `now == expires_at`, `InvalidTransition`, state unchanged) — 37 relation hits, first
+   P2/0/8/23; baseline 40. `return_required_at_exact_deadline` likewise admitted
+   `Held | PaymentUnknown`; added `P6:held_return_required_at_exact_deadline`
+   (`before.phase == Held`, first capture, `now == expires_at`, `ReturnRequired`) — 82
+   relation hits, first P2/3/62/21; baseline 11. Row 4 anchors now use the two
+   Held-specific classes; the broad classes stay as compatibility inventory.
+2. **Row 1 (same-operation reuse under a new identity).**
+   `new_identity_holds_selection_rejected_earlier` proves selection reuse only. Added
+   `P1:new_identity_reholds_same_operation_rejected_unavailable_earlier`: an earlier
+   command with a different identity, the same selection **and the same
+   `ProviderOperation`** was `Rejected(Unavailable)`, and the new command is `Held`.
+   Not reachable without steering (the generators always mint a fresh operation), so
+   one additional P1 sub-arm (`(6, _)` arm 3) re-issues the selection+payment of an
+   earlier `Unavailable` rejection under a fresh identity — 4 relation hits, first
+   P1/0/1/39; baseline 0 (baseline generator untouched, so the baseline never reuses an
+   operation this way; that is expected and not a regression). `P2:rejected_no_binding`
+   is cited on the row as supporting inventory only. This steering changed the P1 RNG
+   stream: all P1-origin counts/witnesses in the Step 5 tables were regenerated from
+   the current JSON; no class dropped to zero and every P1–P7 required class remains
+   reached (Task 003-B gate unchanged).
+3. **Row 7 (cumulative ordered sequence).** Added a model-aware per-order history flag
+   in the observer (`quarantine_sequence`: Quarantined → OwnerReplaced →
+   ExpiryReleased → ScopeCancelled, advanced strictly in that order from the moment the
+   order enters bound quarantine) and the class
+   `P5:quarantined_order_unsendable_after_owner_expiry_cancellation_sequence`, hit
+   only when a send on an order that has completed the whole ordered sequence is
+   `InvalidTransition` with the scope cancelled, the order `Expired` and the operation
+   still in bound quarantine. Reached by the existing P5 generator with no steering — 13
+   relation hits, first P5/0/15/36; baseline 5, first 0/200/109. Row 7 stays
+   `sufficient` with this cumulative anchor; the decomposed classes remain as inventory.
+   No deterministic trace was copied: the sequence emerges from random P5 actions.
 
 ## Contract findings
 
@@ -282,9 +333,13 @@ in this file are unchanged by the split.
   deterministic predicate has an observer class with a reproducible witness; they do
   not claim the generated corpus explores the same *sequence* as the deterministic
   trace, and no deterministic trace was copied.
-- `new_identity_holds_selection_rejected_earlier` has the thinnest generated
-  evidence (12 relation hits, 150 baseline hits); it is reached deterministically
-  and reproducibly, but a future task may prefer a larger margin.
+- `new_identity_reholds_same_operation_rejected_unavailable_earlier` (4 relation
+  hits, 0 baseline) and `quarantined_order_unsendable_after_owner_expiry_cancellation_sequence`
+  (13 relation, 5 baseline) have the thinnest generated evidence; both are reached
+  deterministically and reproducibly, but a future task may prefer a larger margin.
+- The row 7 sequence anchor requires the exact deterministic order
+  owner → expiry → cancellation; other interleavings are covered only by the
+  decomposed classes.
 - Steering changed the P1/P3 RNG streams; Task 003-B per-class counts are therefore
   historical for those families. Gates, corpus sizes and the baseline are preserved.
 - Nothing here concerns durability, replication, bank exactly-once, chain finality or

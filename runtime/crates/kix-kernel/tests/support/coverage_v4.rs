@@ -69,6 +69,18 @@ pub struct Coverage {
     /// Operations named by a conflicting event whose evidence was refused for
     /// capacity while the operation was unbound (unretained unbound conflict).
     unretained: Vec<ProviderOperation>,
+    /// Ordered-transition progress per bound-quarantined order: how far the
+    /// sequence quarantine -> owner replacement -> expiry release -> scope
+    /// cancellation has advanced, strictly in that order.
+    quarantine_sequence: Vec<(KixId, QuarantineStage)>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum QuarantineStage {
+    Quarantined,
+    OwnerReplaced,
+    ExpiryReleased,
+    ScopeCancelled,
 }
 
 fn order(model: &Model, id: KixId) -> Option<&ModelOrder> {
@@ -340,6 +352,17 @@ impl Coverage {
                                 Family::P1CommandIdentity,
                                 "new_identity_holds_selection_rejected_earlier",
                             );
+                            if pre.commands.iter().any(|(input, outcome)| {
+                                input.id != request.id
+                                    && input.selection == request.selection
+                                    && input.payment == request.payment
+                                    && *outcome == ReserveOutcome::Rejected(Rejection::Unavailable)
+                            }) {
+                                self.hit(
+                                    Family::P1CommandIdentity,
+                                    "new_identity_reholds_same_operation_rejected_unavailable_earlier",
+                                );
+                            }
                         }
                         if pre.conflicts.iter().any(|c| {
                             c.operation != request.payment
@@ -584,6 +607,12 @@ impl Coverage {
                     self.hit(Family::P3SlotLifecycle, "send_refused_past_deadline");
                     if step_now == before.input.expires_at_ms {
                         self.hit(Family::P3SlotLifecycle, "send_refused_at_exact_deadline");
+                        if before.phase == OrderState::Held {
+                            self.hit(
+                                Family::P3SlotLifecycle,
+                                "held_send_refused_at_exact_deadline",
+                            );
+                        }
                     }
                     if before.phase == OrderState::PaymentUnknown
                         && pre.reservation(operation).is_some()
@@ -618,6 +647,15 @@ impl Coverage {
                         Family::P5QuarantineEvidence,
                         "quarantined_order_cannot_send_after_expiry_or_cancellation",
                     );
+                    if self.quarantine_stage(order_id) == Some(QuarantineStage::ScopeCancelled)
+                        && pre.cancelled
+                        && before.phase == OrderState::Expired
+                    {
+                        self.hit(
+                            Family::P5QuarantineEvidence,
+                            "quarantined_order_unsendable_after_owner_expiry_cancellation_sequence",
+                        );
+                    }
                 }
             }
             Err(_) => {}
@@ -656,6 +694,11 @@ impl Coverage {
                     self.hit(
                         Family::P5QuarantineEvidence,
                         "bound_quarantine_survives_expiry_release",
+                    );
+                    self.advance_quarantine_stage(
+                        order_id,
+                        QuarantineStage::OwnerReplaced,
+                        QuarantineStage::ExpiryReleased,
                     );
                 }
             }
@@ -707,6 +750,18 @@ impl Coverage {
                         _ => "bound_quarantine_survives_scope_cancellation",
                     },
                 );
+                let (from, to) = match kind {
+                    "owner_replacement" => {
+                        (QuarantineStage::Quarantined, QuarantineStage::OwnerReplaced)
+                    }
+                    _ => (
+                        QuarantineStage::ExpiryReleased,
+                        QuarantineStage::ScopeCancelled,
+                    ),
+                };
+                for q in &pre.quarantined {
+                    self.advance_quarantine_stage(q.order_id, from, to);
+                }
             }
         }
         Ok(())
@@ -918,6 +973,12 @@ impl Coverage {
                                     Family::P6ReturnRequiredReview,
                                     "return_required_at_exact_deadline",
                                 );
+                                if before.phase == OrderState::Held {
+                                    self.hit(
+                                        Family::P6ReturnRequiredReview,
+                                        "held_return_required_at_exact_deadline",
+                                    );
+                                }
                             }
                             if before.phase == OrderState::Expired {
                                 self.hit(
@@ -1033,7 +1094,35 @@ impl Coverage {
 
     /// Facts that no tested transition may undo: review is sticky, a retained
     /// capture and a bound quarantine never disappear, ReturnRequired stays.
+    fn quarantine_stage(&self, order_id: KixId) -> Option<QuarantineStage> {
+        self.quarantine_sequence
+            .iter()
+            .find(|(id, _)| *id == order_id)
+            .map(|(_, stage)| *stage)
+    }
+
+    fn advance_quarantine_stage(
+        &mut self,
+        order_id: KixId,
+        from: QuarantineStage,
+        to: QuarantineStage,
+    ) {
+        if let Some(entry) = self
+            .quarantine_sequence
+            .iter_mut()
+            .find(|(id, stage)| *id == order_id && *stage == from)
+        {
+            entry.1 = to;
+        }
+    }
+
     fn observe_sticky_facts(&mut self, pre: &Model, post: &Model) -> Result<(), String> {
+        for q in &post.quarantined {
+            if !pre.quarantined.contains(q) && self.quarantine_stage(q.order_id).is_none() {
+                self.quarantine_sequence
+                    .push((q.order_id, QuarantineStage::Quarantined));
+            }
+        }
         let mut reviewed = false;
         for before in &pre.orders {
             let after = order(post, before.input.order_id).ok_or("order vanished")?;
