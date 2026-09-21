@@ -38,6 +38,18 @@ workflow, then TASK_REVISION is incremented before resume.
 
 Existing KIX locked-file and prohibited-work rules remain absolute.
 
+KIX compatibility rules:
+
+- legacy KIX wording that green exact-head CI is "merge-ready" means only that
+  the KIX CI gate itself is satisfied inside this control plane; global
+  READY_FOR_MERGE additionally requires independent review + Astra audit +
+  current-task/current-HEAD predicates;
+- legacy instructions to "wait" for queued/in-progress CI do not authorize a
+  standing Grok session or polling. The mechanical layer waits for the next
+  GitHub event and then resumes the state machine;
+- generic same-owner CI feedback applies only before merge. Post-merge KIX
+  failure follows the preserved new-task/session/branch/PR rule.
+
 If PROJECT MAP or required actor/reviewer configuration is missing:
 `[BLOCKED] Reason: CONTROL_PLANE_NOT_CONFIGURED`
 
@@ -131,8 +143,10 @@ Control record minimum facts:
 - PR_POINTER
 - CURRENT_HEAD_SHA
 - verification policy and current-head verification facts
-- review policy, reviewer lane/session and current-head result
-- audit floor, verified audit depth, audited SHA/evidence SHA and result
+- review policy, REVIEW_REQUEST_ID, REVIEW_LAUNCH_STATE, reviewer lane/session,
+  review attempt ID and current-head result
+- audit floor, AUDIT_REQUEST_ID, AUDIT_REQUEST_STATE, verified audit depth,
+  audited SHA/evidence SHA and result
 - unresolved blocker/decision pointer
 - merge SHA
 - post-merge result/follow-up pointer
@@ -333,6 +347,28 @@ CI/verification failure:
 
 ## 13. Independent review gate
 
+Review dispatch is itself idempotent and serialized.
+
+Under TASK_KEY serialization, before emitting a review request for the current
+task revision + HEAD/evidence SHA:
+
+1. if a matching review PASS/FAIL already exists, do not launch another reviewer;
+2. if a matching REVIEW_REQUEST_ID/session already exists, reuse it;
+3. otherwise create stable REVIEW_REQUEST_ID and REVIEW_ATTEMPT_ID;
+4. set REVIEW_LAUNCH_STATE=`NOT_STARTED`;
+5. persist the control record;
+6. emit exactly one `REVIEW_DISPATCH_ALLOWED`.
+
+Grok returns a review-launch receipt keyed by REVIEW_REQUEST_ID.
+
+Confirmed reviewer launch records the reviewer session and
+REVIEW_LAUNCH_STATE=`CONFIRMED`.
+
+If reviewer launch may have succeeded but the outcome is ambiguous:
+REVIEW_LAUNCH_STATE=`UNKNOWN`.
+Do not auto-launch another reviewer. Reconcile the existing request or require
+User resolution.
+
 All non-A0 substantive work in this control plane requires independent
 read-only review before Astra audit.
 
@@ -365,6 +401,21 @@ mechanical layer records the current-head pass and emits
 `AUDIT_REQUIRED`.
 
 ## 14. Astra audit gate
+
+Audit-request delivery is also serialized by task revision + current
+HEAD/evidence SHA.
+
+Before emitting `AUDIT_REQUIRED`, the mechanical layer:
+
+1. reuses an existing accepted audit result for that exact revision/SHA only;
+2. if a matching AUDIT_REQUEST_ID is already REQUESTED/DELIVERED, does not
+   create a second request;
+3. otherwise creates stable AUDIT_REQUEST_ID, sets
+   AUDIT_REQUEST_STATE=`REQUESTED`, persists it, then emits one request.
+
+If audit-request delivery outcome is ambiguous:
+AUDIT_REQUEST_STATE=`UNKNOWN`.
+Do not blindly repost. Reconcile the existing request or require User action.
 
 Grok sends an audit packet to `#ai-audit` only on normalized
 `AUDIT_REQUIRED`.
@@ -428,10 +479,16 @@ Ordinary Slack text is not a decision event.
 
 ## 16. A0 final qualification
 
-Before A0 can complete, the mechanical layer checks project-specific objective
-rules such as allowed paths and forbidden/locked paths.
+Before A0 can complete, the mechanical layer checks the task envelope's
+explicit A0 authorization and path contract:
 
-A0 also requires the explicit A0 authorization pointer from the task envelope.
+- A0_AUTHORIZATION_POINTER exists;
+- A0_CHANGE_KIND is one of the allowed A0 enum values;
+- actual changed paths are a subset of A0_ALLOWED_PATHS;
+- no actual changed path matches A0_FORBIDDEN_PATHS;
+- repository locked/sensitive rules are still satisfied.
+
+Grok does not generate or broaden these path lists.
 
 If A0 qualification fails:
 promote to A1 → independent review → Astra audit.
