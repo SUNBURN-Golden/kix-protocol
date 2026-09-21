@@ -3,6 +3,8 @@
 //! No retention, void, slot-release, chain grant or new kernel transition exists here.
 #[path = "support/coverage_v4.rs"]
 mod coverage;
+#[path = "support/evidence_gates.rs"]
+mod evidence_gates;
 #[path = "support/model_v4.rs"]
 mod reference;
 
@@ -369,7 +371,18 @@ fn check_relations_trace(
         let pre = model.clone();
         let expected = model.apply(step);
         if with_kernel {
+            let before = kernel.clone();
             let actual = apply(&mut kernel, step);
+            evidence_gates::exact_read_only(&pre, step, &actual, &before, &kernel).map_err(
+                |detail| RelationFailure {
+                    step: index,
+                    kind: "whole_kernel_read_only",
+                    detail,
+                },
+            )?;
+            if evidence_gates::must_be_read_only(&pre, step, &actual) {
+                coverage.exact_read_only_checks += 1;
+            }
             if actual != expected {
                 return Err(RelationFailure {
                     step: index,
@@ -513,10 +526,15 @@ fn relation_action(
         Family::P1CommandIdentity => match (rng.below(8), pick(rng, &model.commands)) {
             (0..=2, Some((known, _))) => {
                 if rng.below(3) == 0 {
-                    match rng.below(3) {
+                    match rng.below(4) {
                         0 => ctx.semantics_version = 1,
                         1 => ctx.fence.generation = ctx.fence.generation.saturating_sub(1),
-                        _ => ctx.now_ms = model.time.saturating_sub(1),
+                        2 => ctx.now_ms = model.time.saturating_sub(1),
+                        _ => {
+                            let mut foreign = known.clone();
+                            foreign.id.scope = id(999);
+                            return Action::Reserve(foreign);
+                        }
                     }
                 }
                 Action::Reserve(known.clone())
@@ -535,19 +553,62 @@ fn relation_action(
                         }
                     }
                 }
-                if rng.below(3) == 0 {
-                    ctx.fence.generation = ctx.fence.generation.saturating_sub(1);
+                match rng.below(4) {
+                    0 => ctx.fence.generation = ctx.fence.generation.saturating_sub(1),
+                    1 => ctx.now_ms = model.time.saturating_sub(1),
+                    _ => {}
                 }
                 Action::Reserve(altered)
             }
-            (6, _) => {
-                let mut input = fresh_request(planner, rng, model, ctx.now_ms);
-                input.selection = Selection::Seats {
-                    first: u16::MAX,
-                    count: 1,
-                };
-                Action::Reserve(input)
-            }
+            (6, _) => match rng.below(4) {
+                3 => {
+                    // New identity reusing the selection and operation of an earlier
+                    // Unavailable rejection once the blocking hold may have cleared.
+                    let rejected: Vec<&Reserve> = model
+                        .commands
+                        .iter()
+                        .filter(|(_, o)| {
+                            *o == ReserveOutcome::Rejected(kix_kernel::Rejection::Unavailable)
+                        })
+                        .map(|(r, _)| r)
+                        .collect();
+                    match pick(rng, &rejected) {
+                        Some(earlier) => {
+                            let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                            input.selection = earlier.selection;
+                            input.payment = earlier.payment;
+                            Action::Reserve(input)
+                        }
+                        None => background(planner, rng),
+                    }
+                }
+                0 => {
+                    // Unavailable rejection: ask for a selection another order still owns.
+                    let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                    input.selection = pick(rng, &orders_where(model, |o| o.owns))
+                        .map(|o| o.input.selection)
+                        .unwrap_or(Selection::Seats {
+                            first: u16::MAX,
+                            count: 1,
+                        });
+                    Action::Reserve(input)
+                }
+                1 => match pick(rng, &orders_where(model, |o| o.phase == OrderState::Held)) {
+                    Some(order) => {
+                        ctx.now_ms = ctx.now_ms.max(order.input.expires_at_ms);
+                        Action::Expire(order.input.order_id)
+                    }
+                    None => background(planner, rng),
+                },
+                _ => {
+                    let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                    input.selection = Selection::Seats {
+                        first: u16::MAX,
+                        count: 1,
+                    };
+                    Action::Reserve(input)
+                }
+            },
             _ => background(planner, rng),
         },
         Family::P2OperationBinding => match rng.below(8) {
@@ -611,6 +672,11 @@ fn relation_action(
                     }
                     None => background(planner, rng),
                 }
+            }
+            8 => {
+                let mut input = fresh_request(planner, rng, model, ctx.now_ms);
+                input.expires_at_ms = ctx.now_ms;
+                Action::Reserve(input)
             }
             _ => background(planner, rng),
         },
@@ -1066,6 +1132,434 @@ fn baseline_corpus_relation_coverage_is_inventoried_not_retuned() {
     .unwrap();
 }
 
+/// One row of the Task 003-C crosswalk: a frozen Task 001 deterministic test in
+/// `contract_edge_cases.rs` mapped to the observer classes whose generated
+/// witnesses establish the same contract predicate on the reference model.
+struct CrosswalkRow {
+    deterministic_test: &'static str,
+    predicate: &'static str,
+    /// Observer classes that together cover the predicate (family, class).
+    classes: &'static [(Family, &'static str)],
+    /// Subset of `classes` added by Task 003-C; empty when pre-existing evidence sufficed.
+    anchors: &'static [(Family, &'static str)],
+}
+
+fn crosswalk_rows() -> [CrosswalkRow; 8] {
+    use Family::*;
+    [
+        CrosswalkRow {
+            deterministic_test: "rejection_replay_stays_immutable_after_the_blocking_hold_is_released",
+            predicate: "a rejected first result replays read-only even after the blocking hold was released and the selection is free again; only a new command identity can take the released seat",
+            classes: &[
+                (P1CommandIdentity, "replay_of_rejected_first_result"),
+                (P1CommandIdentity, "replay_after_state_changed"),
+                (
+                    P1CommandIdentity,
+                    "rejected_replay_after_unavailable_cause_cleared",
+                ),
+                (
+                    P1CommandIdentity,
+                    "new_identity_holds_selection_rejected_earlier",
+                ),
+                (
+                    P1CommandIdentity,
+                    "new_identity_reholds_same_operation_rejected_unavailable_earlier",
+                ),
+                (P2OperationBinding, "rejected_no_binding"),
+            ],
+            anchors: &[
+                (
+                    P1CommandIdentity,
+                    "rejected_replay_after_unavailable_cause_cleared",
+                ),
+                (
+                    P1CommandIdentity,
+                    "new_identity_reholds_same_operation_rejected_unavailable_earlier",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "altered_payload_conflicts_before_fence_and_clock_guards",
+            predicate: "same identity with an altered payload is CommandConflict and leaves state unchanged even under a stale execution fence or a regressed clock; the unchanged payload still replays",
+            classes: &[
+                (P1CommandIdentity, "altered_payload_conflict"),
+                (P1CommandIdentity, "altered_field_order_id"),
+                (P1CommandIdentity, "altered_field_operation"),
+                (P1CommandIdentity, "altered_field_expiry"),
+                (P1CommandIdentity, "altered_field_selection"),
+                (
+                    P1CommandIdentity,
+                    "altered_payload_conflict_under_stale_fence",
+                ),
+                (
+                    P1CommandIdentity,
+                    "altered_payload_conflict_under_regressed_clock",
+                ),
+                (P1CommandIdentity, "replay_exact"),
+            ],
+            anchors: &[
+                (
+                    P1CommandIdentity,
+                    "altered_payload_conflict_under_stale_fence",
+                ),
+                (
+                    P1CommandIdentity,
+                    "altered_payload_conflict_under_regressed_clock",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "replay_lookup_is_guarded_by_scope_and_semantics_only",
+            predicate: "a known identity under a foreign scope is WrongScope and under another semantics version is UnsupportedSemantics without state change; a regressed clock or a foreign fence does not stop the read-only replay",
+            classes: &[
+                (P1CommandIdentity, "replay_lookup_outranked_by_scope"),
+                (P1CommandIdentity, "replay_lookup_outranked_by_semantics"),
+                (P1CommandIdentity, "replay_under_regressed_clock"),
+                (P1CommandIdentity, "replay_under_stale_fence"),
+            ],
+            anchors: &[
+                (P1CommandIdentity, "replay_lookup_outranked_by_scope"),
+                (P1CommandIdentity, "replay_lookup_outranked_by_semantics"),
+                (P1CommandIdentity, "replay_under_regressed_clock"),
+                (P1CommandIdentity, "replay_under_stale_fence"),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "expiry_instant_is_treated_consistently_by_every_entry_point",
+            predicate: "at now == expires_at the expiry check releases a Held order, a reservation expiring now is InvalidRequest, an external send is InvalidTransition without state change, and a matching capture is ReturnRequired",
+            classes: &[
+                (P3SlotLifecycle, "held_order_expired_at_exact_instant"),
+                (
+                    P3SlotLifecycle,
+                    "reservation_refused_at_exact_expiry_instant",
+                ),
+                (P3SlotLifecycle, "send_refused_at_exact_deadline"),
+                (P3SlotLifecycle, "held_send_refused_at_exact_deadline"),
+                (P6ReturnRequiredReview, "return_required_at_exact_deadline"),
+                (
+                    P6ReturnRequiredReview,
+                    "held_return_required_at_exact_deadline",
+                ),
+            ],
+            anchors: &[
+                (P3SlotLifecycle, "held_order_expired_at_exact_instant"),
+                (
+                    P3SlotLifecycle,
+                    "reservation_refused_at_exact_expiry_instant",
+                ),
+                (P3SlotLifecycle, "held_send_refused_at_exact_deadline"),
+                (
+                    P6ReturnRequiredReview,
+                    "held_return_required_at_exact_deadline",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "unknown_retry_after_the_deadline_keeps_the_reservation_and_its_slot",
+            predicate: "an UNKNOWN send retry at or after the deadline is InvalidTransition and keeps phase, inventory and the reserved slot; the expiry check does not release the UNKNOWN order; a later matching capture consumes that slot into ReturnRequired",
+            classes: &[
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_past_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_at_exact_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_strictly_after_deadline_keeps_reservation",
+                ),
+                (P3SlotLifecycle, "unknown_order_not_released_by_ttl"),
+                (P3SlotLifecycle, "expiry_check_keeps_reservation"),
+                (
+                    P3SlotLifecycle,
+                    "late_capture_converts_reservation_to_return_required",
+                ),
+            ],
+            anchors: &[
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_past_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_at_exact_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "unknown_retry_refused_strictly_after_deadline_keeps_reservation",
+                ),
+                (
+                    P3SlotLifecycle,
+                    "late_capture_converts_reservation_to_return_required",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "return_required_is_stable_under_further_late_evidence",
+            predicate: "after ReturnRequired a duplicate matching event is DuplicateEffect without a second inventory release, a mismatching event is Review that sets review while phase and retained capture persist, and an external send is refused without state change",
+            classes: &[
+                (
+                    P6ReturnRequiredReview,
+                    "duplicate_effect_after_return_required",
+                ),
+                (P6ReturnRequiredReview, "no_second_inventory_release"),
+                (
+                    P6ReturnRequiredReview,
+                    "mismatch_after_return_required_keeps_phase",
+                ),
+                (
+                    P6ReturnRequiredReview,
+                    "retained_capture_preserved_under_mismatch",
+                ),
+                (
+                    P6ReturnRequiredReview,
+                    "review_set_while_return_required_persists",
+                ),
+                (P6ReturnRequiredReview, "return_required_order_cannot_send"),
+            ],
+            anchors: &[(P6ReturnRequiredReview, "return_required_order_cannot_send")],
+        },
+        CrosswalkRow {
+            deterministic_test: "bound_quarantine_survives_owner_change_expiry_and_cancellation",
+            predicate: "a conflict naming two bound operations quarantines both orders; owner replacement, an expiry that actually releases the order, and scope cancellation keep the quarantine set and review; the quarantined order still cannot send",
+            classes: &[
+                (P4EventVsEconomic, "conflict_names_two_bound_operations"),
+                (
+                    P5QuarantineEvidence,
+                    "bound_quarantine_survives_owner_replacement",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "bound_quarantine_survives_expiry_release",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "bound_quarantine_survives_scope_cancellation",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "quarantined_order_cannot_send_after_expiry_or_cancellation",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "quarantined_order_unsendable_after_owner_expiry_cancellation_sequence",
+                ),
+            ],
+            anchors: &[
+                (
+                    P5QuarantineEvidence,
+                    "bound_quarantine_survives_expiry_release",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "quarantined_order_unsendable_after_owner_expiry_cancellation_sequence",
+                ),
+            ],
+        },
+        CrosswalkRow {
+            deterministic_test: "retained_unbound_conflict_bans_the_identity_for_any_future_order",
+            predicate: "a retained conflict naming a bound and an unbound operation quarantines only the bound order; any future order reusing the unbound identity is OperationQuarantined without creating an order or binding; a sibling operation of the same provider/account still binds",
+            classes: &[
+                (P4EventVsEconomic, "conflict_names_bound_and_unbound"),
+                (P5QuarantineEvidence, "retained_unbound_evidence_present"),
+                (P2OperationBinding, "retained_unbound_operation_refused"),
+                (
+                    P5QuarantineEvidence,
+                    "retained_unbound_ban_coexists_with_bound_sibling",
+                ),
+                (
+                    P5QuarantineEvidence,
+                    "sibling_of_retained_unbound_ban_bound_independently",
+                ),
+            ],
+            anchors: &[(
+                P5QuarantineEvidence,
+                "sibling_of_retained_unbound_ban_bound_independently",
+            )],
+        },
+    ]
+}
+
+#[derive(Clone, Debug)]
+struct Witness {
+    corpus: String,
+    case: usize,
+    seed: u64,
+    step: u64,
+}
+
+#[derive(Default)]
+struct ClassEvidence {
+    relation_count: u64,
+    relation_first: Option<Witness>,
+    baseline_count: u64,
+    baseline_first: Option<Witness>,
+}
+
+fn record_class_evidence(
+    evidence: &mut std::collections::BTreeMap<(Family, &'static str), ClassEvidence>,
+    coverage: &Coverage,
+    corpus: &str,
+    case: usize,
+    seed: u64,
+    baseline: bool,
+) {
+    for (key, entry) in evidence.iter_mut() {
+        let n = coverage.count(key.0, key.1);
+        if n == 0 {
+            continue;
+        }
+        let witness = Witness {
+            corpus: corpus.to_string(),
+            case,
+            seed,
+            step: coverage.first_step(key.0, key.1).unwrap(),
+        };
+        if baseline {
+            entry.baseline_count += n;
+            entry.baseline_first.get_or_insert(witness);
+        } else {
+            entry.relation_count += n;
+            entry.relation_first.get_or_insert(witness);
+        }
+    }
+}
+
+/// Task 003-C: every frozen Task 001 deterministic predicate must be reached by
+/// the relation-aware generated corpus (unchanged parameters) with a stable
+/// first witness `family/config/seed/step`. The historical baseline corpus is
+/// inventoried alongside, never retuned. No deterministic trace is replayed here.
+#[test]
+fn task_001_deterministic_edge_cases_are_cross_validated_by_generated_witnesses() {
+    let rows = crosswalk_rows();
+    let mut evidence = std::collections::BTreeMap::new();
+    for row in &rows {
+        for key in row.classes {
+            evidence.entry(*key).or_insert_with(ClassEvidence::default);
+        }
+    }
+    let mut extra = std::collections::BTreeMap::<String, GateEvidence>::new();
+    for row in 0..8 {
+        for key in evidence_gates::required(row) {
+            extra.entry(key).or_default();
+        }
+    }
+    let mut readonly = [0_u64; 2];
+    let cases = relation_cases();
+    for family in FAMILIES {
+        for (case_no, case) in cases.iter().enumerate() {
+            for seed in 1..=RELATION_SEEDS {
+                let inputs = relation_trace(case, family, seed);
+                let coverage = check_relations_trace(case, &inputs, false, true)
+                    .unwrap_or_else(|failure| panic!("{} seed {seed}: {failure:?}", family.tag()));
+                record_class_evidence(&mut evidence, &coverage, family.tag(), case_no, seed, false);
+                record_gate_evidence(&mut extra, &coverage, family.tag(), case_no, seed, false);
+                readonly[0] += coverage.exact_read_only_checks;
+            }
+        }
+    }
+    for (case_no, case) in baseline_cases().iter().enumerate() {
+        for seed in 1..=CASES {
+            let inputs = trace(case, seed);
+            let coverage = check_relations_trace(case, &inputs, false, true)
+                .unwrap_or_else(|failure| panic!("baseline seed {seed}: {failure:?}"));
+            record_class_evidence(&mut evidence, &coverage, "baseline", case_no, seed, true);
+            record_gate_evidence(&mut extra, &coverage, "baseline", case_no, seed, true);
+            readonly[1] += coverage.exact_read_only_checks;
+        }
+    }
+    let witness_json = |w: &Option<Witness>| match w {
+        Some(w) => format!(
+            "{{\"corpus\":\"{}\",\"config\":{},\"seed\":{},\"step\":{}}}",
+            w.corpus, w.case, w.seed, w.step
+        ),
+        None => "null".to_string(),
+    };
+    let mut unreached = Vec::new();
+    let mut rows_json = String::new();
+    for (row_no, row) in rows.iter().enumerate() {
+        let extra_keys = evidence_gates::required(row_no);
+        let mut extra_json = Vec::new();
+        for key in &extra_keys {
+            let e = &extra[key];
+            if e.relation_count == 0 {
+                unreached.push(format!("{}:{key}", row.deterministic_test));
+            }
+            extra_json.push(format!("{{\"gate\":{},\"relation_count\":{},\"relation_first\":{},\"baseline_count\":{},\"baseline_first\":{}}}", json_string(key), e.relation_count, optional_json(&e.relation_first), e.baseline_count, optional_json(&e.baseline_first)));
+        }
+        let row_proven = row
+            .classes
+            .iter()
+            .all(|key| evidence[key].relation_count > 0)
+            && extra_keys.iter().all(|key| extra[key].relation_count > 0);
+        let strength = if row_proven { "sufficient" } else { "partial" };
+        let mut classes_json = String::new();
+        for (family, class) in row.classes {
+            let entry = &evidence[&(*family, *class)];
+            if entry.relation_count == 0 {
+                unreached.push(format!(
+                    "{}:{}:{class}",
+                    row.deterministic_test,
+                    family.tag()
+                ));
+            }
+            classes_json.push_str(&format!(
+                "{{\"family\":\"{}\",\"class\":\"{class}\",\"anchor\":{},\"relation_count\":{},\"relation_first_witness\":{},\"baseline_count\":{},\"baseline_first_witness\":{}}},",
+                family.tag(),
+                row.anchors.contains(&(*family, *class)),
+                entry.relation_count,
+                witness_json(&entry.relation_first),
+                entry.baseline_count,
+                witness_json(&entry.baseline_first),
+            ));
+        }
+        classes_json.pop();
+        rows_json.push_str(&format!(
+            "{{\"deterministic_test\":\"{}\",\"predicate\":\"{}\",\"strength\":\"{strength}\",\"classes\":[{classes_json}],\"additional_required_gates\":[{}]}},",
+            row.deterministic_test, row.predicate, extra_json.join(",")
+        ));
+    }
+    rows_json.pop();
+    fs::write(evidence_dir().join("e4-deterministic-crosswalk.json"), format!(
+        "{{\"semantics\":4,\"kernel_blob\":\"{LOCKED_KERNEL}\",\"deterministic_source\":\"runtime/crates/kix-kernel/tests/contract_edge_cases.rs\",\"relation_corpus\":{{\"configurations\":{},\"seeds_per_configuration\":{RELATION_SEEDS},\"steps_per_sequence\":{RELATION_STEPS}}},\"baseline_corpus\":{{\"cases\":{CASES},\"steps\":{STEPS}}},\"rows\":[{rows_json}],\"unreached_in_relation_corpus\":{unreached:?},\"scope\":\"generated witnesses reach each mapped predicate class on the source-informed model; not independence, completeness or durability\"}}\n",
+        cases.len(),
+    )).unwrap();
+    let summary = extra
+        .iter()
+        .map(|(key, e)| {
+            format!(
+                "gate={key} relation={} baseline={} first={}\n",
+                e.relation_count,
+                e.baseline_count,
+                e.relation_first
+                    .as_deref()
+                    .unwrap_or("none")
+                    .split(';')
+                    .next()
+                    .unwrap()
+            )
+        })
+        .collect::<String>();
+    let summary = format!(
+        "whole_kernel_read_only_checks relation={} baseline={}\n{summary}",
+        readonly[0], readonly[1]
+    );
+    fs::write(evidence_dir().join("e4-evidence-gates.txt"), &summary).unwrap();
+    // Bypass libtest capture so exact-head CI logs contain the compact evidence.
+    use std::io::Write as _;
+    std::io::stdout()
+        .lock()
+        .write_all(summary.as_bytes())
+        .unwrap();
+    export_row8_generated_identity_evidence(&cases[0]);
+    assert!(
+        unreached.is_empty(),
+        "crosswalk classes not reached by the relation-aware corpus: {unreached:#?}"
+    );
+}
+
 fn baseline_cases() -> [Case; 4] {
     [
         Case {
@@ -1456,4 +1950,253 @@ fn locked_sources_and_new_harness_sources_are_identified() {
         evidence,
     )
     .unwrap();
+}
+
+// Task 003-C1 evidence serialization and narrowly scoped checker sensitivity.
+#[derive(Default)]
+struct GateEvidence {
+    relation_count: usize,
+    relation_first: Option<String>,
+    baseline_count: usize,
+    baseline_first: Option<String>,
+}
+
+fn json_string(value: &str) -> String {
+    let mut out = String::from("\"");
+    for c in value.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if c < ' ' => out.push_str(&format!("\\u{:04x}", u32::from(c))),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+fn optional_json(value: &Option<String>) -> String {
+    value.as_deref().map_or_else(|| "null".into(), json_string)
+}
+fn record_gate_evidence(
+    out: &mut std::collections::BTreeMap<String, GateEvidence>,
+    coverage: &Coverage,
+    corpus: &str,
+    case: usize,
+    seed: u64,
+    baseline: bool,
+) {
+    for (key, e) in out {
+        if let Some(witnesses) = coverage.gates.hits.get(key) {
+            let first = format!("{corpus}/config{case}/seed{seed}: {}", witnesses[0]);
+            if baseline {
+                e.baseline_count += witnesses.len();
+                e.baseline_first.get_or_insert(first);
+            } else {
+                e.relation_count += witnesses.len();
+                e.relation_first.get_or_insert(first);
+            }
+        }
+    }
+}
+fn export_row8_generated_identity_evidence(case: &Case) {
+    let inputs = relation_trace(case, Family::P2OperationBinding, 1);
+    let (mut kernel, mut model) = initial(case);
+    let mut evidence = String::from(
+        "Generated P2/config0/seed1, existing corpus; zero-based steps. Full typed IDs.\n",
+    );
+    for (n, step) in inputs.iter().enumerate() {
+        let pre = model.clone();
+        let reply = model.apply(step);
+        assert_eq!(apply(&mut kernel, step), reply);
+        compare(&kernel, &model).unwrap();
+        if [18, 20, 23].contains(&n) {
+            evidence.push_str(&format!("step={n}\ninput={step:?}\nreply={reply:?}\npre_bindings={:?}\npost_bindings={:?}\npre_events={:?}\npost_conflicts={:?}\n", pre.bindings, model.bindings, pre.events, model.conflicts));
+        }
+    }
+    fs::write(
+        evidence_dir().join("e4-row8-generated-identities.txt"),
+        evidence,
+    )
+    .unwrap();
+}
+
+#[test]
+fn exact_read_only_gate_detects_public_api_clock_only_perturbation() {
+    let case = &relation_cases()[0];
+    let inputs = relation_trace(case, Family::P1CommandIdentity, 1);
+    let (mut kernel, mut model) = initial(case);
+    for step in &inputs {
+        let expected = model.apply(step);
+        assert_eq!(apply(&mut kernel, step), expected);
+        if let Some(held) = model
+            .orders
+            .iter()
+            .find(|o| o.phase == OrderState::Held && o.input.expires_at_ms > model.time + 1)
+        {
+            let held = held.clone();
+            let mut altered = held.input.clone();
+            altered.order_id = id(u64::MAX);
+            let ctx = Context {
+                fence: model.writer,
+                now_ms: model.time,
+                semantics_version: 4,
+            };
+            let attempt = Step {
+                ctx,
+                action: Action::Reserve(altered),
+            };
+            let pre = model.clone();
+            let before = kernel.clone();
+            let expected = model.apply(&attempt);
+            let actual = apply(&mut kernel, &attempt);
+            assert_eq!(
+                actual,
+                Reply::Reserve(Err(kix_kernel::KernelError::CommandConflict))
+            );
+            assert_eq!(actual, expected);
+            evidence_gates::exact_read_only(&pre, &attempt, &actual, &before, &kernel).unwrap();
+            // This is an extra public API call on the test instance, not a
+            // mutation of the frozen implementation or reference-model file.
+            assert_eq!(
+                kernel.expire(
+                    Context {
+                        now_ms: ctx.now_ms + 1,
+                        ..ctx
+                    },
+                    held.input.order_id
+                ),
+                Ok(false)
+            );
+            assert!(
+                compare(&kernel, &model).is_ok(),
+                "old observable comparison ignores clock-only changes"
+            );
+            assert!(
+                evidence_gates::exact_read_only(&pre, &attempt, &actual, &before, &kernel).is_err()
+            );
+            fs::write(evidence_dir().join("e4-read-only-sensitivity.txt"), "injection=extra public expire call after CommandConflict; frozen sources unchanged\nold_compare=Ok\nwhole_kernel_read_only=Err\nnot a reproduction of the unavailable Devin injection patch\n").unwrap();
+            return;
+        }
+    }
+    panic!("generated trace must supply a live Held order");
+}
+
+/// Perturb only the observer's input stream; the actual generated kernel/model
+/// execution remains unchanged. This tests exclusion of nearby false witnesses.
+fn gate_count_with_filter(family: Family, seed: u64, key: &str, filter: &str) -> usize {
+    let case = &relation_cases()[0];
+    let inputs = relation_trace(case, family, seed);
+    let (mut kernel, mut model) = initial(case);
+    let mut gates = evidence_gates::Gates::default();
+    for (n, step) in inputs.iter().enumerate() {
+        let mut pre = model.clone();
+        let actual = apply(&mut kernel, step);
+        let mut reply = model.apply(step);
+        assert_eq!(actual, reply);
+        compare(&kernel, &model).unwrap();
+        match filter {
+            "omit_retry" if matches!(step.action, Action::Send(_)) => continue,
+            "omit_duplicate"
+                if reply == Reply::Capture(Ok(kix_kernel::ObservationOutcome::DuplicateEffect)) =>
+            {
+                continue;
+            }
+            "omit_owner" if matches!(step.action, Action::Owner(_)) => continue,
+            "fresh_trace_each_step" => gates = evidence_gates::Gates::default(),
+            "capacity_origin"
+                if reply == Reply::Capture(Ok(kix_kernel::ObservationOutcome::Conflict)) =>
+            {
+                reply = Reply::Capture(Err(kix_kernel::KernelError::Capacity))
+            }
+            "cancelled_capture" if matches!(step.action, Action::Capture(_)) => {
+                pre.cancelled = true
+            }
+            "already_reviewed_mismatch"
+                if reply == Reply::Capture(Ok(kix_kernel::ObservationOutcome::Review)) =>
+            {
+                if let Action::Capture(o) = &step.action
+                    && let Some(order) = pre
+                        .orders
+                        .iter_mut()
+                        .find(|order| order.input.payment == o.operation)
+                {
+                    order.review = true;
+                }
+            }
+            "unreviewed_send" => {
+                if let Action::Send(id) = step.action
+                    && let Some(o) = pre.orders.iter_mut().find(|o| o.input.order_id == id)
+                {
+                    o.review = false;
+                }
+            }
+            _ => {}
+        }
+        gates.observe(n, &pre, step, &reply, &model).unwrap();
+    }
+    gates.count(key)
+}
+
+#[test]
+fn history_gates_reject_missing_or_wrong_causal_provenance() {
+    for (family, seed, gate, filters) in [
+        (
+            Family::P3SlotLifecycle,
+            12,
+            evidence_gates::UNKNOWN_CHAIN,
+            vec!["omit_retry", "cancelled_capture"],
+        ),
+        (
+            Family::P6ReturnRequiredReview,
+            30,
+            evidence_gates::RETURN_CHAIN,
+            vec![
+                "omit_duplicate",
+                "unreviewed_send",
+                "already_reviewed_mismatch",
+            ],
+        ),
+        (
+            Family::P5QuarantineEvidence,
+            15,
+            evidence_gates::QUARANTINE_CHAIN,
+            vec!["capacity_origin", "omit_owner"],
+        ),
+    ] {
+        assert!(
+            gate_count_with_filter(family, seed, gate, "unchanged") > 0,
+            "positive generated witness for {gate}"
+        );
+        assert_eq!(
+            gate_count_with_filter(family, seed, gate, "fresh_trace_each_step"),
+            0,
+            "history cannot be composed across trace boundaries"
+        );
+        for filter in filters {
+            assert_eq!(
+                gate_count_with_filter(family, seed, gate, filter),
+                0,
+                "{gate}: {filter} must not qualify"
+            );
+        }
+    }
+}
+
+#[test]
+fn altered_payload_matrix_excludes_multiple_fields_and_other_payload_changes() {
+    let original = request(1, Selection::Seats { first: 0, count: 1 }, 100);
+    let mut changed = original.clone();
+    changed.order_id = id(99);
+    assert_eq!(
+        evidence_gates::single_field(&original, &changed),
+        Some("order_id")
+    );
+    changed.payment.operation = id(98);
+    assert_eq!(evidence_gates::single_field(&original, &changed), None);
+    changed.payment.operation = original.payment.operation;
+    changed.expected_business_epoch += 1;
+    assert_eq!(evidence_gates::single_field(&original, &changed), None);
 }
