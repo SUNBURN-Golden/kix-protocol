@@ -1,20 +1,14 @@
-# DISPATCH RUNBOOK
+# DISPATCH RUNBOOK v2
 
-Grok executes this file. Grok does not extend or redesign it mid-session.
+This is a deterministic execution contract.
+Grok does not extend it mid-session.
 
 NO STANDING ROUTINES.
 NO POLLING.
 NO BACKGROUND MONITORING.
-NO SECOND REASONING PASS.
+NO SECOND SEMANTIC REASONING PASS.
 
-ONE EVENT
-→ classify by the rules below
-→ substitute `TASKS/TEMPLATE.md`
-→ launch one worker OR escalate
-→ write one prefixed status
-→ END SESSION / RESET CHAT
-
-## PROJECT MAP
+## 1. Project map
 
 PROJECT: KIX
 REPO: `BeautifulMind-JT/kix-protocol`
@@ -23,308 +17,574 @@ SLACK_PROJECT: `#kix`
 SLACK_CONTROL: `#ai-control`
 SLACK_DECISIONS: `#ai-decisions`
 SLACK_AUDIT: `#ai-audit`
-DEFAULT_WORKER: `DEVIN`
-DEFAULT_AUDIT: `A1`
 
-Never infer another repo/channel for this project.
-If this map is wrong or unavailable:
-`[BLOCKED] Reason: PROJECT_MAP`
-Then end.
+DEFAULT_EXECUTION_CLASS: `DEVIN_STANDARD`
+DEFAULT_AUDIT_FLOOR: `A1`
+REVIEW_POLICY: `REQUIRED_NON_A0`
+REVIEWER_LANE_ID: `CONFIG_REQUIRED`
 
-## Allowed triggers
+TASK_SPEC_POLICY: `KIX_DOCS_TASK_REQUIRED`
+A0_POLICY: `EXPLICIT_AUTHORIZATION_ONLY; NEVER_LOCKED_FILES`
+POST_MERGE_POLICY: `REPOSITORY_RULES_REQUIRED`
 
-1. USER COMMAND
-2. SLACK EXPLICIT COMMAND
-3. GITHUB EVENT via Actions / webhook / Slack Workflow
+The task envelope is only an orchestration envelope.
+The immutable execution specification remains the applicable file under
+`docs/tasks/` with an exact blob/SHA pointer.
 
-Forbidden:
-standing routines, periodic polling, background monitoring,
-"check if anything changed", transcript surveillance.
+A control-plane decision does not silently rewrite that task document.
+If scope/contract changes require a task-spec revision, that revision is created
+outside the executing agent session by the already-authorized repository
+workflow, then TASK_REVISION is incremented before resume.
 
-Cheap mechanical systems carry events. Grok is not the event bus.
+Existing KIX locked-file and prohibited-work rules remain absolute.
 
-## EVENT_ID
+If PROJECT MAP or required actor/reviewer configuration is missing:
+`[BLOCKED] Reason: CONTROL_PLANE_NOT_CONFIGURED`
 
-Every automated event must carry a stable EVENT_ID.
+Do not guess.
 
-Preferred:
-- GitHub webhook: `github:<delivery-id>`
-- Slack: `slack:<channel-id>:<message-ts>`
-- other mechanical trigger: stable source execution/event id
+## 2. Activation preconditions
 
-Never invent a random EVENT_ID when a stable source identifier exists.
-If an automated trigger has no usable EVENT_ID:
-`[BLOCKED] Reason: MISSING_EVENT_ID`
-Then end.
+Before automation is enabled, the mechanical layer must have:
 
-## Idempotency
+- configured USER actor identity;
+- configured ASTRA actor identity;
+- configured Grok/router identity;
+- configured Devin/provider identity;
+- configured independent reviewer identity/lane;
+- per-TASK_KEY single-writer serialization;
+- canonical-control-record read/write support;
+- self-event filtering;
+- provider launch reconciliation or explicit UNKNOWN handling.
 
-Before launch, inspect only the associated GitHub task/issue for:
+Until these exist, these documents are policy only; they do not prove runtime
+enforcement.
 
-`<!-- GROK_DISPATCH event_id=<EVENT_ID> ... -->`
+## 3. Raw event intake
 
-IF present:
-NO NEW WORKER
-→ `[STATUS] Duplicate event ignored`
-→ END.
+Allowed raw sources:
 
-IF absent:
-continue.
+1. explicit authenticated USER command;
+2. configured Slack workflow/command;
+3. GitHub webhook / GitHub Actions event;
+4. configured worker/reviewer/provider callback;
+5. configured ASTRA audit result channel/action.
 
-After successful launch record:
+The mechanical layer rejects:
 
-`<!-- GROK_DISPATCH event_id=<EVENT_ID> task_id=<TASK_ID> worker=<WORKER> -->`
+- unconfigured actors;
+- ordinary chat text masquerading as PASS/DECISION;
+- router's own status messages as new task triggers;
+- events that cannot be mapped to one canonical task;
+- duplicate delivery IDs already recorded with the same effect.
 
-The same EVENT_ID must never create two worker sessions.
+A free-form User request without a canonical task record is an intake request,
+not a dispatch event. A cheap deterministic intake form/workflow must first
+create or identify the canonical GitHub task and task revision.
 
-## Task package
+## 4. Normalized event contract
 
-Use `TASKS/TEMPLATE.md`.
-Substitute explicit values only.
+Only normalized events may invoke Grok.
 
-Do not rewrite objectives, improve requirements, invent invariants, invent
-architecture, or summarize large source documents when a pointer works.
+Every normalized event contains:
 
-If safe dispatch requires inventing a consequential requirement:
-`[BLOCKED] Reason: INCOMPLETE_TASK_PACKAGE`
-List missing fields only. End.
+EVENT_ID:
+EVENT_TYPE:
+SOURCE_ACTOR_ID:
+SOURCE_POINTER:
+REPO:
+TASK_ID:
+TASK_REVISION:
+CANONICAL_TASK_POINTER:
+CONTROL_RECORD_POINTER:
+ATTEMPT_ID:
+PR_POINTER:
+HEAD_SHA:
+RUN_OR_RESULT_ID:
 
-## Worker selection
+Fields that do not apply are explicit `N/A`; they are not silently omitted.
 
-KIX:
-IF change is explicitly typo OR formatting AND behavior unchanged
-  → CHEAP_WORKER, A0
-ELSE
-  → DEVIN, A1 minimum
+Result/gate events that refer to code must carry HEAD_SHA.
+Decision events must carry TASK_REVISION and durable decision pointer.
 
-KIX non-trivial PRs require independent review before Astra audit unless
-User/Astra explicitly changes policy.
+## 5. TASK_KEY and canonical control record
 
-Never assign two writers to the same ticket.
+`TASK_KEY = REPO + TASK_ID`
 
-## Audit-depth mapping after worker output
+Each TASK_KEY has exactly one canonical control record, durably projected in
+the canonical GitHub task/issue at a fixed machine-owned record pointer.
 
-Worker reports TOUCHED_AREAS and CONTRACT_CHANGE_REQUIRED.
+The GitHub projection is durable evidence, not the serialization primitive.
 
-IF TOUCHED_AREAS contains:
-CONCURRENCY | STATE_MACHINE | PERSISTENCE | PAYMENTS | SECURITY | PROTOCOL
-→ A2 minimum.
+Control record minimum facts:
 
-IF TOUCHED_AREAS contains:
-INVARIANT | SCHEMA | PUBLIC_CONTRACT | SUI | FINANCIAL_SEMANTICS
-→ A3.
+- TASK_KEY
+- TASK_REVISION
+- canonical task/spec pointer
+- CLAIM_ID
+- CLAIM_STATE
+- LAUNCH_REQUEST_ID
+- LAUNCH_STATE
+- ATTEMPT_ID
+- OWNER_WORKER
+- OWNER_SESSION_ID
+- PR_POINTER
+- CURRENT_HEAD_SHA
+- verification policy and current-head verification facts
+- review policy, reviewer lane/session and current-head result
+- audit floor, verified audit depth, audited SHA/evidence SHA and result
+- unresolved blocker/decision pointer
+- merge SHA
+- post-merge result/follow-up pointer
+- last accepted event IDs
 
-IF CONTRACT_CHANGE_REQUIRED = YES
-→ stop consequential implementation
-→ DECISION_REQUIRED
-→ ASTRA analysis
-→ USER decision
-→ durable GitHub record
-→ resume same Devin ticket.
+State is derived from these facts. Arrival order does not blindly overwrite
+state.
 
-IF CONTRACT_CHANGE_REQUIRED = NO
-→ approved contract preserved
-→ implementation may complete
-→ required review
-→ Astra audit at mapped depth.
+## 6. Per-task serialization
 
-Grok never selects an architecture option.
+All mutations of one control record occur under a single-writer serialization
+primitive keyed by TASK_KEY.
 
-## Session
+Two concurrent events for the same task must not both observe "unowned" and
+launch two writers.
 
-1. identify event
-2. verify EVENT_ID
-3. verify PROJECT MAP
-4. check idempotency marker
-5. apply deterministic worker rule
-6. fill task package by substitution
-7. launch at most one writer
-8. record dispatch marker
-9. write one short status
-10. END SESSION
+EVENT_ID deduplicates delivery.
+TASK_KEY serialization protects job ownership.
 
-Do not remain active waiting for completion.
+Both are required.
 
-## Event → action
+## 7. Claim and launch protocol
 
-| Event | Action |
-|---|---|
-| USER_TASK / Slack command | Fill task package, dispatch one worker, record marker, write `[TASK]` + `[STATUS]`, end |
-| DEVIN_DONE / PR_OPENED | Record PR + exact HEAD SHA; read status fields only; end |
-| CI_FAIL | Relay exact failing check/log pointer to SAME Devin ticket; do not debug; end |
-| CI_PASS | A0 follows User merge policy; otherwise READY_FOR_REVIEW; end |
-| REVIEW_FAIL | Relay exact findings unchanged to same Devin ticket; end |
-| REVIEW_PASS | Map audit depth mechanically from TOUCHED_AREAS; READY_FOR_AUDIT; end |
-| READY_FOR_AUDIT | Post `[AUDIT_REQUIRED]` packet to #ai-audit; end |
-| ASTRA FAIL | Relay exact findings to same Devin ticket; new HEAD requires fresh gates; end |
-| ASTRA PASS / PASS_WITH_NOTES | `[READY_FOR_MERGE]`; do not merge; end |
-| DEVIN/ASTRA DECISION_REQUIRED | Post exact packet to #ai-decisions; stop consequential work; end |
-| USER DECISION | Ensure durable GitHub decision pointer; relay exact decision to same Devin ticket; end |
-| GROK_QUOTA_UNAVAILABLE | `[BLOCKED] Reason: GROK_QUOTA`; fail closed |
+### 7.1 Existing owner
 
-## CI failure policy
+If OWNER_SESSION_ID exists:
+- do not create a new writer;
+- route eligible feedback to that owner;
+- record the new EVENT_ID as observed;
+- end.
 
-Grok does not debug CI and does not create a new Devin session for ordinary CI
-failure.
+This remains true when the incoming EVENT_ID is new.
 
-Relay only:
-- failing check name
-- check URL
-- exact HEAD SHA
-- machine-provided failure pointer
+### 7.2 New owner claim
 
-to the SAME Devin ticket, then end.
+Under TASK_KEY serialization, if there is no owner and no unresolved launch:
 
-Devin owns implement → test → fail → debug → fix → retest.
+1. create CLAIM_ID;
+2. set CLAIM_STATE=`CLAIMED`;
+3. create stable LAUNCH_REQUEST_ID;
+4. set LAUNCH_STATE=`NOT_STARTED`;
+5. persist the control record;
+6. emit normalized `DISPATCH_ALLOWED`.
 
-Do not arbitrarily terminate this loop after one or two failures.
-If Devin explicitly reports BLOCKED, relay the blocker and apply existing
-escalation rules.
+Only the designated launch executor may continue that claim.
 
-## Independent review
+### 7.3 Launch
 
-Non-A0 code should receive independent read-only review before Astra audit when
-a verified reviewer lane is available or project policy requires it.
+Grok receives `DISPATCH_ALLOWED`, launches exactly the worker/class named in
+the canonical envelope, and returns a structured launch receipt containing the
+same CLAIM_ID and LAUNCH_REQUEST_ID.
 
-Preferred:
-1. verified CHEAP_WORKER read-only reviewer
-2. separately configured read-only reviewer lane
+If the provider supports an idempotency key, LAUNCH_REQUEST_ID must be used.
 
-Reviewer must not become a second writer.
-FAIL findings return unchanged to the ticket owner.
-A changed HEAD requires the applicable gates again.
-Independent review never replaces Astra audit.
+### 7.4 Confirmed success
 
-## Astra audit packet
+Mechanical layer records:
 
-`[AUDIT_REQUIRED]`
+LAUNCH_STATE=`CONFIRMED`
+OWNER_SESSION_ID=<provider session>
+OWNER_WORKER=<worker>
+ATTEMPT_ID=<attempt>
+
+Then derived state may become RUNNING.
+
+### 7.5 Confirmed pre-execution failure
+
+If the provider proves that no worker session was created:
+
+LAUNCH_STATE=`FAILED_PRESTART`
+
+A retry requires an explicit retry event/rule and reuses the same task control
+record. It does not create a competing owner.
+
+### 7.6 Unknown outcome
+
+If launch may have succeeded but the response is lost/ambiguous:
+
+LAUNCH_STATE=`UNKNOWN`
+
+Do not auto-relaunch.
+
+Reconcile using LAUNCH_REQUEST_ID/provider evidence if the provider supports it.
+If existence cannot be determined mechanically, stop and require User
+resolution.
+
+UNKNOWN is intentionally safer than duplicate execution.
+
+### 7.7 Crash after claim before launch
+
+If the record proves LAUNCH_STATE=`NOT_STARTED`, the designated launch
+executor may resume that exact CLAIM_ID/LAUNCH_REQUEST_ID.
+
+Do not create a new claim.
+
+## 8. Manual dispatch during Grok outage
+
+Grok quota/outage is recorded by the caller/mechanical layer.
+
+Before manual User dispatch, the same control record must be checked.
+
+Manual dispatch is forbidden when:
+
+- OWNER_SESSION_ID exists;
+- LAUNCH_STATE=`UNKNOWN`;
+- another active claim belongs to a different executor.
+
+A mechanical `MANUAL_CLAIM_ALLOWED` action should reserve the existing task
+before User launches Devin manually. The resulting provider session ID must be
+written back to the same control record.
+
+No replacement AI dispatcher is appointed.
+
+## 9. Task-envelope use
+
+Grok reads `TASKS/TEMPLATE.md` fields from the canonical task record.
+
+Grok does not:
+
+- write a second task specification;
+- paraphrase objectives;
+- infer omitted contracts/invariants;
+- choose execution class by semantic reading;
+- choose audit depth by semantic reading.
+
+If the canonical task omits EXECUTION_CLASS:
+use `DEVIN_STANDARD`.
+
+A0/CHEAP requires explicit A0 authorization.
+
+## 10. Writer autonomy and feedback
+
+Normal writer feedback always returns to the same OWNER_SESSION_ID.
+
+CI/review/audit findings do not create a new writer.
+
+Devin owns ordinary implementation/debug/test decisions inside approved
+boundaries.
+
+`STALLED` must be explicitly reported by Devin/provider.
+`BUDGET_LIMIT_REACHED` may be emitted only by a configured mechanical cost
+guard.
+
+Grok does not infer either condition.
+
+## 11. HEAD and task-revision guards
+
+Code-result events are accepted only when their HEAD_SHA equals
+CURRENT_HEAD_SHA for the task/PR, except an accepted `HEAD_CHANGED` event that
+advances CURRENT_HEAD_SHA.
+
+On accepted HEAD_CHANGED:
+
+- set CURRENT_HEAD_SHA to the new head;
+- clear current-head CI/verification facts;
+- clear current-head review facts;
+- clear current-head audit facts;
+- retain historical evidence only as history.
+
+Late results for an older HEAD are recorded as stale evidence and do not
+advance gates.
+
+If a consequential User decision changes task scope/contract:
+- persist the decision;
+- increment TASK_REVISION;
+- update the authoritative task/spec pointer as repository policy requires;
+- invalidate approvals tied to the older task revision where applicable;
+- only then resume the same owner or start an explicitly authorized new attempt.
+
+## 12. Verification gate
+
+A single successful check is never equivalent to CI_GATE_PASS.
+
+The mechanical layer aggregates the complete project policy for CURRENT_HEAD_SHA.
+
+KIX verification policy is `CI_REQUIRED`.
+
+For each CURRENT_HEAD_SHA, both workflow runs must be terminal success:
+
+- `KTX kernel verification`
+- `KIX protocol verification`
+
+A success from an older SHA is stale.
+A single job/check is not enough.
+
+KIX existing exact-head CI and evidence rules remain authoritative.
+
+Accepted verification facts must include exact HEAD/evidence SHA and run IDs or
+local evidence pointers.
+
+CI/verification failure:
+- update current-head verification facts;
+- emit one normalized failure event for the new gate state;
+- Grok relays exact failure pointers to the same owner;
+- Grok does not debug;
+- repeated identical raw check events do not repeatedly invoke Grok unless gate
+  state materially changes.
+
+## 13. Independent review gate
+
+All non-A0 substantive work in this control plane requires independent
+read-only review before Astra audit.
+
+After verification gate success, the mechanical layer emits
+`REVIEW_DISPATCH_ALLOWED` if no current-head review exists.
+
+Grok launches the configured REVIEWER_LANE_ID in read-only mode and ends.
+
+If the reviewer lane is unavailable:
+
+derived state = `BLOCKED_REVIEW_LANE`
+
+Do not silently skip review.
+User may configure/assign another independent read-only reviewer; the reviewer
+must not become a writer.
+
+Review result is accepted only when:
+
+- source actor is the configured reviewer;
+- TASK_REVISION matches;
+- HEAD_SHA/evidence SHA matches current revision;
+- reviewer session/attempt ID matches the dispatched review.
+
+Review FAIL:
+relay exact findings to the same writer.
+A new HEAD invalidates the prior review.
+
+Review PASS:
+mechanical layer records the current-head pass and emits
+`AUDIT_REQUIRED`.
+
+## 14. Astra audit gate
+
+Grok sends an audit packet to `#ai-audit` only on normalized
+`AUDIT_REQUIRED`.
+
+Packet fields:
 
 Project:
 Task:
+Task revision:
 Repository:
-PR:
+PR/evidence pointer:
 Base SHA:
-Head SHA:
-Objective source:
-Authoritative documents:
-Existing contracts:
-Invariants:
-Acceptance criteria:
-CI:
-Independent review:
-Touched areas:
-Contract change required:
-Known findings:
-Depth:
+Current HEAD/evidence SHA:
+Objective/task-spec pointers:
+Authoritative document pointers:
+Verification facts:
+Independent review facts:
+Worker-reported touched areas:
+Worker-reported contract-change flag:
+Audit floor:
 
-Instruction: `Do not implement fixes.`
+Astra independently reads the actual diff/evidence and authoritative docs.
 
-Valid result:
-PASS | PASS_WITH_NOTES | FAIL | DECISION_REQUIRED
+Astra must return:
 
-Audit is bound to exact HEAD SHA. HEAD change invalidates the previous final
-audit for the new SHA.
+AUDIT_RESULT: PASS | PASS_WITH_NOTES | FAIL | DECISION_REQUIRED
+AUDITED_TASK_REVISION:
+AUDITED_HEAD_OR_EVIDENCE_SHA:
+VERIFIED_AUDIT_DEPTH:
+VERIFIED_TOUCHED_AREAS:
+VERIFIED_CONTRACT_CHANGE_REQUIRED:
+FINDING_POINTERS:
 
-## DECISION_REQUIRED packet
+The mechanical layer accepts an audit result only from the configured ASTRA
+actor and only for the current task revision and current head/evidence SHA.
 
-Project:
-Task:
-Current SHA:
-Blocking question:
-Current authoritative rule:
-Why worker is blocked:
-Options identified by worker:
-Evidence pointers:
-Worker status:
-Required: ASTRA ANALYSIS + USER DECISION
+Astra FAIL:
+relay findings unchanged to the same writer.
+
+Astra DECISION_REQUIRED:
+record blocker and emit normalized decision request.
+
+## 15. Consequential decision gate
+
+A decision request contains:
+
+- TASK_ID / TASK_REVISION;
+- blocking question;
+- current authoritative rule;
+- exact evidence pointers;
+- options identified by the worker/Astra, if any.
 
 Grok adds no preferred option.
 
-## States
+Only a configured User decision event may authorize the choice.
+
+The decision must be persisted in GitHub/ADR/task authority before the
+mechanical layer emits `DECISION_RECORDED`.
+
+Ordinary Slack text is not a decision event.
+
+## 16. A0 final qualification
+
+Before A0 can complete, the mechanical layer checks project-specific objective
+rules such as allowed paths and forbidden/locked paths.
+
+A0 also requires the explicit A0 authorization pointer from the task envelope.
+
+If A0 qualification fails:
+promote to A1 → independent review → Astra audit.
+
+A0 never bypasses repository-specific evidence/bookkeeping rules.
+
+## 17. Derived states
+
+State is computed from control-record facts, not arrival order.
+
+Allowed derived states:
 
 RECEIVED
-ROUTED
+CLAIMED
+LAUNCH_UNKNOWN
 RUNNING
 BLOCKED
+STALLED
+BUDGET_BLOCKED
 PR_OPEN
-CI_FAILED
+VERIFICATION_FAILED
 READY_FOR_REVIEW
+REVIEW_RUNNING
 REVIEW_FAILED
+BLOCKED_REVIEW_LANE
 READY_FOR_AUDIT
+AUDIT_RUNNING
 AUDIT_FAILED
 DECISION_REQUIRED
 READY_FOR_MERGE
+MERGED_POST_VERIFY
+POST_MERGE_FAILED
 DONE
+DONE_NO_CHANGE
 
-One state per task.
+Important derivations:
 
-## Status prefixes
+- unresolved decision/blocker outranks progress states;
+- LAUNCH_UNKNOWN blocks new launch;
+- verification/review/audit facts must match current task revision and head;
+- READY_FOR_MERGE is computed, never accepted as arbitrary text.
 
-`[TASK]`
-`[STATUS]`
-`[BLOCKED]`
-`[DECISION_REQUIRED]`
-`[DECISION]`
-`[AUDIT_REQUIRED]`
-`[AUDIT_RESULT]`
-`[CI_FAIL]`
-`[READY_FOR_REVIEW]`
-`[READY_FOR_AUDIT]`
-`[READY_FOR_MERGE]`
-`[DONE]`
+## 18. READY_FOR_MERGE predicate
 
-Status body is fields only:
+For PR deliverables, READY_FOR_MERGE is true only when all are true:
 
-```
-[STATUS]
-Project:
-Task:
-State:
-Worker:
-PR:
-HEAD:
-CI:
-Review:
-Audit:
-Blocker:
-Human action:
-```
+- PR exists and is open;
+- CURRENT_HEAD_SHA equals PR current head;
+- task revision is current;
+- no unresolved blocker/decision;
+- verification gate is satisfied for CURRENT_HEAD_SHA;
+- required independent review PASS matches CURRENT_HEAD_SHA;
+- Astra PASS or PASS_WITH_NOTES matches current task revision and HEAD;
+- VERIFIED_AUDIT_DEPTH satisfies the project/audit floor and actual verified
+  touched areas;
+- VERIFIED_CONTRACT_CHANGE_REQUIRED is NO, or the required User decision has
+  been durably recorded and reflected in the current task revision;
+- project-specific merge prerequisites are satisfied.
 
-## Slack
+User still makes the merge decision.
 
-`#ai-control` — explicit control commands/status
-`#ai-decisions` — Astra + User consequential decisions
-`#ai-audit` — audit request/results
-`#kix` — project task/status channel
+## 19. No-change / non-code completion
 
-One project → one project channel.
-One task → one thread.
-Slack is not memory. Durable decisions return to GitHub.
+A writer may return NO_CHANGE only when DELIVERABLE_MODE allows it.
 
-## Cheap vs Cloud Devin
+For A1+ NO_CHANGE:
+- provide exact evidence/base SHA;
+- perform required independent review of the finding/evidence;
+- Astra audits the no-change conclusion against that evidence SHA;
+- PASS may derive `DONE_NO_CHANGE`;
+- no merge is invented.
 
-Use cheap/local only when the lane is verified available.
-Do not assume a model is free or unlimited.
+NON_CODE_EVIDENCE follows the project-specific approval/evidence gates; an
+engineering PR gate does not substitute for production/legal/content approval.
 
-Cloud Devin:
-- long autonomous work
-- difficult debugging
-- multi-file / multi-system implementation
-- isolated iterative development
-- end-to-end ticket ownership
+## 20. Merge and DONE
 
-Do not spend Cloud Devin on grep, typo, formatting, or status lookup.
+On authenticated `PR_MERGED`:
 
-## Quota failure
+KIX uses repository-specific post-merge verification from the
+preserved KIX governance.
 
-If Grok quota is unavailable:
-FAIL CLOSED.
-Surface `[BLOCKED] Reason: GROK_QUOTA`.
-No substitute dispatcher is appointed automatically.
+After merge:
+- record merge SHA;
+- perform the required KIX post-merge checks for that merge;
+- derived state is MERGED_POST_VERIFY until complete.
 
-## Merge
+If post-merge verification fails:
+- record POST_MERGE_FAILED;
+- do not patch main or return the failure to the completed writer as an
+  ordinary same-ticket CI fix;
+- corrective code requires a new KIX task/session/branch/PR under existing
+  governance;
+- the original task may become DONE only after the failure and follow-up task
+  pointer are durably recorded.
+
+For projects without post-merge verification, a correctly recorded merge may
+derive DONE.
 
 Grok never merges.
-Astra PASS is not a merge command.
-READY_FOR_MERGE means required gates passed on the current HEAD.
-USER makes the merge decision.
+
+## 21. Status/event actions for Grok
+
+Grok handles only these normalized actions:
+
+| Normalized event | One Grok action |
+|---|---|
+| DISPATCH_ALLOWED | launch designated writer; return launch receipt; end |
+| WRITER_FEEDBACK_REQUIRED | relay exact pointer to existing owner; end |
+| REVIEW_DISPATCH_ALLOWED | launch configured read-only reviewer; return receipt; end |
+| AUDIT_REQUIRED | post exact audit packet to #ai-audit; end |
+| DECISION_REQUIRED | post exact decision packet to #ai-decisions; end |
+| BLOCKED_STATUS | post one short fields-only status; end |
+| READY_FOR_MERGE | post fields-only status; end |
+| DONE / DONE_NO_CHANGE | post fields-only status; end |
+
+All other state aggregation is mechanical-layer work.
+
+## 22. Slack
+
+`#ai-control` — explicit control-plane commands/status
+`#ai-decisions` — authenticated User/Astra decision work
+`#ai-audit` — authenticated Astra audit request/result
+`#kix` — project task/status cockpit
+
+One task → one thread.
+
+Do not subscribe Grok to every Slack message.
+Only explicit commands or normalized workflow events invoke Grok.
+
+Slack decisions/audits are not durable until the corresponding GitHub control
+record/decision/audit pointer is written.
+
+## 23. Credentials
+
+Target logical permissions:
+
+- Grok router: repo/PR/check read + narrowly scoped task comment/status relay;
+  no source write, PR creation, admin, secrets, delete, merge.
+- Devin owner: assigned repo + task branch/PR only; no merge/admin.
+- Cheap writer: only explicitly assigned branch/task.
+- Reviewer: repo/PR read + finding comment only; no source write.
+- Astra: repo/PR read + audit/decision evidence write only; no source write/merge.
+- Mechanical layer: event validation + control-record/claim/status mutation
+  only; no source write/merge.
+- User: final authority.
+
+Technical enforcement is separate from this document and must be verified
+before claiming least privilege is enforced.
+
+## 24. Cost discipline
+
+Mechanical layer deduplicates raw repeats before Grok invocation.
+Only state transitions that require routing wake Grok.
+CI matrix/check chatter does not wake Grok check-by-check.
+Grok never waits for completion and never polls.
