@@ -41,7 +41,7 @@ A wrapper that proves no external session/process started may write:
 
 Any non-zero wrapper exit is treated as `UNKNOWN`, because the control plane cannot prove whether an external launch occurred.
 
-Wrappers must not merge, alter task semantics, choose another builder, or silently retry an ambiguous launch.
+Wrappers must pass the packet's `launch_request_id` through as the provider idempotency key whenever the provider supports one. They must not merge, alter task semantics, choose another builder, or silently retry an ambiguous launch.
 
 ## Canonical task requirements
 
