@@ -385,14 +385,15 @@ def prepare_dispatch(issue_number: int, packet_path: Path) -> None:
             raise ControlPlaneError("FAILED_PRESTART requires explicit retry authorization/fencing")
     else:
         record = new_control_record(envelope, cfg)
+        # Persist the pending launch as NOT_STARTED before consuming send authority.
+        comment = api.create_comment(issue_number, render_control_record(record))
 
+    # Under the workflow's per-task concurrency lock, consume the one existing
+    # pending action by durably moving NOT_STARTED -> SUBMITTING before any
+    # external builder wrapper can run.
     record["launch_state"] = "SUBMITTING"
     record["last_error"] = None
-    rendered = render_control_record(record)
-    if comment:
-        api.update_comment(comment["id"], rendered)
-    else:
-        comment = api.create_comment(issue_number, rendered)
+    api.update_comment(comment["id"], render_control_record(record))
 
     packet = {
         "schema_version": 1,
