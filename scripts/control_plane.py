@@ -504,6 +504,28 @@ CONTROL_RECORD_POINTER: https://github.com/owner/repo/issues/1
         raise AssertionError("invalid builder was not rejected")
     except ControlPlaneError:
         pass
+
+    trusted_comment = {
+        "body": rendered,
+        "user": {"login": "github-actions[bot]"},
+    }
+    assert find_control_comment([trusted_comment], "github-actions[bot]") is trusted_comment
+
+    try:
+        find_control_comment(
+            [{"body": rendered, "user": {"login": "untrusted-user"}}],
+            "github-actions[bot]",
+        )
+        raise AssertionError("spoofed control-record actor was not rejected")
+    except ControlPlaneError:
+        pass
+
+    try:
+        find_control_comment([trusted_comment, trusted_comment], "github-actions[bot]")
+        raise AssertionError("duplicate control-record comments were not rejected")
+    except ControlPlaneError:
+        pass
+
     print("self-test PASS")
 
 
