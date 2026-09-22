@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "user_activation_approval": "APPROVED",
-  "user_activation_approval_pointer": "PENDING_RUNTIME_PR_POINTER",
+  "user_activation_approval_pointer": "https://github.com/BeautifulMind-JT/kix-protocol/pull/32#issuecomment-5770580023",
   "implementation_audit": "PENDING",
   "implementation_audit_pointer": "PENDING",
   "runner_preflight": "PENDING",
