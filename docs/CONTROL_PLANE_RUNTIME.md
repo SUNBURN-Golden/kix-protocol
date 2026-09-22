@@ -25,7 +25,23 @@ Provider-specific CLI syntax is isolated behind host-local executables:
 - `/opt/astra/bin/astra-builder-grok-build`
 - `/opt/astra/bin/astra-builder-glm`
 
-Each wrapper receives exactly one argument: the path to a JSON launch packet.
+Each wrapper supports two modes.
+
+For host activation preflight:
+
+```bash
+/opt/astra/bin/astra-builder-<provider> --preflight
+```
+
+It must actually validate the provider CLI/API is installed, authenticated and able to use a durable execution mechanism. It writes exactly one JSON object and exits 0:
+
+```json
+{"status":"PASS","builder_id":"DEVIN","execution_mode":"REMOTE_SESSION","parallel_safe":true}
+```
+
+`execution_mode` must be `REMOTE_SESSION` or `PERSISTENT_SUPERVISOR`; a transient child tied to the GitHub Actions job does not qualify. A host using persistent local worktrees should also report its provider-specific `worktree_root`.
+
+For launch, each wrapper receives exactly one argument: the path to a JSON launch packet.
 
 A wrapper that proves an external session started writes one JSON object to stdout and exits 0:
 
