@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -335,16 +336,65 @@ def require_runtime_enabled() -> Dict[str, Any]:
 def host_preflight(builder_id: Optional[str]) -> None:
     cfg = load_config()
     builders = [builder_id] if builder_id else list(cfg["allowed_builders"])
-    missing = []
+    failures = []
+    reports = []
     for builder in builders:
         if builder not in cfg["allowed_builders"]:
             raise ControlPlaneError(f"unknown builder: {builder}")
         path = Path(cfg["builder_wrappers"][builder])
         if not path.exists() or not os.access(path, os.X_OK):
-            missing.append(f"{builder}:{path}")
-    if missing:
-        raise ControlPlaneError("missing/non-executable host wrappers: " + ", ".join(missing))
-    print("host preflight PASS:", ", ".join(builders))
+            failures.append(f"{builder}: missing/non-executable wrapper {path}")
+            continue
+        try:
+            completed = subprocess.run(
+                [str(path), "--preflight"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=90,
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            failures.append(f"{builder}: preflight invocation failed: {exc}")
+            continue
+
+        if completed.returncode != 0:
+            failures.append(
+                f"{builder}: wrapper preflight exited {completed.returncode}: "
+                f"{completed.stderr.strip()[:500]}"
+            )
+            continue
+        try:
+            report = json.loads(completed.stdout)
+        except json.JSONDecodeError as exc:
+            failures.append(f"{builder}: preflight stdout is not one JSON object: {exc}")
+            continue
+        if not isinstance(report, dict):
+            failures.append(f"{builder}: preflight result must be a JSON object")
+            continue
+        if report.get("status") != "PASS":
+            failures.append(f"{builder}: preflight status is not PASS")
+            continue
+        if report.get("builder_id") != builder:
+            failures.append(f"{builder}: preflight builder_id mismatch")
+            continue
+        if report.get("execution_mode") not in {"REMOTE_SESSION", "PERSISTENT_SUPERVISOR"}:
+            failures.append(
+                f"{builder}: execution_mode must prove work survives the dispatch step"
+            )
+            continue
+        if report.get("parallel_safe") is not True:
+            failures.append(f"{builder}: parallel_safe must be true")
+            continue
+        reports.append(report)
+
+    if failures:
+        raise ControlPlaneError("host preflight failed: " + " | ".join(failures))
+
+    roots = [r.get("worktree_root") for r in reports if r.get("worktree_root")]
+    if roots and len(set(roots)) != len(roots):
+        raise ControlPlaneError("builder preflight reports overlapping worktree_root values")
+
+    print(json.dumps({"status": "PASS", "builders": reports}, sort_keys=True))
 
 
 def prepare_dispatch(issue_number: int, packet_path: Path) -> None:
