@@ -431,6 +431,8 @@ def finalize_dispatch(issue_number: int, result_path: Path) -> None:
 
     try:
         result = json.loads(result_path.read_text(encoding="utf-8"))
+        if not isinstance(result, dict):
+            raise ValueError("adapter result must be a JSON object")
     except Exception as exc:
         result = {"outcome": "UNKNOWN", "reason": f"malformed/missing adapter result: {exc}"}
 
@@ -452,6 +454,7 @@ def finalize_dispatch(issue_number: int, result_path: Path) -> None:
         record["last_error"] = str(result.get("reason") or "adapter outcome ambiguous")
 
     api.update_comment(comment["id"], render_control_record(record))
+    return record["launch_state"]
 
 
 def self_test() -> None:
@@ -527,7 +530,10 @@ def main() -> int:
         elif args.command == "prepare-dispatch":
             prepare_dispatch(args.issue_number, args.packet)
         elif args.command == "finalize-dispatch":
-            finalize_dispatch(args.issue_number, args.result)
+            final_state = finalize_dispatch(args.issue_number, args.result)
+            print(f"final launch state: {final_state}")
+            if final_state != "CONFIRMED":
+                return 3
         return 0
     except ControlPlaneError as exc:
         print(f"CONTROL_PLANE_ERROR: {exc}", file=sys.stderr)
