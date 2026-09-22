@@ -48,7 +48,7 @@ jobs:
           fetch-depth: 0
 
       - name: Validate repository contract
-        run: python3 scripts/control_plane.py validate-repo
+        run: python3 -I scripts/control_plane.py validate-repo
 
       - name: Host preflight
         if: ${{ inputs.operation == 'preflight' }}
@@ -56,9 +56,9 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$PREFLIGHT_BUILDER" == "ALL" ]]; then
-            python3 scripts/control_plane.py host-preflight
+            python3 -I scripts/control_plane.py host-preflight
           else
-            python3 scripts/control_plane.py host-preflight --builder-id "$PREFLIGHT_BUILDER"
+            python3 -I scripts/control_plane.py host-preflight --builder-id "$PREFLIGHT_BUILDER"
           fi
 
       - name: Validate dispatch input
@@ -77,14 +77,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: >-
-          python3 scripts/control_plane.py prepare-dispatch
+          python3 -I scripts/control_plane.py prepare-dispatch
           --issue-number "$ISSUE_NUMBER"
           --packet "$RUNNER_TEMP/astra-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-packet.json"
 
       - name: Launch through protected host admission
         if: ${{ inputs.operation == 'dispatch' && steps.prepare.outputs.launch_required == 'true' }}
         run: >-
-          python3 scripts/control_plane.py launch-dispatch
+          python3 -I scripts/control_plane.py launch-dispatch
           --packet "$RUNNER_TEMP/astra-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-packet.json"
           --result "$RUNNER_TEMP/astra-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-result.json"
 
@@ -94,7 +94,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           LAUNCH_REQUEST_ID: ${{ steps.prepare.outputs.launch_request_id }}
         run: >-
-          python3 scripts/control_plane.py finalize-dispatch
+          python3 -I scripts/control_plane.py finalize-dispatch
           --issue-number "$ISSUE_NUMBER"
           --launch-request-id "$LAUNCH_REQUEST_ID"
           --result "$RUNNER_TEMP/astra-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-result.json"

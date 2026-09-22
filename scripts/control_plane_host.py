@@ -277,13 +277,18 @@ class Ledger:
         finally:
             db.close()
 
-    def reconcile(self, request, session, evidence):
+    def reconcile(self, request, session, evidence, *, no_session=False, sender_fenced=False):
         with self.inflight_lock(exclusive=True):
-            return self._reconcile(request, session, evidence)
+            return self._reconcile(request, session, evidence, no_session=no_session, sender_fenced=sender_fenced)
 
-    def _reconcile(self, request, session, evidence):
-        if not session.strip() or not evidence_url(evidence):
+    def _reconcile(self, request, session, evidence, *, no_session=False, sender_fenced=False):
+        if not evidence_url(evidence):
             raise HostError("operator-verified terminal session and durable evidence URL required")
+        if no_session:
+            if session is not None or sender_fenced is not True:
+                raise HostError("no-session reconciliation requires explicit sender fencing and no session ID")
+        elif not isinstance(session, str) or not session.strip():
+            raise HostError("terminal session ID is required")
         db = self.connect()
         try:
             db.execute("BEGIN IMMEDIATE")
@@ -291,12 +296,18 @@ class Ledger:
             if row is None or row["state"] not in ACTIVE:
                 raise HostError("no active reservation to reconcile")
             known = parse_json(row["result"]).get("session_id")
-            if known is not None and known != session:
+            if no_session and (known is not None or row["state"] == "CONFIRMED"):
+                raise HostError("known session cannot be reconciled as no-session")
+            if not no_session and known is not None and known != session:
                 raise HostError("reconciliation session does not match recorded owner")
+            resolution = "NO_SESSION_CONFIRMED" if no_session else "SESSION_TERMINAL"
             db.execute("UPDATE launches SET state='RECONCILED', evidence=? WHERE request=?",
-                       (canonical({"session_id": session, "terminal_evidence": evidence, "at": self.clock()}), request))
+                       (canonical({"resolution": resolution, "session_id": session,
+                                   "sender_fenced": sender_fenced, "terminal_evidence": evidence,
+                                   "at": self.clock()}), request))
             db.commit()
-            return {"status": "RECONCILED", "launch_request_id": request, "session_id": session, "evidence": evidence}
+            return {"status": "RECONCILED", "resolution": resolution, "launch_request_id": request,
+                    "session_id": session, "evidence": evidence}
         finally:
             db.close()
 
@@ -372,8 +383,12 @@ def main(argv=None):
     commands.add_parser("launch")
     commands.add_parser("init")
     reconcile_parser = commands.add_parser("reconcile")
-    for flag in ("launch-request-id", "session-id", "evidence"):
+    for flag in ("launch-request-id", "evidence"):
         reconcile_parser.add_argument("--" + flag, required=True)
+    outcome = reconcile_parser.add_mutually_exclusive_group(required=True)
+    outcome.add_argument("--session-id")
+    outcome.add_argument("--no-session", action="store_true")
+    reconcile_parser.add_argument("--sender-fenced", action="store_true")
     args, packet = parser.parse_args(argv), None
     os.umask(0o077)
     try:
@@ -392,7 +407,8 @@ def main(argv=None):
         elif args.command == "launch":
             result = launch(packet, policy, ledger)
         else:
-            result = ledger.reconcile(args.launch_request_id, args.session_id, args.evidence)
+            result = ledger.reconcile(args.launch_request_id, args.session_id, args.evidence,
+                                      no_session=args.no_session, sender_fenced=args.sender_fenced)
         print(canonical(result))
         return 0
     except (HostError, OSError, sqlite3.Error, ValueError, TypeError, subprocess.SubprocessError) as exc:

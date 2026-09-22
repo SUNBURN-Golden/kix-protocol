@@ -1,6 +1,8 @@
 """Launch boundary regressions; no provider or GitHub network access."""
 import json
 import os
+import re
+import shlex
 import subprocess
 import tempfile
 import unittest
@@ -25,6 +27,26 @@ class DispatchBoundaryTests(unittest.TestCase):
         self.assertEqual(run.call_args.kwargs["env"], {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"})
         self.assertEqual(run.call_args.kwargs["cwd"], "/")
         self.assertNotIn("shell", run.call_args.kwargs)
+
+    def test_runtime_workflow_cannot_import_checkout_shadow_modules(self):
+        workflow = (cp.ROOT / ".github/workflows/control-plane-runtime.yml").read_text()
+        commands = re.findall(r"\bpython3([^\n]*?)scripts/control_plane\.py", workflow)
+        self.assertTrue(commands)
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "scripts/control_plane.py"
+            script.parent.mkdir()
+            script.write_text(Path(cp.__file__).read_text())
+            sentinel = Path(tmp) / "injected"
+            (script.parent / "argparse.py").write_text(
+                "from pathlib import Path\n"
+                f"Path({str(sentinel)!r}).write_text('executed before gates')\n"
+                "raise RuntimeError('checkout shadow module executed')\n"
+            )
+            for flags in set(commands):
+                result = subprocess.run(["python3", *shlex.split(flags), str(script), "self-test"],
+                                        cwd=tmp, capture_output=True, text=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertFalse(sentinel.exists())
 
     def test_old_success_cannot_survive_response_loss(self):
         with tempfile.TemporaryDirectory() as tmp:

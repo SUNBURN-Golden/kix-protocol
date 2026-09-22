@@ -78,6 +78,11 @@ User가 승인한 operator만 원 request의 terminal session/취소·fencing �
 UNKNOWN에는 추정 session을 넣지 않는다. 살아 있는 launch helper와 해제는 경쟁하지
 못하도록 잠근다. 복구 가능한 기존 ticket은 owner를 유지한다. 해제는 재실행 허가가
 아니며, 재시도/재배정은 기존 governance의 별도 승인·fencing을 따른다.
+session 생성 전 crash였으며 원 request의 미생성과 모든 sender의 fencing을
+operator가 입증한 경우에만 `--session-id` 대신 `--no-session --sender-fenced`를 쓴다.
+같은 exclusive lock과 durable evidence를 요구하며 알려진 session에는 사용할 수 없다.
+최초 결과·request dedupe·신규 호출 계수는 그대로 보존한다. 단순 조회 실패나
+timeout은 미생성 증거가 아니다. 해당 옵션은 operator의 증거 확인을 자동 대체하지 않는다.
 GitHub task에는 reconciliation evidence와 control projection을 남긴다.
 
 ## Wrapper contract
@@ -127,6 +132,8 @@ GitHub finalization도 정확한 launch request를 대조하며 이전 run의 �
 ## 활성화와 검증
 
 `runtime_enabled=false` 유지. 기본 branch의 workflow만 self-hosted job을 실행한다.
+self-hosted Python 호출은 `-I`로 격리해 checkout의 동명 module/PYTHONPATH가
+활성화 검사 전에 실행되지 않게 한다.
 아직 미병합 branch의 임의 workflow가 host를 사용할 수 없도록 runner 접근 정책도 검증한다.
 GitHub job 조건 하나를 권한 경계로 간주하지 않는다.
 

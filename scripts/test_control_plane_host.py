@@ -101,6 +101,36 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(self.state(), "UNKNOWN")
         self.assertEqual(self.calls, ["ambiguous"])
 
+    def test_operator_proven_no_session_releases_slot_without_replay(self):
+        self.policy["max_active_sessions"] = 1
+        self.ledger.reserve(packet(), self.policy)  # crash before any adapter call
+        evidence = "https://github.com/owner/ops/issues/13"
+        for options in ({"no_session": True}, {"no_session": True, "sender_fenced": False}):
+            with self.assertRaises(host.HostError):
+                self.ledger.reconcile("request-0", None, evidence, **options)
+        with self.assertRaises(host.HostError):
+            self.ledger.reconcile("request-0", None, "", no_session=True, sender_fenced=True)
+        result = self.ledger.reconcile("request-0", None, evidence, no_session=True, sender_fenced=True)
+        self.assertEqual(result["resolution"], "NO_SESSION_CONFIRMED")
+        self.assertIsNone(result["session_id"])
+        self.assertEqual(self.state(), "RECONCILED")
+        # The first result is retained: replay never authorizes another send.
+        self.assertEqual(host.launch(packet(), self.policy, self.ledger, self.invoke)["outcome"], "UNKNOWN")
+        self.assertEqual(self.calls, [])
+        self.assertEqual(host.launch(packet(1), self.policy, self.ledger, self.invoke)["outcome"], "CONFIRMED")
+        db = sqlite3.connect(self.path)
+        try:
+            self.assertEqual(db.execute("SELECT sum(admitted) FROM launches").fetchone()[0], 2)
+        finally:
+            db.close()
+
+    def test_known_session_cannot_be_released_as_no_session(self):
+        host.launch(packet(), self.policy, self.ledger, self.invoke)
+        with self.assertRaises(host.HostError):
+            self.ledger.reconcile("request-0", None, "https://github.com/owner/ops/issues/13",
+                                  no_session=True, sender_fenced=True)
+        self.assertEqual(self.state(), "CONFIRMED")
+
     def test_process_interruption_leaves_durable_submitting_record(self):
         self.policy["max_active_sessions"] = 1
         def crash(value, policy):
