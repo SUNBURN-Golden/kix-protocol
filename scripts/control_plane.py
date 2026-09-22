@@ -487,7 +487,8 @@ CONTROL_RECORD_POINTER: https://github.com/owner/repo/issues/1
     validate_task(env, cfg)
     record = new_control_record(env, {"repository": "owner/repo"})
     assert record["launch_state"] == "NOT_STARTED"
-    parsed = parse_control_record(render_control_record(record))
+    rendered = render_control_record(record)
+    parsed = parse_control_record(rendered)
     assert parsed["launch_request_id"] == record["launch_request_id"]
     assert stable_id("x", "r", "t", "1", 1) == stable_id("x", "r", "t", "1", 1)
 
