@@ -112,9 +112,13 @@ def load_activation() -> Dict[str, Any]:
     required = {
         "schema_version",
         "user_activation_approval",
+        "user_activation_approval_pointer",
         "implementation_audit",
+        "implementation_audit_pointer",
         "runner_preflight",
+        "runner_preflight_pointer",
         "runtime_enabled",
+        "activated_runtime_sha",
     }
     missing = sorted(required - value.keys())
     if missing:
@@ -123,6 +127,8 @@ def load_activation() -> Dict[str, Any]:
         raise ControlPlaneError("unsupported activation schema_version")
     if value["user_activation_approval"] not in {"APPROVED", "NOT_APPROVED"}:
         raise ControlPlaneError("invalid user_activation_approval")
+    if value["user_activation_approval"] == "APPROVED" and value["user_activation_approval_pointer"] in (None, "", "PENDING", "PENDING_RUNTIME_PR_POINTER"):
+        raise ControlPlaneError("approved activation lacks a durable User approval pointer")
     if value["implementation_audit"] not in {"PENDING", "PASS"}:
         raise ControlPlaneError("invalid implementation_audit")
     if value["runner_preflight"] not in {"PENDING", "PASS"}:
