@@ -216,6 +216,8 @@ PASS text. Shared author/reviewer GitHub identities are conservatively rejected.
                 snapshot.get("dependencies_verified") is True):
             return False
         approved, _ = self.bound_comment(snapshot["repository"], lane["binding"], "<!-- ASTRA_FLOW_BUILDER_V1 -->")
+        flow.require(approved["report"].get("builder_id") == snapshot["builder_id"],
+                     "qualified report belongs to another builder")
         flow.qualify_lane(approved["report"], approved["approval"], lane["runtime_sha"])
         return approved.get("independent_audit") == "PASS"
 
