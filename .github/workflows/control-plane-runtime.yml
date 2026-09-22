@@ -1,0 +1,129 @@
+name: Control Plane Runtime
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "preflight or dispatch"
+        required: true
+        type: choice
+        options:
+          - preflight
+          - dispatch
+      issue_number:
+        description: "Canonical GitHub task issue number (required for dispatch)"
+        required: false
+        type: string
+      builder_id:
+        description: "Builder for preflight"
+        required: false
+        default: "ALL"
+        type: choice
+        options:
+          - ALL
+          - DEVIN
+          - GROK_BUILD
+          - GLM
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: astra-control-${{ github.repository }}-${{ inputs.issue_number || 'preflight' }}
+  cancel-in-progress: false
+
+jobs:
+  control:
+    runs-on: [self-hosted, astra-control-plane]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate repository contract
+        run: python3 scripts/control_plane.py validate-repo
+
+      - name: Host preflight
+        if: ${{ inputs.operation == 'preflight' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.builder_id }}" == "ALL" ]]; then
+            python3 scripts/control_plane.py host-preflight
+          else
+            python3 scripts/control_plane.py host-preflight --builder-id "${{ inputs.builder_id }}"
+          fi
+
+      - name: Validate dispatch input
+        if: ${{ inputs.operation == 'dispatch' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! [[ "${{ inputs.issue_number }}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "issue_number must be a positive integer" >&2
+            exit 2
+          fi
+
+      - name: Prepare serialized dispatch
+        id: prepare
+        if: ${{ inputs.operation == 'dispatch' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 scripts/control_plane.py prepare-dispatch
+          --issue-number "${{ inputs.issue_number }}"
+          --packet "$RUNNER_TEMP/astra-launch-packet.json"
+
+      - name: Launch assigned builder
+        id: launch
+        if: ${{ inputs.operation == 'dispatch' && steps.prepare.outputs.launch_required == 'true' }}
+        shell: bash
+        env:
+          BUILDER_ID: ${{ steps.prepare.outputs.builder_id }}
+        run: |
+          set -uo pipefail
+          WRAPPER="$(python3 - <<'PY'
+          import json
+          import os
+          builder = os.environ["BUILDER_ID"]
+          cfg = json.load(open(".github/control-plane/config.json", encoding="utf-8"))
+          print(cfg["builder_wrappers"][builder])
+          PY
+          )"
+
+          RESULT="$RUNNER_TEMP/astra-adapter-result.json"
+          set +e
+          "$WRAPPER" "$RUNNER_TEMP/astra-launch-packet.json" > "$RESULT"
+          RC=$?
+          set -e
+
+          if [[ $RC -ne 0 ]]; then
+            python3 - "$RESULT" "$RC" <<'PY'
+          import json
+          import pathlib
+          import sys
+          path = pathlib.Path(sys.argv[1])
+          rc = int(sys.argv[2])
+          path.write_text(json.dumps({
+              "outcome": "UNKNOWN",
+              "reason": f"builder wrapper exited nonzero ({rc}); external launch outcome is ambiguous"
+          }) + "\n", encoding="utf-8")
+          PY
+          fi
+
+          echo "wrapper_exit_code=$RC" >> "$GITHUB_OUTPUT"
+
+      - name: Finalize launch state
+        if: ${{ always() && inputs.operation == 'dispatch' && steps.prepare.outputs.launch_required == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          python3 scripts/control_plane.py finalize-dispatch
+          --issue-number "${{ inputs.issue_number }}"
+          --result "$RUNNER_TEMP/astra-adapter-result.json"
+
+      - name: Fail job on ambiguous/nonzero wrapper exit
+        if: ${{ inputs.operation == 'dispatch' && steps.prepare.outputs.launch_required == 'true' && steps.launch.outputs.wrapper_exit_code != '0' }}
+        run: |
+          echo "Builder wrapper did not return a clean result; control record was set fail-closed." >&2
+          exit 1
