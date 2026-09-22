@@ -17,7 +17,7 @@ CONFIG_PATH = ROOT / ".github" / "control-plane" / "config.json"
 ACTIVATION_PATH = ROOT / ".github" / "control-plane" / "activation.json"
 CONTROL_MARKER = "<!-- ASTRA_CONTROL_RECORD_V1 -->"
 JSON_BLOCK_RE = re.compile(
-    re.escape(CONTROL_MARKER) + r"\s*```json\s*(\{.*?\})\s*```,
+    re.escape(CONTROL_MARKER) + r"\s*```json\s*(\{.*?\})\s*```",
     re.DOTALL,
 )
 FIELD_RE = re.compile(r"^([A-Z][A-Z0-9_]+):\s*(.*?)\s*$")
