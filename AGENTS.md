@@ -344,6 +344,14 @@ Keep existing repository-specific review and safety gates. Measure validated
 task throughput, per-builder cost, Astra usage, Grok usage, User interventions,
 review findings and rework separately; do not claim savings without observations.
 
+---
+
+# Repository-specific engineering rules (preserved)
+
+# KIX Protocol — Agent Governance
+
+These rules apply to Devin and every other coding agent working in this repository. They are repository-wide execution constraints. A task document may narrow scope further. If a task document, repository state, and these rules conflict or are ambiguous, stop and report the conflict instead of guessing.
+
 ## 1. Session start and source of truth
 
 Before editing anything:
