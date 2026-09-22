@@ -23,5 +23,8 @@
   ],
   "allowed_dispatch_actors": [
     "BeautifulMind-JT"
+  ],
+  "enabled_builders": [
+    "DEVIN"
   ]
 }

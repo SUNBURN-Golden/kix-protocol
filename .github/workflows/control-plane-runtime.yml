@@ -35,10 +35,17 @@ concurrency:
 
 jobs:
   control:
+    if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
     runs-on: [self-hosted, astra-control-plane]
-    timeout-minutes: 30
+    timeout-minutes: 15
+    env:
+      ISSUE_NUMBER: ${{ inputs.issue_number }}
+      PREFLIGHT_BUILDER: ${{ inputs.builder_id }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Validate repository contract
         run: python3 scripts/control_plane.py validate-repo
@@ -48,10 +55,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "${{ inputs.builder_id }}" == "ALL" ]]; then
+          if [[ "$PREFLIGHT_BUILDER" == "ALL" ]]; then
             python3 scripts/control_plane.py host-preflight
           else
-            python3 scripts/control_plane.py host-preflight --builder-id "${{ inputs.builder_id }}"
+            python3 scripts/control_plane.py host-preflight --builder-id "$PREFLIGHT_BUILDER"
           fi
 
       - name: Validate dispatch input
@@ -59,7 +66,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if ! [[ "${{ inputs.issue_number }}" =~ ^[1-9][0-9]*$ ]]; then
+          if ! [[ "$ISSUE_NUMBER" =~ ^[1-9][0-9]*$ ]]; then
             echo "issue_number must be a positive integer" >&2
             exit 2
           fi
@@ -71,59 +78,23 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: >-
           python3 scripts/control_plane.py prepare-dispatch
-          --issue-number "${{ inputs.issue_number }}"
-          --packet "$RUNNER_TEMP/astra-launch-packet.json"
+          --issue-number "$ISSUE_NUMBER"
+          --packet "$RUNNER_TEMP/astra-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-packet.json"
 
-      - name: Launch assigned builder
-        id: launch
+      - name: Launch through protected host admission
         if: ${{ inputs.operation == 'dispatch' && steps.prepare.outputs.launch_required == 'true' }}
-        shell: bash
-        env:
-          BUILDER_ID: ${{ steps.prepare.outputs.builder_id }}
-        run: |
-          set -uo pipefail
-          WRAPPER="$(python3 - <<'PY'
-          import json
-          import os
-          builder = os.environ["BUILDER_ID"]
-          cfg = json.load(open(".github/control-plane/config.json", encoding="utf-8"))
-          print(cfg["builder_wrappers"][builder])
-          PY
-          )"
+        run: >-
+          python3 scripts/control_plane.py launch-dispatch
+          --packet "$RUNNER_TEMP/astra-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-packet.json"
+          --result "$RUNNER_TEMP/astra-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-result.json"
 
-          RESULT="$RUNNER_TEMP/astra-adapter-result.json"
-          set +e
-          "$WRAPPER" "$RUNNER_TEMP/astra-launch-packet.json" > "$RESULT"
-          RC=$?
-          set -e
-
-          if [[ $RC -ne 0 ]]; then
-            python3 - "$RESULT" "$RC" <<'PY'
-          import json
-          import pathlib
-          import sys
-          path = pathlib.Path(sys.argv[1])
-          rc = int(sys.argv[2])
-          path.write_text(json.dumps({
-              "outcome": "UNKNOWN",
-              "reason": f"builder wrapper exited nonzero ({rc}); external launch outcome is ambiguous"
-          }) + "\n", encoding="utf-8")
-          PY
-          fi
-
-          echo "wrapper_exit_code=$RC" >> "$GITHUB_OUTPUT"
-
-      - name: Finalize launch state
+      - name: Finalize exact launch state
         if: ${{ always() && inputs.operation == 'dispatch' && steps.prepare.outputs.launch_required == 'true' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          LAUNCH_REQUEST_ID: ${{ steps.prepare.outputs.launch_request_id }}
         run: >-
           python3 scripts/control_plane.py finalize-dispatch
-          --issue-number "${{ inputs.issue_number }}"
-          --result "$RUNNER_TEMP/astra-adapter-result.json"
-
-      - name: Fail job on ambiguous/nonzero wrapper exit
-        if: ${{ inputs.operation == 'dispatch' && steps.prepare.outputs.launch_required == 'true' && steps.launch.outputs.wrapper_exit_code != '0' }}
-        run: |
-          echo "Builder wrapper did not return a clean result; control record was set fail-closed." >&2
-          exit 1
+          --issue-number "$ISSUE_NUMBER"
+          --launch-request-id "$LAUNCH_REQUEST_ID"
+          --result "$RUNNER_TEMP/astra-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-result.json"

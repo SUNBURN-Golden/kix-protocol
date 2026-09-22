@@ -45,6 +45,15 @@ ALLOWED_LAUNCH_STATES = (
     "FAILED_PRESTART",
     "UNKNOWN",
 )
+HOST_COMMAND = ("/usr/bin/sudo", "-n", "-u", "astra-control", "/opt/astra/bin/astra-host-control")
+LAUNCH_IDENTITY = ("repository", "task_id", "task_revision", "builder_id", "launch_request_id", "attempt_id")
+RUNTIME_PATHS = (
+    "scripts/control_plane.py", "scripts/control_plane_host.py",
+    "scripts/test_control_plane.py", "scripts/test_control_plane_host.py",
+    ".github/control-plane/config.json", ".github/control-plane/host-policy.example.json",
+    ".github/workflows/control-plane-runtime.yml", ".github/workflows/control-plane-ci.yml",
+    "docs/CONTROL_PLANE_RUNTIME.md", "AGENTS.md", "RUNBOOKS/DISPATCH.md", "TASKS/TEMPLATE.md",
+)
 
 
 class ControlPlaneError(RuntimeError):
@@ -71,6 +80,7 @@ def load_config() -> Dict[str, Any]:
         "repository",
         "runner_labels",
         "allowed_builders",
+        "enabled_builders",
         "builder_wrappers",
         "control_record_marker",
         "control_record_actor",
@@ -95,6 +105,10 @@ def load_config() -> Dict[str, Any]:
         raise ControlPlaneError("allowed_builders must be a non-empty list")
     if set(builders) != set(ALLOWED_BUILDERS):
         raise ControlPlaneError("allowed_builders must be exactly DEVIN, GROK_BUILD, GLM")
+    enabled = cfg["enabled_builders"]
+    if (not isinstance(enabled, list) or not enabled or
+            any(builder not in builders for builder in enabled) or len(set(enabled)) != len(enabled)):
+        raise ControlPlaneError("enabled_builders must be an explicit non-empty subset of allowed_builders")
     wrappers = cfg["builder_wrappers"]
     if not isinstance(wrappers, dict):
         raise ControlPlaneError("builder_wrappers must be an object")
@@ -211,6 +225,8 @@ def validate_task(envelope: Dict[str, str], cfg: Dict[str, Any]) -> None:
         raise ControlPlaneError("runtime dispatch currently accepts BUILDER_STANDARD only")
     if envelope["BUILDER_ID"] not in cfg["allowed_builders"]:
         raise ControlPlaneError("BUILDER_ID is not an allowed configured builder")
+    if envelope["BUILDER_ID"] not in cfg["enabled_builders"]:
+        raise ControlPlaneError("BUILDER_ID is not enabled for this rollout; no automatic fallback")
     if not re.fullmatch(r"[A-Za-z0-9._:/#@+-]+", envelope["TASK_REVISION"]):
         raise ControlPlaneError("TASK_REVISION contains unsupported characters")
 
@@ -330,46 +346,64 @@ def require_runtime_enabled() -> Dict[str, Any]:
     activation = load_activation()
     if not activation["runtime_enabled"]:
         raise ControlPlaneError("runtime is fail-closed: runtime_enabled=false")
+    validate_repo()
+    audited = activation["activated_runtime_sha"]
+    if not isinstance(audited, str) or not re.fullmatch(r"[0-9a-f]{40}", audited):
+        raise ControlPlaneError("activated_runtime_sha must identify the audited runtime commit")
+    # An activation-only commit may follow the audited commit. Product changes
+    # do not require re-auditing unchanged control code; control changes do.
+    for args in (("merge-base", "--is-ancestor", audited, "HEAD"),
+                 ("diff", "--exit-code", audited, "HEAD", "--", *RUNTIME_PATHS),
+                 ("diff", "--exit-code", "HEAD", "--", *RUNTIME_PATHS,
+                  ".github/control-plane/activation.json")):
+        result = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, check=False)
+        if result.returncode:
+            raise ControlPlaneError("current runtime differs from or cannot resolve audited runtime SHA")
     return activation
+
+
+def host_call(arguments: list, packet: Optional[dict] = None) -> dict:
+    # Never forward the Actions token, workflow command files, PATH overrides,
+    # Python import configuration or runner HOME into the privileged adapter.
+    try:
+        completed = subprocess.run(
+            [*HOST_COMMAND, *arguments],
+            input=json.dumps(packet) if packet is not None else None,
+            env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"}, cwd="/",
+            capture_output=True, text=True, check=False, timeout=240,
+        )
+        if completed.returncode:
+            raise ControlPlaneError(f"host control exited {completed.returncode}; inspect protected host evidence")
+        report = json.loads(completed.stdout)
+        if not isinstance(report, dict):
+            raise ValueError("host result is not an object")
+        return report
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        raise ControlPlaneError("host control response unavailable or invalid") from exc
 
 
 def host_preflight(builder_id: Optional[str]) -> None:
     cfg = load_config()
-    builders = [builder_id] if builder_id else list(cfg["allowed_builders"])
+    builders = [builder_id] if builder_id else list(cfg["enabled_builders"])
     failures = []
     reports = []
     for builder in builders:
-        if builder not in cfg["allowed_builders"]:
-            raise ControlPlaneError(f"unknown builder: {builder}")
-        path = Path(cfg["builder_wrappers"][builder])
-        if not path.exists() or not os.access(path, os.X_OK):
-            failures.append(f"{builder}: missing/non-executable wrapper {path}")
-            continue
+        if builder not in cfg["enabled_builders"]:
+            raise ControlPlaneError(f"builder is not enabled: {builder}")
         try:
-            completed = subprocess.run(
-                [str(path), "--preflight"],
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=90,
-            )
-        except (OSError, subprocess.SubprocessError) as exc:
-            failures.append(f"{builder}: preflight invocation failed: {exc}")
+            report = host_call(["preflight", "--builder-id", builder])
+        except ControlPlaneError as exc:
+            failures.append(f"{builder}: {exc}")
             continue
-
-        if completed.returncode != 0:
-            failures.append(
-                f"{builder}: wrapper preflight exited {completed.returncode}: "
-                f"{completed.stderr.strip()[:500]}"
-            )
+        if report.get("host_admission") != "ENFORCED" or not report.get("boundary_evidence_pointer"):
+            failures.append(f"{builder}: protected admission/boundary evidence missing")
             continue
-        try:
-            report = json.loads(completed.stdout)
-        except json.JSONDecodeError as exc:
-            failures.append(f"{builder}: preflight stdout is not one JSON object: {exc}")
+        expected_hash = hashlib.sha256((ROOT / "scripts/control_plane_host.py").read_bytes()).hexdigest()
+        if report.get("helper_sha256") != expected_hash:
+            failures.append(f"{builder}: installed host helper differs from audited source")
             continue
-        if not isinstance(report, dict):
-            failures.append(f"{builder}: preflight result must be a JSON object")
+        if cfg["repository"] not in report.get("allowed_repositories", []):
+            failures.append(f"{builder}: repository not enabled by host policy")
             continue
         if report.get("status") != "PASS":
             failures.append(f"{builder}: preflight status is not PASS")
@@ -404,11 +438,16 @@ def prepare_dispatch(issue_number: int, packet_path: Path) -> None:
     if not token:
         raise ControlPlaneError("GITHUB_TOKEN is required")
     dispatch_actor = os.environ.get("GITHUB_ACTOR", "")
-    if dispatch_actor not in cfg["allowed_dispatch_actors"]:
+    rerun_actor = os.environ.get("GITHUB_TRIGGERING_ACTOR", dispatch_actor)
+    if any(actor not in cfg["allowed_dispatch_actors"] for actor in (dispatch_actor, rerun_actor)):
         raise ControlPlaneError(f"unauthorized dispatch actor: {dispatch_actor!r}")
 
     api = GithubApi(cfg["repository"], token)
+    if issue_number <= 0:
+        raise ControlPlaneError("issue_number must be positive")
     issue = api.issue(issue_number)
+    if issue.get("state") != "open" or "pull_request" in issue:
+        raise ControlPlaneError("canonical task must be an open issue")
     issue_actor = ((issue.get("user") or {}).get("login") or "")
     if issue_actor not in cfg["allowed_task_actors"]:
         raise ControlPlaneError(f"canonical task actor is not allowed: {issue_actor!r}")
@@ -420,8 +459,6 @@ def prepare_dispatch(issue_number: int, packet_path: Path) -> None:
         raise ControlPlaneError("CANONICAL_TASK_POINTER must equal the canonical issue URL")
     if envelope["CONTROL_RECORD_POINTER"] != issue_url:
         raise ControlPlaneError("CONTROL_RECORD_POINTER must equal the canonical issue URL for runtime v1")
-
-    host_preflight(envelope["BUILDER_ID"])
 
     comment = find_control_comment(api.comments(issue_number), cfg["control_record_actor"])
     if comment:
@@ -444,6 +481,9 @@ def prepare_dispatch(issue_number: int, packet_path: Path) -> None:
         # Persist the pending launch as NOT_STARTED before consuming send authority.
         comment = api.create_comment(issue_number, render_control_record(record))
 
+    # Duplicates return before provider preflight or any model invocation.
+    host_preflight(envelope["BUILDER_ID"])
+
     # Under the workflow's per-task concurrency lock, consume the one existing
     # pending action by durably moving NOT_STARTED -> SUBMITTING before any
     # external builder wrapper can run.
@@ -460,6 +500,9 @@ def prepare_dispatch(issue_number: int, packet_path: Path) -> None:
         "task_revision": envelope["TASK_REVISION"],
         "task_pointer": envelope["CANONICAL_TASK_POINTER"],
         "task_spec_pointer": envelope["TASK_SPEC_POINTER"],
+        "task_spec_revision": envelope["TASK_SPEC_REVISION"],
+        "approval_pointer": envelope["APPROVAL_POINTER"],
+        "authoritative_doc_pointers": envelope["AUTHORITATIVE_DOC_POINTERS"],
         "builder_id": envelope["BUILDER_ID"],
         "launch_request_id": record["launch_request_id"],
         "attempt_id": record["attempt_id"],
@@ -472,7 +515,29 @@ def prepare_dispatch(issue_number: int, packet_path: Path) -> None:
     write_github_output("control_comment_id", str(comment["id"]))
 
 
-def finalize_dispatch(issue_number: int, result_path: Path) -> None:
+def bound_result(result: dict, expected: dict) -> dict:
+    if any(type(result.get(key)) is not type(expected.get(key)) or
+           result.get(key) != expected.get(key) for key in LAUNCH_IDENTITY):
+        return {"outcome": "UNKNOWN", "reason": "adapter result launch identity mismatch"}
+    return result
+
+
+def launch_dispatch(packet_path: Path, result_path: Path) -> None:
+    packet = json.loads(packet_path.read_text(encoding="utf-8"))
+    identity = {key: packet[key] for key in LAUNCH_IDENTITY}
+    # Persist an exact-attempt sentinel before crossing the external boundary.
+    # A crash cannot leave a previous run's success at this path.
+    result = {**identity, "outcome": "UNKNOWN", "reason": "host launch did not return"}
+    result_path.write_text(json.dumps(result) + "\n", encoding="utf-8")
+    try:
+        require_runtime_enabled()
+        result = bound_result(host_call(["launch"], packet), packet)
+    except ControlPlaneError as exc:
+        result = {"outcome": "UNKNOWN", "reason": str(exc)}
+    result_path.write_text(json.dumps({**identity, **result}) + "\n", encoding="utf-8")
+
+
+def finalize_dispatch(issue_number: int, result_path: Path, launch_request_id: str) -> str:
     cfg = load_config()
     token = os.environ.get("GITHUB_TOKEN")
     if not token:
@@ -482,6 +547,8 @@ def finalize_dispatch(issue_number: int, result_path: Path) -> None:
     if not comment:
         raise ControlPlaneError("control record missing during finalize")
     record = parse_control_record(comment.get("body") or "")
+    if record.get("launch_request_id") != launch_request_id:
+        raise ControlPlaneError("stale finalization request rejected")
     if record["launch_state"] != "SUBMITTING":
         raise ControlPlaneError(f"cannot finalize from launch_state={record['launch_state']}")
 
@@ -492,6 +559,7 @@ def finalize_dispatch(issue_number: int, result_path: Path) -> None:
     except Exception as exc:
         result = {"outcome": "UNKNOWN", "reason": f"malformed/missing adapter result: {exc}"}
 
+    result = bound_result(result, record)
     outcome = result.get("outcome")
     if outcome == "CONFIRMED":
         session = result.get("session_id")
@@ -533,6 +601,7 @@ CONTROL_RECORD_POINTER: https://github.com/owner/repo/issues/1
         "repository": "owner/repo",
         "project": "SAMPLE",
         "allowed_builders": list(ALLOWED_BUILDERS),
+        "enabled_builders": ["DEVIN"],
     }
     validate_task(env, cfg)
     record = new_control_record(env, {"repository": "owner/repo"})
@@ -593,9 +662,14 @@ def main() -> int:
     prepare.add_argument("--issue-number", type=int, required=True)
     prepare.add_argument("--packet", type=Path, required=True)
 
+    launch = sub.add_parser("launch-dispatch")
+    launch.add_argument("--packet", type=Path, required=True)
+    launch.add_argument("--result", type=Path, required=True)
+
     finalize = sub.add_parser("finalize-dispatch")
     finalize.add_argument("--issue-number", type=int, required=True)
     finalize.add_argument("--result", type=Path, required=True)
+    finalize.add_argument("--launch-request-id", required=True)
 
     args = parser.parse_args()
     try:
@@ -608,8 +682,10 @@ def main() -> int:
             host_preflight(args.builder_id)
         elif args.command == "prepare-dispatch":
             prepare_dispatch(args.issue_number, args.packet)
+        elif args.command == "launch-dispatch":
+            launch_dispatch(args.packet, args.result)
         elif args.command == "finalize-dispatch":
-            final_state = finalize_dispatch(args.issue_number, args.result)
+            final_state = finalize_dispatch(args.issue_number, args.result, args.launch_request_id)
             print(f"final launch state: {final_state}")
             if final_state != "CONFIRMED":
                 return 3
