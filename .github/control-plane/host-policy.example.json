@@ -5,7 +5,7 @@
   "allowed_repositories": [],
   "enabled_builders": ["DEVIN"],
   "max_active_sessions": 1,
-  "max_launches_per_24h": 8,
+  "max_launches_per_24h": null,
   "ledger_path": "/var/lib/astra/control/admission.sqlite3",
   "wrapper_paths": {
     "DEVIN": "/opt/astra/bin/astra-builder-devin",
