@@ -42,8 +42,8 @@ report-mode bypass case in the probe evidence).
    install log).
 3. Build `policy.json` from `boundary-policy.example.json`: pin repository and
    owner **ids** (not just names), the approved `GITHUB_REF`, the exact
-   `GITHUB_WORKFLOW_REF`/`GITHUB_WORKFLOW_SHA` (blob sha of the reviewed
-   workflow file at the audited SHA), event name, job id and allowed actor
+   `GITHUB_WORKFLOW_REF`/`GITHUB_WORKFLOW_SHA` (commit SHA containing the
+   reviewed workflow file; never its blob SHA), event name, job id and allowed actor
    ids, plus `event:` assertions on `repository.id`, `repository.owner.id`,
    `sender.id`. Record `sha256(policy.json)`.
 4. Run, as the runner account context, fail-closed checks:
@@ -53,6 +53,7 @@ report-mode bypass case in the probe evidence).
      --hook /opt/astra/boundary/control_plane_boundary_hook.sh \
      --policy /opt/astra/boundary/policy.json \
      --hook-sha256 <hook sha> --policy-sha256 <policy sha> \
+     --evaluator-sha256 <audited-evaluator-sha256> \
      --owner-uid 0 --forbid-prefix /runner/work/dir \
      --writable-check [--env-file /path/to/runner/.env]
    ```
@@ -100,3 +101,22 @@ decision records live under `/workspace/astra-host-evidence/boundary-003/`.
 - A denied job terminates the worker; the listener reports the job as failed.
   Repeated hostile pushes each get denied again; deduping them is out of
   scope.
+
+## Install-time hardening (verify-install)
+
+- Expected digests for hook, policy and evaluator come from the audited
+  artifact/approval record, never recomputed from the installed files.
+  `--evaluator-sha256` is mandatory; verify-install also checks ownership and
+  replaceability of all three files and every parent directory.
+- The hook runs a fixed interpreter (`/usr/bin/python3`) and denial always
+  attempts worker termination. The former `ASTRA_BOUNDARY_PYTHON`,
+  `ASTRA_BOUNDARY_KILL` and `ASTRA_BOUNDARY_FLUSH_SECONDS` overrides no longer
+  exist and are rejected by `check-env` together with shell/loader startup
+  variables (`BASH_ENV`, `ENV`, `SHELLOPTS`, `BASHOPTS`, `LD_*`, `DYLD_*`,
+  `BASH_FUNC_*`, `PYTHON*`).
+- If the runner has a `.env` file it must be passed via `--env-file`; the
+  file and its parent directories must be protected against job/runner
+  writes, and only `LANG`, `LC_ALL` and `TZ` keys are permitted. Any other
+  key — including `ACTIONS_RUNNER_HOOK_JOB_STARTED` and every
+  `ASTRA_BOUNDARY_*` — denies the install. Extra `.env` keys stay BLOCKED
+  pending separate review.
