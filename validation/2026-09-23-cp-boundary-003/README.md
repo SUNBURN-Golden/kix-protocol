@@ -13,7 +13,7 @@ merge, and does not activate anything.
 ## SOURCE_BASE / HEAD
 
 - Base (pinned task commit): `b9184e48f0df3f26a5214ec00eea20b0629b447f`
-- Implementation HEAD: see PR #38 head (exact SHA recorded in the PR body at push time)
+- Implementation HEAD: see PR #39 head (exact SHA recorded in the PR body at push time)
 - Locked blobs verified unchanged at HEAD:
   - `runtime/crates/kix-kernel/src/lib.rs` = `69564b166f0c27f9af5d8422f0a466b18d74c20f`
   - `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` = `b607996c83a119c349f1cc90469ac1ba82764e20`
@@ -126,7 +126,7 @@ python3 -I scripts/control_plane.py validate-repo                               
 
 ## REMOTE_CI
 
-Exact-head CI for the implementation HEAD is recorded in PR #38 checks; do not
+Exact-head CI for the implementation HEAD is recorded in PR #39 checks; do not
 attribute earlier-SHA results to later SHAs.
 
 ## HOST_INSTALL_READY
@@ -151,6 +151,6 @@ Unchanged.
 ## EVIDENCE_POINTER
 
 This directory (`validation/2026-09-23-cp-boundary-003/` on branch
-`devin/cp-boundary-003`, PR #38) contains the decision records, sentinel
+`devin/cp-boundary-003`, PR #39) contains the decision records, sentinel
 outputs, digests, and runner log. Probe fixtures live on branch
 `probe/cp-boundary-003` and are intentionally not in the PR.
