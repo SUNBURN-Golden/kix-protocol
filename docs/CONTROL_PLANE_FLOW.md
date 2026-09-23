@@ -53,7 +53,7 @@ GitHub 권한이 branch별 merge 금지를 자동 제공한다고 가정하지 �
 
 flow 전용 DB의 부모 디렉터리는 계정 소유 0700, DB는 0600이어야 한다.
 DB는 operator가 `Store(path, initialize=True)`로 최초 한 번 만들며 실행 중 누락 DB를 재생성하지 않는다.
-**이 DB는 이벤트 전달용이다. 기존 host admission DB·8회/24h quota·활성 session을 대체하거나 초기화하지 않는다.**
+**이 DB는 이벤트 전달용이다. 기존 host admission DB·활성 session 상태를 대체하거나 초기화하지 않는다. host 일일 신규 launch 상한은 별도 runtime policy에서 unlimited다.**
 서로 다른 host가 SQLite를 공유한다고 distributed lock을 주장하지 않는다.
 
 서비스 계정 secret injection 이름:
@@ -135,7 +135,7 @@ UID 격리·지속 session·중복/UNKNOWN·workflow boundary·quota를 검증�
 report의 checks는 cli/authentication/credential_isolation/durable_session/duplicate_unknown/
 trusted_workflow_boundary/quota_policy이며 모두 PASS가 아니면 qualification이 실패한다.
 User approval은 report digest에 결합한다. qualification 성공도 production_enabled:false다.
-새 구현 SHA 또는 wrapper/harness 변경은 다시 검증한다. quota 소진을 이유로 ledger를 지우지 않는다.
+새 구현 SHA 또는 wrapper/harness 변경은 다시 검증한다. provider/account quota 문제를 이유로 ledger를 지우지 않는다.
 
 Grok Build의 공식 headless surface는 `grok -p`, named session, JSON output, no-auto-update다.
 CLI의 session 파일 존재는 process 생존 증명이 아니다. 기존과 같은 protected supervisor 증거가 필요하다.
