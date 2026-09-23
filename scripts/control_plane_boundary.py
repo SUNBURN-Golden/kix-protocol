@@ -455,7 +455,7 @@ def cmd_verify_install(args: argparse.Namespace) -> int:
         if conventional.exists():
             problems.append(f"runner env file exists at {conventional} but "
                             "--env-file was omitted; pass it explicitly")
-    if env_file_arg:
+    if env_file_arg is not None:
         env_file = Path(env_file_arg)
         problems += _check_protected_file(env_file, "runner env", args.owner_uid)
         for candidate in (env_file, *env_file.parents):
