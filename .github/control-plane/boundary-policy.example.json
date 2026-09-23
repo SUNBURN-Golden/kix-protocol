@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "policy_id": "PENDING-prod-boundary",
-  "description": "EXAMPLE production boundary policy for the astra-control-plane runner. All claim values are placeholders — the operator must pin the real repository/owner/actor ids and the exact workflow blob SHA of the audited control-plane-runtime.yml before install. Missing or mismatched claims deny the job.",
+  "description": "EXAMPLE production boundary policy for the astra-control-plane runner. All claim values are placeholders — the operator must pin the real repository/owner/actor ids and the exact workflow commit SHA (GITHUB_WORKFLOW_SHA is the commit SHA containing the audited control-plane-runtime.yml, never the file's blob SHA) before install. Missing or mismatched claims deny the job.",
   "required_claims": [
     "env:GITHUB_RUN_ID",
     "env:GITHUB_RUN_ATTEMPT",
