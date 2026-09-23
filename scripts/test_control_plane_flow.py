@@ -9,6 +9,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import threading
+import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import Mock, patch
@@ -381,6 +382,170 @@ class CollectorTests(unittest.TestCase):
         self.data['repos/owner/repo/issues/1']['body']=self.issue_body
         self.runs[0]['pull_requests']=[dict(number=100)]
         self.assertEqual(f.assess(self.ports.load(self.command))['state'],'BLOCKED')
+
+
+class SlackFixtureTests(unittest.TestCase):
+    """Deterministic /slack/commands fixture for the #36 staging status/refresh flow.
+
+    No network: the WSGI environ is built in memory, the executor runs inline
+    and ports are mocked. Covers fail-closed request validation, replay/stale
+    rejection, and that status/refresh grammar can never reach the dispatch path.
+    """
+
+    class Future:
+        def add_done_callback(self, callback):
+            callback(self)
+
+    class Executor:
+        def __init__(self):
+            self.submissions = []
+        def submit(self, fn, *args):
+            self.submissions.append(args)
+            fn(*args)
+            return SlackFixtureTests.Future()
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        # The gateway loads its own private flow module; use its classes so the
+        # exceptions raised inside Ingress are the same FlowError it catches.
+        self.store = g.flow.Store(Path(self.temp.name)/'flow.sqlite', initialize=True)
+        self.secret = b'staging-signing-secret-0123456789'
+        self.policy = dict(enabled=True, repositories=['owner/repo'],
+                           slack=dict(team_ids=['T1'], app_ids=['A1'], user_ids=['U1'],
+                                      channel_ids=['C1'], projects={'KIX': 'owner/repo'}))
+        self.fields = dict(team_id='T1', api_app_id='A1', user_id='U1', channel_id='C1',
+                           command='/astra', text='status KIX 36', trigger_id='trigger-36')
+        self.calls = []
+        self.ports = Mock()
+        self.ports.load.return_value = snapshot()
+        self.ports.is_current.return_value = True
+        self.ports.project.side_effect = lambda a: (self.calls.append('project') or
+            dict(accepted=True, request_id=a['request_id'],
+                 pointer='https://github.com/owner/repo/issues/36#issuecomment-1'))
+        self.ports.route.side_effect = lambda a: (self.calls.append(('route', a['kind'])) or
+                                                  dict(accepted=True, request_id=a['request_id']))
+        self.executor = self.Executor()
+        self.ingress = g.Ingress(self.store, self.ports, self.policy, self.secret,
+                                 b'github-webhook-secret-unused', executor=self.executor)
+
+    def sign(self, fields=None, timestamp=None):
+        raw = urlencode(fields or self.fields).encode()
+        ts = str(timestamp if timestamp is not None else int(time.time()))
+        signature = 'v0=' + hmac.new(self.secret, b'v0:' + ts.encode() + b':' + raw,
+                                     hashlib.sha256).hexdigest()
+        return raw, {'X-Slack-Request-Timestamp': ts, 'X-Slack-Signature': signature}
+
+    def post(self, raw, headers, path='/slack/commands', method='POST', ingress=None):
+        environ = {'REQUEST_METHOD': method, 'PATH_INFO': path,
+                   'CONTENT_LENGTH': str(len(raw)), 'wsgi.input': io.BytesIO(raw)}
+        for key, value in headers.items():
+            environ['HTTP_' + key.upper().replace('-', '_')] = value
+        status = []
+        body = (ingress or self.ingress)(environ, lambda s, h: status.append(s))
+        return status[0], body
+
+    def inbox(self):
+        with self.store.transaction() as db:
+            return db.execute('SELECT id,body,state FROM inbox').fetchall()
+
+    def test_status_and_refresh_roundtrip_ephemeral_ack(self):
+        for verb, kind in (('status', 'STATUS'), ('refresh', 'REVIEW')):
+            with self.subTest(verb=verb):
+                fields = dict(self.fields, text=verb + ' KIX 36', trigger_id='trigger-' + verb)
+                status, body = self.post(*self.sign(fields))
+                self.assertEqual(status, '200 OK')
+                self.assertEqual(json.loads(body[0])['response_type'], 'ephemeral')
+                row = self.inbox()[-1]
+                self.assertEqual(row['state'], 'DONE')
+                command = json.loads(row['body'])
+                self.assertEqual(command, dict(operation=verb, repository='owner/repo',
+                                               issue=36, actor='U1', channel='C1'))
+                self.assertIn(('route', kind), self.calls)
+        self.ports.dispatch_authorized.assert_not_called()
+        order = [c if isinstance(c, str) else c[0] for c in self.calls]
+        self.assertEqual(order, ['project', 'route', 'project', 'route'])
+
+    def test_ready_snapshot_refresh_reports_ready_not_dispatch(self):
+        s = snapshot(); s['review'] = passing(f.assess(s)['action'])
+        self.ports.load.return_value = s
+        fields = dict(self.fields, text='refresh KIX 36', trigger_id='trigger-ready')
+        status, _ = self.post(*self.sign(fields))
+        self.assertEqual(status, '200 OK')
+        self.assertIn(('route', 'READY'), self.calls)
+        self.ports.dispatch_authorized.assert_not_called()
+
+    def test_status_refresh_grammar_cannot_reach_dispatch(self):
+        for verb in ('status', 'refresh'):
+            fields = dict(self.fields, text=verb + ' KIX 36')
+            _, command = f.verify_slack(*self.sign(fields), self.secret,
+                                        self.policy['slack'], int(time.time()))
+            self.assertEqual(command['operation'], verb)
+            self.assertNotIn('dispatch', command.values())
+        # response_url/token in the raw form are never persisted into the ledger.
+        fields = dict(self.fields, token='xoxb-secret', response_url='https://hooks.slack.com/x')
+        _, command = f.verify_slack(*self.sign(fields), self.secret,
+                                    self.policy['slack'], int(time.time()))
+        self.assertNotIn('token', command); self.assertNotIn('response_url', command)
+        # Explicit dispatch text parses but stays behind dispatch_authorized, which is off here.
+        self.ports.dispatch_authorized.return_value = False
+        fields = dict(self.fields, text='dispatch KIX 36', trigger_id='trigger-dispatch')
+        status, _ = self.post(*self.sign(fields))
+        self.assertEqual(status, '403 Forbidden')
+        self.assertEqual(self.inbox()[-1]['state'], 'BLOCKED')
+        self.ports.route.assert_not_called()
+        self.assertNotIn(('route', 'DISPATCH'), self.calls)
+
+    def test_request_validation_fail_closed(self):
+        raw, headers = self.sign()
+        cases = [('tampered-body', raw + b'&x=1', headers),
+                 ('bad-signature', raw, dict(headers, **{'X-Slack-Signature': 'v0=' + '0'*64})),
+                 ('non-numeric-timestamp', raw,
+                  dict(headers, **{'X-Slack-Request-Timestamp': 'abc'}))]
+        cases.append(('stale-timestamp', *self.sign(timestamp=int(time.time()) - 301)))
+        for key, value in (('user_id', 'U2'), ('team_id', 'T2'), ('api_app_id', 'A2'),
+                           ('channel_id', 'C2'), ('command', '/other'),
+                           ('text', 'merge KIX 36'), ('text', 'PASS KIX 36'),
+                           ('text', 'status KIX'), ('text', 'status KIX 36 extra'),
+                           ('text', 'status OTHER 36'), ('text', 'status KIX 0'),
+                           ('text', 'status KIX abc'), ('trigger_id', '')):
+            fields = dict(self.fields); fields[key] = value
+            cases.append((key + '=' + value, *self.sign(fields)))
+        for name, raw, headers in cases:
+            with self.subTest(name=name):
+                self.assertEqual(self.post(raw, headers)[0], '403 Forbidden')
+        self.assertEqual(self.inbox(), [])
+        self.assertEqual(self.executor.submissions, [])
+        self.ports.load.assert_not_called()
+
+    def test_replay_and_retry_dedupe_same_event(self):
+        raw, headers = self.sign()
+        self.assertEqual(self.post(raw, headers)[0], '200 OK')
+        self.assertEqual(len(self.inbox()), 1)
+        # Slack retry reuses the trigger-derived event id; no second event or route.
+        retry = dict(headers, **{'X-Slack-Retry-Num': '1', 'X-Slack-Retry-Reason': 'http_timeout'})
+        self.assertEqual(self.post(raw, retry)[0], '200 OK')
+        rows = self.inbox()
+        self.assertEqual((len(rows), rows[0]['state']), (1, 'DONE'))
+        self.assertEqual(self.ports.route.call_count, 1)
+        # The same trigger id with a different command is rejected, never a second writer.
+        fields = dict(self.fields, text='refresh KIX 36')
+        self.assertEqual(self.post(*self.sign(fields))[0], '403 Forbidden')
+        self.assertEqual(len(self.inbox()), 1)
+
+    def test_wrong_method_path_and_disabled_fail_closed(self):
+        raw, headers = self.sign()
+        self.assertEqual(self.post(raw, headers, method='GET')[0], '403 Forbidden')
+        self.assertEqual(self.post(raw, headers, path='/github/events')[0], '403 Forbidden')
+        self.assertEqual(self.post(raw, headers, path='/')[0], '403 Forbidden')
+        disabled = g.Ingress(self.store, self.ports, dict(self.policy, enabled=False),
+                             self.secret, b'', executor=self.executor)
+        environ = {'REQUEST_METHOD': 'POST', 'PATH_INFO': '/slack/commands',
+                   'CONTENT_LENGTH': str(len(raw)), 'wsgi.input': Mock()}
+        status = []
+        disabled(environ, lambda s, h: status.append(s))
+        self.assertEqual(status, ['403 Forbidden'])
+        environ['wsgi.input'].read.assert_not_called()
+        self.assertEqual(self.inbox(), [])
 
 
 if __name__=='__main__': unittest.main()
