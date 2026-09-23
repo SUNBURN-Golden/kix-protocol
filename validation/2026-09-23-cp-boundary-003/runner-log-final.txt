@@ -1,0 +1,16 @@
+probe-launch: policy sha256=5697610bfaf21b9bf8fe277c801a3e73b0c52eaa98c9df12c0c83b18b46c8748 pinned=5697610bfaf21b9bf8fe277c801a3e73b0c52eaa98c9df12c0c83b18b46c8748
+probe-launch: hook   sha256=a208b7d89ae8986588267bab033ad04b5449f8b2b659672299a386e57c4437bd
+verify-install PASS
+rootfs prepared at /opt/astra/worktrees/devin/probe/runner-live.rootfs
+check-env PASS
+
+√ Connected to GitHub
+
+Current runner version: '2.337.0'
+2026-09-23 09:23:07Z: Listening for Jobs
+2026-09-23 09:23:32Z: Running job: sentinel
+2026-09-23 09:23:36Z: Job sentinel completed with result: Failed
+2026-09-23 09:24:56Z: Running job: sentinel
+2026-09-23 09:24:59Z: Job sentinel completed with result: Succeeded
+Exiting with unknown error code: 143
+Exiting runner...

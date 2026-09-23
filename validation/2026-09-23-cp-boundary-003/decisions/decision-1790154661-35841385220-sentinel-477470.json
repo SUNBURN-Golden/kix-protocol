@@ -1,0 +1,38 @@
+{
+  "decision": "DENY",
+  "event_name": "pull_request",
+  "job": "sentinel",
+  "matched_rule": null,
+  "observed_claims": {
+    "env:GITHUB_ACTOR_ID": "263336091",
+    "env:GITHUB_EVENT_NAME": "pull_request",
+    "env:GITHUB_EVENT_PATH": "/runner/_work/_temp/_github_workflow/event.json",
+    "env:GITHUB_JOB": "sentinel",
+    "env:GITHUB_REF": "refs/pull/38/merge",
+    "env:GITHUB_REPOSITORY": "BeautifulMind-JT/kix-protocol",
+    "env:GITHUB_REPOSITORY_ID": "1365416872",
+    "env:GITHUB_REPOSITORY_OWNER_ID": "263336091",
+    "env:GITHUB_RUN_ATTEMPT": "1",
+    "env:GITHUB_RUN_ID": "35841385220",
+    "env:GITHUB_SHA": "4564196c07729906fc296cde926d023950a2b81c",
+    "env:GITHUB_WORKFLOW_REF": "BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/pull/38/merge",
+    "env:GITHUB_WORKFLOW_SHA": "4564196c07729906fc296cde926d023950a2b81c",
+    "env:RUNNER_NAME": "astra-boundary-probe-01",
+    "event:repository.id": 1365416872,
+    "event:repository.owner.id": 263336091,
+    "event:sender.id": 263336091
+  },
+  "policy_id": "astra-probe-boundary-003-bogus-actor",
+  "policy_sha256": "650c66bee9a6d2656c0efea244bcdd427a59420d8cf5c6ef28d2298f75d6dfb0",
+  "reasons": [
+    "rule probe-boundary-sentinel: env:GITHUB_REF: 'refs/pull/38/merge' not in ['refs/heads/probe/cp-boundary-003']; env:GITHUB_WORKFLOW_REF: 'BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/pull/38/merge' not in ['BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/heads/probe/cp-boundary-003']; env:GITHUB_WORKFLOW_SHA: '4564196c07729906fc296cde926d023950a2b81c' not in ['ba52f1d1a9f0f2f670d00a7ca49ac2ebc5b81085']; env:GITHUB_EVENT_NAME: 'pull_request' not in ['push']; env:GITHUB_ACTOR_ID: '263336091' not in ['999999999']"
+  ],
+  "ref": "refs/pull/38/merge",
+  "repository": "BeautifulMind-JT/kix-protocol",
+  "run_attempt": "1",
+  "run_id": "35841385220",
+  "runner_name": "astra-boundary-probe-01",
+  "sha": "4564196c07729906fc296cde926d023950a2b81c",
+  "ts": "2026-09-23T09:11:01Z",
+  "workflow_ref": "BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/pull/38/merge"
+}

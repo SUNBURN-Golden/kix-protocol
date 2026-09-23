@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "policy_id": "astra-probe-boundary-003",
+  "description": "Probe policy for CP-BOUNDARY-003. Approves only the sentinel job of probe-boundary.yml pushed to refs/heads/probe/cp-boundary-003 by actor 263336091 on repo 1365416872. Separate from any production policy.",
+  "required_claims": [
+    "env:GITHUB_RUN_ID",
+    "env:GITHUB_RUN_ATTEMPT",
+    "env:GITHUB_EVENT_PATH",
+    "env:GITHUB_WORKFLOW_SHA",
+    "event:repository.id"
+  ],
+  "allow": [
+    {
+      "name": "probe-boundary-sentinel",
+      "claims": {
+        "env:GITHUB_REPOSITORY": "BeautifulMind-JT/kix-protocol",
+        "env:GITHUB_REPOSITORY_ID": "1365416872",
+        "env:GITHUB_REPOSITORY_OWNER_ID": "263336091",
+        "env:GITHUB_REF": "refs/heads/probe/cp-boundary-003",
+        "env:GITHUB_WORKFLOW_REF": "BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/heads/probe/cp-boundary-003",
+        "env:GITHUB_WORKFLOW_SHA": "511ddab96b1dd5eb89e42646a75af907e26bda3d",
+        "env:GITHUB_EVENT_NAME": "push",
+        "env:GITHUB_JOB": "sentinel",
+        "env:GITHUB_ACTOR_ID": "263336091",
+        "event:repository.id": 1365416872,
+        "event:repository.owner.id": 263336091,
+        "event:sender.id": 263336091
+      }
+    }
+  ]
+}

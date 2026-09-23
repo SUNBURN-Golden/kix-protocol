@@ -1,0 +1,16 @@
+{
+  "decision": "DENY",
+  "event_name": "push",
+  "job": "sentinel",
+  "reasons": [
+    "policy unreadable: [Errno 2] No such file or directory: '/boundary/missing.json'"
+  ],
+  "ref": "refs/heads/probe/cp-boundary-003",
+  "repository": "BeautifulMind-JT/kix-protocol",
+  "run_attempt": "1",
+  "run_id": "35841849179",
+  "runner_name": "astra-boundary-probe-01",
+  "sha": "229c61e9a67953a04df9700d4158c8ec05bd3f34",
+  "ts": "2026-09-23T09:15:53Z",
+  "workflow_ref": "BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/heads/probe/cp-boundary-003"
+}

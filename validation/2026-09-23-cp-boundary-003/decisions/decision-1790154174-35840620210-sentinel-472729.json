@@ -1,0 +1,38 @@
+{
+  "decision": "DENY",
+  "event_name": "push",
+  "job": "sentinel",
+  "matched_rule": null,
+  "observed_claims": {
+    "env:GITHUB_ACTOR_ID": "263336091",
+    "env:GITHUB_EVENT_NAME": "push",
+    "env:GITHUB_EVENT_PATH": "/runner/_work/_temp/_github_workflow/event.json",
+    "env:GITHUB_JOB": "sentinel",
+    "env:GITHUB_REF": "refs/heads/probe/cp-boundary-003",
+    "env:GITHUB_REPOSITORY": "BeautifulMind-JT/kix-protocol",
+    "env:GITHUB_REPOSITORY_ID": "1365416872",
+    "env:GITHUB_REPOSITORY_OWNER_ID": "263336091",
+    "env:GITHUB_RUN_ATTEMPT": "1",
+    "env:GITHUB_RUN_ID": "35840620210",
+    "env:GITHUB_SHA": "14316943c27a29f4fe20942e547b47b29cc2eb8f",
+    "env:GITHUB_WORKFLOW_REF": "BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/heads/probe/cp-boundary-003",
+    "env:GITHUB_WORKFLOW_SHA": "14316943c27a29f4fe20942e547b47b29cc2eb8f",
+    "env:RUNNER_NAME": "astra-boundary-probe-01",
+    "event:repository.id": 1365416872,
+    "event:repository.owner.id": 263336091,
+    "event:sender.id": 263336091
+  },
+  "policy_id": "astra-probe-boundary-003",
+  "policy_sha256": "143769c3f402b18aba7f2be29f4c33b1dc87e29629c0b9c77bf341fa5b9b525c",
+  "reasons": [
+    "rule probe-boundary-sentinel: env:GITHUB_WORKFLOW_SHA: '14316943c27a29f4fe20942e547b47b29cc2eb8f' not in ['a60d820fa04ef1c3a3fc5fd41111ac2400d40aa7']"
+  ],
+  "ref": "refs/heads/probe/cp-boundary-003",
+  "repository": "BeautifulMind-JT/kix-protocol",
+  "run_attempt": "1",
+  "run_id": "35840620210",
+  "runner_name": "astra-boundary-probe-01",
+  "sha": "14316943c27a29f4fe20942e547b47b29cc2eb8f",
+  "ts": "2026-09-23T09:02:54Z",
+  "workflow_ref": "BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/heads/probe/cp-boundary-003"
+}

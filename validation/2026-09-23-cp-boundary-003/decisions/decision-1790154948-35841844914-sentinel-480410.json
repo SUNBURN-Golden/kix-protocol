@@ -1,0 +1,16 @@
+{
+  "decision": "DENY",
+  "event_name": "pull_request",
+  "job": "sentinel",
+  "reasons": [
+    "policy unreadable: [Errno 2] No such file or directory: '/boundary/missing.json'"
+  ],
+  "ref": "refs/pull/38/merge",
+  "repository": "BeautifulMind-JT/kix-protocol",
+  "run_attempt": "1",
+  "run_id": "35841844914",
+  "runner_name": "astra-boundary-probe-01",
+  "sha": "537494fa80927d980cbfd5ca07834873db333e5c",
+  "ts": "2026-09-23T09:15:48Z",
+  "workflow_ref": "BeautifulMind-JT/kix-protocol/.github/workflows/probe-boundary.yml@refs/pull/38/merge"
+}

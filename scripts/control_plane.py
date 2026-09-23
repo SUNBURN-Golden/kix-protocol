@@ -49,8 +49,12 @@ HOST_COMMAND = ("/usr/bin/sudo", "-n", "-u", "astra-control", "/opt/astra/bin/as
 LAUNCH_IDENTITY = ("repository", "task_id", "task_revision", "builder_id", "launch_request_id", "attempt_id")
 RUNTIME_PATHS = (
     "scripts/control_plane.py", "scripts/control_plane_host.py",
+    "scripts/control_plane_boundary.py", "scripts/control_plane_boundary_hook.sh",
+    "scripts/control_plane_boundary_probe.sh",
     "scripts/test_control_plane.py", "scripts/test_control_plane_host.py",
+    "scripts/test_control_plane_boundary.py",
     ".github/control-plane/config.json", ".github/control-plane/host-policy.example.json",
+    ".github/control-plane/boundary-policy.example.json",
     ".github/workflows/control-plane-runtime.yml", ".github/workflows/control-plane-ci.yml",
     "docs/CONTROL_PLANE_RUNTIME.md", "AGENTS.md", "RUNBOOKS/DISPATCH.md", "TASKS/TEMPLATE.md",
 )
