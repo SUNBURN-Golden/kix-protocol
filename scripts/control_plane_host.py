@@ -93,9 +93,11 @@ def validate_policy(policy):
     ids.extend(builders.values())
     if any(type(uid) is not int or uid <= 0 for uid in ids) or len(set(ids)) != len(ids):
         raise HostError("control, runner and builder Unix UIDs must be distinct and non-root")
-    for name in ("max_active_sessions", "max_launches_per_24h"):
-        if type(policy.get(name)) is not int or policy[name] < 1:
-            raise HostError(f"{name} must be a positive integer")
+    if type(policy.get("max_active_sessions")) is not int or policy["max_active_sessions"] < 1:
+        raise HostError("max_active_sessions must be a positive integer")
+    launch_limit = policy.get("max_launches_per_24h")
+    if launch_limit is not None and (type(launch_limit) is not int or launch_limit < 1):
+        raise HostError("max_launches_per_24h must be null (unlimited) or a positive integer")
     repos, enabled = policy.get("allowed_repositories"), policy.get("enabled_builders")
     if (not isinstance(repos, list) or not repos or
             any(not isinstance(repo, str) or len(repo.split("/")) != 2 or not all(repo.split("/")) for repo in repos)):
@@ -251,8 +253,9 @@ class Ledger:
                 reason = "task already has an active or unresolved owner"
             elif db.execute(f"SELECT count(*) FROM launches WHERE {active}").fetchone()[0] >= policy["max_active_sessions"]:
                 reason = "host max_active_sessions reached"
-            elif db.execute("SELECT count(*) FROM launches WHERE admitted=1 AND created>=?",
-                            (self.clock() - 86400,)).fetchone()[0] >= policy["max_launches_per_24h"]:
+            elif (policy.get("max_launches_per_24h") is not None and
+                  db.execute("SELECT count(*) FROM launches WHERE admitted=1 AND created>=?",
+                             (self.clock() - 86400,)).fetchone()[0] >= policy["max_launches_per_24h"]):
                 reason = "host max_launches_per_24h reached"
             state = "FAILED_PRESTART" if reason else "SUBMITTING"
             result = result_for(packet, "FAILED_PRESTART" if reason else "UNKNOWN",
