@@ -119,4 +119,7 @@ decision records live under `/workspace/astra-host-evidence/boundary-003/`.
   writes, and only `LANG`, `LC_ALL` and `TZ` keys are permitted. Any other
   key — including `ACTIONS_RUNNER_HOOK_JOB_STARTED` and every
   `ASTRA_BOUNDARY_*` — denies the install. Extra `.env` keys stay BLOCKED
-  pending separate review.
+  pending separate review. Fail-closed: verify-install treats
+  `<policy dir>/.env` (sibling of `policy.json`) as the conventional runner
+  env path; if that file exists and `--env-file` was omitted, the install is
+  DENIED. Pass the runner's real `.env` explicitly with `--env-file`.

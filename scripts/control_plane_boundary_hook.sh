@@ -11,10 +11,14 @@
 #
 # This file and its policy must be installed read-only to the runner/job
 # security context (root-owned outside the runner work directory in
-# production; read-only bind mount for the isolated probe). The environment
-# that configures it (ACTIONS_RUNNER_HOOK_JOB_STARTED, ASTRA_BOUNDARY_*) must
-# come from the listener launch environment or a protected .env — never from
-# job-writable state.
+# production; read-only bind mount for the isolated probe). The interpreter
+# is hardcoded (/usr/bin/python3 -I) and denial always attempts worker
+# termination: ASTRA_BOUNDARY_* execution overrides are NOT a configuration
+# channel — the former ASTRA_BOUNDARY_PYTHON / ASTRA_BOUNDARY_KILL /
+# ASTRA_BOUNDARY_FLUSH_SECONDS bypasses no longer exist and are rejected by
+# `check-env`. ACTIONS_RUNNER_HOOK_JOB_STARTED and the ASTRA_BOUNDARY_POLICY*
+# /ASTRA_BOUNDARY_EVIDENCE_DIR pins must come from the listener launch
+# environment — never from job-writable state or a runner .env.
 
 # The runner invokes this file as `bash -e <path>`; disable errexit so the
 # deny path (log, flush, worker termination) always executes.

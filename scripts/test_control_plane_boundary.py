@@ -343,6 +343,13 @@ class VerifyInstallTests(unittest.TestCase):
         self.assertEqual(self.verify(forbid_prefix=str(self.tmp)), cb.DENY)
         self.assertEqual(self.verify(forbid_prefix="/other/dir"), 0)
 
+    def test_env_file_present_but_omitted_denies(self):
+        """A conventional runner env file next to the policy must not be skipped."""
+        env = self.tmp / ".env"
+        env.write_text("LANG=C\n")
+        self.assertEqual(self.verify(), cb.DENY)
+        self.assertEqual(self.verify(env_file=str(env)), 0)
+
     def test_env_file(self):
         env = self.tmp / ".env"
         env.write_text("LANG=C\n")
@@ -354,6 +361,49 @@ class VerifyInstallTests(unittest.TestCase):
         env.write_text("LANG=C\n")
         self.assertEqual(self.verify(env_file=str(env),
                                      env_require={cb.HOOK_ENV: str(self.hook)}), cb.DENY)
+
+
+class CheckEnvTests(unittest.TestCase):
+    """cmd_check_env: launch-environment assertions and injection denies."""
+
+    HOOK = "/opt/astra/boundary/control_plane_boundary_hook.sh"
+    POLICY = "/opt/astra/boundary/policy.json"
+    SHA = "a" * 64
+
+    def run_check_env(self, env_overrides=None, drop=()):
+        env = {
+            cb.HOOK_ENV: self.HOOK,
+            cb.POLICY_ENV: self.POLICY,
+            cb.POLICY_SHA_ENV: self.SHA,
+            cb.EVIDENCE_ENV: "/var/lib/astra/boundary-evidence",
+        }
+        env.update(env_overrides or {})
+        for key in drop:
+            env.pop(key, None)
+        args = argparse.Namespace(hook=self.HOOK, policy=self.POLICY,
+                                  policy_sha256=self.SHA)
+        with mock.patch.dict(os.environ, env, clear=True):
+            return cb.cmd_check_env(args)
+
+    def test_pass_baseline(self):
+        self.assertEqual(self.run_check_env(), 0)
+
+    def test_deny_process_env_injection(self):
+        for key in ("BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "LD_PRELOAD",
+                    "LD_LIBRARY_PATH", "DYLD_INSERT_LIBRARIES", "PYTHONPATH",
+                    "PYTHONSTARTUP", "PYTHONHOME", "BASH_FUNC_x%%"):
+            self.assertEqual(self.run_check_env({key: "/tmp/evil"}), cb.DENY, key)
+
+    def test_deny_boundary_overrides(self):
+        for key in ("ASTRA_BOUNDARY_PYTHON", "ASTRA_BOUNDARY_KILL",
+                    "ASTRA_BOUNDARY_FLUSH_SECONDS"):
+            self.assertEqual(self.run_check_env({key: "1"}), cb.DENY, key)
+
+    def test_deny_wrong_pins_and_missing_evidence(self):
+        self.assertEqual(self.run_check_env({cb.HOOK_ENV: "/evil.sh"}), cb.DENY)
+        self.assertEqual(self.run_check_env({cb.POLICY_ENV: "/evil.json"}), cb.DENY)
+        self.assertEqual(self.run_check_env({cb.POLICY_SHA_ENV: "b" * 64}), cb.DENY)
+        self.assertEqual(self.run_check_env(drop=(cb.EVIDENCE_ENV,)), cb.DENY)
 
 
 class WorkerPidTests(unittest.TestCase):
