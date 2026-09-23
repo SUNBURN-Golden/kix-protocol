@@ -14,9 +14,9 @@ Slack intake, CI/review/audit 전달, READY_FOR_MERGE 계산은 아직 구현하
 - 동일 task의 기존 owner는 provider preflight 전에 반환한다. transcript를 읽지 않는다.
 - builder는 조사·구현·test/fix/retest·PR을 소유한다. 일반 A1/A2 작업의 Astra/Grok
   호출을 추가하지 않는다. 독립 review, A3 승격, milestone gate는 기존 규칙을 유지한다.
-- 초기 host policy 예시는 한 project/lane, 동시 세션 1개, 24시간 신규 실행 8회다.
-  수치는 배포 시 User가 확정한다. builder 내부 수정·재시험 횟수를 제한하지 않는다.
-- 동시 실행·신규 호출 상한은 금액/토큰 상한이 아니다. provider의 실제 과금 상한은
+- 초기 host policy 예시는 한 project/lane, 동시 세션 1개이며 일일 신규 launch 상한은 없다.
+  `max_launches_per_24h: null`은 unlimited를 의미한다. builder 내부 수정·재시험 횟수도 제한하지 않는다.
+- 동시 세션 상한은 중복 writer/runaway launch 방지용이며 금액/토큰 상한이 아니다. provider의 실제 과금 상한은
   별도로 설정·검증한다. 완료 task당 Astra/Grok 사용량, 전체 provider 비용, 재작업과
   독립 review finding을 함께 측정하며 관측 전 절감률을 주장하지 않는다.
 
@@ -65,12 +65,12 @@ Actions 종료 후 session 생존을 실측하고 `boundary_evidence_pointer`에
 공유 admission authority가 필요하다. 이 SQLite 파일은 distributed lock이 아니다.
 
 1. SQLite transaction이 request identity와 전체 packet을 대조한다.
-2. repo + task의 활성 owner, 전체 활성 세션 수, 최근 24시간 신규 호출 수를 검사한다.
+2. repo + task의 활성 owner와 전체 활성 세션 수를 검사한다. 일일 신규 launch 횟수는 제한하지 않는다.
 3. `SUBMITTING`을 durable commit한 후에만 wrapper를 호출한다.
 4. `CONFIRMED`, `UNKNOWN`, crash 후 `SUBMITTING`은 계속 자리를 점유한다.
 5. 같은 request는 저장된 결과만 반환한다. packet 변경이나 새 revision으로 기존
    활성 writer를 우회하지 못한다. 한도 초과도 그 request의 결과로 고정한다.
-6. 확실한 `FAILED_PRESTART`만 즉시 자리를 반환한다. 해당 호출은 일일 한도에 남는다.
+6. 확실한 `FAILED_PRESTART`만 즉시 자리를 반환한다. launch 기록은 audit history로 남지만 일일 상한에는 사용하지 않는다.
 
 job 종료, timeout, 시간 경과, process 미발견은 해제 증거가 아니다.
 User가 승인한 operator만 원 request의 terminal session/취소·fencing 근거를 확인하고
