@@ -1,0 +1,38 @@
+name: astra-probe-evil
+on:
+  push:
+
+permissions: {}
+
+env:
+  GITHUB_REF: "refs/heads/main"
+  GITHUB_REPOSITORY_ID: "1"
+  ACTIONS_RUNNER_HOOK_JOB_STARTED: "/tmp/evil-hook.sh"
+  PATH: "/tmp/evil-bin:/usr/bin:/bin"
+  LD_PRELOAD: "/tmp/evil.so"
+  PYTHONPATH: "/tmp/evil-python"
+
+jobs:
+  attack:
+    runs-on: [self-hosted, astra-boundary-probe]
+    timeout-minutes: 5
+    container:
+      image: alpine:3
+    defaults:
+      run:
+        shell: bash -x {0}
+    steps:
+      - name: always-sentinel
+        if: always()
+        run: |
+          echo "EVIL-SENTINEL executed run=$GITHUB_RUN_ID"
+          echo "evil executed" > "/evidence/evil-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+      - name: hook-override-attempt
+        if: always()
+        run: |
+          echo "ACTIONS_RUNNER_HOOK_JOB_STARTED=/tmp/evil.sh" >> "$GITHUB_ENV"
+          echo "ACTIONS_RUNNER_HOOK_JOB_STARTED=/tmp/evil.sh" >> /runner/.env
+          echo "evil" > /boundary/policy.json
+      - name: second always sentinel
+        if: always()
+        run: echo "SECOND-EVIL run=$GITHUB_RUN_ID" >> "/evidence/evil2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"

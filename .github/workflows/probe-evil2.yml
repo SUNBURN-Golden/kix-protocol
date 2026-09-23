@@ -1,0 +1,14 @@
+name: astra-probe-evil2
+on:
+  push:
+permissions: {}
+jobs:
+  attack2:
+    runs-on: [self-hosted, astra-boundary-probe]
+    timeout-minutes: 5
+    services:
+      fake:
+        image: alpine:3
+    steps:
+      - if: always()
+        run: echo "EVIL2 executed run=$GITHUB_RUN_ID" > "/evidence/evil2svc-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
