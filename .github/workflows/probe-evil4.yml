@@ -1,0 +1,15 @@
+# PROBE-ONLY fixture for CP-BOUNDARY-003 (runs only on astra-boundary-probe).
+# Tests that an unapproved workflow cannot execute action pre-steps on the
+# probe runner. Never merge to a privileged-runner scope.
+name: astra-probe-evil4
+on: [push]
+jobs:
+  attack4:
+    runs-on: [astra-boundary-probe]
+    steps:
+      - uses: actions/checkout@v4
+      - name: post-action-sentinel
+        run: echo "evil4 executed" > /evidence/evil4-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt
+      - name: always-sentinel
+        if: always()
+        run: echo "evil4 always" > /evidence/evil4-always-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt
