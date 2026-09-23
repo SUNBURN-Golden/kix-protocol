@@ -38,7 +38,7 @@ class AdmissionTests(unittest.TestCase):
             "builder_uids": {"DEVIN": 1030, "GROK_BUILD": 1040, "GLM": 1050},
             "allowed_repositories": [f"owner/repo{i}" for i in range(5)],
             "enabled_builders": ["DEVIN"], "max_active_sessions": 2,
-            "max_launches_per_24h": 4, "ledger_path": str(self.path),
+            "max_launches_per_24h": None, "ledger_path": str(self.path),
             "wrapper_paths": dict(host.WRAPPERS),
             "boundary_evidence_pointer": "https://github.com/owner/ops/issues/12",
         }
@@ -153,7 +153,6 @@ class AdmissionTests(unittest.TestCase):
                  (0, json.dumps({**good, "outcome": "UNKNOWN", "session_id": {"bad": "type"}})),
                  (0, json.dumps({**good, "outcome": "FAILED_PRESTART", "session_id": None}))]
         self.policy["max_active_sessions"] = len(cases)
-        self.policy["max_launches_per_24h"] = len(cases)
         for index, (code, stdout) in enumerate(cases):
             with self.subTest(index=index):
                 # Bind all other fields to this request so the malformed field is decisive.
@@ -173,20 +172,23 @@ class AdmissionTests(unittest.TestCase):
                     self.assertEqual(result[field], packet(index)[field])
                 self.assertEqual(self.state(f"request-{index}"), "UNKNOWN")
 
-    def test_definite_prestart_failure_releases_slot_but_counts_launch_attempt(self):
-        self.policy.update(max_active_sessions=1, max_launches_per_24h=1)
+    def test_definite_prestart_failure_releases_slot_with_unlimited_daily_launches(self):
+        self.policy.update(max_active_sessions=1, max_launches_per_24h=None)
         def fail(value, policy):
             self.calls.append(value["launch_request_id"])
             return subprocess.CompletedProcess([], 0, json.dumps(host.result_for(value, "FAILED_PRESTART", "credentials unavailable; no create request sent")))
         result = host.launch(packet(), self.policy, self.ledger, fail)
         self.assertEqual(result["outcome"], "FAILED_PRESTART")
         result = host.launch(packet(1), self.policy, self.ledger, self.invoke)
-        self.assertIn("max_launches_per_24h", result["reason"])
-        self.now += 86401
-        # Previously denied request stays denied after budget window advances.
-        self.assertEqual(host.launch(packet(1), self.policy, self.ledger, self.invoke), result)
-        self.assertEqual(host.launch(packet(2), self.policy, self.ledger, self.invoke)["outcome"], "CONFIRMED")
-        self.assertEqual(self.calls, ["request-0", "request-2"])
+        self.assertEqual(result["outcome"], "CONFIRMED")
+        self.assertEqual(self.calls, ["request-0", "request-1"])
+
+    def test_unlimited_daily_launch_policy_accepts_null_and_rejects_zero(self):
+        self.policy["max_launches_per_24h"] = None
+        host.validate_policy(self.policy)
+        self.policy["max_launches_per_24h"] = 0
+        with self.assertRaisesRegex(host.HostError, "null .* or a positive integer"):
+            host.validate_policy(self.policy)
 
     def test_reconciliation_requires_session_match_and_keeps_request_deduplication(self):
         self.policy["max_active_sessions"] = 1
