@@ -27,7 +27,8 @@ review 배정은 GitHub reviewer request다. 해당 계정의 CLI reviewer를 �
 - `scripts/control_plane_flow.py`: 서명·identity·판정·durable inbox/outbox·coordinator.
 - `scripts/control_plane_flow_gateway.py`: 실제 GitHub/Slack HTTPS ports, WSGI ingress.
 - `scripts/control_plane_flow_cli.py`: 명시적 host preflight / offline qualification.
-- `scripts/test_control_plane_flow.py`: 위조·stale·A3·revocation·동시성·응답 유실·collector 회귀.
+- `scripts/test_control_plane_flow.py`: 위조·stale·A3·revocation·동시성·응답 유실·collector 회귀
+  및 `/slack/commands` status/refresh in-memory ingress fixture.
 
 ```sh
 python3 -m py_compile scripts/control_plane_flow*.py
