@@ -1,0 +1,35 @@
+name: astra-probe-boundary
+on:
+  push:
+  pull_request:
+
+permissions: {}
+
+jobs:
+  sentinel:
+    runs-on: [self-hosted, astra-boundary-probe]
+    timeout-minutes: 5
+    steps:
+      - name: approved sentinel
+        run: |
+          set -u
+          echo "ASTRA-PROBE-SENTINEL executed run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT job=$GITHUB_JOB"
+          echo "{\"sentinel\":\"executed\",\"run_id\":\"$GITHUB_RUN_ID\",\"attempt\":\"$GITHUB_RUN_ATTEMPT\",\"job\":\"$GITHUB_JOB\",\"ref\":\"$GITHUB_REF\",\"event\":\"$GITHUB_EVENT_NAME\"}" > "/evidence/sentinel-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          if touch /boundary/WRITE_TEST 2>/dev/null; then
+            echo "BOUNDARY-FAIL: boundary dir is writable from job"; exit 9
+          else
+            echo "boundary dir read-only from job context: OK"
+          fi
+          if touch /runner/.env 2>/dev/null && echo "PROBE_TAMPER=1" >> /runner/.env; then
+            echo "note: runner .env is job-writable (hook config does not come from .env)"
+          fi
+          if [ -r /etc/astra/builder-credentials/devin/github-token ] || [ -r /etc/astra/control-plane-host.json ]; then
+            echo "BOUNDARY-FAIL: astra credential/config path visible in job"; exit 9
+          else
+            echo "astra credentials/config invisible in job context: OK"
+          fi
+          if ls "$HOME/.config/gh/hosts.yml" >/dev/null 2>&1; then
+            echo "BOUNDARY-FAIL: builder gh auth visible in job"; exit 9
+          else
+            echo "builder gh auth invisible in job context: OK"
+          fi
