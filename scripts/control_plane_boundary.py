@@ -449,8 +449,14 @@ def cmd_verify_install(args: argparse.Namespace) -> int:
         for candidate, label in protected:
             if os.access(candidate, os.W_OK):
                 problems.append(f"{label} is writable by this security context")
-    if args.env_file:
-        env_file = Path(args.env_file)
+    env_file_arg = args.env_file
+    if env_file_arg is None:
+        conventional = policy.parent / ".env"
+        if conventional.exists():
+            problems.append(f"runner env file exists at {conventional} but "
+                            "--env-file was omitted; pass it explicitly")
+    if env_file_arg:
+        env_file = Path(env_file_arg)
         problems += _check_protected_file(env_file, "runner env", args.owner_uid)
         for candidate in (env_file, *env_file.parents):
             info = candidate.lstat() if candidate.exists() else None
