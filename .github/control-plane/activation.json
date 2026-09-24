@@ -7,5 +7,5 @@
   "runner_preflight": "PASS",
   "runner_preflight_pointer": "Staging-on-box host-preflight GROK_BUILD/GLM/DEVIN all PASS at helper 5e5fc45f\u2026; PRODUCTION_RUNNER=NOT_CONNECTED; runtime_enabled=false. Evidence: https://github.com/BeautifulMind-JT/kix-protocol/issues/40#issuecomment-5804568997 and /workspace/astra-host-evidence/ba366de-host/PREFLIGHT_REPORT.md. Not production runner connect.",
   "runtime_enabled": false,
-  "activated_runtime_sha": "PENDING"
+  "activated_runtime_sha": "6d543a7c4540f42d099294d9da0679a9548b1817"
 }
