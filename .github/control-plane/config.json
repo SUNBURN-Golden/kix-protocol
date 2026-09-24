@@ -25,6 +25,7 @@
     "BeautifulMind-JT"
   ],
   "enabled_builders": [
-    "DEVIN"
+    "DEVIN",
+    "GROK_BUILD"
   ]
 }
