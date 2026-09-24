@@ -177,18 +177,27 @@ class ActivationGateTests(unittest.TestCase):
         with patch.object(cp, "ACTIVATION_PATH", self.write_doc(doc, raw)):
             return cp.load_activation()
 
-    def test_committed_activation_loads_and_stays_disabled(self):
-        # runtime_enabled must stay false until C. activated_runtime_sha may be
-        # PENDING or an attested 40-hex SHA (B) without enabling execution.
+    def test_committed_activation_gate_consistency(self):
+        # Committed activation may be disabled (pre-C) or enabled (post-C).
+        # Shape rules hold either way; require_runtime_enabled follows the flag.
         activation = cp.load_activation()
-        self.assertIs(activation["runtime_enabled"], False)
         sha = activation["activated_runtime_sha"]
         self.assertTrue(
             sha == "PENDING" or (isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha)),
             msg=f"unexpected activated_runtime_sha={sha!r}",
         )
-        with self.assertRaises(cp.ControlPlaneError):
-            cp.require_runtime_enabled()
+        if activation["runtime_enabled"] is False:
+            with self.assertRaises(cp.ControlPlaneError):
+                cp.require_runtime_enabled()
+        else:
+            self.assertIs(activation["runtime_enabled"], True)
+            self.assertRegex(sha, r"^[0-9a-f]{40}$")
+            # Real require_runtime_enabled also runs validate_repo + git gates;
+            # those are covered by RuntimeEnabledGateTests with fixtures.
+            # Here only assert the committed doc is enable-shaped.
+            self.assertEqual(activation["implementation_audit"], "PASS")
+            self.assertEqual(activation["runner_preflight"], "PASS")
+            self.assertEqual(activation["user_activation_approval"], "APPROVED")
 
     def test_missing_fields_and_bad_schema_rejected(self):
         doc = activation_doc()
@@ -250,8 +259,10 @@ class RuntimeEnabledGateTests(unittest.TestCase):
     """require_runtime_enabled / validate_repo fail-closed ordering."""
 
     def test_disabled_never_touches_git_or_repo_validation(self):
-        # Uses the real committed activation.json (runtime_enabled=false).
-        with patch.object(cp, "validate_repo") as validate, \
+        # Fixture disabled activation — must not depend on committed enable state.
+        disabled = activation_doc(runtime_enabled=False)
+        with patch.object(cp, "load_activation", return_value=disabled), \
+             patch.object(cp, "validate_repo") as validate, \
              patch.object(cp.subprocess, "run") as run:
             with self.assertRaises(cp.ControlPlaneError):
                 cp.require_runtime_enabled()
@@ -459,7 +470,10 @@ class PrepareDispatchReplayTests(unittest.TestCase):
 
 
 class DisabledRuntimeTests(unittest.TestCase):
-    """With the committed disabled activation, no launch path reaches the host."""
+    """When runtime_enabled=false, no launch path reaches the host."""
+
+    def setUp(self):
+        self.disabled = activation_doc(runtime_enabled=False)
 
     def packet(self, directory):
         path = Path(directory) / "packet.json"
@@ -469,10 +483,11 @@ class DisabledRuntimeTests(unittest.TestCase):
         return path
 
     def test_prepare_consumes_no_authority_while_disabled(self):
-        # No mocks on the activation path: the committed file is disabled.
+        # Fixture disabled activation — independent of committed enable state.
         with tempfile.TemporaryDirectory() as tmp:
             packet = Path(tmp) / "packet.json"
-            with patch.object(cp, "GithubApi") as api, \
+            with patch.object(cp, "load_activation", return_value=self.disabled), \
+                 patch.object(cp, "GithubApi") as api, \
                  patch.object(cp, "host_preflight") as preflight, \
                  patch.object(cp, "host_call") as host, \
                  patch.dict(os.environ, {}, clear=True):
@@ -486,7 +501,8 @@ class DisabledRuntimeTests(unittest.TestCase):
     def test_launch_result_is_unknown_and_claims_no_session(self):
         with tempfile.TemporaryDirectory() as tmp:
             packet, result = self.packet(tmp), Path(tmp) / "result.json"
-            with patch.object(cp, "host_call") as host:
+            with patch.object(cp, "load_activation", return_value=self.disabled), \
+                 patch.object(cp, "host_call") as host:
                 cp.launch_dispatch(packet, result)
             host.assert_not_called()
             outcome = json.loads(result.read_text())
