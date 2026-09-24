@@ -178,9 +178,17 @@ class ActivationGateTests(unittest.TestCase):
             return cp.load_activation()
 
     def test_committed_activation_loads_and_stays_disabled(self):
+        # runtime_enabled must stay false until C. activated_runtime_sha may be
+        # PENDING or an attested 40-hex SHA (B) without enabling execution.
         activation = cp.load_activation()
         self.assertIs(activation["runtime_enabled"], False)
-        self.assertEqual(activation["activated_runtime_sha"], "PENDING")
+        sha = activation["activated_runtime_sha"]
+        self.assertTrue(
+            sha == "PENDING" or (isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha)),
+            msg=f"unexpected activated_runtime_sha={sha!r}",
+        )
+        with self.assertRaises(cp.ControlPlaneError):
+            cp.require_runtime_enabled()
 
     def test_missing_fields_and_bad_schema_rejected(self):
         doc = activation_doc()
