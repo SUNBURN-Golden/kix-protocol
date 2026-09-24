@@ -188,6 +188,54 @@ class IntakeTests(unittest.TestCase):
         self.assertEqual(command['operation'],'refresh_repository')
         self.assertNotIn('state',command)
 
+    def test_short_or_missing_slack_secret_rejected(self):
+        raw,headers=self.sign()
+        for secret in (b'',b'too-short','not-bytes',None):
+            with self.subTest(secret=secret):
+                with self.assertRaises(f.FlowError):
+                    f.verify_slack(raw,headers,secret,self.policy,1000)
+
+    def test_signed_but_empty_or_overfull_body_rejected(self):
+        # A validly signed empty command still fails field validation.
+        raw=b''; ts='1000'
+        sig='v0='+hmac.new(self.secret,b'v0:'+ts.encode()+b':'+raw,hashlib.sha256).hexdigest()
+        with self.assertRaises(f.FlowError):
+            f.verify_slack(raw,{'X-Slack-Request-Timestamp':ts,'X-Slack-Signature':sig},
+                           self.secret,self.policy,1000)
+        fields=dict(self.fields,**{f'f{i}':'1' for i in range(40)})
+        raw,headers=self.sign(fields)
+        with self.assertRaises(f.FlowError):
+            f.verify_slack(raw,headers,self.secret,self.policy,1000)
+        fields=dict(self.fields); del fields['trigger_id']
+        raw,headers=self.sign(fields)
+        with self.assertRaises(f.FlowError):
+            f.verify_slack(raw,headers,self.secret,self.policy,1000)
+
+    def test_github_intake_faults_fail_closed(self):
+        body=json.dumps({'repository':{'full_name':'owner/repo'}}).encode()
+        def signed(raw=body,event='status',delivery='delivery-12345'):
+            return raw,{'x-github-delivery':delivery,'x-github-event':event,
+                'x-hub-signature-256':'sha256='+hmac.new(self.secret,raw,hashlib.sha256).hexdigest()}
+        cases=[signed(event='push'),signed(delivery='bad id!'),signed(delivery='short'),
+               signed(raw=json.dumps({'repository':{'full_name':'other/repo'}}).encode()),
+               signed(raw=b'['),signed(raw=json.dumps(['not-dict']).encode())]
+        for raw,headers in cases:
+            with self.assertRaises(f.FlowError):
+                f.verify_github(raw,headers,self.secret,['owner/repo'])
+        raw,headers=signed(); headers['x-hub-signature-256']='sha256='+'0'*64
+        with self.assertRaises(f.FlowError):
+            f.verify_github(raw,headers,self.secret,['owner/repo'])
+        raw,headers=signed(); headers.pop('x-hub-signature-256')
+        with self.assertRaises(f.FlowError):
+            f.verify_github(raw,headers,self.secret,['owner/repo'])
+        raw,headers=signed(); headers.pop('x-github-delivery')
+        with self.assertRaises(f.FlowError):
+            f.verify_github(raw,headers,self.secret,['owner/repo'])
+        with self.assertRaises(f.FlowError):
+            f.verify_github(raw,headers,b'short',['owner/repo'])
+        with self.assertRaises(f.FlowError):
+            f.verify_github(b' '*1048577,{},self.secret,['owner/repo'])
+
 
 class StoreTests(unittest.TestCase):
     def setUp(self):
@@ -238,6 +286,50 @@ class StoreTests(unittest.TestCase):
         send=Mock()
         self.assertEqual(self.store.send_once(self.action,send,lambda _:True)['state'],'STALE')
         send.assert_not_called()
+
+    def test_stale_authority_invalidates_and_never_revives(self):
+        send=Mock(side_effect=self.send)
+        self.assertEqual(self.store.send_once(self.action,send,lambda a:False),
+                         {'state':'STALE','sent':False})
+        send.assert_not_called()
+        with self.store.transaction() as db:
+            self.assertEqual(db.execute('SELECT valid FROM outbox').fetchone()[0],0)
+        self.assertEqual(self.store.send_once(self.action,send,lambda a:True)['state'],'STALE')
+        send.assert_not_called()
+
+    def test_request_id_cannot_be_reused_with_different_body(self):
+        self.store.reserve(self.action)
+        with self.assertRaises(f.FlowError):
+            self.store.reserve(dict(self.action,designation='other-pointer'))
+
+    def test_terminal_and_missing_events_never_reprocess(self):
+        self.assertTrue(self.store.accept('e',{'operation':'refresh'}))
+        self.assertIsNotNone(self.store.begin_event('e'))
+        self.store.end_event('e',True)
+        self.assertIsNone(self.store.begin_event('e'))
+        self.store.accept('b',{'operation':'refresh'})
+        self.store.begin_event('b')
+        self.store.end_event('b',False)
+        self.assertIsNone(self.store.begin_event('b'))
+        with self.assertRaises(f.FlowError): self.store.begin_event('absent')
+
+    def test_send_outcome_table_no_retry(self):
+        outcomes=[('confirm',lambda a:dict(accepted=True,request_id=a['request_id']),'CONFIRMED'),
+                  ('timeout',TimeoutError,'UNKNOWN'),
+                  ('wrong-request-id',lambda a:dict(accepted=True,request_id='other'),'UNKNOWN'),
+                  ('not-accepted',lambda a:dict(accepted=False,request_id=a['request_id']),'UNKNOWN'),
+                  ('non-dict-receipt',lambda a:'ok','UNKNOWN'),
+                  ('missing-request-id',lambda a:dict(accepted=True),'UNKNOWN')]
+        for name,impl,expected in outcomes:
+            with self.subTest(name=name):
+                store=f.Store(Path(self.temp.name)/('flow-'+name+'.sqlite'),initialize=True)
+                action=dict(self.action,request_id='req-'+name)
+                send=Mock(side_effect=impl)
+                self.assertEqual(store.send_once(action,send,lambda _:True)['state'],expected)
+                self.assertEqual(send.call_count,1)
+                again=Mock()
+                self.assertEqual(store.send_once(action,again,lambda _:True)['state'],expected)
+                again.assert_not_called()
 
     def test_duplicate_event_cannot_change_payload(self):
         self.assertTrue(self.store.accept('event',{'operation':'refresh'}))
@@ -531,6 +623,90 @@ class SlackFixtureTests(unittest.TestCase):
         fields = dict(self.fields, text='refresh KIX 36')
         self.assertEqual(self.post(*self.sign(fields))[0], '403 Forbidden')
         self.assertEqual(len(self.inbox()), 1)
+
+    def test_malformed_bodies_and_headers_fail_closed(self):
+        raw, headers = self.sign()
+        cases = [('empty-body', b'', headers),
+                 ('truncated-signature', raw,
+                  dict(headers, **{'X-Slack-Signature': 'v0=abc123'})),
+                 ('prefixless-signature', raw,
+                  dict(headers, **{'X-Slack-Signature': headers['X-Slack-Signature'][3:]}))]
+        nosig = dict(headers); nosig.pop('X-Slack-Signature')
+        cases.append(('missing-signature', raw, nosig))
+        nots = dict(headers); nots.pop('X-Slack-Request-Timestamp')
+        cases.append(('missing-timestamp', raw, nots))
+        cases.append(('future-timestamp', *self.sign(timestamp=int(time.time()) + 3600)))
+        for key, value in (('channel_id', 'C9'),):
+            fields = dict(self.fields, **{key: value}, text='dispatch KIX 36')
+            cases.append((key + '=' + value + '+dispatch', *self.sign(fields)))
+        for text in ('STATUS KIX 36', 'status KIX 036', 'status KIX 1234567890'):
+            cases.append(('text=' + text, *self.sign(dict(self.fields, text=text))))
+        cases.append(('oversized-trigger',
+                      *self.sign(dict(self.fields, trigger_id='t' * 513))))
+        # Duplicate form field: hand-built body, still validly signed.
+        dup = urlencode(self.fields).encode() + b'&team_id=T1'
+        ts = str(int(time.time()))
+        dup_headers = {'X-Slack-Request-Timestamp': ts,
+                       'X-Slack-Signature': 'v0=' + hmac.new(
+                           self.secret, b'v0:' + ts.encode() + b':' + dup,
+                           hashlib.sha256).hexdigest()}
+        cases.append(('duplicate-field', dup, dup_headers))
+        big = urlencode(dict(self.fields, padding='x' * 70000)).encode()
+        ts = str(int(time.time()))
+        big_headers = {'X-Slack-Request-Timestamp': ts,
+                       'X-Slack-Signature': 'v0=' + hmac.new(
+                           self.secret, b'v0:' + ts.encode() + b':' + big,
+                           hashlib.sha256).hexdigest()}
+        cases.append(('oversized-body', big, big_headers))
+        for name, raw, headers in cases:
+            with self.subTest(name=name):
+                self.assertEqual(self.post(raw, headers)[0], '403 Forbidden')
+        self.assertEqual(self.inbox(), [])
+        self.assertEqual(self.executor.submissions, [])
+        self.ports.load.assert_not_called()
+
+    def test_malformed_content_length_and_truncated_body(self):
+        raw, headers = self.sign()
+        base = {'REQUEST_METHOD': 'POST', 'PATH_INFO': '/slack/commands',
+                'wsgi.input': io.BytesIO(raw)}
+        for key, value in headers.items():
+            base['HTTP_' + key.upper().replace('-', '_')] = value
+        variants = [dict(base), dict(base, CONTENT_LENGTH='abc'),
+                    dict(base, CONTENT_LENGTH='-1'), dict(base, CONTENT_LENGTH=''),
+                    dict(base, CONTENT_LENGTH=str(len(raw) + 10))]
+        for environ in variants:
+            with self.subTest(length=environ.get('CONTENT_LENGTH')):
+                status = []
+                self.ingress(environ, lambda s, h: status.append(s))
+                self.assertEqual(status, ['403 Forbidden'])
+        self.assertEqual(self.inbox(), [])
+
+    def test_retry_header_on_first_delivery_is_normal_delivery(self):
+        # Slack can mark a delivery retried even when the original never
+        # arrived; the trigger-derived event id still dedupes it.
+        raw, headers = self.sign()
+        retry = dict(headers, **{'X-Slack-Retry-Num': '1',
+                               'X-Slack-Retry-Reason': 'http_timeout'})
+        self.assertEqual(self.post(raw, retry)[0], '200 OK')
+        self.assertEqual(len(self.inbox()), 1)
+        self.assertEqual(self.post(raw, retry)[0], '200 OK')
+        self.assertEqual(len(self.inbox()), 1)
+        self.assertEqual(self.ports.route.call_count, 1)
+
+    def test_content_type_is_not_an_authentication_boundary(self):
+        # Content-Type is never consulted: a wrong type cannot bypass the
+        # signature check, and a browser-like type gains no authority.
+        raw, headers = self.sign()
+        environ = {'REQUEST_METHOD': 'POST', 'PATH_INFO': '/slack/commands',
+                   'CONTENT_LENGTH': str(len(raw)), 'CONTENT_TYPE': 'text/plain',
+                   'wsgi.input': io.BytesIO(raw)}
+        bad = dict(headers, **{'X-Slack-Signature': 'v0=' + '0' * 64})
+        for key, value in bad.items():
+            environ['HTTP_' + key.upper().replace('-', '_')] = value
+        status = []
+        self.ingress(environ, lambda s, h: status.append(s))
+        self.assertEqual(status, ['403 Forbidden'])
+        self.assertEqual(self.inbox(), [])
 
     def test_wrong_method_path_and_disabled_fail_closed(self):
         raw, headers = self.sign()

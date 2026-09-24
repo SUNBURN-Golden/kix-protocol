@@ -128,6 +128,14 @@ class ClaimTests(unittest.TestCase):
         self.assertEqual(cb.resolve_event(event, "repository.full_name"),
                          "BeautifulMind-JT/kix-protocol")
 
+    def test_non_scalar_event_values_never_become_claims(self):
+        event = {"repository": {"id": 1.5, "null": None, "list": [1], "obj": {"x": 1}}}
+        claims = cb.collect_claims({}, event)
+        self.assertNotIn("event:repository.id", claims)
+        self.assertNotIn("event:repository.null", claims)
+        self.assertEqual(claims["event:repository.list.0"], 1)
+        self.assertEqual(claims["event:repository.obj.x"], 1)
+
 
 class EvaluateTests(unittest.TestCase):
     def setUp(self):
@@ -190,7 +198,8 @@ class EnforceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             ev = evidence_dir or tmp / "evidence"
-            ev.mkdir(exist_ok=True)
+            if not ev.exists():
+                ev.mkdir()
             if policy_path is None:
                 policy_path = tmp / "policy.json"
                 write_json(policy_path, policy_obj if policy_obj is not None else sample_policy())
@@ -257,6 +266,48 @@ class EnforceTests(unittest.TestCase):
         self.assertEqual(rc, cb.DENY)
         self.assertTrue(any("does not match" in r for r in record["reasons"]))
 
+    def test_deny_self_check_without_hook_env(self):
+        for value in (None, ""):
+            with self.subTest(hook_env=value):
+                overrides = {} if value is None else {cb.HOOK_ENV: value}
+                rc, record = self.run_enforce(
+                    env_overrides=overrides,
+                    self_path="/boundary/control_plane_boundary_hook.sh")
+                self.assertEqual(rc, cb.DENY)
+                self.assertIn("not set", record["reasons"][0])
+
+    def test_deny_noncanonical_policy_sha(self):
+        for sha in ("A" * 64, "0" * 63, "0" * 65, "0g" + "0" * 62):
+            with self.subTest(sha=sha):
+                rc, record = self.run_enforce(env_overrides={cb.POLICY_SHA_ENV: sha})
+                self.assertEqual(rc, cb.DENY)
+                self.assertIn("hex digest", record["reasons"][0])
+
+    def test_deny_non_object_and_unreadable_policy(self):
+        rc, record = self.run_enforce(policy_obj=[1, 2])
+        self.assertEqual(rc, cb.DENY)
+        self.assertIn("policy invalid", record["reasons"][0])
+        with tempfile.TemporaryDirectory() as tmp:
+            rc, record = self.run_enforce(policy_path=Path(tmp), policy_sha=False)
+        self.assertEqual(rc, cb.DENY)
+        self.assertIn("unreadable", record["reasons"][0])
+
+    def test_evidence_write_failure_denies_otherwise_allowed_job(self):
+        # An evidence dir that cannot hold a decision record turns an
+        # otherwise-ALLOW job into ERROR with no persisted ALLOW record.
+        for make in ("world-writable", "not-a-directory"):
+            with self.subTest(make=make):
+                with tempfile.TemporaryDirectory() as tmp:
+                    ev = Path(tmp) / "evidence"
+                    if make == "world-writable":
+                        ev.mkdir()
+                        ev.chmod(0o777)
+                    else:
+                        ev.write_text("not a directory")
+                    rc, record = self.run_enforce(evidence_dir=ev)
+                self.assertEqual(rc, cb.ERROR)
+                self.assertIsNone(record)
+
     def test_actor_mismatch_lists_claim(self):
         policy = sample_policy()
         policy["allow"][0]["claims"]["env:GITHUB_ACTOR_ID"] = "999999"
@@ -280,8 +331,12 @@ class VerifyInstallTests(unittest.TestCase):
         self.policy_sha = hashlib.sha256(self.policy.read_bytes()).hexdigest()
 
     def verify(self, **kw):
+        evaluator_sha = kw.get("evaluator_sha256")
+        if evaluator_sha is None:
+            evaluator_sha = (hashlib.sha256(self.evaluator.read_bytes()).hexdigest()
+                             if self.evaluator.exists() else "0" * 64)
         args = argparse.Namespace(
-            evaluator_sha256=kw.get("evaluator_sha256", hashlib.sha256(self.evaluator.read_bytes()).hexdigest()),
+            evaluator_sha256=evaluator_sha,
             hook=str(kw.get("hook", self.hook)),
             policy=str(kw.get("policy", self.policy)),
             hook_sha256=kw.get("hook_sha256", self.hook_sha),
@@ -362,6 +417,44 @@ class VerifyInstallTests(unittest.TestCase):
         self.assertEqual(self.verify(env_file=str(env),
                                      env_require={cb.HOOK_ENV: str(self.hook)}), cb.DENY)
 
+    def test_empty_env_file_argument_denies(self):
+        # An explicitly empty --env-file must fail closed, not silently skip
+        # both the supplied-file checks and the conventional .env check.
+        self.assertEqual(self.verify(env_file=""), cb.DENY)
+        (self.tmp / ".env").write_text("LANG=C\n")
+        self.assertEqual(self.verify(env_file=""), cb.DENY)
+
+    def test_env_require_satisfied_missing_and_mismatch(self):
+        env = self.tmp / ".env"
+        env.write_text("LANG=C\n")
+        self.assertEqual(self.verify(env_file=str(env), env_require={"LANG": "C"}), 0)
+        env.write_text("LANG=ko\n")
+        self.assertEqual(self.verify(env_file=str(env), env_require={"LANG": "C"}), cb.DENY)
+        env.write_text("TZ=UTC\n")
+        self.assertEqual(self.verify(env_file=str(env), env_require={"LANG": "C"}), cb.DENY)
+
+    def test_symlink_and_hardlink_targets_rejected(self):
+        link = self.tmp / "hook-link.sh"
+        link.symlink_to(self.hook)
+        self.assertEqual(self.verify(hook=link), cb.DENY)
+        hard = self.tmp / "policy-hard.json"
+        os.link(self.policy, hard)
+        try:
+            self.assertEqual(self.verify(policy=hard), cb.DENY)
+        finally:
+            hard.unlink()
+
+    def test_missing_evaluator_rejected(self):
+        self.evaluator.unlink()
+        self.assertEqual(self.verify(), cb.DENY)
+
+    def test_group_writable_parent_rejected(self):
+        self.tmp.chmod(0o770)
+        try:
+            self.assertEqual(self.verify(), cb.DENY)
+        finally:
+            self.tmp.chmod(0o700)
+
 
 class CheckEnvTests(unittest.TestCase):
     """cmd_check_env: launch-environment assertions and injection denies."""
@@ -404,6 +497,16 @@ class CheckEnvTests(unittest.TestCase):
         self.assertEqual(self.run_check_env({cb.POLICY_ENV: "/evil.json"}), cb.DENY)
         self.assertEqual(self.run_check_env({cb.POLICY_SHA_ENV: "b" * 64}), cb.DENY)
         self.assertEqual(self.run_check_env(drop=(cb.EVIDENCE_ENV,)), cb.DENY)
+        self.assertEqual(self.run_check_env({cb.EVIDENCE_ENV: ""}), cb.DENY)
+
+    def test_deny_missing_boundary_pins(self):
+        # A job-controlled environment cannot satisfy the pins by omission.
+        for key in (cb.HOOK_ENV, cb.POLICY_ENV, cb.POLICY_SHA_ENV):
+            with self.subTest(missing=key):
+                self.assertEqual(self.run_check_env(drop=(key,)), cb.DENY)
+        for key in (cb.HOOK_ENV, cb.POLICY_ENV, cb.POLICY_SHA_ENV):
+            with self.subTest(empty=key):
+                self.assertEqual(self.run_check_env({key: ""}), cb.DENY)
 
 
 class WorkerPidTests(unittest.TestCase):
