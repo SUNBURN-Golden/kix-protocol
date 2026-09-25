@@ -149,6 +149,11 @@ LC-TERM 0.3에서 정의하고 현행 0.6이 계승한 **조건·지정 승인·
 대신하지 못한다. 저부하·균등·hot seat·재시도·이력 증가/포화를 구분하고,
 측정 중 커널 재생성이나 무한 예산으로 고갈을 숨기지 않는다.
 CI debug smoke는 장치 동작 검증이지 production p99/TPS 결과가 아니다.
+2026-09-25 Task 004는 같은 절의 측정 장치를 결과별 요약, 저부하·hot seat·재시도·
+이력 증가/포화 구분, `.local/` release 증거 경로, 비주장으로 보완한다. 정본 의미의
+변경이나 승인 SLO 추가는 아니다. 혼합 결과 p99는 구매 또는 신규 성공 p99가 아니다.
+실행 메모는 `validation/2026-09-25-task-004-perf-measurement/README.md`다.
+PostgreSQL 비교와 backend 선택은 시작하지 않는다.
 
 ## 8. schema·SDK
 
