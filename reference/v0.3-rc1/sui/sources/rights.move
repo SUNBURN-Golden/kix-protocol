@@ -1,5 +1,6 @@
 /// LOCALNET PROTOTYPE: compiled and exercised; production limitations remain.
-/// 16 inventory slots. Public gifts/resale + optional private admission only.
+/// 16 inventory slots. Direct issue, attester-bound primary issue, public
+/// gifts/resale, and optional private admission.
 /// Fiat evidence is an authorized attester assertion, never proof of bank funds.
 module kix::rights;
 use sui::clock::{Self, Clock};
@@ -20,6 +21,8 @@ const ACTIVE: u8 = 0;
 const CONSUMED: u8 = 1;
 const VOID: u8 = 2;
 const SHIELDED: u8 = 3;
+const DIRECT: u8 = 0;
+const PAID: u8 = 1;
 const FR: u256 = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
 public struct Show has key {
@@ -75,6 +78,17 @@ public struct PrivateAdmission has copy, drop {
 public struct RefundDutyRequested has copy, drop {
     show: ID, ticket: ID, beneficiary: address, amount: u64, payment_ref: vector<u8>,
 }
+/// Observes a minted right. `kind` 0 is a direct grant; `kind` 1 is primary
+/// issuance bound to an attester assertion. Not a fungible coin and not cash.
+public struct Issuance has copy, drop {
+    show: ID, ticket: ID, slot: u64, generation: u64, holder: address,
+    kind: u8, amount: u64, payment_ref: vector<u8>,
+}
+/// Slot reservation for primary issuance. Owned by the show issuer until
+/// `issue_paid` or `cancel_issuance`. Not transferable outside this module.
+public struct IssuancePayment has key {
+    id: UID, show: ID, slot: u64, buyer: address, amount: u64, payment_ref: vector<u8>,
+}
 
 public fun create_show(capacity: u64, gates: vector<address>, payment_attesters: vector<address>,
     resale_cap: u64, organizer_bps: u64, platform_bps: u64, verifier: ID, ctx: &mut TxContext) {
@@ -107,16 +121,73 @@ fun idle(t: &Ticket, c: &Clock) {
     assert!(t.admission.is_none() || c.timestamp_ms() >= t.admission.borrow().expires_ms, ELocked);
 }
 
+fun remove_payment_ref(refs: &mut vector<vector<u8>>, payment_ref: vector<u8>) {
+    let mut i = 0u64;
+    let n = refs.length();
+    while (i < n) {
+        let found = refs.borrow(i) == &payment_ref;
+        if (found) {
+            let _ = refs.swap_remove(i);
+            return
+        };
+        i = i + 1;
+    };
+    abort EPayment
+}
+fun finish_issue(s: &mut Show, slot: u64, holder: address, payment_ref: vector<u8>, amount: u64,
+    payer: address, kind: u8, ctx: &mut TxContext) {
+    let next_generation = s.generations[slot] + 1;
+    *s.generations.borrow_mut(slot) = next_generation;
+    s.issued = s.issued + 1;
+    let t = Ticket { id: object::new(ctx), show: object::id(s), slot, generation: next_generation, holder,
+        version: 1, state: ACTIVE, offer: option::none(), admission: option::none(),
+        last_payment: payment_ref, last_amount: amount, last_payer: payer };
+    event::emit(Issuance { show: t.show, ticket: object::id(&t), slot: t.slot, generation: t.generation,
+        holder: t.holder, kind, amount: t.last_amount, payment_ref: t.last_payment });
+    changed(&t, 0);
+    transfer::share_object(t);
+}
 public fun issue(s: &mut Show, cap: &IssuerCap, slot: u64, holder: address, ctx: &mut TxContext) {
     authority(s,cap);
     assert!(s.open && slot < s.capacity && !s.occupied[slot], EInventory);
     *s.occupied.borrow_mut(slot) = true;
-    let next_generation = s.generations[slot] + 1;
-    *s.generations.borrow_mut(slot) = next_generation;
-    s.issued = s.issued + 1;
-    let t = Ticket { id: object::new(ctx), show: object::id(s), slot, generation: s.generations[slot], holder,
-        version: 1, state: ACTIVE, offer: option::none(), admission: option::none(), last_payment: vector[], last_amount: 0, last_payer: holder };
-    changed(&t,0); transfer::share_object(t);
+    finish_issue(s, slot, holder, vector[], 0, holder, DIRECT, ctx);
+}
+
+/// Reserves a free slot for primary issuance. Does not mint a Ticket.
+/// The attester is trusted only for the asserted fiat fact.
+public fun attest_issuance(s: &mut Show, slot: u64, buyer: address, amount: u64,
+    payment_ref: vector<u8>, ctx: &mut TxContext) {
+    assert!(s.payment_attesters.contains(&ctx.sender()), EAuthority);
+    assert!(s.open, EClosed);
+    assert!(slot < s.capacity && !s.occupied[slot], EInventory);
+    assert!(amount > 0 && payment_ref.length() == 32, EPayment);
+    assert!(!s.payment_refs.contains(&payment_ref), EPayment);
+    *s.occupied.borrow_mut(slot) = true;
+    s.payment_refs.push_back(payment_ref);
+    transfer::transfer(IssuancePayment { id: object::new(ctx), show: object::id(s), slot, buyer,
+        amount, payment_ref }, s.issuer);
+}
+public fun cancel_issuance(s: &mut Show, cap: &IssuerCap, payment: IssuancePayment) {
+    authority(s, cap);
+    let IssuancePayment { id, show, slot, buyer: _, amount: _, payment_ref } = payment;
+    assert!(show == object::id(s), EPayment);
+    assert!(slot < s.capacity && s.occupied[slot], EInventory);
+    remove_payment_ref(&mut s.payment_refs, payment_ref);
+    object::delete(id);
+    *s.occupied.borrow_mut(slot) = false;
+}
+/// Mints the same public Ticket used by gifts, resale, admission and refund.
+/// A later holder `shield` still calls `zk_gate::mint`; `consume_private` is unchanged.
+public fun issue_paid(s: &mut Show, cap: &IssuerCap, payment: IssuancePayment, ctx: &mut TxContext) {
+    authority(s, cap);
+    let IssuancePayment { id, show, slot, buyer, amount, payment_ref } = payment;
+    assert!(show == object::id(s), EPayment);
+    assert!(s.open, EClosed);
+    assert!(slot < s.capacity && s.occupied[slot], EInventory);
+    assert!(amount > 0 && payment_ref.length() == 32 && s.payment_refs.contains(&payment_ref), EPayment);
+    object::delete(id);
+    finish_issue(s, slot, buyer, payment_ref, amount, buyer, PAID, ctx);
 }
 
 public fun offer(s: &Show, t: &mut Ticket, version: u64, recipient: address, amount: u64,
@@ -249,3 +320,8 @@ public fun consume_private(s: &mut Show, v: &Verifier, nullifier: u256, challeng
 public fun holder(t: &Ticket): address { t.holder }
 public fun version(t: &Ticket): u64 { t.version }
 public fun state(t: &Ticket): u8 { t.state }
+public fun slot(t: &Ticket): u64 { t.slot }
+public fun generation(t: &Ticket): u64 { t.generation }
+public fun last_amount(t: &Ticket): u64 { t.last_amount }
+public fun last_payer(t: &Ticket): address { t.last_payer }
+public fun last_payment(t: &Ticket): vector<u8> { t.last_payment }
