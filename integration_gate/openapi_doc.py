@@ -22,6 +22,9 @@ from integration_gate.constants import (
     LOCAL_CALL_PATH,
     LOOPBACK_HOST,
     MAX_BODY_BYTES,
+    MAX_IN_FLIGHT,
+    MAX_JOURNAL_BYTES,
+    MAX_JOURNAL_RECORDS,
 )
 
 DESCRIPTION = (
@@ -35,11 +38,15 @@ DESCRIPTION = (
     'Core.execute(operationId, actor, action, body). No new protocol command '
     'is defined. No REST resource tree is defined for events, tickets, '
     'payments, venues, or marketplaces.\n\n'
-    'State is the in-memory reference model. It is not durable across process '
-    'restart. Inside one process, the same operationId with the same actor, '
-    'action, and body replays the stored receipt. A different fingerprint for '
-    'that operationId is OPERATION_ID_CONFLICT. An HTTP Idempotency-Key header '
-    'is not consulted.\n\n'
+    'Default state is the in-memory reference model. It is not durable across '
+    'process restart. An optional process-local file journal can replay '
+    'committed local-call receipts after a restart of this loopback process. '
+    'That journal is a readiness runtime. It is not protocol truth and it is '
+    'not a production conformance claim. Inside one process, and after a '
+    'recovered journal, the same operationId with the same actor, action, and '
+    'body replays the stored receipt. A different fingerprint for that '
+    'operationId is OPERATION_ID_CONFLICT. An HTTP Idempotency-Key header is '
+    'not consulted.\n\n'
     'External payment, KYC, venue, and bank adapters are not attached. Fixture '
     'reject codes from the reference model stay reject codes. GET /health and '
     'GET /ready are process probes, not protocol commands. Readiness is not '
@@ -47,6 +54,20 @@ DESCRIPTION = (
     'The contract-only catalogue remains a pin that does not declare a live '
     'server. This document only describes the local integration-gate transport.'
 )
+
+READINESS_RUNTIME = {
+    'role': 'optional-local-file-journal',
+    'protocolTruth': False,
+    'productionConformance': False,
+    'productionEndpoint': False,
+    'defaultEnabled': False,
+    'defaultBindHost': LOOPBACK_HOST,
+    'whenEnabled': (
+        'Replays committed local-call receipts from a process-local file after '
+        'a loopback restart. Not protocol truth. Not a production conformance '
+        'claim. Not a public endpoint.'
+    ),
+}
 
 LIVE_HTTP_SERVER = {
     'mode': LIVE_HTTP_SERVER_MODE,
@@ -99,7 +120,10 @@ def build_document(root=None):
         'x-kix-contract-status': 'integration-gate',
         'x-kix-live-http-server': copy.deepcopy(LIVE_HTTP_SERVER),
         'x-kix-production-endpoint': False,
+        'x-kix-protocol-truth': False,
+        'x-kix-production-conformance': False,
         'x-kix-public-host': False,
+        'x-kix-readiness-runtime': copy.deepcopy(READINESS_RUNTIME),
         'x-kix-omitted-commands': [],
         'x-kix-source': {
             'protocolContract': 'reference/v0.3-rc1/protocol_contract.json',
@@ -117,12 +141,24 @@ def build_document(root=None):
             'requestTimeoutSeconds': DEFAULT_TIMEOUT_SECONDS,
             'headerLimitBytes': HEADER_LIMIT_BYTES,
             'bindHost': LOOPBACK_HOST,
+            'maxInFlight': MAX_IN_FLIGHT,
+            'maxJournalRecords': MAX_JOURNAL_RECORDS,
+            'maxJournalBytes': MAX_JOURNAL_BYTES,
             'durableAcrossRestart': False,
+            'localReadinessJournal': {
+                'defaultEnabled': False,
+                'protocolTruth': False,
+                'productionConformance': False,
+                'restartReplay': 'optional-process-local-file',
+            },
         },
         'x-kix-idempotency': {
             'identity': 'envelope.operationId',
             'sameFingerprint': (
-                'Inside one process, Core.execute returns the stored receipt.'
+                'Inside one process, Core.execute returns the stored receipt. '
+                'With the optional local journal, a later loopback process '
+                'recovers that receipt from the file and does not apply the '
+                'effect again. This is not a production conformance claim.'
             ),
             'conflict': 'OPERATION_ID_CONFLICT',
             'durableAcrossRestart': False,
@@ -153,7 +189,9 @@ def build_document(root=None):
                 'path': '/ready',
                 'meaning': (
                     'In-memory reference core and the published command catalogue '
-                    'are loaded. Not production readiness.'
+                    'are loaded. If a local readiness journal is enabled, it has '
+                    'been recovered or the process is fail-closed. Not production '
+                    'readiness.'
                 ),
             },
         },
@@ -283,6 +321,9 @@ def validate(root=None, document=None):
     need(document.get('x-kix-contract-status') == 'integration-gate', 'status drift')
     need(document.get('x-kix-live-http-server') == LIVE_HTTP_SERVER, 'liveHttpServer marker drift')
     need(document.get('x-kix-production-endpoint') is False, 'production endpoint must be false')
+    need(document.get('x-kix-protocol-truth') is False, 'protocol truth must stay false')
+    need(document.get('x-kix-production-conformance') is False, 'production conformance must stay false')
+    need(document.get('x-kix-readiness-runtime') == READINESS_RUNTIME, 'readiness runtime marker drift')
     need(document.get('x-kix-public-host') is False, 'public host must be false')
     need(document.get('x-kix-omitted-commands') == [], 'omitted command list must stay empty')
     source = document.get('x-kix-source') or {}
@@ -295,7 +336,13 @@ def validate(root=None, document=None):
     limits = document.get('x-kix-limits') or {}
     need(limits.get('maxBodyBytes') == MAX_BODY_BYTES, 'body limit drift')
     need(limits.get('bindHost') == LOOPBACK_HOST, 'bind host drift')
+    need(limits.get('maxInFlight') == MAX_IN_FLIGHT, 'in-flight limit drift')
+    need(limits.get('maxJournalRecords') == MAX_JOURNAL_RECORDS, 'journal record limit drift')
     need(limits.get('durableAcrossRestart') is False, 'restart durability must stay false')
+    local_journal = limits.get('localReadinessJournal') or {}
+    need(local_journal.get('defaultEnabled') is False, 'local journal must default off')
+    need(local_journal.get('protocolTruth') is False, 'local journal must not be protocol truth')
+    need(local_journal.get('productionConformance') is False, 'local journal must not claim conformance')
     idempotency = document.get('x-kix-idempotency') or {}
     need(idempotency.get('httpIdempotencyKeyHeader') is False, 'HTTP Idempotency-Key must stay unused')
     need(idempotency.get('durableAcrossRestart') is False, 'idempotency durability must stay false')
@@ -329,8 +376,16 @@ def validate(root=None, document=None):
             errors.append('forbidden endpoint string near key ' + key)
         if key == 'x-kix-production-endpoint' and value is not False:
             errors.append('production endpoint flag is not false')
+        if key == 'productionEndpoint' and value is not False:
+            errors.append('production endpoint flag is not false')
         if key == 'production' and value is not False:
             errors.append('production flag is not false')
+        if key in ('protocolTruth', 'x-kix-protocol-truth') and value is not False:
+            errors.append('protocol truth flag is not false')
+        if key in ('productionConformance', 'x-kix-production-conformance') and value is not False:
+            errors.append('production conformance flag is not false')
+        if isinstance(value, str) and 'production-ready' in value.lower():
+            errors.append('production-ready claim near key ' + str(key))
     contract_only_path = root / CONTRACT_ONLY_OPENAPI
     try:
         contract_only = json.loads(contract_only_path.read_text(encoding='utf-8'))
@@ -358,6 +413,21 @@ def self_test(root=None):
     broken['x-kix-production-endpoint'] = True
     if not validate(root, broken):
         print('self-test: production endpoint true was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    broken['x-kix-production-conformance'] = True
+    if not validate(root, broken):
+        print('self-test: production conformance true was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    broken['x-kix-protocol-truth'] = True
+    if not validate(root, broken):
+        print('self-test: protocol truth true was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    broken['x-kix-readiness-runtime']['protocolTruth'] = True
+    if not validate(root, broken):
+        print('self-test: readiness protocolTruth true was accepted', file=sys.stderr)
         return 1
     broken = copy.deepcopy(document)
     broken['x-kix-live-http-server']['production'] = True

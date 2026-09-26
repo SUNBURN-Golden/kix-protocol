@@ -8,8 +8,10 @@ from __future__ import annotations
 import io
 import json
 import socket
+import struct
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import unittest
@@ -30,6 +32,7 @@ from integration_gate.constants import (
 from integration_gate.openapi_doc import self_test, validate
 from integration_gate.schema import problems
 from integration_gate.server import build_server, main
+from readiness.store import ReadinessStore
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = {
@@ -97,7 +100,10 @@ def parse_json(raw):
 
 def assert_gate_headers(test, header_map):
     test.assertEqual(header_map.get('x-kix-production-endpoint'), 'false')
+    test.assertEqual(header_map.get('x-kix-protocol-truth'), 'false')
+    test.assertEqual(header_map.get('x-kix-production-conformance'), 'false')
     test.assertEqual(header_map.get('x-kix-transport'), 'integration-gate')
+    test.assertTrue(header_map.get('x-request-id'))
     test.assertTrue(header_map.get('content-type', '').startswith('application/json'))
 
 
@@ -112,8 +118,23 @@ def post_call(port, op, actor, action, body, headers=None):
     return status, parse_json(raw), header_map
 
 
-def run_with_server(fn, timeout_seconds=DEFAULT_TIMEOUT_SECONDS, max_body_bytes=MAX_BODY_BYTES):
-    httpd = build_server(LOOPBACK_HOST, 0, timeout_seconds, max_body_bytes)
+def run_with_server(
+    fn,
+    timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
+    max_body_bytes=MAX_BODY_BYTES,
+    readiness_dir=None,
+    max_in_flight=8,
+    max_journal_records=4096,
+):
+    httpd = build_server(
+        LOOPBACK_HOST,
+        0,
+        timeout_seconds,
+        max_body_bytes,
+        readiness_dir=readiness_dir,
+        max_in_flight=max_in_flight,
+        max_journal_records=max_journal_records,
+    )
     port = httpd.server_address[1]
     error = []
 
@@ -180,19 +201,35 @@ def raw_http(port, payload, timeout=2):
     return status, body, blob
 
 
-def start_process():
+def _capture_stream(stream, bucket):
+    try:
+        bucket.append(stream.read())
+    except Exception as exc:
+        bucket.append(str(exc))
+
+
+def start_process(extra=None):
+    command = [sys.executable, '-m', 'integration_gate', '--port', '0']
+    if extra:
+        command.extend(extra)
     proc = subprocess.Popen(
-        [sys.executable, '-m', 'integration_gate', '--port', '0'],
+        command,
         cwd=ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
+    bucket = []
+    thread = threading.Thread(target=_capture_stream, args=(proc.stderr, bucket), daemon=True)
+    thread.start()
+    proc.stderr_bucket = bucket
+    proc.stderr_thread = thread
     line = proc.stdout.readline().strip()
     if not line.startswith('integration-gate listening 127.0.0.1 '):
         proc.kill()
         proc.wait(timeout=5)
-        stderr = proc.stderr.read() if proc.stderr is not None else ''
+        thread.join(timeout=2)
+        stderr = bucket[0] if bucket else ''
         stop_process(proc)
         raise RuntimeError(line + '\n' + stderr)
     port = int(line.rsplit(' ', 1)[1])
@@ -201,16 +238,26 @@ def start_process():
 
 
 def stop_process(proc):
+    _finish_process(proc, proc.terminate)
+
+
+def kill_process(proc):
+    _finish_process(proc, proc.kill)
+
+
+def _finish_process(proc, stop):
     if proc.poll() is None:
-        proc.terminate()
+        stop()
         try:
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait(timeout=5)
-    for stream in (proc.stdout, proc.stderr):
-        if stream is not None and not stream.closed:
-            stream.close()
+    if proc.stdout is not None and not proc.stdout.closed:
+        proc.stdout.close()
+    thread = getattr(proc, 'stderr_thread', None)
+    if thread is not None:
+        thread.join(timeout=2)
 
 
 class OpenApiAndSchemaTests(unittest.TestCase):
@@ -684,6 +731,227 @@ class TransportTests(unittest.TestCase):
             self.assertEqual(payload['result']['logicalTime'], 1)
         finally:
             stop_process(second)
+
+    def test_loopback_refusal_still_applies_with_a_readiness_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            buf = io.StringIO()
+            with redirect_stderr(buf):
+                code = main(['--host', '0.0.0.0', '--port', '9', '--readiness-dir', tmp])
+            self.assertEqual(code, 2)
+            self.assertIn('REFUSING_NON_LOOPBACK_BIND', buf.getvalue())
+
+    def test_request_id_is_echoed_and_audited(self):
+        domain = load_catalogue(ROOT).domain
+        captured = io.StringIO()
+        previous = sys.stderr
+        sys.stderr = captured
+
+        def run(_httpd, port):
+            status, payload, headers = post_call(
+                port, 'op-trace', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 7},
+                headers={'X-Request-Id': 'req-1', 'X-Correlation-Id': 'corr-1'},
+            )
+            assert_gate_headers(self, headers)
+            self.assertEqual(status, 200)
+            self.assertEqual(headers.get('x-request-id'), 'req-1')
+            self.assertEqual(headers.get('x-correlation-id'), 'corr-1')
+            self.assertEqual(payload['result']['logicalTime'], 7)
+            self.assertIs(payload.get('productionReadiness'), None)
+            status, _payload, headers = post_call(
+                port, 'op-trace-2', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 8},
+                headers={'X-Request-Id': 'bad id'},
+            )
+            self.assertEqual(status, 200)
+            self.assertNotEqual(headers.get('x-request-id'), 'bad id')
+            self.assertRegex(headers.get('x-request-id'), r'^[0-9a-f]{32}$')
+
+        try:
+            run_with_server(run)
+        finally:
+            sys.stderr = previous
+        text = captured.getvalue()
+        self.assertIn('"requestId":"req-1"', text)
+        self.assertIn('"correlationId":"corr-1"', text)
+        self.assertIn('"protocolTruth":false', text)
+        self.assertIn('"productionConformance":false', text)
+        self.assertIn('"productionEndpoint":false', text)
+        self.assertNotIn('production-ready', text.lower())
+
+    def test_drain_keeps_liveness_and_refuses_commands(self):
+        domain = load_catalogue(ROOT).domain
+
+        def run(httpd, port):
+            httpd.begin_drain()
+            status, raw, headers = exchange(port, 'GET', HEALTH_PATH)
+            assert_gate_headers(self, headers)
+            health = parse_json(raw)
+            self.assertEqual(status, 200)
+            self.assertEqual(health['status'], 'up')
+            self.assertIs(health['productionReadiness'], False)
+            self.assertIs(health['productionConformance'], False)
+            self.assertIs(health['protocolTruth'], False)
+            self.assertIs(health['localFileJournal'], False)
+            status, raw, _headers = exchange(port, 'GET', READY_PATH)
+            self.assertEqual(status, 503)
+            self.assertEqual(parse_json(raw)['error'], 'NOT_READY')
+            status, payload, _headers = post_call(
+                port, 'op-drained', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 9},
+            )
+            self.assertEqual(status, 503)
+            self.assertEqual(payload['error'], 'NOT_READY')
+            self.assertIs(payload['productionReadiness'], False)
+
+        run_with_server(run)
+
+    def test_bounded_concurrency_fails_closed(self):
+        domain = load_catalogue(ROOT).domain
+
+        def run(httpd, port):
+            self.assertEqual(httpd.try_admit(), 'OK')
+            try:
+                status, raw, _headers = exchange(port, 'GET', HEALTH_PATH)
+                self.assertEqual(status, 200)
+                self.assertEqual(parse_json(raw)['status'], 'up')
+                status, payload, headers = post_call(
+                    port, 'op-busy', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 4},
+                )
+                assert_gate_headers(self, headers)
+                self.assertEqual(status, 503)
+                self.assertEqual(payload['error'], 'OVERLOADED')
+            finally:
+                httpd.release_admit()
+            status, payload, _headers = post_call(
+                port, 'op-after', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 4},
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(payload['result']['logicalTime'], 4)
+
+        run_with_server(run, max_in_flight=1)
+
+    def test_journal_budget_does_not_apply_the_next_command(self):
+        domain = load_catalogue(ROOT).domain
+
+        def run(_httpd, port):
+            status, raw, _headers = exchange(port, 'GET', READY_PATH)
+            ready = parse_json(raw)
+            self.assertEqual(status, 200)
+            self.assertIs(ready['durable'], False)
+            self.assertIs(ready['localFileJournal'], True)
+            self.assertIs(ready['productionReadiness'], False)
+            self.assertIs(ready['productionConformance'], False)
+            self.assertEqual(ready['journalRecords'], 0)
+            status, payload, _headers = post_call(
+                port, 'op-clock', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 50},
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(payload['result']['logicalTime'], 50)
+            status, payload, _headers = post_call(
+                port, 'op-clock-2', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 60},
+            )
+            self.assertEqual(status, 503)
+            self.assertEqual(payload['error'], 'JOURNAL_BUDGET')
+            status, payload, _headers = post_call(
+                port, 'op-clock', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 50},
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(payload['sequence'], 1)
+            self.assertEqual(payload['result']['logicalTime'], 50)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_with_server(run, readiness_dir=tmp, max_journal_records=1)
+
+    def test_killed_gate_replays_one_event_and_drops_a_torn_tail(self):
+        domain = load_catalogue(ROOT).domain
+        event = {
+            'domain': domain,
+            'eventId': 'show',
+            'organizer': 'organizer',
+            'policy': dict(POLICY),
+            'seats': ['A1'],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            first, port = start_process(['--readiness-dir', tmp])
+            try:
+                status, payload, headers = post_call(
+                    port, 'op-event', 'operator', 'create_event', event,
+                )
+                assert_gate_headers(self, headers)
+                self.assertEqual(status, 200)
+                self.assertEqual(payload['sequence'], 1)
+                status, ready_raw, _headers = exchange(port, 'GET', READY_PATH)
+                ready = parse_json(ready_raw)
+                self.assertEqual(status, 200)
+                self.assertIs(ready['durable'], False)
+                self.assertIs(ready['productionReadiness'], False)
+                self.assertIs(ready['localFileJournal'], True)
+                self.assertGreaterEqual(ready['journalRecords'], 1)
+            finally:
+                kill_process(first)
+            journal = Path(tmp) / 'journal.v1'
+            with journal.open('ab') as handle:
+                handle.write(b'\x01\x02\x03')
+            second, port = start_process(['--readiness-dir', tmp])
+            try:
+                status, payload, _headers = post_call(
+                    port, 'op-event', 'operator', 'create_event', event,
+                )
+                self.assertEqual(status, 200, payload)
+                self.assertEqual(payload['sequence'], 1)
+                self.assertEqual(payload['action'], 'create_event')
+                status, payload, _headers = post_call(
+                    port, 'op-event-2', 'operator', 'create_event', event,
+                )
+                self.assertEqual(status, 422)
+                self.assertEqual(payload['error'], 'EVENT_EXISTS')
+            finally:
+                stop_process(second)
+
+    def test_corrupt_journal_and_unknown_schema_do_not_listen(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = ReadinessStore.open(tmp)
+            store.append({
+                'kind': 'core_commit',
+                'machine': 'integration_core',
+                'operationId': 'op-1',
+                'actor': 'operator',
+                'action': 'advance_clock',
+                'body': {'domain': 'kix:fixture:lifecycle:0.3', 'now': 1},
+                'receiptDigest': 'ab' * 32,
+            })
+            store.close()
+            path = Path(tmp) / 'journal.v1'
+            data = bytearray(path.read_bytes())
+            data[20] ^= 0xFF
+            path.write_bytes(data)
+            checksum = subprocess.run(
+                [sys.executable, '-m', 'integration_gate', '--port', '0', '--readiness-dir', tmp],
+                cwd=ROOT, capture_output=True, text=True, timeout=5,
+            )
+            self.assertEqual(checksum.returncode, 2, checksum.stderr)
+            self.assertIn('CHECKSUM_MISMATCH', checksum.stderr)
+            self.assertNotIn('listening', checksum.stdout)
+        with tempfile.TemporaryDirectory() as tmp:
+            store = ReadinessStore.open(tmp)
+            store.close()
+            path = Path(tmp) / 'journal.v1'
+            data = bytearray(path.read_bytes())
+            struct.pack_into('>I', data, 8, 2)
+            path.write_bytes(data)
+            unknown = subprocess.run(
+                [sys.executable, '-m', 'integration_gate', '--port', '0', '--readiness-dir', tmp],
+                cwd=ROOT, capture_output=True, text=True, timeout=5,
+            )
+            self.assertEqual(unknown.returncode, 2, unknown.stderr)
+            self.assertIn('UNSUPPORTED_SCHEMA', unknown.stderr)
+            self.assertNotIn('listening', unknown.stdout)
 
 
 if __name__ == '__main__':

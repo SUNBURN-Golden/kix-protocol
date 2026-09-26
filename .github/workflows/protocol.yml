@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Non-production HTTP integration gate
-        run: python3 -m unittest integration_gate.test_http_gate
+        run: python3 -m unittest integration_gate.test_http_gate readiness.test_faults
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5
         with:
           node-version: '24'
