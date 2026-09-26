@@ -4,6 +4,10 @@ Deterministic and in-memory. No network, files, bank, or payment provider.
 A note reserves fixture capacity against a Wave 3 settlement face snapshot.
 It does not disburse funds, price a credit product, or perfect collateral.
 
+Lifecycle acceptance (offer, approve, reject, draw, repay, close, default,
+cancel, reconcile) lives in credit_fsm.py. This module remains the open-face
+reservation predicate. attempt_execution is unchanged.
+
 Contract: docs/contracts/CREDIT_ADVANCE_F04.md
 """
 
