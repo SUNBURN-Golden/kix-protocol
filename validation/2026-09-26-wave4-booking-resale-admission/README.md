@@ -43,3 +43,63 @@ Every response is `MOCK_GATE_ONLY`. Role labels are not authenticated principals
 - No production admission routing. `CONSUMED_ONCE` is not `core._admit`.
 - No product frontend, kernel edit, or F04 credit.
 - Passing these tests does not mean B01–B05, R01–R05, or P03 are implemented.
+
+## Reservation and ticketing depth — 2026-09-26
+
+The sections above are the Wave 4 record and stay as written.
+The same discover command now also loads `test_reservation_fsm.py`.
+
+Local run on Python 3.13.5: 22 tests, OK (`Ran 22 tests in 0.022s`).
+Eleven are the original gate tests. Eleven are the lifecycle machine.
+That count is this run only. It is not CI for the commit that records this
+note, and it is not a venue, payment-provider, or admission-routing result.
+
+Observed `origin/main` at session start: `85145eb33799a7c712890ff81708def8a7d61ee5`.
+The Wave 4 gate file and its base SHA are unchanged. B01–B05, R01–R05, and P03 stay **설계중**.
+
+`mock_gates.py` remains the slot, price, payment-fact, and admission predicate.
+`reservation_fsm.py` is the acceptance machine in front of it.
+The machine does not add resale or credit commands. Direct `MockGates` calls still do not pass this phase gate.
+No `protocol_contract.json` command was added. The contract-only OpenAPI
+catalogue is unchanged. There is no live HTTP server, no venue adapter, and no PG or bank call.
+
+The contract table is `docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md` §9.
+The accepted path is:
+
+```text
+hold --> HELD --> confirm --> CONFIRMED --> observe_payment --> PAYMENT_NOTED --> issue --> ISSUED
+          |                    |
+          release              cancel
+          |                    |
+          RELEASED             CANCELLED
+
+ISSUED --> authorize_admission --> ADMISSION_AUTHORIZED --> consume --> CONSUMED
+```
+
+Expiry does not free a slot. `release` from `HELD` does, including after expiry.
+`cancel` after a payment fact is `COMPENSATION_UNDEFINED`. `cancel` after issue is `CANCEL_AFTER_ISSUE`.
+A second consume is `ALREADY_CONSUMED`. One slot has one occupying hold.
+
+Same idempotency key and same canonical arguments replay the first success
+or the first rejection. The replay body is the first response snapshot.
+`view` is the current phase. A different body for that key is `IDEMPOTENCY_CONFLICT`.
+Accepted commands are the journal. `restore` rebuilds only those commands.
+
+### Settlement hook
+
+`issue` never sets `economic_finality_claimed`.
+Unbound issue is memory evidence only (`settlement_gate = UNBOUND`).
+Bound issue reads `view` on an injected settlement machine and does not call settlement commands.
+It is refused unless that view is `COMMITTED`, KRW, the same gross as the order, and every finality flag on that view is false.
+The success flag is `mock_settlement_commit_observed`. That records a mock phase observation.
+It does not move the settlement machine, grant admission, or execute funds.
+`MOCK_COMMIT_OBSERVED` is not a deposit. Restore the settlement journal first when a bound issue is in the reservation journal. The reservation journal does not freeze a commit the settlement view no longer shows.
+
+### Non-claims
+
+- `matched: true` is equality of this process's journal and views.
+- `state_digest` is a sha256 of that in-memory state, not a signature or chain commitment.
+- `RELEASED`, `CANCELLED`, and `CONSUMED` are mock terminals, not production admission closure.
+- `CANCEL_AFTER_ISSUE` does not refund and does not return inventory.
+- A frozen issue snapshot is not the current right. After consume, `view` shows `CONSUMED` and version 2.
+- No resale listing, transfer, credit advance, live HTTP server, or commerce-apps change.
