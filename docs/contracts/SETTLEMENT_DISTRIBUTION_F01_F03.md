@@ -10,6 +10,10 @@ Task 005 Wave 3. 문서일: 2026-09-26.
 그 세션에서 확인한 `origin/main`은 `a744b0a036d7e1edb48416871af20cd182f23df4`다.
 산술 술어와 Wave 3의 기준 SHA는 그대로다. 라벨도 그대로다.
 
+2026-09-26 SETTLEMENT-EXTENSIBILITY-DOC-001이 §0.1–§0.3을 추가했다.
+그 확인의 `origin/main`은 `85145eb33799a7c712890ff81708def8a7d61ee5`다.
+위 기준 SHA와 §9는 그대로다.
+
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 [PROTOCOL_MASTERPLAN_V2.md](../PROTOCOL_MASTERPLAN_V2.md) §7은 역사 계획이다.
 아래 “역사 참조가 이미 말한 계산”은 그 참조를 다시 구현한 것이 아니라,
@@ -35,6 +39,77 @@ Task 005 Wave 3. 문서일: 2026-09-26.
 커널의 `ReturnRequired`는 환불 요청 승인도 환불 완료도 아니다
 ([STATE_LIFECYCLE.md](STATE_LIFECYCLE.md) §5.7). 이 목의 환불 의무는 그 표식이 아니고,
 그 표식을 해제하거나 대체하지 않는다.
+
+### 0.1 커널 정산 책임 경계
+
+잠금 커널은 읽기만 했다. 이 절은 커널 파일을 바꾸지 않는다.
+예약, 수명, 격리, 용량은 커널 의무로 남고, 그 범위를 `captured`로 줄이지 않는다.
+
+| 확인 | 값 |
+|---|---|
+| 스캔한 파일 | `runtime/crates/kix-kernel/src/lib.rs` |
+| 그 blob | `69564b166f0c27f9af5d8422f0a466b18d74c20f` |
+| 잠금만 확인, 본문은 스캔하지 않음 | `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` = `b607996c83a119c349f1cc90469ac1ba82764e20` |
+| 이 확인의 `origin/main` | `85145eb33799a7c712890ff81708def8a7d61ee5` |
+
+`lib.rs`를 읽기 전용으로 검색했다. `payee`, `recipient`, `payout`, `settle`, `split`, `allocate`, `obligation` 식별자는 없다. `distribute` 식별자도 없다.
+
+주석에만 있는 근접 표현은 둘이다.
+
+- 예약 거절 근처(L418): “The inbox must reconcile evidence the kernel could not retain.” 커널이 남기지 못한 증거의 대사를 inbox에 둔다. 은행 정산 대사가 아니다.
+- `replace_owner` 문서(L521): “Actual distributed handoff”는 소유권 교체의 분산 인계가 구현되지 않았다는 뜻이다. 정산 지급이 아니다.
+
+금액이 실리는 필드는 다음 세 개다.
+
+- `Reserve.amount: AssetAmount`
+- `Order.captured: Option<AssetAmount>`
+- `CaptureObservation.amount: AssetAmount`
+
+`observe_capture`는 수취인별로 나누지 않는다.
+이미 `captured`가 있으면 그 값과 `observation.amount`의 같음만 본다. 같으면 `DuplicateEffect`이고, 다르면 `Review`다.
+첫 포착은 `observation.amount`를 `captured`에 저장한다.
+그 값이 `order.request.amount`와 다르면 포착 결과 경로로 `Review`를 기록한다.
+
+비공식 요약 “금액 필드 세 개, 비교만”은 이 파일보다 좁다. 세 필드는 맞다.
+그에 더해 예약은 `request.amount.atoms() == 0`이면 `InvalidRequest`로 거절한다(L407).
+첫 포착은 금액을 보존하고, 이후 포착은 보존된 `captured`와 비교한다.
+관측 구조체 전체의 같음(`original == observation`)과 예약 명령 페이로드 전체의 같음(`record.request != request`)에도 금액이 들어 있다.
+이 비교와 보존은 포착 사실의 결합이다. 수취인별 배분이 아니다.
+
+커널은 지원하는 포착 사실을 결합하고, 비교하고, 보존한다.
+수취인별 의무, 배분, 지급, 은행 정산의 대사는 커널 밖에 있다.
+`captured`는 은행 정산 완료도 실제 지급 완료도 아니다.
+커널 밖에 둔다는 문장은 R2, (a), 실자금, 새 구현의 승인이 아니다.
+
+### 0.2 수취인 수
+
+「정산 수취인 단일 전제를 계약에 고정하지 않는다.」
+
+현재 목의 `residual_payee`, `fee_payee`와 픽스처 주문의 제한된 수취인 프로파일은 시험 프로파일이다.
+일반 계약이 앞으로 가질 수 있는 수취인 수의 한도가 아니다.
+새 타입, 스키마, API는 만들지 않는다.
+
+한 결제 대금을 복수 수취인에게 나눌 수 있는지는 [PG_TOSS_CARD_PROFILE.md](PG_TOSS_CARD_PROFILE.md) §8의 미확인 질문이다.
+그 질문을 가맹 허용의 증거로 읽지 않는다.
+
+### 0.3 정수 잔여 단위의 배분 원칙
+
+원칙이다. 새 알고리즘 구현이 아니다. 픽스처, 코드, 시험은 바꾸지 않는다.
+
+- 자산 최소 단위로 정확한 정수 산술을 한다.
+- 나눗셈 뒤의 잔여 단위는 배분 전에 정한 고정된 결정론적 우선순위로 배정한다.
+- 운영자가 사후에 임의로 귀속하지 않는다. 부동소수점 반올림을 쓰지 않는다.
+- 배분액의 합은 배분 총액을 보존한다.
+- 구체적인 수취인 순서와 우선순위 방법은 **UNDETERMINED**다. 기본 정책을 두지 않는다.
+
+이 원칙은 아래 셋과 다른 문장이다. 셋을 일반 정산 정책으로 올리지 않는다.
+
+1. 부족 현금의 지급 우선순위. §4의 F02는 호출자가 적은 순서, 곧 픽스처 우선순위로 확인 현금을 배정한다. 나눗셈 잔여 단위의 귀속 방법이 아니다.
+2. 기존 목의 수수료·잔여 계산. §2의 `fee = gross * fee_bps // 10000`, `residual = gross - fee`는 일차 판매 수수료의 목 산술이다.
+3. 기존 주문 줄 할인 배분. `reference/v0.3-rc1/commerce.py`의 `proportional`은 줄 할인에 대한 largest-remainder이고, 동점은 줄 ID 오름차순이다. 그 규칙을 정산 정책으로 가져오지 않으며, 그 파일을 수정하지 않는다.
+
+토큰, 수익권, 크레딧 타입, 법적 구조, 수취인의 법률상 지위, 상품 waterfall은 이 절의 범위 밖이다.
+§9의 수락 상태 기계는 이 추가가 바꾸지 않는다.
 
 ## 1. 공통 돈·식별 한계
 
@@ -178,6 +253,7 @@ gross = amount + fee + tax + held + adjustment
 - 특정 법률 주체를 채무자·채권자·환불채무자로 확정하는 일
 - 채권 양도·담보·중복 담보의 대외 완전성
 - 수익 waterfall의 원가 정의, 구간, 상한, 반올림 귀속, 지급 시점
+- 정수 잔여 단위를 받을 수취인 순서와 우선순위 방법. 원칙은 §0.3이고, 방법은 UNDETERMINED
 - 리셀 대금 분할과 직전 구매자 계속 참가(마스터플랜은 후자를 넣지 않는다고 이미 적었다. 이 목은 그 긍정 규칙을 새로 만들지 않는다)
 - 세금·보류·조정 잔액의 해제와 실제 회수
 - 부분 환불의 부담자, 할인 재계산, 복수 결제수단 배분
