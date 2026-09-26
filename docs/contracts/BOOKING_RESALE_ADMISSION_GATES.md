@@ -10,6 +10,10 @@ Task 005 Wave 4. 문서일: 2026-09-26.
 그 세션에서 확인한 `origin/main`은 `85145eb33799a7c712890ff81708def8a7d61ee5`다.
 Wave 4 목 술어와 그 기준 SHA는 그대로다. B01–B05, R01–R05, P03 라벨도 그대로다.
 
+2026-09-26 resale depth가 §10의 수락 상태 기계를 앞에 둔다.
+그 세션에서 확인한 `origin/main`은 `a47828dd4517c5a7397e09eb6b563a64e4265c82`다.
+Wave 4 목과 §9 예약 기계는 그대로다. R01–R05는 **설계중**이다.
+
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 [PROTOCOL_MASTERPLAN_V2.md](../PROTOCOL_MASTERPLAN_V2.md)는 역사 계획이다.
 아래 수치는 그 계획을 제품 규칙으로 다시 정한 것이 아니라, 이미 저장소에 있는
@@ -37,10 +41,13 @@ Wave 4 목 술어와 그 기준 SHA는 그대로다. B01–B05, R01–R05, P03 �
 | 수락 상태 | 재고 점유, 만료 뒤의 명시적 해제, 확정·취소, 발행, 1회 검표, 멱등키, 저널 재생, 미커밋 정산에 대한 최종성 거부 | 라이브 입장, 내구 예약, 자금 최종성, 리셀·여신 확장 |
 
 게이트 술어 파일은 `reference/booking_resale_admission/mock_gates.py`다.
-수락 상태 기계는 `reference/booking_resale_admission/reservation_fsm.py`다. §9.
+예약 수락 상태 기계는 `reference/booking_resale_admission/reservation_fsm.py`다. §9.
+리셀 수락 상태 기계는 `reference/booking_resale_admission/resale_fsm.py`다. §10.
+리셀 명령은 예약 기계에 넣지 않는다.
 실행 방법과 비청구는 [validation/2026-09-26-wave4-booking-resale-admission/README.md](../../validation/2026-09-26-wave4-booking-resale-admission/README.md)에 있다.
 `mock_gates.py`는 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`, 정산 목을 호출하지 않는다.
 §9의 기계도 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`를 호출하지 않는다. 정산은 주입된 기계의 `view`만 읽는다.
+§10의 기계도 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`를 호출하지 않는다. 묶인 예약 기계와 정산 기계의 `view`만 읽는다. 정산 명령은 호출하지 않는다.
 `reference/v0.3-rc1`은 수정하지 않는다.
 프로세스 메모리 안의 결과이며 내구 원장이 아니다.
 모든 응답에 `provenance = MOCK_GATE_ONLY`를 붙인다.
@@ -279,7 +286,7 @@ OpenAPI 카탈로그도 바꾸지 않는다. 새 프로토콜 명령이 필요�
 조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.
 `provenance`는 `MOCK_GATE_ONLY`다.
 
-리셀 명령은 이 기계에 없다. `list_resale`, `cancel_listing`, `observe_resale_payment`, `accept_resale`을 두지 않는다.
+리셀 명령은 이 기계에 없다. `list_resale`, `cancel_listing`, `observe_resale_payment`, `accept_resale`, `hold_buy`, `release_hold`, `close`를 두지 않는다. 그 명령은 §10의 `ResaleMachine`에만 있다.
 F04 여신 명령도 두지 않는다. `resale_allowed`는 공연 등록 술어의 필드일 뿐이고, 이 기계는 그 필드로 리스팅을 열지 않는다.
 Wave 4 목을 직접 부르면 리셀 술어는 그 파일에 그대로 있다. 그 직접 호출은 이 단계 게이트를 지나지 않는다.
 
@@ -426,3 +433,228 @@ ISSUED --authorize_admission--> ADMISSION_AUTHORIZED --consume--> CONSUMED
 - `CONSUMED_ONCE`는 운영 검표가 아니다. `admission_routing_production`과 `private_proof_verified`는 거짓이다.
 - 이 저널은 내구 원장, 체인 커밋먼트, 은행 exactly-once가 아니다.
 - 직접 `MockGates` 호출은 이 단계 게이트를 지나지 않는 Wave 4 술어다. hold부터 consume까지의 수락 기준은 `ReservationMachine`이다.
+- 리셀 리스팅과 이전의 수락 기준은 §10의 `ResaleMachine`이다. 이 기계의 명령이 아니다.
+
+## 10. 리셀 수락 상태 기계
+
+Wave 4 목은 리스팅, 주입된 리셀 결제 사실, 보유자 교체, 버전 +1을 고정했다. 단계, 멱등키, 프로세스 저널, 정산 조회와의 결합은 없었다.
+이 절의 기계가 그 앞에 선다. `mock_gates.py`와 `reservation_fsm.py`는 그대로다. 리셀 기계가 목 함수를 호출하기 전에 전이를 거절하거나, 수락한 명령을 저널에 한 번 적는다.
+
+R01–R05는 **설계중**이다. 이 절이 그 라벨을 올리지 않는다.
+
+이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
+OpenAPI 카탈로그도 바꾸지 않는다. 새 프로토콜 명령이 필요하면 `DECISION_REQUIRED · Astra`다.
+이 깊이는 그 명령을 요구하지 않는다. 수락 기준은 이 참조 모듈 안의 결정이다. 법적 권위, 체인 권위, 마켓 권한, 입장 권한이 아니다.
+조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.
+`provenance`는 `MOCK_GATE_ONLY`다.
+
+예약 명령은 이 기계에 없다. `hold`, `confirm`, `issue`, `consume`을 두지 않는다.
+F04 여신 명령도 두지 않는다.
+발행된 권리를 이 기계에 들이는 명령은 `adopt_issued`다. 그것은 예약 단계가 아니라, 이미 발행된 메모리 권리를 리셀 술어가 읽을 수 있게 베끼는 선행이다.
+
+시계는 `set_clock`으로만 움직이고, 그 명령은 저널에 남는다. 벽시계를 읽지 않는다. 만료는 단계가 아니다.
+
+### 10.1 단계
+
+```text
+(발행된 ACTIVE 권리)
+  adopt_issued --> ELIGIBLE
+                     |
+                     | list_resale
+                     v
+                  LISTED --hold_buy--> BUY_HELD
+                     |                    |
+                     | observe_resale_payment
+                     v                    v
+                  PAYMENT_NOTED -------> PAYMENT_NOTED
+                     |
+                     | accept_resale   (정산이 묶여 있으면 §10.5)
+                     v
+                 TRANSFERRED --close--> CLOSED
+
+LISTED 또는 BUY_HELD --cancel_listing--> CANCELLED
+BUY_HELD --release_hold--> LISTED
+```
+
+`hold_buy`는 생략할 수 있다. `LISTED`에서 `observe_resale_payment`로 바로 간다.
+`CLOSED`와 `CANCELLED`가 이 리스팅의 종결이다. `TRANSFERRED`는 이전이 끝난 단계이고, `close` 뒤에야 종결이다.
+만료돼도 단계는 그대로다. 만료된 리스팅은 살아 있는 잠금이 아니다.
+`reconcile`과 `view`는 단계를 바꾸지 않는다. `reject_external`은 단계를 바꾸지 않고 거절만 한다.
+
+### 10.2 전이
+
+| 단계 | 명령 | 다음 단계 | 효과 |
+|---|---|---|---|
+| 없음 | `set_clock` | 시계 | 감소는 `CLOCK_REGRESSION` |
+| 없음 | `adopt_issued` | 권리 `ELIGIBLE` | 메모리 발행 권리를 이 기계의 목에 한 번 만든다. `kind = 1`. 예약 기계를 호출하지 않음 |
+| `ELIGIBLE` | `list_resale` | `LISTED` | 현재 보유자, 현재 버전, 권리당 살아 있는 리스팅 하나 |
+| `LISTED` | `hold_buy` | `BUY_HELD` | 리스팅에 적힌 수신자만. 목 전송은 없음 |
+| `BUY_HELD` | `release_hold` | `LISTED` | 구매 보류만 푼다. 리스팅은 열려 있음 |
+| `LISTED`, `BUY_HELD` | `cancel_listing` | `CANCELLED` | 결제 사실이 없고 창 안일 때만. 판매자 라벨 |
+| `LISTED`, `BUY_HELD` | `observe_resale_payment` | `PAYMENT_NOTED` | 주입된 32바이트 사실. 자금을 움직이지 않음 |
+| `LISTED`, `BUY_HELD`, `PAYMENT_NOTED` | `bind_settlement` | 유지 | 정산 id 기록만. 정산 명령을 호출하지 않음 |
+| `PAYMENT_NOTED` | `accept_resale` | `TRANSFERRED` | 보유자 교체, 버전 +1, 세대는 1. 정산 게이트는 §10.5 |
+| `TRANSFERRED` | `close` | `CLOSED` | 그 리스팅 id의 종결. 권리를 지우지 않음 |
+| `PAYMENT_NOTED` | `cancel_listing` | 유지 | `COMPENSATION_UNDEFINED` |
+| `PAYMENT_NOTED` | `observe_resale_payment` | 유지 | `LISTING_PAYMENT_BOUND` |
+| `BUY_HELD` | `hold_buy` | 유지 | `BUYER_HOLD_LOCKED` |
+| `TRANSFERRED` | 같은 리스팅의 `list_resale` 또는 `accept_resale` | 유지 | `ILLEGAL_TRANSITION` 또는 `LISTING_BINDING_CONFLICT` |
+| `CLOSED`, `CANCELLED` | 변경 명령 | 유지 | `TERMINAL_IMMUTABLE` |
+| 있는 리스팅 | `reconcile` | 유지 | 재생 비교만 |
+| 아무 때 | `reject_external` | 유지 | `EXTERNAL_UNSUPPORTED` |
+
+창, 가격 상한, 수신자, 결제 참조, 보유자, 버전은 `mock_gates.py`의 코드 그대로다.
+`LISTED`에서 `accept_resale`는 `ILLEGAL_TRANSITION`이다. 결제 사실을 이 기계가 먼저 적는다.
+같은 리스팅 id는 `LISTED`로 돌아가지 않는다. 취소나 이전 뒤에 그 권리를 다시 내려면 새 리스팅 id다.
+이전 뒤 새 리스팅은 새 보유자와 새 버전으로만 열린다. 권리 id와 세대는 바뀌지 않는다.
+
+### 10.3 보유, 자격, 잠금, 낡은 리스팅
+
+`list_resale`와 `accept_resale`는 판매자 라벨이 그 시점의 보유자 라벨과 같아야 한다. 아니면 `NOT_HOLDER`.
+권리는 `ACTIVE`여야 한다. 소비된 권리는 `ALREADY_CONSUMED` 또는 `RIGHT_NOT_ACTIVE`다.
+`resale_allowed`가 아니면 `RESALE_POLICY_REJECTED`. 수신자가 보유자와 같으면 `RECIPIENT_IS_HOLDER`. 금액이 `resale_cap`을 넘으면 `RESALE_CAP`.
+
+살아 있는 리스팅은 권리당 하나다. 두 번째 리스팅은 `RIGHT_SALE_LOCKED`이고 저널에 들어가지 않는다.
+만료된 리스팅은 살아 있는 잠금이 아니다. 그 리스팅의 결제나 이전은 `LISTING_NOT_OPEN`이다. 단계는 만료만으로 바뀌지 않는다.
+
+낡은 리스팅은 다음으로 거절한다.
+
+| 어긋남 | 코드 |
+|---|---|
+| 명령의 버전이 현재 권리 버전과 다름 | `STALE_VERSION` |
+| 판매자 라벨이 현재 보유자와 다름 | `NOT_HOLDER` |
+| 시계가 리스팅 만료를 넘음 | `LISTING_NOT_OPEN` |
+
+묶인 예약 기계가 있으면 `accept_resale`는 그 조회를 다시 읽는다. 예약이 그 사이에 `CONSUMED`면 `ALREADY_CONSUMED`이고, 이 기계의 버전은 오르지 않는다.
+이 재생은 예약 단계를 얼리지 않는다. 예약 저널을 먼저 그 시점의 상태로 복원한 뒤에 리셀 저널을 복원한다.
+
+### 10.4 구매 보류와 한 프로세스 안의 순서
+
+`hold_buy`는 선택이다. 리스팅의 `recipient_role`과 같은 라벨만 보류할 수 있다. 다른 라벨은 `RECIPIENT_MISMATCH`.
+이미 보류 중이면 다른 보류 id는 `BUYER_HOLD_LOCKED`다.
+`BUY_HELD`의 결제 명령은 그 보류 라벨과 같아야 한다. 아니면 `BUYER_MISMATCH`이고 결제 사실은 생기지 않는다.
+보류가 없으면 결제 명령의 구매자 라벨은 없거나 수신자와 같아야 한다.
+
+판매자 취소와 구매 보류는 이 프로세스가 명령을 적용한 순서로 결정된다.
+취소가 먼저면 다음 보류는 `TERMINAL_IMMUTABLE`이다.
+보류가 먼저고 결제 사실이 없으면 판매자 취소는 `CANCELLED`다.
+결제 사실 뒤의 취소는 `COMPENSATION_UNDEFINED`다. 보상 레코드는 없다.
+
+이 순서는 한 프로세스 안의 순차 명령이다. 스레드, 다른 실행자, 다른 채널의 현재성이 아니다.
+`cross_channel_exclusive`는 거짓으로 남는다.
+
+### 10.5 정산 게이트
+
+`accept_resale`는 경제 최종성을 주장하지 않는다. `economic_finality_claimed`를 참으로 만드는 인자는 없다.
+성공, 거절, 재생의 봉투와 조회에서 그 필드는 거짓이다. `funds_executed`도 거짓이다.
+`venue_credential_reissued`도 거짓이다. 이전은 현장 자격 재발급이 아니다.
+
+`bind_settlement`은 리스팅에 정산 id만 적는다. `initiate`, `authorize`, `capture`, `commit`, `distribute`, `bind_refund`를 호출하지 않는다.
+자금을 움직이지 않는다. 정산 기계의 `canonical_state`를 바꾸지 않는다.
+액면 `seller_due`는 목의 정수 나눗셈이다. 정산 장부에 넘기지 않는다.
+
+정산 id가 없는 `accept_resale`는 Wave 4와 같이 메모리 보유자 교체만 한다.
+`settlement_gate`는 `UNBOUND`이고, `mock_settlement_commit_observed`는 거짓이다.
+
+정산 id가 있으면 `accept_resale`는 그 조회의 다음을 모두 요구한다.
+
+- `phase`가 `COMMITTED`
+- `currency`가 `KRW`
+- `gross`가 리스팅 금액과 같은 정수
+- `funds_executed`, `admission_granted`, `bank_debit_observed`, `legal_debtor_bound`, `durable`, `external_return_closed`, `right_cancelled`가 모두 거짓
+
+하나라도 아니면 보유자와 버전은 그대로다.
+
+| 조회 | 코드 |
+|---|---|
+| 정산 원천이 없음 | `SETTLEMENT_SOURCE_REQUIRED` |
+| id가 정산 기계에 없음 | `UNKNOWN_SETTLEMENT` |
+| `phase`가 `COMMITTED`가 아님 | `SETTLEMENT_NOT_COMMITTED` |
+| 통화 또는 `gross`가 리스팅과 다름 | `SETTLEMENT_AMOUNT_MISMATCH` |
+| 위 최종성 플래그가 참 | `SETTLEMENT_VIEW_REJECTED` |
+| 같은 리스팅에 다른 정산 id | `SETTLEMENT_BINDING_CONFLICT` |
+
+통과해도 `economic_finality_claimed`는 거짓이다.
+`mock_settlement_commit_observed`만 참이고, `settlement_gate`는 `MOCK_COMMIT_OBSERVED`다.
+이 참은 목 단계가 `COMMITTED`였다는 관찰이다. 입금, 은행 확정, 체인 최종성, 판매자 지급이 아니다.
+
+거절된 이전 키는 그 거절을 다시 낸다. 나중에 정산 목이 `COMMITTED`가 되어도 그 키로 이전하지 않는다. 이전은 새 키가 필요하다.
+그 거절은 저널에 없으므로 `restore`가 되살리지 않는다.
+묶인 이전을 재생하려면, 그 시점에 정산 조회가 `COMMITTED`이고 `gross`가 리스팅 금액과 같아야 한다.
+
+### 10.6 이전 뒤의 제시
+
+`accept_resale`가 수락되면 보유자는 수신자로 바뀌고 `version`은 1 오르고 `generation`은 1로 남는다.
+권리 id는 그대로다. 새 Right 객체를 만들지 않는다. 슬롯은 `ISSUED`로 남는다.
+리스팅과 검표 허가는 권리에서 떨어진다. 리스팅 상태는 `ACCEPTED`로 목에 남고, 이 기계의 단계는 `TRANSFERRED`다.
+
+`prior_presentation_valid`는 리스팅 시점의 보유자와 버전이 아직 현재 권리일 때만 참이다.
+`TRANSFERRED`와 `CLOSED`에서는 거짓으로 남는다.
+`view_presentation`의 `matches_current_right`는 버전이 같고, 보유자 라벨이 같고, 권리가 `ACTIVE`이고, 살아 있는 리스팅이 없을 때만 참이다.
+살아 있는 리스팅이 붙어 있으면 그 제시는 현재 권리와 맞지 않는다. 이것은 운영 검표가 아니다.
+`admission_routing_production`과 `venue_credential_reissued`는 거짓이다.
+
+같은 `transfer_id`와 같은 바인딩의 재전송은 `duplicate: true`이고 버전을 다시 올리지 않는다.
+다른 `transfer_id`로 같은 리스팅을 다시 받으면 `ILLEGAL_TRANSITION` 또는, 종결 뒤면 `TERMINAL_IMMUTABLE`이다.
+
+### 10.7 멱등키와 재생
+
+멱등키는 길이 1..100인 문자열이다. 형식 실패는 `INVALID_ID`이고, 그 호출은 키를 잡지 않는다.
+키는 `(op, subject_id, 인자)`의 정규 JSON에 묶인다.
+
+- 같은 키와 같은 정규 인자로 이미 수락된 명령은 `duplicate: true`, `applied: null`과 함께 처음 응답 스냅샷을 돌려준다. 효과는 한 번이다.
+- 그 스냅샷은 수락 시점의 응답이다. 그 뒤의 전이는 `view`가 현재다.
+- 같은 키와 같은 정규 인자로 이미 거절된 명령은 같은 오류를 다시 낸다.
+- 같은 키와 다른 정규 인자는 `IDEMPOTENCY_CONFLICT`다.
+- 거절된 명령은 저널에 들어가지 않는다. `restore`는 그 거절을 복원하지 않는다.
+
+수락된 명령만 `export_journal`에 쌓인다.
+`ResaleMachine.restore(journal, ticket_source, settlement_source)`는 빈 기계에 그 명령을 다시 적용한다.
+같은 저널이고, 묶인 예약·정산 조회가 그 명령이 요구하는 상태이면, `canonical_state`와 `state_digest`가 같다.
+
+`reconcile`은 현재 저널을 재생해 현재 상태와 비교한다. 같으면 `matched: true`다. 다르면 `MOCK_INVARIANT`다.
+영수증은 저널에 넣지 않는다.
+`state_digest`는 그 상태의 sha256이다. 서명이나 커밋먼트가 아니다.
+
+이 재생은 메모리 안의 결정론이다. 디스크 원장, 은행 재시도, 체인 재생, 마켓 재생이 아니다.
+정산 명령과 예약 명령은 이 저널에 없다. `restore`는 그 기계를 다시 실행하지 않고, 리셀 명령이 요구할 때 `view`만 다시 읽는다.
+
+### 10.8 거절
+
+이 기계가 목 코드에 더하는 코드는 다음이다.
+
+| 코드 | 조건 |
+|---|---|
+| `TICKET_NOT_ISSUED` | 묶인 예약이 `ISSUED` 또는 `ADMISSION_AUTHORIZED`가 아님 |
+| `TICKET_CANCELLED` | 묶인 예약이 `CANCELLED` |
+| `TICKET_SOURCE_REQUIRED` | 예약 id가 있는데 예약 기계가 없음 |
+| `ALREADY_CONSUMED` | 묶인 예약 또는 권리가 소비됨 |
+| `ADMISSION_LOCKED` | 묶인 예약에 살아 있는 검표 허가가 있음 |
+| `RECIPIENT_MISMATCH` | 보류 또는 결제 라벨이 리스팅 수신자가 아님 |
+| `BUYER_HOLD_LOCKED` | 그 리스팅에 살아 있는 구매 보류가 있음 |
+| `BUYER_MISMATCH` | 보류된 라벨과 다른 결제 |
+| `UNKNOWN_HOLD` | 없는 보류 id |
+| `HOLD_BINDING_CONFLICT` | 같은 보류 id, 다른 바인딩 |
+| `ILLEGAL_TRANSITION` | 그 단계의 명령이 아님 |
+| `TERMINAL_IMMUTABLE` | `CLOSED` 또는 `CANCELLED` 뒤의 변경 |
+| `IDEMPOTENCY_CONFLICT` | 같은 키, 다른 정규 인자 |
+| `EXTERNAL_UNSUPPORTED` | 마켓, HTTP, KYC, 현장 재발급, PG 라벨 |
+| `INVALID_JOURNAL` | `restore`가 읽을 수 없는 저널 |
+| `SETTLEMENT_SOURCE_REQUIRED` / `SETTLEMENT_NOT_COMMITTED` / `SETTLEMENT_AMOUNT_MISMATCH` / `SETTLEMENT_VIEW_REJECTED` / `SETTLEMENT_BINDING_CONFLICT` | §10.5 |
+
+목의 `NOT_HOLDER`, `STALE_VERSION`, `RIGHT_NOT_ACTIVE`, `RESALE_POLICY_REJECTED`, `RIGHT_SALE_LOCKED`, `LISTING_NOT_OPEN`, `COMPENSATION_UNDEFINED`, `LISTING_PAYMENT_BOUND`는 §6 그대로다.
+
+`reject_external`은 라벨 형식이 맞으면 `EXTERNAL_UNSUPPORTED`다. 마켓 전송, KYC, 현장 자격 재발급, PG, HTTP로 분기하지 않는다.
+
+### 10.9 비청구
+
+- 통과가 R01–R05의 구현이나 설계확정이 아니다. 라벨은 설계중이다.
+- `matched: true`는 이 프로세스의 저널과 조회가 같다는 뜻이다.
+- `MOCK_COMMIT_OBSERVED`는 목 정산 단계의 관찰이다. 자금 집행이나 판매자 지급이 아니다.
+- `economic_finality_claimed`는 이전이 성공해도 거짓이다.
+- `venue_credential_reissued`는 거짓이다. 버전 +1과 보유자 라벨 교체는 현장 자격 재발급이 아니고, 새 Right 객체가 아니다.
+- `prior_presentation_valid`와 `matches_current_right`는 이 프로세스의 메모리 권리에 대한 비교다. 운영 검표가 아니다.
+- 구매자 순서와 `RIGHT_SALE_LOCKED`는 한 프로세스 안의 배타다. `cross_channel_exclusive`는 거짓이다.
+- 이 저널은 내구 원장, 체인 커밋먼트, 은행 exactly-once, 마켓 exactly-once가 아니다.
+- 직접 `MockGates` 호출은 이 단계 게이트를 지나지 않는 Wave 4 술어다.
+- 라이브 HTTP, 마켓 전송, KYC, 현장 장비, PG 청구, 여신, commerce-apps 변경은 없다.
