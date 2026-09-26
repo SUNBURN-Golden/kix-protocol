@@ -4,7 +4,7 @@
 
 `kix-protocol.contract-only.openapi.json`은 `reference/v0.3-rc1/protocol_contract.json`의 로컬 호출 명령을 OpenAPI 3.1로 옮긴 **계약 전용 핀**이다. 그 파일은 라이브 서버를 선언하지 않는다. `x-kix-live-http-server`는 `false`이고 `x-kix-production-endpoint`는 `false`다. 명령을 새로 만들거나, 인증·재시도·전송 보장·운영 URL을 정하지 않는다.
 
-`kix-protocol.integration-gate.openapi.json`은 그 같은 40개 명령과 같은 로컬 호출 경로를 **비운영 루프백 통합 관문**으로 적는다. `python3 -m integration_gate`는 `127.0.0.1`에만 붙고, `POST /x-kix-contract-only/local-call` 봉투를 `Core.execute`로 넘긴다. 상태는 기존 인메모리 참조 모형이다. PG·KYC·공연장·은행 실연동을 만들지 않는다.
+`kix-protocol.integration-gate.openapi.json`은 그 같은 40개 명령과 같은 로컬 호출 경로를 **비운영 루프백 통합 관문**으로 적는다. `python3 -m integration_gate`는 `127.0.0.1`에만 붙고, `POST /x-kix-contract-only/local-call` 봉투를 `Core.execute`로 넘긴다. 기본 상태는 인메모리 참조 모형이다. `--readiness-dir`를 주면 커밋된 로컬 호출을 프로세스 로컬 파일에 남기고 재시작 뒤 한 번만 재생한다. 그 파일은 준비 런타임이지 프로토콜 정본이 아니고, 운영 적합 선언이 아니다. PG·KYC·공연장·은행 실연동을 만들지 않는다. 한계는 [READINESS_RUNTIME.md](../READINESS_RUNTIME.md)에 있다.
 
 ## 파일
 
@@ -100,7 +100,7 @@ python3 scripts/check_openapi_contract.py
 python3 scripts/check_openapi_contract.py --self-test
 python3 scripts/check_integration_gate_openapi.py
 python3 scripts/check_integration_gate_openapi.py --self-test
-python3 -m unittest integration_gate.test_http_gate
+python3 -m unittest integration_gate.test_http_gate readiness.test_faults
 ```
 
 계약 전용 검사는 커밋된 카탈로그가 원본 명령 키·스키마·핀과 같은지 본다. 명령이 늘거나 줄거나, `additionalProperties`가 빠지거나, 서버 URL·보안 스킴이 생기면 실패한다. `--self-test`는 그 실패 경로를 메모리에서 확인한다.
@@ -122,6 +122,6 @@ python3 -m integration_gate --port 8765
 
 거절은 HTTP 200으로 숨기지 않는다. 스키마·봉투 오류는 4xx이고, `Core.execute`가 `Rejected`를 던지면 422에 그 코드가 담긴다. 본문 상한은 65536바이트, 요청 시간 상한은 5초, 헤더 상한은 8192바이트다.
 
-같은 프로세스 안에서는 참조 모형 그대로, 같은 `operationId`와 같은 actor·action·body 지문이면 저장 영수증을 다시 주고, 지문이 다르면 `OPERATION_ID_CONFLICT`다. HTTP `Idempotency-Key`는 보지 않는다. 프로세스를 다시 시작하면 인메모리 상태와 그 재생은 사라진다. 재시작 생존을 내구성으로 읽지 않는다.
+같은 프로세스 안에서는 참조 모형 그대로, 같은 `operationId`와 같은 actor·action·body 지문이면 저장 영수증을 다시 주고, 지문이 다르면 `OPERATION_ID_CONFLICT`다. HTTP `Idempotency-Key`는 보지 않는다. 기본 프로세스를 다시 시작하면 인메모리 상태와 그 재생은 사라진다. `--readiness-dir`가 있을 때만 커밋된 호출을 그 디렉터리의 파일에서 재생하며, 재생은 효과를 다시 적용하지 않는다. 이 재생을 운영 내구성이나 운영 적합으로 읽지 않는다. 기본 바인드는 계속 `127.0.0.1`이다.
 
 `actor`는 픽스처 문자열이다. 인증 결과가 아니다. 외부 PG·KYC·공연장·은행 어댑터는 붙이지 않는다. 성공한 로컬 호출은 실자금·실입장·운영 적합성의 증거가 아니다.

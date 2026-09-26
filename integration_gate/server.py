@@ -1,20 +1,28 @@
 """Loopback HTTP transport for the published local-call envelope.
 
 Binds to 127.0.0.1 only. Dispatches POST /x-kix-contract-only/local-call to
-the in-memory reference Core.execute. Does not attach payment, KYC, venue,
-or bank adapters. Not a production endpoint.
+the reference Core.execute. An optional process-local readiness journal can
+replay committed receipts after restart. That journal is not protocol truth.
+Does not attach payment, KYC, venue, or bank adapters. Not a production endpoint.
 """
 from __future__ import annotations
 
 import argparse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
+import queue
+import re
+import secrets
+from socketserver import ThreadingMixIn
 import socket
 import sys
 import threading
+import time
 
+from integration_gate.audit import emit
 from integration_gate.catalogue import CatalogueError, load_catalogue, reference_types
 from integration_gate.constants import (
+    CORRELATION_HEADER,
     DEFAULT_TIMEOUT_SECONDS,
     HEADER_LIMIT_BYTES,
     HEALTH_PATH,
@@ -22,12 +30,20 @@ from integration_gate.constants import (
     LOCAL_CALL_PATH,
     LOOPBACK_HOST,
     MAX_BODY_BYTES,
+    MAX_IN_FLIGHT,
+    MAX_JOURNAL_BYTES,
+    MAX_JOURNAL_RECORDS,
     READY_PATH,
+    TRACE_HEADER,
 )
 from integration_gate.openapi_doc import validate as validate_gate_document
+from integration_gate.recovery import replay_core
 from integration_gate.schema import EnvelopeError, parse_envelope
+from readiness.codec import receipt_digest
+from readiness.store import ReadinessStore, StoreError
 
 ALLOWED_PATHS = frozenset({HEALTH_PATH, READY_PATH, LOCAL_CALL_PATH})
+TRACE_TOKEN = re.compile(r'[A-Za-z0-9._:-]{1,64}')
 REASONS = {
     200: 'OK',
     400: 'Bad Request',
@@ -53,56 +69,275 @@ class GateStartupError(Exception):
         self.code = code
 
 
-class GateServer(HTTPServer):
-    allow_reuse_address = True
+class CoreBusy(Exception):
+    pass
 
-    def __init__(self, address, handler, catalogue, timeout_seconds, max_body_bytes):
+
+class GateServer(ThreadingMixIn, HTTPServer):
+    allow_reuse_address = True
+    daemon_threads = False
+    block_on_close = True
+
+    def __init__(
+        self,
+        address,
+        handler,
+        catalogue,
+        timeout_seconds,
+        max_body_bytes,
+        store,
+        max_in_flight,
+        max_journal_records,
+        max_journal_bytes,
+    ):
         self.catalogue = catalogue
         self.request_timeout_seconds = timeout_seconds
         self.max_body_bytes = max_body_bytes
+        self.store = store
+        self.max_in_flight = max_in_flight
+        self.max_journal_records = max_journal_records
+        self.max_journal_bytes = max_journal_bytes
         self.core = None
         self.Rejected = None
         self._accepting = False
         self._core_failed = False
-        self._core_lock = threading.Lock()
+        self._diverged = False
+        self._draining = False
+        self._admitted = 0
+        self._handlers = 0
+        self._closed_core = False
+        self._admit_lock = threading.Lock()
+        self._handler_cv = threading.Condition(self._admit_lock)
+        self._jobs = queue.Queue()
+        self.request_queue_size = min(max_in_flight, 16)
         super().__init__(address, handler)
+        self._worker = threading.Thread(target=self._core_loop, name='gate-core')
+        self._worker.start()
 
-    def ensure_core(self):
-        if self._core_failed:
-            raise GateStartupError('CORE_UNAVAILABLE')
-        if self.core is not None:
-            return
-        with self._core_lock:
+    def _core_loop(self):
+        while True:
+            job = self._jobs.get()
+            if job is None:
+                return
+            job()
+
+    def on_core(self, fn, timeout):
+        if threading.get_ident() == self._worker.ident:
+            return fn()
+        if not self._worker.is_alive():
+            self._mark_diverged()
+            raise CoreBusy()
+        done = threading.Event()
+        box = {}
+
+        def job():
+            try:
+                box['value'] = fn()
+            except BaseException as exc:
+                box['error'] = exc
+            finally:
+                done.set()
+
+        self._jobs.put(job)
+        if not done.wait(timeout):
+            self._mark_diverged()
+            raise CoreBusy()
+        if 'error' in box:
+            raise box['error']
+        return box['value']
+
+    def recover_now(self):
+        try:
+            self.on_core(self._ensure_core_on_worker, 30)
+        except GateStartupError:
+            raise
+        except StoreError as exc:
+            raise GateStartupError(exc.code) from exc
+        except CoreBusy as exc:
+            raise GateStartupError('CORE_UNAVAILABLE') from exc
+        except Exception as exc:
+            raise GateStartupError('CORE_UNAVAILABLE') from exc
+
+    def _ensure_core_on_worker(self):
+        with self._admit_lock:
+            if self._core_failed:
+                raise GateStartupError('CORE_UNAVAILABLE')
             if self.core is not None:
                 return
-            Core, Rejected = reference_types()
-            core = Core()
+        Core, Rejected = reference_types()
+        core = Core()
+        try:
+            domain = core.snapshot().get('domain')
+        except Exception as exc:
+            self._fail_unpublished(core)
+            raise GateStartupError('CORE_UNAVAILABLE') from exc
+        if domain != self.catalogue.domain:
+            self._fail_unpublished(core)
+            raise GateStartupError('DOMAIN_MISMATCH')
+        if self.store is not None:
             try:
-                domain = core.snapshot().get('domain')
+                replay_core(core, self.store.records)
             except Exception as exc:
-                self._core_failed = True
-                _close_quietly(core)
-                raise GateStartupError('CORE_UNAVAILABLE') from exc
-            if domain != self.catalogue.domain:
-                self._core_failed = True
-                _close_quietly(core)
-                raise GateStartupError('DOMAIN_MISMATCH')
+                self._fail_unpublished(core)
+                if isinstance(exc, StoreError):
+                    raise GateStartupError(exc.code) from exc
+                raise GateStartupError('JOURNAL_CORRUPT') from exc
+        with self._admit_lock:
             self.Rejected = Rejected
             self.core = core
-            self._accepting = True
+            if not self._draining and not self._diverged and not self._core_failed:
+                self._accepting = True
+
+    def _fail_unpublished(self, core):
+        with self._admit_lock:
+            self._core_failed = True
+            self._accepting = False
+            self.core = None
+        _close_quietly(core)
+
+    def _mark_diverged(self):
+        with self._admit_lock:
+            self._diverged = True
+            self._accepting = False
 
     def commands_enabled(self):
-        return bool(self._accepting and self.core is not None and not self._core_failed)
+        with self._admit_lock:
+            return bool(
+                self._accepting
+                and self.core is not None
+                and not self._core_failed
+                and not self._diverged
+                and not self._draining
+            )
+
+    def blocked(self):
+        with self._admit_lock:
+            if self._draining or self._diverged or self._core_failed:
+                return True
+            if self.core is not None and not self._accepting:
+                return True
+            return False
+
+    def try_admit(self):
+        with self._admit_lock:
+            if self._draining or self._diverged or self._core_failed:
+                return 'NOT_READY'
+            if self.core is not None and not self._accepting:
+                return 'NOT_READY'
+            if self._admitted >= self.max_in_flight:
+                return 'OVERLOADED'
+            self._admitted += 1
+            return 'OK'
+
+    def release_admit(self):
+        with self._admit_lock:
+            if self._admitted > 0:
+                self._admitted -= 1
+
+    def note_handler_enter(self):
+        with self._admit_lock:
+            self._handlers += 1
+
+    def note_handler_exit(self):
+        with self._admit_lock:
+            if self._handlers > 0:
+                self._handlers -= 1
+            self._handler_cv.notify_all()
+
+    def begin_drain(self):
+        with self._admit_lock:
+            self._draining = True
+            self._accepting = False
 
     def set_accepting(self, value):
         """Latch used to separate liveness from readiness. Not an HTTP command."""
-        self._accepting = bool(value)
+        with self._admit_lock:
+            if self._draining or self._diverged or self._core_failed:
+                self._accepting = False
+                return
+            self._accepting = bool(value)
+
+    def perform(self, operation_id, actor, action, body):
+        self._ensure_core_on_worker()
+        if not self.commands_enabled():
+            return 503, _not_ready()
+        fresh = self.store is None or not self.store.has_operation(operation_id)
+        if self.store is not None and fresh:
+            if not self.store.can_accept(
+                self.max_body_bytes + 2048,
+                self.max_journal_records,
+                self.max_journal_bytes,
+            ):
+                return 503, _error('JOURNAL_BUDGET')
+        before = _command_count(self.core)
+        try:
+            receipt = self.core.execute(operation_id, actor, action, body)
+        except self.Rejected as exc:
+            return 422, _error(str(exc))
+        except Exception as exc:
+            print('integration-gate internal error: ' + type(exc).__name__, file=sys.stderr)
+            return 500, _error('INTERNAL_ERROR')
+        after = _command_count(self.core)
+        if self.store is None:
+            return 200, receipt
+        if after == before:
+            if fresh:
+                self._mark_diverged()
+                return 503, _error('DURABILITY_DIVERGENCE')
+            return 200, receipt
+        if after != before + 1 or not fresh:
+            self._mark_diverged()
+            return 503, _error('DURABILITY_DIVERGENCE')
+        try:
+            self.store.append({
+                'kind': 'core_commit',
+                'machine': 'integration_core',
+                'operationId': operation_id,
+                'actor': actor,
+                'action': action,
+                'body': body,
+                'receiptDigest': receipt_digest(receipt),
+            })
+        except StoreError:
+            self._mark_diverged()
+            return 503, _error('DURABILITY_DIVERGENCE')
+        return 200, receipt
+
+    def ready_view(self):
+        self._ensure_core_on_worker()
+        if not self.commands_enabled():
+            raise GateStartupError('NOT_READY')
+        snapshot = self.core.snapshot()
+        journal_records = None if self.store is None else len(self.store.records)
+        return snapshot, journal_records
 
     def close_reference_core(self):
-        core = self.core
-        self.core = None
-        self._accepting = False
-        _close_quietly(core)
+        if self._closed_core:
+            return
+        self._closed_core = True
+        self.begin_drain()
+        if self._worker.is_alive():
+            def job():
+                core = self.core
+                with self._admit_lock:
+                    self.core = None
+                    self._accepting = False
+                _close_quietly(core)
+            try:
+                self.on_core(job, 2)
+            except Exception:
+                pass
+            self._jobs.put(None)
+            self._worker.join(timeout=2)
+        if self.store is not None:
+            self.store.close()
+            self.store = None
+
+    def audit(self, **fields):
+        try:
+            emit(sys.stderr, **fields)
+        except Exception:
+            print('integration-gate audit failed', file=sys.stderr)
 
 
 class GateHandler(BaseHTTPRequestHandler):
@@ -114,6 +349,15 @@ class GateHandler(BaseHTTPRequestHandler):
 
     def handle_one_request(self):
         self._sent = False
+        self._status = 0
+        self._error_code = None
+        self._route_path = ''
+        self._operation_id = None
+        self._action = None
+        self.request_id = _new_trace_id()
+        self.correlation_id = self.request_id
+        started = time.monotonic()
+        self.server.note_handler_enter()
         try:
             self.connection.settimeout(self.server.request_timeout_seconds)
             self.raw_requestline = self.rfile.readline(65537)
@@ -128,6 +372,7 @@ class GateHandler(BaseHTTPRequestHandler):
                     self._send(400, _error('BAD_REQUEST'))
                 return
             self.close_connection = True
+            self._adopt_trace_headers()
             self.route()
             self.wfile.flush()
         except (TimeoutError, socket.timeout):
@@ -146,6 +391,22 @@ class GateHandler(BaseHTTPRequestHandler):
                     self.wfile.flush()
                 except Exception:
                     pass
+        finally:
+            if self._sent:
+                self.server.audit(
+                    event='http_request',
+                    requestId=self.request_id,
+                    correlationId=self.correlation_id,
+                    method=getattr(self, 'command', ''),
+                    path=_clip(self._route_path),
+                    status=self._status,
+                    durationMs=int((time.monotonic() - started) * 1000),
+                    error=self._error_code,
+                    operationId=self._operation_id,
+                    action=self._action,
+                    localFileJournal=self.server.store is not None,
+                )
+            self.server.note_handler_exit()
 
     def route(self):
         target = _raw_target(self.raw_requestline)
@@ -153,6 +414,7 @@ class GateHandler(BaseHTTPRequestHandler):
             self._send(400, _error('BAD_REQUEST'))
             return
         path, separator, _query = target.partition('?')
+        self._route_path = path
         if separator:
             self._send(400, _error('QUERY_NOT_ALLOWED'))
             return
@@ -196,101 +458,108 @@ class GateHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         return
 
+    def _adopt_trace_headers(self):
+        request = _trace_token(self.headers.get(TRACE_HEADER))
+        if request is not None:
+            self.request_id = request
+        correlation = _trace_token(self.headers.get(CORRELATION_HEADER))
+        self.correlation_id = correlation if correlation is not None else self.request_id
+
     def _health(self):
-        self._send(200, {
-            'status': 'up',
-            'role': 'integration-gate',
-            'liveHttpServer': LIVE_HTTP_SERVER_MODE,
-            'production': False,
-            'publicHost': False,
-            'productionReadiness': False,
-        })
+        self._send(200, _probe('up', self.server))
 
     def _ready(self):
-        try:
-            self.server.ensure_core()
-        except Exception:
-            self._send(503, _not_ready())
-            return
-        if not self.server.commands_enabled():
+        if self.server.blocked():
             self._send(503, _not_ready())
             return
         try:
-            snapshot = self.server.core.snapshot()
+            snapshot, journal_records = self.server.on_core(
+                self.server.ready_view,
+                self.server.request_timeout_seconds,
+            )
+        except (CoreBusy, GateStartupError, StoreError):
+            self._send(503, _not_ready())
+            return
         except Exception:
             self._send(503, _not_ready())
             return
         if snapshot.get('domain') != self.server.catalogue.domain:
             self._send(503, _not_ready())
             return
-        self._send(200, {
-            'status': 'ready',
-            'role': 'integration-gate',
-            'liveHttpServer': LIVE_HTTP_SERVER_MODE,
-            'production': False,
-            'publicHost': False,
-            'productionReadiness': False,
+        body = _probe('ready', self.server)
+        body.update({
             'durable': False,
             'liveMoney': False,
             'commandCount': len(self.server.catalogue.names),
             'domain': self.server.catalogue.domain,
+            'localFileJournal': journal_records is not None,
         })
+        if journal_records is not None:
+            body['journalRecords'] = journal_records
+        self._send(200, body)
 
     def _local_call(self):
-        try:
-            self.server.ensure_core()
-        except Exception:
-            self._send(503, _not_ready())
-            return
-        if not self.server.commands_enabled():
-            self._send(503, _not_ready())
-            return
-        length, length_error = _content_length(self.headers, self.server.max_body_bytes)
-        if length_error is not None:
-            status, code = length_error
-            self._send(status, _error(code))
-            return
-        if not _json_media(self.headers.get('Content-Type')):
-            self._send(415, _error('UNSUPPORTED_MEDIA_TYPE'))
-            return
-        raw = self.rfile.read(length)
-        if len(raw) != length:
-            self._send(400, _error('INCOMPLETE_BODY'))
-            return
-        if raw.startswith(b'\xef\xbb\xbf'):
-            self._send(400, _error('INVALID_JSON'))
+        decision = self.server.try_admit()
+        if decision != 'OK':
+            payload = _error('OVERLOADED') if decision == 'OVERLOADED' else _not_ready()
+            self._send(503, payload)
             return
         try:
-            text = raw.decode('utf-8')
-        except UnicodeDecodeError:
-            self._send(400, _error('INVALID_JSON'))
-            return
-        try:
-            payload = json.loads(text, object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_constant)
-        except DuplicateKey:
-            self._send(400, _error('DUPLICATE_KEY'))
-            return
-        except (json.JSONDecodeError, RecursionError, ValueError):
-            self._send(400, _error('INVALID_JSON'))
-            return
-        try:
-            operation_id, actor, action, body = parse_envelope(payload, self.server.catalogue.commands)
-        except EnvelopeError as exc:
-            body_out = _error(exc.error)
-            if exc.detail:
-                body_out['detail'] = exc.detail[:500]
-            self._send(400, body_out)
-            return
-        try:
-            receipt = self.server.core.execute(operation_id, actor, action, body)
-        except self.server.Rejected as exc:
-            self._send(422, _error(str(exc)))
-            return
-        except Exception as exc:
-            print('integration-gate internal error: ' + type(exc).__name__, file=sys.stderr)
-            self._send(500, _error('INTERNAL_ERROR'))
-            return
-        self._send(200, receipt)
+            length, length_error = _content_length(self.headers, self.server.max_body_bytes)
+            if length_error is not None:
+                status, code = length_error
+                self._send(status, _error(code))
+                return
+            if not _json_media(self.headers.get('Content-Type')):
+                self._send(415, _error('UNSUPPORTED_MEDIA_TYPE'))
+                return
+            raw = self.rfile.read(length)
+            if len(raw) != length:
+                self._send(400, _error('INCOMPLETE_BODY'))
+                return
+            if raw.startswith(b'\xef\xbb\xbf'):
+                self._send(400, _error('INVALID_JSON'))
+                return
+            try:
+                text = raw.decode('utf-8')
+            except UnicodeDecodeError:
+                self._send(400, _error('INVALID_JSON'))
+                return
+            try:
+                payload = json.loads(text, object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_constant)
+            except DuplicateKey:
+                self._send(400, _error('DUPLICATE_KEY'))
+                return
+            except (json.JSONDecodeError, RecursionError, ValueError):
+                self._send(400, _error('INVALID_JSON'))
+                return
+            try:
+                operation_id, actor, action, body = parse_envelope(payload, self.server.catalogue.commands)
+            except EnvelopeError as exc:
+                body_out = _error(exc.error)
+                if exc.detail:
+                    body_out['detail'] = exc.detail[:500]
+                self._send(400, body_out)
+                return
+            self._operation_id = operation_id
+            self._action = action
+            if self.server.blocked():
+                self._send(503, _not_ready())
+                return
+            try:
+                status, response = self.server.on_core(
+                    lambda: self.server.perform(operation_id, actor, action, body),
+                    self.server.request_timeout_seconds,
+                )
+            except CoreBusy:
+                self._send(503, _error('CORE_BUSY'))
+                return
+            except GateStartupError:
+                self._send(503, _not_ready())
+                return
+            self._send(status, response)
+        finally:
+            self.server.release_admit()
 
     def _send(self, status, payload, allow=None):
         if self._sent:
@@ -308,11 +577,18 @@ class GateHandler(BaseHTTPRequestHandler):
             'X-Content-Type-Options: nosniff',
             'X-Kix-Transport: integration-gate',
             'X-Kix-Production-Endpoint: false',
+            'X-Kix-Protocol-Truth: false',
+            'X-Kix-Production-Conformance: false',
+            'X-Request-Id: ' + self.request_id,
+            'X-Correlation-Id: ' + self.correlation_id,
         ]
         if allow:
             lines.append('Allow: ' + allow)
         packet = ('\r\n'.join(lines) + '\r\n\r\n').encode('ascii') + body
         self._sent = True
+        self._status = status
+        if isinstance(payload, dict) and isinstance(payload.get('error'), str):
+            self._error_code = payload['error']
         self.close_connection = True
         self.wfile.write(packet)
 
@@ -343,8 +619,24 @@ def _not_ready():
         'error': 'NOT_READY',
         'production': False,
         'productionReadiness': False,
+        'productionConformance': False,
+        'protocolTruth': False,
         'rejected': True,
         'role': 'integration-gate',
+    }
+
+
+def _probe(status, server):
+    return {
+        'status': status,
+        'role': 'integration-gate',
+        'liveHttpServer': LIVE_HTTP_SERVER_MODE,
+        'production': False,
+        'publicHost': False,
+        'productionReadiness': False,
+        'productionConformance': False,
+        'protocolTruth': False,
+        'localFileJournal': server.store is not None,
     }
 
 
@@ -400,12 +692,50 @@ def _close_quietly(core):
         pass
 
 
-def build_server(host, port, timeout_seconds=DEFAULT_TIMEOUT_SECONDS, max_body_bytes=MAX_BODY_BYTES, root=None):
+def _command_count(core):
+    return core.db.execute('SELECT COUNT(*) FROM commands').fetchone()[0]
+
+
+def _new_trace_id():
+    return secrets.token_hex(16)
+
+
+def _trace_token(value):
+    if not isinstance(value, str):
+        return None
+    if TRACE_TOKEN.fullmatch(value) is None:
+        return None
+    return value
+
+
+def _clip(path):
+    if len(path) > 200:
+        return path[:200]
+    return path
+
+
+def build_server(
+    host,
+    port,
+    timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
+    max_body_bytes=MAX_BODY_BYTES,
+    root=None,
+    readiness_dir=None,
+    max_in_flight=MAX_IN_FLIGHT,
+    max_journal_records=MAX_JOURNAL_RECORDS,
+    max_journal_bytes=MAX_JOURNAL_BYTES,
+):
     if host != LOOPBACK_HOST:
         raise GateStartupError('REFUSING_NON_LOOPBACK_BIND')
     if not isinstance(port, int) or port < 0 or port > 65535:
         raise GateStartupError('REFUSING_PORT')
     if timeout_seconds <= 0 or max_body_bytes < 1:
+        raise GateStartupError('REFUSING_LIMITS')
+    if not isinstance(max_in_flight, int) or not 1 <= max_in_flight <= 64:
+        raise GateStartupError('REFUSING_LIMITS')
+    if not isinstance(max_journal_records, int) or not 1 <= max_journal_records <= 100000:
+        raise GateStartupError('REFUSING_LIMITS')
+    if not isinstance(max_journal_bytes, int) or max_journal_bytes < max_body_bytes:
         raise GateStartupError('REFUSING_LIMITS')
     try:
         catalogue = load_catalogue(root)
@@ -413,7 +743,28 @@ def build_server(host, port, timeout_seconds=DEFAULT_TIMEOUT_SECONDS, max_body_b
         raise GateStartupError(exc.code) from exc
     if validate_gate_document(root):
         raise GateStartupError('REFUSING_GATE_DOCUMENT')
-    return GateServer((host, port), GateHandler, catalogue, timeout_seconds, max_body_bytes)
+    store = None
+    if readiness_dir is not None:
+        try:
+            store = ReadinessStore.open(readiness_dir)
+        except StoreError as exc:
+            raise GateStartupError(exc.code) from exc
+    try:
+        return GateServer(
+            (host, port),
+            GateHandler,
+            catalogue,
+            timeout_seconds,
+            max_body_bytes,
+            store,
+            max_in_flight,
+            max_journal_records,
+            max_journal_bytes,
+        )
+    except Exception:
+        if store is not None:
+            store.close()
+        raise
 
 
 def parse_args(argv):
@@ -427,6 +778,8 @@ def parse_args(argv):
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--timeout-seconds', type=float, default=DEFAULT_TIMEOUT_SECONDS)
     parser.add_argument('--max-body-bytes', type=int, default=MAX_BODY_BYTES)
+    parser.add_argument('--max-in-flight', type=int, default=MAX_IN_FLIGHT)
+    parser.add_argument('--readiness-dir', default=None)
     return parser.parse_args(argv)
 
 
@@ -438,21 +791,46 @@ def main(argv=None):
     if not (1 <= args.max_body_bytes <= 1048576):
         print('REFUSING_LIMITS', file=sys.stderr)
         return 2
+    if not (1 <= args.max_in_flight <= 64):
+        print('REFUSING_LIMITS', file=sys.stderr)
+        return 2
     try:
-        httpd = build_server(args.host, args.port, args.timeout_seconds, args.max_body_bytes)
+        httpd = build_server(
+            args.host,
+            args.port,
+            args.timeout_seconds,
+            args.max_body_bytes,
+            readiness_dir=args.readiness_dir,
+            max_in_flight=args.max_in_flight,
+        )
     except GateStartupError as exc:
         print(exc.code, file=sys.stderr)
         return 2
     except OSError:
         print('REFUSING_BIND', file=sys.stderr)
         return 2
+    try:
+        httpd.recover_now()
+    except GateStartupError as exc:
+        print(exc.code, file=sys.stderr)
+        httpd.server_close()
+        httpd.close_reference_core()
+        return 2
     host, port = httpd.server_address
     print('integration-gate listening %s %s' % (host, port), flush=True)
+
+    def _request_stop(_signum, _frame):
+        threading.Thread(target=httpd.shutdown, name='gate-shutdown', daemon=True).start()
+
+    import signal
+    signal.signal(signal.SIGTERM, _request_stop)
+    signal.signal(signal.SIGINT, _request_stop)
     try:
         httpd.serve_forever(poll_interval=0.05)
     except KeyboardInterrupt:
         return 0
     finally:
+        httpd.begin_drain()
         httpd.server_close()
         httpd.close_reference_core()
     return 0
