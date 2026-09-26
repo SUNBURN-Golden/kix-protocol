@@ -6,6 +6,10 @@ Task 005 Wave 4. 문서일: 2026-09-26.
 `docs/status/ORIGINAL_32_STATUS.md`의 B01–B05, R01–R05, P03 라벨은 **설계중** 그대로다.
 이 계약은 그 라벨을 설계확정·구현됨·검증됨으로 올리지 않는다.
 
+2026-09-26 reservation/ticketing depth가 §9의 수락 상태 기계를 앞에 둔다.
+그 세션에서 확인한 `origin/main`은 `85145eb33799a7c712890ff81708def8a7d61ee5`다.
+Wave 4 목 술어와 그 기준 SHA는 그대로다. B01–B05, R01–R05, P03 라벨도 그대로다.
+
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 [PROTOCOL_MASTERPLAN_V2.md](../PROTOCOL_MASTERPLAN_V2.md)는 역사 계획이다.
 아래 수치는 그 계획을 제품 규칙으로 다시 정한 것이 아니라, 이미 저장소에 있는
@@ -30,10 +34,13 @@ Task 005 Wave 4. 문서일: 2026-09-26.
 | R04 소유권 이전 | 메모리 보유자 교체, 버전 +1, Move와 같은 정수 액면 | 체인 현재 소유, 새 Right 객체 |
 | R05 중복 판매 | 이 프로세스 안에서 리스팅·검표 허가·결제 참조·버전이 서로 막힘 | 다른 실행자·채널의 배타성·현재성 |
 | P03 검표 | 등록 게이트의 허가 뒤 1회 `CONSUMED`. 재소비 거절 | 운영 라우팅, 독립 현재성, `consume_private` 증명 |
+| 수락 상태 | 재고 점유, 만료 뒤의 명시적 해제, 확정·취소, 발행, 1회 검표, 멱등키, 저널 재생, 미커밋 정산에 대한 최종성 거부 | 라이브 입장, 내구 예약, 자금 최종성, 리셀·여신 확장 |
 
-실행 파일은 `reference/booking_resale_admission/mock_gates.py`다.
+게이트 술어 파일은 `reference/booking_resale_admission/mock_gates.py`다.
+수락 상태 기계는 `reference/booking_resale_admission/reservation_fsm.py`다. §9.
 실행 방법과 비청구는 [validation/2026-09-26-wave4-booking-resale-admission/README.md](../../validation/2026-09-26-wave4-booking-resale-admission/README.md)에 있다.
-네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`, Wave 3 정산 목을 호출하지 않는다.
+`mock_gates.py`는 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`, 정산 목을 호출하지 않는다.
+§9의 기계도 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`를 호출하지 않는다. 정산은 주입된 기계의 `view`만 읽는다.
 `reference/v0.3-rc1`은 수정하지 않는다.
 프로세스 메모리 안의 결과이며 내구 원장이 아니다.
 모든 응답에 `provenance = MOCK_GATE_ONLY`를 붙인다.
@@ -245,6 +252,9 @@ Wave 3 계약이 리셀 분할을 정산 정책으로 다시 정하지 않은 �
 - 커널 수명 상태. 이 목의 `CONSUMED`는 커널 전이가 아니다
 - 내구성, 체인 최종성, 규제 준수, 제품 TPS, p99, 실패율
 - 화면, 앱, 실자금
+- 이 상태 기계의 저널을 내구 원장, 체인 커밋먼트, 은행 exactly-once로 읽는 일
+- 발행 성공을 경제 최종성이나 운영 검표로 읽는 일
+- 리셀 리스팅, 이전, F04 여신을 이 기계의 명령으로 넣는 일
 
 ## 8. 비청구
 
@@ -252,3 +262,167 @@ Wave 3 계약이 리셀 분할을 정산 정책으로 다시 정하지 않은 �
 라벨은 설계중이다.
 메모리 발행 증거는 체인 발행이 아니고, 주입된 결제 사실은 입금이 아니고, `CONSUMED_ONCE`는 운영 검표가 아니다.
 `reference/v0.3-rc1`의 상거래 모형과 Move `rights`를 대체하지 않으며 그 파일을 수정하지 않는다.
+§9의 `matched: true`는 이 프로세스 저널의 재생 일치다.
+`economic_finality_claimed`는 발행이 성공해도 거짓이다.
+`MOCK_COMMIT_OBSERVED`는 정산 목의 `COMMITTED`를 읽었다는 뜻이지 입금이 아니다.
+
+## 9. 예약·발행 수락 상태 기계
+
+Wave 4 목은 슬롯, 가격, 주입된 결제 사실, 검표 술어를 고정했다. 단계, 멱등키, 프로세스 저널은 없었다.
+이 절의 기계가 그 앞에 선다. `mock_gates.py`는 그대로다. 기계가 그 함수를 호출하기 전에 전이를 거절하거나, 수락한 명령을 저널에 한 번 적는다.
+
+B01–B05, R01–R05, P03은 **설계중**이다. 이 절이 그 라벨을 올리지 않는다.
+
+이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
+OpenAPI 카탈로그도 바꾸지 않는다. 새 프로토콜 명령이 필요하면 `DECISION_REQUIRED · Astra`다.
+이 깊이는 그 명령을 요구하지 않는다. 수락 기준은 이 참조 모듈 안의 결정이다. 법적 권위, 체인 권위, 입장 권한이 아니다.
+조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.
+`provenance`는 `MOCK_GATE_ONLY`다.
+
+리셀 명령은 이 기계에 없다. `list_resale`, `cancel_listing`, `observe_resale_payment`, `accept_resale`을 두지 않는다.
+F04 여신 명령도 두지 않는다. `resale_allowed`는 공연 등록 술어의 필드일 뿐이고, 이 기계는 그 필드로 리스팅을 열지 않는다.
+Wave 4 목을 직접 부르면 리셀 술어는 그 파일에 그대로 있다. 그 직접 호출은 이 단계 게이트를 지나지 않는다.
+
+시계는 `set_clock`으로만 움직이고, 그 명령은 저널에 남는다. 벽시계를 읽지 않는다. 만료는 단계가 아니다.
+
+### 9.1 단계
+
+```text
+(없음) --hold--> HELD --confirm--> CONFIRMED --observe_payment--> PAYMENT_NOTED --issue--> ISSUED
+                  |                  |
+                  | release          | cancel
+                  v                  v
+               RELEASED           CANCELLED
+
+ISSUED --authorize_admission--> ADMISSION_AUTHORIZED --consume--> CONSUMED
+```
+
+`HELD`가 만료돼도 단계는 그대로다. 슬롯은 `RESERVED`로 남는다. `release`만 그 슬롯을 `FREE`로 돌린다.
+`PAYMENT_NOTED`에서 시계가 예약을 넘기면 `issue`는 `RESERVATION_EXPIRED`다. 단계는 `PAYMENT_NOTED`로 남고, 권리 id는 생기지 않는다.
+`RELEASED`, `CANCELLED`, `CONSUMED`가 이 기계의 종결이다. 발행 뒤의 `cancel`은 종결로 가지 않고 거절된다.
+
+`register_show`와 `set_clock`은 예약 단계가 아니다. 공연 재고와 주입 시계를 만든다.
+`reconcile`과 `view`는 단계를 바꾸지 않는다. `reject_external`은 단계를 바꾸지 않고 거절만 한다.
+
+### 9.2 전이
+
+| 단계 | 명령 | 다음 단계 | 효과 |
+|---|---|---|---|
+| 없음 | `register_show` | 공연만 | 슬롯 `FREE`. 리셀 명령은 생기지 않음 |
+| 없음 | `set_clock` | 시계 | 감소는 `CLOCK_REGRESSION` |
+| 없음 | `hold` | `HELD` | 빈 슬롯 하나 `RESERVED`. 겹치면 `SLOT_OCCUPIED` |
+| `HELD` | `release` | `RELEASED` | 주문이 없으면 만료 뒤에도 `FREE` |
+| `HELD` | `confirm` | `CONFIRMED` | 주문. 만료면 `RESERVATION_EXPIRED`, 단계 유지 |
+| `CONFIRMED` | `cancel` | `CANCELLED` | 결제 사실이 없을 때만 주문 중단. 슬롯 `FREE` |
+| `CONFIRMED` | `observe_payment` | `PAYMENT_NOTED` | 주입된 32바이트 사실. 자금을 움직이지 않음 |
+| `CONFIRMED`, `PAYMENT_NOTED` | `bind_settlement` | 유지 | 정산 id 기록만. 정산 명령은 호출하지 않음 |
+| `PAYMENT_NOTED` | `issue` | `ISSUED` | 메모리 증거 `kind = 1`. 정산 게이트는 §9.5 |
+| `ISSUED`, `ADMISSION_AUTHORIZED` | `authorize_admission` | `ADMISSION_AUTHORIZED` | 목 허가. 살아있는 허가가 있으면 `ADMISSION_LOCKED` |
+| `CONSUMED` | `authorize_admission` | 유지 | 게이트의 `RIGHT_NOT_ACTIVE` |
+| `ISSUED`, `ADMISSION_AUTHORIZED` | `consume` | `CONSUMED` | 1회 `CONSUMED_ONCE` |
+| `CONSUMED` | `consume` | 유지 | `ALREADY_CONSUMED`. 버전을 다시 올리지 않음 |
+| `PAYMENT_NOTED` | `cancel` | 유지 | `COMPENSATION_UNDEFINED`. 환불 레코드 없음 |
+| `ISSUED`, `ADMISSION_AUTHORIZED`, `CONSUMED` | `cancel` | 유지 | `CANCEL_AFTER_ISSUE`. 슬롯은 `ISSUED` |
+| `RELEASED`, `CANCELLED` | 변경 명령 | 유지 | `TERMINAL_IMMUTABLE` |
+| 있는 예약 | `reconcile` | 유지 | 재생 비교만 |
+| 아무 때 | `reject_external` | 유지 | `EXTERNAL_UNSUPPORTED` |
+
+창, 가격, 결제 참조, 게이트 불일치는 `mock_gates.py`의 코드 그대로다. 이 기계가 그 코드를 다른 정책으로 바꾸지 않는다.
+`release`는 `HELD`만 받는다. 발행 뒤에 `release`로 좌석을 되돌리지 않는다.
+이미 주문이 있는 예약에 다른 주문을 붙이면 `RESERVATION_ALREADY_ORDERED`다.
+이미 발행된 주문에 다른 `issuance_id`를 주면 `ORDER_ALREADY_ISSUED`다.
+
+만료된 검표 허가 뒤에 새 `authorize_admission`이 성공하는 것은 Wave 4 목과 같다. 기계가 그 허가를 영구 잠금으로 바꾸지 않는다.
+그 다음 `consume`도 한 번이다.
+
+### 9.3 재고가 겹칠 때
+
+점유 단계는 `HELD`, `CONFIRMED`, `PAYMENT_NOTED`, `ISSUED`, `ADMISSION_AUTHORIZED`, `CONSUMED`다.
+`RELEASED`와 `CANCELLED`는 점유가 아니다.
+한 공연의 한 슬롯에 점유 단계는 하나다. 두 번째 `hold`는 `SLOT_OCCUPIED`이고 저널에 들어가지 않는다.
+만료만으로 점유가 풀리지 않으므로, 만료된 보유가 남아 있는 동안 다른 예약은 그 슬롯을 받지 못한다.
+
+이 배타는 한 프로세스 안의 순차 명령이다. 스레드, 다른 실행자, 다른 채널의 현재성이 아니다.
+`cross_channel_exclusive`는 거짓으로 남는다.
+
+### 9.4 멱등키와 재생
+
+멱등키는 길이 1..100인 문자열이다. 형식 실패는 `INVALID_ID`이고, 그 호출은 키를 잡지 않는다.
+키는 `(op, subject_id, 인자)`의 정규 JSON에 묶인다.
+
+- 같은 키와 같은 정규 인자로 이미 수락된 명령은 `duplicate: true`, `applied: null`과 함께 처음 응답 스냅샷을 돌려준다. 효과는 한 번이다.
+- 그 스냅샷은 수락 시점의 응답이다. 그 뒤의 전이는 `view`가 현재다. 발행 뒤에 검표로 버전이 올라가도, 같은 발행 키의 재생 스냅샷 안 증거 `version`은 1로 남고, `view`의 권리 버전은 현재 값이다.
+- 같은 키와 같은 정규 인자로 이미 거절된 명령은 같은 오류를 다시 낸다.
+- 같은 키와 다른 정규 인자는 `IDEMPOTENCY_CONFLICT`다.
+- 다른 키로 이미 있는 예약 id는, 바인딩이 같으면 `ILLEGAL_TRANSITION` 또는 종결이면 `TERMINAL_IMMUTABLE`이다. 바인딩이 다르면 `RESERVATION_BINDING_CONFLICT`다.
+- `CONSUMED` 뒤의 다른 `consume` 키는 `ALREADY_CONSUMED`다.
+- 거절된 명령은 저널에 들어가지 않는다. `restore`는 그 거절을 복원하지 않는다.
+
+수락된 명령만 `export_journal`에 쌓인다.
+`ReservationMachine.restore(journal, settlement_source)`는 빈 기계에 그 명령을 다시 적용한다.
+같은 저널이고, 정산에 묶인 `issue`가 있으면 같은 정산 조회이면, `canonical_state`와 `state_digest`가 같다.
+
+정산 게이트의 거절도 그 키에 남는다. 나중에 정산 목이 `COMMITTED`가 되어도 그 키는 저장된 거절을 다시 낸다. 발행은 새 키가 필요하다.
+그 거절은 저널에 없으므로 `restore`가 되살리지 않는다.
+
+`reconcile`은 현재 저널을 재생해 현재 상태와 비교한다. 같으면 `matched: true`다. 다르면 `MOCK_INVARIANT`다.
+영수증은 저널에 넣지 않는다. `restore`는 영수증을 복원하지 않는다.
+`state_digest`는 그 상태의 sha256이다. 서명이나 커밋먼트가 아니다.
+
+이 재생은 메모리 안의 결정론이다. 디스크 원장, 은행 재시도, 체인 재생, 운영 검표 재생이 아니다.
+
+정산 명령은 이 저널에 없다. `restore`는 주입된 정산 기계를 다시 실행하지 않고 `view`만 다시 읽는다.
+묶인 `issue`를 재생하려면, 그 시점에 정산 조회가 `COMMITTED`이고 `gross`가 주문 금액과 같아야 한다.
+정산 저널을 먼저 복원한 뒤에 예약 저널을 복원한다. 예약 저널이 정산 커밋을 얼려 두지는 않는다.
+
+### 9.5 정산 게이트
+
+`issue`는 경제 최종성을 주장하지 않는다. `economic_finality_claimed`를 참으로 만드는 인자는 없다.
+성공, 거절, 재생의 봉투와 조회에서 그 필드는 거짓이다. `funds_executed`도 거짓이다.
+
+`bind_settlement`은 예약에 정산 id만 적는다. `initiate`, `authorize`, `capture`, `commit`, `distribute`, `bind_refund`를 호출하지 않는다.
+자금을 움직이지 않는다. 정산 기계의 `canonical_state`를 바꾸지 않는다.
+
+정산 id가 없는 `issue`는 Wave 4와 같이 메모리 증거만 만든다.
+`settlement_gate`는 `UNBOUND`이고, `mock_settlement_commit_observed`는 거짓이다.
+
+정산 id가 있으면 `issue`는 그 조회의 다음을 모두 요구한다.
+
+- `phase`가 `COMMITTED`
+- `currency`가 `KRW`
+- `gross`가 주문 금액과 같은 정수
+- `funds_executed`, `admission_granted`, `bank_debit_observed`, `legal_debtor_bound`, `durable`, `external_return_closed`, `right_cancelled`가 모두 거짓
+
+하나라도 아니면 권리 id는 생기지 않고 슬롯은 그대로다.
+
+| 조회 | 코드 |
+|---|---|
+| 정산 원천이 없음 | `SETTLEMENT_SOURCE_REQUIRED` |
+| id가 정산 기계에 없음 | `UNKNOWN_SETTLEMENT` |
+| `phase`가 `COMMITTED`가 아님 | `SETTLEMENT_NOT_COMMITTED` |
+| 통화 또는 `gross`가 주문과 다름 | `SETTLEMENT_AMOUNT_MISMATCH` |
+| 위 최종성 플래그가 참 | `SETTLEMENT_VIEW_REJECTED` |
+| 같은 예약에 다른 정산 id | `SETTLEMENT_BINDING_CONFLICT` |
+
+통과해도 `economic_finality_claimed`는 거짓이다.
+`mock_settlement_commit_observed`만 참이고, `settlement_gate`는 `MOCK_COMMIT_OBSERVED`다.
+이 참은 목 단계가 `COMMITTED`였다는 관찰이다. 입금, 은행 확정, 체인 최종성, P04 종결이 아니다.
+발행 증거는 `kind = 1`이고 `chain_issued`는 거짓이며 `seller_due`가 없다.
+정산 조회의 `admission_granted`는 거짓으로 남는다. 검표는 정산 단계가 대신하지 않는다.
+
+### 9.6 종결과 발행 뒤 취소
+
+`RELEASED`와 `CANCELLED` 뒤의 변경 명령은 `TERMINAL_IMMUTABLE`이다. 같은 키의 재생만 처음 결과를 돌려준다.
+`PAYMENT_NOTED`의 `cancel`은 `COMPENSATION_UNDEFINED`다. 보상, 환불, 재고 반환 레코드를 만들지 않는다.
+`ISSUED` 이후의 `cancel`은 `CANCEL_AFTER_ISSUE`다. 슬롯은 `ISSUED`로 남고, 권리는 그대로다.
+`CONSUMED` 뒤의 다른 소비는 `ALREADY_CONSUMED`다. 버전은 한 번만 오른다. 이 기계는 리셀로 버전을 올리지 않으므로, 소비 뒤 버전은 2다.
+`reject_external`은 라벨 형식이 맞으면 `EXTERNAL_UNSUPPORTED`다. PG, 은행, 현장 장비, HTTP로 분기하지 않는다.
+
+### 9.7 비청구
+
+- 통과가 B01–B05, R01–R05, P03의 구현이나 설계확정이 아니다.
+- `matched: true`는 이 프로세스의 저널과 조회가 같다는 뜻이다.
+- `MOCK_COMMIT_OBSERVED`는 목 정산 단계의 관찰이다. 자금 집행이 아니다.
+- `CONSUMED_ONCE`는 운영 검표가 아니다. `admission_routing_production`과 `private_proof_verified`는 거짓이다.
+- 이 저널은 내구 원장, 체인 커밋먼트, 은행 exactly-once가 아니다.
+- 직접 `MockGates` 호출은 이 단계 게이트를 지나지 않는 Wave 4 술어다. hold부터 consume까지의 수락 기준은 `ReservationMachine`이다.
