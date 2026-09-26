@@ -3,6 +3,10 @@
 Deterministic and in-memory. No network, files, bank, or payment provider.
 Fixture role labels are not legal persons.
 
+This module is the economic predicate. Lifecycle acceptance
+(initiate, authorize, capture, commit, fail, cancel, reconcile)
+lives in settlement_fsm.py and is the only writer for that path.
+
 Contract: docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md
 """
 
