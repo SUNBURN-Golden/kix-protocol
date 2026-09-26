@@ -515,7 +515,16 @@ class TransportTests(unittest.TestCase):
             )
             self.assertEqual(status, 405)
             self.assertIn(b'Allow: GET', blob)
-            for action in ('kyc_verify', 'pg_charge', 'bank_transfer', 'venue_scan', 'marketplace_list', 'create_event '):
+            for action in (
+                'kyc_verify',
+                'pg_charge',
+                'bank_transfer',
+                'venue_scan',
+                'marketplace_list',
+                'authorize_admission',
+                'consume_admission',
+                'create_event ',
+            ):
                 status, payload, _headers = post_call(
                     port, 'op-' + action.strip(), 'operator', action, {'domain': domain}
                 )
