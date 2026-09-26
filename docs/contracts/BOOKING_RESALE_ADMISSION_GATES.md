@@ -14,6 +14,11 @@ Wave 4 목 술어와 그 기준 SHA는 그대로다. B01–B05, R01–R05, P03 �
 그 세션에서 확인한 `origin/main`은 `a47828dd4517c5a7397e09eb6b563a64e4265c82`다.
 Wave 4 목과 §9 예약 기계는 그대로다. R01–R05는 **설계중**이다.
 
+2026-09-26 admission depth가 §11의 수락 상태 기계를 앞에 둔다.
+그 세션에서 확인한 `origin/main`은 `5c59d95ec52379e010f8e9c660da11cfa6498def`다.
+Wave 4 목, §9 예약 기계, §10 리셀 기계는 그대로다. B01–B05, R01–R05, P03은 **설계중**이다.
+`protocol_contract.json`과 OpenAPI 카탈로그는 그대로다.
+
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 [PROTOCOL_MASTERPLAN_V2.md](../PROTOCOL_MASTERPLAN_V2.md)는 역사 계획이다.
 아래 수치는 그 계획을 제품 규칙으로 다시 정한 것이 아니라, 이미 저장소에 있는
@@ -43,11 +48,13 @@ Wave 4 목과 §9 예약 기계는 그대로다. R01–R05는 **설계중**이�
 게이트 술어 파일은 `reference/booking_resale_admission/mock_gates.py`다.
 예약 수락 상태 기계는 `reference/booking_resale_admission/reservation_fsm.py`다. §9.
 리셀 수락 상태 기계는 `reference/booking_resale_admission/resale_fsm.py`다. §10.
-리셀 명령은 예약 기계에 넣지 않는다.
+검표 자격 수락 상태 기계는 `reference/booking_resale_admission/admission_fsm.py`다. §11.
+리셀 명령은 예약 기계에 넣지 않는다. 검표 기계의 명령도 예약 기계와 리셀 기계에 더하지 않는다.
 실행 방법과 비청구는 [validation/2026-09-26-wave4-booking-resale-admission/README.md](../../validation/2026-09-26-wave4-booking-resale-admission/README.md)에 있다.
 `mock_gates.py`는 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`, 정산 목을 호출하지 않는다.
 §9의 기계도 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`를 호출하지 않는다. 정산은 주입된 기계의 `view`만 읽는다.
 §10의 기계도 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`를 호출하지 않는다. 묶인 예약 기계와 정산 기계의 `view`만 읽는다. 정산 명령은 호출하지 않는다.
+§11의 기계도 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`를 호출하지 않는다. 묶인 예약 기계의 허가·소비와, 예약·리셀·정산 기계의 `view`만 사용한다. 정산 명령은 호출하지 않는다. 외부 현장 신원과 회수 원천은 읽지 않는다.
 `reference/v0.3-rc1`은 수정하지 않는다.
 프로세스 메모리 안의 결과이며 내구 원장이 아니다.
 모든 응답에 `provenance = MOCK_GATE_ONLY`를 붙인다.
@@ -658,3 +665,186 @@ BUY_HELD --release_hold--> LISTED
 - 이 저널은 내구 원장, 체인 커밋먼트, 은행 exactly-once, 마켓 exactly-once가 아니다.
 - 직접 `MockGates` 호출은 이 단계 게이트를 지나지 않는 Wave 4 술어다.
 - 라이브 HTTP, 마켓 전송, KYC, 현장 장비, PG 청구, 여신, commerce-apps 변경은 없다.
+
+## 11. 검표 자격 수락 상태 기계
+
+Wave 4 목과 §9는 발행된 권리의 허가와 1회 소비를 고정했다. §10은 이전 뒤 옛 제시가 현재 권리와 맞지 않음을 고정했다.
+이 절의 기계가 그 앞에 선다. `mock_gates.py`의 검표 술어는 그대로다. `reservation_fsm.py`와 `resale_fsm.py`에 명령을 더하지 않는다.
+검표 기계가 목 함수를 호출하기 전에 신선도·외부 의존·정산 플래그를 거절하거나, 수락한 명령을 자기 저널에 한 번 적는다.
+
+P03은 **설계중**이다. 이 절이 그 라벨을 올리지 않는다. B01–B05, R01–R05도 그대로다.
+
+이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
+OpenAPI 카탈로그도 바꾸지 않는다.
+
+`DECISION_REQUIRED · Astra`: `authorize_admission`과 `consume`을 게시된 카탈로그 명령으로 올리는 일은 이 PR에서 멈추었다.
+카탈로그에는 그 이름이 없다. 루프백은 그 액션을 `UNKNOWN_ACTION`으로 거절한다.
+게시된 `admit`과 `open_admission`은 그대로다. 이 기계가 그 명령을 다시 정의하지 않는다.
+없는 티켓의 `admit`은 로컬 `Core.execute`와 루프백이 같이 `TICKET_NOT_FOUND`다. 그것은 운영 검표가 아니다.
+
+수락 기준은 이 참조 모듈 안의 결정이다. 법적 권위, 체인 권위, 현장 권한, 오프라인 신뢰가 아니다.
+조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.
+`provenance`는 `MOCK_GATE_ONLY`다.
+`admission_routing_production`, `offline_admission`, `venue_credential_reissued`는 거짓이다.
+`external_admission`은 `UNSUPPORTED`다.
+
+구현은 `reference/booking_resale_admission/admission_fsm.py`다.
+시계는 `set_clock`으로만 움직이고, 그 명령은 저널에 남는다. 벽시계를 읽지 않는다.
+묶인 예약 기계가 있으면 그 `set_clock`도 같은 시각으로 민다. 리셀 기계의 시계는 따로다.
+
+### 11.1 단계
+
+```text
+(발행된 ACTIVE 권리, 버전 1)
+  adopt_issued --> ELIGIBLE
+                     |
+                     | authorize_admission
+                     v
+                 AUTHORIZED --consume--> CONSUMED
+```
+
+`CONSUMED`가 이 자격의 종결이다. 만료는 단계가 아니다.
+`AUTHORIZED`에서 허가가 만료되면 단계는 그대로고, 새 `admission_id`의 `authorize_admission`이 그 허가를 바꿀 수 있다. 그 다음 `consume`은 한 번이다.
+`reconcile`, `view`, `view_credential`은 단계를 바꾸지 않는다. `reject_external`은 단계를 바꾸지 않고 거절만 한다.
+
+묶인 예약이 있으면 수락된 허가와 소비는 예약 기계의 `authorize_admission` / `consume`에도 한 번 적용된다.
+예약 단계는 `ISSUED`에서 `ADMISSION_AUTHORIZED`로, 그 다음 `CONSUMED`로 간다.
+이 기계는 보유자를 바꾸거나 버전을 이전으로 올리지 않는다. 세대는 1이다.
+
+### 11.2 전이
+
+| 단계 | 명령 | 다음 단계 | 효과 |
+|---|---|---|---|
+| 없음 | `set_clock` | 시계 | 감소는 `CLOCK_REGRESSION`. 묶인 예약 시계도 같거나 이후로만 |
+| 없음 | `adopt_issued` | `ELIGIBLE` | 발행 스냅샷을 이 기계의 목에 한 번 만든다. `kind = 1`. 예약이 묶여 있으면 그 조회가 `ISSUED`이고 버전이 1이어야 함 |
+| `ELIGIBLE` | `authorize_admission` | `AUTHORIZED` | 현재 보유자, 현재 버전, 등록된 게이트. 창은 120_000ms |
+| `AUTHORIZED` | `authorize_admission` | `AUTHORIZED` | 살아 있는 허가가 있으면 `ADMISSION_LOCKED`. 만료된 허가는 새 id로 교체 |
+| `AUTHORIZED` | `consume` | `CONSUMED` | 1회 `CONSUMED_ONCE`. 버전 +1. 슬롯은 `ISSUED` |
+| `ELIGIBLE` | `consume` | 유지 | `ADMISSION_REQUIRED` |
+| `AUTHORIZED`가 만료 | `consume` | 유지 | `ADMISSION_EXPIRED`. 버전을 올리지 않음 |
+| `CONSUMED` | `authorize_admission` | 유지 | `RIGHT_NOT_ACTIVE` |
+| `CONSUMED` | `consume` | 유지 | `ALREADY_CONSUMED`. 버전을 다시 올리지 않음 |
+| 있는 자격 | `reconcile` | 유지 | 재생 비교만. 묶인 원천을 다시 읽음 |
+| 아무 때 | `reject_external` | 유지 | `EXTERNAL_UNSUPPORTED` |
+| 아무 때 | `view` / `view_credential` | 유지 | 조회. `view_credential`의 `fresh`는 입장이 아님 |
+
+창, 게이트, 요청, 버전, 1회 소비는 `mock_gates.py`의 코드 그대로다.
+같은 `admission_id`의 다른 바인딩은 `ADMISSION_BINDING_CONFLICT` 또는, 같은 키면 `IDEMPOTENCY_CONFLICT`다.
+같은 `consume_id`의 다른 바인딩은 `CONSUME_BINDING_CONFLICT`다.
+
+### 11.3 신선도
+
+허가와 소비 앞에 다음을 본다. 하나라도 아니면 예약 기계와 이 기계의 목을 소비로 바꾸지 않는다.
+
+| 순서 | 어긋남 | 코드 |
+|---|---|---|
+| 1 | 현장 신원 원천이 붙어 있거나 의존이 `VENUE_IDENTITY` | `VENUE_SOURCE_UNAVAILABLE` |
+| 2 | 회수 원천이 붙어 있거나 의존이 `REVOCATION` | `REVOCATION_SOURCE_UNAVAILABLE` |
+| 3 | 그 밖의 외부 의존 | `EXTERNAL_UNSUPPORTED` |
+| 4 | 묶인 소유 조회가 없거나 깨짐 | `OWNERSHIP_SOURCE_UNAVAILABLE` |
+| 5 | 소유 권리가 이미 소비됨 | `ALREADY_CONSUMED` |
+| 6 | 소유 버전이 제시와 다름 | `STALE_VERSION` |
+| 7 | 소유 보유자 라벨이 제시와 다름 | `NOT_HOLDER` |
+| 8 | 살아 있는 리스팅이 붙어 있음 | `LISTING_LOCKED` |
+| 9 | 제시 비교가 현재 권리와 맞지 않음 | `CREDENTIAL_STALE` |
+| 10 | 예약이 `CANCELLED` | `TICKET_CANCELLED` |
+| 11 | 예약이 `CONSUMED` | 소비는 `ALREADY_CONSUMED`, 허가는 `RIGHT_NOT_ACTIVE` |
+| 12 | 예약이 `ISSUED` 또는 `ADMISSION_AUTHORIZED`가 아님 | `TICKET_NOT_ISSUED` |
+| 13 | 예약 권리의 버전 또는 보유자가 제시와 다름 | `STALE_VERSION`, 그 다음 `NOT_HOLDER` |
+| 14 | 예약에 정산 id가 있는데 정산 원천이 없음 | `SETTLEMENT_SOURCE_REQUIRED` |
+| 15 | 정산 조회의 최종성 플래그가 거짓이 아님. `admission_granted` 포함 | `SETTLEMENT_VIEW_REJECTED` |
+
+소유 기계에 그 권리가 없으면 소유 기록은 없는 것이다. 그때는 예약 조회만 본다.
+버전을 보유자보다 먼저 본다. §2와 같다.
+외부 원천 객체는 읽지 않는다. `available`이 참인 것처럼 보여도 허용으로 쓰지 않는다. 오프라인 신뢰를 만들지 않는다.
+
+정산 `COMMITTED`는 입장이 아니다. 검표 기계는 정산 명령을 호출하지 않고, 정산 기계의 `canonical_state`를 바꾸지 않는다.
+`admission_granted`가 참이면 거절이다. 그 참을 입장으로 읽지 않는다.
+
+### 11.4 순서
+
+이 순서는 한 프로세스 안의 순차 명령이다. 스레드, 다른 실행자, 다른 채널의 현재성이 아니다.
+`cross_channel_exclusive`는 거짓으로 남는다.
+직접 `MockGates` 호출과, 이 기계를 거치지 않는 `ReservationMachine.authorize_admission` / `consume`은 이 신선도 게이트를 지나지 않는다.
+
+| 먼저 | 다음 | 종결 |
+|---|---|---|
+| 리셀 `accept_resale` | 옛 보유자·버전 1의 허가 또는 소비 | `STALE_VERSION`. 예약은 `ISSUED`, 버전 1. 이 기계는 `ELIGIBLE` |
+| 리셀 `accept_resale` | 새 보유자·버전 2의 허가 | `STALE_VERSION`. 현장 자격을 다시 발급하지 않음. `venue_credential_reissued`는 거짓 |
+| `authorize_admission` | 리셀 `list_resale` | 리셀 `ADMISSION_LOCKED` |
+| `consume` | 리셀 `list_resale` | 리셀 `ALREADY_CONSUMED`. 예약은 `CONSUMED`, 버전 2 |
+| 살아 있는 `list_resale` | `authorize_admission` | `LISTING_LOCKED`. 예약은 `ISSUED` |
+| `cancel_listing` | `authorize_admission` | `AUTHORIZED`. 취소된 리스팅은 자격을 지우지 않음 |
+| 발행 전 `cancel` | `adopt_issued` | `TICKET_CANCELLED` |
+| `PAYMENT_NOTED` | `adopt_issued` | `TICKET_NOT_ISSUED` |
+| `issue` 뒤 `cancel` | 허가·소비 | 예약 취소는 `CANCEL_AFTER_ISSUE`. 자격은 남고, 입장은 계속 가능 |
+| `consume` 뒤 `cancel` | 예약 `cancel` | `CANCEL_AFTER_ISSUE`. 단계는 `CONSUMED` |
+| 첫 게이트 허가 | 다른 `admission_id` | `ADMISSION_LOCKED` |
+| 첫 `consume` | 다른 `consume_id` | `ALREADY_CONSUMED`. 버전은 2에서 멈춤 |
+| 같은 키·같은 바인딩 | 재전송 | `duplicate: true`. 효과를 다시 내지 않음 |
+| 허가 만료 | `consume` | `ADMISSION_EXPIRED`. 버전은 1 |
+| 허가 만료 | 새 `authorize_admission` | `AUTHORIZED`. 그 뒤 소비는 한 번 |
+| 외부 의존 또는 `reject_external` | 허가·소비 | 거절. 저널에 들어가지 않음 |
+| 저널 기록 뒤 소유가 이전 | `restore` / `reconcile` | `STALE_VERSION`. 맞은 재생으로 보고하지 않음 |
+
+### 11.5 멱등키와 재생
+
+멱등키는 길이 1..100인 문자열이다. 형식 실패는 `INVALID_ID`이고, 그 호출은 키를 잡지 않는다.
+키는 `(op, subject_id, 인자)`의 정규 JSON에 묶인다.
+
+- 같은 키와 같은 정규 인자로 이미 수락된 명령은 `duplicate: true`, `applied: null`과 함께 처음 응답 스냅샷을 돌려준다. 효과는 한 번이다.
+- 그 스냅샷은 수락 시점의 응답이다. 그 뒤의 전이는 `view`가 현재다.
+- 같은 키와 같은 정규 인자로 이미 거절된 명령은 같은 오류를 다시 낸다.
+- 같은 키와 다른 정규 인자는 `IDEMPOTENCY_CONFLICT`다.
+- 거절된 명령은 저널에 들어가지 않는다. `restore`는 그 거절을 복원하지 않는다.
+
+수락된 명령만 `export_journal`에 쌓인다.
+`AdmissionMachine.restore(journal, ticket_source, ownership_source, settlement_source)`는 빈 기계에 그 명령을 다시 적용한다.
+같은 저널이고, 묶인 예약·소유·정산 조회가 그 명령이 요구하는 상태이면, `canonical_state`와 `state_digest`가 같다.
+묶인 예약 저널은 허가·소비 없이 먼저 복원한다. 그 다음 이 저널을 재생하면 예약 허가와 소비가 다시 적용된다.
+소유가 그 사이 이전되면 재생은 `STALE_VERSION`이고, 입장을 만들지 않는다.
+
+`reconcile`은 현재 저널을 재생해 현재 로컬 상태와 비교한다. 같으면 `matched: true`다.
+묶인 원천을 다시 읽으므로, 이후의 이전은 `matched` 대신 `STALE_VERSION`이다.
+영수증은 저널에 넣지 않는다.
+`state_digest`는 그 로컬 상태의 sha256이다. 서명이나 커밋먼트가 아니다.
+
+이 재생은 메모리 안의 결정론이다. 디스크 원장, 은행 재시도, 체인 재생, 운영 검표 재생, 오프라인 입장이 아니다.
+
+### 11.6 거절
+
+이 기계가 목 코드에 더하는 코드는 다음이다.
+
+| 코드 | 조건 |
+|---|---|
+| `TICKET_NOT_ISSUED` | 묶인 예약이 `ISSUED`가 아님. 재생 중 이미 허가·소비된 예약은 그 저널을 다시 적용할 때만 예외 |
+| `TICKET_CANCELLED` | 묶인 예약이 `CANCELLED` |
+| `TICKET_SOURCE_REQUIRED` | 예약 id가 있는데 예약 기계가 없음 |
+| `TICKET_SOURCE_UNAVAILABLE` | 예약 조회가 깨짐 |
+| `CREDENTIAL_STALE` | 버전·보유자·리스팅은 맞는데 제시 비교가 현재 권리가 아님 |
+| `VENUE_SOURCE_UNAVAILABLE` | 현장 신원 원천이 필요하거나 붙어 있음. 읽지 않음 |
+| `REVOCATION_SOURCE_UNAVAILABLE` | 회수 원천이 필요하거나 붙어 있음. 읽지 않음 |
+| `OWNERSHIP_SOURCE_UNAVAILABLE` | 소유 조회가 깨짐. 그때 허용으로 넘기지 않음 |
+| `SETTLEMENT_SOURCE_REQUIRED` | 예약에 정산 id가 있는데 정산 기계가 없음 |
+| `SETTLEMENT_SOURCE_UNAVAILABLE` | 정산 조회가 깨짐 |
+| `SETTLEMENT_VIEW_REJECTED` | 최종성 플래그가 거짓이 아님. `admission_granted` 포함 |
+| `ILLEGAL_TRANSITION` | 같은 자격·허가 id를 다른 효과로 다시 적용 |
+| `IDEMPOTENCY_CONFLICT` | 같은 키, 다른 정규 인자 |
+| `EXTERNAL_UNSUPPORTED` | 스캐너, 오프라인 입장, 공개 바인드, 그 밖의 외부 라벨 |
+| `INVALID_JOURNAL` | `restore`가 읽을 수 없는 저널 |
+
+목의 `NOT_HOLDER`, `STALE_VERSION`, `ADMISSION_LOCKED`, `LISTING_LOCKED`, `ADMISSION_REQUIRED`, `ADMISSION_EXPIRED`, `ALREADY_CONSUMED`, `RIGHT_NOT_ACTIVE`, `GATE_MISMATCH`, `ADMISSION_REQUEST_MISMATCH`는 §6 그대로다.
+
+### 11.7 비청구
+
+- 통과가 B01–B05, R01–R05, P03의 구현이나 설계확정이 아니다. 라벨은 설계중이다.
+- `matched: true`는 이 프로세스의 저널과 로컬 조회가 같고, 재생 시점의 묶인 원천이 그 명령을 다시 받아들였다는 뜻이다.
+- `CONSUMED_ONCE`는 운영 검표가 아니다. `admission_routing_production`과 `private_proof_verified`는 거짓이다.
+- `offline_admission`은 거짓이다. 외부 현장 신원이나 회수 원천의 부재를 마지막 허용으로 바꾸지 않는다.
+- `venue_credential_reissued`는 거짓이다. 이전 뒤의 새 보유자·버전은 이 기계의 입장 자격이 아니다.
+- 정산 `COMMITTED`와 `admission_granted: false`의 관찰은 입금이나 입장이 아니다. 정산 장부는 이 기계가 바꾸지 않는다.
+- 스캐너 순서는 한 프로세스의 순차 명령이다. `cross_channel_exclusive`는 거짓이다.
+- 이 저널은 내구 원장, 체인 커밋먼트, 은행 exactly-once, 현장 exactly-once가 아니다.
+- 직접 `MockGates` 호출과 예약 기계에 바로 넣은 허가·소비는 이 신선도 게이트를 지나지 않는다.
+- 라이브 HTTP에 이 기계의 명령을 올리지 않았다. 공개 엔드포인트, 현장 장비, 운영 자격 발급·회수, PG, KYC, commerce-apps 변경은 없다.
+- 카탈로그에 `authorize_admission` / `consume_admission`을 넣는 일은 `DECISION_REQUIRED · Astra`로 멈춰 있다.

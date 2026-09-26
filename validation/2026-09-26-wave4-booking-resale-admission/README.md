@@ -191,3 +191,97 @@ That comparison is not venue entry and not credential reissue.
 - `CLOSED` and `CANCELLED` are mock terminals for that listing id, not production marketplace closure.
 - Face split integers are not a seller payout and are not posted into the settlement book.
 - No live marketplace, KYC, venue credential reissue, credit advance, or commerce-apps change.
+
+## Admission depth — 2026-09-26
+
+The sections above stay as written.
+The same discover command now also loads `test_admission_fsm.py`.
+
+Local run on Python 3.13.5: 43 tests, OK (`Ran 43 tests in 0.196s`).
+Eleven are the original gate tests. Eleven are the reservation lifecycle machine.
+Seven are the resale lifecycle machine. Fourteen are the admission lifecycle machine.
+That count is this run only. It is not CI for the commit that records this
+note, and it is not a venue, offline-admit, or admission-routing result.
+
+The same day, `python3 -m unittest integration_gate.test_http_gate` ran 13 tests, OK
+(`Ran 13 tests in 1.311s`), including `UNKNOWN_ACTION` for `authorize_admission`
+and `consume_admission`. That count is this run only.
+
+Observed `origin/main` at session start: `5c59d95ec52379e010f8e9c660da11cfa6498def`.
+The Wave 4 gate file, the reservation machine, the resale machine, and their
+base SHAs are unchanged. B01–B05, R01–R05, and P03 stay **설계중**.
+
+`mock_gates.py` remains the authorize and one-time consume predicate.
+`admission_fsm.py` is the acceptance machine in front of that predicate.
+`reservation_fsm.py` and `resale_fsm.py` do not gain commands.
+A bound reservation is read at adopt, authorize, and consume. A successful
+authorize or consume is also applied on that reservation machine, so a later
+resale read can see `ADMISSION_LOCKED` or `ALREADY_CONSUMED`.
+A bound resale machine is read only. Direct `MockGates` calls, and direct
+`ReservationMachine` authorize or consume calls, still do not pass this freshness gate.
+No `protocol_contract.json` command was added. The contract-only OpenAPI
+catalogue is unchanged.
+
+`DECISION_REQUIRED · Astra`: putting `authorize_admission` or `consume` on the
+published catalogue is stopped. The loopback answers those action names with
+`UNKNOWN_ACTION`. Published `admit` and `open_admission` are unchanged.
+A missing-ticket `admit` is `TICKET_NOT_FOUND` both from local `Core.execute`
+and from the loopback. Health on that loopback stays `production: false` and
+`publicHost: false`.
+
+The contract tables are `docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md` §11.
+The accepted path is:
+
+```text
+issued active right
+  --> adopt_issued --> ELIGIBLE --> authorize_admission --> AUTHORIZED --> consume --> CONSUMED
+```
+
+An expired `AUTHORIZED` credential stays in that phase. A later authorize with a
+new admission id can replace it. The following consume is once.
+`venue_credential_reissued`, `offline_admission`, and `admission_routing_production`
+stay false.
+
+### Races
+
+These orders are sequential commands in one process. They are not threads and
+not cross-channel exclusion. `cross_channel_exclusive` stays false.
+
+| First | Next | Terminal |
+|---|---|---|
+| resale accept | authorize or consume the old holder and version | `STALE_VERSION`. Reservation stays `ISSUED` at version 1 |
+| resale accept | authorize the new holder and version | `STALE_VERSION`. No credential reissue |
+| authorize | resale list | resale `ADMISSION_LOCKED` |
+| consume | resale list | resale `ALREADY_CONSUMED`. Reservation is `CONSUMED`, version 2 |
+| live list | authorize | `LISTING_LOCKED` |
+| cancel listing | authorize | `AUTHORIZED` |
+| cancel before issue | adopt | `TICKET_CANCELLED` |
+| payment noted, not issued | adopt | `TICKET_NOT_ISSUED` |
+| cancel after issue | authorize and consume | reservation cancel is `CANCEL_AFTER_ISSUE`. Entry still proceeds |
+| first authorize | second admission id | `ADMISSION_LOCKED` |
+| first consume | second consume id | `ALREADY_CONSUMED`. Version stays 2 |
+| same key and binding | retry | `duplicate: true`. No second effect |
+| expired authorize | consume | `ADMISSION_EXPIRED` |
+| external dependency, or `reject_external` | authorize or consume | rejected, not journaled |
+| journal, then ownership transfers | restore or reconcile | `STALE_VERSION` |
+
+A configured venue-identity or revocation object is not read. A command that
+names `VENUE_IDENTITY` or `REVOCATION`, or a machine constructed with either
+source, fails closed with `VENUE_SOURCE_UNAVAILABLE` or
+`REVOCATION_SOURCE_UNAVAILABLE`. An ownership source that raises fails closed
+with `OWNERSHIP_SOURCE_UNAVAILABLE`. None of those paths consume.
+
+A settlement `COMMITTED` view is not entry. Consume does not change that
+book's canonical state, and `admission_granted` stays false.
+`admission_granted: true` is `SETTLEMENT_VIEW_REJECTED`.
+A reservation settlement id with no settlement source is
+`SETTLEMENT_SOURCE_REQUIRED`.
+
+### Non-claims
+
+- `matched: true` is equality of this process's journal and local views when the bound sources still accept the replay.
+- `state_digest` is a sha256 of that in-memory state, not a signature or chain commitment.
+- `CONSUMED` is a mock terminal for that credential, not production admission closure and not a venue scan.
+- `offline_admission` stays false. A missing external source is not a last-known allow.
+- No public endpoint, venue hardware, production credential issuance or revocation, PG, KYC, or commerce-apps change.
+- Passing these tests does not mean P03 is implemented.
