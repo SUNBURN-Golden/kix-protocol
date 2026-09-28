@@ -46,6 +46,8 @@ PR 작성 계정과 병합 계정은 모두 `BeautifulMind-JT`다. GitHub 기록
 
 ## 3. DECISION_REQUIRED D-1 — 정본 계획과 병합분의 관계
 
+> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **사용자 승인(이 PR 병합 또는 명시 승인) 전까지는 이 항목이 열린 상태다.**
+
 - [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md) §1은 "첫 묶음만 착수 승인"이라고 적는다. 루트 README §4도 "현재 승인된 것은 첫 묶음의 잔여 검토·보완"이라고 적는다.
 - [Task 005](../tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md)는 Astra 결정으로 Wave 2~5를 순서대로 허용하되, 각 Wave의 게이트가 열릴 때만 시작하도록 정한다.
 - main에는 §1 표의 Wave 2~5 산출물과 후속 상태기계·관문·저널이 이미 있다.
@@ -58,6 +60,8 @@ PR 작성 계정과 병합 계정은 모두 `BeautifulMind-JT`다. GitHub 기록
 
 ## 4. DECISION_REQUIRED D-2 — 착수 근거 추적
 
+> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **사용자 승인(이 PR 병합 또는 명시 승인) 전까지는 이 항목이 열린 상태다.**
+
 - Task 005는 Wave 2 진입 조건을 "Task 004 draft PR 존재 + GROK_BUILD exact-HEAD 비작성자 검토 기록"으로 정한다. 저장소와 이슈 #56(2026-09-28 기준 댓글 0)에서 Wave 2~5 게이트 개방 기록을 찾지 못했다.
 - Task 005 문서의 main 병합(09-27 14:52 KST)이 Wave 2~5 병합(09-26 03:48~05:15 KST)보다 늦다.
 - #64·#66·#67·#68·#69·#70·#71은 Task 005 Wave 표에 이름이 없는 후속 작업이다. `docs/tasks/`에 과제 문서가 없고 PR 본문에 결정 인용도 없다.
@@ -66,6 +70,8 @@ PR 작성 계정과 병합 계정은 모두 `BeautifulMind-JT`다. GitHub 기록
 필요한 것은 게이트 개방 또는 사후 승인 여부의 기록이다. 작성 주체는 사용자 또는 Astra다. 사실 목록은 이슈 #56에 남긴다.
 
 ## 5. DECISION_REQUIRED D-3 — readiness 파일 저널과 저장·로그 구현 금지
+
+> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **사용자 승인(이 PR 병합 또는 명시 승인) 전까지는 이 항목이 열린 상태다.**
 
 사실:
 
