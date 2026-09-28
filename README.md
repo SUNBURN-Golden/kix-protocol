@@ -43,10 +43,18 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 
 기존 E-4 비교 모델은 커널 소스를 참고해 작성했습니다. 두 구현의 일치와 계약 불변식 검증은 구분하며, [검증 범위·한계](docs/contracts/CONTRACT_INVARIANTS.md)를 유지합니다. 실제 은행 자금·체인 위임·분산 내구성을 검증했다는 뜻이 아닙니다.
 
+**2026-09-28 현황:** 2026-09-25~27 main에는 다음이 병합됐습니다.
+
+- Task 004 측정 장치
+- [Task 005](docs/tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md) Wave 2~5: Move 발행 확장, 정산·예매/리셀/검표·F04 여신의 mock과 상태기계
+- 계약 전용 OpenAPI, loopback HTTP 관문, 로컬 readiness 저널
+
+모두 mock·비운영 범위이며, 실 PG·은행·체인 연동이나 운영 승인이 아닙니다. 위 첫 묶음 문장과 이 병합분의 관계, 착수 게이트 기록, readiness 저널이 §3 금지에 해당하는지는 사용자 결정이 필요합니다. 이 세 가지는 [main 상태 정합 기록](docs/status/MAIN_STATE_20260928.md)에 적었습니다. 2026-09-26부터는 GitHub Actions 사용량이 소진돼 hosted CI가 실행되지 않았습니다.
+
 ## 5. 읽는 순서
 
 1. [DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) — 현행 승인·금지·단계, **4단계 비교 정본은 §9 한 곳**.
-2. [BASELINES.md](docs/status/BASELINES.md) — 지금 쓰는 main과 고정·역사 기준을 구분.
+2. [BASELINES.md](docs/status/BASELINES.md) — 지금 쓰는 main과 고정·역사 기준을 구분. [main 상태 정합 기록](docs/status/MAIN_STATE_20260928.md) — 2026-09-28 병합 범위·CI 공백·열린 결정.
 3. [AUTHORITY_MODEL_1.md](docs/decisions/AUTHORITY_MODEL_1.md) — 승인된 모델과 현재 구현의 차이.
 4. [STATE_LIFECYCLE.md](docs/contracts/STATE_LIFECYCLE.md) / [열린 입력](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md) — 초안이며 미정 입력이 남음.
 5. [CONTRACT_INVARIANTS.md](docs/contracts/CONTRACT_INVARIANTS.md) / [첫 묶음 증거](validation/2026-09-16-first-batch/README.md) — 무엇을 검사했고 검사하지 않았는지.

@@ -46,3 +46,12 @@ PR #13 전체 run `35069017150`과 KTX run `35069017358`은 #13 head 대상입�
 2026-09-17 추가된 `kix-exp-r1-preservation-ops-v1-20260916`은 운영 이력 보존용
 **lightweight tag + GitHub Pre-release 본문**입니다. 새 개발 기준선으로 세지 않습니다.
 대상 commit·tree·본문 위치와 대조값은 [운영 이력 보존 기록](PR11_PRESERVATION.md)에 있습니다.
+
+## 2026-09-28 추가 — hosted CI 공백 기간의 기준
+
+| 기준 | 정확한 식별자 | 사용 |
+|---|---|---|
+| 마지막 hosted CI 녹색 main | `b61e48d965e7ed3f1c5f4fcd5ad863b961ce4e28`(#62 병합), KIX protocol verification run `36184686465` success | CI 공백 이전의 마지막 검증 지점. 이후 SHA로 승계하지 않음 |
+| 2026-09-28 확인 main | `34a722d26fa894366c26bac9de4187c598fbf3eb`(#72 병합), run `36304355015` failure(사용량 소진, 테스트 본문 미실행) | hosted CI 미검증. 로컬 대체 결과만 있음 |
+
+2026-09-26 이후 병합분과 원인 기록, 복구 뒤 확인할 항목은 [main 상태 정합 기록](MAIN_STATE_20260928.md)에 있다. 이 표도 태그를 새로 만들거나 옮기라는 뜻이 아니다.
