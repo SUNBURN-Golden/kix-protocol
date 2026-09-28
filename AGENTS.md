@@ -95,6 +95,12 @@ Unless a later explicit human authorization specifically permits it, do not perf
 
 Creating a new task-specific branch is allowed.
 
+Explicit human authorizations granted after this list are recorded under `docs/decisions/`. The 2026-09-28 owner-approved program decisions (`docs/decisions/PROGRAM_DECISIONS_20260928.md`, approved by merging PR #73) do three things:
+
+- They classify the non-production `readiness/` local wrapper, within its stated bounds, as outside the storage/log-engine item above.
+- They open Track P (Task 005 waves) on gate records.
+- They keep every other item in this list locked, each with its unlock criteria.
+
 Model 1 (chain authority / off-chain delegated execution) is the approved authority model, but the current v4 kernel is not a complete implementation of it.
 
 ## 6. Change discipline

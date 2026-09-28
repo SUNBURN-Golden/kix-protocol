@@ -26,7 +26,7 @@ KIX는 티켓 권리·거래 프로토콜을 중심으로 예매, 공식 리셀,
 
 | 작업 | 현재 판단 | 근거 |
 |---|---|---|
-| R2 및 자체 복제·저장·로그 신규 구현 | **금지 유지** | [개발계획 §1·§5](docs/DEVELOPMENT_PLAN.md), [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md) |
+| R2 및 자체 복제·저장·로그 신규 구현 | **금지 유지**. 단, 비운영 로컬 래퍼인 `readiness/`는 D-3 경계 안에서 허용 | [개발계획 §1·§5](docs/DEVELOPMENT_PLAN.md), [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [프로그램 결정 §4](docs/decisions/PROGRAM_DECISIONS_20260928.md) |
 | (a) PR #11의 wire·저널을 v4 위로 통합 | **착수 승인 없음** | [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [#11 태그 보존·호환성](docs/status/PR11_PRESERVATION.md) |
 | 명칭·죽은 코드·브랜치·태그·Cargo/CI/lint 등 위생 일괄 실행 | **목록만 유지, 실행 금지** | [코드 위생 목록](docs/CODE_HYGIENE_BACKLOG.md), [개발계획 §1](docs/DEVELOPMENT_PLAN.md) |
 | 색인 변경·새 종결/회수/해제 전이 | **첫 묶음에서 제외** | [개발계획 §5·§6.3](docs/DEVELOPMENT_PLAN.md), [수명 계약 초안](docs/contracts/STATE_LIFECYCLE.md) |
@@ -49,7 +49,14 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 - [Task 005](docs/tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md) Wave 2~5: Move 발행 확장, 정산·예매/리셀/검표·F04 여신의 mock과 상태기계
 - 계약 전용 OpenAPI, loopback HTTP 관문, 로컬 readiness 저널
 
-모두 mock·비운영 범위이며, 실 PG·은행·체인 연동이나 운영 승인이 아닙니다. 위 첫 묶음 문장과 이 병합분의 관계, 착수 게이트 기록, readiness 저널이 §3 금지에 해당하는지는 사용자 결정이 필요합니다. 이 세 가지는 [main 상태 정합 기록](docs/status/MAIN_STATE_20260928.md)에 적었습니다. 2026-09-26부터는 GitHub Actions 사용량이 소진돼 hosted CI가 실행되지 않았습니다.
+모두 mock·비운영 범위이며, 실 PG·은행·체인 연동이나 운영 승인이 아닙니다. 병합 목록과 CI 기록은 [main 상태 정합 기록](docs/status/MAIN_STATE_20260928.md)에 있습니다. 2026-09-26부터는 GitHub Actions 사용량이 소진돼 hosted CI가 실행되지 않았습니다.
+
+**2026-09-28 결정:** 사용자가 PR #73을 병합(`cfeb0d6`)하면서 [프로그램 결정 D-1~D-3](docs/decisions/PROGRAM_DECISIONS_20260928.md)을 승인했습니다. 이제 승인 범위는 두 트랙입니다.
+
+- **Track K (커널·영속):** 위 첫 묶음과 개발계획의 단계를 따릅니다. 4단계 backend 비교는 준비와 로컬 탐색 실측까지 열렸습니다.
+- **Track P (제품 프로토콜):** Task 005 Wave 0~7과 그 후속입니다. 계약·mock·Move 확장·OpenAPI·비운영 0.x SDK·분리 저장소 앱·AI 위임 계약을 다루며, 게이트 기록만으로 착수합니다. Wave 2~5는 사후 승인됐고, Wave 6은 `kix-commerce-apps`에서 열렸습니다.
+
+실자금·실 제공자 호출·공개 운영 엔드포인트·mainnet·커널 잠금·R2는 계속 잠겨 있습니다. 각 잠금의 해제 조건은 결정 문서 §5에 있습니다.
 
 ## 5. 읽는 순서
 
