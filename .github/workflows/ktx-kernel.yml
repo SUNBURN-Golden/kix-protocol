@@ -19,32 +19,99 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+          # Parent commits are needed to diff the PR merge or push against its base.
+          fetch-depth: 2
+      - name: Classify changed paths
+        id: scope
+        # A classifier error leaves docs_only unset, which runs full verification.
+        continue-on-error: true
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -uo pipefail
+          # Fail safe: any change that cannot be proven documentation-only runs full verification.
+          summary() { printf '%s\n' "$@" >> "$GITHUB_STEP_SUMMARY"; }
+          full() {
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            summary "### 변경 범위: 전체 검증" "" "이유: $1"
+            exit 0
+          }
+          [ "$(git rev-parse HEAD 2>/dev/null)" = "$GITHUB_SHA" ] || full "checkout HEAD is not GITHUB_SHA"
+          case "$EVENT_NAME" in
+            pull_request)
+              # actions/checkout uses the PR merge commit: parent 1 is the base tip, parent 2 the PR head.
+              [ "$(git rev-parse HEAD^2 2>/dev/null)" = "$PR_HEAD_SHA" ] || full "PR merge commit parents not available"
+              base=$(git rev-parse HEAD^1) || full "PR base commit not available" ;;
+            push)
+              case "$PUSH_BEFORE" in
+                ''|*[!0-9a-f]*|0000000000000000000000000000000000000000) full "push has no previous commit" ;;
+              esac
+              git cat-file -e "$PUSH_BEFORE^{commit}" 2>/dev/null || full "previous commit not in the checkout"
+              base=$PUSH_BEFORE ;;
+            *) full "event $EVENT_NAME always runs full verification" ;;
+          esac
+          raw=$(git -c core.quotePath=true diff --raw --no-renames --no-ext-diff "$base" HEAD) || full "git diff failed"
+          [ -n "$raw" ] || full "empty diff"
+          files=()
+          while IFS= read -r line; do
+            meta=${line%%$'\t'*}
+            path=${line#*$'\t'}
+            [ "$meta" != "$line" ] || full "unparsable diff line"
+            read -r old_mode new_mode _ _ status <<< "${meta#:}"
+            case "$path" in \"*) full "quoted path $path" ;; esac
+            case "$old_mode:$new_mode" in
+              000000:100644|100644:000000|100644:100644) ;;
+              *) full "file mode $old_mode to $new_mode on $path" ;;
+            esac
+            case "$status" in A|D|M) ;; *) full "change type $status on $path" ;; esac
+            case "$path" in
+              # Documentation that verifiers read always runs full verification.
+              docs/contracts/*|docs/adr/*|docs/PROTOCOL_MASTERPLAN_*|README.md|validation/2026-09-11/*)
+                full "verifier input $path" ;;
+              docs/*|TASKS/*|RUNBOOKS/*|reviews/*|validation/*) ;;
+              */*) full "non-documentation path $path" ;;
+              *.md) ;;
+              *) full "non-documentation path $path" ;;
+            esac
+            files+=("$path")
+          done <<< "$raw"
+          summary "### 문서 전용 변경: 무거운 검증 생략" "" \
+            "아래 파일만 바뀌었습니다. 이 초록 표시는 전체 검증 통과가 아닙니다." "" '```' "${files[@]}" '```'
+          echo "docs_only=true" >> "$GITHUB_OUTPUT"
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
+        if: steps.scope.outputs.docs_only != 'true'
         with:
           toolchain: '1.98.1'
           components: rustfmt, clippy
       - name: Architecture and declared dependency boundary
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           python3 scripts/verify_runtime_architecture.py
           python3 scripts/test_runtime_architecture.py
       - name: Compile and test kernel transitions
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           set -o pipefail
           mkdir -p .local/verification/ktx
           cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked 2>&1 | tee .local/verification/ktx/kernel-tests.log
       - name: Clippy
+        if: steps.scope.outputs.docs_only != 'true'
         run: cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked -- -D warnings
       - name: Formatting
+        if: steps.scope.outputs.docs_only != 'true'
         run: cargo fmt --manifest-path runtime/Cargo.toml --all -- --check
       - name: Dependency evidence
-        if: always()
+        if: always() && steps.scope.outputs.docs_only != 'true'
         run: |
           mkdir -p .local/verification/ktx
           cargo tree --manifest-path runtime/Cargo.toml -p kix-kernel --edges normal --locked > .local/verification/ktx/dependencies.txt
           sha256sum runtime/Cargo.lock runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/transitions.rs > .local/verification/ktx/source-sha256.txt
           git rev-parse HEAD > .local/verification/ktx/tested-commit.txt
       - name: Preserve review artifacts
-        if: always()
+        if: always() && steps.scope.outputs.docs_only != 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ktx-verification-${{ github.sha }}

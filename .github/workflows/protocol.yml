@@ -21,12 +21,77 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+          # Parent commits are needed to diff the PR merge or push against its base.
+          fetch-depth: 2
+      - name: Classify changed paths
+        id: scope
+        # A classifier error leaves docs_only unset, which runs full verification.
+        continue-on-error: true
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -uo pipefail
+          # Fail safe: any change that cannot be proven documentation-only runs full verification.
+          summary() { printf '%s\n' "$@" >> "$GITHUB_STEP_SUMMARY"; }
+          full() {
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            summary "### 변경 범위: 전체 검증" "" "이유: $1"
+            exit 0
+          }
+          [ "$(git rev-parse HEAD 2>/dev/null)" = "$GITHUB_SHA" ] || full "checkout HEAD is not GITHUB_SHA"
+          case "$EVENT_NAME" in
+            pull_request)
+              # actions/checkout uses the PR merge commit: parent 1 is the base tip, parent 2 the PR head.
+              [ "$(git rev-parse HEAD^2 2>/dev/null)" = "$PR_HEAD_SHA" ] || full "PR merge commit parents not available"
+              base=$(git rev-parse HEAD^1) || full "PR base commit not available" ;;
+            push)
+              case "$PUSH_BEFORE" in
+                ''|*[!0-9a-f]*|0000000000000000000000000000000000000000) full "push has no previous commit" ;;
+              esac
+              git cat-file -e "$PUSH_BEFORE^{commit}" 2>/dev/null || full "previous commit not in the checkout"
+              base=$PUSH_BEFORE ;;
+            *) full "event $EVENT_NAME always runs full verification" ;;
+          esac
+          raw=$(git -c core.quotePath=true diff --raw --no-renames --no-ext-diff "$base" HEAD) || full "git diff failed"
+          [ -n "$raw" ] || full "empty diff"
+          files=()
+          while IFS= read -r line; do
+            meta=${line%%$'\t'*}
+            path=${line#*$'\t'}
+            [ "$meta" != "$line" ] || full "unparsable diff line"
+            read -r old_mode new_mode _ _ status <<< "${meta#:}"
+            case "$path" in \"*) full "quoted path $path" ;; esac
+            case "$old_mode:$new_mode" in
+              000000:100644|100644:000000|100644:100644) ;;
+              *) full "file mode $old_mode to $new_mode on $path" ;;
+            esac
+            case "$status" in A|D|M) ;; *) full "change type $status on $path" ;; esac
+            case "$path" in
+              # Documentation that verifiers read always runs full verification.
+              docs/contracts/*|docs/adr/*|docs/PROTOCOL_MASTERPLAN_*|README.md|validation/2026-09-11/*)
+                full "verifier input $path" ;;
+              docs/*|TASKS/*|RUNBOOKS/*|reviews/*|validation/*) ;;
+              */*) full "non-documentation path $path" ;;
+              *.md) ;;
+              *) full "non-documentation path $path" ;;
+            esac
+            files+=("$path")
+          done <<< "$raw"
+          summary "### 문서 전용 변경: 무거운 검증 생략" "" \
+            "아래 파일만 바뀌었습니다. 이 초록 표시는 전체 검증 통과가 아닙니다." "" '```' "${files[@]}" '```'
+          echo "docs_only=true" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        if: steps.scope.outputs.docs_only != 'true'
         with:
           python-version: '3.12'
       - name: Non-production HTTP integration gate
+        if: steps.scope.outputs.docs_only != 'true'
         run: python3 -m unittest integration_gate.test_http_gate readiness.test_faults
       - name: Offline reference state machines and OpenAPI pins
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04; do
             PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "reference/$suite" -t "reference/$suite"
@@ -36,47 +101,61 @@ jobs:
           python3 scripts/check_integration_gate_openapi.py
           python3 scripts/check_integration_gate_openapi.py --self-test
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5
+        if: steps.scope.outputs.docs_only != 'true'
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: reference/v0.3-rc1/client/package-lock.json
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
+        if: steps.scope.outputs.docs_only != 'true'
         with:
           toolchain: '1.98.1'
           components: rustfmt, clippy
       - name: Install pinned CLI and locked dependencies
+        if: steps.scope.outputs.docs_only != 'true'
         run: bash scripts/bootstrap.sh
       - name: Python, SDK, Move and circuit checks
+        if: steps.scope.outputs.docs_only != 'true'
         run: .venv/bin/python scripts/verify_runtime.py
       - name: Asset and bundle calculation contracts
+        if: steps.scope.outputs.docs_only != 'true'
         run: .venv/bin/python scripts/verify_commerce.py --report .local/verification/commerce.json
       - name: Python and TypeScript canonical contract agreement
+        if: steps.scope.outputs.docs_only != 'true'
         run: .venv/bin/python scripts/verify_canonical.py --report .local/verification/canonical.json
       - name: Production runtime architecture contract
+        if: steps.scope.outputs.docs_only != 'true'
         run: .venv/bin/python scripts/verify_runtime_architecture.py
       - name: Rust production runtime boundary
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           cargo fmt --manifest-path runtime/Cargo.toml --all -- --check
           cargo test --manifest-path runtime/Cargo.toml --workspace --locked
           cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings
       - name: Storage continuity and deliberate rollback probes
+        if: steps.scope.outputs.docs_only != 'true'
         run: |
           .venv/bin/python scripts/probe_paid_storage.py --python /usr/bin/python3 --directory .local/storage-probe --cycles 3 --report .local/verification/storage-probe.json
           .venv/bin/python scripts/reproduce_storage_rollback.py --report .local/verification/storage-rollback.json
           .venv/bin/python scripts/verify_paid_recovery.py --report .local/verification/paid-recovery.json
           /usr/bin/python3 scripts/verify_paid_archive.py --report .local/verification/paid-archive.json
       - name: Public journey on a disposable local chain
+        if: steps.scope.outputs.docs_only != 'true'
         run: .venv/bin/python scripts/run_localnet.py
       - name: Paid resale with actual Sui and independent mock PG and bank
+        if: steps.scope.outputs.docs_only != 'true'
         run: .venv/bin/python scripts/run_localnet.py --paid
       - name: Generate fixture proving artifacts
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm --prefix reference/v0.3-rc1/client run setup:zk
       - name: Reject compensated proofs with contributed keys
+        if: steps.scope.outputs.docs_only != 'true'
         run: npm --prefix reference/v0.3-rc1/client run test:zk
       - name: Private journey on a disposable local chain
+        if: steps.scope.outputs.docs_only != 'true'
         run: .venv/bin/python scripts/run_localnet.py --private
       - name: Upload check results only
-        if: always()
+        if: always() && steps.scope.outputs.docs_only != 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: kix-verification-${{ github.sha }}
