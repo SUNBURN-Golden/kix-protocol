@@ -13,6 +13,13 @@ hosted GitHub Actions 사용량이 소진된 기간의 로컬 대체 확인이�
 - `docs/status/MAIN_STATE_20260928.md`를 새로 썼다. 병합 범위, CI 공백, 열린 결정 D-1~D-3을 담는다.
 - `README.md`, `docs/README.md`, `docs/DEVELOPMENT_PLAN.md`(§17), `docs/status/BASELINES.md`, `docs/status/ORIGINAL_32_STATUS.md`에는 안내와 추가 절만 넣었다. 승인·금지 범위, 32항목 라벨, 기존 집계는 바꾸지 않았다.
 
+## 추가 변경 — 사용자 명시 지시 "전부 그냥 해결해"
+
+- `docs/tasks/README.md`: Task 004·005 표의 상태 행만 사실대로 고쳤다. 과제 문서 본문은 수정하지 않았다.
+- `.gitignore`: `target/` 한 줄을 추가했다. 추가 전 `git ls-files`에서 `target/` 아래 추적 파일이 0개였다. 추가 후 `runtime/target/probe`를 만들어 `git status`에 나타나지 않는 것을 확인하고 지웠다.
+- `docs/status/MAIN_STATE_20260928.md` §7: PR·이슈 처리 결과를 기록했다. §1 표의 #58·#59 PR head KTX 칸도 조회값으로 채웠다.
+- GitHub 정리는 PR #35·#38 close, 이슈 #28·#33·#37·#40·#53·#55 close, #56 체크리스트 갱신이다. branch는 삭제하지 않았다.
+
 ## 기존 범위 대조 (AGENTS.md §7)
 
 | 요구 | 판단 | 근거 |

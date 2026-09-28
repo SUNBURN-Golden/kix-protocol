@@ -13,8 +13,8 @@ AGENTS.md §3에 따라 실행 세션이 자기 과제 문서를 만들지 않�
 
 | PR | 병합 commit | 병합 (KST) | 내용 | 근거 표시 | main push protocol CI | PR head KTX CI |
 |---|---|---|---|---|---|---|
-| #58 | `19bad99` | 09-26 02:56 | Task 004 성능 측정 장치(메모리 한정) | Task 004 | 36170293685 success | 미조회 |
-| #59 | `a281492` | 09-26 03:48 | Wave 2: Move `rights` 유상 1차 발행. 새 coin 모듈 없음 | Task 005 Wave 2 | 36175712454 success | 미조회 |
+| #58 | `19bad99` | 09-26 02:56 | Task 004 성능 측정 장치(메모리 한정) | Task 004 | 36170293685 success | 36130889407 success |
+| #59 | `a281492` | 09-26 03:48 | Wave 2: Move `rights` 유상 1차 발행. 새 coin 모듈 없음 | Task 005 Wave 2 | 36175712454 success | 36171313320 success |
 | #60 | `9e2dad6` | 09-26 04:13 | Wave 3: F01–F03 정산 계약·오프라인 mock | Task 005 Wave 3 | 36178376776 success | 36176909555 success |
 | #61 | `4ec0f93` | 09-26 04:50 | Wave 4: 예매·리셀·검표 계약·mock gate | Task 005 Wave 4 | 36182096662 success | 36180438521 success |
 | #62 | `b61e48d` | 09-26 05:15 | Wave 5: F04 여신 mock | Task 005 Wave 5 | 36184686465 success | 36183257446 success |
@@ -101,17 +101,21 @@ PR 작성 계정과 병합 계정은 모두 `BeautifulMind-JT`다. GitHub 기록
 
 이 기록과 같은 변경에서 위 다섯 줄을 `protocol.yml`의 "Offline reference state machines and OpenAPI pins" 단계로 연결했다. 그 단계의 hosted 실행 결과는 사용량 복구 전까지 없다.
 
-## 7. 정리 후보 — 이번에 조치하지 않음
+## 7. 정리 후보 — 2026-09-28 사용자 지시로 처리
 
-| 대상 | 상태 | 판단할 것 |
+처음에는 목록만 남겼으나, 사용자의 2026-09-28 명시 지시("전부 그냥 해결해")로 아래와 같이 처리했다. PR을 닫아도 branch는 삭제하지 않았다. 이슈·PR은 다시 열 수 있다.
+
+| 대상 | 처리 | 근거 |
 |---|---|---|
-| PR #38 `PROBE-DO-NOT-MERGE` | draft, CP-BOUNDARY-003 증거 | 증거 보존 위치를 정한 뒤 close 여부 |
-| PR #35 청사진 | draft. Task 005가 "#35 implementation"을 금지 | 역사 자료로 둘지 close할지 |
-| 이슈 #55 Task 004 | #54·#58 병합됨 | close 여부 |
-| 이슈 #56 Task 005 | Wave 1~5 체크리스트 미갱신 | D-1·D-2 결정 반영 |
-| 이슈 #28·#33·#37·#40·#53 | 2026-09-20~25 control plane·리뷰 | 담당 판단 |
-| `docs/tasks/README.md` | Task 004를 "impl writer active"로 표기. #58 병합 뒤 사실과 다름 | AGENTS.md §3에 따라 실행 세션이 고치지 않음. 오케스트레이터 갱신 대상 |
-| 최상위 `.gitignore` | `runtime/target/` 미포함. 로컬 cargo 빌드 뒤 추적되지 않은 디렉터리가 남음 | [위생 목록](../CODE_HYGIENE_BACKLOG.md) 편입 여부. 일괄 위생 실행은 금지 유지 |
+| PR #38 `PROBE-DO-NOT-MERGE` | 병합 없이 close. branch `probe/cp-boundary-003` 유지 | 제목이 병합 금지 probe. 증거는 branch와 `validation/2026-09-23-cp-boundary-003/`에 남음 |
+| PR #35 청사진 | 병합 없이 close. branch 유지 | Task 005가 "#35 implementation"을 잠금. 필요하면 다시 열 수 있음 |
+| 이슈 #55 Task 004 | completed로 close | #54·#58 병합. `28c9c13` exact-head KTX `36130889407`·protocol `36130889326` success |
+| 이슈 #53 CP-EXTRACT-001 진단 canary | completed로 close | 2026-09-25 CONFIRMED 기록과 NO_CHANGE 증거 댓글 |
+| 이슈 #28 PR #26 적대적 검토 | not planned로 close | 대상 PR #26이 2026-09-21 병합 없이 닫힘. 후속은 Task 003-C1 PR #30(병합) |
+| 이슈 #33·#37·#40 control plane | not planned로 close. **PASS 아님** | control plane은 `ai-ops-control-plane`으로 분리(#52)되고 중앙 정책 핀(#72)으로 옮겨짐. 남은 조건(실 host 증거, 운영 runner 연결, `runtime_enabled`, 형제 repo rollout)은 충족되지 않았으며, close 댓글에 그대로 옮김 |
+| 이슈 #56 Task 005 | 열어 둠. Wave 체크리스트를 병합 사실대로 갱신 | Wave 6~7 미착수. D-1·D-2는 여전히 열림 |
+| `docs/tasks/README.md` | Task 004·005 행을 사실대로 갱신 | 사용자 명시 지시. 과제 문서 본문은 수정하지 않음 |
+| 최상위 `.gitignore` | `target/` 한 줄 추가 | 사용자 명시 지시. 추적 중인 `target/` 파일은 0개. 다른 위생 항목의 일괄 실행은 하지 않음 |
 
 ## 8. 비주장
 
