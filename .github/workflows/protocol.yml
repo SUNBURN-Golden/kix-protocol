@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # ready_for_review starts the run for a draft that becomes a merge candidate.
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
@@ -15,6 +17,8 @@ concurrency:
 
 jobs:
   protocol:
+    # Draft PRs are skipped without a runner; push and workflow_dispatch always run.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
