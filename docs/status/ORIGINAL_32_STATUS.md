@@ -75,3 +75,17 @@ E-4와 측정 하네스는 K에 대한 **시험 자산**으로 따로 추적한�
 원표 S1~S8 계약 출처와 행별 판단은 기존 제출본에 보존한다. 원표 S7의 미커밋 제안 `57adb8d579986a945b716f0f181c0be938ceb389`를 과거에도 원격 검증된 것으로 수정하지 않는다. 앞으로 개발 순서와 4단계 비교의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md) §5·§9, 모델1 승인과 E02 표시 결정은 [AUTHORITY_MODEL_1.md](../decisions/AUTHORITY_MODEL_1.md)이다. 위 CI는 원래 앵커 SHA의 근거이며 새 하네스의 실행 근거가 아니다.
 
 첫 묶음 보조 진척은 검증 명령열 수·공개 상태 대조 수·재현 seed·축소 출력·독립 모델의 결함 감지 여부와 측정 하네스가 실제 저장한 원시 결과로 기록한다. 지금의 31/1을 움직이기 위해 부분 구현의 의존성을 임의 삭제하지 않는다.
+
+## 2026-09-28 추가 — Task 005 산출물이 관련된 행 (라벨·집계 불변)
+
+위 표와 집계는 원표 재현값이며 이번에 바꾸지 않았다. 아래는 2026-09-25~27 main에 병합된 산출물과 관련 행을 따로 적은 보조 목록이다. 관련 행은 [Task 005](../tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md)의 program map을 옮긴 것이며, 독립 검증을 거친 매핑이 아니다.
+
+| 산출물 | 경로 | 관련 행 | 비고 |
+|---|---|---|---|
+| Wave 2 유상 1차 발행 | `reference/v0.3-rc1/sui/sources/rights.move` | P01, P02, E02 | 앵커 M은 `c8267d1` 당시 blob `d82c379…`로 유지한다. 2026-09-28 main의 같은 경로 blob은 `ea79050…`이다 |
+| Wave 3 정산 mock·상태기계 | `reference/settlement_f01_f03/` | P04, F01, F02, F03 | mock 출처 표시 `MOCK_SETTLEMENT_ONLY` |
+| Wave 4 예매·리셀·검표 mock·상태기계 | `reference/booking_resale_admission/` | B01–B05, R01–R05, P03 | 운영 검표 routing 아님 |
+| Wave 5 F04 여신 mock·상태기계 | `reference/credit_advance_f04/` | F04 (E06 경계) | 원표의 F04 부분 앵커 0은 원표 재현값으로 유지 |
+| 계약 전용 OpenAPI, loopback 관문, readiness 저널 | `docs/contracts/openapi/`, `integration_gate/`, `readiness/` | Task 005 표에 행 매핑 없음 | 운영 엔드포인트 아님 |
+
+위 산출물은 모두 in-memory mock, 로컬 관문 또는 프로세스 로컬 저널이다. 라벨 정의상 필수 의존성(실제 제공자 사실, 영속 원장, 체인 확정 등)을 채우지 않으므로 31/1은 그대로다. 새 경로를 부분 앵커 집계(24/32, 34)에 넣을지는 별도 결정이다. CI 기록과 열린 결정은 [main 상태 정합 기록](MAIN_STATE_20260928.md)에 있다.

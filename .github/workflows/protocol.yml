@@ -26,6 +26,15 @@ jobs:
           python-version: '3.12'
       - name: Non-production HTTP integration gate
         run: python3 -m unittest integration_gate.test_http_gate readiness.test_faults
+      - name: Offline reference state machines and OpenAPI pins
+        run: |
+          for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04; do
+            PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "reference/$suite" -t "reference/$suite"
+          done
+          python3 scripts/check_openapi_contract.py
+          python3 scripts/check_openapi_contract.py --self-test
+          python3 scripts/check_integration_gate_openapi.py
+          python3 scripts/check_integration_gate_openapi.py --self-test
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5
         with:
           node-version: '24'

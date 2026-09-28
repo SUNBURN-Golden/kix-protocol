@@ -5,6 +5,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .local/
+target/
 node_modules/
 build/
 *.r1cs
