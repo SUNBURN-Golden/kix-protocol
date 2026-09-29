@@ -44,3 +44,34 @@ workflow의 `sha256sum` 출력은 **증거 기록**일 뿐 고정값 assert가 �
 
 이 제안은 **코드 위생 (나)의 목록**에만 추가합니다. workflow, Cargo, 테스트 상수,
 브랜치/태그 보호 설정을 이번에 바꾸지 않았습니다. 잠금 파일은 어떤 위생 사유로도 수정하지 않습니다.
+
+## 4. 2026-09-29 추가 — CI 실행 조건 변경 뒤의 강제 경로
+
+위 1~3절은 2026-09-16 기록이므로 그대로 둡니다. 그 뒤 두 가지가 바뀌었습니다.
+하나는 문서 전용 변경이면 무거운 검증을 건너뛰는 분류(#75)입니다. 다른 하나는
+draft PR에서 CI를 건너뛰는 조건(#76)입니다. 이 절은 그 뒤의 값을 적습니다.
+확인 소스는 #76 head `76b5e342c298ebaac42d6ebc7d5ecd6bd27811e6`입니다
+(base main `b8b7455cf346d98689238d3eeaf07fc139fa6a7d`).
+
+| 단계 | 파일과 전체 Git blob | 바뀐 점 |
+|---|---|---|
+| KTX workflow | `.github/workflows/ktx-kernel.yml` / `4a73103904a8b8428cc1424a6e9f52b13ef3ed09` | 검증 명령은 그대로. 변경 경로 분류 단계와 draft 건너뛰기 조건이 추가됨 |
+| 전체 workflow | `.github/workflows/protocol.yml` / `9e5d96e995fe2cff29b2b52863f6d6dc5c4d9289` | 검증 명령은 그대로. 같은 분류 단계와 draft 건너뛰기 조건이 추가됨. main push는 계속 실행 |
+| 두 blob assert | `runtime/crates/kix-kernel/tests/e4_state_model.rs` / `7ae4535c472cbe5416cf68a298fd4cd1dcf2a38a` | 테스트 파일 blob은 바뀜. `locked_sources_and_new_harness_sources_are_identified`의 고정값과 대조 방식은 1절 설명과 같음. ignore 표시 없음 |
+
+잠금 소스의 blob은 그대로입니다. `lib.rs`는 `69564b166f0c27f9af5d8422f0a466b18d74c20f`,
+`quarantine_capacity.rs`는 `b607996c83a119c349f1cc90469ac1ba82764e20`입니다.
+
+바뀐 조건에서 assert가 언제 실행되는지는 다음과 같습니다.
+
+- **잠금 파일이나 테스트를 바꾼 PR.** `runtime/` 경로는 문서가 아니므로 분류가 전체 검증을 고릅니다.
+  분류 단계가 실패해도 전체 검증으로 갑니다.
+- **draft 동안.** 두 workflow 모두 건너뜁니다. 이때 초록 표시는 통과가 아닙니다.
+  draft는 병합할 수 없습니다.
+- **Ready for review로 바꿀 때와 그 뒤 push마다.** 두 workflow가 다시 실행됩니다. 문서 전용 변경이 아니면 위 테스트가 포함됩니다.
+- **main push.** `protocol.yml`이 실행됩니다. 문서 전용 push가 아니면 workspace 테스트에 위 테스트가 포함됩니다.
+
+2절의 한계는 그대로입니다. 이번 확인 시에도 main은 protected=false였습니다.
+필수 상태 검사가 없으므로, Ready 직후 실행이 끝나기 전에 병합하는 것을 서버가 막지 않습니다.
+AGENTS.md §10의 규칙(Ready 때 실행이 병합 근거)이 이 부분을 대신합니다.
+이번에도 잠금 소스를 실제로 바꿔 실패를 재현하지는 않았습니다.
