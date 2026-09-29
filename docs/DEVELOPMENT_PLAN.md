@@ -357,4 +357,4 @@ Rust 기준 의미론과 Polars·DuckDB를 null/정렬/join/overflow/정수 금�
 - R2
 - 커널 잠금 변경
 
-2026-09-26 이후 병합분에는 아직 hosted CI 성공 기록이 없다. #73은 사용자 지시로 CI 예외를 적용해 병합했다.
+2026-09-26 이후 병합분의 hosted CI 성공 기록은 Actions 사용량 복구 뒤 생겼다. #59~#74를 포함한 main `60e7683`에서 두 workflow가 성공했다(run ID는 [기준 표](status/BASELINES.md)). #73·#74는 그 전에 사용자 지시로 CI 예외를 적용해 병합했다.
