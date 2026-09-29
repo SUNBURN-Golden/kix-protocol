@@ -55,3 +55,14 @@ PR #13 전체 run `35069017150`과 KTX run `35069017358`은 #13 head 대상입�
 | 2026-09-28 확인 main | `34a722d26fa894366c26bac9de4187c598fbf3eb`(#72 병합), run `36304355015` failure(사용량 소진, 테스트 본문 미실행) | hosted CI 미검증. 로컬 대체 결과만 있음 |
 
 2026-09-26 이후 병합분과 원인 기록, 복구 뒤 확인할 항목은 [main 상태 정합 기록](MAIN_STATE_20260928.md)에 있다. 이 표도 태그를 새로 만들거나 옮기라는 뜻이 아니다.
+
+## 2026-09-29 추가 — hosted CI 복구 뒤 확인
+
+Actions 사용량이 충전된 뒤 밀린 main 검증을 다시 실행했다. 위 표의 공백은 아래 SHA에서 끝난다.
+
+| 기준 | 정확한 식별자 | 결과 |
+|---|---|---|
+| 복구 뒤 첫 녹색 main | `60e7683ad28d5264f398d7965c06bfd840aa7338`(#74 병합, #59~#74 포함) | KIX protocol verification run `36411644680`(push, attempt 2) success. KTX kernel verification run `36496137735`(workflow_dispatch) success |
+| 문서 전용 분류(#75) 병합 main | `b8b7455cf346d98689238d3eeaf07fc139fa6a7d` | KIX protocol verification run `36498337842`(push) success. workflow 변경이므로 전체 검증 |
+
+`60e7683` 실행은 #75·#76 이전 workflow로 돌았다. 이후 main 결과는 해당 PR 기록에 남기며, 이 표의 성공을 뒤 SHA로 승계하지 않는다.
