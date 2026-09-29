@@ -194,6 +194,18 @@ Both workflows skip draft PRs. A PR runs them when it is opened as ready, when i
 - A draft PR's skipped or absent CI is not a pass. Never report it as one. A skipped job shows as success on the check, but a draft cannot be merged.
 - If CI evidence is needed while the PR is still in draft, run `workflow_dispatch` on the branch by hand, once.
 
+### Main push, weekly run and ZK cache
+
+- **Main push.** A push to `main` runs full KIX protocol verification, with one exception. It skips the heavy steps when an earlier PR run already passed full verification on the same Git tree for the PR head that was merged, which is the merge commit's second parent.
+  - The job summary names that run. For §13, the skip counts only together with the run it names.
+  - The skip rests on identical content (the tree), not on an earlier SHA, so it is not the transfer that §6 forbids.
+  - If `main` moved after that PR run, the tree differs and full verification runs.
+- **No cancellation on main.** Runs on `main`, scheduled runs and dispatch runs are keyed by commit, so a later push never cancels them. PR runs still cancel superseded runs.
+- **Weekly run.** A scheduled run on `main` does full verification every week. It catches runner and dependency drift and regenerates ZK phase 1.
+- **ZK cache.** The ZK fixture may reuse a phase-1 (Powers of Tau) file that a `main` run generated and cached.
+  - Circuit-specific phase-2 keys are still contributed fresh on every run and checked with `zkey verify`.
+  - The artifact manifest records which phase-1 source was used.
+
 ## 11. Avoid CI evidence self-reference loops
 
 Do not create an infinite loop by committing CI run IDs for the same "final" head and thereby creating a new final head.
