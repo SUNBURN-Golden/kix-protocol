@@ -183,6 +183,17 @@ Rules:
 - If either workflow is `queued` or `in_progress`, report that exact state and wait. Do not propose merge.
 - If either workflow fails, diagnose the failure. Make only a minimal in-task fix if authorized; otherwise report a blocker.
 
+### Draft-first CI
+
+Both workflows skip draft PRs. A PR runs them when it is opened as ready, when it is marked Ready for review, and on every push after that. Push to `main` and `workflow_dispatch` still run them.
+
+- Keep the PR in draft while working, and run the relevant tests locally.
+- Batch commits and push them together, not one push per commit.
+- When the work is a merge candidate, it is marked Ready for review. The CI run triggered then is the exact-head evidence for this section. Marking a draft ready still follows §12: an agent does it only with explicit human approval.
+- After Ready, push only review fixes. Each push runs full CI again.
+- A draft PR's skipped or absent CI is not a pass. Never report it as one. A skipped job shows as success on the check, but a draft cannot be merged.
+- If CI evidence is needed while the PR is still in draft, run `workflow_dispatch` on the branch by hand, once.
+
 ## 11. Avoid CI evidence self-reference loops
 
 Do not create an infinite loop by committing CI run IDs for the same "final" head and thereby creating a new final head.
