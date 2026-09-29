@@ -63,6 +63,8 @@ python scripts/run_localnet.py --private
 
 `setup:zk`는 컴파일, 단일 주체 시험용 Powers of Tau, mint/spend 각각의 Groth16 기여와 `zkey verify`를 수행한다. 시작할 때 기존 manifest를 무효화하고 모든 단계가 성공해야 새 manifest를 쓴다. 초기 키 또는 기여 기록이 없는 기존 manifest는 클라이언트가 거절한다. 이 검사는 운영용 신뢰 설정이나 다자 참여를 보장하지 않는다.
 
+`KIX_ZK_PHASE1_PTAU`에 이전에 만든 `pot-final.ptau` 경로를 주면 회로와 무관한 Powers of Tau(1단계)를 새로 만들지 않고 그 파일을 쓴다. 이 단계가 준비 시간의 대부분(CI에서 약 7.5분)을 차지한다. mint/spend 회로별 2단계 기여와 `zkey verify`는 이때도 매번 새 난수로 수행한다. manifest의 `phase1.source`에 새로 만든 것(`FRESH_SINGLE_PARTY_LOCAL_FIXTURE`)인지 재사용한 것(`REUSED_CACHED_LOCAL_FIXTURE`)인지와 파일 SHA-256을 남긴다. CI는 `main` 실행이 만든 1단계만 캐시에 저장하고, 매주 예약 실행에서 새로 만든다.
+
 `test:zk`는 과거 공개 자료의 결함을 먼저 재현한 뒤 새 키에서 정상 증명 수락과 공개 입력·증명 동시 조작 거절을 검사한다. `--private`는 별도 시험 공연에서 실제 체인 조작 거절, 폐기 후 옛 증명 거절, 변경된 루트에 대한 유효 노트의 증명 재생성과 사용, 취소 후 거절을 추가로 검사한다. 폐기된 비공개 슬롯의 재발행은 여전히 금지한다.
 
 개인키·백업 비밀번호·비공개 노트는 `.local/` 및 무시되는 실행 디렉터리에 있으므로 공유하지 않는다. `zk/artifacts/`의 시험용 파라미터도 Git에서 제외했다. 업로드한 검증 자료에는 공개 증명·공개 검증키·선별한 거래 결과만 들어 있다.

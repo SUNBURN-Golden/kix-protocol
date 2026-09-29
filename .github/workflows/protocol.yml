@@ -7,13 +7,19 @@ on:
     # ready_for_review starts the run for a draft that becomes a merge candidate.
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+  schedule:
+    # Weekly full run on main: catches runner and dependency drift and regenerates ZK phase 1.
+    - cron: '17 3 * * 1'
 
 permissions:
   contents: read
+  # Reads artifacts and runs to find an earlier full verification of the same tree.
+  actions: read
 
 concurrency:
-  group: kix-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # PR runs cancel superseded runs. Main, schedule and dispatch runs are keyed by commit and never cancelled.
+  group: kix-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   protocol:
@@ -87,15 +93,49 @@ jobs:
           summary "### 문서 전용 변경: 무거운 검증 생략" "" \
             "아래 파일만 바뀌었습니다. 이 초록 표시는 전체 검증 통과가 아닙니다." "" '```' "${files[@]}" '```'
           echo "docs_only=true" >> "$GITHUB_OUTPUT"
+      - name: Find an earlier full verification of this tree
+        id: verified
+        # Main push only. Any lookup error leaves hit unset, which runs full verification.
+        if: github.event_name == 'push' && steps.scope.outputs.docs_only != 'true'
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          summary() { printf '%s\n' "$@" >> "$GITHUB_STEP_SUMMARY"; }
+          tree=$(git rev-parse "$GITHUB_SHA^{tree}")
+          # Only a merge commit names the PR head that was merged; anything else runs full verification.
+          if ! head=$(git rev-parse -q --verify "$GITHUB_SHA^2"); then
+            summary "### 같은 트리의 이전 전체 검증 없음: 전체 검증" "" "이유: merge commit이 아님"
+            exit 0
+          fi
+          found=""
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=kix-verified-tree-$tree&per_page=20" \
+              --jq '.artifacts[] | select(.expired == false) | .workflow_run.id'); do
+            found=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id" --jq "select(.event == \"pull_request\"
+              and .status == \"completed\" and .conclusion == \"success\"
+              and .path == \".github/workflows/protocol.yml\"
+              and .head_repository.full_name == \"$GITHUB_REPOSITORY\" and .head_sha == \"$head\") | .id")
+            [ -z "$found" ] || break
+          done
+          if [ -z "$found" ]; then
+            summary "### 같은 트리의 이전 전체 검증 없음: 전체 검증" "" "tree \`$tree\`, 병합된 PR head \`$head\`"
+            exit 0
+          fi
+          echo "hit=true" >> "$GITHUB_OUTPUT"
+          summary "### 같은 트리를 이미 전체 검증함: 무거운 검증 생략" "" \
+            "이 커밋의 tree \`$tree\`는 PR head \`$head\`의 실행 [$found]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$found)에서 전체 검증에 성공했습니다." \
+            "이 초록 표시는 이 커밋에서 새로 돈 전체 검증이 아닙니다."
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         with:
           python-version: '3.12'
       - name: Non-production HTTP integration gate
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: python3 -m unittest integration_gate.test_http_gate readiness.test_faults
       - name: Offline reference state machines and OpenAPI pins
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: |
           for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04; do
             PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "reference/$suite" -t "reference/$suite"
@@ -105,64 +145,122 @@ jobs:
           python3 scripts/check_integration_gate_openapi.py
           python3 scripts/check_integration_gate_openapi.py --self-test
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: reference/v0.3-rc1/client/package-lock.json
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         with:
           toolchain: '1.98.1'
           components: rustfmt, clippy
       - name: Install pinned CLI and locked dependencies
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: bash scripts/bootstrap.sh
       - name: Python, SDK, Move and circuit checks
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/verify_runtime.py
       - name: Asset and bundle calculation contracts
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/verify_commerce.py --report .local/verification/commerce.json
       - name: Python and TypeScript canonical contract agreement
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/verify_canonical.py --report .local/verification/canonical.json
       - name: Production runtime architecture contract
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/verify_runtime_architecture.py
       - name: Rust production runtime boundary
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: |
           cargo fmt --manifest-path runtime/Cargo.toml --all -- --check
           cargo test --manifest-path runtime/Cargo.toml --workspace --locked
           cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings
       - name: Storage continuity and deliberate rollback probes
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: |
           .venv/bin/python scripts/probe_paid_storage.py --python /usr/bin/python3 --directory .local/storage-probe --cycles 3 --report .local/verification/storage-probe.json
           .venv/bin/python scripts/reproduce_storage_rollback.py --report .local/verification/storage-rollback.json
           .venv/bin/python scripts/verify_paid_recovery.py --report .local/verification/paid-recovery.json
           /usr/bin/python3 scripts/verify_paid_archive.py --report .local/verification/paid-archive.json
       - name: Public journey on a disposable local chain
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/run_localnet.py
       - name: Paid resale with actual Sui and independent mock PG and bank
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/run_localnet.py --paid
+      - name: ZK phase-1 cache key
+        id: zkkey
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
+        shell: bash
+        env:
+          INPUTS: ${{ hashFiles('reference/v0.3-rc1/client/package-lock.json', 'reference/v0.3-rc1/client/setup-zk.mjs') }}
+        run: |
+          # A new ISO week, snarkjs version or setup script starts a new phase-1 series.
+          prefix="kix-zk-phase1-v1-$INPUTS-"
+          echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
+          echo "key=$prefix$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+      - name: Restore ZK phase-1 parameters
+        id: phase1
+        # The weekly schedule always regenerates phase 1. Only main-branch runs save it.
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true' && github.event_name != 'schedule'
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .local/zk-phase1/pot-final.ptau
+          key: ${{ steps.zkkey.outputs.key }}
+          restore-keys: ${{ steps.zkkey.outputs.prefix }}
       - name: Generate fixture proving artifacts
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
+        env:
+          # Reuses only the circuit-independent phase 1. Phase-2 keys are contributed fresh on every run.
+          KIX_ZK_PHASE1_PTAU: ${{ steps.phase1.outputs.cache-matched-key != '' && format('{0}/.local/zk-phase1/pot-final.ptau', github.workspace) || '' }}
         run: npm --prefix reference/v0.3-rc1/client run setup:zk
       - name: Reject compensated proofs with contributed keys
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: npm --prefix reference/v0.3-rc1/client run test:zk
       - name: Private journey on a disposable local chain
-        if: steps.scope.outputs.docs_only != 'true'
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/run_localnet.py --private
+      - name: Stage fresh ZK phase-1 parameters
+        id: phase1save
+        # Only main-branch runs that generated phase 1 save it, and only after every check passed.
+        if: >-
+          success() && steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
+          && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+          && steps.phase1.outputs.cache-matched-key == ''
+        run: |
+          mkdir -p .local/zk-phase1
+          cp reference/v0.3-rc1/zk/artifacts/pot-final.ptau .local/zk-phase1/pot-final.ptau
+      - name: Save ZK phase-1 parameters
+        if: success() && steps.phase1save.outcome == 'success'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .local/zk-phase1/pot-final.ptau
+          key: ${{ steps.zkkey.outputs.key }}
       - name: Upload check results only
-        if: always() && steps.scope.outputs.docs_only != 'true'
+        if: always() && steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: kix-verification-${{ github.sha }}
           path: .local/verification/
           include-hidden-files: true
           retention-days: 14
+      - name: Record the fully verified tree
+        id: tree
+        # A later main push of the same tree can cite this run instead of repeating it.
+        if: success() && github.event_name == 'pull_request' && steps.scope.outputs.docs_only != 'true'
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p .local/verified-tree
+          tree=$(git rev-parse 'HEAD^{tree}')
+          printf 'tree=%s\nmerge=%s\npr_head=%s\nrun=%s\n' "$tree" "$GITHUB_SHA" "$PR_HEAD_SHA" "$GITHUB_RUN_ID" \
+            > .local/verified-tree/tree.txt
+          echo "tree=$tree" >> "$GITHUB_OUTPUT"
+      - name: Upload the verified-tree marker
+        if: success() && steps.tree.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: kix-verified-tree-${{ steps.tree.outputs.tree }}
+          path: .local/verified-tree/
+          retention-days: 7
