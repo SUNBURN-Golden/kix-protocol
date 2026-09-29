@@ -4,6 +4,10 @@
 **이 문서는 사실 기록이다. 승인·금지 범위를 새로 정하거나 바꾸지 않는다.** 승인 범위의 정본은
 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)이다. 아래 `DECISION_REQUIRED` 항목은 사용자 결정 전까지 열려 있다.
 
+> **2026-09-29 갱신:** D-1~D-3은 닫혔다. 2026-09-28 사용자가 PR #73을 병합(`cfeb0d6`)하면서 [프로그램 결정](../decisions/PROGRAM_DECISIONS_20260928.md)을 승인했다.
+> D-2 사후 승인의 확인 조건인 hosted CI 결과도 나왔다. #59~#74를 포함한 main `60e7683`에서 두 workflow가 성공했다([기준 표](BASELINES.md)).
+> 3~5절 본문은 결정 전 사실 기록으로 그대로 둔다.
+
 작성 근거는 사용자의 2026-09-28 대화 지시("현재 해야하는 것들을 전부 진행")다. `docs/tasks/`에는 이 작업의 과제 문서가 없다.
 AGENTS.md §3에 따라 실행 세션이 자기 과제 문서를 만들지 않았다.
 
@@ -44,9 +48,9 @@ PR 작성 계정과 병합 계정은 모두 `BeautifulMind-JT`다. GitHub 기록
 
 2026-09-28 로컬 대체 확인 결과는 [검증 기록](../../validation/2026-09-28-main-state-catchup/README.md)에 있다. 로컬 결과는 hosted CI가 아니다.
 
-## 3. DECISION_REQUIRED D-1 — 정본 계획과 병합분의 관계
+## 3. D-1 (2026-09-28 결정됨) — 정본 계획과 병합분의 관계
 
-> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **사용자 승인(이 PR 병합 또는 명시 승인) 전까지는 이 항목이 열린 상태다.**
+> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **2026-09-28 PR #73 병합(`cfeb0d6`)으로 승인돼 닫혔다.**
 
 - [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md) §1은 "첫 묶음만 착수 승인"이라고 적는다. 루트 README §4도 "현재 승인된 것은 첫 묶음의 잔여 검토·보완"이라고 적는다.
 - [Task 005](../tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md)는 Astra 결정으로 Wave 2~5를 순서대로 허용하되, 각 Wave의 게이트가 열릴 때만 시작하도록 정한다.
@@ -58,9 +62,9 @@ PR 작성 계정과 병합 계정은 모두 `BeautifulMind-JT`다. GitHub 기록
 2. 병합분을 "병합됐으나 정본 승인 밖의 참고 자산"으로 분류한다.
 3. 일부를 되돌린다. 이 경우 새 과제·새 PR이 필요하다.
 
-## 4. DECISION_REQUIRED D-2 — 착수 근거 추적
+## 4. D-2 (2026-09-28 결정됨) — 착수 근거 추적
 
-> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **사용자 승인(이 PR 병합 또는 명시 승인) 전까지는 이 항목이 열린 상태다.**
+> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **2026-09-28 PR #73 병합(`cfeb0d6`)으로 승인돼 닫혔다.**
 
 - Task 005는 Wave 2 진입 조건을 "Task 004 draft PR 존재 + GROK_BUILD exact-HEAD 비작성자 검토 기록"으로 정한다. 저장소와 이슈 #56(2026-09-28 기준 댓글 0)에서 Wave 2~5 게이트 개방 기록을 찾지 못했다.
 - Task 005 문서의 main 병합(09-27 14:52 KST)이 Wave 2~5 병합(09-26 03:48~05:15 KST)보다 늦다.
@@ -69,9 +73,9 @@ PR 작성 계정과 병합 계정은 모두 `BeautifulMind-JT`다. GitHub 기록
 
 필요한 것은 게이트 개방 또는 사후 승인 여부의 기록이다. 작성 주체는 사용자 또는 Astra다. 사실 목록은 이슈 #56에 남긴다.
 
-## 5. DECISION_REQUIRED D-3 — readiness 파일 저널과 저장·로그 구현 금지
+## 5. D-3 (2026-09-28 결정됨) — readiness 파일 저널과 저장·로그 구현 금지
 
-> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **사용자 승인(이 PR 병합 또는 명시 승인) 전까지는 이 항목이 열린 상태다.**
+> 2026-09-28 결정안 제출: [프로그램 결정안](../decisions/PROGRAM_DECISIONS_20260928.md). **2026-09-28 PR #73 병합(`cfeb0d6`)으로 승인돼 닫혔다.**
 
 사실:
 
@@ -119,7 +123,7 @@ PR 작성 계정과 병합 계정은 모두 `BeautifulMind-JT`다. GitHub 기록
 | 이슈 #53 CP-EXTRACT-001 진단 canary | completed로 close | 2026-09-25 CONFIRMED 기록과 NO_CHANGE 증거 댓글 |
 | 이슈 #28 PR #26 적대적 검토 | not planned로 close | 대상 PR #26이 2026-09-21 병합 없이 닫힘. 후속은 Task 003-C1 PR #30(병합) |
 | 이슈 #33·#37·#40 control plane | not planned로 close. **PASS 아님** | control plane은 `ai-ops-control-plane`으로 분리(#52)되고 중앙 정책 핀(#72)으로 옮겨짐. 남은 조건(실 host 증거, 운영 runner 연결, `runtime_enabled`, 형제 repo rollout)은 충족되지 않았으며, close 댓글에 그대로 옮김 |
-| 이슈 #56 Task 005 | 열어 둠. Wave 체크리스트를 병합 사실대로 갱신 | Wave 6~7 미착수. D-1·D-2는 여전히 열림 |
+| 이슈 #56 Task 005 | 열어 둠. Wave 체크리스트를 병합 사실대로 갱신 | Wave 6~7 미착수. D-1·D-2는 이 처리 당시 열려 있었고, 같은 날 #73 병합으로 결정됐다 |
 | `docs/tasks/README.md` | Task 004·005 행을 사실대로 갱신 | 사용자 명시 지시. 과제 문서 본문은 수정하지 않음 |
 | 최상위 `.gitignore` | `target/` 한 줄 추가 | 사용자 명시 지시. 추적 중인 `target/` 파일은 0개. 다른 위생 항목의 일괄 실행은 하지 않음 |
 
