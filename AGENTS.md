@@ -3,9 +3,34 @@
 Shared engineering policy is maintained in `BeautifulMind-JT/ai-ops-control-plane`.
 See `docs/CONTROL_PLANE_POINTER.md` and `.github/control-plane-client.json` for
 the candidate pin, pending central PR acceptance. Policy adoption is not runtime
-activation. User-only merge, non-author exact-HEAD review, single writer, UNKNOWN
+activation. User-authorized merge (program mode delegates only the executor; see below),
+non-author exact-HEAD review, single writer, UNKNOWN
 fencing, no polling and no automatic retry remain required.
 If shared policy and project contracts conflict, stop with DECISION_REQUIRED.
+
+## AIOPS program mode (User decisions M1 and M5)
+
+These rules apply to a task started by the central AIOPS program mode: its GitHub
+task issue carries an `ASTRA_TASK_KEY_V1` line and a TASK ENVELOPE v4. For that task
+they take precedence over conflicting rules in this file and in other repository
+documents (User decision, 2026-09-30). Everything else still applies.
+
+- **Task input.** The task issue envelope and the documents it names are the task
+  document. The control plane generates it from `.aiops/program.json` at the pinned
+  plan commit, outside the executing session.
+- **Branch.** `astra/<task id in lowercase>`, exactly as the task issue names it.
+- **Pull request.** Open it from that branch as ready for review, not a draft, so the
+  exact-head CI runs. Program mode authorizes this.
+- **Merge.** Builders and reviewers never merge, push to `main`, rewrite history, or
+  create, move or delete tags or branches. The User authorizes merges. User decision
+  M1 (2026-09-29) delegates only the executor: the central `operation=merge` merges a
+  pull request with an ordinary merge commit, pinned to its exact head, and only when
+  the computed READY_FOR_MERGE holds, this repository's required checks included.
+  Anything it cannot compute goes to the User.
+- **Astra.** Architecture and design authority and the required audits are held by
+  Claude Fable, run by the central `aiops-fable` tool (User decision M5, 2026-09-30).
+
+Outside program mode the rules below apply unchanged, including User-only merge.
 
 # Repository-specific engineering rules (preserved)
 
@@ -40,7 +65,7 @@ One agent session handles exactly one task.
 - A new task uses a new task document, new branch and new agent session.
 - Recommended naming:
   - task: `Task NNN`
-  - branch: `agent/task-NNN-<short-name>`
+  - branch: `agent/task-NNN-<short-name>` (program mode: `astra/<task id>`, see the program mode section)
   - validation: `validation/<date>-task-NNN-<short-name>/`
 
 Do not begin the next task as cleanup, follow-up or "while here" work in the current session.
@@ -189,7 +214,7 @@ Both workflows skip draft PRs. A PR runs them when it is opened as ready, when i
 
 - Keep the PR in draft while working, and run the relevant tests locally.
 - Batch commits and push them together, not one push per commit.
-- When the work is a merge candidate, it is marked Ready for review. The CI run triggered then is the exact-head evidence for this section. Marking a draft ready still follows §12: an agent does it only with explicit human approval.
+- When the work is a merge candidate, it is marked Ready for review. The CI run triggered then is the exact-head evidence for this section. Marking a draft ready still follows §12: an agent does it only with explicit human approval. In program mode the builder opens the delivery PR ready for review instead (program mode section).
 - After Ready, push only review fixes. Each push runs full CI again.
 - A draft PR's skipped or absent CI is not a pass. Never report it as one. A skipped job shows as success on the check, but a draft cannot be merged.
 - If CI evidence is needed while the PR is still in draft, run `workflow_dispatch` on the branch by hand, once.
@@ -230,6 +255,8 @@ Without explicit human approval, the agent must not:
 - create/move/delete tags;
 - delete branches;
 - push directly to `main`.
+
+Program mode: the program mode section at the top applies; M1 delegates only the merge executor.
 
 When human merge approval is given, the default is an ordinary merge commit preserving reviewed commit lineage. Squash, rebase merge or history rewriting require separate explicit approval.
 

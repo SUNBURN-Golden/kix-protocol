@@ -22,7 +22,7 @@ Once execution starts, the current task document is an immutable input to the ag
 Recommended:
 
 - document: `TASK_NNN_<SHORT_NAME>.md`
-- branch: `agent/task-NNN-<short-name>`
+- branch: `agent/task-NNN-<short-name>` (program mode tasks use `astra/<task id>`; see `AGENTS.md`)
 - validation: `validation/<YYYY-MM-DD>-task-NNN-<short-name>/`
 - PR title: `task(NNN): <short description>`
 
