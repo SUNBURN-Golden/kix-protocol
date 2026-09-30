@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "program": "kix",
+  "repository": "BeautifulMind-JT/kix-protocol",
+  "project": "KIX",
+  "approval_pointer": "https://github.com/BeautifulMind-JT/kix-protocol/pull/73 (docs/decisions/PROGRAM_DECISIONS_20260928.md, approved by the User's merge cfeb0d69561103302b6fdc3d10842768c3420151; nodes are the §6 follow-up candidates) ; Track P gate record https://github.com/BeautifulMind-JT/kix-protocol/issues/56#issuecomment-5868307343",
+  "authoritative_doc_pointers": "AGENTS.md ; docs/decisions/PROGRAM_DECISIONS_20260928.md ; docs/DEVELOPMENT_PLAN.md ; docs/tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md ; docs/contracts/openapi/README.md",
+  "nodes": [
+    {
+      "id": "p-sdk-0",
+      "title": "P-SDK-0: TypeScript 0.x client from the contract-only OpenAPI, with conformance tests",
+      "spec": "Objective: generate a non-production TypeScript 0.x client from docs/contracts/openapi/kix-protocol.contract-only.openapi.json and add conformance tests for it (PROGRAM_DECISIONS_20260928.md §6 row P-SDK-0 at line 126; scope §2.1 line 47; DEVELOPMENT_PLAN.md §8).\nScope: pin the OpenAPI file and its sha256; generate the client reproducibly from that pin; conformance tests cover every command in the catalogue; wire the tests into the existing protocol CI without weakening any existing check.\nConsumer rules (docs/contracts/openapi/README.md): no base URL (the document has no servers), reject unknown fields, never treat actor as authentication, never infer retry or delivery success.\nOut of scope: stable 1.0, public distribution or registry publishing, the bulk KTX->KIX rename (§2.1, §5), new commands, product frontend trees inside kix-protocol (Task 005 decision 4).\nThe output path is not fixed by the docs: choose one that touches no locked area; if the choice would change a public contract or repository layout rule, stop with DECISION_REQUIRED.\nAcceptance: the client regenerates byte-identically from the pinned file; conformance tests pass; protocol and kernel checks green at the exact head; evidence per AGENTS.md §14 in the PR.",
+      "audit_floor": "A2"
+    },
+    {
+      "id": "openapi-catalogue-promotion",
+      "title": "Promote settlement, booking, resale, admission and credit commands into the contract-only OpenAPI catalogue",
+      "depends_on": ["p-sdk-0"],
+      "spec": "Objective: add the settlement, booking, resale, admission (including authorize_admission and consume, stopped in #70) and credit FSM commands to the contract-only OpenAPI catalogue, updating the contract documents and the pin check together (PROGRAM_DECISIONS_20260928.md §6 line 128; §2.1 line 45).\nConstraints: no servers, security schemes or production endpoints (the checker rejects them); update the loopback tests that currently expect UNKNOWN_ACTION for these actions; regenerate the P-SDK-0 client and its conformance tests for the new commands.\nOpen design point: the catalogue is derived from reference/v0.3-rc1/protocol_contract.json, and the FSM commands live in separate modules outside that catalogue (docs/contracts/openapi/README.md). Before choosing a source of truth that changes an approved contract, stop with DECISION_REQUIRED. Revise the earlier DECISION_REQUIRED stop markers in the booking, settlement and credit contract documents only as the approved decision allows.\nOut of scope: real payment, KYC, public endpoints, stable 1.0.\nAcceptance: pin check, loopback tests, client conformance tests, protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3"
+    },
+    {
+      "id": "move-primary-price-fee",
+      "title": "Define primary issuance price and fee for the Move rights module",
+      "spec": "Objective: close the contract-undefined item from the Wave 2 validation: the Move Show has no primary price and no primary fee (validation/2026-09-26-wave2-rights-issuance/README.md lines 24-30; PROGRAM_DECISIONS_20260928.md §6 line 127).\nScope: a draft-versioned contract document under docs/contracts/, and only if that contract requires it a rights/zk_gate extension with localnet tests (§2.1 line 44).\nOut of scope: a new coin/TIX module (Task 005 decision 5), Sui testnet or mainnet, real funds.\nConstraints: do not invent product price or fee policy values; policy choices go to DECISION_REQUIRED. The rights-scale blueprint requires the 16-slot reference profile Move tests to keep passing unchanged; if a change under reference/v0.3-rc1/sui is needed, stop with DECISION_REQUIRED first.\nAcceptance: contract document with its draft version; any Move change covered by localnet tests; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3"
+    },
+    {
+      "id": "ai-delegation-contract-mock",
+      "title": "AI delegation authority contract draft and in-memory mock",
+      "spec": "Objective: draft the AI delegation authority contract covering query, propose and execute authority, scope, amount, period and revocation conditions, and an in-memory mock under reference/ (PROGRAM_DECISIONS_20260928.md §2.1 line 49 and §6 line 129; DEVELOPMENT_PLAN.md §14).\nConstraints: model output alone never issues or pays; no AI self-expansion of delegation (FIRST_BATCH_OPEN_INPUTS I11); delegation execution stays disabled (DEVELOPMENT_PLAN.md §12); the AI tool allowlist excludes transfers, refund execution and signing. State how the contract relates to the existing delegate and close_delegation commands; if it would change them, stop with DECISION_REQUIRED.\nOutputs: a draft-versioned contract under docs/contracts/ and the mock with tests.\nAcceptance: mock tests pass; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3"
+    },
+    {
+      "id": "k-stage4-comparison-plan",
+      "title": "Track K stage 4: backend comparison plan and candidate screening",
+      "spec": "Objective: write the stage 4 comparison plan (approved targets, ACK, failure scope, equipment and cost) and screen candidates from official sources (PROGRAM_DECISIONS_20260928.md §2.2 steps 1-2, lines 54-60; §6 line 130).\nConstraints: DEVELOPMENT_PLAN.md §9 is the only canonical comparison source; do not create a second comparison table (BACKEND_COMPARISON_STAGE4.md stays a pointer). Label results exploration data. There is no approved TPS or p99 target; do not invent SLOs (DEVELOPMENT_PLAN.md §7 and §9). Candidates named in §9: PostgreSQL, TigerBeetle, FoundationDB, TiKV.\nOut of scope: local measurement runs (steps 3-4, a later task), backend adoption, stage 5 and R2 decisions.\nIf equipment or cost needs spending, stop with DECISION_REQUIRED.\nAcceptance: plan and screening recorded in the canonical place; checks green at the exact head.",
+      "audit_floor": "A2"
+    },
+    {
+      "id": "k-readiness-conformance-suite",
+      "title": "Split the readiness fault suite into a backend-common conformance test",
+      "spec": "Objective: reuse the readiness fault suite (torn write, crash before durable, replay idempotence, budget rejection, concurrent hold) as a common conformance test for Track K stage 4 and 5 backend candidates, keeping the wrapper replaceable behind the same interface (PROGRAM_DECISIONS_20260928.md §4 lines 100-102; §6 line 131).\nBounds (§4): single process, single writer, local file, off unless --readiness-dir is given; protocolTruth, productionConformance, productionReadiness, productionEndpoint and FSM durable stay false; no replication, consensus, multi-writer, network, remote storage or default-on.\nOut of scope: implementing or adopting any backend (AGENTS.md §5).\nAcceptance: the existing readiness tests keep passing, the conformance suite runs against the current wrapper in CI, protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2"
+    },
+    {
+      "id": "k-stage2-v5-design-decision",
+      "title": "Track K stage 2: v5 crate design decision proposal (document only)",
+      "spec": "Objective: write the design decision proposal for a new v5 crate that implements the lifecycle transitions (termination, reclaim, release, index) while the locked v4 files stay unchanged (PROGRAM_DECISIONS_20260928.md §2.2 lines 61-63; §6 line 132).\nConstraints: document only; no implementation; the two locked kernel blobs stay unchanged (AGENTS.md §4). Reference the lifecycle contract and the FIRST_BATCH_OPEN_INPUTS rows the implementation would depend on. Like the D-1..D-3 proposal, the document takes effect only when the User merges or explicitly approves it; say so in the document.\nOut of scope: starting the stage 2 implementation (a separate approval).\nAcceptance: the proposal document; checks green at the exact head.",
+      "audit_floor": "A3"
+    }
+  ]
+}
