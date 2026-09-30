@@ -23,20 +23,24 @@
 
 - **정본은 두 계획 파일이다.**
   - kix-protocol `.aiops/program.json`: program `kix`, 노드 66개
-  - kix-commerce-apps `.aiops/program.json`: program `kixc`, 노드 28개
+  - kix-commerce-apps `.aiops/program.json`: program `kixc`, 노드 10개
   - 아래 §3·§4 표는 두 파일에서 그대로 옮겼다. 둘이 다르면 파일이 우선하고, 표는 `roadmap-sync`에서 고친다.
-- **이 문서가 병합되면 두 파일의 모든 노드가 승인된 작업 범위가 된다.**
+- **이 문서가 병합되면 두 파일의 모든 노드와 "편입 대기" 노드가 승인된 작업 범위가 된다.**
   - 각 노드의 task envelope(중앙 control plane이 계획 파일에서 만든다)가 과제 문서다.
-  - 개발계획 §18과 두 청사진의 "후속 표는 과제 문서·발송 대상이 아니다"라는 문구는, 이 문서에 실린 노드에 대해서는 이 문서가 대체한다.
+  - 개발계획 §18(391행)과 두 청사진(권리 확장 424행, 토큰 계층 439행)은 "이 표는 작업문서가 아니며 dispatch 대상이 아니다"라고 적는다. 이 문서에 실린 노드에 대해서는 이 문서가 그 문구를 대체한다.
   - 이 문서는 kix 노드 전체의 게이트 기록 역할도 한다(프로그램 결정 §3의 "같은 범위 안의 후속 심화"). Wave 7은 §2 R-7을 따른다.
-- **병합 주체는 두 가지다.**
-  - "사용자"로 표시한 노드(13개)는 사람의 결정 문서다. 계획 파일에 `user_merge: true`로 적었다. 기계가 병합하지 않고, 사용자가 병합해야 효력이 생긴다.
-  - 나머지는 AIOPS 규칙(M1 병합 실행 위임, Astra(Claude Fable) 게이트, 비작성자 리뷰)을 모두 통과하면 자동 병합된다.
+- **사용자만 병합하는 노드는 14개다.** 모두 사람의 결정 문서이고, 계획 파일에 `user_merge: true`로 적었다.
+  - 이 노드들은 모두 A3다. 현재 중앙 런타임은 A3 노드를 기계로 병합하지 않는다. 근거는 ai-ops-control-plane main `7de954f`의 `engineering/scripts/control_plane_program.py`다. `merge_check`는 A3를 ARCHITECTURE 게이트로 올리고(962행), Astra 게이트가 있는 노드는 "Astra gate … is not machine-verifiable here; User merges"로 병합을 거부한다(978-979행). 그래서 지금 런타임에서도 이 노드들은 사용자가 병합해야 효력이 생긴다.
+  - `user_merge: true`는 앞으로 Astra 게이트를 자동화하는 변경이 들어와도 이 노드들을 사용자 몫으로 남기라는 표시다. 그런 변경은 이 표시를 강제해야 한다. 강제가 확인되기 전에는 이 노드들의 A3 등급을 낮추지 않는다.
+  - 나머지 노드는 AIOPS 규칙(M1 병합 실행 위임, Astra(Claude Fable) 게이트, 비작성자 리뷰)을 모두 통과하면 병합된다. 현재 런타임에서 A3·Astra 게이트 노드는 사용자가 병합한다.
+- **다른 저장소 노드를 기다리는 노드는 계획 파일에 넣지 않았다.**
+  - 현재 중앙 런타임은 저장소 사이 선행을 읽지 않는다. 그래서 이런 노드를 계획 파일에 두면 선행 노드보다 먼저 시작될 수 있다.
+  - 이 노드들은 §3.7·§4.4·§4.5 "편입 대기" 표에 두었다. 노드 정의는 정의 파일에 그대로 적어 두었다. kix-protocol은 `docs/decisions/PROGRAM_ROADMAP_20260930_PENDING.json`, kix-commerce-apps는 `docs/aiops/PENDING_NODES.json`이다.
+  - 이 노드들도 이 문서로 승인된 범위다. 외부 선행 노드와 계획 안 선행 노드가 모두 병합되면, 계획 파일 개정 PR로 정의를 그대로 옮긴다. 개정 PR은 계획 변경 규칙(비작성자 리뷰, 사용자 병합)을 따른다.
 - **멈추는 규칙은 노드마다 같다.**
   - 제품 정책 값과 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`로 멈춘다. 질문 경로(Opus → Astra → 사용자)가 답한다.
   - 법률·세무·회계·토스 답변이 필요한 값은 추측하지 않는다. `UNDETERMINED`로 두고 담당을 적는다.
-  - 잠금 해제가 필요한 일은 하지 않는다. 결정 문서 노드로만 둔다(§5).
-  - 저장소 사이 선행(`외부:` 표시)은 상대 저장소 노드가 병합된 뒤에 시작한다.
+  - 잠금 해제가 필요한 일은 하지 않는다. 결정 문서 노드로만 둔다(§5). 새 coin/TIX 모듈의 유일한 예외는 `tl-2`의 localnet 패키지이며, Astra 재결정 뒤 사용자가 `tl-coin-lock-adr`를 병합한 뒤에만 가능하다.
 
 ## 2. 이 문서로 확정되는 결정
 
@@ -45,13 +49,14 @@
 | R-1 | **D-B 수락.** Astra 판정대로 범위·한계 ADR(TL-A)을 TL-0 앞에 둔다. 새 coin/TIX 모듈 잠금의 해제 경로(ADR + Astra 재결정)는 그대로다 | [TL·RS 범위 결정](TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) §4.1, D-B |
 | R-2 | **D-D 수락.** 권리 확장의 권고 구조(독립 객체 분할)를 받아들인다. 새 패키지·새 회로를 프로그램 결정 §2.1의 "`rights`·`zk_gate` 확장"으로 읽는 해석을 Astra 조건 (a)~(e)와 함께 확인한다 | 같은 문서 D-D |
 | R-3 | **D-C.** 토큰 초기 역할 범위는 권고안 U2(담보)·U3(보상)로 설계한다. 되돌리기 어려운 선택이 들어가므로 최종 확정은 `tl-0` 계약 문서의 사용자 병합으로 한다 | 같은 문서 D-C |
-| R-4 | **Track K 2단계 구현 착수 조건.** v5 설계 결정 문서(`k-stage2-v5-design-decision`)를 사용자가 병합하면 `k-stage2-v5-impl`이 시작한다. 이것이 프로그램 결정 §2.2의 "별도 승인"이다. 첫 묶음 열린 입력의 해당 행이 아직 열려 있으면 그 부분만 `DECISION_REQUIRED`로 멈춘다 | 프로그램 결정 §2.2 |
+| R-4 | **Track K 2단계 구현 착수 조건을 바꾼다.** 프로그램 결정 §2.2(61-63행)는 착수 조건을 둘로 정했다. 첫 묶음 열린 입력의 해당 행이 확정될 것, 그리고 v5 설계 결정 문서가 있을 것. R-4는 첫째 조건을 **착수 조건에서 부분별 정지 조건으로 바꾼다.** v5 설계 결정 문서(`k-stage2-v5-design-decision`)를 사용자가 병합하면 `k-stage2-v5-impl`이 시작한다. 이것이 §2.2의 "별도 승인"이다. 해당 행이 아직 열려 있으면 그 행에 기대는 부분만 `DECISION_REQUIRED`로 멈춘다 | 프로그램 결정 §2.2 |
 | R-5 | **Track K 3단계 적합성 작업 승인.** 안정 1.0과 공개 배포는 여기에 들어가지 않는다(`sdk-1-0-decision`, 사용자) | 프로그램 결정 §5 |
 | R-6 | **Track K 5단계 로컬·비운영 구현 착수 조건.** backend 채택 결정 문서(`k-stage4-adoption-decision`)를 사용자가 병합하면 `k-stage5-durable-tx`가 시작한다. R2와 자체 복제·합의는 계속 잠금이다 | 프로그램 결정 §2.2, §5 |
-| R-7 | **Wave 7 조건부 게이트.** kix-commerce-apps 노드 `w6a-evidence`가 병합되면 Wave 7이 열린다. 이것이 프로그램 결정 §3의 진입 조건(최소 한 표면의 mock end-to-end 여정)이다. **이 절이 Wave 7의 게이트 기록이다.** 구현 PR은 이 절과 `w6a-evidence` PR 링크를 인용한다 | 프로그램 결정 §3 |
-| R-8 | **kix-commerce-apps 사후 승인.** Wave 6 게이트(2026-09-28 10:42Z) 전에 병합된 #1, #3~#12와 CI #13을 승인된 병합분으로 인정한다. D-2가 Wave 2~5를 사후 승인한 것과 같은 방식이다. #3의 Wave 7 마케팅 stub은 stub으로만 인정하고, Wave 7이 열리기 전에는 계약에 결합하지 않는다 | 프로그램 결정 §3 |
-| R-9 | **계약 공백 심화 승인.** 정산 §7, 예매·리셀·검표 §7, F04 §7의 초안 작업을 승인한다. 정책 값은 Astra 결정 경로로 정하고, 법률 의존 값은 `UNDETERMINED`로 둔다 | 각 계약 §7 |
+| R-7 | **Wave 7 조건부 게이트.** kix-commerce-apps 노드 `w6a-evidence`가 병합되면 Wave 7이 열린다. 이것이 프로그램 결정 §3의 진입 조건(최소 한 표면의 mock end-to-end 여정)이다. **이 절이 Wave 7의 게이트 기록이다.** 구현 PR은 이 절과 `w6a-evidence` PR 링크를 인용한다. `w6a-evidence`는 마일스톤 게이트 노드라 현재 런타임에서 사용자가 병합한다. kix-protocol `wave7-marketing-contracts`는 편입 대기이며 그 병합 뒤 계획 개정으로 들어온다 | 프로그램 결정 §3 |
+| R-8 | **kix-commerce-apps 사후 승인.** Wave 6 게이트 기록([#56 댓글](https://github.com/BeautifulMind-JT/kix-protocol/issues/56#issuecomment-5868307343), 2026-09-28 10:42Z) 전에 병합된 [#1](https://github.com/BeautifulMind-JT/kix-commerce-apps/pull/1), [#3](https://github.com/BeautifulMind-JT/kix-commerce-apps/pull/3)~[#12](https://github.com/BeautifulMind-JT/kix-commerce-apps/pull/12)(2026-09-25 23:35Z~09-28 08:49Z)를 승인된 병합분으로 인정한다. D-2가 Wave 2~5를 사후 승인한 것과 같은 방식이다. 모두 stub·mock·loopback 결합이라 Wave 6 범위(계약 소비와 mock backend) 안이다. CI [#13](https://github.com/BeautifulMind-JT/kix-commerce-apps/pull/13)은 게이트 뒤(09-28 23:14Z)에 병합됐다. #3의 Wave 7 마케팅 stub은 stub으로만 인정하고, Wave 7이 열리기 전에는 계약에 결합하지 않는다 | 프로그램 결정 §3 |
+| R-9 | **계약 공백 심화 승인.** 정산 계약 §7, 예매·리셀·검표 계약 §7, F04 계약 §5("의도적으로 비운 항목")의 초안 작업을 승인한다. 정책 값은 Astra 결정 경로로 정하고, 법률 의존 값은 `UNDETERMINED`로 둔다 | 각 계약의 해당 절 |
 | R-10 | **6단계 경제 기능은 참조 모델로만 승인한다.** 합성 금액만 쓴다. 실자금은 프로그램 결정 §5 조건을 따른다 | 개발계획 6단계 |
+| R-11 | **이 문서가 따로 이름 붙여 승인하는 구현 범위.** 아래는 R-1~R-10에 없던 구현이다. 모두 §5 잠금 안에 있다. (1) `gate-browser-access`: loopback 관문의 동작 변경. 기본 꺼짐, loopback 출처만, 결정 문서가 정한 방식으로만. (2) `read-model-reference`: 새 조회 명령을 참조 모듈과 카탈로그에 추가. 상태를 바꾸지 않는다. (3) `k-onsale-admission-control`: R4 시기 계약(runtime/ONSALE_ADMISSION_CONTROL.md, 구현 없음)을 새로 고치고 로컬에 구현. 개발계획 §5의 단계 목록 밖이지만 5단계 뒤에만 시작한다. (4) `k-stage7-authenticated-export`, `k-stage7-cpu-analytics-sql-audit`: 개발계획 §5(111행)는 7단계에 원천·권위 연결이 먼저라고 적는다. 그래서 5단계 로컬 원천 위에서만 시작한다 | 개발계획 §5, 각 노드 |
 
 D-E(법률·회계·세무·금융 검토의 주체와 시점)는 사람이 정할 일이라 사용자 몫으로 남긴다. `tl-legal-brief`가 질문지를 준비한다.
 
@@ -62,6 +67,7 @@ D-E(법률·회계·세무·금융 검토의 주체와 시점)는 사람이 정�
 | 노드 | 내용 | 선행 | 등급 | Astra 게이트 | 병합 |
 |---|---|---|---|---|---|
 | `roadmap-sync` | Reflect the approved roadmap into DEVELOPMENT_PLAN, README, AGENTS and the task index | — | A1 | — | 자동(M1·Fable) |
+| `agents-scope-sync` | Reflect the roadmap's approved scope into AGENTS.md §5 | — | A3 | ARCHITECTURE | **사용자** |
 | `sui-commit-mismatch-note` | Record why two Sui framework commits appear in the docs | — | A1 | — | 자동(M1·Fable) |
 
 ### 3.2 Track P — 계약·카탈로그·SDK
@@ -82,7 +88,6 @@ D-E(법률·회계·세무·금융 검토의 주체와 시점)는 사람이 정�
 | `read-model-contract` | Read and list query contract for commerce surfaces | — | A3 | ARCHITECTURE | 자동(M1·Fable) |
 | `read-model-reference` | Implement the approved read queries and add them to the catalogue | read-model-contract, openapi-catalogue-promotion | A3 | ARCHITECTURE | 자동(M1·Fable) |
 | `p-sdk-1` | P-SDK-1: regenerate the TypeScript 0.x client for the full catalogue | openapi-catalogue-promotion, read-model-reference | A2 | — | 자동(M1·Fable) |
-| `wave7-marketing-contracts` | Wave 7: protocol-side marketing contracts M01-M04 and the M05 consent link | 외부: kixc/w6a-evidence | A3 | ARCHITECTURE | 자동(M1·Fable) |
 
 ### 3.3 Track K — 첫 묶음 잔여와 1~8단계
 
@@ -153,6 +158,12 @@ D-E(법률·회계·세무·금융 검토의 주체와 시점)는 사람이 정�
 | `sdk-1-0-decision` | Decision proposal for a stable schema/SDK 1.0 and publishing | k-stage3-schema-sdk-conformance | A3 | ARCHITECTURE | **사용자** |
 | `ktx-kix-rename-plan` | Plan for the bulk KTX to KIX rename (document only) | k-stage3-schema-sdk-conformance | A2 | — | 자동(M1·Fable) |
 
+### 3.7 편입 대기 — kix-protocol
+
+| 노드 | 내용 | 선행 | 등급 | Astra 게이트 | 병합 |
+|---|---|---|---|---|---|
+| `wave7-marketing-contracts` | Wave 7: protocol-side marketing contracts M01-M04 and the M05 consent link | 외부: kixc/w6a-evidence | A3 | ARCHITECTURE | 자동(M1·Fable) |
+
 ## 4. kix-commerce-apps 노드 (program `kixc`)
 
 ### 4.1 Wave 6-A — 첫 mock 여정
@@ -165,7 +176,22 @@ D-E(법률·회계·세무·금융 검토의 주체와 시점)는 사람이 정�
 | `w6a-ui-skeleton` | Wave 6-A step 4: booking and box-office screens show the journey | w6a-journey-adapter | A2 | — | 자동(M1·Fable) |
 | `w6a-evidence` | Wave 6-A step 5: binding table, docs and the alignment evidence that opens Wave 7 | w6a-journey-test, w6a-ui-skeleton | A1 | MILESTONE | 자동(M1·Fable) |
 
-### 4.2 Wave 6 심화 — 계약 결합
+### 4.2 Wave 6 심화 — 화면
+
+| 노드 | 내용 | 선행 | 등급 | Astra 게이트 | 병합 |
+|---|---|---|---|---|---|
+| `organizer-admin-console` | Organizer console for event lifecycle commands | w6a-evidence | A2 | — | 자동(M1·Fable) |
+| `gift-surface` | Gift transfer surface (offer, accept, cancel) | w6a-journey-adapter | A2 | — | 자동(M1·Fable) |
+| `doc-m05-label` | Correct the M05 status label to the ORIGINAL_32 source | — | A1 | — | 자동(M1·Fable) |
+
+### 4.3 Wave 7 — 마케팅
+
+| 노드 | 내용 | 선행 | 등급 | Astra 게이트 | 병합 |
+|---|---|---|---|---|---|
+| `w7-marketing-align` | Wave 7: align the M01-M05 stub surfaces with the published contracts | w6a-evidence | A2 | — | 자동(M1·Fable) |
+| `w7-m05-consent-bind` | Wave 7 M05: bind consent to set_consent and authorize_marketing | w7-marketing-align, w6a-journey-adapter | A3 | ARCHITECTURE | 자동(M1·Fable) |
+
+### 4.4 편입 대기 — 계약 결합
 
 | 노드 | 내용 | 선행 | 등급 | Astra 게이트 | 병합 |
 |---|---|---|---|---|---|
@@ -179,29 +205,19 @@ D-E(법률·회계·세무·금융 검토의 주체와 시점)는 사람이 정�
 | `bind-list-read` | Bind the list and read methods to the read-model queries | consume-p-sdk-0, 외부: kix/read-model-reference | A3 | ARCHITECTURE | 자동(M1·Fable) |
 | `browser-gate-path` | Browser HTTP path to the loopback gate, as kix-protocol decided | w6a-ui-skeleton, 외부: kix/gate-browser-access | A3 | ARCHITECTURE | 자동(M1·Fable) |
 
-### 4.3 Wave 6 심화 — 화면
+### 4.5 편입 대기 — 화면·Wave 7
 
 | 노드 | 내용 | 선행 | 등급 | Astra 게이트 | 병합 |
 |---|---|---|---|---|---|
 | `primary-price-fee-ui` | Show the contracted primary price and fee | w6a-ui-skeleton, 외부: kix/move-primary-price-fee | A2 | — | 자동(M1·Fable) |
 | `api-state-distinction` | UI separates reservation, payment, issuance, return and refund states | bind-reservation-fsm, bind-settlement-fsm | A2 | — | 자동(M1·Fable) |
-| `organizer-admin-console` | Organizer console for event lifecycle commands | w6a-evidence | A2 | — | 자동(M1·Fable) |
 | `refund-surface` | Refund and cancel flows as synthetic mocks | bind-settlement-fsm | A3 | ARCHITECTURE | 자동(M1·Fable) |
-| `gift-surface` | Gift transfer surface (offer, accept, cancel) | consume-p-sdk-0 | A2 | — | 자동(M1·Fable) |
 | `delegation-surface` | Delegation surface: query and propose only | consume-p-sdk-0, 외부: kix/ai-delegation-contract-mock | A3 | ARCHITECTURE | 자동(M1·Fable) |
-| `doc-m05-label` | Correct the M05 status label to the ORIGINAL_32 source | — | A1 | — | 자동(M1·Fable) |
-| `e2e-browser-journeys` | Browser end-to-end journeys across all surfaces | browser-gate-path, api-state-distinction, bind-list-read, organizer-admin-console | A2 | MILESTONE | 자동(M1·Fable) |
-
-### 4.4 Wave 7 — 마케팅
-
-| 노드 | 내용 | 선행 | 등급 | Astra 게이트 | 병합 |
-|---|---|---|---|---|---|
-| `w7-marketing-align` | Wave 7: align the M01-M05 stub surfaces with the published contracts | w6a-evidence | A2 | — | 자동(M1·Fable) |
 | `w7-m01-membership` | Wave 7 M01: membership surface on the membership contract | w7-marketing-align, 외부: kix/wave7-marketing-contracts | A2 | — | 자동(M1·Fable) |
 | `w7-m02-presale` | Wave 7 M02: presale surface on the presale contract | w7-marketing-align, bind-reservation-fsm, 외부: kix/wave7-marketing-contracts | A2 | — | 자동(M1·Fable) |
 | `w7-m03-coupon` | Wave 7 M03: coupon surface on the coupon contract | w7-marketing-align, bind-reservation-fsm, 외부: kix/wave7-marketing-contracts | A3 | ARCHITECTURE | 자동(M1·Fable) |
 | `w7-m04-referral` | Wave 7 M04: referral surface on the referral contract (no payout) | w7-marketing-align, 외부: kix/wave7-marketing-contracts | A3 | ARCHITECTURE | 자동(M1·Fable) |
-| `w7-m05-consent-bind` | Wave 7 M05: bind consent to set_consent and authorize_marketing | w7-marketing-align, consume-p-sdk-0 | A3 | ARCHITECTURE | 자동(M1·Fable) |
+| `e2e-browser-journeys` | Browser end-to-end journeys across all surfaces | browser-gate-path, api-state-distinction, bind-list-read, organizer-admin-console | A2 | MILESTONE | 자동(M1·Fable) |
 
 ## 5. 계획에 넣지 않은 것
 
@@ -228,6 +244,8 @@ D-E(법률·회계·세무·금융 검토의 주체와 시점)는 사람이 정�
 ## 6. 사용자에게 남는 일
 
 1. 이 PR(kix-protocol)을 병합한다. 그다음 kix-commerce-apps의 계획 PR을 병합한다(이 문서를 근거로 삼으므로 순서가 중요하다).
-2. "사용자" 표시 노드의 PR이 오면 읽고 병합하거나 고치라고 답한다: `k1-cut-proof`, `k-stage2-v5-design-decision`, `k2-retention-proposal`, `k-stage4-adoption-decision`, `k-a-integration-decision`, `testnet-key-management-decision`, `rs-5-decision`, `tl-0`, `tl-coin-lock-adr`, `tl-5-decision`, `ai-delegation-execution-decision`, `f04-real-funds-lift-criteria`, `sdk-1-0-decision`.
-3. 외부 답변(토스, 법무·세무)은 `k1-open-inputs-brief`와 `tl-legal-brief`가 만든 질문지를 보내고 받아 온다.
-4. (선택) kix-commerce-apps에 `KIX_PROTOCOL_READ_TOKEN` secret을 넣으면 live-gate CI가 돈다. 없으면 그 검사는 건너뛰고 로컬 실행 기록으로 대신한다.
+2. 코디네이터를 켜기 전에, 켜는 런타임이 §1이 전제한 것(A3·Astra 게이트 노드를 기계로 병합하지 않음)인지 Claude의 확인 보고를 받고 승인한다. Astra 게이트를 자동화하는 변경이 들어온다면, 그 변경이 `user_merge`와 `depends_on_external`을 강제하는지 같은 방식으로 확인한다.
+3. "사용자" 표시 노드의 PR이 오면 읽고 병합하거나 고치라고 답한다: `agents-scope-sync`, `k1-cut-proof`, `k-stage2-v5-design-decision`, `k2-retention-proposal`, `k-stage4-adoption-decision`, `k-a-integration-decision`, `testnet-key-management-decision`, `rs-5-decision`, `tl-0`, `tl-coin-lock-adr`, `tl-5-decision`, `ai-delegation-execution-decision`, `f04-real-funds-lift-criteria`, `sdk-1-0-decision`.
+4. 외부 답변(토스, 법무·세무)은 `k1-open-inputs-brief`와 `tl-legal-brief`가 만든 질문지를 보내고 받아 온다.
+5. (선택) kix-commerce-apps에 `KIX_PROTOCOL_READ_TOKEN` secret을 넣으면 live-gate CI가 돈다. 없으면 그 검사는 건너뛰고 로컬 실행 기록으로 대신한다.
+6. 편입 대기 노드는 선행 노드가 병합되면 Claude가 계획 개정 PR을 올린다. 사용자는 그 PR을 병합한다.
