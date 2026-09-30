@@ -1,6 +1,6 @@
 # KIX 계약 호환 묶음과 개발 완료 설계 후보
 
-공통 후속 규약: [중앙 #45](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/45), 후보 HEAD `112110c2c0a996e309abf2c62a57368a9a673126`. [고정 설계](https://github.com/BeautifulMind-JT/ai-ops-control-plane/blob/112110c2c0a996e309abf2c62a57368a9a673126/engineering/docs/PROGRAM_EXECUTION_EVOLUTION_DESIGN_KO.md)는 아직 운영·승인 evidence가 아니다.
+공통 후속 규약: [중앙 #46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46), 후보 HEAD `a8b7355712c58de8d27c85a535fb241a09a4037c`. [고정 설계](https://github.com/BeautifulMind-JT/ai-ops-control-plane/blob/a8b7355712c58de8d27c85a535fb241a09a4037c/engineering/docs/PROGRAM_EXECUTION_EVOLUTION_DESIGN_KO.md)는 아직 운영·승인 evidence가 아니다.
 
 상태: **설계·계획 개정 후보. 구현·활성화·감사 PASS가 아니다.**
 작성 기준은 protocol #82 `1fc02920d93fe0fb1f272fa917f6e20ba26cc987`와 commerce
@@ -36,7 +36,7 @@ producer는 다음 입력을 canonical UTF-8 JSON의 manifest로 기록한다. �
 | producer | repository, exact source commit/tree, protocol domain, contract schema version |
 | contract | contract-only OpenAPI와 integration-gate OpenAPI 각각의 path, Git blob, file sha256 |
 | generated SDK | tree/path, generator source revision과 고정 toolchain, output blob/tree digest와 file sha256 |
-| semantics | 승인된 compatibility profile의 immutable revision, command/query/receipt schema 집합 digest |
+| semantics | 승인된 compatibility profile의 kind와 immutable revision, command/query/receipt schema 집합 digest |
 | vectors | body/receipt/identity/error conformance vector 집합의 path와 digest |
 | source references | 허용된 FSM source/contract revisions, 원본 fixture profile과 확장 profile 구분 |
 
@@ -50,6 +50,43 @@ consumer app의 최종 HEAD는 producer manifest 안에 넣지 않는다. app은
 manifest digest와 producer 입력을 버전 관리하고, 최종 정확한 app HEAD의 독립
 검토·CI·보호된 completion receipt가 그 소비 입력을 별도로 결합한다. 이 구조가
 최종 HEAD를 기록하려다 HEAD를 끝없이 바꾸는 self-reference를 막는다.
+
+### 2.1 초기 형식·검증과 후속 의미 검증의 담당
+
+`p-sdk-0`가 **manifest-v1 형식, BOOTSTRAP profile, 최소 verifier와 golden vectors**를
+처음 제공한다. 공유 schema/검증 경계를 만드는 일이므로 이 후보에서 해당 노드의
+최소 등급을 A2에서 **A3/ARCHITECTURE**로 올린다. 새 노드는 추가하지 않는다.
+이 설계의 채택은 형식·작업 범위의 승인일 뿐 실제 profile의 감사 PASS가 아니다.
+소비 가능한 초기 profile revision은 그 작업의 비작성자 exact-HEAD A3 검토와 보호된
+완료 증거·실제 병합을 거친 immutable source에 고정한다.
+
+| 담당 | 제공·검증하는 것 | 주장하지 않는 것 |
+|---|---|---|
+| `p-sdk-0` | 기존 catalogue 의미를 유지한 manifest-v1 schema/encoding, BOOTSTRAP profile revision+digest, source/두 OpenAPI/generator/SDK/output/vector 결합을 확인하는 offline 최소 verifier, canonical encoding과 혼합 입력 거부 golden vectors | 확대 catalogue 의미 검증, N/N−1 호환, production conformance |
+| `consume-p-sdk-0` | 원본 catalogue의 정확한 p-sdk-0 manifest와 BOOTSTRAP profile을 vendoring하고 같은 최소 verifier와 vectors로 입력 결합을 확인 | 변경된 catalogue나 후속 profile을 초기 PASS로 소비할 권한 |
+| `contract-compatibility-profile` | 초기 형식·최소 verifier를 재사용하고 `p-sdk-1`/stage3 뒤 확대 command/query/receipt 및 승인 fixture 간 positive/negative 의미 conformance를 검증한 SEMANTIC_CONFORMANCE profile과 정확한 대상 tuple/evidence | 과거 BOOTSTRAP profile의 소급 승격, 이후 변경의 자동 qualification |
+
+manifest-v1은 `manifest_schema_version`, `profile_kind`, `profile_revision`,
+`profile_sha256`를 필수 입력으로 고정한다. 허용 kind는 `BOOTSTRAP`과
+`SEMANTIC_CONFORMANCE`뿐이며 verifier는 누락/unknown kind와 요청한 kind·revision·
+digest가 다른 입력을 거부한다. BOOTSTRAP의 허용 catalogue/schema/vector 집합은
+초기 immutable profile에 한정한다. manifest와 profile은 위 표의 입력을 기록하는
+artifact이며 보호된 감사·완료 증거를 대체하지 않는다. profile 자신의 digest는
+profile 바이트 밖에서 계산하며 자기 digest/최종 commit을 profile 입력에 넣지 않는다.
+
+초기 golden vectors는 생성기와 consumer verifier가 같은 바이트를 얻는 양성 사례와
+중복 키, 잘못된 UTF-8/숫자 표현, wrong schema/kind/revision/digest, 다른 source,
+혼합 OpenAPI/SDK, 잘린 입력 거부 사례를 포함한다. 허용 숫자·문자열 표현을
+명시하고 같은 입력의 독립 encoder 결과를 비교한다. 실제 테스트를 이 문서가
+실행한 것으로 기록하지 않는다.
+
+`openapi-catalogue-promotion`/`read-model-reference`/`p-sdk-1`은 초기 형식·verifier로
+새 입력 artifact를 생성·검증하지만 확대 catalogue를 BOOTSTRAP 대상으로 표시하지
+않는다. 확대 catalogue를 소비하는 pending 앱 노드는 후속
+`contract-compatibility-profile`의 실제 완료도 기다리며, 소비할 정확한 source tuple의
+SEMANTIC_CONFORMANCE profile/evidence를 확인한다. 해당 tuple의 검증이 없으면 HOLD다.
+따라서 초기 producer가 후속 profile 완료를 기다리는 역방향 의존성은 없으며,
+추가 catalogue 소비가 초기 profile의 범위를 넘겨 앞서 시작하지 않는다.
 
 ## 3. 호환 규칙 후보
 
@@ -78,14 +115,19 @@ catalogue 변경 한 번마다 생성 SDK와 manifest를 같은 source 입력에
 
 | 노드 | 의무 |
 |---|---|
-| `p-sdk-0` / `p-sdk-1` | 재현 생성, 정확한 source·generator·output manifest, body/receipt vectors |
+| `p-sdk-0` | A3/ARCHITECTURE; §2.1 초기 형식·BOOTSTRAP profile·최소 verifier·golden vectors와 원본 catalogue SDK 재현 생성 |
+| `p-sdk-1` | 초기 형식을 재사용해 확대 catalogue의 정확한 source·generator·output artifact와 body/receipt vectors 생성; 후속 의미 profile을 미리 PASS로 주장하지 않음 |
 | `openapi-catalogue-promotion` | FSM command catalogue, gate, SDK, manifest 동시 개정; 관련 checks |
 | `read-model-reference` | 새 read catalogue와 gate·SDK·manifest 동시 개정; query non-mutation 검사 |
 | pending `wave7-marketing-contracts` | 문서 초안 범위를 지킴. 승인된 catalogue 변경을 수행하는 경우에만 SDK·gate·manifest도 갱신; 새 명령 의미는 DECISION_REQUIRED |
-| `contract-compatibility-profile` | `p-sdk-1`과 `k-stage3-schema-sdk-conformance` 뒤에 profile verifier와 positive/negative conformance 증거를 완성 |
+| `contract-compatibility-profile` | `p-sdk-1`과 `k-stage3-schema-sdk-conformance` 뒤 초기 verifier를 재사용해 SEMANTIC_CONFORMANCE profile과 정확한 대상 tuple의 positive/negative 의미 검증 증거를 완성 |
 
 앱의 새 pending `consume-p-sdk-1`은 `p-sdk-1`과 compatibility-profile의 실제 완료를
 기다린다. `bind-list-read`는 이 SDK 소비와 `read-model-reference`/`p-sdk-1`을 기다린다.
+초기 `consume-p-sdk-0` 이외 pending 앱 노드에는 후속 profile 완료의 명시적 외부
+선행을 둔다. 이 선행은 기본 verifier의 제공 시점과 후속 의미 검증 시점을 구분하며,
+그 자체로 소비할 새로운 tuple의 qualification을 대신하지 않는다. Wave 6-A의 기존
+`w6a-evidence` 최소 gate와 active 노드의 선행은 바꾸지 않는다.
 그 이후 catalogue 변경을 소비하는 각 앱 노드는 **그 변경의 정확한 새 manifest**와
 생성 SDK를 다시 검증한다. 초기 SDK 소비의 PASS를 후속 버전으로 옮기지 않는다.
 
@@ -153,3 +195,5 @@ input/qualification hold 수를 각각 집계한다. pending 노드를 분모에
 
 이 PR에는 설계 문서와 candidate plan만 있다. verifier/SDK/앱/E2E 구현, 실제 서비스
 시험, 독립 Fable 감사·host qualification·배포를 실행한 것으로 보고하지 않는다.
+
+중앙 bootstrap의 현 채택 검토 후보는 #44/#45를 통합·보완한 [#46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46)이다. 기존 #44 감사의 DECISION_REQUIRED를 통과한 것으로 간주하지 않는다. PA-1 권한 예외는 PENDING이며, 보호된 reconcile과 실제 host qualification 전에는 전체 실행 NOT_READY다. 기존 중앙 포인터는 이전 체크포인트 기록이고 최종 승인 registration에는 실제 채택·qualification commit을 pin해야 한다.
