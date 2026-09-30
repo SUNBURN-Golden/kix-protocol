@@ -9,20 +9,28 @@ The earlier delegation candidate preserved the parent specifications, dependency
 DAG, audit floors and milestone gates. This later, separately reviewed design
 candidate adds the compatibility profile and source-bound evidence obligations in
 [CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md](CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md).
-It keeps every User-only node and lock, and leaves cross-repository pending nodes
-inactive. Its candidate counts are active 67/pending 1 protocol and active 10/pending
-20 commerce. This text does not record adoption or activation.
+It keeps every User-only node and lock, and leaves all pending nodes inactive.
+The earlier #83/#16 checkpoint was active67/pending1 protocol and active10/pending20
+commerce. The new product evolution adds six protocol follow-up candidates, the
+separate Finance inventory combined once into protocol, and commerce follow-up
+candidates. Current counts come from both complete active+pending catalogues and
+are verified in the submission report. This text does not record adoption or activation.
 The current continuity correction raises only p-sdk-0 from A2 to A3/ARCHITECTURE:
 it owns the immutable manifest-v1/BOOTSTRAP profile, minimum verifier and golden
 vectors before the later semantic conformance task. All other protocol floors,
 original dependencies and all14 User-only boundaries stay. Non-bootstrap commerce
 pending consumers now explicitly wait for contract-compatibility-profile; this is
 an additional candidate dependency, not a claim that earlier grades/DAG were
-unchanged in this correction. No node or permission is added.
+unchanged in that earlier correction. This later candidate adds pending nodes through
+[PROTOCOL_COMPLETION_DESIGN_KO.md](PROTOCOL_COMPLETION_DESIGN_KO.md) and
+[FINANCE_COMPLETION_DESIGN_KO.md](FINANCE_COMPLETION_DESIGN_KO.md); it changes no
+original active node, User-only flag or lock. Candidate definition is not permission.
 `astra_auto_merge=true` delegates only the merge executor inside
-each non-User node's explicitly approved scope, through the protected bridge in
-[central #46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46),
-candidate HEAD `a8b7355712c58de8d27c85a535fb241a09a4037c`.
+each non-User node's explicitly approved scope, through an actually adopted and qualified protected bridge. The bootstrap source
+candidate is [central #46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46),
+HEAD `a8b7355712c58de8d27c85a535fb241a09a4037c`; its recovery source follow-up is
+[central #47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47),
+HEAD `94a768e19df12703ea0b9a49e49972feb2f6ef4f`. Neither is an installed-host claim.
 Existing independent reviews, current-head CI, required product gates and exact
 merge HEAD remain mandatory. A protected Fable PASS/PASS_WITH_NOTES plus
 WITHIN_APPROVED_PLAN is required whenever an Astra gate applies or review
@@ -37,9 +45,9 @@ service or hardware that is absent remains unqualified; fake tests do not make i
 complete. UNKNOWN model/task/job outcomes remain fenced.
 
 The existing central source ignores this new delegation field. Its gates still
-hold. The new path applies only after replacement central #46 has an exact-HEAD independent
-A3 result, User adoption, root-owned host install, canary/qualification and updated
-runtime attestation. Product client pins and activation records are not altered
+hold. The new path applies only after the final adopted central source has an exact-HEAD
+independent A3 result, User adoption, root-owned host install, actual service
+authorization, canary/qualification and updated runtime attestation. Product client pins and activation records are not altered
 by this candidate; actual runtime/source qualification must be established at
 registration. Cross-repository pending dependencies remain pending.
 
@@ -51,6 +59,8 @@ issues. Do not manufacture task envelopes, MACs, session receipts, audit verdict
 or host state. The bootstrap PRs themselves are not program tasks and are not
 self-authorized for automatic merge.
 
-## 중앙 채택 후보 갱신 — 2026-09-30
+## 중앙·제품 후속 후보 갱신 — 2026-10-01
 
-중앙 [#46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46), 후보 HEAD `a8b7355712c58de8d27c85a535fb241a09a4037c`가 #44/#45의 대체 검토 후보다. #44의 DECISION_REQUIRED 차단을 수정하는 새 후보이며 독립 PASS나 사용자 채택을 주장하지 않는다. RELEASE·contract_change=YES·User-only는 자동 병합에서 제외된다. 권한 예외 PA-1, 실제 서비스 authorization·reconcile·host qualification·activation은 아직 PENDING/NOT_READY다. approval pointer는 PENDING 상태로 비활성이며, 실제 등록 시 대체 후보의 최종 승인·qualification evidence로 갱신한다.
+중앙 #46을 대체 bootstrap 후보로 유지하며 그 위 #47에 보호된 실패 journal·검증된 quota 한 번 재시도의 구현 source 후보가 추가됐다. 실제 설치·authorization·qualification은 확인되지 않았다. 외부 완료 증거/전체 완료 query는 후속 구현이며 기존 manual plan revision 경로를 유지한다. #44의 DECISION_REQUIRED를 독립 PASS나 사용자 채택으로 바꾸지 않는다. RELEASE·contract_change=YES·User-only는 자동 병합에서 제외된다. PA-1, 독립 감사·User 채택·실제 서비스 authorization·host qualification·activation은 PENDING/NOT_READY다. approval pointer는 PENDING 상태로 비활성이며 실제 등록 때 최종 승인·qualification evidence로 갱신한다.
+
+제품 새 pending 노드의 task input은 완전히 결합한 catalogue와 이 설계 문서를 승인한 plan revision에서 생성한다. 기존67 active와 User-only14, 기존 pending Wave7을 보존한다. protocol 최종 closeout은 Finance를 포함한 나머지 모든 protocol 정의를 기다리며, Finance 소비자는 새 SDK/manifest/profile의 정확한 tuple을 기다린다. 소비자는 protocol 최종 closeout을 선행으로 삼지 않아 cycle을 만들지 않는다. 프로그램 완료의 전체 분모와 mode별 실제 evidence는 [프로토콜 완료 설계 §8](PROTOCOL_COMPLETION_DESIGN_KO.md#8-후속-dag와-전체-완료-분모)에 따른다.

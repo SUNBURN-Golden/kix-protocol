@@ -133,9 +133,13 @@ catalogue 변경 한 번마다 생성 SDK와 manifest를 같은 source 입력에
 
 ## 5. 저장소 사이 완료와 대기 노드
 
-현재 active plan에는 `depends_on_external`을 넣지 않는다. 기존 pending protocol 1개와
-commerce 18개에 새 SDK 소비와 최종 closeout 2개가 추가되므로 pending은 총 21개다.
-현재 방식은 확인된 선행 병합 뒤 사용자 병합의 plan revision이다.
+현재 active plan에는 `depends_on_external`을 넣지 않는다. #83 최초 후보의 checkpoint는
+protocol pending 1개와 commerce pending 20개, 총 pending 21개였다. 이번 후속 개정은
+[프로토콜 완료 설계](PROTOCOL_COMPLETION_DESIGN_KO.md)의 여섯 노드와
+[금융 설계](FINANCE_COMPLETION_DESIGN_KO.md)의 후보, commerce 후속 노드를 추가한다.
+현재 분모의 정본은 각 저장소 active plan + 완전히 결합된 pending catalogue의 정의 집합이며
+금융 별도 inventory는 같은 정의를 복제해 세지 않는다. 제출 PR은 최종 실제 수를 기록한다.
+현재 실행 방식은 확인된 선행 병합·보호된 evidence 뒤 사용자 병합의 plan revision이다.
 pending의 `astra_auto_merge=true`는 별도 후보 위임이다. 실제 승인 범위와 해당 중앙
 기능의 채택·qualification·attestation 없이는 실행이나 병합 권한이 되지 않는다.
 
@@ -178,7 +182,10 @@ loopback-reference의 QUALIFIED를 production QUALIFIED로 표시하지 않는�
 해당 User-only 의사결정 문서가 DONE이어도 별도 실제 배포·자금·키 권한은 열리지 않는다.
 노드별 완료와 양 저장소 프로그램 완료를 분리하고 active/pending/User decision/external
 input/qualification hold 수를 각각 집계한다. pending 노드를 분모에서 없애 전체 완료라고
-보고하지 않는다. 초기 95개에서 새 후보 3개가 늘어 **전체 정의 98개**다.
+보고하지 않는다. 초기 95개에서 후보 3개를 추가한 **98개는 #83/#16의 이전 checkpoint**다.
+후속 protocol·Finance·commerce 후보를 포함한 전체 정의를 다시 세며, 최종 protocol closeout은
+기존 active 전체와 pending의 나머지 모든 정의를 기다린다. 새로운 User 승인·실 자금·출시
+권한을 이 집계가 만들지 않는다.
 
 ## 7. 수용·거부 시험과 증거
 
@@ -196,4 +203,4 @@ input/qualification hold 수를 각각 집계한다. pending 노드를 분모에
 이 PR에는 설계 문서와 candidate plan만 있다. verifier/SDK/앱/E2E 구현, 실제 서비스
 시험, 독립 Fable 감사·host qualification·배포를 실행한 것으로 보고하지 않는다.
 
-중앙 bootstrap의 현 채택 검토 후보는 #44/#45를 통합·보완한 [#46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46)이다. 기존 #44 감사의 DECISION_REQUIRED를 통과한 것으로 간주하지 않는다. PA-1 권한 예외는 PENDING이며, 보호된 reconcile과 실제 host qualification 전에는 전체 실행 NOT_READY다. 기존 중앙 포인터는 이전 체크포인트 기록이고 최종 승인 registration에는 실제 채택·qualification commit을 pin해야 한다.
+중앙 bootstrap의 #44/#45 대체 후보는 [#46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46)이며, 그 위 [#47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47) HEAD `94a768e19df12703ea0b9a49e49972feb2f6ef4f`에 실패 보존·검증된 한도 한 번 재시도 source 후보가 추가됐다. 구현 source와 실제 설치·qualification을 구분한다. 기존 #44의 DECISION_REQUIRED를 PASS로 간주하지 않는다. PA-1 권한 예외, 독립 exact-HEAD 감사·User 채택·실제 보호 서비스 authorization·host qualification·activation은 PENDING이다. 외부 완료/전체 완료 query 후속 기능도 미구현이며 전체 실행은 NOT_READY다. 최종 registration에는 실제 채택·qualification commit/evidence를 pin해야 한다.
