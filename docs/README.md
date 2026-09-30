@@ -15,12 +15,24 @@
 6. [측정 계약](contracts/PERFORMANCE_MEASUREMENT.md), [고정 smoke 조건](contracts/PERFORMANCE_BASELINE_V4.md)(역사적 debug 논리 서명, 제품 p99 아님), [Task 004 장치 메모](../validation/2026-09-25-task-004-perf-measurement/README.md).
 7. [잠금의 실제 CI 경로](status/LOCK_ENFORCEMENT.md), [위생 목록 — 실행 금지](CODE_HYGIENE_BACKLOG.md).
 8. [원래 32개 항목](status/ORIGINAL_32_STATUS.md), [M 제외 부분 앵커](status/PARTIAL_ANCHOR_COUNTS.md), [#11 태그 보존](status/PR11_PRESERVATION.md).
+9. [범위 편입 결정 기록(2026-09-29)](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) — 선택적 자체 토큰 계층과 확장형 권리·재고·검표 계층. 병합 시 효력. 설계·계획 문서화 한정, 구현·발행 미승인, 새 coin/TIX 모듈 잠금 유지. [개발계획 §18](DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입).
 
 ## 계약 전용 OpenAPI
 
 [계약 전용 OpenAPI](contracts/openapi/README.md)는 `reference/v0.3-rc1/protocol_contract.json`의 로컬 호출 명령을 담은 OpenAPI 3.1 핀이다. 그 핀은 라이브 서버를 선언하지 않고, 운영 엔드포인트도 없다. 같은 40개 명령과 같은 로컬 호출 경로를 루프백에서 부르는 비운영 통합 관문이 따로 있다. 공개 호스트·실 PG·KYC·공연장·은행 연동이 아니며, 로컬 HTTP 성공은 운영 승인이 아니다. 선택적 로컬 파일 저널과 재시작 재생은 [준비 런타임 경계](contracts/READINESS_RUNTIME.md)에 적는다. 그 저장은 프로토콜 정본이 아니고, 공개 배치·운영 적합·외부 연동의 승인이 아니다.
 
 `reference/v0.1/KIX_프로토콜_통합명세_v0.1.md` §9.1의 “HTTP 서버·OpenAPI 서비스는 아직 없다”는 그 명세를 쓰던 시점의 기록이다. 그 파일은 당시 패키지 해시에 묶인 역사 증거라 본문을 고치지 않았다. 예매·리셀·검표 목과 신용 목의 “HTTP 서버는 없다”는 각 목 함수에 대한 설명으로 그대로 둔다.
+
+## 청사진 색인 — 설계 제안, 승인·구현 아님
+
+아래 두 청사진은 2026-09-29 범위 편입([결정 기록](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md))의 설계 제안이다. 구현·배포·발행을 승인하지 않으며, 후속 작업 정의는 작업문서가 아니다.
+
+| 청사진 | 다루는 것 | 상태 |
+|---|---|---|
+| [선택적 자체 토큰 발행·운영 계층](blueprints/optional-native-token-v1/README.md) | 용도별 채택 평가, 필수 불변식, Sui 표준 대조, 공급·분배, 경제적 연결, 권한, 거래 결합, 활성화 단계, TIX 자료 등급 | 구체 설계·구현 미완료 |
+| [확장형 권리·재고·검표 계층](blueprints/rights-scale-v1/README.md) | 16슬롯 변경 영향 지도, 구조 대안 비교와 권고, 필수 안전 조건, ZK 현재성 설계, 검증 규모 계획 | 설계 제안. 16슬롯 참조 프로파일은 회귀 기준으로 보존 |
+
+닫힌 미병합 [PR #35](https://github.com/BeautifulMind-JT/kix-protocol/pull/35)의 금융·플랫폼 청사진은 이 색인의 항목이 아니다. 역사적 설계 자료로만 참고한다.
 
 ## 역사 문서와 증거
 
