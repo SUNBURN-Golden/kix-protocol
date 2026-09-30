@@ -5,8 +5,14 @@ are recorded. It prepares the User's 2026-09-30 one-command development request.
 Parent scope: [BeautifulMind-JT/kix-protocol#81](https://github.com/BeautifulMind-JT/kix-protocol/pull/81).
 The parent PR's existing audit HEAD is not changed by this delegation candidate.
 
-The nodes keep their complete specifications, dependency DAG, audit floors and
-milestone gates. `astra_auto_merge=true` delegates only the merge executor inside
+The earlier delegation candidate preserved the parent specifications, dependency
+DAG, audit floors and milestone gates. This later, separately reviewed design
+candidate adds the compatibility profile and source-bound evidence obligations in
+[CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md](CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md).
+It keeps every User-only node and lock, and leaves cross-repository pending nodes
+inactive. Its candidate counts are active 67/pending 1 protocol and active 10/pending
+20 commerce. This text does not record adoption or activation.
+`astra_auto_merge=true` delegates only the merge executor inside
 each non-User node's explicitly approved scope, through the protected bridge in
 [central #44](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/44),
 candidate HEAD `3c7dd38d69d2992ed25fe97f39f6ed4a37360ea3`.
