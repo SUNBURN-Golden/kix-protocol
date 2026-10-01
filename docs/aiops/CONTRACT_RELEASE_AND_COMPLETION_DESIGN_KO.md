@@ -1,6 +1,6 @@
 # KIX 계약 호환 묶음과 개발 완료 설계 후보
 
-공통 후속 규약: [중앙 #46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46), 후보 HEAD `a8b7355712c58de8d27c85a535fb241a09a4037c`. [고정 설계](https://github.com/BeautifulMind-JT/ai-ops-control-plane/blob/a8b7355712c58de8d27c85a535fb241a09a4037c/engineering/docs/PROGRAM_EXECUTION_EVOLUTION_DESIGN_KO.md)는 아직 운영·승인 evidence가 아니다.
+공통 후속 규약: [중앙 #47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47), 후보 HEAD `09e161caa652d75e9617caf632b3b9899be35740`. [고정 설계](https://github.com/BeautifulMind-JT/ai-ops-control-plane/blob/09e161caa652d75e9617caf632b3b9899be35740/engineering/docs/PROGRAM_EXECUTION_EVOLUTION_DESIGN_KO.md)는 아직 운영·승인 evidence가 아니다.
 
 상태: **설계·계획 개정 후보. 구현·활성화·감사 PASS가 아니다.**
 작성 기준은 protocol #82 `1fc02920d93fe0fb1f272fa917f6e20ba26cc987`와 commerce
@@ -244,4 +244,4 @@ input/qualification hold 수를 각각 집계한다. pending 노드를 분모에
 이 PR에는 설계 문서와 candidate plan만 있다. verifier/SDK/앱/E2E 구현, 실제 서비스
 시험, 독립 Fable 감사·host qualification·배포를 실행한 것으로 보고하지 않는다.
 
-중앙 bootstrap의 #44/#45 대체 후보는 [#46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46)이며, 그 위 [#47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47) HEAD `94a768e19df12703ea0b9a49e49972feb2f6ef4f`에 실패 보존·검증된 한도 한 번 재시도 source 후보가 추가됐다. 구현 source와 실제 설치·qualification을 구분한다. 기존 #44의 DECISION_REQUIRED를 PASS로 간주하지 않는다. PA-1 권한 예외, 독립 exact-HEAD 감사·User 채택·실제 보호 서비스 authorization·host qualification·activation은 PENDING이다. 외부 완료/전체 완료 query 후속 기능도 미구현이며 전체 실행은 NOT_READY다. 최종 registration에는 실제 채택·qualification commit/evidence를 pin해야 한다.
+중앙 bootstrap의 #44/#45 대체 후보는 [#47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47)이며, 그 위 [#47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47) HEAD `09e161caa652d75e9617caf632b3b9899be35740`에 실패 보존·검증된 한도 한 번 재시도 source 후보가 추가됐다. 구현 source와 실제 설치·qualification을 구분한다. 기존 #44의 DECISION_REQUIRED를 PASS로 간주하지 않는다. PA-1 권한 예외, 독립 exact-HEAD 감사·User 채택·실제 보호 서비스 authorization·host qualification·activation은 PENDING이다. 외부 완료/전체 완료 query 후속 기능도 미구현이며 전체 실행은 NOT_READY다. 최종 registration에는 실제 채택·qualification commit/evidence를 pin해야 한다.

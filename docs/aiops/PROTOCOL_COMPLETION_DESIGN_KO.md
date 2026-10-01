@@ -244,7 +244,7 @@ commit 전 crash, replay, budget, 동시 보유를 중복 작성하지 않고 �
 
 `docs/decisions/PROGRAM_ROADMAP_20260930_PENDING.json`이 새 여섯 노드의 실행 입력 후보를
 소유한다. 여기서 지정한 acceptance는 계획 채택 뒤 task envelope로 materialize한다.
-현재 active plan·User-only 14개·기존 선행·기존 감사 등급은 변경하지 않는다.
+기존14 User-only와 선행은 유지하며, 계약 변경 노드도 user_merge=true/A3로 바꾼다. 현재 병합 경계는 PROGRAM_ASTRA_DELEGATION.md의 spec 판정 표다.
 
 | 새 pending 노드 | 선행 | 제출·수용 조건 |
 |---|---|---|
@@ -282,7 +282,7 @@ closeout은 ADOPT된 실제 구현, DEFERRED로 남은 구현, DECLINED 뒤 User
 등록 전에는 새 pending catalogue 전체가 비활성이다. 기존 중앙에 지원되지 않는
 `depends_on_external`을 active plan에 직접 넣지 않는다. 실제 upstream merge/evidence 뒤
 승인된 plan revision을 만들거나, 별도 채택·qualification된 중앙 기능을 사용한다.
-중앙 #47 HEAD `94a768e19df12703ea0b9a49e49972feb2f6ef4f`은 #46 위의 **복구 source 후보**다.
+중앙 #47 HEAD `09e161caa652d75e9617caf632b3b9899be35740`은 #47의 **복구 source 후보**다.
 소스에서 실패 journal과 검증된 한도 한 번 재시도를 구현했어도 실제 호스트 설치·authorization·
 독립 감사·qualification·activation이 확인되지 않았다. 외부 완료 기능·전체 완료 query의
 후속 구현도 이 제품 문서가 완성했다고 표시하지 않는다.

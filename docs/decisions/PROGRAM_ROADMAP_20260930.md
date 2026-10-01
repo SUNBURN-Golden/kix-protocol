@@ -1,6 +1,6 @@
 # 프로그램 로드맵 R-1 — 2026-09-30 (사용자 위임)
 
-상태: **결정안.** 사용자가 이 문서를 포함한 PR을 병합한 때 효력이 생긴다. 작성 기준 main은 `78b78b1b4a4ffe92de461edd351235ce858b335a`다.
+상태: **범위 결정안.** #81의 대표님 병합은 범위 승인이고, 시작은 별도 시작 PR이다. 작성 기준 main은 `78b78b1b4a4ffe92de461edd351235ce858b335a`다.
 이 문서는 [프로그램 결정 D-1~D-3](PROGRAM_DECISIONS_20260928.md)을 이어받아 KIX 두 저장소의 장기 계획을 한 번에 승인하기 위한 것이다.
 
 ## 0. 작성 근거와 효력 발생
@@ -12,7 +12,7 @@
   - kix-protocol과 kix-commerce-apps에 장기·대규모 계획을 넣는다.
   - 한 번 시작하면 사람의 결정이 꼭 필요한 곳 말고는 멈추지 않고 끝까지 진행되게 한다.
 - 이 문서는 그 지시에 따라 Claude가 작성한 **결정안**이다. 에이전트가 승인 범위를 스스로 넓히지 않도록, 작성만으로는 효력이 생기지 않는다.
-- **효력 발생:** 사용자가 이 문서를 포함한 PR을 병합하거나 이 결정안을 따로 명시 승인한 때다. 사용자는 언제든 바꾸거나 되돌릴 수 있고, 그 경우 새 결정 문서가 이 문서를 대체한다.
+- **범위 효력 발생:** 대표님이 #81을 병합하거나 이 범위를 따로 명시 승인한 때다. 실행/시작은 승인 초안을 복사하고 승인 링크만 바꾸는 별도 시작 PR의 exact-HEAD Fable 감사와 대표님 병합 뒤에 열린다. 사용자는 언제든 바꾸거나 되돌릴 수 있고, 그 경우 새 결정 문서가 이 문서를 대체한다.
 - 이 문서는 다음을 바꾸지 않는다.
   - AGENTS.md의 program mode 규칙, 비작성자 exact-HEAD 검토, 단일 작성자, UNKNOWN fencing, 잠금 blob 규칙
   - [프로그램 결정](PROGRAM_DECISIONS_20260928.md) §5의 잠금과 해제 조건
@@ -21,26 +21,11 @@
 
 ## 1. 계획의 형태와 승인 방식
 
-- **정본은 두 계획 파일이다.**
-  - kix-protocol `.aiops/program.json`: program `kix`, 노드 66개
-  - kix-commerce-apps `.aiops/program.json`: program `kixc`, 노드 10개
-  - 아래 §3·§4 표는 두 파일에서 그대로 옮겼다. 둘이 다르면 파일이 우선하고, 표는 `roadmap-sync`에서 고친다.
-- **이 문서가 병합되면 두 파일의 모든 노드와 "편입 대기" 노드가 승인된 작업 범위가 된다.**
-  - 각 노드의 task envelope(중앙 control plane이 계획 파일에서 만든다)가 과제 문서다.
-  - 개발계획 §18(391행)과 두 청사진(권리 확장 424행, 토큰 계층 439행)은 "이 표는 작업문서가 아니며 dispatch 대상이 아니다"라고 적는다. 이 문서에 실린 노드에 대해서는 이 문서가 그 문구를 대체한다.
-  - 이 문서는 kix 노드 전체의 게이트 기록 역할도 한다(프로그램 결정 §3의 "같은 범위 안의 후속 심화"). Wave 7은 §2 R-7을 따른다.
-- **사용자만 병합하는 노드는 14개다.** 모두 사람의 결정 문서이고, 계획 파일에 `user_merge: true`로 적었다.
-  - 이 노드들은 모두 A3다. 현재 중앙 런타임은 A3 노드를 기계로 병합하지 않는다. 근거는 ai-ops-control-plane main `7de954f`의 `engineering/scripts/control_plane_program.py`다. `merge_check`는 A3를 ARCHITECTURE 게이트로 올리고(962행), Astra 게이트가 있는 노드는 "Astra gate … is not machine-verifiable here; User merges"로 병합을 거부한다(978-979행). 그래서 지금 런타임에서도 이 노드들은 사용자가 병합해야 효력이 생긴다.
-  - `user_merge: true`는 앞으로 Astra 게이트를 자동화하는 변경이 들어와도 이 노드들을 사용자 몫으로 남기라는 표시다. 그런 변경은 이 표시를 강제해야 한다. 강제가 확인되기 전에는 이 노드들의 A3 등급을 낮추지 않는다.
-  - 나머지 노드는 AIOPS 규칙(M1 병합 실행 위임, Astra(Claude Fable) 게이트, 비작성자 리뷰)을 모두 통과하면 병합된다. 현재 런타임에서 A3·Astra 게이트 노드는 사용자가 병합한다.
-- **다른 저장소 노드를 기다리는 노드는 계획 파일에 넣지 않았다.**
-  - 현재 중앙 런타임은 저장소 사이 선행을 읽지 않는다. 그래서 이런 노드를 계획 파일에 두면 선행 노드보다 먼저 시작될 수 있다.
-  - 이 노드들은 §3.7·§4.4·§4.5 "편입 대기" 표에 두었다. 노드 정의는 정의 파일에 그대로 적어 두었다. kix-protocol은 `docs/decisions/PROGRAM_ROADMAP_20260930_PENDING.json`, kix-commerce-apps는 `docs/aiops/PENDING_NODES.json`이다.
-  - 이 노드들도 이 문서로 승인된 범위다. 외부 선행 노드와 계획 안 선행 노드가 모두 병합되면, 계획 파일 개정 PR로 정의를 그대로 옮긴다. 개정 PR은 계획 변경 규칙(비작성자 리뷰, 사용자 병합)을 따른다.
-- **멈추는 규칙은 노드마다 같다.**
-  - 제품 정책 값과 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`로 멈춘다. 질문 경로(Opus → Astra → 사용자)가 답한다.
-  - 법률·세무·회계·토스 답변이 필요한 값은 추측하지 않는다. `UNDETERMINED`로 두고 담당을 적는다.
-  - 잠금 해제가 필요한 일은 하지 않는다. 결정 문서 노드로만 둔다(§5). 새 coin/TIX 모듈의 유일한 예외는 `tl-2`의 localnet 패키지이며, Astra 재결정 뒤 사용자가 `tl-coin-lock-adr`를 병합한 뒤에만 가능하다.
+- 비실행 정본은 kix-protocol `docs/aiops/KIX_PROGRAM_DRAFT.json`(67개)과 kix-commerce-apps `docs/aiops/KIX_COMMERCE_PROGRAM_DRAFT.json`(10개)이다. pending 정의는 protocol15/commerce26이며 전체82/36개다. Finance8은 protocol pending의 부분집합이다. §3·§4는 초기 roadmap 표이며 현재 전체 정의·병합 등급/경계는 각 초안 및 PROGRAM_ASTRA_DELEGATION 판정 표가 우선한다.
+- **#81 병합 = 범위 승인, 시작 = 별도 시작 PR.** 승인 전 `.aiops/program.json`은 없다. PENDING pointer를 제품 시작 승인으로 바꾸는 일은 대표님 시작 결정 뒤에만 한다. 절차와 hash 규칙은 [등록 범위 문서](../aiops/REGISTRATION_SCOPE_APPROVAL_KO.md)를 따른다.
+- 정책 C(2026-10-01, [대표님 원문](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47#issuecomment-5927605393))는 Fable PASS 위임 노드 자동 병합이며 contract_change=YES·RELEASE·user_merge는 대표님 몫이다. 기존14 User-only 외에 계약 변경 노드도 user_merge/A3로 바꿨다. [spec 판정 표](../aiops/PROGRAM_ASTRA_DELEGATION.md)가 현재 병합 경계다. source 후보의 설치·qualification 전에는 program을 켜지 않는다.
+- 외부 선행 노드는 pending catalogue에 둔다. 실제 보호된 완료와 정확한 plan/definition/delivery/merge·post-merge 근거를 확인한 뒤 별도 대표님 병합 plan revision으로 승격한다. 미완료/UNKNOWN을 삭제해 실행하지 않는다.
+- 제품 정책·새 명령은 DECISION_REQUIRED로 멈추며 법률/회계/토스 답변은 UNDETERMINED와 담당을 기록한다. §5 잠금은 유지한다. coin/TIX 유일 예외인 tl-2도 Astra 재결정 및 대표님 tl-coin-lock-adr 병합 뒤에만 가능하다.
 
 ## 2. 이 문서로 확정되는 결정
 
@@ -52,7 +37,7 @@
 | R-4 | **Track K 2단계 구현 착수 조건을 바꾼다.** 프로그램 결정 §2.2(61-63행)는 착수 조건을 둘로 정했다. 첫 묶음 열린 입력의 해당 행이 확정될 것, 그리고 v5 설계 결정 문서가 있을 것. R-4는 첫째 조건을 **착수 조건에서 부분별 정지 조건으로 바꾼다.** v5 설계 결정 문서(`k-stage2-v5-design-decision`)를 사용자가 병합하면 `k-stage2-v5-impl`이 시작한다. 이것이 §2.2의 "별도 승인"이다. 해당 행이 아직 열려 있으면 그 행에 기대는 부분만 `DECISION_REQUIRED`로 멈춘다 | 프로그램 결정 §2.2 |
 | R-5 | **Track K 3단계 적합성 작업 승인.** 안정 1.0과 공개 배포는 여기에 들어가지 않는다(`sdk-1-0-decision`, 사용자) | 프로그램 결정 §5 |
 | R-6 | **Track K 5단계 로컬·비운영 구현 착수 조건.** backend 채택 결정 문서(`k-stage4-adoption-decision`)를 사용자가 병합하면 `k-stage5-durable-tx`가 시작한다. R2와 자체 복제·합의는 계속 잠금이다 | 프로그램 결정 §2.2, §5 |
-| R-7 | **Wave 7 조건부 게이트.** kix-commerce-apps 노드 `w6a-evidence`가 병합되면 Wave 7이 열린다. 이것이 프로그램 결정 §3의 진입 조건(최소 한 표면의 mock end-to-end 여정)이다. **이 절이 Wave 7의 게이트 기록이다.** 구현 PR은 이 절과 `w6a-evidence` PR 링크를 인용한다. `w6a-evidence`는 마일스톤 게이트 노드라 현재 런타임에서 사용자가 병합한다. kix-protocol `wave7-marketing-contracts`는 편입 대기이며 그 병합 뒤 계획 개정으로 들어온다 | 프로그램 결정 §3 |
+| R-7 | **Wave 7 조건부 게이트.** kix-commerce-apps 노드 `w6a-evidence`가 병합되면 Wave 7이 열린다. 이것이 프로그램 결정 §3의 진입 조건(최소 한 표면의 mock end-to-end 여정)이다. **이 절이 Wave 7의 게이트 기록이다.** 구현 PR은 이 절과 `w6a-evidence` PR 링크를 인용한다. `w6a-evidence`는 계약 변경/RELEASE/User-only가 아니면 정책 C의 보호된 Fable PASS와 exact-head gate 뒤 위임 병합한다. kix-protocol `wave7-marketing-contracts`는 편입 대기이며 그 병합 뒤 계획 개정으로 들어온다 | 프로그램 결정 §3 |
 | R-8 | **kix-commerce-apps 사후 승인.** Wave 6 게이트 기록([#56 댓글](https://github.com/BeautifulMind-JT/kix-protocol/issues/56#issuecomment-5868307343), 2026-09-28 10:42Z) 전에 병합된 [#1](https://github.com/BeautifulMind-JT/kix-commerce-apps/pull/1), [#3](https://github.com/BeautifulMind-JT/kix-commerce-apps/pull/3)~[#12](https://github.com/BeautifulMind-JT/kix-commerce-apps/pull/12)(2026-09-25 23:35Z~09-28 08:49Z)를 승인된 병합분으로 인정한다. D-2가 Wave 2~5를 사후 승인한 것과 같은 방식이다. 모두 stub·mock·loopback 결합이라 Wave 6 범위(계약 소비와 mock backend) 안이다. CI [#13](https://github.com/BeautifulMind-JT/kix-commerce-apps/pull/13)은 게이트 뒤(09-28 23:14Z)에 병합됐다. #3의 Wave 7 마케팅 stub은 stub으로만 인정하고, Wave 7이 열리기 전에는 계약에 결합하지 않는다 | 프로그램 결정 §3 |
 | R-9 | **계약 공백 심화 승인.** 정산 계약 §7, 예매·리셀·검표 계약 §7, F04 계약 §5("의도적으로 비운 항목")의 초안 작업을 승인한다. 정책 값은 Astra 결정 경로로 정하고, 법률 의존 값은 `UNDETERMINED`로 둔다 | 각 계약의 해당 절 |
 | R-10 | **6단계 경제 기능은 참조 모델로만 승인한다.** 합성 금액만 쓴다. 실자금은 프로그램 결정 §5 조건을 따른다 | 개발계획 6단계 |
@@ -243,9 +228,9 @@ D-E(법률·회계·세무·금융 검토의 주체와 시점)는 사람이 정�
 
 ## 6. 사용자에게 남는 일
 
-1. 이 PR(kix-protocol)을 병합한다. 그다음 kix-commerce-apps의 계획 PR을 병합한다(이 문서를 근거로 삼으므로 순서가 중요하다).
-2. 코디네이터를 켜기 전에, 켜는 런타임이 §1이 전제한 것(A3·Astra 게이트 노드를 기계로 병합하지 않음)인지 Claude의 확인 보고를 받고 승인한다. Astra 게이트를 자동화하는 변경이 들어온다면, 그 변경이 `user_merge`와 `depends_on_external`을 강제하는지 같은 방식으로 확인한다.
-3. "사용자" 표시 노드의 PR이 오면 읽고 병합하거나 고치라고 답한다: `agents-scope-sync`, `k1-cut-proof`, `k-stage2-v5-design-decision`, `k2-retention-proposal`, `k-stage4-adoption-decision`, `k-a-integration-decision`, `testnet-key-management-decision`, `rs-5-decision`, `tl-0`, `tl-coin-lock-adr`, `tl-5-decision`, `ai-delegation-execution-decision`, `f04-real-funds-lift-criteria`, `sdk-1-0-decision`.
-4. 외부 답변(토스, 법무·세무)은 `k1-open-inputs-brief`와 `tl-legal-brief`가 만든 질문지를 보내고 받아 온다.
-5. (선택) kix-commerce-apps에 `KIX_PROTOCOL_READ_TOKEN` secret을 넣으면 live-gate CI가 돈다. 없으면 그 검사는 건너뛰고 로컬 실행 기록으로 대신한다.
-6. 편입 대기 노드는 선행 노드가 병합되면 Claude가 계획 개정 PR을 올린다. 사용자는 그 PR을 병합한다.
+1. #81과 커머스 범위 PR을 검토·병합한다. 범위 승인이며 실행 시작은 아니다.
+2. 실제 시작을 정하고 각 저장소의 별도 **시작 PR**을 요청한다. 승인 초안을 그대로 복사하고 approval_pointer만 대표님 결정 링크 하나로 바꾼 PR의 exact-HEAD Fable 감사 뒤 대표님이 병합한다. 같은 PR에서 정의를 바꾸지 않는다.
+3. 중앙 최종 source 채택·보호된 설치/authorization·host qualification/activation·attestation과 user_merge/contract_change/RELEASE/외부 선행 보호의 실제 근거를 확인한 뒤 코디네이터 시작을 승인한다.
+4. PROGRAM_ASTRA_DELEGATION 판정 표의 대표님 노드 PR은 읽고 병합하거나 수정을 요청한다. 원래14 결정 노드 외에 새 계약 변경 노드도 포함된다.
+5. 외부 답변(토스·법무·세무)은 k1-open-inputs-brief와 tl-legal-brief의 담당 질문지로 받는다. 실제 환경/자원/화면/작품 승인도 별도다.
+6. 편입 대기는 실제 보호된 선행 완료 확인 후 별도 plan revision을 검토·병합한다. secret/host/실자금/chain/공개 운영을 이 초안 PR에서 설정하지 않는다.

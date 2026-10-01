@@ -9,7 +9,7 @@ KIX Finance는 이 설계의 제품 범위명이다. 새 저장소나 제3의 AI
 |---|---|
 | protocol 설계 후보 #83 | `b665f9a0ad41a46e2169cb142b91d598665aa7ab` |
 | commerce 설계 후보 #16 | `bb24207cb648acfe3083c4a2e7720251b06ad639` |
-| 중앙 복구 구현 후보 #47 | `94a768e19df12703ea0b9a49e49972feb2f6ef4f`; 제품·실자금 실행 자격의 증거 아님 |
+| 중앙 복구 구현 후보 #47 | `09e161caa652d75e9617caf632b3b9899be35740`; 제품·실자금 실행 자격의 증거 아님 |
 | 현행 승인 범위 | protocol `docs/DEVELOPMENT_PLAN.md`, `docs/decisions/PROGRAM_DECISIONS_20260928.md`, `docs/tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md` |
 | 계약·열린 입력 | `docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md`, `CREDIT_ADVANCE_F04.md`, `STATE_LIFECYCLE.md` 0.6, `PG_TOSS_CARD_PROFILE.md`, `FIRST_BATCH_OPEN_INPUTS.md` |
 | export 경계 | `runtime/AUTHENTICATED_EXPORT.md` |
@@ -112,7 +112,7 @@ export에는 mode/profile, 자산 registry·계약·정책 revision, projection 
 
 ## 8. 새 후속 노드와 진행 순서
 
-`FINANCE_PENDING_NODES.json`의 8개 node는 별도 실행 계획이 아니라 승인 전 후보 fragment다. protocol의 pending catalogue에 같은 정의로 편입하고, immutable catalogue digest와 cross-repo DAG 전체 검사를 거쳐 채택한다. 기존 `.aiops/program.json`은 이번 설계 작성으로 활성화하지 않는다. 중앙 #47은 실패 보존/제한된 Fable 모델 quota 복구 구현 후보이며 외부 의존성 admission·전체 완료 판정 능력이 설치/적격화됐다는 증거가 아니다. 그 Fable 재시도 자격을 금융 업무 operation의 재전송 권한으로 옮기지 않는다. 현재 runtime이 외부 의존성을 읽지 못하면 전제의 실제 보호된 완료·병합 뒤 승인된 plan revision PR로만 이동한다.
+`FINANCE_PENDING_NODES.json`의 8개 node는 별도 실행 계획이 아니라 승인 전 후보 fragment다. protocol의 pending catalogue에 같은 정의로 편입하고, immutable catalogue digest와 cross-repo DAG 전체 검사를 거쳐 채택한다. 기존 `docs/aiops/KIX_PROGRAM_DRAFT.json`은 이번 설계 작성으로 활성화하지 않는다. 중앙 #47은 실패 보존/제한된 Fable 모델 quota 복구 구현 후보이며 외부 의존성 admission·전체 완료 판정 능력이 설치/적격화됐다는 증거가 아니다. 그 Fable 재시도 자격을 금융 업무 operation의 재전송 권한으로 옮기지 않는다. 현재 runtime이 외부 의존성을 읽지 못하면 전제의 실제 보호된 완료·병합 뒤 승인된 plan revision PR로만 이동한다.
 
 | 노드 | 새로 맡는 결과 | 주요 선행 |
 |---|---|---|
