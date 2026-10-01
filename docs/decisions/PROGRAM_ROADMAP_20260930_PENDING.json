@@ -1,0 +1,339 @@
+{
+  "schema_version": 1,
+  "program": "kix",
+  "repository": "BeautifulMind-JT/kix-protocol",
+  "status": "PENDING_NOT_IN_PLAN",
+  "rule": "Approval boundary: roadmap references below describe the inherited wave7-marketing-contracts origin; they do not approve the 6 new protocol or 8 Finance evolution definitions. Those additions remain PENDING_NOT_IN_PLAN until actual exact-HEAD review and separate scope adoption/approved plan revision. FINANCE_PENDING_NODES.json is an authoring fragment duplicated exactly in this catalogue, not a third program or an additional denominator. This catalogue is PENDING_NOT_IN_PLAN. Original wave7-marketing-contracts keeps its approved conditional scope and external w6a-evidence prerequisite. The six new protocol-* nodes are additional design/plan revision candidates, not self-authorized scope or dispatch inputs. All local/external predecessors, catalogue ownership and the complete Finance expansion must be verified in the full DAG before User-adopted plan revision. The active schema-v1 loader rejects every depends_on_external field, including an empty field. Candidate nodes cannot be copied unchanged or silently stripped into the active plan. Promotion requires authoritative completion proof for every external predecessor, bound to its exact repository/program/node, approved plan/definition, delivered HEAD, merge SHA and required post-merge evidence. A separately reviewed, User-merged plan revision must record those proof pointers, before/after definition digests and the explicit removal of only the settled external field; retain the original pending catalogue as history. Missing/UNKNOWN/wrong-revision predecessors HOLD. Keeping the field requires a separately adopted/audited/actually qualified external completion reader and consumer. Source-only recovery does not grant that capability. Comments/pins/old profile PASS are not completion; UNKNOWN/wrong revision cannot admit a node. Do not copy candidate nodes into active or manufacture envelopes before adoption. Keep existing User-only14, audit floors, protected completion predicate and all locks.",
+  "nodes": [
+    {
+      "id": "wave7-marketing-contracts",
+      "title": "Wave 7: protocol-side marketing contracts M01-M04 and the M05 consent link",
+      "depends_on_external": [
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "w6a-evidence"
+        }
+      ],
+      "spec": "Objective: once Wave 7 is open (docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-7: it opens when kix-commerce-apps node w6a-evidence is merged), write draft contracts for M01 membership (fan qualification issue, revoke, consent, proof; cards are not Wave 2 rights), M02 presale (eligibility, priority, purchase limit, link to booking hold), M03 coupons (issue, use, revoke, discount budget, order atomicity with B03 pricing), M04 referral (attribution, reward eligibility and amount; no payout) (TASK_005 lines ~85, 105; docs/status/ORIGINAL_32_STATUS.md M01-M05; docs/DEVELOPMENT_PLAN.md §14). M05 CRM is a separate product; only the consent link (set_consent, authorize_marketing) is in scope.\nConstraints: limits, discount rates and reward amounts are DECISION_REQUIRED · Astra; token-linked benefits (U5) stay on hold; no frontend trees here.\nAcceptance: contract drafts under docs/contracts/; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nCompatibility producer rule (docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §§2–4): any actual catalogue/gate/schema/receipt change regenerates the TypeScript SDK from that exact new source and emits a new canonical compatibility manifest binding source/tree, both OpenAPI blobs+sha256, generator/toolchain/output, domain/schema/profile and vectors. Artifact identity is not qualification/audit/User approval. Never reuse an earlier profile/manifest/PASS for changed bytes. No self-referential final-commit field; exact delivery/consumer head is bound by protected evidence outside the manifest. Keep stable 1.0/publishing/production permissions locked.\nWhen later consumer tasks bind the M01–M04 catalogue, they verify this exact new generated SDK/manifest tuple; the earlier compatibility-profile completion is not transferable qualification. Keep the existing minimal w6a-evidence prerequisite; no final-closeout prerequisite and no Wave7 cycle.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "protocol-runtime-boundary-register",
+      "title": "Register protocol authority, execution modes and evidence ownership",
+      "spec": "Objective: materialize docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md §§1-2 into an evidence/coverage register for all existing KIX paths. Map contract/FSM, Rust validator/scalar helpers, BCS codec, generated SDK, readiness wrapper, adopted backend, authenticated export and Move localnet to exact source/evidence/owner and implemented/missing/unqualified boundaries. Read DEVELOPMENT_PLAN, AUTHORITY_MODEL_1 and existing tests before adding work.\nAcceptance: versioned register links each active and pending capability to exact source, mode, contract clause, existing coverage and remaining gap; preserves original32 labels; verifies both kernel locked blobs; marks all unavailable/full-pipeline/production claims correctly. No product implementation, new public API, backend adoption or lock change in this document-only node.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\n This is a PENDING design/plan revision candidate; no envelope/dispatch/automatic adoption before exact-HEAD A3 review, User adoption and actual central registration/qualification. Keep all 14 original User-only nodes unchanged. Evidence mode/source/input corpus must be explicit; skipped/unavailable services are BLOCKED/NOT_RUN, never production qualification. Existing node completion predicate is not redefined. Source candidate #47 is not installed or qualified.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "protocol-featureir-conformance",
+      "title": "Verify complete FeatureIR execution and schema/numeric boundaries",
+      "spec": "Objective: implement the follow-up conformance evidence in PROTOCOL_COMPLETION_DESIGN_KO.md §4 using existing CPU analytics implementation and semantic helpers, without duplicating stage7 ownership. Require schema-bound ValidatedFeaturePlan and trusted export/catalog binding for execution; structural validate alone cannot authorize execution. Cover raw bounded parse -> plan validation -> result/error with a separately recorded logical oracle and exact corpus.\nAcceptance: existing audit_regressions/schema_bound reused; tests cover F64 filter/key/nonterminal/nested divide, integer/overflow/type/scope, empty/null aggregates, dictionary logical equality, stable ordering, MoneyWide unsupported arithmetic, Fast64 exact asset/registry/hash/range, plan/wire budget boundaries and changed source/schema after validation. Compare supported full CPU adapter/scalar outputs and errors without calculating expected values using the same production adapter. Versioned F64 tolerance must be approved; missing policy or absent GPU is BLOCKED/NOT_RUN. No engine default authority, money float coercion, new provider call or GPU spend.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\n This is a PENDING design/plan revision candidate; no envelope/dispatch/automatic adoption before exact-HEAD A3 review, User adoption and actual central registration/qualification. Keep all 14 original User-only nodes unchanged. Evidence mode/source/input corpus must be explicit; skipped/unavailable services are BLOCKED/NOT_RUN, never production qualification. Existing node completion predicate is not redefined. Source candidate #47 is not installed or qualified.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true,
+      "depends_on": [
+        "protocol-runtime-boundary-register",
+        "k-stage3-schema-sdk-conformance",
+        "k-stage7-cpu-analytics-sql-audit"
+      ]
+    },
+    {
+      "id": "protocol-canonical-identity-conformance",
+      "title": "Verify supported canonical identities across Rust and an independent client",
+      "spec": "Objective: PROTOCOL_COMPLETION_DESIGN_KO.md §5 conformance for the exact approved supported schemas using existing KIX-BCS1 trait/codec and fixed golden corpus; extend independent TypeScript/Rust byte/hash/error vectors rather than inventing a new codec or production schema. Tie JSON typed parse to immutable BCS domain/schema/version and SDK profile inputs.\nAcceptance: actual supported schema positive/negative corpus agrees across independent clients; reject wrong magic/domain/schema/version, noncanonical ULEB128, trailing/truncated/malformed UTF-8, length/range overflow and mixed CE1/JSON/BCS identity; u128 remains lossless and JS Number coercion is rejected. Test-only65535/65535 is never relabeled production. Move equality only where an approved actual type/package exists, otherwise NOT_RUN/BLOCKED. Current tuple/vector/qualification source evidence required; earlier profile DONE cannot qualify changed bytes.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\n This is a PENDING design/plan revision candidate; no envelope/dispatch/automatic adoption before exact-HEAD A3 review, User adoption and actual central registration/qualification. Keep all 14 original User-only nodes unchanged. Evidence mode/source/input corpus must be explicit; skipped/unavailable services are BLOCKED/NOT_RUN, never production qualification. Existing node completion predicate is not redefined. Source candidate #47 is not installed or qualified.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true,
+      "depends_on": [
+        "protocol-runtime-boundary-register",
+        "k-stage3-schema-sdk-conformance",
+        "contract-compatibility-profile"
+      ]
+    },
+    {
+      "id": "protocol-read-projection-evidence",
+      "title": "Bind read observations to source cuts, snapshots and current producer tuples",
+      "spec": "Objective: PROTOCOL_COMPLETION_DESIGN_KO.md §6 draft ReadObservationV1 candidate and nonmutation evidence using the approved read-model; finalize only through the A3 contract decision before adding catalogue fields. Own general query/cursor/visibility/sourcecut/watermark/receipt evidence; Finance owns account/projection schema, commerce owns client session epochs. When query/gate/receipt changes, regenerate SDK and manifest from the exact new source and verify that exact new SEMANTIC_CONFORMANCE tuple; no BOOTSTRAP or old PASS transfer.\nAcceptance: draft->approved schema mapping includes read_schema_version/query_digest/subject_scope/fixture_mode/source_cut/projection_watermark/snapshot_digest/observed_receipt_refs/producer_manifest_digest/profile_revision; source position domains cannot be compared generically. Offline/loopback vectors reject mixed source/generation, missing receipt, lagged watermark promoted to success, pagination snapshot/query/scope drift, wrong current profile and visibility errors. Reads do not mutate state or authorize payment/issuance/admission/retry/UNKNOWN resolution. Actual authentication/public service missing stays unqualified; do not create those services.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\n This is a PENDING design/plan revision candidate; no envelope/dispatch/automatic adoption before exact-HEAD A3 review, User adoption and actual central registration/qualification. Keep all 14 original User-only nodes unchanged. Evidence mode/source/input corpus must be explicit; skipped/unavailable services are BLOCKED/NOT_RUN, never production qualification. Existing node completion predicate is not redefined. Source candidate #47 is not installed or qualified.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": false,
+      "depends_on": [
+        "protocol-runtime-boundary-register",
+        "read-model-reference",
+        "contract-compatibility-profile"
+      ],
+      "user_merge": true
+    },
+    {
+      "id": "protocol-local-recovery-conformance",
+      "title": "Verify local transaction ACK and crash recovery on the User-adopted backend",
+      "spec": "Objective: PROTOCOL_COMPLETION_DESIGN_KO.md §7 fault/evidence follow-up against the actual local backend selected by the User adoption decision. Reuse readiness fault coverage and stage5 implementation; document atomic business mutation/immutable first result/inbox dedupe/outbox intent/observation slots and the concrete ACK/failure model. No backend selection or own storage/log/replication engine. If no backend was adopted, BLOCKED, no fallback implementation.\nAcceptance: map existing tests then cover remaining precommit/postcommit/preresponse crashes, ambiguous mock outbox dispatch, duplicate/out-of-order/late/conflicting observations, command body mismatch/generation changes, partial tail/middle corruption/unsupported snapshot schema/cut, bounded capacity and replay of retained first outcomes. Immutable result/captured fact/return obligation survive supported recovery. UNKNOWN lacks retry authority and historical replay lacks new external execution authority. Keep readiness false flags and labels; passing local conformance never proves distributed/production durability or real-provider exactly-once.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\n This is a PENDING design/plan revision candidate; no envelope/dispatch/automatic adoption before exact-HEAD A3 review, User adoption and actual central registration/qualification. Keep all 14 original User-only nodes unchanged. Evidence mode/source/input corpus must be explicit; skipped/unavailable services are BLOCKED/NOT_RUN, never production qualification. Existing node completion predicate is not redefined. Source candidate #47 is not installed or qualified.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true,
+      "depends_on": [
+        "protocol-runtime-boundary-register",
+        "k-stage5-durable-tx",
+        "k-readiness-conformance-suite"
+      ]
+    },
+    {
+      "id": "protocol-integration-evidence-closeout",
+      "title": "Close the complete protocol inventory with mode-bound evidence and Finance consumers",
+      "spec": "Objective: PROTOCOL_COMPLETION_DESIGN_KO.md §§8-9 final integration/evidence report. Wait for every other definition in the complete protocol active+pending catalogue, including the separately combined Finance nodes and its closeout. The orchestrator combines Finance catalogue before adoption and expands this predecessor list; never admit while any local predecessor is omitted/unresolved. Existing node DONE uses the same protected exact delivery/merge predicate; this task aggregates, does not redefine it.\nAcceptance: machine-readable full inventory and count crosscheck count each(repository,program,node)once; all14 original User-only flags retained; coverage/evidence matrix links original32 capabilities, SDK/schema/FeatureIR/BCS/read/recovery/rights/AI/Finance to actual source/mode/qualification. Confirm every predecessor completion with protected current binding and applicable deliverable checks, report pending/external/decision/qualification holds independently. Finance closeout waits its current commerce consumer; no consumer depends this final closeout. Synthetic/local/readiness/NOT_RUN cannot become production or release approval. Final report is an evidence deliverable, no host activation, real funds/chain/public operation or new policy permissions.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\n This is a PENDING design/plan revision candidate; no envelope/dispatch/automatic adoption before exact-HEAD A3 review, User adoption and actual central registration/qualification. Keep all 14 original User-only nodes unchanged. Evidence mode/source/input corpus must be explicit; skipped/unavailable services are BLOCKED/NOT_RUN, never production qualification. Existing node completion predicate is not redefined. Source candidate #47 is not installed or qualified.\nFinal integrated catalogue rule (2026-10-01): wait for all other 81 protocol definitions, including all 8 FINANCE_PENDING_NODES definitions. The unique KIX candidate denominator is protocol82 + commerce36 =118, pending15+26=41. Finance fragment repeats the exact same 8 definitions for authoring only and must not be admitted or counted separately. No final-to-final cross-repository dependency; finance closeout waits its named commerce consumers, which wait intermediate producer contracts, never protocol closeout. These are proposed catalogue counts, not adopted or completed work.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true,
+      "depends_on": [
+        "roadmap-sync",
+        "agents-scope-sync",
+        "sui-commit-mismatch-note",
+        "p-sdk-0",
+        "openapi-catalogue-promotion",
+        "move-primary-price-fee",
+        "ai-delegation-contract-mock",
+        "readiness-extensions",
+        "settlement-policy-deepening",
+        "booking-resale-admission-deepening",
+        "f04-mock-deepening",
+        "toss-method-expansion-review",
+        "gate-browser-access-decision",
+        "gate-browser-access",
+        "read-model-contract",
+        "read-model-reference",
+        "p-sdk-1",
+        "k1-e4-residual-review",
+        "k1-adapter-event-identity",
+        "k1-cut-proof",
+        "k1-open-inputs-brief",
+        "k1-evidence-close",
+        "k-stage2-v5-design-decision",
+        "k-stage2-v5-impl",
+        "k2-retention-proposal",
+        "k-stage3-schema-sdk-conformance",
+        "k-stage4-comparison-plan",
+        "k-readiness-conformance-suite",
+        "k-stage4-local-exploration",
+        "k-stage4-adoption-decision",
+        "k-stage5-durable-tx",
+        "k-onsale-admission-control",
+        "k-stage6-economics-reference",
+        "k-stage7-authenticated-export",
+        "k-stage7-cpu-analytics-sql-audit",
+        "k-stage8-gpu-plan",
+        "k-a-reestimate",
+        "k-a-integration-decision",
+        "rs-0",
+        "rs-1",
+        "rs-1-issuercap-probe",
+        "rs-2",
+        "rs-3a",
+        "rs-3b",
+        "rs-4-l1",
+        "rs-4-l2",
+        "rs-4-l3",
+        "testnet-key-management-decision",
+        "rs-5-decision",
+        "tl-a",
+        "tl-0",
+        "tl-price-source-contract",
+        "tl-1",
+        "tl-coin-lock-adr",
+        "tl-2",
+        "tl-3-offchain",
+        "tl-3-onchain",
+        "tl-4",
+        "tl-legal-brief",
+        "tl-5-decision",
+        "ai-delegation-execution-decision",
+        "f04-real-funds-lift-criteria",
+        "toss-sandbox-conformance-plan",
+        "public-endpoint-readiness-plan",
+        "sdk-1-0-decision",
+        "ktx-kix-rename-plan",
+        "contract-compatibility-profile",
+        "wave7-marketing-contracts",
+        "protocol-runtime-boundary-register",
+        "protocol-featureir-conformance",
+        "protocol-canonical-identity-conformance",
+        "protocol-read-projection-evidence",
+        "protocol-local-recovery-conformance",
+        "fin-ledger-contract",
+        "fin-double-entry-projection",
+        "fin-observation-reconciliation",
+        "fin-multi-payee-refund-proof",
+        "fin-credit-exposure-reconciliation",
+        "fin-consistent-accounting-export",
+        "fin-catalogue-read-model",
+        "fin-finance-closeout"
+      ]
+    },
+    {
+      "id": "fin-ledger-contract",
+      "title": "KIX Finance: version the synthetic finance projection and authority contract",
+      "depends_on": [
+        "protocol-runtime-boundary-register",
+        "settlement-policy-deepening",
+        "f04-mock-deepening"
+      ],
+      "spec": "Objective: produce a versioned draft ADR and typed numeric contract for derived finance projections over the adopted stage 5 / stage 6 source, not a new economic writer. Define source-event/operation/order/claim/advance identity, per-asset amounts and registry binding, source cut and projection watermark, debit-credit conservation, correction linkage, duplicate/gap/UNKNOWN states and schema revision. Reuse F01-F04 and lifecycle 0.6 without rewriting legacy fixtures, captured semantics or first results. Coverage map names existing mock/FSM/adapter tests and gaps. Account labels are synthetic roles; chart-of-accounts/legal debtor/creditor/revenue/tax/reserve/interest classifications and statutory retention stay UNDETERMINED, with User plus finance/accounting/legal/provider owners named. Numeric simulation semantics can be decided under the existing Astra path; missing product policy has no default. If the ADR would introduce a command, authoritative ledger/result or change approved semantics, record options and stop for actual adoption before dependent implementation. Acceptance: draft revision plus positive/negative numeric and mapping vectors, authority/decision matrix and nonclaims; approved semantics references are explicit, unresolved fields have HOLD behavior.\nCommon candidate rules: this is PENDING_NOT_IN_PLAN, not an adopted finance implementation or dispatch grant. Follow protocol AGENTS.md and the current owner-approved decisions at the immutable task/plan commit. Keep the two locked kernel blobs and reference/v0.3-rc1 unchanged. No live funds, real PG/bank/KYC, regulated credit, public host, production conformity, chain deployment/issuance/key provisioning, R2 or custom log/storage/replication/consensus. Reuse the User-adopted stage 5 backend; no own durability engine. Preserve original operation identity, immutable first result, one-attempt transport, UNKNOWN fencing, retained raw observations, nonmutation of kernel captured/ReturnRequired/Review. No implicit retry/new operation/receipt/result authority; if needed, draft ADR + independent exact-head architecture review + existing authority adoption comes before implementation. Product policy gaps go to DECISION_REQUIRED · Astra; legal/accounting/tax/provider inputs stay UNDETERMINED with the User and named external role. Existing User-only 14 nodes and all unlock criteria remain unchanged. Do not edit CI to obtain a pass. Map existing coverage first and add meaningful contract/negative/fault tests only for actual gaps. Acceptance includes exact delivery-head KTX/kernel and KIX protocol checks, locked blob verification and AGENTS §14 evidence. No test/CI/manifest replaces independent audit, adoption, actual installation qualification or User acceptance. See docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md.\nPreparatory ADR boundary: this document/schema/coverage task may precede stage5/backend implementation. Record whether source contracts are planned, User-selected, implemented or unavailable, with exact decision/source references and explicit remaining gaps. Missing backend implementation does not authorize a fabricated source cut, committed economic event, durable ledger or qualification claim. Actual projection/observation/export implementation remains in its existing stage5/stage6-dependent successors and follows the decision applicability guard in CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1. No additional stage5 completion prerequisite is invented for this preparatory ADR.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": false,
+      "user_merge": true
+    },
+    {
+      "id": "fin-double-entry-projection",
+      "title": "KIX Finance: project synthetic economic events into a balanced finance view",
+      "depends_on": [
+        "fin-ledger-contract",
+        "k-stage5-durable-tx",
+        "k-stage6-economics-reference"
+      ],
+      "spec": "Objective: add a rebuildable double-entry numeric projection for stage 6 synthetic events on the actually adopted stage 5 backend. Stage 6 retains ownership of capture/refund/allocation/payout economics; this task derives event-linked finance entries, not a replacement ledger or duplicated economic algorithm. Preserve the original committed source records, first outcome and stable identity. Apply each source event + projection revision once using selected-backend transactions/uniqueness, retain cut/watermark/gaps and quarantine invalid events. Per-asset debit sum equals credit sum; no cross-asset netting. Use exact nonnegative integer atoms, reject bool/float and unknown asset revisions, maintain lossless Wide128 mappings without signed truncation. Correction is an explicit reversal/replacement projection linked to original entries under adopted numeric semantics; no rewrite of original operation or auto retry. Acceptance: replay determinism, duplicate source/receipt/page, missing-source, reversal linkage, 0/boundary/overflow and signed mapping negative vectors; selected DB crash/response-loss tests prove no duplicate projection or promoted UNKNOWN, with observed limitations and no production claim.\nCommon candidate rules: this is PENDING_NOT_IN_PLAN, not an adopted finance implementation or dispatch grant. Follow protocol AGENTS.md and the current owner-approved decisions at the immutable task/plan commit. Keep the two locked kernel blobs and reference/v0.3-rc1 unchanged. No live funds, real PG/bank/KYC, regulated credit, public host, production conformity, chain deployment/issuance/key provisioning, R2 or custom log/storage/replication/consensus. Reuse the User-adopted stage 5 backend; no own durability engine. Preserve original operation identity, immutable first result, one-attempt transport, UNKNOWN fencing, retained raw observations, nonmutation of kernel captured/ReturnRequired/Review. No implicit retry/new operation/receipt/result authority; if needed, draft ADR + independent exact-head architecture review + existing authority adoption comes before implementation. Product policy gaps go to DECISION_REQUIRED · Astra; legal/accounting/tax/provider inputs stay UNDETERMINED with the User and named external role. Existing User-only 14 nodes and all unlock criteria remain unchanged. Do not edit CI to obtain a pass. Map existing coverage first and add meaningful contract/negative/fault tests only for actual gaps. Acceptance includes exact delivery-head KTX/kernel and KIX protocol checks, locked blob verification and AGENTS §14 evidence. No test/CI/manifest replaces independent audit, adoption, actual installation qualification or User acceptance. See docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "fin-observation-reconciliation",
+      "title": "KIX Finance: reconcile original observations, economic effects and finance projections",
+      "depends_on": [
+        "fin-ledger-contract",
+        "k1-adapter-event-identity",
+        "k-stage5-durable-tx",
+        "fin-double-entry-projection"
+      ],
+      "spec": "Objective: extend the selected-backend synthetic inbox/outbox evidence to reconcile raw transmission/event/payment/operation identities, provider/account/environment, raw hash and retained reference, occurred/received/applied time, accepted source cut, original intent/attempt/result, projection gap and unresolved cases. Reuse adapter identity and stage 5 inbox/outbox; no new source authority, operation protocol or custom journal. Unverified webhook fixtures stay unverified signals; matched amount, full input completeness and actual authenticated evidence are separate states. Record page/period/cursor range, missing records, dedupe, correction, stale snapshot, late capture/refund and conflicting observations. Queries/readback never authorize another economic POST. Timeout/single not-found/response loss keeps UNKNOWN, and LC-TERM C1-C5/valid authority/durable record are not inferred from this report. Acceptance: selected DB faults at intent/economic commit/response/inbox projection/outbox ack boundaries, duplicate/out-of-order/correction/missing-page and late-event vectors; original first result and raw evidence preserved, scopes/cursors explicit, gaps stay incomplete. No live provider calls or synthetic signature-to-live-conformance claim.\nCommon candidate rules: this is PENDING_NOT_IN_PLAN, not an adopted finance implementation or dispatch grant. Follow protocol AGENTS.md and the current owner-approved decisions at the immutable task/plan commit. Keep the two locked kernel blobs and reference/v0.3-rc1 unchanged. No live funds, real PG/bank/KYC, regulated credit, public host, production conformity, chain deployment/issuance/key provisioning, R2 or custom log/storage/replication/consensus. Reuse the User-adopted stage 5 backend; no own durability engine. Preserve original operation identity, immutable first result, one-attempt transport, UNKNOWN fencing, retained raw observations, nonmutation of kernel captured/ReturnRequired/Review. No implicit retry/new operation/receipt/result authority; if needed, draft ADR + independent exact-head architecture review + existing authority adoption comes before implementation. Product policy gaps go to DECISION_REQUIRED · Astra; legal/accounting/tax/provider inputs stay UNDETERMINED with the User and named external role. Existing User-only 14 nodes and all unlock criteria remain unchanged. Do not edit CI to obtain a pass. Map existing coverage first and add meaningful contract/negative/fault tests only for actual gaps. Acceptance includes exact delivery-head KTX/kernel and KIX protocol checks, locked blob verification and AGENTS §14 evidence. No test/CI/manifest replaces independent audit, adoption, actual installation qualification or User acceptance. See docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "fin-multi-payee-refund-proof",
+      "title": "KIX Finance: verify multi-payee, remainder and refund conservation without default policies",
+      "depends_on": [
+        "fin-ledger-contract",
+        "settlement-policy-deepening",
+        "k-stage6-economics-reference"
+      ],
+      "spec": "Objective: supply independent conservation/negative vectors for the stage 6 allocation/refund/payout model using the actually adopted F01-F03 policy revision. Keep total/asset/payee set/weights or fees/priority ordering/policy digest immutable before calculation. Verify exact integer conservation and deterministic remainder behavior, but do not choose a payee order or priority algorithm: current §0.3 method is UNDETERMINED until explicitly decided. F02 shortage order and legacy order-line largest-remainder are not general settlement policy. Do not implement a second allocation engine. Separate partial refund liability, shortage, hold/reserve, roundoff and recovery_due; missing refund bearer policy remains open/HOLD without implicit full-gross reclassification or setoff. Legacy full-once fixture and partial-sum behavior remain versioned unchanged. Acceptance: zero/tiny/boundary amounts, invalid/duplicate/missing payees or weights, overflow, order permutation and policy revision drift, multiple captures, partial refund before/after distribution and cross-asset rejection; sum allocated exactly equals the adopted input and unknown policies cannot create output authorization.\nCommon candidate rules: this is PENDING_NOT_IN_PLAN, not an adopted finance implementation or dispatch grant. Follow protocol AGENTS.md and the current owner-approved decisions at the immutable task/plan commit. Keep the two locked kernel blobs and reference/v0.3-rc1 unchanged. No live funds, real PG/bank/KYC, regulated credit, public host, production conformity, chain deployment/issuance/key provisioning, R2 or custom log/storage/replication/consensus. Reuse the User-adopted stage 5 backend; no own durability engine. Preserve original operation identity, immutable first result, one-attempt transport, UNKNOWN fencing, retained raw observations, nonmutation of kernel captured/ReturnRequired/Review. No implicit retry/new operation/receipt/result authority; if needed, draft ADR + independent exact-head architecture review + existing authority adoption comes before implementation. Product policy gaps go to DECISION_REQUIRED · Astra; legal/accounting/tax/provider inputs stay UNDETERMINED with the User and named external role. Existing User-only 14 nodes and all unlock criteria remain unchanged. Do not edit CI to obtain a pass. Map existing coverage first and add meaningful contract/negative/fault tests only for actual gaps. Acceptance includes exact delivery-head KTX/kernel and KIX protocol checks, locked blob verification and AGENTS §14 evidence. No test/CI/manifest replaces independent audit, adoption, actual installation qualification or User acceptance. See docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "fin-credit-exposure-reconciliation",
+      "title": "KIX Finance: read F04 exposure with current settlement and refund evidence",
+      "depends_on": [
+        "f04-mock-deepening",
+        "fin-double-entry-projection",
+        "fin-observation-reconciliation",
+        "fin-multi-payee-refund-proof"
+      ],
+      "spec": "Objective: build synthetic diagnostic views linking original frozen F04 face, reserved/outstanding/repaid exposure, current observed settlement revision, refund burden status and reconciliation provenance. Preserve legacy FACE_SNAPSHOT_FROZEN and old first results; a new diagnostic revision cannot free or enlarge the original ceiling, grant collateral/priority, approve an advance or execute a draw. Confirmed cash and recovery_due are not lending capital or available advance face. Undetermined terms, stale/conflicting snapshot, unresolved refund, concurrent reservations or missing repayment evidence produce explicit HOLD/UNKNOWN. No interest/APR/schedule/priority/limit-recalculation default; use only previously adopted mock terms. Gift/right/coupon transfer is not finance collateral, repayment or credit draw, and offer_gift does not map to credit. Acceptance: shared-face concurrency, second draw, partial mock repayment without unintended ceiling release, refund/stale/UNKNOWN snapshots and gift/resale/admission isolation vectors. Always false real-funds/license/regulated/priority/perfection/admission flags remain false; exact numeric meanings and nonclaims are visible.\nCommon candidate rules: this is PENDING_NOT_IN_PLAN, not an adopted finance implementation or dispatch grant. Follow protocol AGENTS.md and the current owner-approved decisions at the immutable task/plan commit. Keep the two locked kernel blobs and reference/v0.3-rc1 unchanged. No live funds, real PG/bank/KYC, regulated credit, public host, production conformity, chain deployment/issuance/key provisioning, R2 or custom log/storage/replication/consensus. Reuse the User-adopted stage 5 backend; no own durability engine. Preserve original operation identity, immutable first result, one-attempt transport, UNKNOWN fencing, retained raw observations, nonmutation of kernel captured/ReturnRequired/Review. No implicit retry/new operation/receipt/result authority; if needed, draft ADR + independent exact-head architecture review + existing authority adoption comes before implementation. Product policy gaps go to DECISION_REQUIRED · Astra; legal/accounting/tax/provider inputs stay UNDETERMINED with the User and named external role. Existing User-only 14 nodes and all unlock criteria remain unchanged. Do not edit CI to obtain a pass. Map existing coverage first and add meaningful contract/negative/fault tests only for actual gaps. Acceptance includes exact delivery-head KTX/kernel and KIX protocol checks, locked blob verification and AGENTS §14 evidence. No test/CI/manifest replaces independent audit, adoption, actual installation qualification or User acceptance. See docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "fin-consistent-accounting-export",
+      "title": "KIX Finance: export synthetic accounting views at an evidenced source cut",
+      "depends_on": [
+        "fin-double-entry-projection",
+        "fin-observation-reconciliation",
+        "k-stage7-authenticated-export"
+      ],
+      "spec": "Objective: specialize the existing authenticated export contract for synthetic finance entries, role accounts, obligations, exposure and reconciliation exceptions. Reuse stage 7 source-cut/snapshot/incremental protocol; do not recreate exporter storage, signing authority or global consistent cut. Bind export mode/profile, registry/contract/policy/projection mapping revisions, source cut + actual applied watermarks, snapshot or cursor boundary, files/hashes/rows/schema and gap/stale status. A projection LSN/hash does not prove source completeness/authorship/latest state; no global-atomic multi-shard report without the existing actual consistent-cut evidence. Export monetary atoms losslessly (e.g. exact decimal strings with asset profile); CSV/JS/Excel floats and DuckDB/Polars summaries are not economic truth. Account/legal/tax classifications stay synthetic/UNDETERMINED with named adviser owners, not GAAP/IFRS/tax filing certification. Acceptance: same source cut gives identical canonical content, missing/partial upload/hash/schema/profile mismatch fails closed, cut/watermark lag remains visible, full vs incremental boundaries/duplicate cursors and Wide128 roundtrip tests; query-result-to-exact-files trace demonstrated.\nCommon candidate rules: this is PENDING_NOT_IN_PLAN, not an adopted finance implementation or dispatch grant. Follow protocol AGENTS.md and the current owner-approved decisions at the immutable task/plan commit. Keep the two locked kernel blobs and reference/v0.3-rc1 unchanged. No live funds, real PG/bank/KYC, regulated credit, public host, production conformity, chain deployment/issuance/key provisioning, R2 or custom log/storage/replication/consensus. Reuse the User-adopted stage 5 backend; no own durability engine. Preserve original operation identity, immutable first result, one-attempt transport, UNKNOWN fencing, retained raw observations, nonmutation of kernel captured/ReturnRequired/Review. No implicit retry/new operation/receipt/result authority; if needed, draft ADR + independent exact-head architecture review + existing authority adoption comes before implementation. Product policy gaps go to DECISION_REQUIRED · Astra; legal/accounting/tax/provider inputs stay UNDETERMINED with the User and named external role. Existing User-only 14 nodes and all unlock criteria remain unchanged. Do not edit CI to obtain a pass. Map existing coverage first and add meaningful contract/negative/fault tests only for actual gaps. Acceptance includes exact delivery-head KTX/kernel and KIX protocol checks, locked blob verification and AGENTS §14 evidence. No test/CI/manifest replaces independent audit, adoption, actual installation qualification or User acceptance. See docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": false,
+      "user_merge": true
+    },
+    {
+      "id": "fin-catalogue-read-model",
+      "title": "KIX Finance: publish finance queries with the exact current qualified producer tuple",
+      "depends_on": [
+        "fin-credit-exposure-reconciliation",
+        "fin-consistent-accounting-export",
+        "openapi-catalogue-promotion",
+        "contract-compatibility-profile",
+        "protocol-read-projection-evidence"
+      ],
+      "spec": "Objective: publish approved read-only finance schemas over the protocol ReadObservationV1 general evidence envelope: synthetic account/entry/obligation/exposure views, reconciliation exceptions and export references, each with exact scope/identity/source cut/watermark/current contract-policy tuple and synthetic/nonproduction provenance. Reuse protocol-read-projection-evidence query, visibility, cursor and nonmutation rules; no arbitrary hidden read endpoint, new authentication policy, write or financial authority. Approve new query meaning before implementation; unknown query/schema remains not-bound, no command-body substitution onto settle_capture or offer_gift. Generated consumer types must distinguish stale/incomplete/UNKNOWN from zero/settled/paid. Acceptance: current producer manifest/SDK/profile plus positive/negative query vectors, stale/wrongscope/wrongcut/unsupportedfield/mixedtuple cases, no writes from query, exact finance amount mapping and always-false live finance flags. This node is the actual upstream prerequisite of commerce kixc/c-finance-projection; its prior profile dependency alone does not qualify this changed tuple.\nCommon candidate rules: this is PENDING_NOT_IN_PLAN, not an adopted finance implementation or dispatch grant. Follow protocol AGENTS.md and the current owner-approved decisions at the immutable task/plan commit. Keep the two locked kernel blobs and reference/v0.3-rc1 unchanged. No live funds, real PG/bank/KYC, regulated credit, public host, production conformity, chain deployment/issuance/key provisioning, R2 or custom log/storage/replication/consensus. Reuse the User-adopted stage 5 backend; no own durability engine. Preserve original operation identity, immutable first result, one-attempt transport, UNKNOWN fencing, retained raw observations, nonmutation of kernel captured/ReturnRequired/Review. No implicit retry/new operation/receipt/result authority; if needed, draft ADR + independent exact-head architecture review + existing authority adoption comes before implementation. Product policy gaps go to DECISION_REQUIRED · Astra; legal/accounting/tax/provider inputs stay UNDETERMINED with the User and named external role. Existing User-only 14 nodes and all unlock criteria remain unchanged. Do not edit CI to obtain a pass. Map existing coverage first and add meaningful contract/negative/fault tests only for actual gaps. Acceptance includes exact delivery-head KTX/kernel and KIX protocol checks, locked blob verification and AGENTS §14 evidence. No test/CI/manifest replaces independent audit, adoption, actual installation qualification or User acceptance. See docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md.\nProducer compatibility: any actual catalogue/gate/schema/receipt change emits newly generated TypeScript SDK and immutable manifest from the same exact source/tree, both OpenAPI blobs/hashes, generator/toolchain/output, domain/schema/profile/vector tuple. Bind SEMANTIC_CONFORMANCE kind/revision/digest and current positive/negative evidence for that exact new tuple; an old profile PASS or BOOTSTRAP is not transferable. No self-referential final commit field; exact delivery/independent audit/merge/protected completion binding is outside the manifest. Same semantic version with changed meaning is refused. Keep stable 1.0/public publishing locked.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": false,
+      "user_merge": true
+    },
+    {
+      "id": "fin-finance-closeout",
+      "title": "KIX Finance: close the adopted synthetic producer and consumer scope with protected evidence",
+      "depends_on": [
+        "fin-ledger-contract",
+        "fin-double-entry-projection",
+        "fin-observation-reconciliation",
+        "fin-multi-payee-refund-proof",
+        "fin-credit-exposure-reconciliation",
+        "fin-consistent-accounting-export",
+        "fin-catalogue-read-model"
+      ],
+      "depends_on_external": [
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "c-finance-projection"
+        },
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "refund-surface"
+        },
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "gift-surface"
+        },
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "bind-reservation-fsm"
+        },
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "bind-resale-fsm"
+        },
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "bind-admission-fsm"
+        },
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "e2e-browser-journeys"
+        },
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "delegation-surface"
+        },
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "c-async-session-fence"
+        }
+      ],
+      "spec": "Objective: close only the adopted synthetic Finance scope with actual producer and consumer evidence, preserving the global programme completion predicate. Construct a finance view of the immutable adopted catalogue: union existing financial anchor/bind nodes with the adopted new finance nodes, count each repository/program/node once, retain original catalogue/plan revision and every external protected completion binding. The eight-node fragment is not a third programme nor a new product-wide denominator. Wait for actual current producer and commerce c-finance-projection completion (not either repository final-closeout, avoiding a final-to-final cycle); require current consumption head/SDK/manifest/SEMANTIC_CONFORMANCE tuple and browser success/error/stale/UNKNOWN acceptance evidence. Preserve existing User-only14 and original active/pending nodes; missing/wrong/UNKNOWN evidence is HOLD. Acceptance: report reproducible per-node source/review/exact-head CI/merge/protected receipt refs and actual finance vector+browser/export evidence; SOURCE_IMPLEMENTED vs FINANCE_SYNTHETIC_ACCEPTED vs FINANCE_RELEASE_READY separated. Release remains HOLD for real-funds/credit/chain/public/provider/legal/operational requirements. Report open decisions and actual input owners, not a financial safety claim or manufactured Fable PASS/global DONE.\nCommon candidate rules: this is PENDING_NOT_IN_PLAN, not an adopted finance implementation or dispatch grant. Follow protocol AGENTS.md and the current owner-approved decisions at the immutable task/plan commit. Keep the two locked kernel blobs and reference/v0.3-rc1 unchanged. No live funds, real PG/bank/KYC, regulated credit, public host, production conformity, chain deployment/issuance/key provisioning, R2 or custom log/storage/replication/consensus. Reuse the User-adopted stage 5 backend; no own durability engine. Preserve original operation identity, immutable first result, one-attempt transport, UNKNOWN fencing, retained raw observations, nonmutation of kernel captured/ReturnRequired/Review. No implicit retry/new operation/receipt/result authority; if needed, draft ADR + independent exact-head architecture review + existing authority adoption comes before implementation. Product policy gaps go to DECISION_REQUIRED · Astra; legal/accounting/tax/provider inputs stay UNDETERMINED with the User and named external role. Existing User-only 14 nodes and all unlock criteria remain unchanged. Do not edit CI to obtain a pass. Map existing coverage first and add meaningful contract/negative/fault tests only for actual gaps. Acceptance includes exact delivery-head KTX/kernel and KIX protocol checks, locked blob verification and AGENTS §14 evidence. No test/CI/manifest replaces independent audit, adoption, actual installation qualification or User acceptance. See docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md.\nScope register: use docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md §9 exact synthetic-finance producer/consumer roots plus their complete dependency closure in the adopted immutable combined catalogue. Include the closeout row in the view but keep it pending until actual post-merge protected completion is independently observed; never require or invent its own final-head evidence inside this source report. Original real-funds/credit/provider unlock proposal rows are reported separately as release HOLD, remain part of global KIX inventory and are never hidden or approved by this synthetic evidence pack. c-finance-projection covers aggregate finance; actual refund/gift/reservation/resale/admission/delegation/async-session/E2E deliveries are material external prerequisites too. Do not wait either repository final-closeout.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": true
+    }
+  ]
+}

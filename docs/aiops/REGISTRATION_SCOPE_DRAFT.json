@@ -1,0 +1,462 @@
+{
+  "schema_version": 1,
+  "state": "PENDING_FULL_SCOPE_ADOPTION",
+  "repository": "BeautifulMind-JT/kix-protocol",
+  "program": "kix",
+  "encoding": "UTF8_JSON_SORTED_KEYS_COMPACT_ENSURE_ASCII_FALSE",
+  "plan_definition": {
+    "path": "docs/aiops/KIX_PROGRAM_DRAFT.json",
+    "excluded_root_fields": [
+      "approval_pointer",
+      "registration_scope"
+    ],
+    "definition_sha256": "04642a3ffc7587cb8d1e65a41d5aefaa0045af59f0e6aa7e5fe728b5a62f7118",
+    "node_count": 67
+  },
+  "pending_catalogues": [
+    {
+      "path": "docs/decisions/PROGRAM_ROADMAP_20260930_PENDING.json",
+      "definition_sha256": "490916c7f15e888f6026884a44bc0aa6a8915da7f0937d7f29d4caebf86afead",
+      "node_count": 15
+    }
+  ],
+  "finance_subset": {
+    "path": "docs/aiops/FINANCE_PENDING_NODES.json",
+    "definition_sha256": "40e99944662c8df5e21b13acb5ca256d8b65a256f4e34f5cca0087422a80037f",
+    "counted_as": "EXISTING_PROTOCOL_CATALOGUE_SUBSET",
+    "nodes": [
+      {
+        "id": "fin-ledger-contract",
+        "definition_sha256": "ce5876ced033d061b7166bc2f30e5825f57f82d8856816121f9d59bacddbf1a7"
+      },
+      {
+        "id": "fin-double-entry-projection",
+        "definition_sha256": "f68658f30e5da1170bcfbb43ac942e208723dec4932c90047e6de251674a1556"
+      },
+      {
+        "id": "fin-observation-reconciliation",
+        "definition_sha256": "4beb03bae96aa4ae759e4bda49dbabd1d8af215b8cf81e5bf4598186a5962c1c"
+      },
+      {
+        "id": "fin-multi-payee-refund-proof",
+        "definition_sha256": "7b44f5a3339a9e0b39263858346d313eef875dd62a60d583712f6930429f0e98"
+      },
+      {
+        "id": "fin-credit-exposure-reconciliation",
+        "definition_sha256": "9600b4b78f42be48fb1f8d5faee1780691594efc5467845105e9cfc74080472a"
+      },
+      {
+        "id": "fin-consistent-accounting-export",
+        "definition_sha256": "bec8ee48148794df649d7a3dcb553a8ff794518108fd476f743064ce04f21b46"
+      },
+      {
+        "id": "fin-catalogue-read-model",
+        "definition_sha256": "037442683557e7c75271f1b872f89e89e121fccf9e2ffd54634de31ca156c1fc"
+      },
+      {
+        "id": "fin-finance-closeout",
+        "definition_sha256": "0c33b33c72c8454422f71f292f209db1c5a23adaece364aaf009021df3f563be"
+      }
+    ]
+  },
+  "candidate_node_count": 82,
+  "user_only_nodes": [
+    "agents-scope-sync",
+    "p-sdk-0",
+    "openapi-catalogue-promotion",
+    "move-primary-price-fee",
+    "ai-delegation-contract-mock",
+    "readiness-extensions",
+    "settlement-policy-deepening",
+    "booking-resale-admission-deepening",
+    "f04-mock-deepening",
+    "gate-browser-access-decision",
+    "gate-browser-access",
+    "read-model-contract",
+    "read-model-reference",
+    "p-sdk-1",
+    "k1-adapter-event-identity",
+    "k1-cut-proof",
+    "k-stage2-v5-design-decision",
+    "k-stage2-v5-impl",
+    "k2-retention-proposal",
+    "k-stage4-adoption-decision",
+    "k-onsale-admission-control",
+    "k-stage6-economics-reference",
+    "k-stage7-authenticated-export",
+    "k-a-integration-decision",
+    "rs-0",
+    "rs-1",
+    "rs-2",
+    "rs-3a",
+    "rs-3b",
+    "testnet-key-management-decision",
+    "rs-5-decision",
+    "tl-a",
+    "tl-0",
+    "tl-price-source-contract",
+    "tl-1",
+    "tl-coin-lock-adr",
+    "tl-2",
+    "tl-3-offchain",
+    "tl-3-onchain",
+    "tl-5-decision",
+    "ai-delegation-execution-decision",
+    "f04-real-funds-lift-criteria",
+    "sdk-1-0-decision",
+    "contract-compatibility-profile",
+    "wave7-marketing-contracts",
+    "protocol-read-projection-evidence",
+    "fin-ledger-contract",
+    "fin-consistent-accounting-export",
+    "fin-catalogue-read-model"
+  ],
+  "node_definitions": [
+    {
+      "id": "roadmap-sync",
+      "definition_sha256": "186bedefa1afa314de05fe0f02ccf3d1cc7966183a962554cecfafd6b467a83a"
+    },
+    {
+      "id": "agents-scope-sync",
+      "definition_sha256": "a658b2fee51051dd473934e29fb336ad55996758e2a99f9d6e6bdb7e1d6a062a"
+    },
+    {
+      "id": "sui-commit-mismatch-note",
+      "definition_sha256": "0c2be66a7e72907498cc0a4b70f7c35b49f03f68cfc7166dcf4345949ec62729"
+    },
+    {
+      "id": "p-sdk-0",
+      "definition_sha256": "d81052c7416cd83e54e523dd889003942c2528fdeb2e14781d948369c315fc49"
+    },
+    {
+      "id": "openapi-catalogue-promotion",
+      "definition_sha256": "8f2b3512a956549135b9dcdf76fb5331b520957971bc3ac4c76021f0fa020b49"
+    },
+    {
+      "id": "move-primary-price-fee",
+      "definition_sha256": "86352fe65d7e73c7c45706495cf46dfe9a419fa425d7d11c8dd52462c89f068c"
+    },
+    {
+      "id": "ai-delegation-contract-mock",
+      "definition_sha256": "dc083c2f7600cfdb3fcd86c0a1a109bfa49adfc297152b0b969253fc603e70ae"
+    },
+    {
+      "id": "readiness-extensions",
+      "definition_sha256": "7d57b302d0afad81432dcc325df3327b0776a61fc29186ccf2fde70045c1b477"
+    },
+    {
+      "id": "settlement-policy-deepening",
+      "definition_sha256": "87337da2be9e7a15b71127f917c0ed0e0ad6b6595fc32fa9d05a1bb4c7a100bf"
+    },
+    {
+      "id": "booking-resale-admission-deepening",
+      "definition_sha256": "a7c2f4a94dcecdc3909aa18b9db47203e7568baca23717f531295283b1374dd0"
+    },
+    {
+      "id": "f04-mock-deepening",
+      "definition_sha256": "25f890fe315b96fd9931f995cc000388971d3823d252cfbacde1b8501d0196f4"
+    },
+    {
+      "id": "toss-method-expansion-review",
+      "definition_sha256": "74eb638918a3167db92d704c0599a47d37d18bf89b48faccd3faf2f7f8002470"
+    },
+    {
+      "id": "gate-browser-access-decision",
+      "definition_sha256": "8ab2b624d09a307640e466907adcff3e8e45452e6bb47bbf4cf60a324635ad5c"
+    },
+    {
+      "id": "gate-browser-access",
+      "definition_sha256": "2bf2cabd18905111fed684f229daca0ba363447e1795d82c6cc2ad8e54f0fb70"
+    },
+    {
+      "id": "read-model-contract",
+      "definition_sha256": "440bd22b3e3c2acc1824413f0ab59f27cb642d46e9a7639351a335a52dbd4d89"
+    },
+    {
+      "id": "read-model-reference",
+      "definition_sha256": "fc5435b89e92f7671aa6b3165c6f4b8f3c2450aad42a02b5558dc749e9923d2f"
+    },
+    {
+      "id": "p-sdk-1",
+      "definition_sha256": "15fcf4eaeac3dd53d0d0abfa209a7b66bbf39fe10ee9defbccb80ee07847e441"
+    },
+    {
+      "id": "k1-e4-residual-review",
+      "definition_sha256": "2d5dc91821994e78b64ac1e5480b68cb8d86e7d2565c666858bf125e10bbd13b"
+    },
+    {
+      "id": "k1-adapter-event-identity",
+      "definition_sha256": "811029a79296f34b5a3f4109727520c9805352de1c4043b0d29cbd88360459d5"
+    },
+    {
+      "id": "k1-cut-proof",
+      "definition_sha256": "701d46b0e6a842eb53970103e746451d7713e950359760e0151e00d1ab52d7ab"
+    },
+    {
+      "id": "k1-open-inputs-brief",
+      "definition_sha256": "15bcdec496dd3fa153b8122d3389f5a6a51def1be1a178fd49b60d7a9798c61a"
+    },
+    {
+      "id": "k1-evidence-close",
+      "definition_sha256": "db0ac266e9d32ce1c0c43cdb44696c352519b309e1e46ce19678aab0c65d1df5"
+    },
+    {
+      "id": "k-stage2-v5-design-decision",
+      "definition_sha256": "55ef4ec77b34bc907735b0080eb1328a1aa12fb06859b6d671d9e3181658aeeb"
+    },
+    {
+      "id": "k-stage2-v5-impl",
+      "definition_sha256": "1f42540a4c28d485b9f8c492fb7515b0b076e714d984466bafaad9cd366d1b7c"
+    },
+    {
+      "id": "k2-retention-proposal",
+      "definition_sha256": "a406b72329a12b285e0149dc6388edc2323a0726e500663fb56cf6dc245fd32f"
+    },
+    {
+      "id": "k-stage3-schema-sdk-conformance",
+      "definition_sha256": "512bee70d83aec07d4046ccdd81473459ab3e78d30b5b37acab35c4e73a7c6a9"
+    },
+    {
+      "id": "k-stage4-comparison-plan",
+      "definition_sha256": "c64b874810296dc96644ab71ca6fd889cbb06a29862e79af1f649bb7826a7103"
+    },
+    {
+      "id": "k-readiness-conformance-suite",
+      "definition_sha256": "aeef3986b3ec5e7ffeaecb572dc5b600d55c69611f9b4baf241f2912106e2ff1"
+    },
+    {
+      "id": "k-stage4-local-exploration",
+      "definition_sha256": "d591a08806b89e3155964ff1420f61889f8cb0897278c87fbfb609be56e7b514"
+    },
+    {
+      "id": "k-stage4-adoption-decision",
+      "definition_sha256": "68b8319ac676767b64f4a62b59e9b57514b3aa7ea14ad51936a7b9ea9e2fead3"
+    },
+    {
+      "id": "k-stage5-durable-tx",
+      "definition_sha256": "6a717f0d1a9e64a6918922ac86c315566cb3695f92dc06ad7a02bb45a259be74"
+    },
+    {
+      "id": "k-onsale-admission-control",
+      "definition_sha256": "dd071b4bd01a527b3855588ec803df161bb3e7455883c49acfe5d9feb6d2d1be"
+    },
+    {
+      "id": "k-stage6-economics-reference",
+      "definition_sha256": "a81e385149648cca01f61bcc660e654fcc44a407bb73b53be06b838773b84209"
+    },
+    {
+      "id": "k-stage7-authenticated-export",
+      "definition_sha256": "28a9e000132948f8634c56994b76c1c8db9f5e536afd07cb51d802ebfba0a486"
+    },
+    {
+      "id": "k-stage7-cpu-analytics-sql-audit",
+      "definition_sha256": "4af74996f8d61cc3509d93442dc32130b6380aded430badfa6acf794d5792662"
+    },
+    {
+      "id": "k-stage8-gpu-plan",
+      "definition_sha256": "dd27628068574bb8d718124ae857e999b223975a75917e610623204fce088838"
+    },
+    {
+      "id": "k-a-reestimate",
+      "definition_sha256": "cba3c9e38478584b09b4fe0fa1fb5327d0829f83bdcec6260ee57289b398a78c"
+    },
+    {
+      "id": "k-a-integration-decision",
+      "definition_sha256": "abdceab06466286001895c36f81a488f89532954ef0cda68783af3386e1e40b9"
+    },
+    {
+      "id": "rs-0",
+      "definition_sha256": "a531b5c8e708c883b457c8a42e9e9880e6523f3b27ce6b7033fd2de0e001e48d"
+    },
+    {
+      "id": "rs-1",
+      "definition_sha256": "96b5d4a96666fd7aa99b289d8f362f8d1420706e3ff40e84fa05215d80e5208c"
+    },
+    {
+      "id": "rs-1-issuercap-probe",
+      "definition_sha256": "b9a322e3e29354e5151a5f401900ea59c8777b35baafd3be6913730071a1d70f"
+    },
+    {
+      "id": "rs-2",
+      "definition_sha256": "18b0ff806b6750922da8cc65f715423d14511895d0a192538421ac4c0c9fd3e4"
+    },
+    {
+      "id": "rs-3a",
+      "definition_sha256": "d1afeddbf5fda18d923e2f3f7e02975321e7fe82e015d803673d21f0f5982294"
+    },
+    {
+      "id": "rs-3b",
+      "definition_sha256": "30d51da55e0b16df61753a97aaf493219787d8b730d83727b0290786df6787b9"
+    },
+    {
+      "id": "rs-4-l1",
+      "definition_sha256": "b43c34d693058d8505a6065f176bef7f39538036e76caa2c58da0eeb4130c5f3"
+    },
+    {
+      "id": "rs-4-l2",
+      "definition_sha256": "55376c80a7c2156b6024124324276524eae766566fa449c91c914d4bfd46ab0e"
+    },
+    {
+      "id": "rs-4-l3",
+      "definition_sha256": "621d65e56c75d9094597db298748ff73fa8bff69dff73d7424958d1764a36662"
+    },
+    {
+      "id": "testnet-key-management-decision",
+      "definition_sha256": "ebeb55a1def722841bcaab07db51a55c5d7c323fe7a81b211e1850e29a41e5bc"
+    },
+    {
+      "id": "rs-5-decision",
+      "definition_sha256": "b367b505550cf13238ead9006fc112b6261fb0532b40ebf84a5997811fdf86ec"
+    },
+    {
+      "id": "tl-a",
+      "definition_sha256": "c1aa826195d166d5f25896f0e579ecc3e296493a8bd8c52eb8af2bad2cdf492e"
+    },
+    {
+      "id": "tl-0",
+      "definition_sha256": "8661ec58b45ce4f2c125b10f9913488e426b1a8c21fb5660e546100773553c1a"
+    },
+    {
+      "id": "tl-price-source-contract",
+      "definition_sha256": "c4a55b337515d9b24099a7c416354f504cb6f4d6ca61787d0bde2ff7a836ad6f"
+    },
+    {
+      "id": "tl-1",
+      "definition_sha256": "b2fa2b65d1ce68254cd82901c60bc9121312f29803c6088d45b95cdbb7bb3229"
+    },
+    {
+      "id": "tl-coin-lock-adr",
+      "definition_sha256": "b5c14bb69c06a213edf45043180d3fd7c4a210cfbd9a4f5c6275e5d4ff689e06"
+    },
+    {
+      "id": "tl-2",
+      "definition_sha256": "f2c3c3ea4a08707962ccc470484b967f79b1b83471ed3e20c1493d7ee8535c10"
+    },
+    {
+      "id": "tl-3-offchain",
+      "definition_sha256": "2667a0e148037329f1f8239dba231de363c046ebf2c945bf41dc7f5a5777d0b2"
+    },
+    {
+      "id": "tl-3-onchain",
+      "definition_sha256": "b2a076f91e6638700768f9eec6fcb6b41a7d172a239a27a75a145a7a1d661885"
+    },
+    {
+      "id": "tl-4",
+      "definition_sha256": "cd06444fbee16ad20d0eba3b2460a05ee3287371620b299016d15efd277cc59b"
+    },
+    {
+      "id": "tl-legal-brief",
+      "definition_sha256": "f56c5aaab5002396d08816a282f5ff2aff7eadf353037d9c207cef11dd918842"
+    },
+    {
+      "id": "tl-5-decision",
+      "definition_sha256": "dcc2656718b60a4ead0c425d3b3f53311db1e5ca7f9735d62428fdc2c6375fe1"
+    },
+    {
+      "id": "ai-delegation-execution-decision",
+      "definition_sha256": "98c6f774eeb6ed20fda3982772529d4c92a9c1344fc0ad2c296dd5208036c188"
+    },
+    {
+      "id": "f04-real-funds-lift-criteria",
+      "definition_sha256": "37fff68d15c4fecb376e12d1c4c4e66cdbd68d3898be8f73c6a019176cef7349"
+    },
+    {
+      "id": "toss-sandbox-conformance-plan",
+      "definition_sha256": "4bfa4640dd45015b754718a6fd94a5499e1164dc4e681d522a0a299a0b215213"
+    },
+    {
+      "id": "public-endpoint-readiness-plan",
+      "definition_sha256": "d01c76d5936ed394eadb433442769cecec9ebeaca10283f53f5181af2ddfbec6"
+    },
+    {
+      "id": "sdk-1-0-decision",
+      "definition_sha256": "800a57a2d184d957d7f81cde9f1ca742c68c6867eac4c06c6fbf2a0f500c2521"
+    },
+    {
+      "id": "ktx-kix-rename-plan",
+      "definition_sha256": "71f6e3e12d59f2688f0a57a8be86a9b49addaa7dd27c37a92628033e07b31cca"
+    },
+    {
+      "id": "contract-compatibility-profile",
+      "definition_sha256": "3090583f318b6a0f408b1c1549d45a767fc27ed0c437d3f96998bd261f7b8d08"
+    },
+    {
+      "id": "wave7-marketing-contracts",
+      "definition_sha256": "668993b3d2fa996ff66d658a6b3f8052e22913191dd09d0bdf53f272cdcba734"
+    },
+    {
+      "id": "protocol-runtime-boundary-register",
+      "definition_sha256": "ba1a4022c721242db5e6cee3879374cc66ee44761793da7e1653d0f97ca0cc99"
+    },
+    {
+      "id": "protocol-featureir-conformance",
+      "definition_sha256": "88b70e51a582cea3e927b9cea6b0fe19e566aeb9e53cdfc3e25ff5a120a85439"
+    },
+    {
+      "id": "protocol-canonical-identity-conformance",
+      "definition_sha256": "0cd93e1a98cb4d73d9b4df299f5c6b523a08682df94bc55827874cadbcffc498"
+    },
+    {
+      "id": "protocol-read-projection-evidence",
+      "definition_sha256": "4f88ead0ae96e043186792980e0f84a01bcce4d384c740de171a62b927a3dbf3"
+    },
+    {
+      "id": "protocol-local-recovery-conformance",
+      "definition_sha256": "8c80e2dbc4100c4bccb96799db3d306b2363f7bc08a337e38750415840ec3208"
+    },
+    {
+      "id": "protocol-integration-evidence-closeout",
+      "definition_sha256": "3eebb280436f243b3c910edd4da94b7d57c62056abafdbd8cbb4fac47ac9bfcd"
+    },
+    {
+      "id": "fin-ledger-contract",
+      "definition_sha256": "ce5876ced033d061b7166bc2f30e5825f57f82d8856816121f9d59bacddbf1a7"
+    },
+    {
+      "id": "fin-double-entry-projection",
+      "definition_sha256": "f68658f30e5da1170bcfbb43ac942e208723dec4932c90047e6de251674a1556"
+    },
+    {
+      "id": "fin-observation-reconciliation",
+      "definition_sha256": "4beb03bae96aa4ae759e4bda49dbabd1d8af215b8cf81e5bf4598186a5962c1c"
+    },
+    {
+      "id": "fin-multi-payee-refund-proof",
+      "definition_sha256": "7b44f5a3339a9e0b39263858346d313eef875dd62a60d583712f6930429f0e98"
+    },
+    {
+      "id": "fin-credit-exposure-reconciliation",
+      "definition_sha256": "9600b4b78f42be48fb1f8d5faee1780691594efc5467845105e9cfc74080472a"
+    },
+    {
+      "id": "fin-consistent-accounting-export",
+      "definition_sha256": "bec8ee48148794df649d7a3dcb553a8ff794518108fd476f743064ce04f21b46"
+    },
+    {
+      "id": "fin-catalogue-read-model",
+      "definition_sha256": "037442683557e7c75271f1b872f89e89e121fccf9e2ffd54634de31ca156c1fc"
+    },
+    {
+      "id": "fin-finance-closeout",
+      "definition_sha256": "0c33b33c72c8454422f71f292f209db1c5a23adaece364aaf009021df3f563be"
+    }
+  ],
+  "definition_document_sha256": {
+    "docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md": "44dadf337a484f3905c8b1b582ac732669071e938e9c5dde7b81cbcecb95539c",
+    "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "ae95cd248ea7c647548dfae018cbced7113663904962765591bd1c97ce23e77a",
+    "docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md": "7328985a1786f59598639756e6b56285e883e385dc66262665e372b9b1d15056",
+    "docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md": "bf4c37939766b7f924a95648d2a4c78f9b1fcd0a79dff67b23d8d1bd7686cee7",
+    "docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md": "8d77d611c4f58194c5be2a2e8c3eb1bdb42a60035e59be3fa81cd0a17d489efa"
+  },
+  "approval_evidence": {
+    "scope_decision_pointer": "PENDING_EXACT_WHOLE_SCOPE_USER_DECISION",
+    "audit_pointer": "PENDING_NON_AUTHOR_EXACT_HEAD_A3",
+    "registration_revision_pointer": "PENDING_APPROVED_FULL_SCOPE_READER_AND_REVISION"
+  },
+  "central_source_candidate": {
+    "pr": "BeautifulMind-JT/ai-ops-control-plane#47",
+    "head": "09e161caa652d75e9617caf632b3b9899be35740",
+    "authority": "SOURCE_ONLY_NOT_ADOPTED_INSTALLED_QUALIFIED_OR_ACTIVATED"
+  },
+  "rule": "Any changed definition needs a new manifest and exact-head review. Finance aliases are counted once. No inherited approval, edited status, partial selection, ordinary comment or source CI grants execution. The manifest digest and approval target commit are recorded externally to avoid hash self-reference."
+}
