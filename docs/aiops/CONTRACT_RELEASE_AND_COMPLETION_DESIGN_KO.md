@@ -121,9 +121,20 @@ catalogue 변경 한 번마다 생성 SDK와 manifest를 같은 source 입력에
 | `read-model-reference` | 새 read catalogue와 gate·SDK·manifest 동시 개정; query non-mutation 검사 |
 | pending `wave7-marketing-contracts` | 문서 초안 범위를 지킴. 승인된 catalogue 변경을 수행하는 경우에만 SDK·gate·manifest도 갱신; 새 명령 의미는 DECISION_REQUIRED |
 | `contract-compatibility-profile` | `p-sdk-1`과 `k-stage3-schema-sdk-conformance` 뒤 초기 verifier를 재사용해 SEMANTIC_CONFORMANCE profile과 정확한 대상 tuple의 positive/negative 의미 검증 증거를 완성 |
+| `gate-browser-access` | `p-sdk-0` 뒤 승인된 CORS/transport 분기를 구현. 관련 gate/source 바이트를 바꾸면 같은 delivery PR에서 SDK 재생성과 새 manifest 결합·vectors를 검증. 관문을 닫아 두는 문서만의 분기는 관련 바이트 불변 evidence를 기록 |
+| `settlement-policy-deepening`, `booking-resale-admission-deepening`, `f04-mock-deepening` | `p-sdk-0` 뒤 승인된 정책·계약만 개정. catalogue/schema/receipt/계약 의미나 manifest-bound source가 실제 바뀌면 같은 delivery PR에서 SDK·manifest와 해당 vectors를 갱신 |
+| `readiness-extensions` | `p-sdk-0` 뒤 D-3 경계 안에서 작업. 관련 schema/receipt/계약·source 바이트가 바뀔 때만 같은 delivery PR의 SDK 재생성·새 manifest·vectors를 요구하며, 단순 관측/문서 변경으로 qualification을 발명하지 않음 |
+
+위 다섯 producer는 형식·최소 verifier를 먼저 확보하도록 `p-sdk-0`을 선행으로 둔다.
+관련 바이트 변경의 artifact 갱신은 별도 후속 노드가 언젠가 해 주는 일로 미루지 않는다.
+transport만 바뀌어 SDK 출력이 같아도 실제 재생성과 새 source/gate 결합을 검증한다.
+문서만 바뀌는 분기는 manifest-bound 입력의 바이트 대조를 남긴다. 아직 후속 의미
+profile이 없다면 확대 catalogue를 BOOTSTRAP으로 적격화하지 않으며, 소비자는 해당
+변경의 정확한 SEMANTIC_CONFORMANCE tuple/evidence가 확보될 때까지 HOLD다.
 
 앱의 새 pending `consume-p-sdk-1`은 `p-sdk-1`과 compatibility-profile의 실제 완료를
-기다린다. `bind-list-read`는 이 SDK 소비와 `read-model-reference`/`p-sdk-1`을 기다린다.
+기다린다. FSM 결합 다섯 노드와 `browser-gate-path`도 이 최종 SDK 소비를 먼저 기다린다.
+`bind-list-read`는 이 SDK 소비와 `read-model-reference`/`p-sdk-1`을 기다린다.
 초기 `consume-p-sdk-0` 이외 pending 앱 노드에는 후속 profile 완료의 명시적 외부
 선행을 둔다. 이 선행은 기본 verifier의 제공 시점과 후속 의미 검증 시점을 구분하며,
 그 자체로 소비할 새로운 tuple의 qualification을 대신하지 않는다. Wave 6-A의 기존
@@ -164,6 +175,36 @@ protected root ledger/host pin의 signature/issuer와 revision, protected receip
 upstream 완료 한 사건은 durable dedupe key로 한 번만 기록하고, 승인된 downstream을
 한 번 깨운다. polling, 반복 model 호출, 무조건 재시도는 없다. 오래된 receipt·다른
 head·다른 plan·중복/역순 event·알 수 없는 signature는 거부하고 해당 노드를 HOLD한다.
+
+### 5.1 사용자 결정 결과와 후손 적용 범위
+
+User-only 결정 문서가 병합돼 `DONE`인 것과 권고한 기능이 실제 채택된 것은 별개다.
+해당 immutable 결정과 승인된 scope에서 다음 결과를 구분한다. 이 명칭은 적용 범위를
+보고하는 설계 규칙이며, 기존 중앙 schema에 새 node_state나 자동 판독기를 추가한 것이 아니다.
+
+| 결정 결과 | 후손 구현과 완료 처리 |
+|---|---|
+| `ADOPT` | 실제 선택된 backend/capability와 승인 입력·필요 evidence가 있을 때만 그 범위의 정상 구현을 진행 |
+| `DEFERRED` (`none yet`, 아직 선택하지 않음 포함) | 영향을 받는 구현·소비는 `WAITING/HOLD`로 보존. 전체 catalogue와 분모에서 지우지 않고 자동 대안이나 완료를 만들지 않음 |
+| `DECLINED` | 정상 구현은 계속 HOLD. 비작성자 검토와 User 병합의 적용 범위/계획 개정이 정확한 영향 node 정의·digest, 제외 또는 결정에 결합된 비구현 산출물, 이전·개정 분모를 고정해야 다음 처리가 가능 |
+| 불명확하거나 승인 근거 없음 | HOLD. 문서 병합·명칭·recommendation만으로 ADOPT를 추론하지 않음 |
+
+한 분기가 거절됐다고 모든 후손을 자동으로 `DONE`이나 해당 없음으로 바꾸지 않는다.
+승인된 개정 전에는 원 정의와 선행을 그대로 보존한다. 결정에 결합된 비구현 note가
+승인된 산출물이라면 그 실제 제출·독립 검토·병합 evidence를 따로 기록하며, 기술 구현·
+서비스 qualification·제품 수용·출시 증거로 승격하지 않는다. closeout은 구현됨·보류·
+거절 후 승인된 적용 범위를 각각 표시하고 분모 변경의 승인과 전후 catalogue를 보존한다.
+
+`k-stage4-adoption-decision`의 아직 없음은 DEFERRED다. stage5와 onsale, stage6/7,
+CPU/GPU 및 후속 protocol/Finance/commerce 구현은 필요한 실제 backend/capability 없이
+진행하지 않는다. `fin-ledger-contract` 같은 준비 ADR·schema·coverage 문서는 승인된
+준비 범위 안에서 먼저 작성할 수 있지만 계획됨·선택됨·구현됨·없음을 구분해야 한다.
+원 경제 사건이나 commit/source cut·durability를 발명해서 뒤 구현의 선행을 충족시키지 않는다.
+
+현재 중앙은 이 결정 결과를 새 wire field로 해석하지 않는다. 실제 적용 범위·선행 검증은
+채택된 등록/계획 개정과 materialization에 결합해야 하며, 지원되지 않는 자동 조건부
+dispatch나 plan 편집 권한을 이 문서가 만들지 않는다. 해당 검사 없이 결정 문서 DONE만
+보고 정상 구현 envelope를 만들어서는 안 된다. 독립적인 승인된 준비·다른 분기는 계속할 수 있다.
 
 ## 6. 완료의 네 측면
 

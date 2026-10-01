@@ -45,6 +45,14 @@ KIX Finance는 이 설계의 제품 범위명이다. 새 저장소나 제3의 AI
 
 `fin-ledger-contract`가 버전이 있는 후보 ADR과 수치 스키마를 먼저 만든다. 아래는 합성 계산의 검증 계약이며 계정과목의 법률·회계 분류를 승인하지 않는다.
 
+이 준비 ADR은 stage5 backend 구현보다 먼저 작성할 수 있다. source 계약의 상태를
+계획됨·User 선택됨·구현됨·현재 없음으로 구분하고 immutable 결정/source 참조와 gap을
+남긴다. 없는 backend에서 commit된 사건·source cut·durability를 발명하지 않는다.
+실제 투영·관측·export 구현은 기존 stage5/6 선행 뒤에서만 하며, `none yet`는 DEFERRED로
+HOLD다. DECLINED 뒤의 제외/비구현 산출물도 User 병합의 적용 범위/계획 개정이 먼저다.
+[호환·완료 설계 §5.1](CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md#51-사용자-결정-결과와-후손-적용-범위)을
+따르며 준비 문서가 뒤 일곱 금융 구현의 실제 evidence를 대신하지 않는다.
+
 - `ProjectionEntry`는 원 program/plan revision/task/delivery head, 원 source event identity, operation/order/claim/advance identity, 자산 ID·registry version/hash, source cut, 계약·정책 revision, ordinal과 entry digest를 결합한다. 계약 tuple과 금융 사건의 업무 identity를 서로 대체하지 않는다.
 - 금액은 자산 최소 단위의 정확한 정수다. bool·float·암묵적 통화 변환·타임존 추측·Wide128 잘림을 거절한다. KRW 목의 기존 상한은 시험 프로파일로 남기고 다중 자산의 새 상품 한도로 일반화하지 않는다. 선택 DB의 signed 표현에 맞춰 u128을 축소하지 않는다. 저장 mapping과 overflow 한계는 stage 5 결정과 형식 검증으로 고정한다.
 - 투영 묶음마다 같은 자산의 debit 합과 credit 합이 같다. 서로 다른 자산을 합산해 균형을 맞추지 않는다. account 라벨은 승인되지 않은 법적 당사자·은행 계좌·회계 계정과목의 의미를 갖지 않는 합성 role이다.
@@ -145,6 +153,11 @@ Release 검토 행은 `f04-real-funds-lift-criteria`, `toss-method-expansion-rev
 - FINANCE_RELEASE_READY: 현재는 **HOLD**. 합성 테스트와 위 마감은 real funds/credit/chain/public 운영 unlock 증거가 아니다.
 
 금융 closeout이 central/global `DONE`을 재정의하지 않는다. global/제품 완료는 모든 원래 active+pending 및 채택 후속 node·외부 전제·User-only HOLD를 동일 immutable catalogue로 판정하는 중앙의 채택/적격화된 완료 기능을 따라야 한다. UI에서 finance closed를 전체 KIX done으로 바꾸지 않는다. missing/UNKNOWN/wrong revision receipt는 완료가 아니다. blocked User 결정·법무/회계·제공자 항목은 보고서에서 이름·담당·실제 입력 부재로 남긴다.
+
+분모 보고는 실제 ADOPT된 구현과 DEFERRED, DECLINED 뒤 승인된 적용 범위를 따로
+센다. 결정 문서의 DONE이나 backend 없는 note를 금융 기술 완료·합성 수용·qualification으로
+승격하지 않는다. 승인된 개정이 node 적용 범위를 바꾸면 영향 정의·digest와 이전/개정
+catalogue를 보존하며, 원래 여덟 금융 후보를 이 PR에서 없애거나 조용히 제외하지 않는다.
 
 실자금·실 PG/은행/KYC·규제 여신·공개 endpoint·production conformity·Sui testnet/mainnet·coin·키·R2/자체 저장·합의는 계속 잠근다. 기존 unlock 문서가 요구하는 실제 MID/상품/가맹 범위·서명/조회 계약·sandbox 실제 증거·법무/인허가·운영 책임·보존/복구·독립 감사·User 명시 승인을 각각 현재 범위로 확인해야 한다. 기존 User-only 14개와 `f04-real-funds-lift-criteria`를 우회하는 새 승인이나 자동 활성화는 없다.
 

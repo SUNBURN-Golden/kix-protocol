@@ -196,6 +196,14 @@ backend 후보 비교의 유일 정본은 `docs/DEVELOPMENT_PLAN.md §9`다. 이
 공통 readiness suite 뒤에서 **User가 실제 채택한 backend의 local transaction 계약**을 검증한다.
 backend가 선택되지 않았다면 BLOCKED이며 대체 backend를 임의로 켜지 않는다.
 
+결정 문서 병합과 실제 backend 채택은 [호환·완료 설계 §5.1](CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md#51-사용자-결정-결과와-후손-적용-범위)에
+따라 분리한다. `none yet`는 DEFERRED이며 stage5와 그 뒤 경제·export·CPU/GPU·
+후속 conformance/Finance 구현을 기술 완료로 만들지 않는다. DECLINED도 승인된 적용
+범위/계획 개정 전에는 같은 HOLD다. 결정에 결합된 비구현 note를 허용하는 개정은
+User가 병합해야 하고, 원 정의·영향 범위·이전/개정 분모와 실제 note evidence를 보존한다.
+준비 ADR와 독립적인 승인 작업은 계속할 수 있지만 없는 backend/source cut을 구현된
+것처럼 쓰거나 서비스 qualification으로 바꾸지 않는다.
+
 ### 7.1 하나의 local durable transaction에 포함할 것
 
 승인된 backend adapter의 transaction 계약은 업무 상태·명령의 immutable first result·
@@ -265,6 +273,11 @@ Finance의 commerce 소비자는 `fin-catalogue-read-model`을 기다리고, Fin
 않는다. 전체 closeout은 각 노드 predicate와 해당 deliverable/qualification evidence를 집계한다.
 pending, User decision, external input, qualification hold를 숨겨 전체 완료로 표시하지 않는다.
 출시/실자금 권한은 완료 분모와 별도다. 일부 결정 문서의 DONE도 운영 lock 해제를 대신하지 않는다.
+
+closeout은 ADOPT된 실제 구현, DEFERRED로 남은 구현, DECLINED 뒤 User가 승인한
+적용 범위/비구현 산출물을 별도 행으로 보고한다. 후손 자동 DONE이나 조용한 분모 축소는
+없다. 등록·materialization에서 결정 결과와 승인된 현재 정의를 함께 검증해야 하며,
+현재 중앙이 새 결정 결과 parser를 이미 제공한다고 주장하지 않는다.
 
 등록 전에는 새 pending catalogue 전체가 비활성이다. 기존 중앙에 지원되지 않는
 `depends_on_external`을 active plan에 직접 넣지 않는다. 실제 upstream merge/evidence 뒤

@@ -64,3 +64,17 @@ self-authorized for automatic merge.
 중앙 #46을 대체 bootstrap 후보로 유지하며 그 위 #47에 보호된 실패 journal·검증된 quota 한 번 재시도의 구현 source 후보가 추가됐다. 실제 설치·authorization·qualification은 확인되지 않았다. 외부 완료 증거/전체 완료 query는 후속 구현이며 기존 manual plan revision 경로를 유지한다. #44의 DECISION_REQUIRED를 독립 PASS나 사용자 채택으로 바꾸지 않는다. RELEASE·contract_change=YES·User-only는 자동 병합에서 제외된다. PA-1, 독립 감사·User 채택·실제 서비스 authorization·host qualification·activation은 PENDING/NOT_READY다. approval pointer는 PENDING 상태로 비활성이며 실제 등록 때 최종 승인·qualification evidence로 갱신한다.
 
 제품 새 pending 노드의 task input은 완전히 결합한 catalogue와 이 설계 문서를 승인한 plan revision에서 생성한다. 기존67 active와 User-only14, 기존 pending Wave7을 보존한다. protocol 최종 closeout은 Finance를 포함한 나머지 모든 protocol 정의를 기다리며, Finance 소비자는 새 SDK/manifest/profile의 정확한 tuple을 기다린다. 소비자는 protocol 최종 closeout을 선행으로 삼지 않아 cycle을 만들지 않는다. 프로그램 완료의 전체 분모와 mode별 실제 evidence는 [프로토콜 완료 설계 §8](PROTOCOL_COMPLETION_DESIGN_KO.md#8-후속-dag와-전체-완료-분모)에 따른다.
+
+## 승인된 표적 수정 후보 — SDK 생산과 결정 분기
+
+이 후속 수정은 관문·정책 심화 세 노드·readiness producer의 선행에 `p-sdk-0`을
+추가하고, 관련 바이트 변경 때 같은 delivery PR에서 SDK·manifest·vectors를 갱신하게
+한다. 이전 checkpoint의 선행 보존 설명과 구분한다. node 수·감사 floor·User-only14의
+원 정의와 flags·잠금은 보존하며, 새로운 권한이나 현재-head 감사 PASS를 기록하지 않는다.
+
+결정 문서 DONE은 기능 ADOPT가 아니다. [호환·완료 설계 §5.1](CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md#51-사용자-결정-결과와-후손-적용-범위)의
+DEFERRED/DECLINED 경계와 실제 선택된 입력을 등록·materialization에서 검증해야 한다.
+지원되지 않는 자동 판독·plan 편집·후손 DONE를 가정하지 않는다. 적용 범위 개정과
+비구현 산출물의 승인·분모 변경은 비작성자 검토와 User 병합의 계획 개정으로만 처리한다.
+준비 Finance ADR는 source의 계획/선택/구현/부재를 명시하고 먼저 작성할 수 있지만
+후속 금융 구현의 stage5/6 선행이나 actual qualification을 대신하지 않는다.
