@@ -27,10 +27,11 @@ unchanged in that earlier correction. This later candidate adds pending nodes th
 original active node, User-only flag or lock. Candidate definition is not permission.
 `astra_auto_merge=true` delegates only the merge executor inside
 each non-User node's explicitly approved scope, through an actually adopted and qualified protected bridge. The bootstrap source
-candidate is [central #46](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/46),
-HEAD `a8b7355712c58de8d27c85a535fb241a09a4037c`; its recovery source follow-up is
-[central #47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47),
-HEAD `94a768e19df12703ea0b9a49e49972feb2f6ef4f`. Neither is an installed-host claim.
+candidate requires [central #47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47),
+minimum source checkpoint `e34868c6a12e5488224095b3248e59c8be9128f1` or a verified descendant retaining
+its external-field rejection and User-only merge guard. The prior #46 and #47
+checkpoints listed below are historical and cannot be adopted alone. No source
+checkpoint is an installed-host claim.
 Existing independent reviews, current-head CI, required product gates and exact
 merge HEAD remain mandatory. A protected Fable PASS/PASS_WITH_NOTES plus
 WITHIN_APPROVED_PLAN is required whenever an Astra gate applies or review
@@ -44,7 +45,7 @@ specifications and protected source contracts retain those boundaries. A real
 service or hardware that is absent remains unqualified; fake tests do not make it
 complete. UNKNOWN model/task/job outcomes remain fenced.
 
-The existing central source ignores this new delegation field. Its gates still
+The flags do not activate the existing adopted runtime. Its gates still
 hold. The new path applies only after the final adopted central source has an exact-HEAD
 independent A3 result, User adoption, root-owned host install, actual service
 authorization, canary/qualification and updated runtime attestation. Product client pins and activation records are not altered
@@ -61,7 +62,7 @@ self-authorized for automatic merge.
 
 ## 중앙·제품 후속 후보 갱신 — 2026-10-01
 
-중앙 #46을 대체 bootstrap 후보로 유지하며 그 위 #47에 보호된 실패 journal·검증된 quota 한 번 재시도의 구현 source 후보가 추가됐다. 실제 설치·authorization·qualification은 확인되지 않았다. 외부 완료 증거/전체 완료 query는 후속 구현이며 기존 manual plan revision 경로를 유지한다. #44의 DECISION_REQUIRED를 독립 PASS나 사용자 채택으로 바꾸지 않는다. RELEASE·contract_change=YES·User-only는 자동 병합에서 제외된다. PA-1, 독립 감사·User 채택·실제 서비스 authorization·host qualification·activation은 PENDING/NOT_READY다. approval pointer는 PENDING 상태로 비활성이며 실제 등록 때 최종 승인·qualification evidence로 갱신한다.
+중앙 #46은 역사적 bootstrap checkpoint로 남으며 R-1 §6-2 미충족으로 단독 채택하지 않는다. 최소 채택 source는 #47 `e34868c6a12e5488224095b3248e59c8be9128f1` 또는 같은 거부 검사를 유지한 후손이며, #47에는 보호된 실패 journal·검증된 quota 한 번 재시도의 구현 source 후보가 추가됐다. 실제 설치·authorization·qualification은 확인되지 않았다. 외부 완료 증거/전체 완료 query는 후속 구현이며 기존 manual plan revision 경로를 유지한다. #44의 DECISION_REQUIRED를 독립 PASS나 사용자 채택으로 바꾸지 않는다. RELEASE·contract_change=YES·User-only는 자동 병합에서 제외된다. PA-1, 독립 감사·User 채택·실제 서비스 authorization·host qualification·activation은 PENDING/NOT_READY다. approval pointer는 PENDING 상태로 비활성이며 실제 등록 때 최종 승인·qualification evidence로 갱신한다.
 
 제품 새 pending 노드의 task input은 완전히 결합한 catalogue와 이 설계 문서를 승인한 plan revision에서 생성한다. 기존67 active와 User-only14, 기존 pending Wave7을 보존한다. protocol 최종 closeout은 Finance를 포함한 나머지 모든 protocol 정의를 기다리며, Finance 소비자는 새 SDK/manifest/profile의 정확한 tuple을 기다린다. 소비자는 protocol 최종 closeout을 선행으로 삼지 않아 cycle을 만들지 않는다. 프로그램 완료의 전체 분모와 mode별 실제 evidence는 [프로토콜 완료 설계 §8](PROTOCOL_COMPLETION_DESIGN_KO.md#8-후속-dag와-전체-완료-분모)에 따른다.
 
@@ -78,3 +79,9 @@ DEFERRED/DECLINED 경계와 실제 선택된 입력을 등록·materialization�
 비구현 산출물의 승인·분모 변경은 비작성자 검토와 User 병합의 계획 개정으로만 처리한다.
 준비 Finance ADR는 source의 계획/선택/구현/부재를 명시하고 먼저 작성할 수 있지만
 후속 금융 구현의 stage5/6 선행이나 actual qualification을 대신하지 않는다.
+
+## 중앙 채택 최소 조건과 대기 노드 승격 — 2026-10-01 수정 요청 5
+
+중앙 #46의 `a8b7355712c58de8d27c85a535fb241a09a4037c`와 역사적 #47의 `94a768e19df12703ea0b9a49e49972feb2f6ef4f`는 KIX R-1 §6-2의 `depends_on_external` 거부 조건을 충족하지 못하므로 단독 채택 대상이 아니다. 최소 source 후보는 [중앙 #47](https://github.com/BeautifulMind-JT/ai-ops-control-plane/pull/47)의 `e34868c6a12e5488224095b3248e59c8be9128f1` 또는 `user_merge` 보호와 외부 필드 거부를 유지한 검증된 후손이다. 실제 최종 HEAD의 독립 A3, 대표님 채택, 보호된 설치·service authorization·host qualification·activation은 별도이며 아직 PENDING/NOT_READY다. 최소 버전 표시나 source commit은 승인·PASS·설치 증거가 아니다.
+
+이 로더는 비어 있어도 `depends_on_external` 필드를 거부한다. 대기 정의를 그대로 active plan에 복사하거나 필드를 조용히 삭제하지 않는다. 외부 선행 각각의 실제 완료를 정확한 저장소·program/node·승인된 plan/정의·전달 HEAD·병합 SHA·필요한 병합 후 검증 및 권위 있는 완료 증거에 결합해 확인한 뒤, 별도 대표님 병합 plan revision에서 그 증거와 변환 전/후 정의 digest를 기록하고 해당 완료된 외부 필드를 명시적으로 제거한다. 원본 pending catalogue는 검토 이력으로 보존한다. 미완료·UNKNOWN·wrong-revision은 승격하지 않는다. 필드를 유지해 소비하려면 먼저 외부 완료 reader/consumer의 별도 채택·감사·실제 qualification이 필요하다. PENDING, 기존 ID·선행·감사 등급·User-only·금융/chain/공개 운영 제한은 그대로 유지한다.

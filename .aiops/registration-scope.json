@@ -16,13 +16,13 @@
   "pending_catalogues": [
     {
       "path": "docs/decisions/PROGRAM_ROADMAP_20260930_PENDING.json",
-      "definition_sha256": "a2547617214bc8c98fb9a1e413d7cc7ff99f8e3b6860b97763cd97bef55d2b5b",
+      "definition_sha256": "36107462b8c1a1d9ff8671308b2b917616fe0de71201ef8b55e15e5c0e384f22",
       "node_count": 15
     }
   ],
   "finance_subset": {
     "path": "docs/aiops/FINANCE_PENDING_NODES.json",
-    "definition_sha256": "8e41ef97587eb2d947ef6b7c7b297daaa2d585e2a2e3a58a6528557a0b1e3236",
+    "definition_sha256": "01a9d967b76ed6e47176dd6375415f37ccee5703d51df6171166c4f0eebe4df0",
     "counted_as": "EXISTING_PROTOCOL_CATALOGUE_SUBSET",
     "nodes": [
       {
@@ -408,7 +408,7 @@
   ],
   "definition_document_sha256": {
     "docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md": "47266e564ee350ada9040ec2c3c2ebd7a55cb293f890792c2c04af19345d7656",
-    "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "d99b8b5d98690a1f711da827b33bce3f5b803f0b2c19cf2e3b3f2dd748af6315",
+    "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "2b6263d8d03dd024f526d816f3899a3e7bd0bd94af94aaf0c52f8229388c7895",
     "docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md": "a76a96fab0f46adc14a44d8441d580975a1b279cfb6c164e4186b0f9c24432d2",
     "docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md": "3064b6c804ca80e0131a49b1972dfa879c907d7f516974081d460d373080baf5",
     "docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md": "0b10f7dc42be07c4b8680c288f57a71114a0e958055a947f96842f4c29643b83"
@@ -420,7 +420,7 @@
   },
   "central_source_candidate": {
     "pr": "BeautifulMind-JT/ai-ops-control-plane#47",
-    "head": "e34868c6a12e5488224095b3248e59c8be9128f1",
+    "head": "15f7fe67726c04efd5a6d289ef985041f40c511a",
     "authority": "SOURCE_ONLY_NOT_ADOPTED_INSTALLED_QUALIFIED_OR_ACTIVATED"
   },
   "rule": "Any changed definition needs a new manifest and exact-head review. Finance aliases are counted once. No inherited approval, edited status, partial selection, ordinary comment or source CI grants execution. The manifest digest and approval target commit are recorded externally to avoid hash self-reference."
