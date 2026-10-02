@@ -397,3 +397,8 @@ Rust 기준 의미론과 Polars·DuckDB를 null/정렬/join/overflow/정수 금�
 ## 19. 2026-10-02 사용자 직접 요청 — 공개 권리 확장 구현 후보
 
 문서·명세 정합화와 실제 Move 16슬롯 제한 해소 요청에 따라 새 [RS-PUBLIC-1 계약](contracts/RIGHTS_SCALE_PROFILE.md) 및 `reference/rights-scale-v1/sui`를 제안한다. 256슬롯 독립 페이지, 정원 1..65,536, 결제 참조 샤드, 기대 세대 검사를 둔다. 기존 16슬롯과 두 kernel 잠금은 보존한다. AIOPS 초안의 node 완료·선행·승인 포인터를 자동 변경하지 않는다. 이 직접 요청은 프로그램 시작이나 배포·운영 승인이 아니다. RS-2 비공개·RS-3 위임·GA·SDK/앱 연결 및 전 경로 RS-4 수용은 남는다.
+
+
+## 20. 2026-10-02 사용자 직접 요청 — 플랫폼 전체 용량 설계
+
+[플랫폼 확장 청사진](blueprints/platform-scale-v1/README.md)은 공연당 정원과 플랫폼 전체 100만·1,000만·3,000만 권리 목표를 분리한다. PR #84 공개 Move 후보 위에 검색/조회, 다중 채널 리셀, 권한별 분할, UNKNOWN 대사, 복구 및 단계별 부하 검증 구조를 제안한다. [PS 후속 작업](blueprints/platform-scale-v1/DELIVERY_PLAN.md)은 작업문서나 실행 계획이 아니며 기존 118개 노드·승인 포인터를 변경하지 않는다. 페이지와 기존 좌석 경합 단위의 차이는 후속 ADR로 확정한다. backend 채택·위임 실행·배포 게이트와 두 kernel 잠금은 유지한다.

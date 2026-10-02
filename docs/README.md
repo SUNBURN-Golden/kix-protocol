@@ -44,6 +44,10 @@ Protocol 82(초안 67 + 편입 대기 15), Commerce 36(초안 10 + 편입 대기
 
 닫힌 미병합 [PR #35](https://github.com/BeautifulMind-JT/kix-protocol/pull/35)의 금융·플랫폼 청사진은 이 색인의 항목이 아니다. 역사적 설계 자료로만 참고한다.
 
+## 플랫폼 전체 용량 설계
+
+[100만~3,000만 권리 확장 구조](blueprints/platform-scale-v1/README.md) / [후속 작업 제안](blueprints/platform-scale-v1/DELIVERY_PLAN.md): 공연별 정원과 플랫폼 합산 용량, 리셀 체결·검색 투영·분할·복구·단계별 검증을 구분한다. PR #84 후보를 기반으로 한 설계이며 기존 118개 노드에 자동 편입하거나 운영 성능을 보장하지 않는다.
+
 ## 공개 권리 확장 구현 후보
 
 [RS-PUBLIC-1 계약](contracts/RIGHTS_SCALE_PROFILE.md) / [새 Move 패키지와 시험](../reference/rights-scale-v1/README.md): 256슬롯 페이지, 정원 1..65,536. 기존 16슬롯 회귀·ZK는 보존하며, 비공개·위임·운영 완료와 구분한다.
