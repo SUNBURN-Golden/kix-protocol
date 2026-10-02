@@ -10,14 +10,14 @@
       "approval_pointer",
       "registration_scope"
     ],
-    "definition_sha256": "04642a3ffc7587cb8d1e65a41d5aefaa0045af59f0e6aa7e5fe728b5a62f7118",
-    "node_count": 67
+    "definition_sha256": "00dac42d5795259297813d278c688791fcf4d3b2228dd4fa9c0a50c0bb6b98a8",
+    "node_count": 73
   },
   "pending_catalogues": [
     {
       "path": "docs/decisions/PROGRAM_ROADMAP_20260930_PENDING.json",
-      "definition_sha256": "490916c7f15e888f6026884a44bc0aa6a8915da7f0937d7f29d4caebf86afead",
-      "node_count": 15
+      "definition_sha256": "e21e1b789a1a9c1079230ddc82db8973fd69bbd1a292116a213d8ddc7b1cd24d",
+      "node_count": 36
     }
   ],
   "finance_subset": {
@@ -59,7 +59,7 @@
       }
     ]
   },
-  "candidate_node_count": 82,
+  "candidate_node_count": 109,
   "user_only_nodes": [
     "agents-scope-sync",
     "p-sdk-0",
@@ -109,7 +109,28 @@
     "protocol-read-projection-evidence",
     "fin-ledger-contract",
     "fin-consistent-accounting-export",
-    "fin-catalogue-read-model"
+    "fin-catalogue-read-model",
+    "ps-01-routing-authority",
+    "ps-02-query-contract",
+    "ps-03-resale-contract",
+    "ps-04-execution-partitions",
+    "ps-05-query-projections",
+    "ps-06-admission-load",
+    "ps-07-scale-qualification",
+    "cr-01-product-authority",
+    "cr-02-claim-eligibility",
+    "cr-03-facility-reservations",
+    "cr-04-underwriting-consent",
+    "cr-05-disbursement-observation",
+    "cr-06-repayment-allocation",
+    "cr-07-delinquency-recovery",
+    "cr-08-producer-sdk",
+    "cr-10-credit-qualification",
+    "k-provider-sandbox",
+    "k-authority-qualification",
+    "k-token-platform-contract",
+    "k-operator-contract",
+    "k-platform-release"
   ],
   "node_definitions": [
     {
@@ -381,6 +402,30 @@
       "definition_sha256": "3090583f318b6a0f408b1c1549d45a767fc27ed0c437d3f96998bd261f7b8d08"
     },
     {
+      "id": "k-current-capability-map",
+      "definition_sha256": "2c58203b0306771bcd6268479456cfa54f4c29b5a35b2e5da1f1907657d5283d"
+    },
+    {
+      "id": "k-adversarial-corpus",
+      "definition_sha256": "34af1b607c975a7e888a78eaacf97d573d8c6991396e79d9bfc0433e18a2737b"
+    },
+    {
+      "id": "k-sdk-examples",
+      "definition_sha256": "2c0dba9052af866ed43a903b95744aac6fe02a9bbd72fef798b96bd66050ed64"
+    },
+    {
+      "id": "k-benchmark-reproduction",
+      "definition_sha256": "00c8210c6c4c173b632f3f981ece541f26f492f2a8fa6805efae61907df2eadd"
+    },
+    {
+      "id": "k-operator-evidence",
+      "definition_sha256": "4111a8138bc77f6534ae4bc02b0b000625704224b12e4901f44661bedecff132"
+    },
+    {
+      "id": "k-local-program-closeout",
+      "definition_sha256": "2dbca97138e39056b218b475ed43a0464d7a6b83c3fa852cf0775c56fd12ea10"
+    },
+    {
       "id": "wave7-marketing-contracts",
       "definition_sha256": "668993b3d2fa996ff66d658a6b3f8052e22913191dd09d0bdf53f272cdcba734"
     },
@@ -439,14 +484,99 @@
     {
       "id": "fin-finance-closeout",
       "definition_sha256": "0c33b33c72c8454422f71f292f209db1c5a23adaece364aaf009021df3f563be"
+    },
+    {
+      "id": "ps-01-routing-authority",
+      "definition_sha256": "2bc876c4bd8f1859bb3838b97efa171a9141596badaeecc162086908ebead397"
+    },
+    {
+      "id": "ps-02-query-contract",
+      "definition_sha256": "f64b75223ded051178f549dc0b1b75b2633d7424c72e834961389971b1e00435"
+    },
+    {
+      "id": "ps-03-resale-contract",
+      "definition_sha256": "c9d63de6fcc6030f9ddfa1a02c1134001b3f9ce895c6ca85eecb3d5e744c118b"
+    },
+    {
+      "id": "ps-04-execution-partitions",
+      "definition_sha256": "d32205294fad8fdd7b3a73e2ba8522d9e2f332c69eb903091a91672119299ad6"
+    },
+    {
+      "id": "ps-05-query-projections",
+      "definition_sha256": "55054b1bd275b7864f5758d941ee593864432b7770bddd43ea1bd8b375e453b7"
+    },
+    {
+      "id": "ps-06-admission-load",
+      "definition_sha256": "e9aa763b835cd47331d1d81c054cbcda4038bf724092e6ba90306a917e02a1f8"
+    },
+    {
+      "id": "ps-07-scale-qualification",
+      "definition_sha256": "44e47c99973409420e9d9bdaeb08b59bd12611b9e3bd52ccddb484b5fc1ab4ba"
+    },
+    {
+      "id": "cr-01-product-authority",
+      "definition_sha256": "b48097051011251f10e842e8230bc150878b9c7423221d90750afdf3a2ef32d4"
+    },
+    {
+      "id": "cr-02-claim-eligibility",
+      "definition_sha256": "2eaeae776eac9c554956fdbfac3eac9fe2af27077086702f0b34a9024f934c26"
+    },
+    {
+      "id": "cr-03-facility-reservations",
+      "definition_sha256": "e7b59712974ebe1ba6d16fb3043a567e964ec7700db9e80728c15721dd7eee9d"
+    },
+    {
+      "id": "cr-04-underwriting-consent",
+      "definition_sha256": "e8946eebe2dadd9a1aef514d5417b463223528a5dc37122c7c9a41a6d3ba1113"
+    },
+    {
+      "id": "cr-05-disbursement-observation",
+      "definition_sha256": "5b88b302d8d61ca8fc6fba532f36f6d553282d246fdb3fef935746011e3e6d74"
+    },
+    {
+      "id": "cr-06-repayment-allocation",
+      "definition_sha256": "200f9f0b05f9c7ac8eedfc69fe76f145aa553ae497eca7ff2e30046620a0126a"
+    },
+    {
+      "id": "cr-07-delinquency-recovery",
+      "definition_sha256": "7c238402ea5f51346021603511c6b0fb70f0e7f548270801425bc3f550c89acd"
+    },
+    {
+      "id": "cr-08-producer-sdk",
+      "definition_sha256": "8f8a1b17444edf05058b3502ecbdce95f547dee382187ca55f284dd0e073485d"
+    },
+    {
+      "id": "cr-10-credit-qualification",
+      "definition_sha256": "d9af0660374e38a2413fed194f1c3b3f381401fe03833c9a36d61a8618bc20d5"
+    },
+    {
+      "id": "k-provider-sandbox",
+      "definition_sha256": "c884aa2db8aea6dbb19ac0725bd8fac968399615c92ac916e5f075d4ddc45648"
+    },
+    {
+      "id": "k-authority-qualification",
+      "definition_sha256": "305b23a8920b65e21724de13973c370cb3dfcb40f6d18ae6010d0c3aa87af57c"
+    },
+    {
+      "id": "k-token-platform-contract",
+      "definition_sha256": "02efe1698b03dbed417895209854438476ba96d13272fcdc6272bbac476f4768"
+    },
+    {
+      "id": "k-operator-contract",
+      "definition_sha256": "33c15c108c5497a5c8b2b6eb940d98b7985b1440e46cd1bfd089cb53d82ade48"
+    },
+    {
+      "id": "k-platform-release",
+      "definition_sha256": "bb476c1ccb16ca9c4f9dadbd21cd5ccb66892d94997a16d0ec027abd83ffe90a"
     }
   ],
   "definition_document_sha256": {
-    "docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md": "44dadf337a484f3905c8b1b582ac732669071e938e9c5dde7b81cbcecb95539c",
+    "docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md": "0b2c9e6414b5de72d746ef178e3414edc0df9f7584085fc54bbd3ac1a5693451",
     "docs/aiops/PROGRAM_ASTRA_DELEGATION.md": "ae95cd248ea7c647548dfae018cbced7113663904962765591bd1c97ce23e77a",
     "docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md": "7328985a1786f59598639756e6b56285e883e385dc66262665e372b9b1d15056",
     "docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md": "bf4c37939766b7f924a95648d2a4c78f9b1fcd0a79dff67b23d8d1bd7686cee7",
-    "docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md": "8d77d611c4f58194c5be2a2e8c3eb1bdb42a60035e59be3fa81cd0a17d489efa"
+    "docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md": "8d77d611c4f58194c5be2a2e8c3eb1bdb42a60035e59be3fa81cd0a17d489efa",
+    "docs/aiops/PROGRAM_EXPANSION_20261002_KO.md": "099968f996d74dcba0bc973ae1fe57343c6f1fbedb171a84690561a9797a1773"
   },
   "approval_evidence": {
     "scope_decision_pointer": "PENDING_EXACT_WHOLE_SCOPE_USER_DECISION",
@@ -458,5 +588,20 @@
     "head": "09e161caa652d75e9617caf632b3b9899be35740",
     "authority": "SOURCE_ONLY_NOT_ADOPTED_INSTALLED_QUALIFIED_OR_ACTIVATED"
   },
-  "rule": "Any changed definition needs a new manifest and exact-head review. Finance aliases are counted once. No inherited approval, edited status, partial selection, ordinary comment or source CI grants execution. The manifest digest and approval target commit are recorded externally to avoid hash self-reference."
+  "rule": "Any changed definition needs a new manifest and exact-head review. Finance aliases are counted once. No inherited approval, edited status, partial selection, ordinary comment or source CI grants execution. The manifest digest and approval target commit are recorded externally to avoid hash self-reference.",
+  "authoring_request": {
+    "date_kst": "2026-10-02",
+    "instruction": "네 제품의 .aiops/program.json을 원대하고 자세히 작성",
+    "prior_start_decision": "https://github.com/BeautifulMind-JT/ai-ops-control-plane/issues/57",
+    "existing_start_pr": "https://github.com/BeautifulMind-JT/kix-protocol/pull/87",
+    "existing_start_head": "df7b026590677448438be62d2249f13f2da1cbaf",
+    "observed_main": "dd0a501248e092c2a4475088d94d7449b7bd98b5",
+    "authority": "PLAN_AUTHORING_ONLY_NOT_EXPANDED_START_OR_RELEASE_APPROVAL"
+  },
+  "validation_reader": {
+    "repository": "BeautifulMind-JT/ai-ops-control-plane",
+    "source_sha": "a34a38b73f096c9f6597b38a111d95ca12ecd159",
+    "path": "engineering/scripts/control_plane_program.py",
+    "authority": "SOURCE_FORMAT_CHECK_ONLY"
+  }
 }
