@@ -402,3 +402,8 @@ Rust 기준 의미론과 Polars·DuckDB를 null/정렬/join/overflow/정수 금�
 ## 20. 2026-10-02 사용자 직접 요청 — 플랫폼 전체 용량 설계
 
 [플랫폼 확장 청사진](blueprints/platform-scale-v1/README.md)은 공연당 정원과 플랫폼 전체 100만·1,000만·3,000만 권리 목표를 분리한다. PR #84 공개 Move 후보 위에 검색/조회, 다중 채널 리셀, 권한별 분할, UNKNOWN 대사, 복구 및 단계별 부하 검증 구조를 제안한다. [PS 후속 작업](blueprints/platform-scale-v1/DELIVERY_PLAN.md)은 작업문서나 실행 계획이 아니며 기존 118개 노드·승인 포인터를 변경하지 않는다. 페이지와 기존 좌석 경합 단위의 차이는 후속 ADR로 확정한다. backend 채택·위임 실행·배포 게이트와 두 kernel 잠금은 유지한다.
+
+
+## 21. 2026-10-02 사용자 직접 요청 — 여신 설계 고도화
+
+[여신 고도화 후보](blueprints/credit-lifecycle-v1/README.md)는 F04와 Finance를 기반으로 적격 정산채권·차주 심사·약정·공유 한도·자금 예약·상환·연체·회수 구조를 문서화한다. 기존 목의 frozen snapshot, 부분 상환 예약 유지, terminal default 의미는 보존한다. 새 정책·원자성·producer/consumer 계약과 [CR 후속 작업](blueprints/credit-lifecycle-v1/DELIVERY_PLAN.md)은 승인 전 설계이며 118개 catalogue 및 Finance seed/노드 정의를 변경하지 않는다. 이 요청은 설계 고도화 범위이며 실제 여신 상품·이자 정책·backend 채택·실자금·운영 게이트 해제를 뜻하지 않는다.

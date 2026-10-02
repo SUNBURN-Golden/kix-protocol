@@ -60,3 +60,7 @@ Protocol 82(초안 67 + 편입 대기 15), Commerce 36(초안 10 + 편입 대기
 
 모델 1·첫 묶음 승인은 backend 채택·커널 전환 완료·실금전 운영 승인과 다릅니다. 미정 항목, 두 잠금 blob, R2 금지, (a) 보류, 위생 일괄 금지는 유지합니다.
 
+
+## 여신 고도화 설계
+
+[여신 수명·위험·회수](blueprints/credit-lifecycle-v1/README.md) / [사건·상환 계약 후보](blueprints/credit-lifecycle-v1/LIFECYCLE.md) / [후속 작업](blueprints/credit-lifecycle-v1/DELIVERY_PLAN.md): 정산채권 기반 선지급부터 한도·심사·지급 관측·상환·연체·회수까지 설계한다. 기존 F04 목과 Finance 8개를 보존하며 상품 정책·실자금 게이트를 자동 해제하지 않는다.
