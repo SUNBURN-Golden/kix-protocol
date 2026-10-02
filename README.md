@@ -4,7 +4,7 @@ KIX는 티켓 권리·거래 프로토콜을 중심으로 예매, 공식 리셀,
 
 ## 1. 현재 기준
 
-**현행 개발계획 정본은 [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md)입니다.** 승인·금지 범위와 다음 순서는 이 문서를 따릅니다. V24는 현행 정본이 아닙니다.
+**현행 개발계획 정본은 [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md)입니다.** 승인·금지 범위와 다음 순서는 이 문서를 따릅니다. V24는 현행 정본이 아닙니다. [R-1](docs/decisions/PROGRAM_ROADMAP_20260930.md)은 PR #81로 범위 승인됐으며, 명시한 범위에서는 이전 개발계획보다 우선합니다. 시작은 별도 시작 PR입니다.
 
 - 고정 R1 기준선: [`kix-r1-v4-verification-baseline-20260916`](https://github.com/BeautifulMind-JT/kix-protocol/tree/kix-r1-v4-verification-baseline-20260916).
 - 이번 문서 작업 시작 시 확인한 **main HEAD**: `d5b9f2d67b5532fa35464c8557e88f70be300888`. 이 값은 기준 스냅샷이며, 이 문서 변경 뒤에도 영원히 최신 HEAD라는 뜻이 아닙니다.
@@ -35,7 +35,7 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 
 ## 4. 승인된 다음 작업
 
-현재 승인된 것은 **첫 묶음의 잔여 검토·보완**입니다. 잠금 v4의 비교 모델·계약 불변식 검사 검토, LC-FACT/LC-CUT/LC-TERM 수명 계약의 미정 입력 정리, 별도 성능 하네스·측정 계약의 검토를 진행합니다. 구체적인 열린 항목과 답할 주체는 [FIRST_BATCH_OPEN_INPUTS](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md)를 따릅니다.
+첫 묶음의 승인 범위는 **잔여 검토·보완**입니다. 이후 확대된 승인 범위와 조건은 아래 Track K/P 및 R-1을 함께 읽습니다. 잠금 v4의 비교 모델·계약 불변식 검사 검토, LC-FACT/LC-CUT/LC-TERM 수명 계약의 미정 입력 정리, 별도 성능 하네스·측정 계약의 검토를 진행합니다. 구체적인 열린 항목과 답할 주체는 [FIRST_BATCH_OPEN_INPUTS](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md)를 따릅니다.
 
 2026-09-17 사용자 결정으로 **토스페이먼츠를 잠정 선택하고, 결제수단 1단계는 토스를 통한 국내 KRW 일반 카드 결제로 한정**합니다. 리셀·금융 대금의 실제 가맹 범위와 일반 결제 웹훅 서명 규격은 미확인이므로 최종 가맹·운영 승인이 아닙니다. 간편결제·가상계좌는 토스 내 수단으로 나중에 검토하며, 간편결제 직접 가맹은 이번 범위가 아닙니다.
 
@@ -49,7 +49,7 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 - [Task 005](docs/tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md) Wave 2~5: Move 발행 확장, 정산·예매/리셀/검표·F04 여신의 mock과 상태기계
 - 계약 전용 OpenAPI, loopback HTTP 관문, 로컬 readiness 저널
 
-모두 mock·비운영 범위이며, 실 PG·은행·체인 연동이나 운영 승인이 아닙니다. 병합 목록과 CI 기록은 [main 상태 정합 기록](docs/status/MAIN_STATE_20260928.md)에 있습니다. 2026-09-26부터는 GitHub Actions 사용량이 소진돼 hosted CI가 실행되지 않았습니다.
+모두 mock·비운영 범위이며, 실 PG·은행·체인 연동이나 운영 승인이 아닙니다. 병합 목록과 CI 기록은 [main 상태 정합 기록](docs/status/MAIN_STATE_20260928.md)에 있습니다. 당시의 hosted CI 공백은 역사 기록입니다. 2026-10-01 Commerce `b0217cc`의 [CI](https://github.com/BeautifulMind-JT/kix-commerce-apps/actions/runs/36867931427)는 stub과 live-gate 모두 실제 실행·통과했습니다. Protocol `dd0a501`의 [CI](https://github.com/BeautifulMind-JT/kix-protocol/actions/runs/36867940729)는 문서 변경 분류로 무거운 단계가 생략됐으며 전체 제품 재검증이 아닙니다. 이 기록은 후속 HEAD의 CI 증거로 승계하지 않습니다.
 
 **2026-09-28 결정:** 사용자가 PR #73을 병합(`cfeb0d6`)하면서 [프로그램 결정 D-1~D-3](docs/decisions/PROGRAM_DECISIONS_20260928.md)을 승인했습니다. 이제 승인 범위는 두 트랙입니다.
 
@@ -57,6 +57,10 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 - **Track P (제품 프로토콜):** Task 005 Wave 0~7과 그 후속입니다. 계약·mock·Move 확장·OpenAPI·비운영 0.x SDK·분리 저장소 앱·AI 위임 계약을 다루며, 게이트 기록만으로 착수합니다. Wave 2~5는 사후 승인됐고, Wave 6은 `kix-commerce-apps`에서 열렸습니다.
 
 실자금·실 제공자 호출·공개 운영 엔드포인트·mainnet·커널 잠금·R2는 계속 잠겨 있습니다. 각 잠금의 해제 조건은 결정 문서 §5에 있습니다.
+
+**2026-10-02 계획 정합:** Protocol 82개(초안 67·편입 대기 15), Commerce 36개(초안 10·편입 대기 26), 총 118개입니다. Finance 8개는 Protocol 안에 포함됩니다. [R-1](docs/decisions/PROGRAM_ROADMAP_20260930.md), [정의·병합 경계](docs/aiops/PROGRAM_ASTRA_DELEGATION.md), [별도 시작 절차](docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md)를 따릅니다. 범위 병합은 실행·완료가 아닙니다. 선택적 토큰과 권리 확장은 [개발계획 §18](docs/DEVELOPMENT_PLAN.md)에 포함됩니다.
+
+**권리 확장 구현 후보:** [RS-PUBLIC-1](reference/rights-scale-v1/README.md)은 256슬롯 페이지로 최대 65,536슬롯을 구성하는 새 공개 Move 패키지입니다. 기존 16슬롯 프로파일은 회귀용으로 보존합니다. 실제 검증 범위는 [프로파일 계약](docs/contracts/RIGHTS_SCALE_PROFILE.md)을 따르며, 비공개 ZK·위임·앱 연결·운영 수용량 완료를 뜻하지 않습니다.
 
 ## 5. 읽는 순서
 
@@ -89,3 +93,4 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 `reference/`, `validation/`, `reviews/`의 과거 코드·실험은 보존 자산입니다. Python/Node 시험 도구를 사용하는 것과 Python 운영 엔진을 채택하는 것은 다릅니다. 원본 증거를 현재 결과로 재라벨링하지 않습니다.
 
 개인키·비공개 노트·proving key·로컬 체인 DB를 제출하지 않습니다. 공개 배포용 라이선스는 부여하지 않았습니다.
+

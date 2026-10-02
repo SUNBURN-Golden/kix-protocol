@@ -53,7 +53,7 @@ Before editing anything:
    - the current task document under `docs/tasks/`
    - any contracts/evidence explicitly named by that task.
 
-`docs/DEVELOPMENT_PLAN.md` is the current authority for approved, deferred and prohibited implementation scope. Historical roadmaps are evidence, not current authorization.
+`docs/DEVELOPMENT_PLAN.md` is the current authority for approved, deferred and prohibited implementation scope. Read it with `docs/decisions/PROGRAM_ROADMAP_20260930.md` (R-1, owner scope adoption via #81); within R-1's explicit scope it takes precedence over earlier plan text. Scope adoption is not program start. Historical roadmaps are evidence, not current authorization.
 
 If the task's stated base differs from current `origin/main`, report the delta. Do not silently rebase, merge main into the task branch, or change the task base.
 
@@ -125,6 +125,8 @@ Explicit human authorizations granted after this list are recorded under `docs/d
 - They classify the non-production `readiness/` local wrapper, within its stated bounds, as outside the storage/log-engine item above.
 - They open Track P (Task 005 waves) on gate records.
 - They keep every other item in this list locked, each with its unlock criteria.
+
+The later owner-adopted R-1 records conditional v5 lifecycle and local backend implementation paths (R-4/R-6), conformance scope, and RS/TL gates. Read those exact prerequisites; this summary does not lift a gate or mark a pending node complete. The 2026-10-02 direct user request for documentation reconciliation and public Move rights scaling is recorded in `docs/contracts/RIGHTS_SCALE_PROFILE.md`; it does not activate the AIOPS plan or authorize deployment.
 
 Model 1 (chain authority / off-chain delegated execution) is the approved authority model, but the current v4 kernel is not a complete implementation of it.
 
@@ -321,3 +323,4 @@ Do not commit private keys, proving keys, credentials, non-public notes, local c
 Do not broaden repository permissions or external-service access as part of an ordinary task.
 
 Prefer separation between the coding agent and GitHub publication credentials where automation permits it.
+

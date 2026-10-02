@@ -19,6 +19,7 @@ checks = [
     ('node-offline', ['node', '--test', 'offline.test.mjs'], PROTO / 'client'),
     ('sdk-import', ['node', '--input-type=module', '-e', 'const m = await import("./independent.mjs"); if (typeof m.IndependentClient !== "function") throw new Error("SDK client unavailable"); console.log("SDK import and IndependentClient export OK");'], PROTO / 'client'),
     ('move-tests', ['sui', 'move', '--client.config', env['KIX_SUI_CONFIG'], '--build-env', 'mainnet', 'test', '--path', str(PROTO / 'sui')], ROOT),
+    ('move-rights-scale-tests', ['sui', 'move', '--client.config', env['KIX_SUI_CONFIG'], '--build-env', 'mainnet', 'test', '--path', str(ROOT / 'reference/rights-scale-v1/sui'), '--gas-limit', '1000000000'], ROOT),
     ('circuit-build', ['node', 'compile-circuits.mjs'], PROTO / 'client'),
 ]
 results = []
@@ -34,3 +35,4 @@ for name, args, cwd in checks:
     if r.returncode:
         print((OUT / (name + '.log')).read_text()[-10000:])
         raise SystemExit(r.returncode)
+

@@ -1,0 +1,505 @@
+{
+  "profile": "RS-PUBLIC-1",
+  "chain": {
+    "chainIdentifier": "23hAkmu8UrFhGb1gomt2fjtcD4CXCLKsjANPDi9g21Eo"
+  },
+  "mode": "LOCALNET_FUNCTIONAL",
+  "cases": [
+    {
+      "capacity": 1024,
+      "pages": 4,
+      "fullRangeConstructed": true,
+      "lastSlotIssued": true,
+      "crossPageRollback": true,
+      "staleAfterRefundRejected": true,
+      "cancelledIssueRejected": true
+    },
+    {
+      "capacity": 16384,
+      "pages": 64,
+      "fullRangeConstructed": true,
+      "lastSlotIssued": true,
+      "crossPageRollback": true,
+      "staleAfterRefundRejected": true,
+      "cancelledIssueRejected": true
+    },
+    {
+      "capacity": 65536,
+      "pages": 256,
+      "fullRangeConstructed": true,
+      "lastSlotIssued": true,
+      "crossPageRollback": true,
+      "staleAfterRefundRejected": true,
+      "cancelledIssueRejected": true
+    }
+  ],
+  "transactions": [
+    {
+      "label": "publish",
+      "digest": "Hjuh1uhuyVcRrRTRSkTmZuTKnVfLM2ZauBpDqNLQ6aM6",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "create-1024",
+      "digest": "BAkTGNUNduFFePeMSTVzM4gc3TYo1h2rxCR9mCTcGRPa",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-1024-0",
+      "digest": "ACpTmWMoAaS8t3wjioGZrsodLynbTYZFoBsV4DgvELQ1",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "shards-1024",
+      "digest": "7ng1vG3qDFVMEb3JocMbY6nTPwDm4n6Mf6A53WaBfTTc",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "seal-1024",
+      "digest": "4psBwcLNmWjxB3mVNABzdMtiZ5p1L4SvapikWN8HJzFa",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "issue-last-1024",
+      "digest": "HsYWuVhC23w28S4zSgPDVtzTVS4gKjknhhxjTDnCsDLu",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cross-page-rollback-1024",
+      "digest": "8BtdBmijV783dhaAQ3TZduyoW3rvJWiTBHvdYs7YXW2Z",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 2nd command, abort code: 9, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 34)",
+          "command": 1,
+          "MoveAbort": {
+            "abortCode": "9",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 34,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "refund-1024",
+      "digest": "HfWyQGw2Qq9yB5749yqoTptcwdvB2yPY99C6JHXksB7K",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "stale-after-refund-1024",
+      "digest": "8eGbHbGyY3EHSvAvNXHeXeuWthrLb9N4q5NcA7pzwKEp",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 1st command, abort code: 3, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 51)",
+          "command": 0,
+          "MoveAbort": {
+            "abortCode": "3",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 51,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "new-generation-1024",
+      "digest": "BbcaTx8ZijgqS2QbUe5UWRS2oeEUe75XhRNMLZTyfR2u",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cancel-1024",
+      "digest": "Vx4nFZXRd2ApbyDetAeXdv5gR5kA3TtLxfqoGiN3WxU",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cancelled-issue-1024",
+      "digest": "DX1mYCCZkaNjzajCqf4cELubRmDVKUx5YVVroPrwFN2b",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 1st command, abort code: 9, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 34)",
+          "command": 0,
+          "MoveAbort": {
+            "abortCode": "9",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 34,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "create-16384",
+      "digest": "8xW3j4KQH1apMvH4kWhqrggrES7sMhnxJK7Ewx7AVBQb",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-16384-0",
+      "digest": "J8JSdUfe88mHcpAn3sciSJyUKb2qPdVTYovRB2KzCaCD",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-16384-32",
+      "digest": "FuZ3E3PfMzdBfxc6gQkWuTSmTvKYrqwSZ7Ux8VdtzqpD",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "shards-16384",
+      "digest": "ELL2TFUdyy6FBqqkeXQkAvmWnwZoAnAFi8HvG3pm4xhf",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "seal-16384",
+      "digest": "Cu94LAKUBtYUnsnmvRskoaZZ3pAw39GvZUJ8WhYkc7LE",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "issue-last-16384",
+      "digest": "FVA8KV4tcwofTE4BvKQEnqZNZRWpDhEL5So647qhkWbq",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cross-page-rollback-16384",
+      "digest": "GRbGPY8hNuy9UtW9eQrFtygavdn6pLkmQxRbmhW9T5Mn",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 2nd command, abort code: 9, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 34)",
+          "command": 1,
+          "MoveAbort": {
+            "abortCode": "9",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 34,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "refund-16384",
+      "digest": "4JmdGEb4Xx9XwHvZha3hrMKm2ccrXq17QQSeHa7LQq7P",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "stale-after-refund-16384",
+      "digest": "8yTzB7M3Zj7zRiDJJQwYRe6rMYf8Don6k8K3a8bjBuHe",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 1st command, abort code: 3, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 51)",
+          "command": 0,
+          "MoveAbort": {
+            "abortCode": "3",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 51,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "new-generation-16384",
+      "digest": "9bJcXuCxqGR22CcRzwSmmpUWeuVnhFqLNtZByxHmXqCd",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cancel-16384",
+      "digest": "BvfKhvMqR3Ws36ppRLpTYFwkX4XmZYPmwVP68XR97s4v",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cancelled-issue-16384",
+      "digest": "EGPXUTXnxYd6rhXJC6u8k8diGTCbf3NRg26rG3d9Hbrs",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 1st command, abort code: 9, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 34)",
+          "command": 0,
+          "MoveAbort": {
+            "abortCode": "9",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 34,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "create-65536",
+      "digest": "AdLpnMzW2iaF8qj1hk5rXua3oBnxv2ruigABgNRTkb3f",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-65536-0",
+      "digest": "EzDPVeGpEsEbCq6GmZw5CY5219yxQhpxrjkr3WTjfsyc",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-65536-32",
+      "digest": "CGFQtqEepMMU5LhXS8UQqHKNyscmBtjR94djRMN6k6WF",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-65536-64",
+      "digest": "C1vYsjecERWHzn8uYxGwEBijVobr8wh82w68SBhzAyRU",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-65536-96",
+      "digest": "DdPo9NcbMJUUqMdxYNXxzU85sY9p8nNc8YHTfxXGVd7c",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-65536-128",
+      "digest": "HQ1RSPwyksyZghgU6KzTdYckK7ig5Ro2jyhvGnuQcDN1",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-65536-160",
+      "digest": "EzsEWhJVpeewRP3WBPcgHkgx3LvkRmascHPDLSMTNbuV",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-65536-192",
+      "digest": "GkbChN7oTLtYWEKLtWho35PwRunccvzZLYnscg6FjcQ7",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "pages-65536-224",
+      "digest": "6Fa87Bzt8Hf5SD6ESzuFPxGtYhjb6wkVn1ahNaEsnouQ",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "shards-65536",
+      "digest": "4SGyCN7FxgLG6KYj5ncg77bfQZhFsQvBeAG4j1k5kT8e",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "seal-65536",
+      "digest": "6N3UaLU85J393LnwgieR6aEPrwAPobfcjiJUXSx4ziS9",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "issue-last-65536",
+      "digest": "5sdeL8xTvjVH9qseeAwKu4Kp91ioSLEpwzKFA9jBzyB3",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cross-page-rollback-65536",
+      "digest": "9s5QuMwQd9D1FhjeJ3sd4pRq8LnW21coYMgFaZF29x51",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 2nd command, abort code: 9, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 34)",
+          "command": 1,
+          "MoveAbort": {
+            "abortCode": "9",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 34,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "refund-65536",
+      "digest": "A7g4DCuSZ6JCpLTcykJm7sKAn7D3x5a9yXrrAyvB74xs",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "stale-after-refund-65536",
+      "digest": "5bLvqusJkanuFbc4HAoRuDLraciwcCdR7NtfT5wtPgGK",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 1st command, abort code: 3, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 51)",
+          "command": 0,
+          "MoveAbort": {
+            "abortCode": "3",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 51,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "new-generation-65536",
+      "digest": "AR2mTNnRB3jmmoXUJM1wroVkRQ3Y7Fh419KtprL35SsN",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cancel-65536",
+      "digest": "3HqczA5H8BvQNPEhJYHUqK8Kx9Hc6UaFP4TJpuotRE6d",
+      "status": {
+        "success": true,
+        "error": null
+      }
+    },
+    {
+      "label": "cancelled-issue-65536",
+      "digest": "CTkaASASEXDhRJCUDEGXFcPHCrFXCA51ho6ADiH73nF5",
+      "status": {
+        "success": false,
+        "error": {
+          "$kind": "MoveAbort",
+          "message": "MoveAbort in 1st command, abort code: 9, in '0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10::rights::issue' (instruction 34)",
+          "command": 0,
+          "MoveAbort": {
+            "abortCode": "9",
+            "location": {
+              "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+              "module": "rights",
+              "function": 16,
+              "instruction": 34,
+              "functionName": "issue"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "production": false,
+  "package": "0x952eafb17718e587dfe741d504dc4d955b109cd62a01e31c8c569c874a942d10",
+  "localCommitteeSize": 1,
+  "networkFaultToleranceTested": false,
+  "zkLoginBackgroundKeyFetchDisabled": true
+}
