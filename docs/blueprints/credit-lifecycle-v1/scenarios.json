@@ -1,0 +1,26 @@
+{
+  "status": "DESIGN_ONLY_NOT_EXECUTABLE",
+  "asset": "SYNTHETIC_UNIT",
+  "policy_values_are_production_defaults": false,
+  "arithmetic_examples": [
+    {"id": "C01", "kind": "availability", "facility_limit": 1000, "facility_used": 300, "party_limit": 1200, "party_used": 500, "borrowing_base": 800, "base_used": 300, "portfolio_limit": 5000, "portfolio_used": 4000, "free_funding": 450, "expected_available": 450},
+    {"id": "C02", "kind": "serialized_reservation", "initial_available": 100, "requests": [80, 80], "expected_accept_count": 1, "expected_reserved": 80, "expected_remaining": 20, "note": "Either request may win; both must not succeed. Not a runtime concurrency test."},
+    {"id": "C03", "kind": "reevaluation_deficit", "used": 600, "new_borrowing_base": 450, "expected_deficit": 150, "expected_new_availability": 0, "expected_existing_exposure": 600},
+    {"id": "C04", "kind": "receipt_conservation", "verified_receipt_net": 120, "allocated_net": 100, "unallocated": 20, "confirmed_refund_net": 0, "refund_pending_subset_of_unallocated": 10}
+  ],
+  "event_scenarios": [
+    {"id": "C05", "event": "provider_timeout", "expected": "UNKNOWN retains reservation; original operation/provider observation only"},
+    {"id": "C06", "event": "duplicate_or_late_disbursement_observation", "expected": "same transfer applied once; reservation converts once; ambiguity quarantined"},
+    {"id": "C07", "event": "claim_reused_across_facilities", "expected": "shared claim slice cannot back two overlapping reservations"},
+    {"id": "C08", "event": "repayment_duplicate_or_reversal", "expected": "one allocation per verified fact; reversal linked; first result preserved"},
+    {"id": "C09", "event": "facility_expiry_with_outstanding_or_unknown", "expected": "new draw blocked; existing obligations and observation retained"},
+    {"id": "C10", "event": "charged_off_late_recovery", "expected": "record recovery separately; charge-off alone never extinguishes contractual debt"},
+    {"id": "C11", "event": "policy_change_and_old_schedule_replay", "expected": "original policy and schedule reproducible; amendments explicit"},
+    {"id": "C12", "event": "rejected_command_restore", "expected": "candidate durable contract retains first rejection; old F04 restore semantics unchanged"},
+    {"id": "C13", "event": "unknown_refund_and_unidentified_receipt", "expected": "suspense and outbound reservation retained; no automatic income recognition or fresh payout"},
+    {"id": "C14", "event": "draw_concurrent_with_claim_refund_or_reevaluation", "expected": "atomic authority revision check; stale valuation cannot authorize draw"},
+    {"id": "C15", "event": "interest_interval_replay_or_rounding_boundary", "expected": "selected exact-rational policy reproduced; no duplicate accrual or float drift"}
+  ],
+  "runtime_scenarios_executed": false,
+  "real_funds_approved": false
+}
