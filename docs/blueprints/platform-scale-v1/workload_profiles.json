@@ -1,0 +1,21 @@
+{
+  "status": "DESIGN_ONLY_NOT_EXECUTABLE",
+  "profile": "RS-PUBLIC-1-candidate",
+  "page_size": 256,
+  "payment_ref_shards_per_show": 16,
+  "capacity_scenarios": [
+    {"id": "S1", "shows": 100, "capacity_per_show": 10000, "total_slots": 1000000, "total_pages": 4000, "total_payment_ref_shards": 1600},
+    {"id": "S2", "shows": 1000, "capacity_per_show": 10000, "total_slots": 10000000, "total_pages": 40000, "total_payment_ref_shards": 16000},
+    {"id": "S3", "shows": 3000, "capacity_per_show": 10000, "total_slots": 30000000, "total_pages": 120000, "total_payment_ref_shards": 48000}
+  ],
+  "synthetic_distributions": [
+    {"id": "uniform", "hot_scope": null, "hot_request_share": null},
+    {"id": "hot_show", "hot_scope": "one_show", "hot_request_share": 0.9},
+    {"id": "hot_page", "hot_scope": "one_page", "hot_request_share": 0.9},
+    {"id": "hot_right", "hot_scope": "one_right", "hot_request_share": 0.9}
+  ],
+  "required_run_parameters": ["source_tuple", "data_provenance", "active_rights", "active_listings", "history_events", "workload_seed", "operation_mix", "admission_concurrency", "arrival_rate", "duration", "queue_and_retry_budgets", "fault_schedule", "latency_and_recovery_slo", "cost_budget", "stop_conditions"],
+  "measured_capacity": null,
+  "promised_tps": null,
+  "production_approved": false
+}
