@@ -1,0 +1,715 @@
+{
+  "schema_version": 1,
+  "program": "kix",
+  "repository": "BeautifulMind-JT/kix-protocol",
+  "project": "KIX",
+  "approval_pointer": "https://github.com/BeautifulMind-JT/ai-ops-control-plane/issues/57",
+  "authoritative_doc_pointers": "AGENTS.md ; docs/decisions/PROGRAM_ROADMAP_20260930.md ; docs/decisions/PROGRAM_DECISIONS_20260928.md ; docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md ; docs/DEVELOPMENT_PLAN.md ; docs/tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md ; docs/contracts/openapi/README.md ; docs/contracts/FIRST_BATCH_OPEN_INPUTS.md ; docs/blueprints/rights-scale-v1/README.md ; docs/blueprints/optional-native-token-v1/README.md (read at the plan commit) ; docs/aiops/PROGRAM_ASTRA_DELEGATION.md (immutable plan commit) ; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md (candidate scope/completion design at immutable plan commit) ; docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md (full candidate scope; pending adoption) ; NON_EXECUTABLE_DRAFT: docs/aiops/KIX_PROGRAM_DRAFT.json",
+  "nodes": [
+    {
+      "id": "roadmap-sync",
+      "title": "Reflect the approved roadmap into DEVELOPMENT_PLAN, README, AGENTS and the task index",
+      "spec": "Objective: after docs/decisions/PROGRAM_ROADMAP_20260930.md takes effect, reflect it the way docs/decisions/PROGRAM_DECISIONS_20260928.md was reflected (its header lines 3-4): docs/DEVELOPMENT_PLAN.md header, §1, §5, §17 and §18; root README.md §3-§4 and a pointer to docs/DEVELOPMENT_PLAN.md §18 (docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md line ~187); the docs/README.md index (add the roadmap next to the D-1~D-3 and TL/RS decision entries); docs/tasks/README.md row that still says Waves 6-7 are not started; the docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md header status (approved by the #79 merge 5cf4168). AGENTS.md is out of scope for this node (node agents-scope-sync).\nConstraints: do not change any decision; historical documents and evidence are not rewritten (AGENTS.md); README.md is a full-CI path.\nAcceptance: the listed documents agree with the roadmap; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nAdopted evolution follow-up: when this candidate is separately adopted, update current plan/index/status pointers and counts from this immutable plan, including active 67/pending 1 protocol and active 10/pending 20 commerce. Keep historical decisions and their original evidence/counts unchanged; link the new candidate adoption instead of rewriting history.",
+      "audit_floor": "A1",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "agents-scope-sync",
+      "title": "Reflect the roadmap's approved scope into AGENTS.md §5",
+      "spec": "Objective: AGENTS.md §5 lists work that is not authorized by default. Where docs/decisions/PROGRAM_ROADMAP_20260930.md §2 approves such work (R-4 stage 2 lifecycle work in the v5 crate after the User merges the v5 decision; R-6 stage 5 local work after the adoption decision; R-2 the rights/zk_gate extension reading), add a pointer to the approving R-row the way docs/decisions/PROGRAM_DECISIONS_20260928.md was reflected into AGENTS.md §5. Do not widen anything the roadmap does not approve; every lock in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 stays.\nAcceptance: AGENTS.md diff limited to §5 pointers; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "sui-commit-mismatch-note",
+      "title": "Record why two Sui framework commits appear in the docs",
+      "spec": "Objective: explain why docs/DEVELOPMENT_PLAN.md §9.1 and docs/research name the Sui commit 58386edc while reference/v0.3-rc1/sui/Move.toml and the tag pin 808640d9 (docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md line ~183; docs/blueprints/rights-scale-v1/README.md line ~32). Add a note in the current documents; never rewrite history or the pin.\nAcceptance: note with the evidence commands; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A1",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "p-sdk-0",
+      "title": "P-SDK-0: TypeScript 0.x client from the contract-only OpenAPI, with conformance tests",
+      "spec": "Objective: generate a non-production TypeScript 0.x client from docs/contracts/openapi/kix-protocol.contract-only.openapi.json and add conformance tests for it (PROGRAM_DECISIONS_20260928.md §6 row P-SDK-0 at line 126; scope §2.1 line 47; DEVELOPMENT_PLAN.md §8).\nScope: pin the OpenAPI file and its sha256; generate the client reproducibly from that pin; conformance tests cover every command in the catalogue; wire the tests into the existing protocol CI without weakening any existing check.\nConsumer rules (docs/contracts/openapi/README.md): no base URL (the document has no servers), reject unknown fields, never treat actor as authentication, never infer retry or delivery success.\nOut of scope: stable 1.0, public distribution or registry publishing, the bulk KTX->KIX rename (§2.1, §5), new commands, product frontend trees inside kix-protocol (Task 005 decision 4).\nThe output path is not fixed by the docs: choose one that touches no locked area; if the choice would change a public contract or repository layout rule, stop with DECISION_REQUIRED.\nAcceptance: the client regenerates byte-identically from the pinned file; conformance tests pass; protocol and kernel checks green at the exact head; evidence per AGENTS.md §14 in the PR.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nCompatibility producer rule (docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §§2–4): any actual catalogue/gate/schema/receipt change regenerates the TypeScript SDK from that exact new source and emits a new canonical compatibility manifest binding source/tree, both OpenAPI blobs+sha256, generator/toolchain/output, domain/schema/profile and vectors. Artifact identity is not qualification/audit/User approval. Never reuse an earlier profile/manifest/PASS for changed bytes. No self-referential final-commit field; exact delivery/consumer head is bound by protected evidence outside the manifest. Keep stable 1.0/publishing/production permissions locked.\nBootstrap ownership correction (design §2.1): this A3/ARCHITECTURE node defines and implements the immutable manifest-v1 format, BOOTSTRAP compatibility profile, minimum offline producer/consumer verifier and canonical encoding/mixed-input rejection golden vectors for the unchanged original catalogue. Bind manifest_schema_version/profile_kind/profile_revision/profile_sha256 and exact source/OpenAPI/generator/SDK/vector inputs. Keep profile and manifest self digests/final commit outside their own input. A profile artifact is not audit/approval evidence: consumers require the actual independent exact-head A3 and protected completion/merge binding. BOOTSTRAP grants no enlarged-catalogue semantic/N/N-1/production qualification. Do not wait for the downstream semantic profile node or add a reverse dependency; do not create new commands, retry/auth semantics, live services or release permission.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "astra_gate": "ARCHITECTURE",
+      "user_merge": true
+    },
+    {
+      "id": "openapi-catalogue-promotion",
+      "title": "Promote settlement, booking, resale, admission and credit commands into the contract-only OpenAPI catalogue",
+      "depends_on": [
+        "p-sdk-0"
+      ],
+      "spec": "Objective: add the settlement, booking, resale, admission (including authorize_admission and consume, stopped in #70) and credit FSM commands to the contract-only OpenAPI catalogue, updating the contract documents and the pin check together (PROGRAM_DECISIONS_20260928.md §6 line 128; §2.1 line 45).\nConstraints: no servers, security schemes or production endpoints (the checker rejects them); update the loopback tests that currently expect UNKNOWN_ACTION for these actions; regenerate the P-SDK-0 client and its conformance tests for the new commands.\nOpen design point: the catalogue is derived from reference/v0.3-rc1/protocol_contract.json, and the FSM commands live in separate modules outside that catalogue (docs/contracts/openapi/README.md). Before choosing a source of truth that changes an approved contract, stop with DECISION_REQUIRED. Revise the earlier DECISION_REQUIRED stop markers in the booking, settlement and credit contract documents only as the approved decision allows.\nOut of scope: real payment, KYC, public endpoints, stable 1.0.\nAcceptance: pin check, loopback tests, client conformance tests, protocol and kernel checks green at the exact head.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nCompatibility producer rule (docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §§2–4): any actual catalogue/gate/schema/receipt change regenerates the TypeScript SDK from that exact new source and emits a new canonical compatibility manifest binding source/tree, both OpenAPI blobs+sha256, generator/toolchain/output, domain/schema/profile and vectors. Artifact identity is not qualification/audit/User approval. Never reuse an earlier profile/manifest/PASS for changed bytes. No self-referential final-commit field; exact delivery/consumer head is bound by protected evidence outside the manifest. Keep stable 1.0/publishing/production permissions locked.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "move-primary-price-fee",
+      "title": "Define primary issuance price and fee for the Move rights module",
+      "spec": "Objective: close the contract-undefined item from the Wave 2 validation: the Move Show has no primary price and no primary fee (validation/2026-09-26-wave2-rights-issuance/README.md lines 24-30; PROGRAM_DECISIONS_20260928.md §6 line 127).\nScope: a draft-versioned contract document under docs/contracts/, and only if that contract requires it a rights/zk_gate extension with localnet tests (§2.1 line 44).\nOut of scope: a new coin/TIX module (Task 005 decision 5), Sui testnet or mainnet, real funds.\nConstraints: do not invent product price or fee policy values; policy choices go to DECISION_REQUIRED. The rights-scale blueprint requires the 16-slot reference profile Move tests to keep passing unchanged; if a change under reference/v0.3-rc1/sui is needed, stop with DECISION_REQUIRED first.\nAcceptance: contract document with its draft version; any Move change covered by localnet tests; protocol and kernel checks green at the exact head.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "ai-delegation-contract-mock",
+      "title": "AI delegation authority contract draft and in-memory mock",
+      "spec": "Objective: draft the AI delegation authority contract covering query, propose and execute authority, scope, amount, period and revocation conditions, and an in-memory mock under reference/ (PROGRAM_DECISIONS_20260928.md §2.1 line 49 and §6 line 129; DEVELOPMENT_PLAN.md §14).\nConstraints: model output alone never issues or pays; no AI self-expansion of delegation (FIRST_BATCH_OPEN_INPUTS I11); delegation execution stays disabled (DEVELOPMENT_PLAN.md §12); the AI tool allowlist excludes transfers, refund execution and signing. State how the contract relates to the existing delegate and close_delegation commands; if it would change them, stop with DECISION_REQUIRED.\nOutputs: a draft-versioned contract under docs/contracts/ and the mock with tests.\nAcceptance: mock tests pass; protocol and kernel checks green at the exact head.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "readiness-extensions",
+      "title": "Extend the readiness journal inside the D-3 bounds",
+      "spec": "Objective: add what docs/decisions/PROGRAM_DECISIONS_20260928.md §4 allows inside the bounds: new fault scenarios, explicit schema version migration functions (no guessed migration), wrapping for FSMs not yet wrapped, better observation and audit lines, budget and overload policy (docs/contracts/READINESS_RUNTIME.md; readiness/).\nBounds: single process, single writer, local file, off unless --readiness-dir; protocolTruth, productionConformance, productionReadiness, productionEndpoint and FSM durable stay false; no replication, consensus, multi-writer, network, remote storage or default-on. The journal is never a canonical ledger, audit evidence or an exactly-once basis.\nAcceptance: new tests (including readiness/test_faults.py scenarios) pass with the existing ones unchanged; READINESS_RUNTIME.md updated; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nTargeted producer sequencing correction (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §4): wait for p-sdk-0 to provide manifest-v1 and the minimum verifier before changing relevant producer inputs. If this task changes actual catalogue/gate/schema/receipt/contract semantics or manifest-bound source bytes, regenerate the current TypeScript SDK and emit a new immutable manifest in this same delivery PR from the exact changed source, then run the applicable reproducibility and positive/negative vectors. Generated SDK bytes may remain equal for a transport-only change, but their regeneration and the new source/gate binding must still be verified. Keep artifact source and final delivery evidence separate; do not reuse an old manifest/profile/PASS for changed inputs. If the branch changes only documentation outside the manifest-bound inputs, record the relevant-path byte comparison instead of claiming a new implementation or fabricating qualification. BOOTSTRAP cannot qualify enlarged semantics; consumers HOLD until the exact new SEMANTIC_CONFORMANCE tuple/evidence is available. No new commands, retry/auth semantics or permissions are implied by this generation duty.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "depends_on": [
+        "p-sdk-0"
+      ],
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "settlement-policy-deepening",
+      "title": "Settlement contract §7: turn the open policy items into a decided draft revision",
+      "spec": "Objective: revise the open items of docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md §7 (lines ~249-265) into a draft-versioned revision with explicit options: legal debtor and creditor, revenue waterfall, remainder-unit recipient order (UNDETERMINED today), resale proceeds split, tax/holds/reserves, the partial refund bearer (refund_bearer_policy=UNDEFINED), P04 durable closure. Update reference/settlement_f01_f03 and its tests only for items that get decided.\nDecision rule: write options and a recommendation, then stop with DECISION_REQUIRED so the Astra consult decides the product values (docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-9). Items that need legal, tax or accounting advice stay UNDETERMINED with the owner (docs/contracts/FIRST_BATCH_OPEN_INPUTS.md I10).\nOut of scope: real bank or PG calls, real payouts.\nAcceptance: contract revision with a version bump; mock tests for decided items; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nTargeted producer sequencing correction (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §4): wait for p-sdk-0 to provide manifest-v1 and the minimum verifier before changing relevant producer inputs. If this task changes actual catalogue/gate/schema/receipt/contract semantics or manifest-bound source bytes, regenerate the current TypeScript SDK and emit a new immutable manifest in this same delivery PR from the exact changed source, then run the applicable reproducibility and positive/negative vectors. Generated SDK bytes may remain equal for a transport-only change, but their regeneration and the new source/gate binding must still be verified. Keep artifact source and final delivery evidence separate; do not reuse an old manifest/profile/PASS for changed inputs. If the branch changes only documentation outside the manifest-bound inputs, record the relevant-path byte comparison instead of claiming a new implementation or fabricating qualification. BOOTSTRAP cannot qualify enlarged semantics; consumers HOLD until the exact new SEMANTIC_CONFORMANCE tuple/evidence is available. No new commands, retry/auth semantics or permissions are implied by this generation duty.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "depends_on": [
+        "p-sdk-0"
+      ],
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "booking-resale-admission-deepening",
+      "title": "Booking/resale/admission contract §7: decide the open items as a draft revision",
+      "spec": "Objective: revise the open items of docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md §7 (lines ~251-270): actor authentication and revocation, durable ShowConfig, approved reservation TTL, discounts and coupons, payment_attesters authority, COMPENSATION_UNDEFINED after a payment fact, resale failure compensation and seller payout, refund/revoke/shield/gift/cancel_show in the FSM, consume_private and delegated sessions. Update reference/booking_resale_admission and its tests for decided items.\nDecision rule: as in settlement-policy-deepening (docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-9).\nAcceptance: contract revision with a version bump; mock tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nTargeted producer sequencing correction (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §4): wait for p-sdk-0 to provide manifest-v1 and the minimum verifier before changing relevant producer inputs. If this task changes actual catalogue/gate/schema/receipt/contract semantics or manifest-bound source bytes, regenerate the current TypeScript SDK and emit a new immutable manifest in this same delivery PR from the exact changed source, then run the applicable reproducibility and positive/negative vectors. Generated SDK bytes may remain equal for a transport-only change, but their regeneration and the new source/gate binding must still be verified. Keep artifact source and final delivery evidence separate; do not reuse an old manifest/profile/PASS for changed inputs. If the branch changes only documentation outside the manifest-bound inputs, record the relevant-path byte comparison instead of claiming a new implementation or fabricating qualification. BOOTSTRAP cannot qualify enlarged semantics; consumers HOLD until the exact new SEMANTIC_CONFORMANCE tuple/evidence is available. No new commands, retry/auth semantics or permissions are implied by this generation duty.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "depends_on": [
+        "p-sdk-0"
+      ],
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "f04-mock-deepening",
+      "title": "F04 credit contract: product terms for the mock",
+      "spec": "Objective: fill the open terms of docs/contracts/CREDIT_ADVANCE_F04.md (lines ~162-178): legal parties, interest/APR/schedule, seniority, perfection, limit recalculation; update reference/credit_advance_f04 and its tests. Mock and simulation only (TASK_005 decision 6); no disbursement; real credit stays locked.\nDecision rule: as in settlement-policy-deepening (docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-9).\nAcceptance: contract revision; mock tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nTargeted producer sequencing correction (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §4): wait for p-sdk-0 to provide manifest-v1 and the minimum verifier before changing relevant producer inputs. If this task changes actual catalogue/gate/schema/receipt/contract semantics or manifest-bound source bytes, regenerate the current TypeScript SDK and emit a new immutable manifest in this same delivery PR from the exact changed source, then run the applicable reproducibility and positive/negative vectors. Generated SDK bytes may remain equal for a transport-only change, but their regeneration and the new source/gate binding must still be verified. Keep artifact source and final delivery evidence separate; do not reuse an old manifest/profile/PASS for changed inputs. If the branch changes only documentation outside the manifest-bound inputs, record the relevant-path byte comparison instead of claiming a new implementation or fabricating qualification. BOOTSTRAP cannot qualify enlarged semantics; consumers HOLD until the exact new SEMANTIC_CONFORMANCE tuple/evidence is available. No new commands, retry/auth semantics or permissions are implied by this generation duty.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "depends_on": [
+        "p-sdk-0"
+      ],
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "toss-method-expansion-review",
+      "title": "Review easy-pay and virtual accounts inside the Toss profile (document only)",
+      "spec": "Objective: review easy-pay and virtual accounts as payment methods inside the Toss profile (docs/DEVELOPMENT_PLAN.md lines ~33-35; docs/contracts/PG_TOSS_CARD_PROFILE.md lines ~6, 136-142): what each changes in adapter events, identities, refunds and settlement, and which Toss answers it needs. Document only; no integration or calls.\nAcceptance: new section or appendix; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "gate-browser-access-decision",
+      "title": "Decide how the commerce browser may reach the loopback gate (CORS)",
+      "spec": "Objective: decide how the kix-commerce-apps dev server (127.0.0.1:5173) may reach the loopback integration gate. Today integration_gate/server.py answers OPTIONS with 405 (asserted in integration_gate/test_http_gate.py) and accepts only JSON, so every cross-origin browser POST fails at preflight (kix-commerce-apps docs/http-integration-gate-apps-bind.md); docs/contracts/READINESS_RUNTIME.md lists commerce-app coupling as on hold.\nOutput: a decision document under docs/decisions/ comparing (1) an opt-in CORS allowlist of explicit loopback origins, off by default, (2) keeping the gate closed and running live journeys from Node tests only, (3) any other option; with a threat model (DNS rebinding, other local origins, credentials) and a recommendation. The commerce repo forbids a proxy; do not propose one there.\nConstraints: the gate stays 127.0.0.1 only; no 0.0.0.0, no public endpoint.\nAcceptance: decision document; checks green. The implementation is the next node.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "gate-browser-access",
+      "title": "Implement the chosen browser access option in the loopback gate",
+      "depends_on": [
+        "gate-browser-access-decision",
+        "p-sdk-0"
+      ],
+      "spec": "Objective: implement the option the gate-browser-access-decision document chose, in integration_gate/, off by default behind an explicit flag, with tests for allowed and refused origins, preflight, and unchanged behaviour when off. Change the existing 405 test only as the decision states. If the decision kept the gate closed, deliver only the documentation it names.\nConstraints: loopback only; the docs/decisions/PROGRAM_DECISIONS_20260928.md §4 bounds stay.\nAcceptance: tests; READINESS_RUNTIME.md and docs/contracts/openapi/README.md consumer notes updated; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nTargeted producer sequencing correction (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §4): wait for p-sdk-0 to provide manifest-v1 and the minimum verifier before changing relevant producer inputs. If this task changes actual catalogue/gate/schema/receipt/contract semantics or manifest-bound source bytes, regenerate the current TypeScript SDK and emit a new immutable manifest in this same delivery PR from the exact changed source, then run the applicable reproducibility and positive/negative vectors. Generated SDK bytes may remain equal for a transport-only change, but their regeneration and the new source/gate binding must still be verified. Keep artifact source and final delivery evidence separate; do not reuse an old manifest/profile/PASS for changed inputs. If the branch changes only documentation outside the manifest-bound inputs, record the relevant-path byte comparison instead of claiming a new implementation or fabricating qualification. BOOTSTRAP cannot qualify enlarged semantics; consumers HOLD until the exact new SEMANTIC_CONFORMANCE tuple/evidence is available. No new commands, retry/auth semantics or permissions are implied by this generation duty.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "read-model-contract",
+      "title": "Read and list query contract for commerce surfaces",
+      "spec": "Objective: define the read and list queries commerce surfaces need and the catalogue lacks (kix-commerce-apps packages/protocol-adapter/src/commerce-bindings.ts: listPerformances, getBooking, listResale and the view* methods). Draft-versioned contract under docs/contracts/ (for example READ_MODEL_QUERIES.md): state exposed per query, actor visibility, consistency (which receipts a read reflects), pagination bounds, and why a read is never proof of payment, issuance or admission.\nNew commands need DECISION_REQUIRED · Astra (BOOKING_RESALE_ADMISSION_GATES.md new-command rule): write the proposal, then stop with DECISION_REQUIRED before finalizing.\nOut of scope: implementation, public endpoints.\nAcceptance: contract draft; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "read-model-reference",
+      "title": "Implement the approved read queries and add them to the catalogue",
+      "depends_on": [
+        "read-model-contract",
+        "openapi-catalogue-promotion"
+      ],
+      "spec": "Objective: implement the approved read-model queries in the FSM reference modules (reference/settlement_f01_f03, reference/booking_resale_admission, reference/credit_advance_f04, or where the contract says), serve them through the loopback gate, and add them to the contract-only OpenAPI with the pin check.\nConstraints: reference/v0.3-rc1/** and protocol_contract.json unchanged; queries never mutate state; no servers or security schemes in OpenAPI; loopback only.\nAcceptance: unit tests per query, loopback tests, pin check updated; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nCompatibility producer rule (docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §§2–4): any actual catalogue/gate/schema/receipt change regenerates the TypeScript SDK from that exact new source and emits a new canonical compatibility manifest binding source/tree, both OpenAPI blobs+sha256, generator/toolchain/output, domain/schema/profile and vectors. Artifact identity is not qualification/audit/User approval. Never reuse an earlier profile/manifest/PASS for changed bytes. No self-referential final-commit field; exact delivery/consumer head is bound by protected evidence outside the manifest. Keep stable 1.0/publishing/production permissions locked.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "p-sdk-1",
+      "title": "P-SDK-1: regenerate the TypeScript 0.x client for the full catalogue",
+      "depends_on": [
+        "openapi-catalogue-promotion",
+        "read-model-reference"
+      ],
+      "spec": "Objective: regenerate the TypeScript 0.x client from the enlarged contract-only catalogue (promoted FSM commands and read queries) and extend the conformance tests to every command and query. Keep the P-SDK-0 consumer rules (no base URL, reject unknown fields, actor is not authentication, never infer retry or delivery success).\nOut of scope: 1.0, publishing, rename.\nAcceptance: byte-identical regeneration from the pin; conformance tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nCompatibility producer rule (docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §§2–4): any actual catalogue/gate/schema/receipt change regenerates the TypeScript SDK from that exact new source and emits a new canonical compatibility manifest binding source/tree, both OpenAPI blobs+sha256, generator/toolchain/output, domain/schema/profile and vectors. Artifact identity is not qualification/audit/User approval. Never reuse an earlier profile/manifest/PASS for changed bytes. No self-referential final-commit field; exact delivery/consumer head is bound by protected evidence outside the manifest. Keep stable 1.0/publishing/production permissions locked.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "k1-e4-residual-review",
+      "title": "First batch: residual review of the E-4 model and contract invariants",
+      "spec": "Objective: finish the residual review of the E-4 model and contract invariants (README.md line ~44; docs/contracts/FIRST_BATCH_OPEN_INPUTS.md line ~74; docs/tasks/DEVIN_FIRST_BATCH_E4_AUDIT.md). Record findings as tests or review notes; task documents and historical evidence are not rewritten.\nAcceptance: review record with the invariants checked and any tests added; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k1-adapter-event-identity",
+      "title": "I06: design adapter transmission, event, payment and operation identities (document only)",
+      "spec": "Objective: design how transmission, event, payment and operation identities relate, including duplicates, corrections and the replaceable PG boundary (docs/contracts/FIRST_BATCH_OPEN_INPUTS.md I06 line ~30; docs/contracts/PG_TOSS_CARD_PROFILE.md lines ~128, 139-161). Draft-versioned contract under docs/contracts/. Items needing Toss answers (I02-I05, I08) stay open with the owner. No adapter code.\nAcceptance: contract draft; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "k1-cut-proof",
+      "title": "I12: technical proof of the C_g/H_g cut and old-writer fencing",
+      "spec": "Objective: write the technical proof of the C_g/H_g cut, old-writer fencing and preservation of unissued commitments (docs/contracts/FIRST_BATCH_OPEN_INPUTS.md I12 line ~36; docs/decisions/AUTHORITY_MODEL_1.md lines ~17-33), listing every assumption and the trust policy it needs. No code.\nAcceptance: proof document; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "k1-open-inputs-brief",
+      "title": "Ready-to-send question sheets for the open first-batch inputs",
+      "spec": "Objective: turn the open rows of docs/contracts/FIRST_BATCH_OPEN_INPUTS.md into one question sheet per owner: Toss (I02, I03, I04, I05, I08); User (I09 SLO and retention, I11 automatic-service identity and limits, residual risk), in plain Korean; legal/privacy (I10); protocol owner and independent reviewer (I12); ops/security (I13). Each question is answerable in one reply and names where the answer will be recorded. Do not answer any question.\nAcceptance: a new docs/status/ question sheet (or a section in docs/contracts/FIRST_BATCH_OPEN_INPUTS.md if its rules allow); checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A1",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k1-evidence-close",
+      "title": "First batch: integration review and evidence close-out",
+      "depends_on": [
+        "k1-e4-residual-review",
+        "k1-adapter-event-identity"
+      ],
+      "spec": "Objective: close out the first-batch integration review and evidence (docs/contracts/FIRST_BATCH_OPEN_INPUTS.md line ~77). The lifecycle input reflection (line ~75, needs Toss answers) and the fixed-environment perf repeat (line ~76, needs approved numbers and equipment) stay open; record them with their unlock conditions instead of closing them.\nAcceptance: evidence summary; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A1",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-stage2-v5-design-decision",
+      "title": "Track K stage 2: v5 crate design decision proposal (document only)",
+      "spec": "Objective: write the design decision proposal for a new v5 crate that implements the lifecycle transitions (termination, reclaim, release, index) while the locked v4 files stay unchanged (PROGRAM_DECISIONS_20260928.md §2.2 lines 61-63; §6 line 132).\nConstraints: document only; no implementation; the two locked kernel blobs stay unchanged (AGENTS.md §4). Reference the lifecycle contract and the FIRST_BATCH_OPEN_INPUTS rows the implementation would depend on. Like the D-1..D-3 proposal, the document takes effect only when the User merges or explicitly approves it; say so in the document.\nOut of scope: starting the stage 2 implementation (a separate approval).\nAcceptance: the proposal document; checks green at the exact head.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "k-stage2-v5-impl",
+      "title": "Track K stage 2: implement the lifecycle transitions in the v5 crate",
+      "depends_on": [
+        "k-stage2-v5-design-decision"
+      ],
+      "spec": "Objective: implement the lifecycle transitions in the new v5 crate as the User-merged v5 design decision specifies: operational termination, one-time reserved-slot release, reference and evidence reclamation, review release, conflict index (docs/DEVELOPMENT_PLAN.md lines ~106, 164-171; docs/adr/0001-ktx-authority-commit-recovery.md lines ~153-190; runtime/crates/kix-kernel/README.md). docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-4 is the separate approval docs/decisions/PROGRAM_DECISIONS_20260928.md §2.2 requires, conditional on that merge.\nConstraints: the v4 crate and both locked blobs stay byte-identical; any part that depends on an open docs/contracts/FIRST_BATCH_OPEN_INPUTS.md row stops with DECISION_REQUIRED naming the row; no R2, replication or storage engine.\nAcceptance: new crate with tests per transition; existing kernel tests unchanged and green; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "k2-retention-proposal",
+      "title": "Retention periods proposal (legal, reconciliation, retry support, memory)",
+      "spec": "Objective: propose the retention periods docs/DEVELOPMENT_PLAN.md line ~171 requires, with options, the legal/privacy questions they depend on (docs/contracts/FIRST_BATCH_OPEN_INPUTS.md I10) and a recommendation.\nAcceptance: decision proposal; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "k-stage3-schema-sdk-conformance",
+      "title": "Track K stage 3: schema and SDK conformance",
+      "depends_on": [
+        "p-sdk-1"
+      ],
+      "spec": "Objective: stage 3 conformance (docs/DEVELOPMENT_PLAN.md lines ~107, 191-198, 314): distinguish identity, domain, schema and version; validate collisions, truncation, ULEB128, UTF-8, trailing bytes and integer range; show two independent clients agree on shared vectors; add Rust-Move vectors where production types exist; the API distinguishes reservation, payment, issuance, return and refund. docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-5 approves this work; it does not approve a stable 1.0 or publishing.\nAcceptance: conformance vectors and tests in CI; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nEvolution acceptance: cover mixed catalogue/gate/SDK source tuples, changed required/optional fields, enums, receipt/error semantics, profile/domain confusion and N/N−1 approved fixtures without promising an operational version-support window. Shared vectors and exact input hashes support the compatibility profile; testing does not grant release authority.",
+      "audit_floor": "A3",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-stage4-comparison-plan",
+      "title": "Track K stage 4: backend comparison plan and candidate screening",
+      "spec": "Objective: write the stage 4 comparison plan (approved targets, ACK, failure scope, equipment and cost) and screen candidates from official sources (PROGRAM_DECISIONS_20260928.md §2.2 steps 1-2, lines 54-60; §6 line 130).\nConstraints: DEVELOPMENT_PLAN.md §9 is the only canonical comparison source; do not create a second comparison table (BACKEND_COMPARISON_STAGE4.md stays a pointer). Label results exploration data. There is no approved TPS or p99 target; do not invent SLOs (DEVELOPMENT_PLAN.md §7 and §9). Candidates named in §9: PostgreSQL, TigerBeetle, FoundationDB, TiKV.\nOut of scope: local measurement runs (steps 3-4, a later task), backend adoption, stage 5 and R2 decisions.\nIf equipment or cost needs spending, stop with DECISION_REQUIRED.\nAcceptance: plan and screening recorded in the canonical place; checks green at the exact head.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-readiness-conformance-suite",
+      "title": "Split the readiness fault suite into a backend-common conformance test",
+      "spec": "Objective: reuse the readiness fault suite (torn write, crash before durable, replay idempotence, budget rejection, concurrent hold) as a common conformance test for Track K stage 4 and 5 backend candidates, keeping the wrapper replaceable behind the same interface (PROGRAM_DECISIONS_20260928.md §4 lines 100-102; §6 line 131).\nBounds (§4): single process, single writer, local file, off unless --readiness-dir is given; protocolTruth, productionConformance, productionReadiness, productionEndpoint and FSM durable stay false; no replication, consensus, multi-writer, network, remote storage or default-on.\nOut of scope: implementing or adopting any backend (AGENTS.md §5).\nAcceptance: the existing readiness tests keep passing, the conformance suite runs against the current wrapper in CI, protocol and kernel checks green at the exact head.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-stage4-local-exploration",
+      "title": "Track K stage 4: local exploratory measurement under equal conditions",
+      "depends_on": [
+        "k-stage4-comparison-plan",
+        "k-readiness-conformance-suite"
+      ],
+      "spec": "Objective: run the local exploratory measurement (docs/decisions/PROGRAM_DECISIONS_20260928.md §2.2 steps 3-4) for the candidates the stage 4 plan selected, with the backend-common readiness conformance suite. Label every result exploration data and record it only in docs/DEVELOPMENT_PLAN.md §9 (the single comparison table). No SLOs; no concurrent writers on SQL and chain inventory (docs/DEVELOPMENT_PLAN.md line ~228). Equipment or cost spend: stop with DECISION_REQUIRED.\nOut of scope: adoption.\nAcceptance: scripts, raw results and the §9 update; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-stage4-adoption-decision",
+      "title": "Track K stage 4: backend adoption decision proposal",
+      "depends_on": [
+        "k-stage4-local-exploration"
+      ],
+      "spec": "Objective: write the adoption proposal from the exploration (docs/decisions/PROGRAM_DECISIONS_20260928.md line ~60; docs/DEVELOPMENT_PLAN.md line ~118): the recommended backend or 'none yet', why, what stays unproven, cost and operations questions, and what stage 5 would build on it.\nAcceptance: decision proposal; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "k-stage5-durable-tx",
+      "title": "Track K stage 5: durable transactions on the adopted backend (local, non-production)",
+      "depends_on": [
+        "k-stage4-adoption-decision",
+        "k-stage2-v5-impl"
+      ],
+      "spec": "Objective: on the backend the User-merged adoption decision chose: durable transactions, adapter durable inbox and outbox, per-item webhook normalization, budgets (docs/DEVELOPMENT_PLAN.md lines ~109, 268-275; docs/adr/0001-ktx-authority-commit-recovery.md lines ~145-151). Local and non-production only; docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-6 is the approval, conditional on that merge. If the decision chose no backend, stop normal implementation with a decision-bound blocked note; this is not backend implementation completion. DEFERRED stays HOLD; a DECLINED nonimplementation deliverable requires the separately approved applicability/plan revision described below.\nConstraints: no R2, own replication or consensus; no real PG or funds; production flags stay false.\nAcceptance: implementation passing the readiness conformance suite; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-onsale-admission-control",
+      "title": "On-sale admission control: waiting room and GA routing",
+      "depends_on": [
+        "k-stage5-durable-tx"
+      ],
+      "spec": "Objective: refresh the historical R4 contract in runtime/ONSALE_ADMISSION_CONTROL.md for the stage 5 local backend and implement the waiting room and GA routing locally. No public endpoint; no invented SLOs (fairness and capacity values are DECISION_REQUIRED · Astra).\nAcceptance: contract revision, implementation and tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "k-stage6-economics-reference",
+      "title": "Track K stage 6: economics as a reference model with synthetic money",
+      "depends_on": [
+        "k-stage5-durable-tx",
+        "settlement-policy-deepening",
+        "booking-resale-admission-deepening"
+      ],
+      "spec": "Objective: reference-model economics (docs/DEVELOPMENT_PLAN.md lines ~277-290; runtime/crates/kix-kernel/README.md 'required follow-on commerce work'): asset and policy authentication, OrderLine, immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts, resale seller payout, multiple assets. Synthetic money only; docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-10 approves the reference model, not real money. Values come from the deepened contracts; missing ones are DECISION_REQUIRED · Astra.\nAcceptance: reference model and tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "k-stage7-authenticated-export",
+      "title": "Track K stage 7: authenticated, consistent export",
+      "depends_on": [
+        "k-stage5-durable-tx"
+      ],
+      "spec": "Objective: authenticated and consistent export (runtime/AUTHENTICATED_EXPORT.md; docs/DEVELOPMENT_PLAN.md line ~302): source cut versus projection watermark, on the stage 5 local source.\nAcceptance: implementation and tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "k-stage7-cpu-analytics-sql-audit",
+      "title": "Track K stage 7: CPU analytics semantics audit (Polars, DuckDB)",
+      "depends_on": [
+        "k-stage7-authenticated-export"
+      ],
+      "spec": "Objective: match Rust semantics against Polars and DuckDB for nulls, ordering, joins, overflow and integer money (docs/DEVELOPMENT_PLAN.md lines ~303-305) on exported data.\nAcceptance: audit tests and a report; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-stage8-gpu-plan",
+      "title": "Track K stage 8: native GPU path plan (document only)",
+      "depends_on": [
+        "k-stage7-cpu-analytics-sql-audit"
+      ],
+      "spec": "Objective: plan the native libcudf path and a dedicated GPU CI runner (docs/DEVELOPMENT_PLAN.md lines ~305-307; runtime/AI_GPU_DATA_PLANE.md lines ~132-143): semantic match criteria, transfer-cost measurement, equipment options and costs. Plan only; any equipment spend is DECISION_REQUIRED.\nAcceptance: plan document; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nDecision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1): a User decision document DONE/merge is not a positive adoption. Before normal implementation, read the exact User-merged decision and approved scope: ADOPT requires the specified actual backend/capability and current evidence; DEFERRED (including none yet) keeps the affected implementation WAITING/HOLD and in the full catalogue; DECLINED also holds normal implementation until a separately reviewed, User-merged applicability/plan revision binds the affected definitions and authorizes removal or a decision-bound nonimplementation deliverable. Unknown/ambiguous outcomes HOLD. Never infer a backend, omit a descendant, mark it DONE, or grant qualification/release from the decision-document merge alone. Independent document/ADR/coverage work may proceed only inside its explicitly approved preparatory scope and must label unavailable inputs. The existing runtime has no new decision-outcome interpreter: approved revision/materialization must preserve these guards; this spec does not grant automatic plan editing or a new completion predicate.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-a-reestimate",
+      "title": "Re-estimate integration (a) of the PR #11 journal",
+      "depends_on": [
+        "k1-evidence-close"
+      ],
+      "spec": "Objective: re-estimate the remaining effort for integration (a) now that the first batch is closed (currently 18-30 person-days, conditional; docs/contracts/FIRST_BATCH_OPEN_INPUTS.md lines ~86-94; docs/contracts/STATE_LIFECYCLE.md lines ~581-587; docs/decisions/AUTHORITY_MODEL_1.md lines ~42-44), including v4 versus v5 as the target.\nAcceptance: estimate document; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "k-a-integration-decision",
+      "title": "Integration (a) decision proposal",
+      "depends_on": [
+        "k-a-reestimate"
+      ],
+      "spec": "Objective: propose whether and how to integrate the PR #11 journal (docs/decisions/PROGRAM_DECISIONS_20260928.md line ~115; AGENTS.md §5), based on the re-estimate.\nAcceptance: decision proposal; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "rs-0",
+      "title": "RS-0: rights-scale object and inventory authority design",
+      "spec": "Objective: RS-0 (docs/blueprints/rights-scale-v1/README.md lines ~447-458, 541-552; docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md lines ~121, 132; docs/DEVELOPMENT_PLAN.md §18): docs/contracts/RIGHTS_SCALE_PROFILE.md 0.1 plus its decision document. D-D is accepted by docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-2 (split-object structure; new packages and circuits count as the rights/zk_gate extension under Astra's conditions (a)-(e), docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md line ~178). Include the RR-1..RR-6 root rules RS-2 needs, and leave the IssuerCap decision open until the RS-1 probe.\nConstraints: the 16-slot reference profile, its 19 Move tests and the ZK regression stay unchanged and passing; localnet only; no coin/TIX module; Sui framework rev 808640d9 stays pinned.\nAcceptance: profile 0.1 and decision document; checks green (full-CI path).\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "rs-1",
+      "title": "RS-1: public path on the new profile at 1,024 slots (localnet)",
+      "depends_on": [
+        "rs-0"
+      ],
+      "spec": "Objective: new Move package, reference model and localnet tests for 15/16/17 and page boundaries (docs/blueprints/rights-scale-v1/README.md lines ~460-470, 443) following the RS-0 profile.\nConstraints: the 16-slot reference profile, its 19 Move tests and the ZK regression stay unchanged and passing; localnet only; no coin/TIX module; Sui framework rev 808640d9 stays pinned.\nAcceptance: Move and reference tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "rs-1-issuercap-probe",
+      "title": "RS-1 probe: does concurrent IssuerCap use by reference serialize?",
+      "depends_on": [
+        "rs-1"
+      ],
+      "spec": "Objective: localnet check whether two concurrent transactions that use IssuerCap by reference serialize (docs/blueprints/rights-scale-v1/README.md lines ~467, 273); record the result and its effect on the RS-0 cap decision.\nConstraints: the 16-slot reference profile, its 19 Move tests and the ZK regression stay unchanged and passing; localnet only; no coin/TIX module; Sui framework rev 808640d9 stays pinned.\nAcceptance: probe script, raw output and the note; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "rs-2",
+      "title": "RS-2: private path (root rules, new circuit, verifier, manifest v2)",
+      "depends_on": [
+        "rs-1"
+      ],
+      "spec": "Objective: root rules RR-1..RR-6, new circuit, new Verifier, manifest v2, witness reconstruction, fixture ceremony (docs/blueprints/rights-scale-v1/README.md lines ~472-482, 323-355). Existing circom files untouched. Respect the 30-minute CI job and the phase-1 cache; if the circuit build exceeds the CI budget, stop with DECISION_REQUIRED instead of editing CI.\nConstraints: the 16-slot reference profile, its 19 Move tests and the ZK regression stay unchanged and passing; localnet only; no coin/TIX module; Sui framework rev 808640d9 stays pinned.\nAcceptance: circuit, Move and client tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "rs-3a",
+      "title": "RS-3a: on-chain delegation primitives (page-level grant, GrantControl, revocation cut)",
+      "depends_on": [
+        "rs-1"
+      ],
+      "spec": "Objective: page-level grant, GrantControl and the revocation cut (docs/blueprints/rights-scale-v1/README.md lines ~484-495). No Track K lifecycle work.\nConstraints: the 16-slot reference profile, its 19 Move tests and the ZK regression stay unchanged and passing; localnet only; no coin/TIX module; Sui framework rev 808640d9 stays pinned.\nAcceptance: Move tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "rs-3b",
+      "title": "RS-3b: Rust delegated execution integration (new crate)",
+      "depends_on": [
+        "rs-3a",
+        "k-stage2-v5-impl"
+      ],
+      "spec": "Objective: new crate mapping pages to kernel inventory and GA counters above 4,096 seats and 64-seat bundles (docs/blueprints/rights-scale-v1/README.md lines ~484-495, 126). Track K approval comes through docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-4 (v5 merge). Delegated execution stays disabled at runtime (docs/DEVELOPMENT_PLAN.md lines ~296-297).\nConstraints: locked blobs unchanged.\nAcceptance: crate tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "rs-4-l1",
+      "title": "RS-4 L1: staged load validation at 1,024 slots",
+      "depends_on": [
+        "rs-1",
+        "rs-2",
+        "rs-3a"
+      ],
+      "spec": "Objective: load validation at 1,024 slots. Label results exploration data; no SLOs; localnet on the builder machine. A measurement environment beyond it, or any spend, is DECISION_REQUIRED. Report public, private and delegated paths separately (docs/blueprints/rights-scale-v1/README.md lines ~497-507, 374-420).\nAcceptance: scripts, raw results, report; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "rs-4-l2",
+      "title": "RS-4 L2: staged load validation at 16,384 slots",
+      "depends_on": [
+        "rs-4-l1"
+      ],
+      "spec": "Objective: load validation at 16,384 slots. Label results exploration data; no SLOs; localnet on the builder machine. A measurement environment beyond it, or any spend, is DECISION_REQUIRED. Report public, private and delegated paths separately (docs/blueprints/rights-scale-v1/README.md lines ~497-507, 374-420).\nAcceptance: scripts, raw results, report; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "rs-4-l3",
+      "title": "RS-4 L3: staged load validation at 65,536 slots with concurrent shows",
+      "depends_on": [
+        "rs-4-l2"
+      ],
+      "spec": "Objective: load validation at 65,536 slots including several concurrent shows. Label results exploration data; no SLOs; localnet on the builder machine. A measurement environment beyond it, or any spend, is DECISION_REQUIRED. Report public, private and delegated paths separately (docs/blueprints/rights-scale-v1/README.md lines ~497-507, 374-420).\nAcceptance: scripts, raw results, report; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "testnet-key-management-decision",
+      "title": "Sui testnet key management decision proposal",
+      "depends_on": [
+        "rs-1"
+      ],
+      "spec": "Objective: propose the key management approach a future Sui testnet deployment needs (docs/decisions/PROGRAM_DECISIONS_20260928.md §5 testnet row): custody, rotation, incident handling, who operates it. Proposal only; no keys are created and nothing is deployed.\nAcceptance: decision proposal; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "rs-5-decision",
+      "title": "RS-5: operational adoption decision proposal",
+      "depends_on": [
+        "rs-4-l3",
+        "rs-1-issuercap-probe",
+        "testnet-key-management-decision"
+      ],
+      "spec": "Objective: operational adoption proposal (docs/blueprints/rights-scale-v1/README.md lines ~509-519): testnet then mainnet path, key management, audits, multi-party ceremony, operations owner. Deployment stays locked.\nAcceptance: decision proposal; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "tl-a",
+      "title": "TL-A: token layer scope-and-limits ADR",
+      "spec": "Objective: the scope-and-limits ADR in docs/adr/ (docs/blueprints/optional-native-token-v1/README.md lines ~464-474; docs/DEVELOPMENT_PLAN.md line ~383). D-B is accepted by docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-1: TL-A comes before TL-0 as Astra ruled. The ADR is explicitly not a lock unlock and does not replace the ADR + Astra re-ruling TL-2 needs.\nAcceptance: ADR; checks green (full-CI path).\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "tl-0",
+      "title": "TL-0: token role and supply contract",
+      "depends_on": [
+        "tl-a"
+      ],
+      "spec": "Objective: docs/contracts/TOKEN_ROLE_AND_SUPPLY.md 0.1 (docs/blueprints/optional-native-token-v1/README.md lines ~476-486, 578-589): usage grades U1-U5, representation F1-F4, irreversible choices, supply predicates V1-V6, fund pools. The initial role scope follows docs/decisions/PROGRAM_ROADMAP_20260930.md §2 R-3 (U2 collateral and U3 rewards, docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md line ~177). No numbers without User approval: supply and pool values are DECISION_REQUIRED.\nAcceptance: contract 0.1; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "tl-price-source-contract",
+      "title": "Token price source contract (only if TL-0 needs conversion)",
+      "depends_on": [
+        "tl-0"
+      ],
+      "spec": "Objective: the price source contract, needed only if a TL-0 feature needs token-KRW conversion (docs/blueprints/optional-native-token-v1/README.md lines ~73, 298, 585). If TL-0 shows it is not needed, deliver a short record saying so.\nAcceptance: contract draft or the record; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "tl-1",
+      "title": "TL-1: token authority and lifecycle contract",
+      "depends_on": [
+        "tl-0"
+      ],
+      "spec": "Objective: authority and lifecycle contract (docs/blueprints/optional-native-token-v1/README.md lines ~488-498): separation matrix, key-incident rules, and the bridge interface for the 'works without the token' requirement (TK-2).\nAcceptance: contract draft; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "tl-coin-lock-adr",
+      "title": "ADR requesting the Astra re-ruling to lift the coin/TIX lock for a localnet package",
+      "depends_on": [
+        "tl-0",
+        "tl-1"
+      ],
+      "spec": "Objective: the ADR that asks Astra to re-rule the new coin/TIX module lock for a non-production localnet package only (TASK_005 decision 5; docs/decisions/PROGRAM_DECISIONS_20260928.md §5; docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md line ~92). Lock changes need an explicit human decision (AGENTS.md lock rule), so the lift takes effect only when the User merges the ADR after the Astra ruling.\nAcceptance: ADR with the Astra ruling linked; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "tl-2",
+      "title": "TL-2: non-production token package on localnet",
+      "depends_on": [
+        "tl-coin-lock-adr"
+      ],
+      "spec": "Objective: a separate Move package on localnet with no dependency on rights (docs/blueprints/optional-native-token-v1/README.md lines ~500-510), within the lock lift the merged ADR grants. If TL-0 chose F3, follow the Astra ruling on whether the lock applies; if it chose F4, deliver a short note that TL-2 does not open.\nConstraints: localnet only; Sui framework rev pinned; existing packages unchanged.\nAcceptance: Move tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "tl-3-offchain",
+      "title": "TL-3 off-chain: reward-transaction coupling in a reference model",
+      "depends_on": [
+        "tl-1"
+      ],
+      "spec": "Objective: reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6) (docs/blueprints/optional-native-token-v1/README.md lines ~512-522). Existing mocks unchanged.\nAcceptance: reference model and tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "tl-3-onchain",
+      "title": "TL-3 on-chain: reward records on localnet",
+      "depends_on": [
+        "tl-2",
+        "tl-3-offchain"
+      ],
+      "spec": "Objective: on-chain reward records on localnet (docs/blueprints/optional-native-token-v1/README.md lines ~512-522), consistent with the off-chain reference model.\nAcceptance: Move tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "astra_gate": "ARCHITECTURE"
+    },
+    {
+      "id": "tl-4",
+      "title": "TL-4: independent verification of the token layer",
+      "depends_on": [
+        "tl-2",
+        "tl-3-onchain"
+      ],
+      "spec": "Objective: threat model, property and fuzz tests for the token layer (docs/blueprints/optional-native-token-v1/README.md lines ~524-534).\nAcceptance: threat model document and tests; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "tl-legal-brief",
+      "title": "Brief for external legal, accounting, tax and finance review",
+      "depends_on": [
+        "tl-0"
+      ],
+      "spec": "Objective: a brief for outside advisers on the 11 issues (docs/blueprints/optional-native-token-v1/README.md lines ~548-558, 392-408): facts, questions, what the design assumes. Questions only; no legal conclusions. Who runs the review and when (D-E) stays with the User.\nAcceptance: brief document; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "tl-5-decision",
+      "title": "TL-5: operational activation decision proposal",
+      "depends_on": [
+        "tl-4",
+        "tl-legal-brief"
+      ],
+      "spec": "Objective: operational activation proposal (docs/blueprints/optional-native-token-v1/README.md lines ~536-546): testnet, mainnet and issuance conditions. They stay locked.\nAcceptance: decision proposal; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "ai-delegation-execution-decision",
+      "title": "Decision proposal for enabling delegated execution",
+      "depends_on": [
+        "ai-delegation-contract-mock",
+        "rs-3a",
+        "rs-3b"
+      ],
+      "spec": "Objective: propose when and how delegated execution may be enabled (docs/DEVELOPMENT_PLAN.md lines ~296-297; docs/contracts/FIRST_BATCH_OPEN_INPUTS.md I11): prerequisites from the delegation contract and RS-3, the I11 limits the User must set, revocation guarantees. Execution stays disabled.\nAcceptance: decision proposal; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "f04-real-funds-lift-criteria",
+      "title": "Criteria for lifting real credit (document only)",
+      "depends_on": [
+        "f04-mock-deepening"
+      ],
+      "spec": "Objective: write the explicit criteria for lifting real credit (TASK_005 line ~175; docs/decisions/PROGRAM_DECISIONS_20260928.md §5): legal and licensing review items, capital, risk and operations. Criteria only.\nAcceptance: criteria document; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "toss-sandbox-conformance-plan",
+      "title": "Plan for Toss sandbox conformance evidence (document only)",
+      "depends_on": [
+        "k1-adapter-event-identity",
+        "toss-method-expansion-review"
+      ],
+      "spec": "Objective: plan the sandbox conformance evidence required before real PG (docs/decisions/PROGRAM_DECISIONS_20260928.md §5): test cases, the Toss answers needed, where evidence is recorded. No calls and no credentials.\nAcceptance: plan document; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "public-endpoint-readiness-plan",
+      "title": "Plan for the public endpoint unlock (document only)",
+      "spec": "Objective: plan what the public endpoint unlock needs (docs/decisions/PROGRAM_DECISIONS_20260928.md §5): authentication, TLS, operations owner, incident plan. No deployment; the gate stays loopback.\nAcceptance: plan document; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "sdk-1-0-decision",
+      "title": "Decision proposal for a stable schema/SDK 1.0 and publishing",
+      "depends_on": [
+        "k-stage3-schema-sdk-conformance"
+      ],
+      "spec": "Objective: propose the stable schema/SDK 1.0 and public distribution (docs/decisions/PROGRAM_DECISIONS_20260928.md lines ~47, 117) from the stage 3 results: criteria, versioning, licence question (docs/CODE_HYGIENE_BACKLOG.md lines ~48-60).\nAcceptance: decision proposal; checks green.\nUser decision document: it takes effect only when the User merges it (docs/decisions/PROGRAM_ROADMAP_20260930.md §1); state that in the document. Write options, consequences and a recommendation in plain terms; do not act on the recommendation.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A3",
+      "user_merge": true,
+      "astra_auto_merge": false
+    },
+    {
+      "id": "ktx-kix-rename-plan",
+      "title": "Plan for the bulk KTX to KIX rename (document only)",
+      "depends_on": [
+        "k-stage3-schema-sdk-conformance"
+      ],
+      "spec": "Objective: plan the bulk rename (docs/DEVELOPMENT_PLAN.md lines ~56-57; docs/CODE_HYGIENE_BACKLOG.md lines ~9-10): scope, effect on comments in the locked files, the lock-change decision it needs. Plan only; no renaming.\nAcceptance: plan document; checks green.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.",
+      "audit_floor": "A2",
+      "astra_auto_merge": true
+    },
+    {
+      "id": "contract-compatibility-profile",
+      "title": "Verify the immutable contract/gate/SDK compatibility profile",
+      "depends_on": [
+        "p-sdk-1",
+        "k-stage3-schema-sdk-conformance"
+      ],
+      "spec": "Objective: implement the adopted candidate compatibility profile in docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md on the non-production contract/gate/generated TypeScript SDK; publish deterministic producer manifest inputs and reusable verifier/shared vectors. Validate only approved command/query/receipt meanings, with explicit decisions for breaking/undetermined semantics. Each later catalogue producer must regenerate SDK and manifest and rerun applicable vectors; one completed profile does not qualify future versions.\nAcceptance: byte-identical manifest/SDK generation from pinned source/toolchain; independent client agreement on shared vectors; negative tests reject mixed old/new catalogue/gate/SDK, wrong source/blob/sha256/domain/version, unsupported enum/receipt fields and source drift before writes. Record exact evidence and its qualification target; production/release/User approval is not inferred. Keep source and final delivery evidence outside self-referential manifests.\nOut of scope: stable 1.0, publishing, transport retry/auth invention, live funds/services/chain/public endpoint, existing lock changes.\nCommon rules: follow AGENTS.md (program mode) and docs/decisions/PROGRAM_ROADMAP_20260930.md. Keep the two locked kernel blobs (AGENTS.md §4) and reference/v0.3-rc1/** unchanged unless this node says otherwise. The locks and unlock conditions in docs/decisions/PROGRAM_DECISIONS_20260928.md §5 still hold: no real funds, real PG/bank/KYC calls, public endpoints, Sui testnet or mainnet, R2 or own replication/consensus/storage engine, and no new coin/TIX module (the only exception is the localnet package of node tl-2, and only after the User merges tl-coin-lock-adr following the Astra re-ruling). Do not invent SLOs or product policy values: product policy values and new protocol commands go to DECISION_REQUIRED · Astra; values that need legal, tax, accounting or provider answers stay UNDETERMINED with the owner named. Do not edit CI to make the task pass. Evidence per AGENTS.md §14; protocol and kernel checks green at the exact head.\nBootstrap sequencing correction (design §2.1): reuse the p-sdk-0 manifest-v1 format and minimum verifier; this later node owns enlarged-catalogue SEMANTIC_CONFORMANCE profile and positive/negative semantic vectors for exact source tuples after p-sdk-1/stage3. It does not retroactively upgrade BOOTSTRAP or supply the prerequisite initial encoding/verifier. Bind profile kind/revision/digest and exact validated tuple; missing/wrong profile and initial BOOTSTRAP used for enlarged catalogue fail before writes. Each later changed producer tuple still requires its own current semantic verification/evidence; profile completion is not perpetual qualification.",
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "astra_auto_merge": false,
+      "user_merge": true
+    }
+  ]
+}
