@@ -334,6 +334,389 @@
       "audit_floor": "A3",
       "astra_gate": "ARCHITECTURE",
       "astra_auto_merge": true
+    },
+    {
+      "id": "ps-01-routing-authority",
+      "title": "공연·페이지·cell·shard·epoch의 경합 단위 계약",
+      "spec": "목표: 100만~3,000만 플랫폼 권리를 단일 공연 슬롯 수와 분리하여 설계한다.\n\n작업 묶음: 대규모 권리·거래 플랫폼\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #85 f931cfc87bdeaa1ed2495df0ce659ee832ac1c33 docs/blueprints/platform-scale-v1/{README,DELIVERY_PLAN}.md (미병합, 구현/채택 증거 아님)\n\n구현 범위:\n1. Show/InventoryPage/ExecutionCell/PlacementVersion 식별과 권위를 구분한다\n2. 특정 좌석·GA·리셀 매물의 경합 키와 세대를 정의한다\n3. 공연당 65,536 후보·페이지 크기·플랫폼 총량의 의미를 분리한다\n\n필수 산출물:\n- 라우팅/권위 ADR와 수용 vectors\n- 기존 16슬롯 legacy 및 신규 RS profile 호환표\n\n완료 판정/실패 검증:\n1. 플랫폼 총량이 단일 객체·전역 mutex·브라우저 전체 다운로드를 요구하지 않는다\n2. route epoch가 chain generation을 대신하지 않는다\n3. #84 localnet 증거를 운영 확장 증거로 해석하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "rs-0",
+        "k-onsale-admission-control"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다."
+    },
+    {
+      "id": "ps-02-query-contract",
+      "title": "조회·검색·snapshot·delta·재생 계약",
+      "spec": "목표: 크게 늘어나는 권리·매물을 권위와 시점을 보존하며 조회한다.\n\n작업 묶음: 대규모 권리·거래 플랫폼\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #85 f931cfc87bdeaa1ed2495df0ce659ee832ac1c33 docs/blueprints/platform-scale-v1/{README,DELIVERY_PLAN}.md (미병합, 구현/채택 증거 아님)\n\n구현 범위:\n1. 인덱스 watermark/source cut/gap/cursor/tenant scope를 정의한다\n2. 요약→페이지→권리 상세의 bounded read 계약을 만든다\n3. 중복·역순·재구축·cross-shard cut의 표현을 고정한다\n\n필수 산출물:\n- 조회 투영/검색 계약과 SDK fixture 후보\n- gap/rebuild/stale cursor 벡터\n\n완료 판정/실패 검증:\n1. 검색 hit가 구매·검표·지급 권한을 만들지 않는다\n2. cursor vector만으로 전역 원자 snapshot을 주장하지 않는다\n3. 권한 필터 누락과 다른 tenant cursor 재사용을 거절한다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "ps-01-routing-authority",
+        "read-model-contract",
+        "k-stage7-authenticated-export"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다."
+    },
+    {
+      "id": "ps-03-resale-contract",
+      "title": "다중 채널 리셀·조건부 체결·자금 대사",
+      "spec": "목표: 여러 채널의 동일 권리 판매 경쟁을 한 경제적 체결로 연결한다.\n\n작업 묶음: 대규모 권리·거래 플랫폼\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #85 f931cfc87bdeaa1ed2495df0ce659ee832ac1c33 docs/blueprints/platform-scale-v1/{README,DELIVERY_PLAN}.md (미병합, 구현/채택 증거 아님)\n\n구현 범위:\n1. 매물/hold/체결/결제/권리 이전을 별도 state로 정의한다\n2. 가격 변경·양도·환불·기한·동시 체결의 first-result를 정한다\n3. 지급 응답 유실 뒤 대사와 새 체결 차단을 명시한다\n\n필수 산출물:\n- 리셀 거래 ADR·순서 경합 vectors\n- producer/consumer 필드 연결 명세\n\n완료 판정/실패 검증:\n1. 같은 권리를 두 채널에서 동시에 확정 판매하지 않는다\n2. HTTP timeout이 결제 취소나 권리 미이전을 뜻하지 않는다\n3. unsupported 가격/수수료 정책을 임의 채우지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "ps-01-routing-authority",
+        "booking-resale-admission-deepening",
+        "settlement-policy-deepening"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다."
+    },
+    {
+      "id": "ps-04-execution-partitions",
+      "title": "승인 backend의 실행 partition·입출력·fencing",
+      "spec": "목표: 기존 경제 writer를 승인된 저장 기반의 partition에서 안전하게 실행한다.\n\n작업 묶음: 대규모 권리·거래 플랫폼\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #85 f931cfc87bdeaa1ed2495df0ce659ee832ac1c33 docs/blueprints/platform-scale-v1/{README,DELIVERY_PLAN}.md (미병합, 구현/채택 증거 아님)\n\n구현 범위:\n1. 원자 범위별 first result/inbox/outbox·backpressure를 구현한다\n2. 신규 소비 차단→cut→옛 writer 차단→새 epoch의 이전을 검증한다\n3. 늦은 사실과 UNKNOWN을 이동 중에도 보존한다\n\n필수 산출물:\n- 채택 backend 기반 partition 구현\n- crash/동시 writer/늦은 결과 fault suite\n\n완료 판정/실패 검증:\n1. 차단을 증명하지 못하면 writer를 승격하지 않는다\n2. local commit을 은행·체인 원자 커밋으로 주장하지 않는다\n3. 자체 consensus/복제/log engine을 새로 만들지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "ps-01-routing-authority",
+        "k-stage5-durable-tx",
+        "k1-cut-proof",
+        "rs-3b"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다."
+    },
+    {
+      "id": "ps-05-query-projections",
+      "title": "권리·매물 조회 투영과 versioned SDK",
+      "spec": "목표: 큰 데이터셋에서도 갱신 근거와 stale을 추적할 수 있는 조회를 제공한다.\n\n작업 묶음: 대규모 권리·거래 플랫폼\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #85 f931cfc87bdeaa1ed2495df0ce659ee832ac1c33 docs/blueprints/platform-scale-v1/{README,DELIVERY_PLAN}.md (미병합, 구현/채택 증거 아님)\n\n구현 범위:\n1. 승인된 source event에서 projection·index를 재구축한다\n2. bounded cursor·permission filter·delta gap 복구를 구현한다\n3. schema/OpenAPI/SDK/manifest/vectors를 같은 소스로 갱신한다\n\n필수 산출물:\n- local projection/index와 query SDK\n- 재구축·중복·역순·권한 경계 적합성 결과\n\n완료 판정/실패 검증:\n1. projection을 경제 writer나 원권리 정본으로 바꾸지 않는다\n2. source cut이 다른 페이지를 단일 확정 시점으로 합치지 않는다\n3. producer tuple 변경이 consumer에서 검출된다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "ps-02-query-contract",
+        "ps-04-execution-partitions",
+        "contract-compatibility-profile"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다."
+    },
+    {
+      "id": "ps-06-admission-load",
+      "title": "대기열·과부하·공정성·복구 자원 예산",
+      "spec": "목표: 동시 판매 집중에도 환불·관측·복구가 굶지 않는 입장 제어를 검증한다.\n\n작업 묶음: 대규모 권리·거래 플랫폼\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #85 f931cfc87bdeaa1ed2495df0ce659ee832ac1c33 docs/blueprints/platform-scale-v1/{README,DELIVERY_PLAN}.md (미병합, 구현/채택 증거 아님)\n\n구현 범위:\n1. 공연/cell/provider별 요청·bytes·backlog와 admission budget을 둔다\n2. queue token을 epoch/scope/nonce/expiry/key-version에 결합한다\n3. 관측·취소·환불에 예약 자원을 두고 telemetry cardinality를 제한한다\n\n필수 산출물:\n- admission/backpressure 구현과 부하 재현\n- 공정성·token replay·expiry·hot-key 보고서\n\n완료 판정/실패 검증:\n1. 재발급이 순번 점프나 이중 입장을 만들지 않는다\n2. 부하 거절이 권리·지급 상태를 임의 변경하지 않는다\n3. queue token을 권리 소유·결제 완료로 표시하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "ps-04-execution-partitions",
+        "ps-05-query-projections",
+        "k-onsale-admission-control"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다."
+    },
+    {
+      "id": "ps-07-scale-qualification",
+      "title": "100만→1,000만→3,000만 규모의 단계별 증거",
+      "spec": "목표: 목표 용량을 숫자 약속 대신 경로별 실제 검증으로 바꾼다.\n\n작업 묶음: 대규모 권리·거래 플랫폼\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #85 f931cfc87bdeaa1ed2495df0ce659ee832ac1c33 docs/blueprints/platform-scale-v1/{README,DELIVERY_PLAN}.md (미병합, 구현/채택 증거 아님)\n\n구현 범위:\n1. workload profile S1/S2/S3의 권리·매물·명령·분포를 고정한다\n2. hot key/실패/복구/인덱스 lag/비용을 경로별로 측정한다\n3. Commerce 연결의 UNKNOWN·경합·stale 검증을 포함한다\n\n필수 산출물:\n- 단계별 source/env/workload/분모 보고서\n- 보존식·TPS/지연·backlog·복구·비용 evidence\n\n완료 판정/실패 검증:\n1. 하위 단계 안전성 실패 시 상위 부하로 진입하지 않는다\n2. 합성 index 처리량을 체인 실거래 처리량으로 표시하지 않는다\n3. 미정 SLO는 측정치만 보고하고 수용은 보류한다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "ps-03-resale-contract",
+        "ps-05-query-projections",
+        "ps-06-admission-load",
+        "k-benchmark-reproduction"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "c-platform-journey"
+        }
+      ],
+      "promotion_requirements": "PR #84/#85의 해당 계약이 실제 채택되고 RS/TrackK 선행의 현재 증거가 확인되어야 한다. 구현 노드는 승인 backend·독립 A3·새 계획 개정을 추가로 요구한다."
+    },
+    {
+      "id": "cr-01-product-authority",
+      "title": "여신 상품·주체·권위·정책 버전 계약",
+      "spec": "목표: 정산채권 기반 선지급의 대주·차주·정책·증거 권위를 먼저 확정한다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. 사업자 선지급/반복 한도/제작 자금/소비자 후불/재고 금융을 별도 범위로 둔다\n2. Party/Relationship/ProductPolicy와 채택/만료 규칙을 정의한다\n3. 기존 FACE_SNAPSHOT_FROZEN·DEFAULTED terminal을 보존한다\n\n필수 산출물:\n- 여신 lifecycle ADR와 정책 미정 입력표\n- 구/신 profile 호환·migration vectors\n\n완료 판정/실패 검증:\n1. 티켓 소유·매물·판매총액이 현금/담보 완성으로 승격되지 않는다\n2. 금리·수수료·기간·담보 효력을 임의 결정하지 않는다\n3. 토큰 발행이 여신 선행으로 강제되지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "f04-mock-deepening",
+        "fin-ledger-contract",
+        "f04-real-funds-lift-criteria"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "cr-02-claim-eligibility",
+      "title": "채권 적격성·borrowing base·중복 사용 통제",
+      "spec": "목표: 확인 가능한 정산 의무와 부담을 기반으로 사용 가능한 채권 범위를 계산한다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. ClaimEvidence/source cut/귀속/기한/환불 부담/양도 확인을 고정한다\n2. claim slice와 평가 revision으로 중복 사용을 막는다\n3. 재평가 부족·만료·취소 시 신규 draw와 기존 노출을 구분한다\n\n필수 산출물:\n- 적격성 계약과 합성 평가 모형\n- 중복 slice·stale evidence·deficit vectors\n\n완료 판정/실패 검증:\n1. 불확실한 소유/부담은 적격으로 처리하지 않는다\n2. 같은 claim이 여러 facility에 이중 담보로 계산되지 않는다\n3. 재평가 감소가 기존 채무를 임의 소멸시키지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "cr-01-product-authority",
+        "fin-credit-exposure-reconciliation"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "cr-03-facility-reservations",
+      "title": "약정·공유 한도·재원 원자 예약",
+      "spec": "목표: 인출 하나가 차주·관계자·상품·포트폴리오·재원 한도를 함께 지킨다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. facility/draw/commitment의 identity와 사용 가능량을 정의한다\n2. 동일 원자 범위에서 공유 한도·재원을 예약한다\n3. UNKNOWN 지급과 정책별 재인출·해제 조건을 보존한다\n\n필수 산출물:\n- 승인 backend의 합성 reservation 구현\n- 경쟁 인출·crash·공유 한도 보존식 tests\n\n완료 판정/실패 검증:\n1. 각 한도가 따로 성공하여 총량을 초과하지 않는다\n2. cash 관측이나 부분 repay가 미채택 회전 한도를 만들지 않는다\n3. UNKNOWN의 예약을 timeout만으로 해제하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "cr-02-claim-eligibility",
+        "k-stage5-durable-tx",
+        "k-stage6-economics-reference"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "cr-04-underwriting-consent",
+      "title": "심사·동의·이유·예외 승인·정책 변경",
+      "spec": "목표: 판단 입력과 결정 근거가 재현되며 권한과 만료가 유지된다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. 입력 출처/snapshot·모델/규칙 revision·판단 시점·이유를 기록한다\n2. 동의 철회·자료 만료·추가 자료·override의 근거를 관리한다\n3. maker/checker와 수취계좌 변경 권한을 정의한다\n\n필수 산출물:\n- versioned 심사/동의 contract와 합성 decision 서비스\n- 만료·변조·권한 분리·override fixtures\n\n완료 판정/실패 검증:\n1. LLM 요약이 한도 승인·담보 판정·자금 송신 권한이 되지 않는다\n2. 현재 자료와 다른 revision의 동의를 재사용하지 않는다\n3. 거절 사유를 재현하되 비공개 민감 자료를 무단 공개하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "cr-01-product-authority",
+        "protocol-canonical-identity-conformance"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "cr-05-disbursement-observation",
+      "title": "지급 지시·외부 관측·UNKNOWN·복구",
+      "spec": "목표: 인출 승인과 실제 지급 결과를 구별하고 중복 지급을 방지한다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. 승인된 draw의 outbox와 제공자 관측 inbox를 기존 기반에 연결한다\n2. 제공자 identity/계좌 revision/최초 결과를 보존한다\n3. 지시 뒤 응답 유실·늦은 지급·중복 관측을 합성 대사한다\n\n필수 산출물:\n- 합성 rail adapter와 지급 대사 상태기계\n- 중단/거절/부분 관측/late success fault corpus\n\n완료 판정/실패 검증:\n1. DB commit을 실제 송금 완료로 표시하지 않는다\n2. 관측이 불명확하면 새 지급을 재제출하지 않는다\n3. 변경된 수취계좌가 오래된 승인에 묵시 반영되지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "cr-03-facility-reservations",
+        "cr-04-underwriting-consent",
+        "k1-adapter-event-identity",
+        "fin-observation-reconciliation"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "cr-06-repayment-allocation",
+      "title": "상환표·입금 배분·미식별 입금·조정",
+      "spec": "목표: 상환과 비용·원금·이자·미배분금을 정책에 따라 보존한다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. 정수/rational·반올림·기산·정책 revision을 명시한다\n2. receipt마다 원금/이자/비용/suspense/reversal을 기록한다\n3. 중도/부분/과입금·회수 취소·정책 변경을 재생한다\n\n필수 산출물:\n- 합성 상환 schedule와 allocation 모델\n- 독립 산술 vectors와 보존식 tests\n\n완료 판정/실패 검증:\n1. 수령액=배분액+미배분액이라는 보존식을 지킨다\n2. 동일 입금을 여러 번 상환에 반영하지 않는다\n3. 미정 금융 조건을 운영 기본값으로 넣지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "cr-05-disbursement-observation",
+        "fin-double-entry-projection",
+        "fin-multi-payee-refund-proof"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "cr-07-delinquency-recovery",
+      "title": "연체·조정·회수·상각·후기 입금",
+      "spec": "목표: 채무 상태와 회계 손실·운영 case를 분리해 끝까지 추적한다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. 연체 구간·약정 변경·회수 case·상각·면제의 별도 권위를 정의한다\n2. 후기 입금·취소·반환 의무를 기존 사실에 연결한다\n3. 보존/접근/개인정보와 승인 근거를 관리한다\n\n필수 산출물:\n- servicing 합성 모델과 사건 연표\n- 종결 후 사실·조정 reversal·late recovery tests\n\n완료 판정/실패 검증:\n1. 상각이 채무 소멸이나 담보 자동 처분을 의미하지 않는다\n2. 기존 DEFAULTED terminal을 조용히 재개하지 않는다\n3. 모형이 외부 추심 연락·법적 절차·실계좌 거래를 실행하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "cr-06-repayment-allocation",
+        "fin-credit-exposure-reconciliation",
+        "fin-consistent-accounting-export"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "cr-08-producer-sdk",
+      "title": "여신 producer 계약·query·SDK 적합성",
+      "spec": "목표: Commerce가 임의 금융 계산 없이 정확한 여신 상태를 소비하게 한다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. 승인 command/query의 schema·상태·reason·source cut을 게시한다\n2. 기존 compatibility 절차로 SDK/manifest/vectors를 재생성한다\n3. actor/scope/profile/revision 불일치를 호출 전에 거절한다\n\n필수 산출물:\n- 여신 catalogue/SDK/compatibility tuple\n- consumer용 정상/거절/STALE/UNKNOWN fixtures\n\n완료 판정/실패 검증:\n1. 옛 F04 tuple을 새 여신 API 자격으로 재사용하지 않는다\n2. source/SDK/manifest/vector가 섞이면 fail-closed다\n3. UI 계산을 경제 원장으로 만드는 필드가 없다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "cr-02-claim-eligibility",
+        "cr-03-facility-reservations",
+        "cr-04-underwriting-consent",
+        "cr-05-disbursement-observation",
+        "cr-06-repayment-allocation",
+        "cr-07-delinquency-recovery",
+        "fin-catalogue-read-model",
+        "contract-compatibility-profile"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "cr-10-credit-qualification",
+      "title": "여신 전체 여정·스트레스·합성 수용",
+      "spec": "목표: 채권 확인부터 인출·상환·연체·회수까지 producer/consumer로 검증한다.\n\n작업 묶음: 여신 전체 수명\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md; 설계 후보 PR #86 0846e4ddf1d55cc4ac619e2c350c4e3574547bda docs/blueprints/credit-lifecycle-v1/{README,LIFECYCLE,DELIVERY_PLAN}.md (미병합, 상품 승인 아님)\n\n구현 범위:\n1. 동시 draw·환불 부담·지급 유실·재평가 부족·상환 역순·후기 회수를 실행한다\n2. 차주/관계자/재원별 노출 보존식을 검사한다\n3. code/합성 수용/실제 상품/실자금 권한을 별도로 보고한다\n\n필수 산출물:\n- 여신 전체 current tuple의 통합 보고서\n- 정책별 미정 입력·위반·미실행 경로\n\n완료 판정/실패 검증:\n1. 초기 SDK PASS가 이후 변경 여신 버전을 승인하지 않는다\n2. finance closeout과 consumer의 순환 선행이 없다\n3. 합성 성공으로 실대출·신용 결정·은행 연결을 활성화하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "cr-08-producer-sdk"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "c-credit-servicing-journey"
+        }
+      ],
+      "promotion_requirements": "PR #86 여신 계약과 해당 상품/정책 revision을 별도로 채택한 뒤 승격한다. 구현은 승인 backend 및 TrackK 경제 전이 선행을 요구하며 모든 개발 fixture는 SYNTHETIC_UNIT이다. 실자금·심사 제공자·법적 효력은 별도 권한/근거 없이는 활성화하지 않는다."
+    },
+    {
+      "id": "k-provider-sandbox",
+      "title": "PG·은행·KYC 제공자 sandbox 적합성",
+      "spec": "목표: 승인된 테스트 계정 범위에서 실제 제공자 계약과 어댑터 의미를 확인한다.\n\n작업 묶음: 외부 자격과 운영 준비\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md\n\n구현 범위:\n1. 선택 제공자·계약/MID별 권한·서명·금액·이벤트 identity를 검증한다\n2. replay/역순/응답 유실/키 교체/금지 환경 호출을 시험한다\n3. 제한된 test credential의 보관·삭제·감사 경로를 확인한다\n\n필수 산출물:\n- 제공자별 실제 sandbox qualification\n- 어댑터 사건/경제 효과 대사 결과\n\n완료 판정/실패 검증:\n1. 공개 문서만으로 실제 계약 기능 지원을 단정하지 않는다\n2. 실제 계정 부재는 fake 결과와 분리한다\n3. sandbox 성공이 production 자금·KYC 허가를 만들지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 계약/제공자 scope와 sandbox 계정 사용 승인이 확인된 뒤 새 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "toss-sandbox-conformance-plan",
+        "k1-adapter-event-identity",
+        "public-endpoint-readiness-plan"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "계약/제공자 scope와 sandbox 계정 사용 승인이 확인된 뒤 새 계획 개정으로 승격한다."
+    },
+    {
+      "id": "k-authority-qualification",
+      "title": "체인 위임·회수·backend writer의 실제 자격",
+      "spec": "목표: 정의된 체인/키/backend 범위에서 권위 이전과 늦은 사실 보존을 입증한다.\n\n작업 묶음: 외부 자격과 운영 준비\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md\n\n구현 범위:\n1. grant generation/C_g/H_g·현재성·키 교체·비협조 writer를 시험한다\n2. 체인 관측과 DB commit 위치를 별도로 대사한다\n3. 승인된 testnet 등 정확한 환경에서 실패·회수·재개를 검증한다\n\n필수 산출물:\n- 환경별 grant/fencing qualification packet\n- 미확정 권위에서 실행 차단 증거\n\n완료 판정/실패 검증:\n1. 로컬 PID 종료가 분산 writer fencing을 대신하지 않는다\n2. 체인 재조직/관측 지연을 local sequence로 덮지 않는다\n3. 실제 환경 미검증을 current authority PASS로 표시하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: testnet/키 관리/위임/backend의 개별 unlock과 host 자격을 확인한 뒤 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "ps-07-scale-qualification",
+        "ai-delegation-execution-decision",
+        "testnet-key-management-decision",
+        "rs-5-decision"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "testnet/키 관리/위임/backend의 개별 unlock과 host 자격을 확인한 뒤 승격한다."
+    },
+    {
+      "id": "k-token-platform-contract",
+      "title": "선택적 토큰과 리워드·거래의 연결 자격",
+      "spec": "목표: 토큰을 선택적 확장으로 유지하면서 거래·환불·리워드의 경계를 검증한다.\n\n작업 묶음: 외부 자격과 운영 준비\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md\n\n구현 범위:\n1. 공급·권한·가격 source·리워드 eligibility와 경제 거래 coupling을 대조한다\n2. 환불/취소/부분 이행/소급 정정 시 중복 리워드를 검증한다\n3. 토큰 없는 기본 경로와 독립 비교한다\n\n필수 산출물:\n- 선택적 토큰 통합 계약/합성 vectors\n- 공급/리워드/환불 보존식과 운영 미정 표\n\n완료 판정/실패 검증:\n1. 발행·상장·가격·수익을 자동 보장하지 않는다\n2. 일반 거래가 토큰 발행을 필수로 요구하지 않는다\n3. coin lock 및 실제 발행 권한을 계획으로 우회하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "tl-4",
+        "tl-5-decision",
+        "ps-03-resale-contract"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "k-operator-contract",
+      "title": "플랫폼 운영·권한·감사·장애 대응 계약",
+      "spec": "목표: 운영자가 큰 플랫폼의 상태를 보고 권한 있는 조치를 수행할 계약을 만든다.\n\n작업 묶음: 외부 자격과 운영 준비\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md\n\n구현 범위:\n1. tenant/운영자/금융/감사자별 읽기·제안·실행 권한을 분리한다\n2. maker/checker·비상중지·보존·민감정보 export를 정의한다\n3. 운영 조치와 원래 경제 사실의 audit trail을 결합한다\n\n필수 산출물:\n- 운영자 command/query 계약과 SDK 후보\n- privilege escalation·stale decision·감사 누락 vectors\n\n완료 판정/실패 검증:\n1. read console이 새 자금 writer가 되지 않는다\n2. 운영자 편의를 위해 UNKNOWN과 보존 사실을 삭제하지 않는다\n3. 실제 운영 SLO/보존 정책 미정을 임의 채택하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "k-operator-evidence",
+        "ps-06-admission-load",
+        "cr-08-producer-sdk"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "ARCHITECTURE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
+    },
+    {
+      "id": "k-platform-release",
+      "title": "대규모 프로토콜·금융·체인 운영 인계",
+      "spec": "목표: 선택한 서비스 범위의 구현·독립 검토·실환경·운영 승인을 함께 검수한다.\n\n작업 묶음: 출시와 운영\n\n설계 근거: docs/DEVELOPMENT_PLAN.md; docs/decisions/AUTHORITY_MODEL_1.md; docs/aiops/PROTOCOL_COMPLETION_DESIGN_KO.md; docs/aiops/FINANCE_COMPLETION_DESIGN_KO.md; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md\n\n구현 범위:\n1. producer/consumer version과 현재 권한·chain/backend/provider tuple을 고정한다\n2. 성능·보존·장애·운영·보안·금융 미해결을 scope별 집계한다\n3. 배포/되돌리기/지원/키 rotation과 최종 결정을 준비한다\n\n필수 산출물:\n- 현재 source의 release readiness packet\n- 서비스 범위별 승인/보류/연기 지도\n\n완료 판정/실패 검증:\n1. 운영 거절·UNKNOWN·복구 경로가 빠지면 완료되지 않는다\n2. 선택적 토큰 운영 보류를 기본 서비스 강제 발행으로 바꾸지 않는다\n3. User RELEASE 결정 전 운영 자금·공개 활성화를 하지 않는다\n\n공통 경계: 잠금 kernel 두 blob과 reference/v0.3-rc1 기준선을 보존한다. 모델1의 체인 권위/위임 실행/자금 관측을 분리한다. 새 backend·수명·권위·상품 정책은 선행 채택 없이는 구현하지 않는다. R2/자체 합의·복제·로그 엔진을 만들지 않는다. 합성 금액과 localnet은 실자금/운영 규모 증거가 아니다. 실 PG·은행·KYC·testnet/mainnet·토큰 운영은 별도 unlock이 필요하다.\n\n증거/인계: 실제 변경 파일·실행 명령·성공 및 실패 사례·정확한 소스 SHA를 PR에 남긴다. 기존 충분한 coverage는 재사용하고 새 gap만 검증한다. UI 변경은 실제 브라우저의 정상/빈 값/오류/진행 중 화면과 키보드 동작을 확인한다. 실환경 부재는 미검증으로 남긴다. 독립 검토 지적과 CI 실패는 같은 소유자가 수정하고 변경 HEAD를 다시 검토한다. 일반 구현 선택은 자율 결정하며 계정·중요 계약·실사용 승인만 구체적인 결정을 요청한다.\n\n승격 조건: 상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다. 이 항목은 pending catalogue이며 현재 schema-v1 dispatch 대상이 아니다. depends_on_external을 spec 문장으로 바꾸거나 삭제하여 우회하지 않는다.",
+      "depends_on": [
+        "k-local-program-closeout",
+        "protocol-integration-evidence-closeout",
+        "cr-10-credit-qualification",
+        "k-provider-sandbox",
+        "k-authority-qualification",
+        "k-token-platform-contract",
+        "k-operator-contract"
+      ],
+      "audit_floor": "A3",
+      "astra_gate": "RELEASE",
+      "deliverable_mode": "PR",
+      "astra_auto_merge": false,
+      "user_merge": true,
+      "depends_on_external": [
+        {
+          "repository": "BeautifulMind-JT/kix-commerce-apps",
+          "program": "kixc",
+          "node": "c-platform-operational-qualification"
+        }
+      ],
+      "promotion_requirements": "상세 계약 채택·정확한 소스의 독립 검토·범위별 실제 환경 자격 확인 뒤 계획 개정으로 승격한다."
     }
   ]
 }
