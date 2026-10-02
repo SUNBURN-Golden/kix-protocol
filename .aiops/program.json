@@ -3,7 +3,7 @@
   "program": "kix",
   "repository": "BeautifulMind-JT/kix-protocol",
   "project": "KIX",
-  "approval_pointer": "PENDING_EXPANDED_SCOPE_REVIEW_DO_NOT_DISPATCH",
+  "approval_pointer": "https://github.com/BeautifulMind-JT/ai-ops-control-plane/issues/58",
   "authoritative_doc_pointers": "AGENTS.md ; docs/decisions/PROGRAM_ROADMAP_20260930.md ; docs/decisions/PROGRAM_DECISIONS_20260928.md ; docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md ; docs/DEVELOPMENT_PLAN.md ; docs/tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md ; docs/contracts/openapi/README.md ; docs/contracts/FIRST_BATCH_OPEN_INPUTS.md ; docs/blueprints/rights-scale-v1/README.md ; docs/blueprints/optional-native-token-v1/README.md (read at the plan commit) ; docs/aiops/PROGRAM_ASTRA_DELEGATION.md (immutable plan commit) ; docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md (candidate scope/completion design at immutable plan commit) ; docs/aiops/REGISTRATION_SCOPE_APPROVAL_KO.md (full candidate scope; pending adoption) ; NON_EXECUTABLE_DRAFT: docs/aiops/KIX_PROGRAM_DRAFT.json ; docs/aiops/PROGRAM_EXPANSION_20261002_KO.md (expanded candidate; source and acceptance scope, not execution approval) ; docs/decisions/PROGRAM_ROADMAP_20260930_PENDING.json (NON_EXECUTABLE pending catalogue; do not erase cross-repository prerequisites)",
   "nodes": [
     {
