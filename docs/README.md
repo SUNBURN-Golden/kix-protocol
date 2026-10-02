@@ -1,6 +1,6 @@
 # KIX 문서 색인
 
-**현행 개발계획 정본은 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) 하나입니다.** 현재 승인·금지·진행 순서는 §1·§5, 4단계 backend 비교는 §9를 따릅니다. 이 색인은 별도의 승인 문서가 아닙니다.
+**현행 개발계획 정본은 [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) 하나입니다.** 현재 승인·금지·진행 순서는 §1·§5, 4단계 backend 비교는 §9를 따릅니다. [R-1](decisions/PROGRAM_ROADMAP_20260930.md)(#81 병합)의 명시한 범위는 이전 계획에 우선합니다. 이 색인은 별도의 승인 문서가 아닙니다.
 
 **[루트 README](../README.md)의 역할:** 프로젝트와 현재 기준·잠금·금지·읽는 순서를 안내하는 최초 입구.
 **이 `docs/README.md`의 역할:** 같은 정본 아래 계약·검증·보존 자료의 위치를 안내하는 색인.
@@ -15,7 +15,17 @@
 6. [측정 계약](contracts/PERFORMANCE_MEASUREMENT.md), [고정 smoke 조건](contracts/PERFORMANCE_BASELINE_V4.md)(역사적 debug 논리 서명, 제품 p99 아님), [Task 004 장치 메모](../validation/2026-09-25-task-004-perf-measurement/README.md).
 7. [잠금의 실제 CI 경로](status/LOCK_ENFORCEMENT.md), [위생 목록 — 실행 금지](CODE_HYGIENE_BACKLOG.md).
 8. [원래 32개 항목](status/ORIGINAL_32_STATUS.md), [M 제외 부분 앵커](status/PARTIAL_ANCHOR_COUNTS.md), [#11 태그 보존](status/PR11_PRESERVATION.md).
-9. [범위 편입 결정 기록(2026-09-29)](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) — 선택적 자체 토큰 계층과 확장형 권리·재고·검표 계층. 병합 시 효력. 설계·계획 문서화 한정, 구현·발행 미승인, 새 coin/TIX 모듈 잠금 유지. [개발계획 §18](DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입).
+9. [범위 편입 결정 기록(2026-09-29)](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) — 선택적 자체 토큰 계층과 확장형 권리·재고·검표 계층. PR #79 병합으로 범위 편입. 후속 조건은 R-1 및 개발계획 §19를 따른다. 토큰 발행·새 coin/TIX 잠금 유지. [개발계획 §18](DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입).
+
+## 현재 프로그램 정의
+
+Protocol 82(초안 67 + 편입 대기 15), Commerce 36(초안 10 + 편입 대기 26), 전체 118개. Finance 8개는 Protocol 부분집합입니다.
+- [R-1 범위·조건](decisions/PROGRAM_ROADMAP_20260930.md)
+- [Protocol 비실행 초안](aiops/KIX_PROGRAM_DRAFT.json) / [편입 대기](decisions/PROGRAM_ROADMAP_20260930_PENDING.json)
+- [Protocol 후속 적합성](aiops/PROTOCOL_COMPLETION_DESIGN_KO.md) / [Finance 설계](aiops/FINANCE_COMPLETION_DESIGN_KO.md)
+- [등록 범위·시작 절차](aiops/REGISTRATION_SCOPE_APPROVAL_KO.md) / [노드별 병합 경계](aiops/PROGRAM_ASTRA_DELEGATION.md)
+
+범위 승인은 #81 병합으로 기록됐지만 편입 대기는 보호된 선행 완료와 별도 계획 개정까지 유지합니다. 비실행 초안의 `active`는 실행 중·완료가 아닙니다.
 
 ## 계약 전용 OpenAPI
 
@@ -34,6 +44,10 @@
 
 닫힌 미병합 [PR #35](https://github.com/BeautifulMind-JT/kix-protocol/pull/35)의 금융·플랫폼 청사진은 이 색인의 항목이 아니다. 역사적 설계 자료로만 참고한다.
 
+## 공개 권리 확장 구현 후보
+
+[RS-PUBLIC-1 계약](contracts/RIGHTS_SCALE_PROFILE.md) / [새 Move 패키지와 시험](../reference/rights-scale-v1/README.md): 256슬롯 페이지, 정원 1..65,536. 기존 16슬롯 회귀·ZK는 보존하며, 비공개·위임·운영 완료와 구분한다.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
@@ -41,3 +55,4 @@
 [ADR-0001](adr/0001-ktx-authority-commit-recovery.md)의 안전 관계와 [보안 보완](PROTOCOL_HARDENING.md)·[저장 조사](STORAGE_INVESTIGATION.md)·[회귀 검증](RUNTIME_VALIDATION.md)은 근거별 범위로 읽습니다. 옛 계획의 승인 효력을 폐기했다고 안전 규칙이나 사건 기록을 삭제하지 않습니다.
 
 모델 1·첫 묶음 승인은 backend 채택·커널 전환 완료·실금전 운영 승인과 다릅니다. 미정 항목, 두 잠금 blob, R2 금지, (a) 보류, 위생 일괄 금지는 유지합니다.
+

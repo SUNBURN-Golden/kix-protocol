@@ -1,0 +1,9 @@
+{
+  "reference/rights-scale-v1/sui/Move.toml": "57b1ff70bc7ec2b18e555b20f8bd0dcd2efa192e88d781541f5a4fa86e21b781",
+  "reference/rights-scale-v1/sui/Move.lock": "c192249c62ce9dd07fdab2ce8afc1e1200a404716a1dc495db1fe13fb08c3ca0",
+  "reference/rights-scale-v1/sui/sources/rights.move": "a192b254b03f98add00d4378d43221c381db4c8d96ce793df692acf1319e91ba",
+  "reference/rights-scale-v1/sui/tests/rights_tests.move": "68ef8103302f9451d4b42950b82dedbd939a266c9af4d55175193b98d5d7c851",
+  "reference/rights-scale-v1/localnet.mjs": "f9bcab2940c1ae54131cfb0a49eead4e616a3dacadce781cbbafb5e2ac1269b2",
+  "scripts/run_localnet.py": "233775032a8df27ff0f7eac4b7e9f064b8d78381358a1b7731e058b615aa126e",
+  "scripts/verify_runtime.py": "740942f7bcbb848b42a2e64c14f63b287878f33cc8aceabb0acd260cf2cef10e"
+}

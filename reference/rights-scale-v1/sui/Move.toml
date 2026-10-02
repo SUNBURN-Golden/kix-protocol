@@ -1,0 +1,10 @@
+[package]
+name = "kix_scale"
+edition = "2024.beta"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "808640d9b49aecf29d8e6f46033c15eca236efa7" }
+
+[addresses]
+kix_scale = "0x0"
+

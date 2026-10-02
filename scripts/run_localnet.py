@@ -22,11 +22,12 @@ PROTO = ROOT / 'reference/v0.3-rc1'
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--private', action='store_true', help='Requires client/setup-zk.mjs artifacts')
+    parser.add_argument('--scale', action='store_true', help='Public rights-scale functional localnet acceptance')
     parser.add_argument('--paid', action='store_true', help='Actual public Sui resale with independent mock PG/bank')
     args = parser.parse_args()
-    if args.private and args.paid:
-        raise SystemExit('The paid integration currently supports public rights only.')
-    output_name = 'paid-journey.json' if args.paid else 'private-journey.json' if args.private else 'public-journey.json'
+    if sum((args.private, args.paid, args.scale)) > 1:
+        raise SystemExit('Choose one of private, paid or scale.')
+    output_name = 'scale-localnet.json' if args.scale else 'paid-journey.json' if args.paid else 'private-journey.json' if args.private else 'public-journey.json'
     # A failed new attempt must not leave an older success as its apparent result.
     (ROOT / '.local/verification' / output_name).unlink(missing_ok=True)
     if args.private and not (PROTO / 'zk/artifacts/manifest.json').exists():
@@ -55,6 +56,8 @@ def main():
     env['KIX_PRIVATE'] = '1' if args.private else '0'
     env['KIX_PAID'] = '1' if args.paid else '0'
     env['KIX_PYTHON'] = env.get('KIX_PYTHON', '/usr/bin/python3' if args.paid else sys.executable)
+    if args.scale:
+        env['KIX_SCALE_OUTPUT'] = str(run / 'scale-result.json')
     if args.paid:
         # Ubuntu 24.04 system Python is the bounded integration runtime. Fail
         # before creating a chain if a different environment is selected.
@@ -110,13 +113,18 @@ def main():
                 time.sleep(0.5)
             print('Local chain ready: ' + chain, flush=True)
             with (run / 'journey.log').open('w') as journey_log:
-                result = subprocess.run(['node', 'localnet.mjs'], cwd=PROTO / 'client', env=env,
+                journey = ROOT / 'reference/rights-scale-v1/localnet.mjs' if args.scale else PROTO / 'client/localnet.mjs'
+                result = subprocess.run(['node', str(journey)], cwd=PROTO / 'client', env=env,
                     stdout=journey_log, stderr=subprocess.STDOUT, timeout=600)
             if result.returncode:
                 print((run / 'journey.log').read_text()[-14000:])
                 raise RuntimeError('LOCALNET_JOURNEY_FAILED: ' + str(run))
-            receipt = json.loads((run / 'journey/journey-result.json').read_text())
-            if receipt.get('status') != 'PASSED_ACTUAL_LOCALNET':
+            receipt_path = run / 'scale-result.json' if args.scale else run / 'journey/journey-result.json'
+            receipt = json.loads(receipt_path.read_text())
+            if args.scale:
+                if receipt.get('mode') != 'LOCALNET_FUNCTIONAL' or [c.get('capacity') for c in receipt.get('cases', [])] != [1024, 16384, 65536]:
+                    raise RuntimeError('MISSING_SCALE_CHAIN_SUCCESS_RECEIPT')
+            elif receipt.get('status') != 'PASSED_ACTUAL_LOCALNET':
                 raise RuntimeError('MISSING_ACTUAL_CHAIN_SUCCESS_RECEIPT')
             receipt['localCommitteeSize'] = 1
             receipt['networkFaultToleranceTested'] = False
@@ -139,3 +147,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

@@ -186,6 +186,9 @@ jobs:
       - name: Public journey on a disposable local chain
         if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/run_localnet.py
+      - name: Public rights scale on a disposable local chain
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
+        run: .venv/bin/python scripts/run_localnet.py --scale
       - name: Paid resale with actual Sui and independent mock PG and bank
         if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: .venv/bin/python scripts/run_localnet.py --paid
@@ -264,3 +267,4 @@ jobs:
           name: kix-verified-tree-${{ steps.tree.outputs.tree }}
           path: .local/verified-tree/
           retention-days: 7
+

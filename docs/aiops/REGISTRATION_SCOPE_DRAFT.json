@@ -10,7 +10,7 @@
       "approval_pointer",
       "registration_scope"
     ],
-    "definition_sha256": "04642a3ffc7587cb8d1e65a41d5aefaa0045af59f0e6aa7e5fe728b5a62f7118",
+    "definition_sha256": "a4d3ea442933d61fcd850b22a41742689f8e08904c3743d9f5d36f70bd14d069",
     "node_count": 67
   },
   "pending_catalogues": [
@@ -114,7 +114,7 @@
   "node_definitions": [
     {
       "id": "roadmap-sync",
-      "definition_sha256": "186bedefa1afa314de05fe0f02ccf3d1cc7966183a962554cecfafd6b467a83a"
+      "definition_sha256": "aaa52c7040963d3101fedda483e8142f117d26e0e342781ebb5877a691b73f6f"
     },
     {
       "id": "agents-scope-sync",
