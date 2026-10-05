@@ -49,9 +49,9 @@ Do not copy the entire root `AGENTS.md` into every task. Reference it.
 | ID | Document | Notes |
 |----|----------|-------|
 | 004 | `TASK_004_PERFORMANCE_MEASUREMENT.md` | Perf apparatus (Wave0). **Done:** docs PR #54 and implementation PR #58 merged. Exact-head CI on `28c9c13` was success (KTX `36130889407`, protocol `36130889326`). Issue #55 closed. No implementation writer is active for this task. |
-| 005 | `TASK_005_MEGA_COMMERCE_PROGRAM.md` | Mega commerce program. The Wave1 charter was merged via PR #57. The Wave 2–5 implementations (#59–#62) and follow-up state machines, gates and journal (#63–#71) were merged on 2026-09-26. The owner-approved program decisions (`docs/decisions/PROGRAM_DECISIONS_20260928.md`, approved by merging PR #73) put Task 005 in scope as Track P. They approve Waves 2–5 and the follow-ups #59–#71 post hoc and open the Wave 6 gate (`kix-commerce-apps`). Wave 7 opens after Wave 6 is aligned with the contracts. Waves 6–7 are not started. Astra wave order + locks remain binding. |
+| 005 | `TASK_005_MEGA_COMMERCE_PROGRAM.md` | Historical charter and Wave 2–5 delivery record (#57, #59–#71). D-1~D-3 (#73) added Track P and opened Wave 6. [Roadmap R-7/R-8](../decisions/PROGRAM_ROADMAP_20260930.md) recognizes commerce #1 and #3–#12 as approved stub/mock/loopback deliveries; #13 CI followed the gate. Wave 7 opens only after commerce `w6a-evidence` merges; the #3 marketing stub is not contract integration. Protocol `wave7-marketing-contracts` remains pending external evidence and a separate plan revision. Astra order, audits and locks remain binding; this is not Wave/program completion. |
 
-Row status updated 2026-09-28 on the user's explicit instruction. The task documents themselves were not edited.
+Row pointers synchronized with the approved roadmap for `roadmap-sync`. Current input: [.aiops/program.json](../../.aiops/program.json); this Mac node has no canonical dependencies. Conditional candidate adoption remains separate (development plan §17). The task documents themselves were not edited; Mac implementation checkpoints do not establish legacy DONE or post-merge proof.
 
 Historical task documents above remain execution records.
 

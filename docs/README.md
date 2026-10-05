@@ -15,7 +15,8 @@
 6. [측정 계약](contracts/PERFORMANCE_MEASUREMENT.md), [고정 smoke 조건](contracts/PERFORMANCE_BASELINE_V4.md)(역사적 debug 논리 서명, 제품 p99 아님), [Task 004 장치 메모](../validation/2026-09-25-task-004-perf-measurement/README.md).
 7. [잠금의 실제 CI 경로](status/LOCK_ENFORCEMENT.md), [위생 목록 — 실행 금지](CODE_HYGIENE_BACKLOG.md).
 8. [원래 32개 항목](status/ORIGINAL_32_STATUS.md), [M 제외 부분 앵커](status/PARTIAL_ANCHOR_COUNTS.md), [#11 태그 보존](status/PR11_PRESERVATION.md).
-9. [범위 편입 결정 기록(2026-09-29)](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) — 선택적 자체 토큰 계층과 확장형 권리·재고·검표 계층. 병합 시 효력. 설계·계획 문서화 한정, 구현·발행 미승인, 새 coin/TIX 모듈 잠금 유지. [개발계획 §18](DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입).
+9. [범위 편입 결정 기록(2026-09-29)](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) — #79 사용자 병합(`5cf4168`)으로 승인. 선택적 자체 토큰 계층과 확장형 권리·재고·검표 계층. 당시 설계·계획 문서화 한정이며 후속 조건부 범위는 [프로그램 로드맵 R-1~R-11](decisions/PROGRAM_ROADMAP_20260930.md)을 따른다. D-1~D-3의 잠금·해제 조건은 유지하며 범위 승인과 실행 시작을 분리한다. [개발계획 §18](DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입).
+10. [.aiops/program.json](../.aiops/program.json) — 현재 노드 입력·canonical 의존성. [감사·병합 판정 표](aiops/PROGRAM_ASTRA_DELEGATION.md), [pending catalogue](decisions/PROGRAM_ROADMAP_20260930_PENDING.json), [확대 후보](aiops/PROGRAM_EXPANSION_20261002_KO.md) — 외부 선행·별도 채택·release 결정을 완료로 간주하지 않는다. 후보 집계 반영은 별도 채택 뒤 개발계획 §17에 따른다.
 
 ## 계약 전용 OpenAPI
 
