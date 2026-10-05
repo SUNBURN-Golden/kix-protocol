@@ -1,0 +1,11 @@
+{
+  "name": "sui_protocol_config__test__Mainnet_version_136.snap",
+  "path": "crates/sui-protocol-config/src/snapshots/sui_protocol_config__test__Mainnet_version_136.snap",
+  "sha": "a45b246082453cb739e51bb0577bed646e4d1935",
+  "size": 83587,
+  "url": "https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-protocol-config/src/snapshots/sui_protocol_config__test__Mainnet_version_136.snap?ref=808640d9b49aecf29d8e6f46033c15eca236efa7",
+  "html_url": "https://github.com/MystenLabs/sui/blob/808640d9b49aecf29d8e6f46033c15eca236efa7/crates/sui-protocol-config/src/snapshots/sui_protocol_config__test__Mainnet_version_136.snap",
+  "git_url": "https://api.github.com/repos/MystenLabs/sui/git/blobs/a45b246082453cb739e51bb0577bed646e4d1935",
+  "download_url": "https://raw.githubusercontent.com/MystenLabs/sui/808640d9b49aecf29d8e6f46033c15eca236efa7/crates/sui-protocol-config/src/snapshots/sui_protocol_config__test__Mainnet_version_136.snap",
+  "type": "file"
+}

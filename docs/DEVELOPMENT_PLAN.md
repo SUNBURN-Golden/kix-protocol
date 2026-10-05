@@ -241,6 +241,12 @@ SQL 비교 재고와 체인 위임 재고에 동시 writer를 두지 않는다. 
 2026-09-16~17 KST, Sui 기준은 mainnet-v1.79.1 / protocol 136 /
 `58386edc269ef88ff0f40ab0a9d50e87cba80ca8`이다. [게시·검증 범위](research/SUI_EQUIVOCATION_IMPORT.md)를 함께 읽는다.
 
+**2026-10-05 커밋 표기 보충:** 위 값은 보존 조사 기준이며, 공식 릴리스 API의
+`target_commitish`와 일치한다. 실제 `mainnet-v1.79.1` 태그와 참조 `Move.toml`의
+framework pin은 `808640d9b49aecf29d8e6f46033c15eca236efa7`이다. 릴리스 메타데이터와
+태그 해석을 같은 것으로 읽으면 두 커밋이 섞인다. [대조 기록과 재현 명령](status/SUI_COMMIT_MISMATCH_20261005.md)은
+두 기준 및 확인한 파일의 동등성 범위를 구분한다. 원문·기존 pin·역사 증거는 변경하지 않는다.
+
 **R2 금지는 유지한다.** 별도 착수 승인이 주어질 경우 다음 두 가지를 반드시 다룬다.
 
 1. **객체당 서명 권한 단일화:** 하나의 mutable owned 입력

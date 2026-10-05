@@ -1,0 +1,104 @@
+{
+  "method": "Unauthenticated public HTTPS GET using curl  -fSsL --max-time 45 -H Accept:application/vnd.github+json -H X-GitHub-Api-Version:2022-11-28; selected JSON fields retained without changing values; response headers retained. No chain RPC. Header text is normalized to LF with trailing whitespace removed.",
+  "responses": [
+    {
+      "file": "release.json",
+      "headers": "release.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/releases/tags/mainnet-v1.79.1",
+      "retrieved_at_utc": "2026-10-05T12:56:08.178448+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/releases/tags/mainnet-v1.79.1",
+      "raw_response_sha256": "a97d73155d312dcd64e40f4e077403b80cbaa631baca0c24bc2ec4801df2a440",
+      "captured_fields_sha256": "503255a6c752c2f19815cc57cfba77480a9592598c7ab8b39e804977408305ce",
+      "headers_sha256": "9a7ed203a76dd470974cb3186138a4bb3128da2d726ba8efc0a2a814b9ff5105"
+    },
+    {
+      "file": "tag.json",
+      "headers": "tag.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/git/ref/tags/mainnet-v1.79.1",
+      "retrieved_at_utc": "2026-10-05T12:56:08.488873+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/git/ref/tags/mainnet-v1.79.1",
+      "raw_response_sha256": "a5e98bf549238de9862e9caff30ada2889b9f6daaec7923cbba4094e5a443222",
+      "captured_fields_sha256": "a5e98bf549238de9862e9caff30ada2889b9f6daaec7923cbba4094e5a443222",
+      "headers_sha256": "1fa101b29dc5848a073516ed206993259a5499424ed0cd037ccd76c69e95f7c2"
+    },
+    {
+      "file": "commit-research.json",
+      "headers": "commit-research.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/commits/58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+      "retrieved_at_utc": "2026-10-05T12:56:08.870711+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/commits/58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+      "raw_response_sha256": "3c879419c68052d6d310d6972831c3acae9a4ea9b02b11099fdb2102d842ab6c",
+      "captured_fields_sha256": "81e211cc3ae4bf93fcb90c613da6a79e95d301796e4541fa215255c9547d6296",
+      "headers_sha256": "95788084f9512734631c0427b0c9f515602ade733d2057ca0ff02528f92b5658"
+    },
+    {
+      "file": "commit-pin.json",
+      "headers": "commit-pin.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/commits/808640d9b49aecf29d8e6f46033c15eca236efa7",
+      "retrieved_at_utc": "2026-10-05T12:56:09.275147+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/commits/808640d9b49aecf29d8e6f46033c15eca236efa7",
+      "raw_response_sha256": "48bd282c8e4eabfd4c6d0a02bad0390ecbcea65bbe4d7d32a497ef838e38f94c",
+      "captured_fields_sha256": "2e7d23b290086f5e8a10df4ae3e3f125461bb4663069ac9862369e534a5256b5",
+      "headers_sha256": "6b7e705137dfa79ebf031810a98eaac80c7e92ba308342988ae968fa8ee8b3c4"
+    },
+    {
+      "file": "compare.json",
+      "headers": "compare.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/compare/808640d9b49aecf29d8e6f46033c15eca236efa7...58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+      "retrieved_at_utc": "2026-10-05T12:56:09.596880+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/compare/808640d9b49aecf29d8e6f46033c15eca236efa7...58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+      "raw_response_sha256": "cf9fad67d5bf2f67af85f98cbc04b9154407a8367344406e2f9e5b3c02b0f613",
+      "captured_fields_sha256": "7c30acba241db816e37194337d8437842b2ed455a9cb7a20b88c15dfc70310b0",
+      "headers_sha256": "df4b8be9a7f651d761fa004309dd54d0c3e5efdf91a4d945315ef423863be8db"
+    },
+    {
+      "file": "object-locks-research.json",
+      "headers": "object-locks-research.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-core/src/execution_cache/object_locks.rs?ref=58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+      "retrieved_at_utc": "2026-10-05T12:56:10.258985+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-core/src/execution_cache/object_locks.rs?ref=58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+      "raw_response_sha256": "762fc95532acd161bf2ebcddb6634664e37950045ab953107ab43b29eb650916",
+      "captured_fields_sha256": "b83f19d2be40944442ec7dde964531921fa659ceba89a7f21fb738c542630b85",
+      "headers_sha256": "985661cf105026a846e80434ac78eb887ec967849b2d4789ba237ab6bbc303b7"
+    },
+    {
+      "file": "object-locks-pin.json",
+      "headers": "object-locks-pin.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-core/src/execution_cache/object_locks.rs?ref=808640d9b49aecf29d8e6f46033c15eca236efa7",
+      "retrieved_at_utc": "2026-10-05T12:56:10.597106+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-core/src/execution_cache/object_locks.rs?ref=808640d9b49aecf29d8e6f46033c15eca236efa7",
+      "raw_response_sha256": "952abe2c2ca787e1ff70ddc7f36d97a562dfa51f2350493d5e07eadedbc50a26",
+      "captured_fields_sha256": "07bd3d93e52696dcec7fd879b5743d1c968866d185874b70d7259de81ec57bf0",
+      "headers_sha256": "a1afb5821465200c66ad981db800aeeacf77d5d7b9b58ca3e44f96f802202b4b"
+    },
+    {
+      "file": "protocol-136-research.json",
+      "headers": "protocol-136-research.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-protocol-config/src/snapshots/sui_protocol_config__test__Mainnet_version_136.snap?ref=58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+      "retrieved_at_utc": "2026-10-05T12:56:10.876158+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-protocol-config/src/snapshots/sui_protocol_config__test__Mainnet_version_136.snap?ref=58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+      "raw_response_sha256": "3bb5361d688abbe4054b5e15ec934ecd6e7429879f10c10b52257765246378e7",
+      "captured_fields_sha256": "a9a0916f2b7c89d1199e5d33ea9ed4a12ade45207332dd99a92b57bfc2180a70",
+      "headers_sha256": "c1f7d66221ab38ae3bd9d2622eaf4509467105093b19f5489c7a6440421963bb"
+    },
+    {
+      "file": "protocol-136-pin.json",
+      "headers": "protocol-136-pin.headers",
+      "source_url": "https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-protocol-config/src/snapshots/sui_protocol_config__test__Mainnet_version_136.snap?ref=808640d9b49aecf29d8e6f46033c15eca236efa7",
+      "retrieved_at_utc": "2026-10-05T12:56:11.240813+00:00",
+      "curl_exit": 0,
+      "http_result": "200 https://api.github.com/repos/MystenLabs/sui/contents/crates/sui-protocol-config/src/snapshots/sui_protocol_config__test__Mainnet_version_136.snap?ref=808640d9b49aecf29d8e6f46033c15eca236efa7",
+      "raw_response_sha256": "67a6e3dfae65a3ab081d8258b6c0fa2609694e2aba3fe2d4caaac52ce088596c",
+      "captured_fields_sha256": "0c99184ff5a6035b588082ff5c7f10a270ce3eb3451eeb11177549eb6b26ae84",
+      "headers_sha256": "19126220d61be2ebb29b9f9c2c9708c269cac4eaa9469ce554cc8d7f13c64762"
+    }
+  ]
+}

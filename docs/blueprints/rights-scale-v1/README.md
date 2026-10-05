@@ -30,6 +30,12 @@
 - 잠금 blob 두 개(`lib.rs` `69564b16…`, `quarantine_capacity.rs` `b607996c…`)는 작업 전 요구값과 일치했다.
 - **고정 Sui 기준.** `reference/v0.3-rc1/sui/Move.toml:6`의 framework rev는 `808640d9b49aecf29d8e6f46033c15eca236efa7`이다. 2026-09-29에 `git ls-remote`로 확인한 공식 태그 `mainnet-v1.79.1`이 같은 커밋을 가리킨다. 아래 프로토콜 한도는 그 rev의 Mainnet protocol 136 스냅샷 값이다. **현재 네트워크를 측정한 값이 아니며**, 이후 릴리스에서 달라질 수 있다.
 - 저장소의 `docs/research/`와 `docs/DEVELOPMENT_PLAN.md` §9.1은 같은 릴리스의 소스 커밋을 `58386edc…`로 적는다. 이 값은 위와 다르다. 역사 증거와 현행 정본의 기존 문장이므로 고치지 않았고 이 문서에서는 쓰지 않는다. 불일치의 원인은 **[미확인]**이다.
+
+**2026-10-05 보충:** 위의 미확인은 9월 29일 관측 기록이다. 현재 대조에서는 공식
+릴리스 API의 `target_commitish`가 `58386edc…`, 실제 태그가 `808640d9…`로 확인됐다.
+두 값은 서로 다른 Git 커밋이며 이 청사진의 고정 rev는 계속 `808640d9…`다.
+[대조 기록·증거 명령](../../status/SUI_COMMIT_MISMATCH_20261005.md)은 메타데이터와 태그의 차이,
+조사에 쓰인 두 파일의 동일 blob 및 확인하지 않은 범위를 설명한다. 당시 기록과 pin은 보존한다.
 - **관측 이후의 이동.** 작업 중 `origin/main`이 `13134e49704815457fef444ce61d781b5a424713`(PR #78)로 이동했다. 이 문서의 줄 번호는 위 스냅샷(`ba5bd063…`) 기준이다. PR #78이 바꾼 파일 중 이 문서가 **줄 번호로** 인용한 것은 `client/setup-zk.mjs`뿐이며(IM-16·IM-17에 새 줄 번호를 함께 적었다), `.github/workflows/protocol.yml`(IM-30·§2.6), `docs/DEVELOPMENT.md`(IM-30), `zk/artifacts/README.md`(IM-16), `AGENTS.md`는 줄 번호 없이 그 서술을 인용하며 그 서술은 새 main에서도 유효하다. 잠금 blob과 CI 변경 범위 분류기의 경로 목록은 그대로다. 자동 rebase나 병합은 하지 않았다.
 
 **보존 규칙.** `reference/v0.3-rc1/**`의 Move·회로·클라이언트·시험과 `docs/contracts/`의 기존 계약은 이 작업에서 수정하지 않았다. 역사 문서의 "16개 슬롯" 문구도 그대로 둔다.

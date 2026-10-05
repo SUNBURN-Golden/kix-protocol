@@ -1,0 +1,16 @@
+{
+  "url": "https://api.github.com/repos/MystenLabs/sui/compare/808640d9b49aecf29d8e6f46033c15eca236efa7...58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+  "html_url": "https://github.com/MystenLabs/sui/compare/808640d9b49aecf29d8e6f46033c15eca236efa7...58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+  "status": "diverged",
+  "ahead_by": 50,
+  "behind_by": 4,
+  "total_commits": 50,
+  "base_commit": {
+    "sha": "808640d9b49aecf29d8e6f46033c15eca236efa7",
+    "url": "https://api.github.com/repos/MystenLabs/sui/commits/808640d9b49aecf29d8e6f46033c15eca236efa7"
+  },
+  "merge_base_commit": {
+    "sha": "a4158b3fb495aa12507ceb44bf128bfbe7dba2ac",
+    "url": "https://api.github.com/repos/MystenLabs/sui/commits/a4158b3fb495aa12507ceb44bf128bfbe7dba2ac"
+  }
+}
