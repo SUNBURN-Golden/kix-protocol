@@ -33,6 +33,7 @@ from integration_gate.openapi_doc import self_test, validate
 from integration_gate.schema import problems
 from integration_gate.server import build_server, main
 from readiness.store import ReadinessStore
+from readiness.conformance import assert_budget_rejection
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = {
@@ -837,33 +838,15 @@ class TransportTests(unittest.TestCase):
         domain = load_catalogue(ROOT).domain
 
         def run(_httpd, port):
-            status, raw, _headers = exchange(port, 'GET', READY_PATH)
-            ready = parse_json(raw)
-            self.assertEqual(status, 200)
-            self.assertIs(ready['durable'], False)
-            self.assertIs(ready['localFileJournal'], True)
-            self.assertIs(ready['productionReadiness'], False)
-            self.assertIs(ready['productionConformance'], False)
-            self.assertEqual(ready['journalRecords'], 0)
-            status, payload, _headers = post_call(
-                port, 'op-clock', 'operator', 'advance_clock',
-                {'domain': domain, 'now': 50},
-            )
-            self.assertEqual(status, 200)
-            self.assertEqual(payload['result']['logicalTime'], 50)
-            status, payload, _headers = post_call(
-                port, 'op-clock-2', 'operator', 'advance_clock',
-                {'domain': domain, 'now': 60},
-            )
-            self.assertEqual(status, 503)
-            self.assertEqual(payload['error'], 'JOURNAL_BUDGET')
-            status, payload, _headers = post_call(
-                port, 'op-clock', 'operator', 'advance_clock',
-                {'domain': domain, 'now': 50},
-            )
-            self.assertEqual(status, 200)
-            self.assertEqual(payload['sequence'], 1)
-            self.assertEqual(payload['result']['logicalTime'], 50)
+            def ready_call():
+                status, raw, _headers = exchange(port, 'GET', READY_PATH)
+                return status, parse_json(raw)
+
+            def command_call(*args):
+                status, payload, _headers = post_call(port, *args)
+                return status, payload
+
+            assert_budget_rejection(self, ready_call, command_call, domain)
 
         with tempfile.TemporaryDirectory() as tmp:
             run_with_server(run, readiness_dir=tmp, max_journal_records=1)
