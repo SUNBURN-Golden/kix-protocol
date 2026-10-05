@@ -1,0 +1,19 @@
+{
+  "sha": "808640d9b49aecf29d8e6f46033c15eca236efa7",
+  "url": "https://api.github.com/repos/MystenLabs/sui/commits/808640d9b49aecf29d8e6f46033c15eca236efa7",
+  "html_url": "https://github.com/MystenLabs/sui/commit/808640d9b49aecf29d8e6f46033c15eca236efa7",
+  "commit": {
+    "message": "[1.79 backport] docker: move bullseye images to bookworm (#27897, #27898) (#27917)",
+    "tree": {
+      "sha": "c4cb873ddc4fe04fd436b44f66240da345a03a6a",
+      "url": "https://api.github.com/repos/MystenLabs/sui/git/trees/c4cb873ddc4fe04fd436b44f66240da345a03a6a"
+    }
+  },
+  "parents": [
+    {
+      "sha": "c13b9acc39e831219c35946533428ffb36fa7107",
+      "url": "https://api.github.com/repos/MystenLabs/sui/commits/c13b9acc39e831219c35946533428ffb36fa7107",
+      "html_url": "https://github.com/MystenLabs/sui/commit/c13b9acc39e831219c35946533428ffb36fa7107"
+    }
+  ]
+}

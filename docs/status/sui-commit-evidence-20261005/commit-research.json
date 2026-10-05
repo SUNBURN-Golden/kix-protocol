@@ -1,0 +1,19 @@
+{
+  "sha": "58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+  "url": "https://api.github.com/repos/MystenLabs/sui/commits/58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+  "html_url": "https://github.com/MystenLabs/sui/commit/58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+  "commit": {
+    "message": "[graphql-stream] Reduce default number of maximum subscribers (#27896)",
+    "tree": {
+      "sha": "b6d9876d9d77f19cadbbdc366555de63fa9fbeea",
+      "url": "https://api.github.com/repos/MystenLabs/sui/git/trees/b6d9876d9d77f19cadbbdc366555de63fa9fbeea"
+    }
+  },
+  "parents": [
+    {
+      "sha": "7d594caf065ec3c587da1850733d39bfb189e4fe",
+      "url": "https://api.github.com/repos/MystenLabs/sui/commits/7d594caf065ec3c587da1850733d39bfb189e4fe",
+      "html_url": "https://github.com/MystenLabs/sui/commit/7d594caf065ec3c587da1850733d39bfb189e4fe"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "ref": "refs/tags/mainnet-v1.79.1",
+  "node_id": "REF_kwDOGWVmxblyZWZzL3RhZ3MvbWFpbm5ldC12MS43OS4x",
+  "url": "https://api.github.com/repos/MystenLabs/sui/git/refs/tags/mainnet-v1.79.1",
+  "object": {
+    "sha": "808640d9b49aecf29d8e6f46033c15eca236efa7",
+    "type": "commit",
+    "url": "https://api.github.com/repos/MystenLabs/sui/git/commits/808640d9b49aecf29d8e6f46033c15eca236efa7"
+  }
+}

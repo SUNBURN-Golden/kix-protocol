@@ -1,0 +1,11 @@
+{
+  "url": "https://api.github.com/repos/MystenLabs/sui/releases/385711025",
+  "html_url": "https://github.com/MystenLabs/sui/releases/tag/mainnet-v1.79.1",
+  "id": 385711025,
+  "tag_name": "mainnet-v1.79.1",
+  "target_commitish": "58386edc269ef88ff0f40ab0a9d50e87cba80ca8",
+  "published_at": "2026-09-09T17:18:01Z",
+  "created_at": "2026-09-08T22:48:23Z",
+  "updated_at": "2026-09-09T18:23:33Z",
+  "immutable": false
+}

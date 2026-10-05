@@ -49,7 +49,28 @@ Sui VM 시험·체인 호출·배포·wallet 작업은 이 문서 노드의 범�
 ## 증거 명령
 
 아래는 이번 조사에서 실행한 조회 명령이다. 공개 GitHub 소스만 읽으며 체인 RPC를 호출하지 않는다.
-API 응답은 전체 transcript 대신 위의 관련 필드와 blob을 기록했다.
+API 응답의 관련 필드를 [캡처 provenance](sui-commit-evidence-20261005/provenance.json)와
+함께 보존했다. 2026-10-05의 후속 조회는 인증 없는 공개 HTTPS GET으로 9개 endpoint에서
+HTTP 200을 받았다. 각 항목은 원본 URL, UTC 조회 시작 시각, curl exit/status,
+원본 응답 SHA-256, 보존한 필드 파일 SHA-256 및 응답 헤더 파일을 명시한다.
+헤더에는 서버 Date, ETag, GitHub request ID가 있다. 헤더 텍스트는 LF 줄바꿈으로
+정규화하고 줄 끝 공백을 제거했으며 별도 SHA-256을 기록했다. JSON은 명시한 필드만 추출한
+캡처이며 전체 원본 응답이 아니다. 해시는 무결성 대조용이지 독립 감사 서명은 아니다.
+리뷰어는 네트워크 조회가 불가능해도 다음 공개 API 필드를 직접 검사할 수 있다.
+
+| 캡처 | 설명에 사용한 필드 |
+|---|---|
+| [release.json](sui-commit-evidence-20261005/release.json) | `target_commitish`, `tag_name`, `published_at` |
+| [tag.json](sui-commit-evidence-20261005/tag.json) | `ref`, `object.type`, `object.sha` |
+| [commit-research.json](sui-commit-evidence-20261005/commit-research.json), [commit-pin.json](sui-commit-evidence-20261005/commit-pin.json) | `sha`, `commit.message` 첫 줄, tree와 parents |
+| [compare.json](sui-commit-evidence-20261005/compare.json) | `status`, `ahead_by`, `behind_by`, `merge_base_commit.sha`; URL의 비교 방향은 pin → research |
+| [object-locks-research.json](sui-commit-evidence-20261005/object-locks-research.json), [object-locks-pin.json](sui-commit-evidence-20261005/object-locks-pin.json) | 각 rev의 `path`, `sha`, `size`, 소스 URL |
+| [protocol-136-research.json](sui-commit-evidence-20261005/protocol-136-research.json), [protocol-136-pin.json](sui-commit-evidence-20261005/protocol-136-pin.json) | 각 rev의 `path`, `sha`, `size`, 소스 URL |
+
+캡처 시 contents 응답 네 개의 base64 content를 디코딩한 뒤
+`SHA1(b"blob " + ASCII(byte_length) + b"\0" + bytes)`도 계산하여 API의 `sha`와
+일치함을 확인했다. content 자체는 캡처에서 제외했다. 릴리스 메타데이터와 태그는
+조회 시점의 관측이며, 과거 필드 사용 절차나 태그 이동 이력을 입증하지 않는다.
 
 ```sh
 git show 0b8b6b484c1b5d49b7cb285e780481061c2b16c7:reference/v0.3-rc1/sui/Move.toml
