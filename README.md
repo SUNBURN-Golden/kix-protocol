@@ -29,13 +29,15 @@ KIX는 티켓 권리·거래 프로토콜을 중심으로 예매, 공식 리셀,
 | R2 및 자체 복제·저장·로그 신규 구현 | **금지 유지**. 단, 비운영 로컬 래퍼인 `readiness/`는 D-3 경계 안에서 허용 | [개발계획 §1·§5](docs/DEVELOPMENT_PLAN.md), [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [프로그램 결정 §4](docs/decisions/PROGRAM_DECISIONS_20260928.md) |
 | (a) PR #11의 wire·저널을 v4 위로 통합 | **착수 승인 없음** | [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [#11 태그 보존·호환성](docs/status/PR11_PRESERVATION.md) |
 | 명칭·죽은 코드·브랜치·태그·Cargo/CI/lint 등 위생 일괄 실행 | **목록만 유지, 실행 금지** | [코드 위생 목록](docs/CODE_HYGIENE_BACKLOG.md), [개발계획 §1](docs/DEVELOPMENT_PLAN.md) |
-| 색인 변경·새 종결/회수/해제 전이 | **첫 묶음에서 제외** | [개발계획 §5·§6.3](docs/DEVELOPMENT_PLAN.md), [수명 계약 초안](docs/contracts/STATE_LIFECYCLE.md) |
+| 색인 변경·새 종결/회수/해제 전이 | **잠금 v4에서 금지**. 새 v5는 사용자 설계 결정 병합 뒤, 열린 입력 의존 부분은 정지 | [개발계획 §5·§6.3](docs/DEVELOPMENT_PLAN.md), [로드맵 R-4](docs/decisions/PROGRAM_ROADMAP_20260930.md) |
+
+로드맵의 조건부 로컬 구현은 실자금·실 PG/은행/KYC·공개 운영 엔드포인트·Sui testnet/mainnet·R2·자체 복제/합의/저장 엔진을 열지 않습니다. 새 coin/TIX 모듈도 잠금이며, 유일한 TL-2 localnet 예외는 Astra 재결정과 사용자 `tl-coin-lock-adr` 병합 뒤입니다. [프로그램 결정 §5](docs/decisions/PROGRAM_DECISIONS_20260928.md)의 해제 조건을 유지합니다.
 
 KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단계 schema·SDK에서 별도 승인 후 KIX Runtime으로 바꿀 예정**이며, 지금 일괄 치환하지 않습니다.
 
 ## 4. 승인된 다음 작업
 
-현재 승인된 것은 **첫 묶음의 잔여 검토·보완**입니다. 잠금 v4의 비교 모델·계약 불변식 검사 검토, LC-FACT/LC-CUT/LC-TERM 수명 계약의 미정 입력 정리, 별도 성능 하네스·측정 계약의 검토를 진행합니다. 구체적인 열린 항목과 답할 주체는 [FIRST_BATCH_OPEN_INPUTS](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md)를 따릅니다.
+첫 묶음의 잔여 검토·보완은 승인 범위에 유지됩니다. 잠금 v4의 비교 모델·계약 불변식 검사 검토, LC-FACT/LC-CUT/LC-TERM 수명 계약의 미정 입력 정리, 별도 성능 하네스·측정 계약의 검토를 진행합니다. 구체적인 열린 항목과 답할 주체는 [FIRST_BATCH_OPEN_INPUTS](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md)를 따릅니다. 후속 승인 범위와 조건은 아래 로드맵 및 개발계획 §5·§18을 함께 읽습니다.
 
 2026-09-17 사용자 결정으로 **토스페이먼츠를 잠정 선택하고, 결제수단 1단계는 토스를 통한 국내 KRW 일반 카드 결제로 한정**합니다. 리셀·금융 대금의 실제 가맹 범위와 일반 결제 웹훅 서명 규격은 미확인이므로 최종 가맹·운영 승인이 아닙니다. 간편결제·가상계좌는 토스 내 수단으로 나중에 검토하며, 간편결제 직접 가맹은 이번 범위가 아닙니다.
 
@@ -57,6 +59,10 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 - **Track P (제품 프로토콜):** Task 005 Wave 0~7과 그 후속입니다. 계약·mock·Move 확장·OpenAPI·비운영 0.x SDK·분리 저장소 앱·AI 위임 계약을 다루며, 게이트 기록만으로 착수합니다. Wave 2~5는 사후 승인됐고, Wave 6은 `kix-commerce-apps`에서 열렸습니다.
 
 실자금·실 제공자 호출·공개 운영 엔드포인트·mainnet·커널 잠금·R2는 계속 잠겨 있습니다. 각 잠금의 해제 조건은 결정 문서 §5에 있습니다.
+
+**후속 로드맵:** [프로그램 로드맵 R-1~R-11](docs/decisions/PROGRAM_ROADMAP_20260930.md)의 #81 병합은 범위 승인이고 실행 시작은 별도 결정·감사·시작 PR·host 자격에 따릅니다. Track K는 사용자 v5 설계 결정 병합 뒤 2단계(열린 입력 의존 부분만 정지), 3단계 적합성, backend 채택 결정과 v5 구현 뒤 5단계 로컬 영속 거래, 합성 금액 경제 참조 모델, 인증 export·CPU/SQL 감사와 GPU 문서 계획을 포함합니다. Track P는 계약 공백 심화·조회·결정된 loopback browser 접근을 포함합니다. 정책 값·새 명령은 `DECISION_REQUIRED · Astra`, 외부 답변 의존 값은 담당을 명시한 `UNDETERMINED`로 둡니다.
+
+Wave 6의 commerce #1·#3~#12 stub·mock·loopback 병합분은 R-8로 사후 승인됐습니다. Wave 7은 commerce `w6a-evidence` 병합 뒤 열리며 protocol 마케팅 계약은 외부 선행 확인 후 별도 plan revision 대상입니다. 전체 완료로 표시하지 않습니다. [TL·RS 범위 및 의존성(개발계획 §18)](docs/DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입)은 #79 병합(`5cf4168`)과 로드맵 R-1~R-3을 반영합니다. TL과 RS는 서로 선행이 아니며 16슬롯 참조는 보존합니다. 현재 노드 입력은 [.aiops/program.json](.aiops/program.json), 감사·병합 경계는 [판정 표](docs/aiops/PROGRAM_ASTRA_DELEGATION.md)를 따릅니다. 후보 채택·pending 승격·운영 활성화는 별도이며 Mac 구현 인계는 legacy DONE이나 프로그램 완료 증거가 아닙니다.
 
 ## 5. 읽는 순서
 

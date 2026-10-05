@@ -10,8 +10,11 @@
 실자금·실 제공자·운영 엔드포인트·mainnet·커널 잠금·R2 잠금은 유지한다.
 
 2026-09-29 — [범위 편입 결정 기록](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) 반영(§18).
-사용자 요청으로 선택적 자체 토큰 계층(TL)과 확장형 권리·재고·검표 계층(RS)을 개발 범위에 편입한다(그 문서를 포함한 PR의 병합으로 효력 발생).
-이번 실행은 설계·계획 문서화에 한정한다. 구현 착수와 운영 발행은 별도 단계이며, 새 coin/TIX 모듈 잠금은 유지한다.
+사용자가 PR #79를 병합(`5cf4168`)하면서 선택적 자체 토큰 계층(TL)과 확장형 권리·재고·검표 계층(RS)의 범위 편입을 승인했다.
+당시 승인은 설계·계획 문서화에 한정했다. 이후 조건부 구현 범위는 아래 로드맵을 따르며, 운영 발행과 새 coin/TIX 모듈 잠금은 유지한다.
+
+2026-09-30 — [프로그램 로드맵 R-1~R-11](decisions/PROGRAM_ROADMAP_20260930.md) 반영.
+#81 병합은 범위 승인이고 실행 시작은 별도 시작 결정·감사·병합·host 자격의 대상이다. 현재 노드 정의와 의존성은 [.aiops/program.json](../.aiops/program.json), 감사·병합 경계는 [PROGRAM_ASTRA_DELEGATION](aiops/PROGRAM_ASTRA_DELEGATION.md)을 따른다. 이번 Mac 구현 인계는 legacy DONE·프로그램 완료·운영 활성화의 증거가 아니다.
 
 근거 원안: 제출 문서 Git blob `57adb8d579986a945b716f0f181c0be938ceb389`.
 원안은 GitHub에서 검증된 기존 정본이 아니었다. 해당 제출 바이트를 로컬
@@ -43,7 +46,7 @@ PG는 사용자 결정으로 **토스페이먼츠 잠정 선택**. 결제수단 
 - **Track K:** 이 문서 §5의 1~8단계다. 기존 순서와 잠금을 유지하고, 4단계 비교 준비·탐색 실측을 새로 연다.
 - **Track P:** [Task 005](tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md)의 Wave 0~7과 그 후속 심화다. 게이트 기록만으로 착수한다.
 
-범위와 잠금 해제 조건은 [프로그램 결정](decisions/PROGRAM_DECISIONS_20260928.md) §2·§5를 따른다.
+현재 범위는 [로드맵](decisions/PROGRAM_ROADMAP_20260930.md) R-1~R-11을 함께 따른다. Track K의 조건부 v5·적합성·로컬 영속 거래·합성 경제·인증 export와 Track P의 계약 공백 심화·조회·loopback 접근, TL·RS 후속을 포함한다. 개별 선행 병합·아키텍처 감사·작업 입력을 충족해야 하며, 정책 값과 새 명령은 `DECISION_REQUIRED · Astra`, 법률·세무·회계·제공자 답변 의존 값은 담당을 명시한 `UNDETERMINED`로 둔다. 잠금 해제 조건은 [프로그램 결정](decisions/PROGRAM_DECISIONS_20260928.md) §5를 유지한다.
 
 10~16인 개발일은 계획용 노력 추정이며 이 PR의 완료 주장이나 납기 약속이 아니다.
 (a) 통합은 보류, R2 및 자체 복제·저장·로그 구현 금지는 유지한다. 먼저 수명
@@ -103,20 +106,20 @@ Move는 유지한다. TypeScript SDK나 Python 시험 도구까지 Rust로 강�
 | 단계 | 범위 | 현재 착수 판단 |
 |---|---|---|
 | 1 | v4 E-4, 수명 계약, 성능 계약·측정 장치 | 첫 묶음 승인. v4 코드 수정 금지 |
-| 2 | 종결·회수·보존·재시도·격리 해제와 색인 | 계약 검토 이후 별도 구현 승인 |
-| 3 | schema·버전·SDK·독립 클라이언트 적합성 | 미착수. 잠금 영향 명칭 치환도 이때 재승인 |
+| 2 | 종결·회수·보존·재시도·격리 해제와 색인 | R-4: 사용자 v5 설계 결정 병합 뒤 새 crate 구현. 열린 입력에 기대는 부분만 DECISION_REQUIRED. 잠금 v4 불변 |
+| 3 | schema·버전·SDK·독립 클라이언트 적합성 | R-5: 적합성 작업 승인, p-sdk-1 선행. 안정 1.0·공개 배포·일괄 명칭 치환은 별도 결정 |
 | 4 | 실행·저장 후보 비교 | §9의 단일 비교표 사용. 실측 범위 별도 확정 |
-| 5 | 선택 backend의 영속 거래·inbox/outbox | 미승인. 자체 R2 금지 해제와 별개 판단 |
-| 6 | 경제·Move·복합 거래 | 최종 범위 유지. 설계와 실행 완료 구분 |
-| 7 | 인증 export·CPU 분석·SQL 감사 | 실제 정본과 출처·시점·권한 연결 필요 |
-| 8 | native GPU 선택적 가속 | 의미론 일치·전송비용 포함 측정 이후 |
+| 5 | 선택 backend의 영속 거래·inbox/outbox | R-6: 사용자 backend 채택 결정 병합과 v5 구현 뒤 로컬·비운영 구현. 자체 R2·복제·합의 잠금 유지 |
+| 6 | 경제·Move·복합 거래 | R-10: 합성 금액 참조 모델만 승인. 5단계·정산·예매/리셀/검표 계약 심화 선행 |
+| 7 | 인증 export·CPU 분석·SQL 감사 | R-11: 5단계 로컬 원천 위 인증·일관 export, 그 뒤 CPU/SQL 의미론 감사 |
+| 8 | native GPU 선택적 가속 | CPU/SQL 감사 뒤 문서 전용 계획. 가속 구현·성능 달성 승인 아님 |
 | 병행 | AI 위임·금융 확장 | 필요한 공통 권한·경제 계약에 연결. GPU 선행 아님 |
 
 현재 첫 묶음에 새 회수 정책의 구현, 물리 저널, 복제, frontend, 색인 변경은 없다.
 
-2026-09-28 기준 이 표는 Track K다.
+이 표는 Track K이며 9월 28일 결정과 후속 로드맵을 반영한다.
 - 4단계는 비교 계획·후보 선별·로컬 탐색 실측까지 열렸다. backend 채택은 별도 결정이다.
-- 2단계 구현은 여전히 별도 승인 대상이다. 권장 경로는 잠금 v4를 둔 채 새 버전 crate를 추가하는 것이다.
+- 현재 2단계 조건은 R-4다. 사용자 v5 설계 결정 병합이 별도 승인이며, 열린 입력 전체의 확정을 기다리지 않고 해당 부분만 정지한다. 잠금 v4를 둔 채 새 버전 crate를 추가한다.
 
 Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항목이다.
 - 계약·참조 모델·mock
@@ -125,7 +128,7 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 - 분리 저장소 앱
 - AI 위임 계약
 
-게이트는 [프로그램 결정](decisions/PROGRAM_DECISIONS_20260928.md) §3을 따른다.
+게이트는 [프로그램 결정](decisions/PROGRAM_DECISIONS_20260928.md) §3과 [로드맵](decisions/PROGRAM_ROADMAP_20260930.md) R-7~R-9·R-11을 따른다. Wave 7은 commerce `w6a-evidence` 병합 뒤 열리며, protocol `wave7-marketing-contracts`는 외부 선행 확인 후 별도 plan revision으로 편입한다. 조회는 상태를 바꾸지 않으며 browser 접근은 결정된 방식·기본 꺼짐·loopback 출처만 허용한다. on-sale admission control은 5단계 뒤 별도 계약·감사 경로를 따른다.
 
 ## 6. E-4와 상태 수명
 
@@ -337,6 +340,10 @@ Rust 기준 의미론과 Polars·DuckDB를 null/정렬/join/overflow/정수 금�
 
 ## 17. 2026-09-28 main 반영 현황과 결정
 
+아래 9월 28일 목록과 CI는 당시 기록이다. 후속 [로드맵](decisions/PROGRAM_ROADMAP_20260930.md) R-7은 commerce `w6a-evidence` 병합을 Wave 7 조건부 게이트로 정했고, R-8은 commerce #1·#3~#12의 stub·mock·loopback 병합분을 사후 승인했다. #13 CI는 게이트 뒤 병합분이다. #3 마케팅 stub은 stub으로만 인정하며 Wave 7 개방 전 계약에 결합하지 않는다. 이를 Wave 6 전체 완료나 외부 선행의 완료 증거로 읽지 않는다.
+
+현재 Mac 노드 입력은 [.aiops/program.json](../.aiops/program.json)의 `roadmap-sync`이며 canonical 선행은 없다. pending/external 항목은 [pending catalogue](decisions/PROGRAM_ROADMAP_20260930_PENDING.json)에 보존한다. [확대 후보](aiops/PROGRAM_EXPANSION_20261002_KO.md)·[등록 범위](aiops/REGISTRATION_SCOPE_APPROVAL_KO.md)의 별도 채택 전에는 현재 계획을 후보 집계로 바꾸지 않는다. 별도 채택 시 immutable 후보의 protocol active 67/pending 1, commerce active 10/pending 20 포인터·집계를 반영하고 과거 결정·증거·집계는 그대로 연결한다.
+
 2026-09-25~27 main에는 다음이 병합됐다. 목록·CI 상태·근거 표시는 [main 상태 정합 기록](status/MAIN_STATE_20260928.md)에 있다.
 
 - Task 004 측정 장치(§7)
@@ -368,8 +375,8 @@ Rust 기준 의미론과 Polars·DuckDB를 null/정렬/join/overflow/정수 금�
 
 사용자 요청으로 아래 두 항목을 개발 범위에 편입한다. 근거·한계·기존 제한과의 공존은
 [범위 편입 결정 기록](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md)이 정한다.
-그 문서를 포함한 PR을 사용자가 병합할 때 효력이 생긴다.
-**이 절은 범위·의존성·우선순위의 기록이다. 구현 착수, 배포, 토큰 발행의 승인이 아니다.**
+PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위는 [로드맵](decisions/PROGRAM_ROADMAP_20260930.md) R-1~R-3을 함께 따른다.
+**이 절의 범위 승인은 개별 노드 착수 게이트·감사·배포·토큰 발행 승인을 대체하지 않는다.**
 
 | 보완 항목 | 성격 | 청사진 | 현재 상태 |
 |---|---|---|---|
@@ -378,15 +385,15 @@ Rust 기준 의미론과 Polars·DuckDB를 null/정렬/join/overflow/정수 금�
 
 ### 18.1 승인된 것과 승인되지 않은 것
 
-| | 이번 편입으로 승인 | 승인되지 않음 |
+| | 범위 편입과 후속 로드맵 | 유지되는 조건·잠금 |
 |---|---|---|
-| TL | 설계·계획 문서화. 작업문서가 발급되면 TL-A(범위·한계 ADR), 그 뒤 TL-0·TL-1(문서 전용). Astra 판정: 이 청사진은 Task 005의 ADR 트리거에 해당하므로 ADR을 TL-0 앞에 둔다(결정 기록 §4.1) | TL-2 이후. **새 coin/TIX 모듈 구현의 잠금(ADR + Astra 재결정)은 그대로다.** 토큰 생성·민팅·판매·유통·풀 개설·바이백, 배포, 실자금 |
-| RS | 설계·계획 문서화. 작업문서가 발급되면 RS-0(문서). RS-1·RS-2·RS-3a는 Track P의 게이트 기록 범위로 읽는다(해석. 새 패키지·새 회로를 프로그램 결정 §2.1의 "`rights`·`zk_gate` 확장"으로 읽는 것은 RS-0 결정 문서 확정 전에 사용자·Astra가 명시 확인한다) | RS-3b(Rust 위임 실행, Track K의 별도 승인), 운영 배포, 커널 잠금 변경 |
+| TL | R-1은 D-B 수락: TL-A → TL-0 → TL-1. R-3은 U2(담보)·U3(보상) 설계 범위이며 최종 확정은 사용자 tl-0 병합. TL-3 off-chain은 TL-1 뒤, on-chain은 TL-2와 off-chain 뒤 | **coin/TIX 잠금 유지.** 유일한 TL-2 localnet 예외도 Astra 재결정과 사용자 tl-coin-lock-adr 병합 뒤. TL-4 검증·TL-5 운영 판단은 선행을 충족해야 하며 실자금·운영 발행은 미승인 |
+| RS | R-2는 D-D의 독립 객체 분할 및 rights·zk_gate 확장 해석을 조건 (a)~(e)와 함께 수락. RS-0 설계·감사 뒤 새 프로파일 RS-1 → RS-2·RS-3a → 단계별 RS-4 localnet 검증 | coin/TIX 불포함, 16슬롯 참조 불변, localnet 한정. RS-3b는 RS-3a와 Track K v5 별도 승인·구현 선행. 수명 전이를 R-2만으로 승인하지 않음. 운영 배포·커널 잠금 변경 미승인 |
 
 ### 18.2 의존성과 우선순위
 
-- TL과 RS는 **서로의 선행조건이 아니다.** 다른 트랙에 대한 **직접** 의존은 RS-3b가 Track K(2단계 v5 설계·승인)에, TL-2가 새 coin/TIX 모듈 잠금 해제에 두는 것뿐이다. TL-3의 온체인 부분과 TL-4·TL-5는 TL-2를 거쳐 간접 의존하고, TL-5는 프로그램 결정 §5에도 직접 의존한다.
+- TL과 RS는 **서로의 선행조건이 아니다.** 다른 트랙에 대한 **직접** 의존은 RS-3b가 Track K(2단계 v5 설계·승인·구현)에, TL-2가 새 coin/TIX 모듈 잠금 해제에 두는 것뿐이다. TL-3의 온체인 부분과 TL-4·TL-5는 TL-2를 거쳐 간접 의존하고, TL-5는 프로그램 결정 §5에도 직접 의존한다. 현재 canonical 선행은 `.aiops/program.json`의 각 노드 정의를 따른다.
 - 진행 중이거나 예정된 Track K·Track P 작업은 이 편입 때문에 중단하거나 순서를 바꾸지 않는다.
 - 권고 순서는 RS-0(문서)을 먼저 두고, TL-A(ADR)를 거친 TL-0(문서)와 외부 검토(TL-L)를 RS-0과 병행하고, 이어서 RS-1·RS-2·TL-1, 그다음 RS-3a·RS-4·TL-2(잠금 해제 뒤)다. 세부는 결정 기록 §5.
-- 후속 작업의 범위·인수 조건은 두 청사진의 §8(RS)·§12(TL)에 있다. **작업문서가 아니며 dispatch 대상이 아니다.** 작업문서는 승인된 orchestrator가 작성자 세션 밖에서 확정한다.
+- 후속 작업의 설계 근거·인수 조건은 두 청사진의 §8(RS)·§12(TL)에 있다. **청사진 자체는 작업문서나 dispatch 대상이 아니다.** 현재 노드의 완전한 spec·선행은 `.aiops/program.json`에 보존하며, 실행 입력은 승인된 orchestrator/host가 작성자 세션 밖에서 확정한다.
 - 원래 32개 항목의 라벨과 31/1 집계, 과거 Task 005와 9월 28일 결정은 바꾸지 않았다. TL·RS는 관련 행에 연결만 한다(결정 기록 §5.4).
