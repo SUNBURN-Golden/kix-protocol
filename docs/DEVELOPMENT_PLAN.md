@@ -274,6 +274,152 @@ R2 비용 증액 전제로 쓰지 않는다. **동일 버전 단일 소비와 �
 그 두 가지의 완료만으로 모든 착수 조건이 충족되거나 R2/(a)가 자동 승인되는 것도 아니다.
 객체 배치 설계·Kiosk·zkLogin·SDK/gas 모드 선정은 이번 범위에서 제외한다.
 
+### 9.2 비교 준비 계획 — 탐색 자료 (2026-10-06)
+
+입력은 base `403d3e29413b1e78c5da945cd33389b50d4514a4`의
+[.aiops/program.json](../.aiops/program.json) 노드 `k-stage4-comparison-plan`이다.
+canonical 선행은 없다. [프로그램 결정](decisions/PROGRAM_DECISIONS_20260928.md)
+§2.2의 **1~2번(계획·공식 자료 선별)만** 이 산출물에 해당한다.
+아래는 **탐색 자료 / exploration data**이며 측정 결과·backend 채택 결정이 아니다.
+§9의 기존 비교축 표를 그대로 사용하고 별도 비교표를 만들지 않는다.
+
+**목표와 거래 경계.** 승인된 것은 동일 업무·내구성 조건을 준비하고 기능 부족과
+추가 구현 비용을 확인하는 일이다. 절대 TPS·p99·허용 실패율·RTO/RPO의 승인 수치는
+없다. 2배/0.1%도 채택하지 않는다. 탐색의 기능 판정은 다음 기존 요구에 둔다.
+
+- 합성 재고에서 명령 identity와 원payload(또는 검증 가능한 결합), 최초 결과,
+  예약·최소 주문·외부 의도를 한 업무 트랜잭션으로 보존한다. 업무 거절에는 주문이
+  없어도 명령 결과가 필요하다. 외부 의도 기록은 PG·은행·체인 실행이 아니다.
+- 동일 ID·동일 입력은 검증된 최초 결과와 원래 commit/receipt 근거를 반환한다.
+  동일 ID·다른 입력은 거절한다. 응답 유실 뒤에도 신규 경제 효과를 만들지 않는다.
+  복구 미완료·조회 불능·timeout은 UNKNOWN으로 보류하며 미실행/최종 실패로 바꾸지 않는다.
+- entry/byte 예산 포화에서 신규 admission과 읽기 전용 원결과 조회를 분리한다.
+  retry 조회의 추가 WAL/log·fsync·예산 소비를 계측할 계획이다. 실패 결과·상태 변경형
+  Capacity도 버리지 않는다. 저장소 내부 housekeeping I/O는 업무 신규 쓰기와 따로 기록한다.
+- 재고 경합·GA 한도·명령 중복·관계 제약은 backend 종류와 무관하게 유지한다.
+  SQL/키값 재고는 격리된 합성 fixture만 쓰며 실제 체인 위임 재고의 writer가 되지 않는다.
+  u128 정본을 signed DB 정수로 축소하지 않고 표현·검증 비용을 포함한다.
+
+**ACK와 안정 저장.** 비교 기준 ACK는 위 업무 단위의 commit 성공 및 선언한 장애
+범위의 안정 저장 이후에만 반환하는 응답이다. 메모리 적용·비동기 flush·외부 자금 확인을
+동일 ACK로 세지 않는다. PostgreSQL은 `fsync=on`, `full_page_writes=on`과 로컬 WAL flush를
+기다리는 `synchronous_commit=on`(동기 standby 없는 로컬 구성)을 기준안으로 둔다.
+FoundationDB/TiKV는 선택 버전·client API·복제 설정의 commit 완료와 안정 저장 조건을
+공식 자료 및 적합성 시험으로 확인한 뒤 같은 로컬 장애 범위에 묶는다. Raft 과반 ACK를
+단일 디스크 flush와 같은 장애 보장으로 단정하지 않는다. 해당 설정을 확인하지 못하면
+그 후보의 내구성 동등 비교는 보류한다. cache hit에는 새 commit 근거를 만들지 않는다.
+
+**장애 범위.** 후속 로컬 탐색의 공통 범위는 disposable backend/client 프로세스의
+commit 전 중단, commit 후 응답 전 유실, 재시작, 찢긴 tail/손상 검출, 예산 거절,
+동시 재고 경합과 동일 명령 경합이다. 복구 뒤 ACK된 결과 보존·중복 효과 부재·손상 시
+fail-closed를 확인한다. 로컬 디스크가 유지되는 process crash와 전원/OS crash는 구별한다.
+현재 Mac의 전원·OS 장애를 주입하지 않으며, 실제 stable-media flush의 하드웨어 보장은
+장비 자료와 별도 검증 없이는 미검증이다. 한 host의 여러 replica는 독립 장애 도메인이
+아니다. 디스크 영구 소실·host 상실·네트워크 분할·과반 상실·다중 지역·Byzantine 장애·
+PG/bank exactly-once·Sui finality는 이 공통 로컬 비교의 보장 밖이다. 후보 고유 복제 장애는
+별도 조건으로 표시하고 공통 성능 표본에 섞지 않는다. 자체 복제/합의 구현은 하지 않는다.
+
+**장비·비용.** 이번 문서/공개 자료 검토에는 장비 구매·클라우드·유료 서비스·quota가
+필요하지 않고 지출하지 않는다. 후속 탐색은 이미 사용 허가된 로컬 장비와 격리된 임시
+데이터 경로만을 후보로 삼는다. 실행 담당자가 시작 전에 CPU/architecture·RAM·OS·디스크
+모델/여유 공간/flush 특성·toolchain·backend/client 버전·프로세스/replica 수·자원 상한을
+기록하고, 모든 후보에 동일한 **총** CPU/RAM/디스크 예산을 적용해야 한다. PD·proxy·
+복제본·driver·관측의 자원도 총량에 포함한다. 특정 Mac에서의 설치 가능성·가용 용량은
+아직 확인하지 않았으며, 이 계획은 설치나 host 서비스 가동 권한이 아니다.
+
+기존 장비 재사용도 총비용 0이라는 뜻은 아니다. 실행 시간·저장 byte/증폭·CPU/RAM·
+복구 시간·adapter 구현/유지 노력·패치/백업/대사 작업을 기록하고, 인건비·장비 감가·
+전력 단가·연간 운영비·투자 한도는 **UNDETERMINED — 사용자/운영 책임자**로 남긴다.
+실행자는 기능/측정 근거를, 운영 책임자는 복구·패치·보존 책임과 비용 입력을 인계한다.
+새 장비·VM/클라우드·라이선스·지원 계약 등 지출이 필요하면 구매/실행 전에
+**DECISION_REQUIRED**로 멈춘다. 이번 계획은 예산 승인이나 운영 책임자 지명이 아니다.
+
+### 9.3 공식 자료 후보 선별 — 탐색 자료
+
+2026-10-06 읽은 공식 문서의 기능 설명과 KIX 요구의 간극을 아래에 기록한다.
+PostgreSQL은 18 문서, FoundationDB와 TigerBeetle은 조회 시점의 온라인 문서다.
+온라인 문서는 움직일 수 있으므로 후속 실행은 실제 binary/client 버전·문서 revision과
+설정을 pin해야 한다. 공식 수치/데모를 KIX 실측이나 적합성 PASS로 전용하지 않는다.
+
+- **PostgreSQL — 우선 탐색 후보 유지.** [18 transaction isolation](https://www.postgresql.org/docs/18/transaction-iso.html),
+  [18 WAL 설정](https://www.postgresql.org/docs/18/runtime-config-wal.html),
+  [18 reliability](https://www.postgresql.org/docs/18/wal-reliability.html)는 serializable
+  거래와 commit WAL flush/하드웨어 cache의 경계를 설명한다. 관계형 업무 단위를 묶을
+  비교 기준으로 적합하나 KIX schema·명령 결과 저장·payload 충돌 검사·합성 재고 경합·
+  entry/byte admission·읽기 전용 retry 경로는 별도 설계/검증이 필요하다. serialization
+  failure 처리는 원 ID와 결합하고 자동 재시도를 새 업무 성공으로 세지 않는다.
+  원결과 조회가 예산 포화에서도 동작한다는 실증은 아직 없다.
+- **FoundationDB — 우선 탐색 후보 유지, 크기/시간 경계 확인 조건.**
+  [developer guide](https://apple.github.io/foundationdb/developer-guide.html)의
+  Transactions, Conflict ranges, Transactions with unknown results와
+  [known limitations](https://apple.github.io/foundationdb/known-limitations.html)을 읽었다.
+  ordered key-value의 다중 key 거래·serializable conflict 검사는 후보 가치가 있다.
+  snapshot read/conflict range 생략은 정합성을 약화할 수 있다. 조회 문서의 거래 한도는
+  affected data 10,000,000 bytes, 장기 거래는 약 5초이며 이는 **backend 제약이지 KIX SLO가
+  아니다**. key/value 한도도 입력 fixture와 대조해야 한다. 관계/인덱스·재고·결과·예산을
+  application layer에 표현하는 부담, client/cluster 운영·인증 경계를 포함한다.
+  `commit_unknown_result`에서 미실행을 추정하거나 side effect를 retry loop에 넣지 않는다.
+  KIX의 검증된 최초 결과 조회·같은 identity 보존은 별도 증명이 필요하다.
+- **TigerBeetle — 이번 전체 업무 단위의 단독 backend 실측 후보에서 제외.**
+  [system architecture](https://docs.tigerbeetle.com/coding/system-architecture/),
+  [data modeling](https://docs.tigerbeetle.com/coding/data-modeling/),
+  [linked events](https://docs.tigerbeetle.com/coding/linked-events/)는 account/transfer와
+  일반 metadata 저장소의 역할을 분리하고, linked account/transfer chain의 원자성을
+  설명한다. 그 기능만으로 임의 KIX 주문·예약·명령 원문/거절 결과·외부 의도를 같은
+  commit에 보존하는 API는 확인하지 못했다. companion DB의 metadata commit을 linked
+  transfer와 원자적이라고 가정할 수 없다. ledger 전용 throughput 비교는 요구 경계를
+  줄이므로 하지 않는다. 이는 ledger 제품의 일반적 부적합 판정/채택 거절이 아니라 이
+  비교의 단독 backend 범위에 대한 선별이다. 결합 backend 설계·경제 단계 판단은 별도다.
+- **TiKV — 조건부 예비 후보.** 공식 website 7.1의
+  [distributed transaction](https://github.com/tikv/website/blob/1578bc39bd256d4e894ce341a108be1647b9e14d/content/docs/7.1/concepts/explore-tikv-features/distributed-transaction.md),
+  [replication/rebalancing](https://github.com/tikv/website/blob/1578bc39bd256d4e894ce341a108be1647b9e14d/content/docs/7.1/concepts/explore-tikv-features/replication-and-rebalancing.md),
+  [fault tolerance](https://github.com/tikv/website/blob/1578bc39bd256d4e894ce341a108be1647b9e14d/content/docs/7.1/concepts/explore-tikv-features/fault-tolerance.md)
+  원문을 읽었다. `tikv.org` 해당 경로는 HTTP 오류로 읽지 못해 공식 저장소의 위 commit을
+  근거로 사용했다. TxnKV는 snapshot isolation과 optimistic/pessimistic write conflict를
+  설명한다. SI를 serializable과 동일시하지 않으며, write skew를 막는 공통 충돌 key/관계
+  검증이 KIX 불변식을 보존하는지 후속 적합성 시험이 필요하다. RawKV 데모는 다중 key
+  업무 거래 증거가 아니다. Region Raft replicas와 PD의 추가 자원/운영 부담도 포함한다.
+  선택 release/client의 ACK·flush 설정 및 전체 업무 mapping 확인 전 우선 실측군에 넣지
+  않는다. 문서의 노드 장애 데모가 이 Mac의 독립 host 장애 보장을 뜻하지 않는다.
+
+우선 비교 준비군은 PostgreSQL/FoundationDB 두 개다. 두 후보도 아직 채택/적합성 PASS가
+아니다. TiKV의 조건이 충족되면 후속 노드에서 같은 범위로 비교 여부를 기록한다.
+기성 제품의 문서상 불일치/미확인만으로 자체 KIX 저장 엔진이나 R2를 정당화하지 않는다.
+
+### 9.4 기존 증거·후속 실행 인계
+
+기존 coverage는 다음과 같이 구분한다. 새 runtime test나 backend adapter는 이번에 추가하지 않는다.
+
+- **충분히 covered(요구/측정 의미):** §9의 기존 비교축과
+  [PERFORMANCE_MEASUREMENT](contracts/PERFORMANCE_MEASUREMENT.md)는 신규 성공·업무 거절·
+  retry·Capacity와 scheduled/service latency·포화 이후 표본 보존을 정의한다.
+  `runtime/crates/kix-kernel/tests/performance_harness.rs`는 memory-only 장치 회귀이며
+  backend I/O 실증이 아니다.
+- **부분 covered(로컬 fault 시나리오):** `readiness/test_faults.py`의
+  `StoreTests.test_torn_tail_is_discarded_and_a_bad_checksum_fails_closed`와
+  `readiness/conformance.py`의 `test_budget_rejection_preserves_records_and_replay_identity`,
+  `test_settlement_crash_before_durable_authorize_applies_once`,
+  `test_concurrent_reservation_holds_occupy_the_slot_once` 등은 torn write·복구·예산·
+  중복·경합을 다룬다. readiness의 비운영 local adapter 증거이며 네 후보의 PASS는 아니다.
+- **이번 문서로 채운 gap:** 동일 업무/ACK/장애/장비·비용의 준비 계획과 공식 자료 선별.
+  **not covered:** 후보별 실제 mapping·동등 내구성·포화 원결과 조회·goodput/p99/비용 실측·
+  hardware flush/독립 장애 도메인 검증. 이를 자료 조회나 memory smoke로 완료 처리하지 않는다.
+
+후속 `k-stage4-local-exploration`의 canonical 선행은 이 노드와
+`k-readiness-conformance-suite`다. 실제 승인/병합 근거를 host가 확인한 뒤, 실행자는 동일
+입력·검증·예산·총 장비 자원·ACK·장애 범위를 고정하고 버전/설정과 fixture/seed를 남긴다.
+저부하·균등·hot seat·동일 명령 retry·이력 증가/포화를 분리하며 신규 성공 goodput과
+outcome별 scheduled/service latency, 원시 표본·거절·오류·복구·공간/비용을 보존한다.
+warmup·실행 길이·반복·도착률·동시성은 탐색 설정으로 명시하고 제품 목표로 승격하지 않는다.
+업무 경계나 장애 보장이 다르면 우열 결론을 보류한다. 이 문서는 그 실행을 하지 않았다.
+
+I02~I13의 미완결 정책/외부 입력은 [열린 입력](contracts/FIRST_BATCH_OPEN_INPUTS.md)의
+담당과 상태를 유지한다. 보존기간·제공자 보증·권위 cut을 이 선별로 결정하지 않는다.
+인계 완료는 이 Mac 구현 단계의 문서 준비를 뜻한다. A2 비작성자 review, app의 Draft
+게시 이후 실제 exact-head KTX/KIX CI와 독립 최종 supervision은 여전히 필요하며,
+skipped/absent CI는 전체 검증 PASS가 아니다. backend 채택은 별도 사용자 결정,
+5단계는 채택 결정 병합과 v5 선행, R2는 §5 잠금 해제 근거/사용자 승인 뒤다.
+
 ## 10. backend 선택 이후 영속 거래
 
 명령·원payload·최초 결과·예약·최소 주문·외부 의도를 원자적으로 보존하고,
