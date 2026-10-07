@@ -126,6 +126,35 @@ Explicit human authorizations granted after this list are recorded under `docs/d
 - They open Track P (Task 005 waves) on gate records.
 - They keep every other item in this list locked, each with its unlock criteria.
 
+The later scope pointers are `docs/decisions/PROGRAM_ROADMAP_20260930.md` §2,
+subject to its §1: the decision takes effect only when the User merges it;
+scope approval does not activate execution, which retains the separate start
+and audit gates. Within that scope:
+
+- **R-4:** Track K stage 2 lifecycle transitions belong in a new v5 crate,
+  only after the User merges `k-stage2-v5-design-decision`. The locked v4 files
+  remain unchanged. An unresolved first-batch input stops only the part that
+  depends on that input with `DECISION_REQUIRED`; it does not authorize guessed
+  semantics or policy values.
+- **R-6:** Track K stage 5 durable transactions are local and non-production,
+  on the adopted backend, only after the User merges
+  `k-stage4-adoption-decision` and the canonical `k-stage2-v5-impl` dependency
+  is satisfied. R2 and custom replication, consensus and storage engines remain
+  locked.
+- **R-2:** New rights-scale packages and circuits may be read as the existing
+  `rights`/`zk_gate` extension scope under
+  `docs/decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md` D-D conditions
+  (a)–(e): no coin/TIX or new economic-asset module, unchanged 16-slot reference
+  profile, localnet only, separate Track K v5 approval for RS-3b, and no stage 2
+  lifecycle/GC authorization from R-2.
+
+Every lock and unlock condition in `PROGRAM_DECISIONS_20260928.md` §5 remains.
+The options are to retain the older pointers alone (leaving the later conditional
+scope hard to find), or add these R-row pointers (making the conditions explicit
+without lifting locks). The recommendation is the latter. This documentation
+does not act on that recommendation by starting the referenced implementations,
+adopting a backend, lifting a lock or authorizing merge or release.
+
 Model 1 (chain authority / off-chain delegated execution) is the approved authority model, but the current v4 kernel is not a complete implementation of it.
 
 ## 6. Change discipline
