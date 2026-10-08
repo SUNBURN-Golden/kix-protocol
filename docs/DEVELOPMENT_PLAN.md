@@ -207,17 +207,17 @@ PostgreSQL/TigerBeetle/FoundationDB/TiKV는 후보이며 자체 KIX Runtime 저�
 일괄 치환하지 않는다. 요구에 맞지 않는 후보는 공식 자료·구체 부족 근거로
 제외하고 비교 가치가 있는 소수만 동일 거래 범위에서 실측한다.
 
-| 비교축 | 질문·기록할 결과 |
-|---|---|
-| 원자적 업무 범위 | 주문·예약·명령 결과·외부 의도를 같은 단위로 묶는가 |
-| 별도 구현 부담 | 추가 자료구조·인증·관계 검사·대사 기능은 무엇인가 |
-| 확정·장애·복구 | 같은 ACK·안정 저장·허용 장애에서 어떤 결과가 남는가 |
-| **상한과 멱등 조회** | 신규 쓰기 entry/byte 예산 만석에서도 검증된 최초 결과를 읽는가. 재시도가 새 WAL/log·fsync·예산을 소비하는가. 동일 ID 변조는 거절하는가 |
-| **응답 유실·재시작** | 같은 명령의 최초 결과와 원래 내구성 근거를 반환하는가. cache miss나 복구 미완료를 미실행으로 처리하지 않는가 |
-| 자료·운영 연결 | 관측·export·보존·업그레이드·자동화 비용 |
-| 인력·투자 | 책임자·장애 대응·패치·연간 유지 작업량·투자 한도 |
-| 동등 조건 성능 | 같은 입력검증·정합성·내구성·실패 모델의 지속 성공 goodput·지연·비용 |
-| **외부 Sui 서명·미확정 거래 인계** | R2가 별도 승인될 경우 객체당 논리적 서명 권한 단일화와 구 리더 미확정 거래 인계를 반드시 다룬다. 동일 owned 입력 버전·전체 입력 집합, 원거래 bytes/digest/서명·effects, 실제 서명 권한 차단과 이미 노출된 거래의 대사를 구분한다. 아래 §9.1 참조. |
+| 비교축 | 질문·기록할 결과 | PostgreSQL 탐색 자료 (2026-10-08) | FoundationDB 탐색 자료 (2026-10-08) |
+|---|---|---|---|
+| 원자적 업무 범위 | 주문·예약·명령 결과·외부 의도를 같은 단위로 묶는가 | 탐색 자료. 한 로컬 트랜잭션에 명령 identity, payload sha256, 최초 결과, 합성 show `synthetic-show`의 slot, 최소 주문, 외부 의도 기록(`FIXTURE_NOT_DISPATCHED`, 호출 없음)을 commit한다. 업무 거절은 주문 없이 명령 결과만 남긴다. 금액은 u128 십진 문자열이다. 체인 재고 writer는 없다. | 탐색 자료. 같은 필드를 한 FoundationDB 트랜잭션의 여러 key로 commit한다. 관계·재고·결과는 application key다. 체인 재고 writer는 없다. |
+| 별도 구현 부담 | 추가 자료구조·인증·관계 검사·대사 기능은 무엇인가 | 탐색 자료. 명령 결과 표, slot 표, 충돌 관찰 표, entry/byte 예산, crc가 adapter에 있다. serializable 거래를 쓴다. 로컬 readiness `BackendConformance`를 이 adapter로 통과했다. 채택은 아니다. | 탐색 자료. key prefix, meta index, crc, 예산, conflict range가 adapter에 있다. 재시도 조회만 snapshot read이고 신규 성공의 쓰기 트랜잭션은 snapshot read를 쓰지 않는다. 버전 7.3.77, redundancy `single`, storage/log `ssd-2`, coordinator 1, commit proxy 3, GRV proxy 1, resolver 1, usable region 1의 단일 프로세스다. 같은 conformance를 통과했다. 채택은 아니다. |
+| 확정·장애·복구 | 같은 ACK·안정 저장·허용 장애에서 어떤 결과가 남는가 | 탐색 자료. ACK는 `synchronous_commit=on`, `fsync=on`, `full_page_writes=on`의 commit 반환이다. `data_checksums=on`, `listen_addresses`는 비어 있고 유닉스 소켓만 쓴다. `autovacuum=off`는 짧은 탐색에서 retry WAL을 vacuum과 섞지 않으려는 설정이다. SIGKILL 후 디스크가 남은 재시작에서 최초 결과가 보존됐다(`restart_to_replay_ns` 323014119). checksum 불일치는 `CHECKSUM_MISMATCH`로 닫힌다. `partial`은 rollback, `crash_before_durable`은 미기록이다. 전원·OS crash는 주입하지 않았고 하드웨어 flush는 미검증이다. 내구성 동등 비교와 우열 결론은 보류다. | 탐색 자료. ACK는 commit 반환이다. zone 장애 허용은 데이터·가용성 모두 0이다. 한 호스트의 프로세스 1개는 독립 장애 도메인이 아니다. SIGKILL 후 디스크가 남은 재시작에서 최초 결과가 보존됐다(`restart_to_replay_ns` 1377877234). checksum 불일치는 `CHECKSUM_MISMATCH`로 닫힌다. 같은 in-process fault 이름을 쓴다. 전원·OS crash는 주입하지 않았고 하드웨어 flush는 미검증이다. 단일 디스크 flush와 같은 보장으로 두지 않는다. 내구성 동등 비교와 우열 결론은 보류다. |
+| **상한과 멱등 조회** | 신규 쓰기 entry/byte 예산 만석에서도 검증된 최초 결과를 읽는가. 재시도가 새 WAL/log·fsync·예산을 소비하는가. 동일 ID 변조는 거절하는가 | 탐색 자료. `max_entries=3`에서 신규 성공 3, capacity 3, 이어서 기존 명령 replay 1이다. `first_capacity_index` 3, 그 뒤 표본 3건을 남긴다. capacity는 경제 효과 행을 추가하지 않는다. 동일 명령 replay 4회의 `log_delta`는 각 0이고, 그 workload의 `log_delta_sum` 976은 첫 commit 쪽이다. 동일 ID·다른 payload는 `conflict_retained` 5건이며 원 slot과 최초 결과는 유지된다. `2^128-1`(`340282366920938463463374607431768211455`)을 십진 문자열로 저장하고 다시 읽었다. signed 정수로 줄이지 않았다. 예산 숫자는 fixture다. | 탐색 자료. 같은 건수와 같은 최초 결과 조회다. 단일 디스크 WAL LSN은 없어 `log_delta`는 빈 값이다. same-command-retry의 디렉터리 크기 변화는 0바이트로 기록됐고, 프로세스 끝 데이터·로그 디렉터리는 210918811바이트로 엔진 footprint가 대부분이다. 그 0바이트를 fsync 부재의 증명으로 쓰지 않는다. u128 최댓값 문자열 왕복은 같았다. |
+| **응답 유실·재시작** | 같은 명령의 최초 결과와 원래 내구성 근거를 반환하는가. cache miss나 복구 미완료를 미실행으로 처리하지 않는가 | 탐색 자료. 같은 payload의 replay는 저장된 최초 결과 문자열을 반환한다. 프로세스 재시작 뒤에도 `replayed`다. 이번 실행에서 commit 결과 unknown은 없었다. unknown을 미실행으로 바꾸는 경로는 두지 않았다. | 탐색 자료. 같은 replay·재시작 결과다. `commit_unknown_result`이면 새 업무 성공으로 재시도하지 않고 outcome `unknown`으로 남긴다. 이번 실행에서는 그 오류가 없었다. |
+| 자료·운영 연결 | 관측·export·보존·업그레이드·자동화 비용 | 탐색 자료. 원시 파일은 `validation/2026-10-08-k-stage4-local-exploration/postgresql/`. 업그레이드·백업·대사 절차는 이번 측정이 아니다. 시스템 클러스터는 TCP를 열지 않았다. | 탐색 자료. 원시 파일은 `validation/2026-10-08-k-stage4-local-exploration/foundationdb/`. 패키지 기본 프로세스(`public-address auto`, storage engine memory)는 측정 대상이 아니며 시작 전에 중지했다. 측정 프로세스는 `127.0.0.1:4501`만 사용했다. |
+| 인력·투자 | 책임자·장애 대응·패치·연간 유지 작업량·투자 한도 | 탐색 자료. 서버 RSS 23158784, 클라이언트 RSS 36859904, 디스크 41535867바이트. 인건비·장비 감가·전력 단가·연간 운영비·투자 한도는 **UNDETERMINED — 사용자/운영 책임자**. 장비 구매·클라우드·라이선스 지출은 없었다. | 탐색 자료. 서버 RSS 90161152, 클라이언트 RSS 56180736, 디스크 210918811바이트. 같은 총 RAM cap 536870912와 디스크 cap 268435456 안이다. 비용 단가는 **UNDETERMINED — 사용자/운영 책임자**. 지출은 없었다. |
+| 동등 조건 성능 | 같은 입력검증·정합성·내구성·실패 모델의 지속 성공 goodput·지연·비용 | 탐색 자료. 입력 fingerprint `507971bd647d34dfa40d1bfbcd7089b79fc58f6a17c19e6cfac06b5f1650eec2`. warmup 2, repeats 1, arrival rate 0, concurrency 1, CPU 0–1. rate 0이라 scheduled latency는 service time과 같다. `exploration_new_success_per_elapsed_s`는 제품 TPS가 아니고 mixed nearest-rank p99는 신규 성공 p99가 아니다. low-load-uniform: 신규 8, elapsed 74301251 ns, goodput 107, 신규성공 p99 13057107, mixed p99 13057107. uniform: 신규 4, 거절 4, elapsed 50999787, goodput 78, 신규성공 p99 9159903, mixed p99 9159903. hot-seat: 신규 1, 거절 7, elapsed 49998493, goodput 20, 신규성공 p99 6627227, mixed p99 7386729. same-command-retry: 신규 1, replay 4, elapsed 25884781, goodput 38, 신규성공 p99 6574612, mixed p99 6574612. history-growth: 신규 1, conflict 5, elapsed 52018580, goodput 19, 신규성공 p99 10346253, mixed p99 10346253. saturation: 신규 3, capacity 3, replay 1, elapsed 48999080, goodput 61, 신규성공 p99 10940803, mixed p99 10940803. 장애 보장이 다르므로 우열 결론은 없다. | 탐색 자료. 같은 fingerprint·warmup·rate·concurrency·CPU cap. low-load-uniform: 신규 8, elapsed 34253600 ns, goodput 233, 신규성공 p99 5857356, mixed p99 5857356. uniform: 신규 4, 거절 4, elapsed 31300668, goodput 127, 신규성공 p99 3619502, mixed p99 5289976. hot-seat: 신규 1, 거절 7, elapsed 29250123, goodput 34, 신규성공 p99 2678442, mixed p99 4378075. same-command-retry: 신규 1, replay 4, elapsed 4072371, goodput 245, 신규성공 p99 2499899, mixed p99 2499899. history-growth: 신규 1, conflict 5, elapsed 19249927, goodput 51, 신규성공 p99 2652680, mixed p99 3765520. saturation: 신규 3, capacity 3, replay 1, elapsed 11902269, goodput 252, 신규성공 p99 3429495, mixed p99 3429495. 이 숫자를 PostgreSQL goodput과 견줘 이기거나 진 것으로 읽지 않는다. 우열 결론은 없다. |
+| **외부 Sui 서명·미확정 거래 인계** | R2가 별도 승인될 경우 객체당 논리적 서명 권한 단일화와 구 리더 미확정 거래 인계를 반드시 다룬다. 동일 owned 입력 버전·전체 입력 집합, 원거래 bytes/digest/서명·effects, 실제 서명 권한 차단과 이미 노출된 거래의 대사를 구분한다. 아래 §9.1 참조. | 이번 로컬 탐색은 측정하지 않았다. R2 금지를 유지한다. 체인 writer는 없다. | 이번 로컬 탐색은 측정하지 않았다. R2 금지를 유지한다. 체인 writer는 없다. |
 
 PR #11의 `LocalJournal::execute()`는 next sequence/byte 예산을 커널의 기존
 명령 조회보다 먼저 검사한다. `max_entries=1`에서 첫 명령 응답이 유실된 뒤
@@ -404,6 +404,7 @@ PostgreSQL은 18 문서, FoundationDB와 TigerBeetle은 조회 시점의 온라�
 - **이번 문서로 채운 gap:** 동일 업무/ACK/장애/장비·비용의 준비 계획과 공식 자료 선별.
   **not covered:** 후보별 실제 mapping·동등 내구성·포화 원결과 조회·goodput/p99/비용 실측·
   hardware flush/독립 장애 도메인 검증. 이를 자료 조회나 memory smoke로 완료 처리하지 않는다.
+  이 not covered는 계획 노드 시점의 인계다. 그 뒤 로컬 탐색이 채운 범위와 여전히 비어 있는 범위는 §9.5다.
 
 후속 `k-stage4-local-exploration`의 canonical 선행은 이 노드와
 `k-readiness-conformance-suite`다. 실제 승인/병합 근거를 host가 확인한 뒤, 실행자는 동일
@@ -411,7 +412,8 @@ PostgreSQL은 18 문서, FoundationDB와 TigerBeetle은 조회 시점의 온라�
 저부하·균등·hot seat·동일 명령 retry·이력 증가/포화를 분리하며 신규 성공 goodput과
 outcome별 scheduled/service latency, 원시 표본·거절·오류·복구·공간/비용을 보존한다.
 warmup·실행 길이·반복·도착률·동시성은 탐색 설정으로 명시하고 제품 목표로 승격하지 않는다.
-업무 경계나 장애 보장이 다르면 우열 결론을 보류한다. 이 문서는 그 실행을 하지 않았다.
+업무 경계나 장애 보장이 다르면 우열 결론을 보류한다. 이 절은 그 실행을 하지 않았다.
+실행 기록은 §9.5다.
 
 I02~I13의 미완결 정책/외부 입력은 [열린 입력](contracts/FIRST_BATCH_OPEN_INPUTS.md)의
 담당과 상태를 유지한다. 보존기간·제공자 보증·권위 cut을 이 선별로 결정하지 않는다.
@@ -419,6 +421,46 @@ I02~I13의 미완결 정책/외부 입력은 [열린 입력](contracts/FIRST_BAT
 게시 이후 실제 exact-head KTX/KIX CI와 독립 최종 supervision은 여전히 필요하며,
 skipped/absent CI는 전체 검증 PASS가 아니다. backend 채택은 별도 사용자 결정,
 5단계는 채택 결정 병합과 v5 선행, R2는 §5 잠금 해제 근거/사용자 승인 뒤다.
+
+### 9.5 로컬 탐색 실측 — 탐색 자료 (2026-10-08)
+
+이 절은 §9 비교표의 측정 조건과 원시 파일 위치다. 후보별 답은 위 비교표의
+PostgreSQL·FoundationDB 열에만 적는다. 다른 파일에 두 번째 비교표를 두지 않는다.
+결과는 **탐색 자료**다. 제품 SLO, backend 채택, 내구성 우열, R2 근거가 아니다.
+
+측정 시작 전에 기록한 host는 `validation/2026-10-08-k-stage4-local-exploration/host.json`이다.
+그때의 `origin/main`과 HEAD 커밋은 `7481b0e16ce9b903abbffa62249bb91cd9e63cfe`다.
+탐색 코드는 그 커밋 위의 작업 트리에서 실행됐다. 그 SHA 안에 이 절이 들어 있다는 뜻이 아니다.
+잠금 blob 두 개는 그 시점에 일치했다. 기계는 Linux 6.12.94+ x86_64, CPU 8
+(측정은 affinity 0–1), Intel Xeon(가상), MemTotal 16397616 kB, MemAvailable 6244004 kB,
+swap 0, 디스크 vda/vdb 128G rotational 표식 1·모델 문자열 없음, overlay 여유
+31741984768바이트다. 하드웨어 flush 특성은 장비 자료가 없어 미검증이다.
+Python 3.13.5, PostgreSQL 17.11 (Debian 17.11-0+deb13u1), FoundationDB 7.3.77
+(source `3ea44ce1d9003ad095e408039e1f755c319c4dfb`, protocol `fdb00b073000000`).
+두 후보에 같은 총 cap을 적용했다. CPU 2코어, RAM 536870912바이트(서버 RSS와
+클라이언트 RSS의 합), 디스크 268435456바이트(데이터와 로그). FoundationDB 프로세스
+한도는 memory 384MiB, storage-memory 96MiB, cache-memory 64MiB다. PostgreSQL
+`shared_buffers`는 64MB다. 둘 다 cap 안에서 끝났고, 후보를 동시에 띄우지 않았다.
+
+탐색 설정은 warmup 2, repeats 1, arrival rate 0, concurrency 1이다. rate 0은
+열린 루프가 아니다. 업무 입력 fingerprint는
+`507971bd647d34dfa40d1bfbcd7089b79fc58f6a17c19e6cfac06b5f1650eec2`다.
+재고는 합성 fixture이고 체인 위임 재고의 writer가 아니다. TigerBeetle은 §9.3의
+단독 backend 제외를 유지해 실행하지 않았다. TiKV는 §9.3의 release/client ACK
+조건이 이 실행에서 새로 충족되지 않아 같은 실측군에 넣지 않았다.
+
+공통 기능 확인은 `readiness.conformance.BackendConformance`를 각 adapter에
+결합한 로컬 unittest다. 통과는 production conformance가 아니다. 원시 요약은
+`postgresql/summary.json`, `foundationdb/summary.json`과 각 `samples.csv`다.
+재현은 저장소 루트에서 `python3 scripts/stage4_local_explore.py validation/2026-10-08-k-stage4-local-exploration`이다.
+로컬 PostgreSQL 17 바이너리와 FoundationDB 7.3.77 클라이언트·서버가 필요하며,
+공개 주소로 열지 않는다.
+
+이 실행이 채운 것: 두 우선 후보의 로컬 업무 mapping, 공통 conformance, 예산 포화
+뒤의 원결과 조회, 프로세스 crash(디스크 유지) 후 보존, 탐색 설정의 goodput·지연·
+바이트·RSS. 여전히 비어 있는 것: 하드웨어 flush, 전원·OS crash, 독립 장애 도메인,
+동등 내구성 판정, 인건비·전력·연간 운영비(UNDETERMINED — 사용자/운영 책임자),
+TiKV, 채택, R2. 기성 제품의 이 결과만으로 자체 저장 엔진이나 R2를 열지 않는다.
 
 ## 10. backend 선택 이후 영속 거래
 
