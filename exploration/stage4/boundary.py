@@ -2,37 +2,10 @@
 
 from __future__ import annotations
 
-import sys
 import threading
-from pathlib import Path
 
+from readiness.machines import MACHINES, RESTORE
 from readiness.store import ReadinessFault, StoreError
-
-ROOT = Path(__file__).resolve().parents[2]
-_PATHS = (
-    ROOT / 'reference' / 'settlement_f01_f03',
-    ROOT / 'reference' / 'booking_resale_admission',
-    ROOT / 'reference' / 'credit_advance_f04',
-)
-for _path in _PATHS:
-    text = str(_path)
-    if text not in sys.path:
-        sys.path.insert(0, text)
-
-from admission_fsm import AdmissionMachine  # noqa: E402
-from credit_fsm import CreditMachine  # noqa: E402
-from reservation_fsm import ReservationMachine  # noqa: E402
-from resale_fsm import ResaleMachine  # noqa: E402
-from settlement_fsm import SettlementMachine  # noqa: E402
-
-MACHINES = ('settlement', 'reservation', 'resale', 'credit', 'admission')
-_RESTORE = {
-    'settlement': SettlementMachine.restore,
-    'reservation': ReservationMachine.restore,
-    'resale': ResaleMachine.restore,
-    'credit': CreditMachine.restore,
-    'admission': AdmissionMachine.restore,
-}
 
 
 class ReadinessError(Exception):
@@ -46,7 +19,7 @@ class ReadinessClosed(ReadinessError):
 
 
 class ExploreBoundary:
-    """One candidate store and the five machines recovered from it."""
+    """One candidate store and the same wrapped machines as FsmBoundary."""
 
     def __init__(self, store):
         self.failed = False
@@ -62,12 +35,12 @@ class ExploreBoundary:
     def machine(self, name):
         if self.failed:
             raise ReadinessClosed('READINESS_CLOSED')
-        if name not in _RESTORE:
+        if name not in RESTORE:
             raise ReadinessError('UNKNOWN_MACHINE')
         return self.machines[name]
 
     def call(self, machine_name, fn, *, fault=None):
-        if machine_name not in _RESTORE:
+        if machine_name not in RESTORE:
             raise ReadinessError('UNKNOWN_MACHINE')
         with self._lock:
             if self.failed:
@@ -112,7 +85,7 @@ class ExploreBoundary:
             journals[record['machine']].append(record['entry'])
         restored = {}
         for name in MACHINES:
-            machine = _RESTORE[name](journals[name])
+            machine = RESTORE[name](journals[name])
             if machine.export_journal() != journals[name]:
                 raise ReadinessError('RECOVERY_DIVERGENCE')
             restored[name] = machine

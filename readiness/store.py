@@ -16,13 +16,16 @@ import zlib
 
 from readiness.codec import CodecError, canonical_json, strict_loads
 from readiness.migrate import SCHEMA_VERSION, MigrationError, migrate
+from readiness.policy import classify_budget
 
 MAGIC = b'KIXRDY01'
 HEADER_LEN = 16
 MAX_RECORD_BYTES = 1024 * 1024
 JOURNAL_NAME = 'journal.v1'
 
-FSM_MACHINES = frozenset({'settlement', 'reservation', 'resale', 'credit', 'admission'})
+FSM_MACHINES = frozenset({
+    'settlement', 'reservation', 'resale', 'credit', 'admission', 'ai_delegation',
+})
 CORE_MACHINE = 'integration_core'
 _STAMPED = frozenset({'schema', 'protocolTruth', 'productionConformance'})
 _COMMON = _STAMPED | {'kind', 'machine'}
@@ -119,12 +122,14 @@ class ReadinessStore:
     def has_operation(self, operation_id):
         return any(record.get('operationId') == operation_id for record in self.records)
 
+    def budget_decision(self, extra, max_records, max_bytes):
+        return classify_budget(
+            len(self.records), self.committed_bytes, extra, max_records, max_bytes,
+        )
+
     def can_accept(self, extra, max_records, max_bytes):
-        if len(self.records) >= max_records:
-            return False
-        if self.committed_bytes + extra > max_bytes:
-            return False
-        return True
+        code, _limit = self.budget_decision(extra, max_records, max_bytes)
+        return code == 'OK'
 
     def close(self):
         file_obj = self._file
@@ -192,8 +197,8 @@ def _parse(data):
     if reserved != 0:
         raise StoreError('JOURNAL_HEADER')
     try:
-        # Migration runs before records are trusted. Version 1 is identity.
-        # The call is here so a future explicit migrator is on the read path.
+        # The file reader calls migrate() only. That path is schema 1 to
+        # schema 1. migrate_v1_to_v2 is not applied here.
         migrate(version, [])
     except MigrationError as exc:
         raise StoreError(exc.code) from exc

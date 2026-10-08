@@ -40,6 +40,8 @@ from integration_gate.openapi_doc import validate as validate_gate_document
 from integration_gate.recovery import replay_core
 from integration_gate.schema import EnvelopeError, parse_envelope
 from readiness.codec import receipt_digest
+from readiness.migrate import SCHEMA_VERSION
+from readiness.policy import AdmitGate
 from readiness.store import ReadinessStore, StoreError
 
 ALLOWED_PATHS = frozenset({HEALTH_PATH, READY_PATH, LOCAL_CALL_PATH})
@@ -103,7 +105,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         self._core_failed = False
         self._diverged = False
         self._draining = False
-        self._admitted = 0
+        self.admit = AdmitGate(max_in_flight)
         self._handlers = 0
         self._closed_core = False
         self._admit_lock = threading.Lock()
@@ -224,15 +226,11 @@ class GateServer(ThreadingMixIn, HTTPServer):
                 return 'NOT_READY'
             if self.core is not None and not self._accepting:
                 return 'NOT_READY'
-            if self._admitted >= self.max_in_flight:
-                return 'OVERLOADED'
-            self._admitted += 1
-            return 'OK'
+            return self.admit.try_admit()
 
     def release_admit(self):
         with self._admit_lock:
-            if self._admitted > 0:
-                self._admitted -= 1
+            self.admit.release()
 
     def note_handler_enter(self):
         with self._admit_lock:
@@ -258,36 +256,48 @@ class GateServer(ThreadingMixIn, HTTPServer):
             self._accepting = bool(value)
 
     def perform(self, operation_id, actor, action, body):
+        observation = _journal_observation('not_attempted', self.store)
         self._ensure_core_on_worker()
         if not self.commands_enabled():
-            return 503, _not_ready()
+            observation['journalDecision'] = 'not_attempted'
+            observation['admit'] = 'NOT_READY'
+            return 503, _not_ready(), observation
         fresh = self.store is None or not self.store.has_operation(operation_id)
         if self.store is not None and fresh:
-            if not self.store.can_accept(
+            code, limit = self.store.budget_decision(
                 self.max_body_bytes + 2048,
                 self.max_journal_records,
                 self.max_journal_bytes,
-            ):
-                return 503, _error('JOURNAL_BUDGET')
+            )
+            if code != 'OK':
+                observation['journalDecision'] = 'budget_rejected'
+                observation['budgetLimit'] = limit
+                return 503, _error('JOURNAL_BUDGET'), observation
         before = _command_count(self.core)
         try:
             receipt = self.core.execute(operation_id, actor, action, body)
         except self.Rejected as exc:
-            return 422, _error(str(exc))
+            observation['journalDecision'] = 'inactive' if self.store is None else 'not_attempted'
+            return 422, _error(str(exc)), observation
         except Exception as exc:
             print('integration-gate internal error: ' + type(exc).__name__, file=sys.stderr)
-            return 500, _error('INTERNAL_ERROR')
+            observation['journalDecision'] = 'not_attempted'
+            return 500, _error('INTERNAL_ERROR'), observation
         after = _command_count(self.core)
         if self.store is None:
-            return 200, receipt
+            observation['journalDecision'] = 'inactive'
+            return 200, receipt, observation
         if after == before:
             if fresh:
                 self._mark_diverged()
-                return 503, _error('DURABILITY_DIVERGENCE')
-            return 200, receipt
+                observation['journalDecision'] = 'diverged'
+                return 503, _error('DURABILITY_DIVERGENCE'), observation
+            observation['journalDecision'] = 'replayed'
+            return 200, receipt, observation
         if after != before + 1 or not fresh:
             self._mark_diverged()
-            return 503, _error('DURABILITY_DIVERGENCE')
+            observation['journalDecision'] = 'diverged'
+            return 503, _error('DURABILITY_DIVERGENCE'), observation
         try:
             self.store.append({
                 'kind': 'core_commit',
@@ -300,8 +310,10 @@ class GateServer(ThreadingMixIn, HTTPServer):
             })
         except StoreError:
             self._mark_diverged()
-            return 503, _error('DURABILITY_DIVERGENCE')
-        return 200, receipt
+            observation['journalDecision'] = 'diverged'
+            return 503, _error('DURABILITY_DIVERGENCE'), observation
+        observation['journalDecision'] = 'appended'
+        return 200, receipt, observation
 
     def ready_view(self):
         self._ensure_core_on_worker()
@@ -356,6 +368,9 @@ class GateHandler(BaseHTTPRequestHandler):
         self._action = None
         self.request_id = _new_trace_id()
         self.correlation_id = self.request_id
+        self._observation = {'admit': 'probe', 'journalDecision': 'probe', 'queued': 0}
+        if self.server.store is not None:
+            self._observation['schemaVersion'] = SCHEMA_VERSION
         started = time.monotonic()
         self.server.note_handler_enter()
         try:
@@ -405,6 +420,7 @@ class GateHandler(BaseHTTPRequestHandler):
                     operationId=self._operation_id,
                     action=self._action,
                     localFileJournal=self.server.store is not None,
+                    **self._observation,
                 )
             self.server.note_handler_exit()
 
@@ -500,6 +516,16 @@ class GateHandler(BaseHTTPRequestHandler):
 
     def _local_call(self):
         decision = self.server.try_admit()
+        admitted = self.server.admit.view()
+        self._observation = {
+            'admit': decision,
+            'journalDecision': 'not_attempted',
+            'inFlight': admitted['inFlight'],
+            'maxInFlight': admitted['maxInFlight'],
+            'queued': admitted['queued'],
+        }
+        if self.server.store is not None:
+            self._observation['schemaVersion'] = SCHEMA_VERSION
         if decision != 'OK':
             payload = _error('OVERLOADED') if decision == 'OVERLOADED' else _not_ready()
             self._send(503, payload)
@@ -547,10 +573,15 @@ class GateHandler(BaseHTTPRequestHandler):
                 self._send(503, _not_ready())
                 return
             try:
-                status, response = self.server.on_core(
+                status, response, observation = self.server.on_core(
                     lambda: self.server.perform(operation_id, actor, action, body),
                     self.server.request_timeout_seconds,
                 )
+                observation['admit'] = 'OK'
+                observation['inFlight'] = admitted['inFlight']
+                observation['maxInFlight'] = admitted['maxInFlight']
+                observation['queued'] = 0
+                self._observation = observation
             except CoreBusy:
                 self._send(503, _error('CORE_BUSY'))
                 return
@@ -712,6 +743,17 @@ def _clip(path):
     if len(path) > 200:
         return path[:200]
     return path
+
+
+def _journal_observation(decision, store):
+    observation = {
+        'admit': 'OK',
+        'journalDecision': 'inactive' if store is None else decision,
+        'queued': 0,
+    }
+    if store is not None:
+        observation['schemaVersion'] = SCHEMA_VERSION
+    return observation
 
 
 def build_server(
