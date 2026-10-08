@@ -1,0 +1,917 @@
+{
+  "adoption": false,
+  "candidate": "foundationdb",
+  "chain_inventory_writer": false,
+  "durability": {
+    "ack": "FoundationDB commit return",
+    "configuration": {
+      "backup_worker_enabled": 0,
+      "blob_granules_enabled": 0,
+      "commit_proxies": 3,
+      "coordinators_count": 1,
+      "encryption_at_rest_mode": "disabled",
+      "excluded_servers": [],
+      "grv_proxies": 1,
+      "log_engine": "ssd-2",
+      "log_spill": 2,
+      "logs": 3,
+      "perpetual_storage_wiggle": 0,
+      "perpetual_storage_wiggle_engine": "none",
+      "perpetual_storage_wiggle_locality": "0",
+      "proxies": 4,
+      "redundancy_mode": "single",
+      "resolvers": 1,
+      "storage_engine": "ssd-2",
+      "storage_migration_type": "disabled",
+      "tenant_mode": "disabled",
+      "usable_regions": 1
+    },
+    "durability_equal_to_other_candidate": false,
+    "hardware_flush_verified": false,
+    "independent_failure_domain": false,
+    "process_count": 1,
+    "reason": "One local FoundationDB process is not an independent failure domain. Its commit is not equated to PostgreSQL synchronous_commit. Power and OS crash were not injected.",
+    "status": {
+      "configuration": {
+        "backup_worker_enabled": 0,
+        "blob_granules_enabled": 0,
+        "commit_proxies": 3,
+        "coordinators_count": 1,
+        "encryption_at_rest_mode": "disabled",
+        "excluded_servers": [],
+        "grv_proxies": 1,
+        "log_engine": "ssd-2",
+        "log_spill": 2,
+        "logs": 3,
+        "perpetual_storage_wiggle": 0,
+        "perpetual_storage_wiggle_engine": "none",
+        "perpetual_storage_wiggle_locality": "0",
+        "proxies": 4,
+        "redundancy_mode": "single",
+        "resolvers": 1,
+        "storage_engine": "ssd-2",
+        "storage_migration_type": "disabled",
+        "tenant_mode": "disabled",
+        "usable_regions": 1
+      },
+      "fault_tolerance": {
+        "max_zone_failures_without_losing_availability": 0,
+        "max_zone_failures_without_losing_data": 0
+      },
+      "processes": 1
+    },
+    "version": "FoundationDB 7.3 (v7.3.77)\nsource version 3ea44ce1d9003ad095e408039e1f755c319c4dfb\nprotocol fdb00b073000000"
+  },
+  "exploration_data": true,
+  "functional_ok": true,
+  "input_fingerprint": "507971bd647d34dfa40d1bfbcd7089b79fc58f6a17c19e6cfac06b5f1650eec2",
+  "low_load_holds": true,
+  "money": "UNDETERMINED \u2014 \uc0ac\uc6a9\uc790/\uc6b4\uc601 \ucc45\uc784\uc790",
+  "probes": {
+    "checksum_fail_closed": {
+      "code": "CHECKSUM_MISMATCH",
+      "ok": true
+    },
+    "process_crash": {
+      "disk_retained_process_crash": true,
+      "hardware_flush_verified": false,
+      "power_os_crash_injected": false,
+      "preserved": true,
+      "restart_to_replay_ns": 1377877234,
+      "rto_slo": null
+    },
+    "u128": {
+      "ok": true,
+      "signed_integer_narrowing": false,
+      "stored_amount_u128": "340282366920938463463374607431768211455",
+      "stored_as_decimal_text": true
+    }
+  },
+  "production_conformance": false,
+  "production_readiness": false,
+  "protocol_truth": false,
+  "public_endpoint": false,
+  "ranking": null,
+  "resource_budget": {
+    "applied_affinity": [
+      0,
+      1
+    ],
+    "client_hwm_bytes": 56180736,
+    "cpu_cores": [
+      0,
+      1
+    ],
+    "disk_bytes": 210918811,
+    "server_hwm_bytes": 90161152,
+    "total_disk_cap_bytes": 268435456,
+    "total_ram_cap_bytes": 536870912,
+    "within_cap": true
+  },
+  "slo": null,
+  "sql_and_chain_concurrent_writers": false,
+  "valid": true,
+  "workload_settings": {
+    "arrival_rate_per_s": 0,
+    "concurrency": 1,
+    "label": "exploration_data",
+    "p99_method": "nearest_rank_ceil",
+    "rate_zero_means": "scheduled_latency_equals_service_time",
+    "repeats": 1,
+    "warmup_calls": 2
+  },
+  "workloads": [
+    {
+      "admitted_entries": 8,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 0,
+        "capacity": 0,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 8,
+        "replayed": 0,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 0,
+      "elapsed_ns": 34253600,
+      "expected_admitted_entries": 8,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 233,
+      "first_capacity_index": null,
+      "log_delta_sum": null,
+      "low_load": true,
+      "mixed_result_p99_scheduled_latency_ns": 5857356,
+      "mixed_result_p99_service_ns": 5857356,
+      "outcomes": {
+        "new_success": {
+          "count": 8,
+          "scheduled_p99_ns": 5857356,
+          "service_p99_ns": 5857356
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "ll-0",
+          "index": 0,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 3120842,
+          "service_ns": 3120842,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 2,
+          "capacity_reason": null,
+          "command_id": "ll-1",
+          "index": 1,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 3128073,
+          "service_ns": 3128073,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "ll-2",
+          "index": 2,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 3859988,
+          "service_ns": 3859988,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 4,
+          "capacity_reason": null,
+          "command_id": "ll-3",
+          "index": 3,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 4388203,
+          "service_ns": 4388203,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 5,
+          "capacity_reason": null,
+          "command_id": "ll-4",
+          "index": 4,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 4208361,
+          "service_ns": 4208361,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 6,
+          "capacity_reason": null,
+          "command_id": "ll-5",
+          "index": 5,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 4428301,
+          "service_ns": 4428301,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 7,
+          "capacity_reason": null,
+          "command_id": "ll-6",
+          "index": 6,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 5207152,
+          "service_ns": 5207152,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 8,
+          "capacity_reason": null,
+          "command_id": "ll-7",
+          "index": 7,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 5857356,
+          "service_ns": 5857356,
+          "workload": "low-load-uniform"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "low-load-uniform"
+    },
+    {
+      "admitted_entries": 8,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 4,
+        "capacity": 0,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 4,
+        "replayed": 0,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 131072,
+      "elapsed_ns": 31300668,
+      "expected_admitted_entries": 8,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 127,
+      "first_capacity_index": null,
+      "log_delta_sum": null,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 5289976,
+      "mixed_result_p99_service_ns": 5289976,
+      "outcomes": {
+        "business_rejected": {
+          "count": 4,
+          "scheduled_p99_ns": 5289976,
+          "service_p99_ns": 5289976
+        },
+        "new_success": {
+          "count": 4,
+          "scheduled_p99_ns": 3619502,
+          "service_p99_ns": 3619502
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "uf-0",
+          "index": 0,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 2565529,
+          "service_ns": 2565529,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 2,
+          "capacity_reason": null,
+          "command_id": "uf-1",
+          "index": 1,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 3041596,
+          "service_ns": 3041596,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "uf-2",
+          "index": 2,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 3400349,
+          "service_ns": 3400349,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 4,
+          "capacity_reason": null,
+          "command_id": "uf-3",
+          "index": 3,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 3619502,
+          "service_ns": 3619502,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 5,
+          "capacity_reason": null,
+          "command_id": "uf-4",
+          "index": 4,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 4084399,
+          "service_ns": 4084399,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 6,
+          "capacity_reason": null,
+          "command_id": "uf-5",
+          "index": 5,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5289976,
+          "service_ns": 5289976,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 7,
+          "capacity_reason": null,
+          "command_id": "uf-6",
+          "index": 6,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 4419407,
+          "service_ns": 4419407,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 8,
+          "capacity_reason": null,
+          "command_id": "uf-7",
+          "index": 7,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 4832570,
+          "service_ns": 4832570,
+          "workload": "uniform"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "uniform"
+    },
+    {
+      "admitted_entries": 8,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 7,
+        "capacity": 0,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 1,
+        "replayed": 0,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 0,
+      "elapsed_ns": 29250123,
+      "expected_admitted_entries": 8,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 34,
+      "first_capacity_index": null,
+      "log_delta_sum": null,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 4378075,
+      "mixed_result_p99_service_ns": 4378075,
+      "outcomes": {
+        "business_rejected": {
+          "count": 7,
+          "scheduled_p99_ns": 4378075,
+          "service_p99_ns": 4378075
+        },
+        "new_success": {
+          "count": 1,
+          "scheduled_p99_ns": 2678442,
+          "service_p99_ns": 2678442
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hs-0",
+          "index": 0,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 2678442,
+          "service_ns": 2678442,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 2,
+          "capacity_reason": null,
+          "command_id": "hs-1",
+          "index": 1,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 3122536,
+          "service_ns": 3122536,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "hs-2",
+          "index": 2,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 3017766,
+          "service_ns": 3017766,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 4,
+          "capacity_reason": null,
+          "command_id": "hs-3",
+          "index": 3,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 3327120,
+          "service_ns": 3327120,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 5,
+          "capacity_reason": null,
+          "command_id": "hs-4",
+          "index": 4,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 4122191,
+          "service_ns": 4122191,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 6,
+          "capacity_reason": null,
+          "command_id": "hs-5",
+          "index": 5,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 4222893,
+          "service_ns": 4222893,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 7,
+          "capacity_reason": null,
+          "command_id": "hs-6",
+          "index": 6,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 4378075,
+          "service_ns": 4378075,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 8,
+          "capacity_reason": null,
+          "command_id": "hs-7",
+          "index": 7,
+          "log_delta": null,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 4333116,
+          "service_ns": 4333116,
+          "workload": "hot-seat"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "hot-seat"
+    },
+    {
+      "admitted_entries": 1,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 0,
+        "capacity": 0,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 1,
+        "replayed": 4,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 0,
+      "elapsed_ns": 4072371,
+      "expected_admitted_entries": 1,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "replayed",
+        "replayed",
+        "replayed",
+        "replayed"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 245,
+      "first_capacity_index": null,
+      "log_delta_sum": null,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 2499899,
+      "mixed_result_p99_service_ns": 2499899,
+      "outcomes": {
+        "new_success": {
+          "count": 1,
+          "scheduled_p99_ns": 2499899,
+          "service_p99_ns": 2499899
+        },
+        "replayed": {
+          "count": 4,
+          "scheduled_p99_ns": 499928,
+          "service_p99_ns": 499928
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 0,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 2499899,
+          "service_ns": 2499899,
+          "workload": "same-command-retry"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 1,
+          "log_delta": null,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 499928,
+          "service_ns": 499928,
+          "workload": "same-command-retry"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 2,
+          "log_delta": null,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 372616,
+          "service_ns": 372616,
+          "workload": "same-command-retry"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 3,
+          "log_delta": null,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 345996,
+          "service_ns": 345996,
+          "workload": "same-command-retry"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 4,
+          "log_delta": null,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 329933,
+          "service_ns": 329933,
+          "workload": "same-command-retry"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "same-command-retry"
+    },
+    {
+      "admitted_entries": 1,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 0,
+        "capacity": 0,
+        "conflict_retained": 5,
+        "error": 0,
+        "new_success": 1,
+        "replayed": 0,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 0,
+      "elapsed_ns": 19249927,
+      "expected_admitted_entries": 1,
+      "expected_observations": 5,
+      "expected_outcomes": [
+        "new_success",
+        "conflict_retained",
+        "conflict_retained",
+        "conflict_retained",
+        "conflict_retained",
+        "conflict_retained"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 51,
+      "first_capacity_index": null,
+      "log_delta_sum": null,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 3765520,
+      "mixed_result_p99_service_ns": 3765520,
+      "outcomes": {
+        "conflict_retained": {
+          "count": 5,
+          "scheduled_p99_ns": 3765520,
+          "service_p99_ns": 3765520
+        },
+        "new_success": {
+          "count": 1,
+          "scheduled_p99_ns": 2652680,
+          "service_p99_ns": 2652680
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 0,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 2652680,
+          "service_ns": 2652680,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 1,
+          "log_delta": null,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 3211438,
+          "service_ns": 3211438,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 2,
+          "log_delta": null,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 2871076,
+          "service_ns": 2871076,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 3,
+          "log_delta": null,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 3260846,
+          "service_ns": 3260846,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 4,
+          "log_delta": null,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 3450961,
+          "service_ns": 3450961,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 5,
+          "log_delta": null,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 3765520,
+          "service_ns": 3765520,
+          "workload": "history-growth"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "history-growth"
+    },
+    {
+      "admitted_entries": 3,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 3,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 0,
+        "capacity": 3,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 3,
+        "replayed": 1,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 0,
+      "elapsed_ns": 11902269,
+      "expected_admitted_entries": 3,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "new_success",
+        "new_success",
+        "capacity",
+        "capacity",
+        "capacity",
+        "replayed"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 252,
+      "first_capacity_index": 3,
+      "log_delta_sum": null,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 3429495,
+      "mixed_result_p99_service_ns": 3429495,
+      "outcomes": {
+        "capacity": {
+          "count": 3,
+          "scheduled_p99_ns": 796686,
+          "service_p99_ns": 796686
+        },
+        "new_success": {
+          "count": 3,
+          "scheduled_p99_ns": 3429495,
+          "service_p99_ns": 3429495
+        },
+        "replayed": {
+          "count": 1,
+          "scheduled_p99_ns": 861815,
+          "service_p99_ns": 861815
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "sa-0",
+          "index": 0,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 2490495,
+          "service_ns": 2490495,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 2,
+          "capacity_reason": null,
+          "command_id": "sa-1",
+          "index": 1,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 2832740,
+          "service_ns": 2832740,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "sa-2",
+          "index": 2,
+          "log_delta": null,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 3429495,
+          "service_ns": 3429495,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": "entry_budget",
+          "command_id": "sa-3",
+          "index": 3,
+          "log_delta": null,
+          "outcome": "capacity",
+          "scheduled_latency_ns": 772648,
+          "service_ns": 772648,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": "entry_budget",
+          "command_id": "sa-4",
+          "index": 4,
+          "log_delta": null,
+          "outcome": "capacity",
+          "scheduled_latency_ns": 677902,
+          "service_ns": 677902,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": "entry_budget",
+          "command_id": "sa-5",
+          "index": 5,
+          "log_delta": null,
+          "outcome": "capacity",
+          "scheduled_latency_ns": 796686,
+          "service_ns": 796686,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "sa-0",
+          "index": 6,
+          "log_delta": null,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 861815,
+          "service_ns": 861815,
+          "workload": "saturation"
+        }
+      ],
+      "samples_after_first_capacity": 3,
+      "workload": "saturation"
+    }
+  ]
+}

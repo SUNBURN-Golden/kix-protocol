@@ -1,0 +1,20 @@
+{
+  "adoption": false,
+  "candidates": [
+    "postgresql",
+    "foundationdb"
+  ],
+  "comparison_authority": "docs/DEVELOPMENT_PLAN.md \u00a79",
+  "exploration_data": true,
+  "files": [
+    "host.json",
+    "postgresql/summary.json",
+    "postgresql/samples.csv",
+    "foundationdb/summary.json",
+    "foundationdb/samples.csv"
+  ],
+  "input_fingerprint": "507971bd647d34dfa40d1bfbcd7089b79fc58f6a17c19e6cfac06b5f1650eec2",
+  "not_a_second_comparison_table": true,
+  "ranking": null,
+  "slo": null
+}

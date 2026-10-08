@@ -1,0 +1,15 @@
+{
+  "name": "kix-protocol-client-0",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Non-production TypeScript 0.x client generated from the contract-only OpenAPI. Not published.",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "generate": "node generate/generate_client.mjs && node generate/generate_manifest.mjs",
+    "conformance": "node --test conformance/conformance.test.mjs",
+    "verify-compat": "node compat/verify_compat.mjs --manifest compat/manifests/manifest.bootstrap-1.json --expect-kind BOOTSTRAP --expect-revision bootstrap-1"
+  }
+}

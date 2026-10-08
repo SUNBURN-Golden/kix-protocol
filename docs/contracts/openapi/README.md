@@ -15,6 +15,7 @@
 | [`../../../scripts/check_openapi_contract.py`](../../../scripts/check_openapi_contract.py) | 계약 전용 문서의 명령 키·본문 스키마·핀 검사 |
 | [`../../../scripts/check_integration_gate_openapi.py`](../../../scripts/check_integration_gate_openapi.py) | 통합 관문 문서가 같은 40개 명령·비운영 표식을 유지하는지 검사 |
 | [`../../../integration_gate/`](../../../integration_gate/) | 루프백 HTTP 프로세스. 운영 배치물이 아니다 |
+| [`../../../sdk/README.md`](../../../sdk/README.md) | 계약 전용 문서에서 생성한 비운영 TypeScript 0.x 클라이언트. 안정 1.0·공개 배포가 아니다 |
 
 OpenAPI 산출물은 JSON이다. 검사는 Python 표준 라이브러리만 쓰고, 별도 YAML 패키지를 요구하지 않는다.
 
