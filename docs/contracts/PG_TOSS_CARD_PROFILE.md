@@ -123,7 +123,7 @@ S3의 PAYMENT_STATUS_CHANGED data는 한 Payment이고, S4의 cancels 배열은 
 재전달 불변성이 확인된 것은 아니므로, 전송 identity와 stable economic operation,
 정규화한 event-item은 여전히 분리한다. paymentKey는 상태가 변해도 같아 단독 event ID로
 쓰지 않는다. lastTransactionKey는 마지막 거래를 가리키므로 고정 capture ID로 대체하지 않는다.
-이벤트 매핑식·반복 snapshot의 정체성은 별도 검토 대상이며 이번에 schema를 만들지 않는다.
+이벤트 매핑식·반복 snapshot의 정체성 관계는 [ADAPTER_EVENT_IDENTITY](ADAPTER_EVENT_IDENTITY.md) 초안 0.1에 둔다. 이 프로파일은 schema를 만들지 않으며 제공자별 값을 바꾸지 않는다.
 
 공통 수명 계약은 provider-specific 종결을 요구하지만 기존에는 결제수단·상품 결합이
 명시적이지 않았다. 이번 문서 개정에서는 **provider/MID/환경/API·계약 버전/상품/

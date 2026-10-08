@@ -150,6 +150,13 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: reference/v0.3-rc1/client/package-lock.json
+      - name: Contract-only TypeScript 0.x client
+        if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
+        run: |
+          python3 scripts/check_sdk_client.py
+          python3 scripts/check_sdk_client.py --self-test
+          npm --prefix sdk run conformance
+          npm --prefix sdk run verify-compat
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
         if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         with:
