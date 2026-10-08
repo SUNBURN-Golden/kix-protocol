@@ -130,6 +130,8 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 
 게이트는 [프로그램 결정](decisions/PROGRAM_DECISIONS_20260928.md) §3과 [로드맵](decisions/PROGRAM_ROADMAP_20260930.md) R-7~R-9·R-11을 따른다. Wave 7은 commerce `w6a-evidence` 병합 뒤 열리며, protocol `wave7-marketing-contracts`는 외부 선행 확인 후 별도 plan revision으로 편입한다. 조회는 상태를 바꾸지 않으며 browser 접근은 결정된 방식·기본 꺼짐·loopback 출처만 허용한다. on-sale admission control은 5단계 뒤 별도 계약·감사 경로를 따른다.
 
+병합된 문서 위치(2026-10-08, 위치 안내만): [어댑터 이벤트 정체성](contracts/ADAPTER_EVENT_IDENTITY.md)(#124), [조회·목록 쿼리](contracts/READ_MODEL_QUERIES.md)(#127), [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md)(#130), [1차 발행 가격·수수료](contracts/MOVE_PRIMARY_ISSUANCE_PRICE_FEE.md)(#129), [브라우저 접근 결정](decisions/GATE_BROWSER_ACCESS_DECISION_20261008.md)(#132). 각 문서의 확정 조건은 그 문서가 정하며 이 문단은 승인이나 상태 변경이 아니다.
+
 ## 6. E-4와 상태 수명
 
 ### 6.1 E-4
@@ -583,6 +585,11 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 |---|---|---|
 | TL | R-1은 D-B 수락: TL-A → TL-0 → TL-1. R-3은 U2(담보)·U3(보상) 설계 범위이며 최종 확정은 사용자 tl-0 병합. TL-3 off-chain은 TL-1 뒤, on-chain은 TL-2와 off-chain 뒤 | **coin/TIX 잠금 유지.** 유일한 TL-2 localnet 예외도 Astra 재결정과 사용자 tl-coin-lock-adr 병합 뒤. TL-4 검증·TL-5 운영 판단은 선행을 충족해야 하며 실자금·운영 발행은 미승인 |
 | RS | R-2는 D-D의 독립 객체 분할 및 rights·zk_gate 확장 해석을 조건 (a)~(e)와 함께 수락. RS-0 설계·감사 뒤 새 프로파일 RS-1 → RS-2·RS-3a → 단계별 RS-4 localnet 검증 | coin/TIX 불포함, 16슬롯 참조 불변, localnet 한정. RS-3b는 RS-3a와 Track K v5 별도 승인·구현 선행. 수명 전이를 R-2만으로 승인하지 않음. 운영 배포·커널 잠금 변경 미승인 |
+
+현재 문서 포인터:
+
+- TL: TL-A ADR [ADR-0002](adr/0002-token-layer-scope-and-limits.md) 병합됨(#126). 범위·한계 기록이며 coin/TIX 잠금 해제가 아니다.
+- RS: RS-0 프로파일 0.1·결정 기록 병합됨(#125): [프로파일](contracts/RIGHTS_SCALE_PROFILE.md), [결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md). 확정 조건은 그 문서가 정한다.
 
 ### 18.2 의존성과 우선순위
 
