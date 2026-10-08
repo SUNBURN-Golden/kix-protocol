@@ -51,6 +51,7 @@
 | [RS-0 결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) | 권리 확장의 객체·재고 권위 | 결정 초안. 확정 조건은 그 문서가 정한다 |
 | [루프백 관문의 브라우저 접근](decisions/GATE_BROWSER_ACCESS_DECISION_20261008.md) | 브라우저가 루프백 관문에 닿는 방식의 비교 | "채택 제안"(그 문서의 표현). 관문 코드 변경 없음 |
 | [I12 절단 증명](decisions/CUT_PROOF_I12_20261008.md) | C_g/H_g 절단, 옛 작성자 차단, 미발행 약정 보존 | 증명 초안, 사용자 병합 때에만 효력. I12는 미완결 |
+| [v5 crate 설계 결정](decisions/STAGE2_V5_CRATE_DESIGN_DECISION_20261008.md) | 종결·슬롯 해제·기록 회수·review 해제·색인을 잠금 v4 밖에 둘 새 crate | 설계 결정 제안. 사용자 병합 때에만 효력. 구현 없음 |
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
