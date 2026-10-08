@@ -329,7 +329,11 @@ test("mixed-input vectors and the committed manifest", () => {
         writeFileSync(target, readFileSync(manifestPath).subarray(0, -1));
       } else if (item.op === "duplicate-key") {
         const text = readFileSync(manifestPath, "utf8");
-        writeFileSync(target, text.replace("{", '{"contract":{},'));
+        const open = text.indexOf("{");
+        if (open !== 0) {
+          throw new Error("committed manifest does not start with an object");
+        }
+        writeFileSync(target, `{"contract":{},${text.slice(1)}`);
       } else {
         const copy = parseStrict(canonicalStringify(original));
         const parts = item.path.split(".");
