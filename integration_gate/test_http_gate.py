@@ -214,6 +214,16 @@ def wait_ready(port):
     raise RuntimeError(last)
 
 
+def wait_admit_idle(httpd, timeout=3):
+    """Poll until the gate's admit slot is free. Test harness only."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if httpd.admit.view()['inFlight'] == 0:
+            return
+        time.sleep(0.005)
+    raise AssertionError('admit slot not released')
+
+
 def raw_http(port, payload, timeout=2):
     sock = socket.create_connection((LOOPBACK_HOST, port), timeout=timeout)
     try:
@@ -1269,9 +1279,11 @@ class BrowserAccessTests(unittest.TestCase):
                 status_a, raw_a, headers_a = exchange(
                     port, method, path, payload=payload, headers=origin_headers
                 )
+                wait_admit_idle(httpd)
                 status_b, raw_b, headers_b = exchange(
                     port, method, path, payload=payload, headers=plain_headers
                 )
+                wait_admit_idle(httpd)
                 self.assertEqual(status_a, status_b)
                 self.assertEqual(raw_a, raw_b)
                 self._assert_simple_cors(headers_a)
@@ -1295,9 +1307,11 @@ class BrowserAccessTests(unittest.TestCase):
                 port, 'op-miss-a', 'operator', 'cancel_event', missing,
                 headers={'Origin': BROWSER_ALLOWED_ORIGIN},
             )
+            wait_admit_idle(httpd)
             status_b, payload_b, headers_b = post_call(
                 port, 'op-miss-b', 'operator', 'cancel_event', missing,
             )
+            wait_admit_idle(httpd)
             self.assertEqual(status_a, 422)
             self.assertEqual(status_b, 422)
             self.assertEqual(payload_a, payload_b)
@@ -1314,6 +1328,7 @@ class BrowserAccessTests(unittest.TestCase):
             self.assertEqual(payload['result']['logicalTime'], 6)
             self.assertNotIn('rejected', payload)
             self._assert_simple_cors(headers)
+            wait_admit_idle(httpd)
             self.assertEqual(httpd.try_admit(), 'OK')
             try:
                 status, payload, headers = post_call(
@@ -1333,6 +1348,46 @@ class BrowserAccessTests(unittest.TestCase):
                 assert_no_cors(self, headers_plain)
             finally:
                 httpd.release_admit()
+
+        run_with_server(run, max_in_flight=1, browser_origin=BROWSER_ALLOWED_ORIGIN)
+
+    def test_response_can_complete_while_admit_slot_is_held(self):
+        """Characterization of the current handler order, not a contract claim.
+
+        GateHandler writes the response and only then releases the admit slot.
+        docs/contracts/READINESS_RUNTIME.md does not define that order.
+        """
+        domain = load_catalogue(ROOT).domain
+        release_gate = threading.Event()
+
+        def run(httpd, port):
+            original = httpd.release_admit
+
+            def blocking_release():
+                release_gate.wait()
+                original()
+
+            httpd.release_admit = blocking_release
+            try:
+                status, raw, _headers = exchange(
+                    port, 'POST', LOCAL_CALL_PATH, payload={},
+                    headers={'Content-Type': 'text/plain'},
+                )
+                self.assertEqual(status, 415)
+                self.assertEqual(parse_json(raw)['error'], 'UNSUPPORTED_MEDIA_TYPE')
+                self.assertEqual(httpd.admit.view()['inFlight'], 1)
+                with self.assertRaises(AssertionError) as caught:
+                    wait_admit_idle(httpd, timeout=0.2)
+                self.assertEqual(str(caught.exception), 'admit slot not released')
+                release_gate.set()
+                wait_admit_idle(httpd)
+                status, _payload, _headers = post_call(
+                    port, 'op-after-release', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 1},
+                )
+                self.assertEqual(status, 200)
+            finally:
+                release_gate.set()
 
         run_with_server(run, max_in_flight=1, browser_origin=BROWSER_ALLOWED_ORIGIN)
 
