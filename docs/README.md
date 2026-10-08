@@ -24,6 +24,8 @@
 
 `reference/v0.1/KIX_프로토콜_통합명세_v0.1.md` §9.1의 “HTTP 서버·OpenAPI 서비스는 아직 없다”는 그 명세를 쓰던 시점의 기록이다. 그 파일은 당시 패키지 해시에 묶인 역사 증거라 본문을 고치지 않았다. 예매·리셀·검표 목과 신용 목의 “HTTP 서버는 없다”는 각 목 함수에 대한 설명으로 그대로 둔다.
 
+비운영 TypeScript 0.x 클라이언트는 [sdk/README.md](../sdk/README.md)에 있고, 계약 전용 OpenAPI에서 다시 생성한다. manifest-v1과 BOOTSTRAP profile은 [contracts/sdk/COMPATIBILITY_MANIFEST_V1.md](contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)가 정한다. 이 산출물은 안정 1.0·공개 배포·운영 적합이 아니다.
+
 ## 청사진 색인 — 설계 제안, 승인·구현 아님
 
 아래 두 청사진은 2026-09-29 범위 편입([결정 기록](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md))의 설계 제안이다. 구현·배포·발행을 승인하지 않으며, 후속 작업 정의는 작업문서가 아니다.

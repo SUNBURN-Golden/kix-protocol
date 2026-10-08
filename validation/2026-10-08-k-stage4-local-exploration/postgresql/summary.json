@@ -1,0 +1,899 @@
+{
+  "adoption": false,
+  "candidate": "postgresql",
+  "chain_inventory_writer": false,
+  "durability": {
+    "ack": "commit return after local WAL flush (synchronous_commit=on, fsync=on, full_page_writes=on)",
+    "durability_equal_to_other_candidate": false,
+    "hardware_flush_verified": false,
+    "independent_failure_domain": false,
+    "reason": "Local PostgreSQL WAL flush on this virtual disk is not equated to a single-process FoundationDB commit. Power and OS crash were not injected.",
+    "settings": {
+      "autovacuum": {
+        "setting": "off",
+        "unit": null
+      },
+      "data_checksums": {
+        "setting": "on",
+        "unit": null
+      },
+      "fsync": {
+        "setting": "on",
+        "unit": null
+      },
+      "full_page_writes": {
+        "setting": "on",
+        "unit": null
+      },
+      "listen_addresses": {
+        "setting": "",
+        "unit": null
+      },
+      "server_version": {
+        "setting": "17.11 (Debian 17.11-0+deb13u1)",
+        "unit": null
+      },
+      "shared_buffers": {
+        "setting": "8192",
+        "unit": "8kB"
+      },
+      "synchronous_commit": {
+        "setting": "on",
+        "unit": null
+      }
+    },
+    "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"
+  },
+  "exploration_data": true,
+  "functional_ok": true,
+  "input_fingerprint": "507971bd647d34dfa40d1bfbcd7089b79fc58f6a17c19e6cfac06b5f1650eec2",
+  "low_load_holds": true,
+  "money": "UNDETERMINED \u2014 \uc0ac\uc6a9\uc790/\uc6b4\uc601 \ucc45\uc784\uc790",
+  "probes": {
+    "checksum_fail_closed": {
+      "code": "CHECKSUM_MISMATCH",
+      "ok": true
+    },
+    "process_crash": {
+      "disk_retained_process_crash": true,
+      "hardware_flush_verified": false,
+      "power_os_crash_injected": false,
+      "preserved": true,
+      "restart_to_replay_ns": 323014119,
+      "rto_slo": null
+    },
+    "u128": {
+      "ok": true,
+      "signed_integer_narrowing": false,
+      "stored_amount_u128": "340282366920938463463374607431768211455",
+      "stored_as_decimal_text": true
+    }
+  },
+  "production_conformance": false,
+  "production_readiness": false,
+  "protocol_truth": false,
+  "public_endpoint": false,
+  "ranking": null,
+  "resource_budget": {
+    "applied_affinity": [
+      0,
+      1
+    ],
+    "client_hwm_bytes": 36859904,
+    "cpu_cores": [
+      0,
+      1
+    ],
+    "disk_bytes": 41535867,
+    "server_hwm_bytes": 23158784,
+    "total_disk_cap_bytes": 268435456,
+    "total_ram_cap_bytes": 536870912,
+    "within_cap": true
+  },
+  "slo": null,
+  "sql_and_chain_concurrent_writers": false,
+  "valid": true,
+  "workload_settings": {
+    "arrival_rate_per_s": 0,
+    "concurrency": 1,
+    "label": "exploration_data",
+    "p99_method": "nearest_rank_ceil",
+    "rate_zero_means": "scheduled_latency_equals_service_time",
+    "repeats": 1,
+    "warmup_calls": 2
+  },
+  "workloads": [
+    {
+      "admitted_entries": 8,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 0,
+        "capacity": 0,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 8,
+        "replayed": 0,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 32768,
+      "elapsed_ns": 74301251,
+      "expected_admitted_entries": 8,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 107,
+      "first_capacity_index": null,
+      "log_delta_sum": 6040,
+      "low_load": true,
+      "mixed_result_p99_scheduled_latency_ns": 13057107,
+      "mixed_result_p99_service_ns": 13057107,
+      "outcomes": {
+        "new_success": {
+          "count": 8,
+          "scheduled_p99_ns": 13057107,
+          "service_p99_ns": 13057107
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "ll-0",
+          "index": 0,
+          "log_delta": 920,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 8371636,
+          "service_ns": 8371636,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 2,
+          "capacity_reason": null,
+          "command_id": "ll-1",
+          "index": 1,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 13057107,
+          "service_ns": 13057107,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "ll-2",
+          "index": 2,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 6916777,
+          "service_ns": 6916777,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 4,
+          "capacity_reason": null,
+          "command_id": "ll-3",
+          "index": 3,
+          "log_delta": 752,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 10070236,
+          "service_ns": 10070236,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 5,
+          "capacity_reason": null,
+          "command_id": "ll-4",
+          "index": 4,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 9495753,
+          "service_ns": 9495753,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 6,
+          "capacity_reason": null,
+          "command_id": "ll-5",
+          "index": 5,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 10146636,
+          "service_ns": 10146636,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 7,
+          "capacity_reason": null,
+          "command_id": "ll-6",
+          "index": 6,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 8693467,
+          "service_ns": 8693467,
+          "workload": "low-load-uniform"
+        },
+        {
+          "admitted_entries": 8,
+          "capacity_reason": null,
+          "command_id": "ll-7",
+          "index": 7,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 7487309,
+          "service_ns": 7487309,
+          "workload": "low-load-uniform"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "low-load-uniform"
+    },
+    {
+      "admitted_entries": 8,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 4,
+        "capacity": 0,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 4,
+        "replayed": 0,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 32768,
+      "elapsed_ns": 50999787,
+      "expected_admitted_entries": 8,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "new_success",
+        "new_success",
+        "new_success",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 78,
+      "first_capacity_index": null,
+      "log_delta_sum": 5456,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 9159903,
+      "mixed_result_p99_service_ns": 9159903,
+      "outcomes": {
+        "business_rejected": {
+          "count": 4,
+          "scheduled_p99_ns": 5669812,
+          "service_p99_ns": 5669812
+        },
+        "new_success": {
+          "count": 4,
+          "scheduled_p99_ns": 9159903,
+          "service_p99_ns": 9159903
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "uf-0",
+          "index": 0,
+          "log_delta": 976,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 8009648,
+          "service_ns": 8009648,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 2,
+          "capacity_reason": null,
+          "command_id": "uf-1",
+          "index": 1,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 9159903,
+          "service_ns": 9159903,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "uf-2",
+          "index": 2,
+          "log_delta": 752,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 6451423,
+          "service_ns": 6451423,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 4,
+          "capacity_reason": null,
+          "command_id": "uf-3",
+          "index": 3,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 5537089,
+          "service_ns": 5537089,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 5,
+          "capacity_reason": null,
+          "command_id": "uf-4",
+          "index": 4,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5186319,
+          "service_ns": 5186319,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 6,
+          "capacity_reason": null,
+          "command_id": "uf-5",
+          "index": 5,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5669812,
+          "service_ns": 5669812,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 7,
+          "capacity_reason": null,
+          "command_id": "uf-6",
+          "index": 6,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5474832,
+          "service_ns": 5474832,
+          "workload": "uniform"
+        },
+        {
+          "admitted_entries": 8,
+          "capacity_reason": null,
+          "command_id": "uf-7",
+          "index": 7,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5459494,
+          "service_ns": 5459494,
+          "workload": "uniform"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "uniform"
+    },
+    {
+      "admitted_entries": 8,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 7,
+        "capacity": 0,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 1,
+        "replayed": 0,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 32768,
+      "elapsed_ns": 49998493,
+      "expected_admitted_entries": 8,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected",
+        "business_rejected"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 20,
+      "first_capacity_index": null,
+      "log_delta_sum": 4920,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 7386729,
+      "mixed_result_p99_service_ns": 7386729,
+      "outcomes": {
+        "business_rejected": {
+          "count": 7,
+          "scheduled_p99_ns": 7386729,
+          "service_p99_ns": 7386729
+        },
+        "new_success": {
+          "count": 1,
+          "scheduled_p99_ns": 6627227,
+          "service_p99_ns": 6627227
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hs-0",
+          "index": 0,
+          "log_delta": 920,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 6627227,
+          "service_ns": 6627227,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 2,
+          "capacity_reason": null,
+          "command_id": "hs-1",
+          "index": 1,
+          "log_delta": 592,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 7386729,
+          "service_ns": 7386729,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "hs-2",
+          "index": 2,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 7183521,
+          "service_ns": 7183521,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 4,
+          "capacity_reason": null,
+          "command_id": "hs-3",
+          "index": 3,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5881888,
+          "service_ns": 5881888,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 5,
+          "capacity_reason": null,
+          "command_id": "hs-4",
+          "index": 4,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5607285,
+          "service_ns": 5607285,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 6,
+          "capacity_reason": null,
+          "command_id": "hs-5",
+          "index": 5,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5589491,
+          "service_ns": 5589491,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 7,
+          "capacity_reason": null,
+          "command_id": "hs-6",
+          "index": 6,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 5518564,
+          "service_ns": 5518564,
+          "workload": "hot-seat"
+        },
+        {
+          "admitted_entries": 8,
+          "capacity_reason": null,
+          "command_id": "hs-7",
+          "index": 7,
+          "log_delta": 568,
+          "outcome": "business_rejected",
+          "scheduled_latency_ns": 6135109,
+          "service_ns": 6135109,
+          "workload": "hot-seat"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "hot-seat"
+    },
+    {
+      "admitted_entries": 1,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 0,
+        "capacity": 0,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 1,
+        "replayed": 4,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 32768,
+      "elapsed_ns": 25884781,
+      "expected_admitted_entries": 1,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "replayed",
+        "replayed",
+        "replayed",
+        "replayed"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 38,
+      "first_capacity_index": null,
+      "log_delta_sum": 976,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 6574612,
+      "mixed_result_p99_service_ns": 6574612,
+      "outcomes": {
+        "new_success": {
+          "count": 1,
+          "scheduled_p99_ns": 6574612,
+          "service_p99_ns": 6574612
+        },
+        "replayed": {
+          "count": 4,
+          "scheduled_p99_ns": 5290493,
+          "service_p99_ns": 5290493
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 0,
+          "log_delta": 976,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 6574612,
+          "service_ns": 6574612,
+          "workload": "same-command-retry"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 1,
+          "log_delta": 0,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 4682860,
+          "service_ns": 4682860,
+          "workload": "same-command-retry"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 2,
+          "log_delta": 0,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 4848861,
+          "service_ns": 4848861,
+          "workload": "same-command-retry"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 3,
+          "log_delta": 0,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 5290493,
+          "service_ns": 5290493,
+          "workload": "same-command-retry"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "rt-0",
+          "index": 4,
+          "log_delta": 0,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 4456403,
+          "service_ns": 4456403,
+          "workload": "same-command-retry"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "same-command-retry"
+    },
+    {
+      "admitted_entries": 1,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 32,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 0,
+        "capacity": 0,
+        "conflict_retained": 5,
+        "error": 0,
+        "new_success": 1,
+        "replayed": 0,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 49152,
+      "elapsed_ns": 52018580,
+      "expected_admitted_entries": 1,
+      "expected_observations": 5,
+      "expected_outcomes": [
+        "new_success",
+        "conflict_retained",
+        "conflict_retained",
+        "conflict_retained",
+        "conflict_retained",
+        "conflict_retained"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 19,
+      "first_capacity_index": null,
+      "log_delta_sum": 2040,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 10346253,
+      "mixed_result_p99_service_ns": 10346253,
+      "outcomes": {
+        "conflict_retained": {
+          "count": 5,
+          "scheduled_p99_ns": 9855832,
+          "service_p99_ns": 9855832
+        },
+        "new_success": {
+          "count": 1,
+          "scheduled_p99_ns": 10346253,
+          "service_p99_ns": 10346253
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 0,
+          "log_delta": 920,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 10346253,
+          "service_ns": 10346253,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 1,
+          "log_delta": 320,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 9855832,
+          "service_ns": 9855832,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 2,
+          "log_delta": 200,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 8761175,
+          "service_ns": 8761175,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 3,
+          "log_delta": 200,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 7217881,
+          "service_ns": 7217881,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 4,
+          "log_delta": 200,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 8533860,
+          "service_ns": 8533860,
+          "workload": "history-growth"
+        },
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "hg-0",
+          "index": 5,
+          "log_delta": 200,
+          "outcome": "conflict_retained",
+          "scheduled_latency_ns": 7254352,
+          "service_ns": 7254352,
+          "workload": "history-growth"
+        }
+      ],
+      "samples_after_first_capacity": null,
+      "workload": "history-growth"
+    },
+    {
+      "admitted_entries": 3,
+      "budget": {
+        "max_bytes": 1000000,
+        "max_entries": 3,
+        "observation_budget": 8
+      },
+      "counts": {
+        "business_rejected": 0,
+        "capacity": 3,
+        "conflict_retained": 0,
+        "error": 0,
+        "new_success": 3,
+        "replayed": 1,
+        "unknown": 0
+      },
+      "data_dir_delta_bytes": 32768,
+      "elapsed_ns": 48999080,
+      "expected_admitted_entries": 3,
+      "expected_observations": 0,
+      "expected_outcomes": [
+        "new_success",
+        "new_success",
+        "new_success",
+        "capacity",
+        "capacity",
+        "capacity",
+        "replayed"
+      ],
+      "exploration_data": true,
+      "exploration_new_success_per_elapsed_s": 61,
+      "first_capacity_index": 3,
+      "log_delta_sum": 2432,
+      "low_load": false,
+      "mixed_result_p99_scheduled_latency_ns": 10940803,
+      "mixed_result_p99_service_ns": 10940803,
+      "outcomes": {
+        "capacity": {
+          "count": 3,
+          "scheduled_p99_ns": 7740845,
+          "service_p99_ns": 7740845
+        },
+        "new_success": {
+          "count": 3,
+          "scheduled_p99_ns": 10940803,
+          "service_p99_ns": 10940803
+        },
+        "replayed": {
+          "count": 1,
+          "scheduled_p99_ns": 4527316,
+          "service_p99_ns": 4527316
+        }
+      },
+      "outcomes_match_simulation": true,
+      "p99_is_product_slo": false,
+      "samples": [
+        {
+          "admitted_entries": 1,
+          "capacity_reason": null,
+          "command_id": "sa-0",
+          "index": 0,
+          "log_delta": 976,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 9168799,
+          "service_ns": 9168799,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 2,
+          "capacity_reason": null,
+          "command_id": "sa-1",
+          "index": 1,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 10940803,
+          "service_ns": 10940803,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "sa-2",
+          "index": 2,
+          "log_delta": 728,
+          "outcome": "new_success",
+          "scheduled_latency_ns": 6545184,
+          "service_ns": 6545184,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": "entry_budget",
+          "command_id": "sa-3",
+          "index": 3,
+          "log_delta": 0,
+          "outcome": "capacity",
+          "scheduled_latency_ns": 5252257,
+          "service_ns": 5252257,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": "entry_budget",
+          "command_id": "sa-4",
+          "index": 4,
+          "log_delta": 0,
+          "outcome": "capacity",
+          "scheduled_latency_ns": 7740845,
+          "service_ns": 7740845,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": "entry_budget",
+          "command_id": "sa-5",
+          "index": 5,
+          "log_delta": 0,
+          "outcome": "capacity",
+          "scheduled_latency_ns": 4776051,
+          "service_ns": 4776051,
+          "workload": "saturation"
+        },
+        {
+          "admitted_entries": 3,
+          "capacity_reason": null,
+          "command_id": "sa-0",
+          "index": 6,
+          "log_delta": 0,
+          "outcome": "replayed",
+          "scheduled_latency_ns": 4527316,
+          "service_ns": 4527316,
+          "workload": "saturation"
+        }
+      ],
+      "samples_after_first_capacity": 3,
+      "workload": "saturation"
+    }
+  ]
+}
