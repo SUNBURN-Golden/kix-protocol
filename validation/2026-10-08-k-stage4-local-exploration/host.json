@@ -1,0 +1,100 @@
+{
+  "architecture": "x86_64",
+  "candidate_ports_before_start": [],
+  "chain_inventory_writer": false,
+  "cpu_model": "Intel(R) Xeon(R) Processor",
+  "disk": {
+    "df": {
+      "code": 0,
+      "stderr": "",
+      "stdout": "Filesystem        1B-blocks        Used   Available Use% Mounted on\noverlay        135152996352 96522326016 31741984768  76% /"
+    },
+    "flush_characteristic": "unverified: virtual disk, no equipment datasheet, rotational flag is not a hardware flush proof",
+    "lsblk": {
+      "code": 0,
+      "stderr": "",
+      "stdout": "NAME  SIZE ROTA TYPE MODEL\nvda   128G    1 disk \nvdb   128G    1 disk"
+    },
+    "model": "unreadable: [Errno 2] No such file or directory: '/sys/block/vda/device/model'",
+    "rotational_vda": "1"
+  },
+  "exploration_data": true,
+  "fdbserver_version": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "FoundationDB 7.3 (v7.3.77)\nsource version 3ea44ce1d9003ad095e408039e1f755c319c4dfb\nprotocol fdb00b073000000"
+  },
+  "git_head": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "7481b0e16ce9b903abbffa62249bb91cd9e63cfe"
+  },
+  "locked_blobs": {
+    "runtime/crates/kix-kernel/src/lib.rs": {
+      "expected": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+      "match": true,
+      "observed": "69564b166f0c27f9af5d8422f0a466b18d74c20f"
+    },
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": {
+      "expected": "b607996c83a119c349f1cc90469ac1ba82764e20",
+      "match": true,
+      "observed": "b607996c83a119c349f1cc90469ac1ba82764e20"
+    }
+  },
+  "meminfo": {
+    "MemAvailable": "6244004 kB",
+    "MemTotal": "16397616 kB",
+    "SwapTotal": "0 kB"
+  },
+  "money": "UNDETERMINED \u2014 \uc0ac\uc6a9\uc790/\uc6b4\uc601 \ucc45\uc784\uc790",
+  "nproc": 8,
+  "origin_main": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "7481b0e16ce9b903abbffa62249bb91cd9e63cfe"
+  },
+  "os_release": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"",
+  "packages": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "foundationdb-clients\t7.3.77\nfoundationdb-server\t7.3.77\npostgresql-17\t17.11-0+deb13u1\npostgresql-client-17\t17.11-0+deb13u1\npython3-psycopg\t3.2.6-1"
+  },
+  "postgres_version": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "postgres (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1)"
+  },
+  "public_endpoint": false,
+  "python": "3.13.5",
+  "recorded_before_candidate_start": true,
+  "resource_budget": {
+    "cpu_cores": [
+      0,
+      1
+    ],
+    "fdb_cache_memory": "64MiB",
+    "fdb_memory": "384MiB",
+    "fdb_port": 4501,
+    "fdb_storage_memory": "96MiB",
+    "fdb_version_pin": "7.3.77",
+    "includes": "backend process, client, logs, and observation files of that candidate",
+    "not_a_product_limit": true,
+    "postgres_shared_buffers": "64MB",
+    "total_disk_cap_bytes": 268435456,
+    "total_ram_cap_bytes": 536870912
+  },
+  "uname": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "Linux 6.12.94+ #1 SMP PREEMPT_DYNAMIC Tue Oct  6 06:02:30 UTC 2026 x86_64"
+  },
+  "workload_settings": {
+    "arrival_rate_per_s": 0,
+    "concurrency": 1,
+    "label": "exploration_data",
+    "p99_method": "nearest_rank_ceil",
+    "rate_zero_means": "scheduled_latency_equals_service_time",
+    "repeats": 1,
+    "warmup_calls": 2
+  }
+}
