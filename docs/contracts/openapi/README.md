@@ -92,7 +92,7 @@ v0.3-rc1 `commands` 키를 모두 싣는다. `x-kix-omitted-commands`는 빈 배
 4. 본문의 알려지지 않은 필드는 거절한다 (`additionalProperties: false`, `unknownFields: REJECT`).
 5. `actor`를 인증 결과로 믿지 않는다. 인증 구현은 이 문서에 없다.
 6. 재시도, 전송 성공, 운영 엔드포인트를 이 문서에서 추론하지 않는다.
-7. 비운영 루프백 통합 관문은 아래 절이 적는다. 그 관문은 운영 엔드포인트가 아니고, 상거래 앱 결합도 아니다.
+7. 비운영 루프백 통합 관문은 아래 절이 적는다. 그 관문은 운영 엔드포인트가 아니고, 상거래 앱 결합도 아니다. 브라우저 전송은 `--browser-origin http://127.0.0.1:5173`일 때만 열린다. 기본은 꺼져 있다. 그 전송은 운영 결합, 공개 엔드포인트, 인증, 프로토콜 정본이 아니다.
 
 ## 검사
 
@@ -119,7 +119,14 @@ python3 -m integration_gate --port 8765
 | `POST /x-kix-contract-only/local-call` | 봉투 `operationId`, `actor`, `action`, `body`. 본문은 그 명령의 공개 스키마로 검사한 뒤 `Core.execute` |
 | `GET /health` | 프로세스가 응답하는지만 본다. 프로토콜 명령이 아니다 |
 | `GET /ready` | 인메모리 참조 코어와 40개 명령 카탈로그가 열려 있는지만 본다. 운영 준비가 아니다 |
-| 그 밖 경로·메서드 | 실패로 닫는다. 이벤트·티켓·결제·공연장·시장의 REST 트리는 없다 |
+| `OPTIONS` (플래그가 켜진 경우만) | 로컬 호출·`/health`·`/ready`에서 허용 출처의 프리플라이트만 204. 코어를 호출하지 않는다 |
+| 그 밖 경로·메서드 | 기본은 실패로 닫는다. 이벤트·티켓·결제·공연장·시장의 REST 트리는 없다 |
+
+플래그 `--browser-origin http://127.0.0.1:5173`를 준 경우에만 브라우저 전송이 열린다. 기본은 꺼져 있다. 켜지면 `Host`는 `127.0.0.1` 또는 `127.0.0.1:<듣는 포트>`만 받는다. 그 밖, 없거나 두 개인 `Host`는 400이고 CORS 헤더는 없다. 허용 출처 `http://127.0.0.1:5173`의 프리플라이트는 204이고 본문이 없다. 같은 출처의 실제 응답에는 `Access-Control-Allow-Origin`과 `Vary: Origin`만 더한다. 자격 증명 헤더는 없다. `Access-Control-Expose-Headers`도 없으므로 페이지 스크립트는 `X-Request-Id`를 읽지 못한다. `Access-Control-Allow-Private-Network`는 보내지 않는다. 헤더를 파싱하기 전에 만든 응답(414, 잘못된 요청)에는 CORS 헤더가 없다. OpenAPI 문서 자체는 바꾸지 않았다. 서버 URL, 보안 스킴, `OPTIONS` 오퍼레이션은 없다.
+
+```bash
+python3 -m integration_gate --port 8765 --browser-origin http://127.0.0.1:5173
+```
 
 거절은 HTTP 200으로 숨기지 않는다. 스키마·봉투 오류는 4xx이고, `Core.execute`가 `Rejected`를 던지면 422에 그 코드가 담긴다. 본문 상한은 65536바이트, 요청 시간 상한은 5초, 헤더 상한은 8192바이트다.
 
