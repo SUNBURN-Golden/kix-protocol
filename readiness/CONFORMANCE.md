@@ -66,6 +66,14 @@ needed. The local wrapper stays single-process, single-writer, local-file and
 opt-in through `--readiness-dir`. All production/truth and FSM durable labels
 remain false. No runtime source or protocol contract changes are made.
 
+Later local scenarios added beside that table, still through the same public
+adapter surface: a reservation hold that crashes before durable is absent
+until retried once; a crash-before-durable store append does not take a record
+slot; a partial append does not either. Schema 2 migration, the AI delegation
+wrap, named budget limits, and audit-line fields are local-wrapper coverage in
+`readiness.test_faults` and the loopback gate tests. They do not add a product
+limit or make schema 2 a readable file version.
+
 Local acceptance is passing existing tests plus the reusable scenarios through
 the existing CI command. The application still owns non-author exact-head
 review, required Fable audits, draft publication, and successful exact-head KTX

@@ -936,6 +936,80 @@ class TransportTests(unittest.TestCase):
             self.assertIn('UNSUPPORTED_SCHEMA', unknown.stderr)
             self.assertNotIn('listening', unknown.stdout)
 
+    def test_budget_rejection_names_the_record_limit_and_omits_the_body(self):
+        domain = load_catalogue(ROOT).domain
+        captured = io.StringIO()
+        previous = sys.stderr
+        sys.stderr = captured
+
+        def run(_httpd, port):
+            status, payload, _headers = post_call(
+                port, 'op-clock', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 50},
+            )
+            self.assertEqual(status, 200, payload)
+            status, payload, _headers = post_call(
+                port, 'op-clock-2', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 60},
+            )
+            self.assertEqual(status, 503)
+            self.assertEqual(payload['error'], 'JOURNAL_BUDGET')
+
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                run_with_server(run, readiness_dir=tmp, max_journal_records=1)
+        finally:
+            sys.stderr = previous
+        rejected = [
+            json.loads(line)
+            for line in captured.getvalue().splitlines()
+            if line.startswith('{') and '"JOURNAL_BUDGET"' in line
+        ]
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0]['journalDecision'], 'budget_rejected')
+        self.assertEqual(rejected[0]['budgetLimit'], 'records')
+        self.assertEqual(rejected[0]['queued'], 0)
+        self.assertIs(rejected[0]['productionReadiness'], False)
+        self.assertIs(rejected[0]['protocolTruth'], False)
+        self.assertNotIn('body', rejected[0])
+        self.assertNotIn('entry', rejected[0])
+        self.assertNotIn('now', json.dumps(rejected[0]))
+
+    def test_overload_observation_does_not_queue(self):
+        domain = load_catalogue(ROOT).domain
+        captured = io.StringIO()
+        previous = sys.stderr
+        sys.stderr = captured
+
+        def run(httpd, port):
+            self.assertEqual(httpd.try_admit(), 'OK')
+            try:
+                status, payload, _headers = post_call(
+                    port, 'op-busy', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 4},
+                )
+                self.assertEqual(status, 503)
+                self.assertEqual(payload['error'], 'OVERLOADED')
+            finally:
+                httpd.release_admit()
+
+        try:
+            run_with_server(run, max_in_flight=1)
+        finally:
+            sys.stderr = previous
+        overloaded = [
+            json.loads(line)
+            for line in captured.getvalue().splitlines()
+            if line.startswith('{') and '"OVERLOADED"' in line
+        ]
+        self.assertEqual(len(overloaded), 1)
+        self.assertEqual(overloaded[0]['admit'], 'OVERLOADED')
+        self.assertEqual(overloaded[0]['queued'], 0)
+        self.assertEqual(overloaded[0]['journalDecision'], 'not_attempted')
+        self.assertIs(overloaded[0]['productionReadiness'], False)
+        self.assertNotIn('body', overloaded[0])
+        self.assertNotIn('now', json.dumps(overloaded[0]))
+
 
 if __name__ == '__main__':
     unittest.main()

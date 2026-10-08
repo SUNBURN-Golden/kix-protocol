@@ -8,4 +8,5 @@ production-conformance claim.
 
 PROTOCOL_TRUTH = False
 PRODUCTION_CONFORMANCE = False
+PRODUCTION_READINESS = False
 PRODUCTION_ENDPOINT = False

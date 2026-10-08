@@ -557,6 +557,99 @@ class BackendConformance:
             finally:
                 restarted.close()
 
+    def test_reservation_crash_before_durable_hold_is_absent_until_retried(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._reservation_show(boundary)
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call(
+                        'reservation',
+                        lambda machine: self._hold(machine, 'reserve-1', 'hold-1'),
+                        fault='crash_before_durable',
+                    )
+                self.assertEqual(raised.exception.code, 'CRASH_BEFORE_DURABLE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                self.assertEqual(
+                    code(lambda: recovered.machine('reservation').view('reserve-1'), ReservationError),
+                    'UNKNOWN_RESERVATION',
+                )
+                held = recovered.call('reservation', lambda machine: self._hold(machine, 'reserve-1', 'hold-1'))
+                self.assertFalse(held['duplicate'])
+                replay = recovered.call('reservation', lambda machine: self._hold(machine, 'reserve-1', 'hold-1'))
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(
+                    [entry['op'] for entry in recovered.machine('reservation').export_journal() if entry['op'] == 'hold'],
+                    ['hold'],
+                )
+                self.assertIs(recovered.machine('reservation').view('reserve-1')['durable'], False)
+            finally:
+                recovered.close()
+
+    def test_crash_before_durable_leaves_the_attempt_out_of_the_record_budget(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self.backend.open_store(tmp)
+            try:
+                store.append(self._core_record('op-kept'))
+                before = list(store.records)
+                size = store.committed_bytes
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    store.append(self._core_record('op-crashed'), fault='crash_before_durable')
+                self.assertEqual(raised.exception.code, 'CRASH_BEFORE_DURABLE')
+                self.assertEqual(store.records, before)
+                self.assertEqual(store.committed_bytes, size)
+                self.assertTrue(store.can_accept(1, len(before) + 1, size + 1))
+                self.assertFalse(store.has_operation('op-crashed'))
+            finally:
+                store.close()
+            recovered = self.backend.open_store(tmp)
+            try:
+                self.assertTrue(recovered.has_operation('op-kept'))
+                self.assertFalse(recovered.has_operation('op-crashed'))
+                self.assertEqual(len(recovered.records), 1)
+            finally:
+                recovered.close()
+
+    def test_partial_attempt_does_not_consume_a_record_slot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = self.backend.open_store(tmp)
+            try:
+                store.append(self._core_record('op-kept'))
+                count = len(store.records)
+                size = store.committed_bytes
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    store.append(self._core_record('op-torn'), fault='partial')
+                self.assertEqual(raised.exception.code, 'PARTIAL_WRITE')
+                self.assertEqual(len(store.records), count)
+                self.assertEqual(store.committed_bytes, size)
+                self.assertTrue(store.can_accept(1, count + 1, size + 1))
+                self.assertFalse(store.has_operation('op-torn'))
+            finally:
+                store.close()
+            recovered = self.backend.open_store(tmp)
+            try:
+                self.assertEqual(
+                    [record['operationId'] for record in recovered.records],
+                    ['op-kept'],
+                )
+                self.assertTrue(recovered.can_accept(1, 2, recovered.committed_bytes + 1))
+            finally:
+                recovered.close()
+
+    def _core_record(self, operation_id):
+        return {
+            'kind': 'core_commit',
+            'machine': 'integration_core',
+            'operationId': operation_id,
+            'actor': 'operator',
+            'action': 'advance_clock',
+            'body': {'now': 1},
+            'receiptDigest': 'ab' * 32,
+        }
+
     def _initiate_body(self):
         return dict(
             trade_id='trade-1',
