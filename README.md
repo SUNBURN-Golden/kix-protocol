@@ -26,10 +26,10 @@ KIX는 티켓 권리·거래 프로토콜을 중심으로 예매, 공식 리셀,
 
 | 작업 | 현재 판단 | 근거 |
 |---|---|---|
-| R2 및 자체 복제·저장·로그 신규 구현 | **금지 유지**. 단, 비운영 로컬 래퍼인 `readiness/`는 D-3 경계 안에서 허용 | [개발계획 §1·§5](docs/DEVELOPMENT_PLAN.md), [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [프로그램 결정 §4](docs/decisions/PROGRAM_DECISIONS_20260928.md) |
-| (a) PR #11의 wire·저널을 v4 위로 통합 | **착수 승인 없음** | [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [#11 태그 보존·호환성](docs/status/PR11_PRESERVATION.md) |
+| R2 및 자체 복제·저장·로그 신규 구현 | **금지 유지**. 단, 비운영 로컬 래퍼인 `readiness/`는 D-3 경계 안에서 허용 | [개발계획 §1·§5](docs/DEVELOPMENT_PLAN.md), [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [프로그램 결정 §4](docs/decisions/PROGRAM_DECISIONS_20260928.md), [백엔드 채택 제안 #140](docs/decisions/BACKEND_ADOPTION_PROPOSAL_20261009.md) |
+| (a) PR #11의 wire·저널을 v4 위로 통합 | **착수 승인 없음** | [권위 모델 결정](docs/decisions/AUTHORITY_MODEL_1.md), [#11 태그 보존·호환성](docs/status/PR11_PRESERVATION.md), [통합 (a) 결정 제안 #142](docs/decisions/INTEGRATION_A_DECISION_PROPOSAL_20261009.md) |
 | 명칭·죽은 코드·브랜치·태그·Cargo/CI/lint 등 위생 일괄 실행 | **목록만 유지, 실행 금지** | [코드 위생 목록](docs/CODE_HYGIENE_BACKLOG.md), [개발계획 §1](docs/DEVELOPMENT_PLAN.md) |
-| 색인 변경·새 종결/회수/해제 전이 | **잠금 v4에서 금지**. 새 v5는 사용자 설계 결정 병합 뒤, 열린 입력 의존 부분은 정지 | [개발계획 §5·§6.3](docs/DEVELOPMENT_PLAN.md), [로드맵 R-4](docs/decisions/PROGRAM_ROADMAP_20260930.md) |
+| 색인 변경·새 종결/회수/해제 전이 | **잠금 v4에서 금지**. 새 v5는 사용자 설계 결정 병합 뒤, 열린 입력 의존 부분은 정지 | [개발계획 §5·§6.3](docs/DEVELOPMENT_PLAN.md), [로드맵 R-4](docs/decisions/PROGRAM_ROADMAP_20260930.md), [v5 crate 설계 결정 제안 #138](docs/decisions/STAGE2_V5_CRATE_DESIGN_DECISION_20261008.md) |
 
 로드맵의 조건부 로컬 구현은 실자금·실 PG/은행/KYC·공개 운영 엔드포인트·Sui testnet/mainnet·R2·자체 복제/합의/저장 엔진을 열지 않습니다. 새 coin/TIX 모듈도 잠금이며, 유일한 TL-2 localnet 예외는 Astra 재결정과 사용자 `tl-coin-lock-adr` 병합 뒤입니다. [프로그램 결정 §5](docs/decisions/PROGRAM_DECISIONS_20260928.md)의 해제 조건을 유지합니다.
 
@@ -37,7 +37,7 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 
 ## 4. 승인된 다음 작업
 
-첫 묶음의 잔여 검토·보완은 승인 범위에 유지됩니다. 잠금 v4의 비교 모델·계약 불변식 검사 검토, LC-FACT/LC-CUT/LC-TERM 수명 계약의 미정 입력 정리, 별도 성능 하네스·측정 계약의 검토를 진행합니다. 구체적인 열린 항목과 답할 주체는 [FIRST_BATCH_OPEN_INPUTS](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md)를 따릅니다. 후속 승인 범위와 조건은 아래 로드맵 및 개발계획 §5·§18을 함께 읽습니다.
+첫 묶음은 완료가 아닙니다. [열린 입력](docs/contracts/FIRST_BATCH_OPEN_INPUTS.md) §4는 「잔여 통합 검토·증거 마감」만 닫고, 수명 계약 입력 반영과 고정 환경 성능 반복은 미완결로 둡니다. 「새로 실입력까지 완결된 행: 0」은 그대로입니다. I12는 미완결입니다. 후속 승인 범위와 조건은 아래 로드맵 및 개발계획 §5·§18을 함께 읽습니다.
 
 2026-09-17 사용자 결정으로 **토스페이먼츠를 잠정 선택하고, 결제수단 1단계는 토스를 통한 국내 KRW 일반 카드 결제로 한정**합니다. 리셀·금융 대금의 실제 가맹 범위와 일반 결제 웹훅 서명 규격은 미확인이므로 최종 가맹·운영 승인이 아닙니다. 간편결제·가상계좌는 토스 내 수단으로 나중에 검토하며, 간편결제 직접 가맹은 이번 범위가 아닙니다.
 
@@ -57,6 +57,7 @@ KTX는 옛 코드명 표기이며 **정의된 약자가 아닙니다**. **3단�
 
 - **Track K (커널·영속):** 위 첫 묶음과 개발계획의 단계를 따릅니다. 4단계 backend 비교는 준비와 로컬 탐색 실측까지 열렸습니다.
 - **Track P (제품 프로토콜):** Task 005 Wave 0~7과 그 후속입니다. 계약·mock·Move 확장·OpenAPI·비운영 0.x SDK·분리 저장소 앱·AI 위임 계약을 다루며, 게이트 기록만으로 착수합니다. Wave 2~5는 사후 승인됐고, Wave 6은 `kix-commerce-apps`에서 열렸습니다.
+- Track K 결정 문서의 위치와 각 문서 채택 문장 원문은 [개발계획 §5](docs/DEVELOPMENT_PLAN.md)의 「병합된 문서 위치(2026-10-09, 위치 안내만)」 표를 봅니다.
 
 실자금·실 제공자 호출·공개 운영 엔드포인트·mainnet·커널 잠금·R2는 계속 잠겨 있습니다. 각 잠금의 해제 조건은 결정 문서 §5에 있습니다.
 
