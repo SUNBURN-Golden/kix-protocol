@@ -54,6 +54,7 @@
 | [v5 crate 설계 결정](decisions/STAGE2_V5_CRATE_DESIGN_DECISION_20261008.md) | 종결·슬롯 해제·기록 회수·review 해제·색인을 잠금 v4 밖에 둘 새 crate | 설계 결정 제안. 사용자 병합 때에만 효력. 구현 없음 |
 | [백엔드 채택 결정 제안](decisions/BACKEND_ADOPTION_PROPOSAL_20261009.md) | 5단계에 쓸 로컬·비운영 backend, 또는 아직 없음 | 결정 제안, 사용자 병합 때에만 효력, 구현 없음 |
 | [통합 (a) 잔여 공수 재산정](decisions/INTEGRATION_A_REESTIMATE_20261009.md) | PR #11 저널 통합 (a)의 잔여 계획 인일. 대상은 잠금 v4, 계획된 v5 crate, 5단계 로컬 PostgreSQL | 추정 기록. 결정이 아님. (a)·R2·저널·저장을 승인하지 않음 |
+| [통합 (a) 결정 제안](decisions/INTEGRATION_A_DECISION_PROPOSAL_20261009.md) | PR #11 저널 통합 (a)를 지금 할지, 한다면 잠금 v4·v5 프레임 저널·v5와 로컬 PostgreSQL 중 어디인지 | 결정 제안, 사용자 병합 때에만 효력, 구현 없음. 문장 수정 없이 병합하면 DEFERRED |
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
@@ -68,6 +69,7 @@
 - [k1-adapter-event-identity](../validation/2026-10-08-k1-adapter-event-identity/README.md) — 초안 증거 기록.
 - [k1-evidence-close](../validation/2026-10-08-k1-evidence-close/README.md) — 첫 묶음 통합 검토·증거 마감 기록. 수명 입력 반영과 고정 환경 성능 반복은 미완결로 둔다.
 - [k-a-reestimate](../validation/2026-10-09-k-a-reestimate/README.md) — 2026-10-09 통합 (a) 잔여 공수 재산정 기록. 계획용 추정이며 착수 승인이 아니다.
+- [k-a-integration-decision](../validation/2026-10-09-k-a-integration-decision/README.md) — 2026-10-09 통합 (a) 결정 제안 기록. 권고는 실행하지 않음. 사용자 병합 때에만 효력.
 
 ## 역사 문서와 증거
 
