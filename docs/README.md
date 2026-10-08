@@ -37,6 +37,32 @@
 
 닫힌 미병합 [PR #35](https://github.com/BeautifulMind-JT/kix-protocol/pull/35)의 금융·플랫폼 청사진은 이 색인의 항목이 아니다. 역사적 설계 자료로만 참고한다.
 
+## 2026-10-08 병합 문서 색인 — 초안·결정 초안·ADR
+
+이 절은 문서의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
+|---|---|---|
+| [어댑터 전송·이벤트·결제·operation 정체성](contracts/ADAPTER_EVENT_IDENTITY.md) | 전송·원문 증거·이벤트·결제·경제 operation의 묶음 | 계약 초안 0.1. 구현·schema·wire 아님 |
+| [조회·목록 쿼리](contracts/READ_MODEL_QUERIES.md) | 상거래 표면의 조회·목록 의미 | 초안 0.1. 와이어 본문·카탈로그 삽입 없음 |
+| [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md) | 조회·제안·실행 권한. 오프라인 목의 술어 | 초안 0.1. 실행을 켜지 않음. 목은 `reference/ai_delegation/` |
+| [1차 발행 가격·수수료](contracts/MOVE_PRIMARY_ISSUANCE_PRICE_FEE.md) | 1차 발행의 구조·바인딩·산술·사건 의미 | 초안 0.1. 가격·수수료 값은 정하지 않음 |
+| [확장 권리 프로파일](contracts/RIGHTS_SCALE_PROFILE.md) | 확장 프로파일 계약 | 초안 0.1. 미검토·미측정 |
+| [RS-0 결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) | 권리 확장의 객체·재고 권위 | 결정 초안. 확정 조건은 그 문서가 정한다 |
+| [루프백 관문의 브라우저 접근](decisions/GATE_BROWSER_ACCESS_DECISION_20261008.md) | 브라우저가 루프백 관문에 닿는 방식의 비교 | "채택 제안"(그 문서의 표현). 관문 코드 변경 없음 |
+| [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
+| [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
+| [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | 2026-10-06 `2554173` 시점 스냅샷. 이후 병합분은 반영하지 않음 |
+
+[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) 본문은 이 색인에서 고치지 않았다. 그 행은 2026-10-06 `2554173` 스냅샷의 한계이며, 그 뒤 들어온 문서를 반영하지 않는다.
+
+같은 날짜의 검증 기록:
+
+- [k-stage4-local-exploration](../validation/2026-10-08-k-stage4-local-exploration/README.md) — 탐색 자료, 제품 SLO·backend 채택·우열 아님. 비교표 정본은 개발계획 §9.
+- [ai-delegation-contract-mock](../validation/2026-10-08-ai-delegation-contract-mock/README.md) — 오프라인 목 시험 기록.
+- [k1-adapter-event-identity](../validation/2026-10-08-k1-adapter-event-identity/README.md) — 초안 증거 기록.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
