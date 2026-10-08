@@ -21,5 +21,7 @@ python3 scripts/stage4_local_explore.py validation/2026-10-08-k-stage4-local-exp
 python3 -m unittest exploration.stage4.test_stage4
 ```
 
+`exploration.stage4.test_stage4`는 로컬 PostgreSQL·FoundationDB 바이너리가 필요하므로 CI(`protocol.yml`)가 실행하지 않는다.
+
 후보를 동시에 띄우지 않는다. 체인 재고 writer, 실 PG/은행 호출, 공개 운영
 엔드포인트는 없다.
