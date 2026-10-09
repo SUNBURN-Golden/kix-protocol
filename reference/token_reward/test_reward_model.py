@@ -3,8 +3,9 @@
 Fixture numbers in this file are not policy values. They exercise TK-4,
 TK-12, and V6. They are not an independent verification of those predicates.
 
-This suite is local evidence. The protocol workflow's reference loop does
-not name this directory.
+This suite runs in the protocol workflow's offline reference loop
+(.github/workflows/protocol.yml). A passing run is not an independent
+verification.
 """
 
 import hashlib
