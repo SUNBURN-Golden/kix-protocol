@@ -161,22 +161,126 @@ HTTP 서버는 없다. 아래는 목 함수다. `view` / `view_claim`은 상태�
 
 ## 5. 의도적으로 비운 항목
 
-다음에 값을 채워 넣지 않는다. 제품 정책이 필요하면 `DECISION_REQUIRED · Astra`다.
+다음에 값을 채워 넣지 않는다. 제품 정책 숫자가 필요하면 담당은 Astra다.
+아래 다섯 항목의 목 경계는 §5.1이다. 2026-10-09 소유자 결정(JunTae)이 선택지 A를 목 경계로 채택했다. 정책 숫자는 비어 있다.
 
-- 대주·차주·담보권자·환불채무자의 법적 확정
+- 대주·차주·담보권자·환불채무자의 법적 확정 (§5.1 `legal-parties`)
 - 여신 인허가, 등록, 규제 상품 분류, 약관, 면허 번호
-- 이자, 수수료, APR, 기간, 상환 일정, 연체, 손실 귀속, 상각
-- 노트 사이의 우선순위, 후순위, 배당 순위
-- 담보 대항요건, 등기, 점유, 외부 질권의 완전성
+- 이자, 수수료, APR, 기간, 상환 일정, 연체, 손실 귀속, 상각 (§5.1 `interest-apr-schedule`)
+- 노트 사이의 우선순위, 후순위, 배당 순위 (§5.1 `seniority`)
+- 담보 대항요건, 등기, 점유, 외부 질권의 완전성 (§5.1 `perfection`)
 - 처분, 실행, 유질, 수익 귀속
 - 은행 출금, PG, 고객 입금, 상환 관찰, 준비금
 - `confirmed_cash` 또는 `recovery_due`를 재원으로 쓰는 일
-- 스냅샷 이후 정산 변화에 맞춘 한도 재산정
+- 스냅샷 이후 정산 변화에 맞춘 한도 재산정 (§5.1 `limit-recalculation`)
 - 부담 미정 환불과 메모의 상계
 - 관람권, 검표, 권리 폐기
 - 내구성, 은행 정확히 한 번, 체인 최종성, 규제 준수
 - 제품 TPS, p99, 실패율
 - 화면, 앱, 실자금
+
+### 5.1 초안 0.2 — 채택된 목 경계
+
+개정 ID `F04-MOCK-TERMS-DRAFT-0.2`. 계약 버전 `0.2`.
+이전의 빈 항목은 이 개정에서 선택지와 채택된 목 경계로 다시 적는다. 정책 숫자는 여전히 비어 있다.
+
+2026-10-09 소유자 결정(JunTae)이 선택지 A를 목 경계로 채택했다.
+선택지 B, C, D는 기록만 있고 채택하지 않는다.
+`decided_value`는 없다. 참조 모듈은 그 항목을 채우지 않는다.
+정책 숫자는 `UNDETERMINED`이고 담당을 이름 붙인다.
+
+노드 `f04-mock-deepening`. 결정 규칙은 [프로그램 로드맵 R-9](../decisions/PROGRAM_ROADMAP_20260930.md)와 `settlement-policy-deepening`과 같다.
+Task 005 결정 6대로 실여신·실지급은 잠금이다.
+조회에 붙는 `open_terms`는 이 목 경계의 기록이다. APR, 순위 번호, 법적 당사자, 재산정 공식이 아니다.
+F04·E06 라벨은 설계중이다.
+
+결정 규칙은 법률 당사자와 담보 완전성을 숫자로 정하지 않는다. 그 둘은 `UNDETERMINED`다.
+이자·순위·한도의 숫자도 이 개정에 없다. 담당은 Astra다.
+
+기계가 읽는 표는 `reference/credit_advance_f04/open_terms.py`다.
+OpenAPI 카탈로그, `protocol_contract.json`, 생성 SDK, manifest-v1 입력은 이 개정이 바꾸지 않는다.
+BOOTSTRAP은 이 개정을 적격화하지 않는다. 이 개정은 카탈로그 의미를 확대하지 않는다.
+소비자는 이 개정에 대해 새 `SEMANTIC_CONFORMANCE`를 요구하지 않는다.
+
+### 5.2 이 노드가 분류하는 항목
+
+| ID | 지금 목이 하는 일 | 채택 | 정책 숫자 | 그 밖의 미정 |
+|---|---|---|---|---|
+| `legal-parties` | `beneficiary_role`은 라벨이다. `legal_debtor_bound`는 거짓이다. 대주·차주·담보권자·환불채무자를 묶지 않는다 | A | `UNDETERMINED` | 법적 당사자는 `UNDETERMINED`. 담당은 사용자. 법률 검토의 주체와 시점은 로드맵 D-E. 당사자·관할·자료는 I10 |
+| `interest-apr-schedule` | `interest_defined`는 거짓이다. `product`가 있으면 `CREDIT_PRODUCT_UNDEFINED`. `ACCRUE`, `INTEREST`, `FEE`도 그 코드다 | A | `UNDETERMINED` | APR, 수수료, 기간, 상환 일정은 `UNDETERMINED`. 담당은 Astra |
+| `seniority` | 순위 키가 없다. `priority_bound`는 거짓이다. 예약 합만 미지급 액면 안에 둔다. 넘으면 `ADVANCE_EXCEEDS_OPEN_FACE`. `PRIORITY`는 `CREDIT_PRODUCT_UNDEFINED` | A | `UNDETERMINED` | 선순위·후순위·배당 순위는 `UNDETERMINED`. 담당은 Astra |
+| `perfection` | `collateral_perfected`와 `external_pledge_complete`는 거짓이다. `PERFECT`는 `CREDIT_PRODUCT_UNDEFINED` | A | `UNDETERMINED` | 대항요건·등기·점유·외부 질권은 `UNDETERMINED`. 담당은 사용자. 법률 검토의 주체와 시점은 로드맵 D-E. 대항요건은 I10과 같은 법무 경로 |
+| `limit-recalculation` | 첫 수락 조회의 `open_face`를 유지한다. 다른 조회는 `FACE_SNAPSHOT_FROZEN`. `confirmed_cash`와 `recovery_due`는 천장에 더하지 않는다 | A | `UNDETERMINED` | 한도 재산정 공식은 `UNDETERMINED`. 담당은 Astra |
+
+표의 담당 문자열은 다음이다.
+
+- 사용자. 법률 검토의 주체와 시점은 로드맵 D-E. 당사자·관할·자료는 I10
+- Astra
+- 사용자. 법률 검토의 주체와 시점은 로드맵 D-E. 대항요건은 I10과 같은 법무 경로
+
+### 5.3 선택지
+
+각 항목의 채택은 A다. 나머지 선택지는 기록만 있고 채택하지 않는다.
+
+`legal-parties`
+
+- A. 역할 라벨만 저장한다. 대주·차주·담보권자·환불채무자를 묶지 않는다.
+- B. 호출자가 넘긴 식별자를 법적 당사자로 기록한다. 법률 확정이다.
+- C. 계약에 고정 법인을 적는다. 법률 확정이다.
+
+`interest-apr-schedule`
+
+- A. 이자·수수료·APR·기간·상환표를 정의하지 않는다.
+- B. 합성 고정 APR과 일정을 목 상품으로 채택한다. 이율·기간·일정은 정책 숫자다. 이 개정은 그 숫자를 적지 않는다.
+- C. 호출자 APR을 기록만 하고 이자는 계산하지 않는다. 그 APR도 정책 숫자다.
+
+`seniority`
+
+- A. 선순위·후순위·배당 순위를 두지 않고 합만 천장 안에 둔다.
+- B. 수락 순서를 선순위로 한다.
+- C. `beneficiary_role`을 순위 키로 한다.
+- D. 호출자가 순위를 넘긴다.
+
+`perfection`
+
+- A. 대항요건·등기·점유·외부 질권의 완전성을 주장하지 않는다.
+- B. 완성 플래그를 참으로 둔다. 법률 효과의 표시다.
+- C. 등기·점유 식별자를 받아 완성으로 기록한다.
+
+`limit-recalculation`
+
+- A. 첫 수락 조회로 천장을 고정한다. `confirmed_cash`와 `recovery_due`는 재원이 아니다.
+- B. 조회마다 미지급 액면으로 천장을 다시 계산한다.
+- C. 확인 현금 또는 회수채권을 한도에 넣는다. 노출을 늘릴 수 있다.
+- D. 배정·환불 뒤에만 한도를 낮춘다.
+
+### 5.4 이 개정이 열지 않는 나머지 공백
+
+아래는 초안 0.2의 대상이 아니다. 값을 채우지 않고 선택지도 만들지 않는다.
+
+- 연체, 손실 귀속, 상각
+- 처분, 실행, 유질, 수익 귀속
+- 여신 인허가, 등록, 규제 상품 분류, 약관, 면허 번호
+- 은행 출금, PG, 고객 입금, 상환 관찰, 준비금
+- 부담 미정 환불과 메모의 상계
+- 관람권, 검표, 권리 폐기
+- 내구성, 은행 정확히 한 번, 체인 최종성, 규제 준수
+- 제품 TPS, p99, 실패율. SLO 숫자를 만들지 않는다
+- 화면, 앱, 실자금
+- 새 프로토콜 명령
+
+### 5.5 이 개정의 비청구
+
+- 통과가 F04 또는 E06의 구현이나 설계확정이 아니다. 라벨은 설계중이다.
+- 선택지 A는 채택된 목 경계다. 정책 숫자의 승인이 아니다.
+- `beneficiary_role`은 법적 당사자가 아니다. `legal_debtor_bound`는 거짓이다.
+- `interest_defined`는 거짓이다. 이 개정에 APR, 기간, 상환표가 없다.
+- `priority_bound`는 거짓이다. 합의 천장은 순위가 아니다.
+- `collateral_perfected`와 `external_pledge_complete`는 거짓이다. 담보 완전성을 주장하지 않는다.
+- `snapshot_frozen`은 첫 조회의 고정이다. 한도 공식의 채택이 아니다.
+- `confirmed_cash`와 `recovery_due`는 재원이 아니다.
+- 이 개정은 `protocol_contract.json`에 명령을 넣지 않는다. 그 파일의 명령 수는 40이다.
+- 이 개정은 OpenAPI 카탈로그, 생성 SDK, manifest-v1 입력을 바꾸지 않는다.
 
 ## 6. 비청구
 
@@ -403,5 +507,6 @@ REJECTED                               DEFAULTED
 - 한도 순서는 한 프로세스 안의 배타다. 분산 잠금이나 은행 한도가 아니다.
 - 이 저널은 내구 원장, 체인 커밋먼트, 은행 exactly-once가 아니다.
 - 직접 `MockCredit` 호출은 이 단계 게이트를 지나지 않는 Wave 5 술어다.
+- §5.1의 선택지 A는 채택된 목 경계다. 정책 숫자의 승인이 아니다. 조회의 `open_terms`는 `decided_value`가 없다.
 - 라이브 HTTP, 언더라이팅, KYC-AML, PG·은행 레일, 실여신, commerce-apps 변경은 없다.
 - 새 `protocol_contract` 명령은 없다. OpenAPI에는 이 기계의 `REPLAYABLE`이 `credit_<op>`로 있다. 2026-10-09 소유자 결정(JunTae).
