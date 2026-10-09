@@ -11,6 +11,7 @@
 그 줄은 당시 스냅샷의 기록으로 둔다.
 위치 동기화 기준: observed origin/main `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42` (2026-10-09).
 2026-10-09 위치 동기화는 TL-A, TL-0, TL-1, TL price source / coin-lock ADR, TL-2, TL-3 offchain, TL-3 onchain, EV-GATE, K3, P catalogue/gate/readiness 행의 경로만 그 기준으로 옮긴다. 등급은 올리지 않는다. 실행 근거가 없는 자리는 not covered로 둔다. 나머지 행은 2026-10-06 스냅샷이다.
+위치 동기화 기준(TL-3 onchain, TL-4): observed origin/main `5e20a467160148ad5c2debfe357dfb8da084a30a` (2026-10-09). 다시 맞춘 행은 TL-3 onchain과 TL-4뿐이다. 위 문장의 다른 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`에 둔다.
 프로그램 blob은 `ff0f39a8129ca8b8d30818cce35c3d4e588872fc`.
 `git show <base>:<path>`로 고정 입력과 현재 바이트를 대조했다.
 이 register는 현재 소스의 색인이다. 기존 라벨·승인·완료 predicate를 바꾸지 않는다.
@@ -154,8 +155,8 @@ RS/TL 구현 evidence로 세지 않는다.
 | TL price source / coin-lock ADR | `docs/decisions/TL_PRICE_SOURCE_NOT_NEEDED_20261009.md`, `docs/adr/0003-coin-tix-lock-localnet-re-ruling-request.md` | SOURCE_ONLY. not needed under the TL-0 recommendation. Astra re-ruling not recorded. lock unchanged. 가격원 값과 패키지 실행은 not covered |
 | TL-2 | `docs/decisions/TL2_DOES_NOT_OPEN_20261009.md` | SOURCE_ONLY 기록. package와 fixture는 not covered. 잠금은 열리지 않음 |
 | TL-3 offchain | `reference/token_reward/{token_reward_model,reward_fsm,test_reward_model,test_reward_fsm}.py` | MOCK. `.github/workflows/protocol.yml:140`에 suite가 연결되어 있다(PR #153). 37 tests는 `validation/2026-10-09-ci-wire-token-reward-suite/README.md`의 이전 로컬 기록이다. 이 위치 동기화는 그 기록을 실행 근거로 올리지 않는다. TL-4가 독립 검증을 소유한다 |
-| TL-3 onchain | 없음 | not covered. onchain은 TL-2와 offchain 뒤. KRW와 token은 분리 |
-| TL-4 | 없음 | not covered; TL-2/3 후 비작성자 독립 검증·부정/재생/보존 corpus |
+| TL-3 onchain | `docs/decisions/TL3_ONCHAIN_DOES_NOT_OPEN_20261009.md` | SOURCE_ONLY 기록. package와 Move 시험은 not covered. 잠금은 열리지 않음. onchain은 TL-2와 offchain 뒤. KRW와 token은 분리 |
+| TL-4 | `reference/token_reward/test_tl4_model_properties.py`, `reference/token_reward/test_tl4_fsm_properties.py`, `reference/token_reward/test_tl4_fuzz_boundaries.py`, `reference/token_reward/tl4_support.py`, `docs/decisions/TL4_THREAT_MODEL_20261009.md` | MOCK. 작성자 측 하네스. `.github/workflows/protocol.yml:140` 루프가 `reference/token_reward`의 `unittest discover`로 `test_tl4_*.py`를 수집한다. `tl4_support.py`는 수집되지 않는다. 독립 검증은 not covered; 패키지가 필요한 술어는 NOT VERIFIABLE · no package |
 | TL-L / TL-5 | 없음 | not covered; 외부 법무/회계/세무/금융 서면·키/감사/운영 승인, issuance 자동 개방 없음 |
 
 ## Finance / protocol 후보 대응
