@@ -119,3 +119,13 @@ Fixture amounts and periods are not product limits.
 - The mock keeps at most one `ACTIVE` grant per `(issuer, agent_id)`. Whether several grants may be live at once is still UNDETERMINED in contract §9. The one-active rule is a mock invariant so the cap predicates can be tested.
 - A second revoke does not overwrite the first reason.
 - A repeated proposal whose binding matches returns `duplicate: true` even if the grant was later revoked or is outside its period. A new proposal still re-checks.
+
+## Addendum 2026-10-08: CI discovery
+
+`.github/workflows/protocol.yml` step "Offline reference state machines and OpenAPI pins" now lists `ai_delegation` as a fourth suite, with `settlement_f01_f03`, `booking_resale_admission`, and `credit_advance_f04`.
+
+The "Not run" paragraph above, which says the workflow does not discover `reference/ai_delegation`, was true when that note was written and is kept as history. The "Commands and results" table is not rewritten.
+
+A local run of the suite is still not CI. Only the exact-head `KIX protocol verification` run for the merged head counts. This note does not record a run ID or a conclusion. Closure belongs in the pull-request report.
+
+Discovering the suite does not implement AI delegation, add a wire command, or enable execution.

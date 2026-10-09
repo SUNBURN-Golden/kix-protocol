@@ -25,14 +25,14 @@
 | 파일 | 역할 |
 |---|---|
 | `generate/generate_client.mjs` | 카탈로그를 다시 만든다 |
-| `generated/catalogue.ts` | 40개 명령과 본문 스키마. 바이트 동일 재생성의 대상 |
+| `generated/catalogue.ts` | 84개 명령과 본문 스키마, FSM 기계 맵. 바이트 동일 재생성의 대상 |
 | `sdk-pin.json` | OpenAPI·원본 계약의 git blob과 sha256 |
 | `src/client.ts` | `createLocalCallClient({ transport })` |
 | `src/jsonschema.ts` | 엄격 JSON과 스키마 부분집합 |
 | `compat/` | manifest-v1, BOOTSTRAP profile, 최소 검증기 |
 | `conformance/` | 명령별 적합성과 golden vectors |
 
-호환 형식은 [docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)에 있다. BOOTSTRAP은 카탈로그 스키마 결합만 부여한다. 의미 적합성, N/N−1, 운영 적합, 감사 통과, 사용자 승인이 아니다.
+호환 형식은 [docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)에 있다. 현재 생성물은 `bootstrap-2`다. `bootstrap-1`은 40개 명령 역사 핀으로 트리에 남아 있고 다시 생성하지 않는다. 둘 다 카탈로그 스키마 결합만 부여한다. 의미 적합성, N/N−1, 운영 적합, 감사 통과, 사용자 승인이 아니다. 의미 적합의 소비자는 HOLD다.
 
 타입 검사는 Node 24의 타입 제거로 돌린다. `tsc`와 패키지 의존성은 없다. 지울 수 있는 구문만 쓴다.
 

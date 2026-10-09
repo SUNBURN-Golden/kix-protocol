@@ -285,7 +285,7 @@ F01·F02·F03·P04는 **설계중**이다. 이 절이 그 라벨을 올리지 �
 
 이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
 역사 스키마의 `capture`와 `settle_capture`는 로컬 호출 목록에 남아 있고, 이 기계는 그 명령을 실행하지 않는다.
-OpenAPI 카탈로그도 바꾸지 않는다. 새 프로토콜 명령이 필요하면 `DECISION_REQUIRED · Astra`다.
+OpenAPI 카탈로그에는 이 기계의 `REPLAYABLE`만 `settlement_<op>`로 있다. 2026-10-09 소유자 결정(JunTae)이 그 출처와 와이어 이름을 승인했다. 그 집합 밖의 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`다.
 
 수락 기준은 이 참조 모듈 안의 결정이다. 법적 권위, 체인 권위, 은행 권한이 아니다.
 조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.

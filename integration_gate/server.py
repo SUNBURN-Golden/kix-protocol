@@ -4,6 +4,7 @@ Binds to 127.0.0.1 only. Dispatches POST /x-kix-contract-only/local-call to
 the reference Core.execute. An optional process-local readiness journal can
 replay committed receipts after restart. That journal is not protocol truth.
 Does not attach payment, KYC, venue, or bank adapters. Not a production endpoint.
+Opt-in CORS for http://127.0.0.1:5173 is off unless --browser-origin is set.
 """
 from __future__ import annotations
 
@@ -21,7 +22,10 @@ import time
 
 from integration_gate.audit import emit
 from integration_gate.catalogue import CatalogueError, load_catalogue, reference_types
+from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.constants import (
+    BROWSER_ALLOWED_ORIGIN,
+    BROWSER_ALLOWED_REQUEST_HEADERS,
     CORRELATION_HEADER,
     DEFAULT_TIMEOUT_SECONDS,
     HEADER_LIMIT_BYTES,
@@ -33,6 +37,8 @@ from integration_gate.constants import (
     MAX_IN_FLIGHT,
     MAX_JOURNAL_BYTES,
     MAX_JOURNAL_RECORDS,
+    ORIGIN_HEADER,
+    READINESS_FSM_REFUSED,
     READY_PATH,
     TRACE_HEADER,
 )
@@ -48,6 +54,7 @@ ALLOWED_PATHS = frozenset({HEALTH_PATH, READY_PATH, LOCAL_CALL_PATH})
 TRACE_TOKEN = re.compile(r'[A-Za-z0-9._:-]{1,64}')
 REASONS = {
     200: 'OK',
+    204: 'No Content',
     400: 'Bad Request',
     404: 'Not Found',
     405: 'Method Not Allowed',
@@ -91,7 +98,9 @@ class GateServer(ThreadingMixIn, HTTPServer):
         max_in_flight,
         max_journal_records,
         max_journal_bytes,
+        browser_origin=None,
     ):
+        self.browser_origin = browser_origin
         self.catalogue = catalogue
         self.request_timeout_seconds = timeout_seconds
         self.max_body_bytes = max_body_bytes
@@ -100,6 +109,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         self.max_journal_records = max_journal_records
         self.max_journal_bytes = max_journal_bytes
         self.core = None
+        self.fsm = None
         self.Rejected = None
         self._accepting = False
         self._core_failed = False
@@ -169,6 +179,11 @@ class GateServer(ThreadingMixIn, HTTPServer):
         Core, Rejected = reference_types()
         core = Core()
         try:
+            fsm = FsmHost()
+        except Exception as exc:
+            self._fail_unpublished(core)
+            raise GateStartupError('CORE_UNAVAILABLE') from exc
+        try:
             domain = core.snapshot().get('domain')
         except Exception as exc:
             self._fail_unpublished(core)
@@ -187,6 +202,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         with self._admit_lock:
             self.Rejected = Rejected
             self.core = core
+            self.fsm = fsm
             if not self._draining and not self._diverged and not self._core_failed:
                 self._accepting = True
 
@@ -195,6 +211,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
             self._core_failed = True
             self._accepting = False
             self.core = None
+            self.fsm = None
         _close_quietly(core)
 
     def _mark_diverged(self):
@@ -262,6 +279,8 @@ class GateServer(ThreadingMixIn, HTTPServer):
             observation['journalDecision'] = 'not_attempted'
             observation['admit'] = 'NOT_READY'
             return 503, _not_ready(), observation
+        if action in self.catalogue.fsm_name_set:
+            return self._perform_fsm(action, body, observation)
         fresh = self.store is None or not self.store.has_operation(operation_id)
         if self.store is not None and fresh:
             code, limit = self.store.budget_decision(
@@ -315,6 +334,26 @@ class GateServer(ThreadingMixIn, HTTPServer):
         observation['journalDecision'] = 'appended'
         return 200, receipt, observation
 
+    def _perform_fsm(self, action, body, observation):
+        """FSM calls stay on this worker. A readiness journal refuses them.
+
+        The envelope operationId is not copied into idempotency_key.
+        """
+        if self.store is not None:
+            observation['journalDecision'] = 'not_attempted'
+            return 422, _error(READINESS_FSM_REFUSED), observation
+        try:
+            result = self.fsm.call(action, body)
+        except FsmRejected as exc:
+            observation['journalDecision'] = 'inactive'
+            return 422, _error(exc.code), observation
+        except Exception as exc:
+            print('integration-gate internal error: ' + type(exc).__name__, file=sys.stderr)
+            observation['journalDecision'] = 'not_attempted'
+            return 500, _error('INTERNAL_ERROR'), observation
+        observation['journalDecision'] = 'inactive'
+        return 200, result, observation
+
     def ready_view(self):
         self._ensure_core_on_worker()
         if not self.commands_enabled():
@@ -361,6 +400,7 @@ class GateHandler(BaseHTTPRequestHandler):
 
     def handle_one_request(self):
         self._sent = False
+        self._cors = False
         self._status = 0
         self._error_code = None
         self._route_path = ''
@@ -425,6 +465,11 @@ class GateHandler(BaseHTTPRequestHandler):
             self.server.note_handler_exit()
 
     def route(self):
+        if self.server.browser_origin is not None and not _loopback_host_header(
+            self.headers, self.server.server_address[1]
+        ):
+            self._send(400, _error('BAD_REQUEST'))
+            return
         target = _raw_target(self.raw_requestline)
         if target is None:
             self._send(400, _error('BAD_REQUEST'))
@@ -446,7 +491,13 @@ class GateHandler(BaseHTTPRequestHandler):
         if self.headers.get('Expect'):
             self._send(417, _error('EXPECTATION_FAILED'))
             return
+        if _origin_is_allowed(self.headers, self.server.browser_origin):
+            self._cors = True
         method = self.command
+        if method == 'OPTIONS' and self.server.browser_origin is not None:
+            if self._preflight(path):
+                return
+            self._cors = False
         if path in (HEALTH_PATH, READY_PATH):
             if method != 'GET':
                 self._send(405, _error('METHOD_NOT_ALLOWED'), allow='GET')
@@ -473,6 +524,14 @@ class GateHandler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         return
+
+    def _preflight(self, path):
+        if not _preflight_acceptable(self.headers, path, self.server.browser_origin):
+            return False
+        self._cors = True
+        allow = 'POST' if path == LOCAL_CALL_PATH else 'GET'
+        self._send(204, None, allow=allow, preflight=True)
+        return True
 
     def _adopt_trace_headers(self):
         request = _trace_token(self.headers.get(TRACE_HEADER))
@@ -592,17 +651,20 @@ class GateHandler(BaseHTTPRequestHandler):
         finally:
             self.server.release_admit()
 
-    def _send(self, status, payload, allow=None):
+    def _send(self, status, payload, allow=None, preflight=False):
         if self._sent:
             return
-        body = json.dumps(
-            payload, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(',', ':')
-        ).encode('utf-8')
         reason = REASONS.get(status, 'Error')
-        lines = [
-            'HTTP/1.0 %d %s' % (status, reason),
-            'Content-Type: application/json; charset=utf-8',
-            'Content-Length: %d' % len(body),
+        lines = ['HTTP/1.0 %d %s' % (status, reason)]
+        if status == 204:
+            body = b''
+        else:
+            body = json.dumps(
+                payload, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(',', ':')
+            ).encode('utf-8')
+            lines.append('Content-Type: application/json; charset=utf-8')
+            lines.append('Content-Length: %d' % len(body))
+        lines.extend([
             'Connection: close',
             'Cache-Control: no-store',
             'X-Content-Type-Options: nosniff',
@@ -612,7 +674,15 @@ class GateHandler(BaseHTTPRequestHandler):
             'X-Kix-Production-Conformance: false',
             'X-Request-Id: ' + self.request_id,
             'X-Correlation-Id: ' + self.correlation_id,
-        ]
+        ])
+        if self._cors:
+            lines.append('Access-Control-Allow-Origin: ' + BROWSER_ALLOWED_ORIGIN)
+            lines.append('Vary: Origin')
+        if preflight:
+            lines.append('Access-Control-Allow-Methods: ' + allow)
+            lines.append(
+                'Access-Control-Allow-Headers: ' + ', '.join(BROWSER_ALLOWED_REQUEST_HEADERS)
+            )
         if allow:
             lines.append('Allow: ' + allow)
         packet = ('\r\n'.join(lines) + '\r\n\r\n').encode('ascii') + body
@@ -756,6 +826,49 @@ def _journal_observation(decision, store):
     return observation
 
 
+def _one_header(headers, name):
+    values = headers.get_all(name)
+    if values is None or len(values) != 1:
+        return None
+    return values[0]
+
+
+def _loopback_host_header(headers, port):
+    host = _one_header(headers, 'Host')
+    if host is None:
+        return False
+    return host == LOOPBACK_HOST or host == '%s:%d' % (LOOPBACK_HOST, port)
+
+
+def _origin_is_allowed(headers, browser_origin):
+    if browser_origin is None:
+        return False
+    return _one_header(headers, ORIGIN_HEADER) == browser_origin
+
+
+def _requested_headers_allowed(headers):
+    values = headers.get_all('Access-Control-Request-Headers')
+    if values is None:
+        return True
+    if len(values) != 1 or values[0].strip() == '':
+        return False
+    tokens = [part.strip().lower() for part in values[0].split(',')]
+    if '' in tokens or len(tokens) != len(set(tokens)):
+        return False
+    return set(tokens).issubset(BROWSER_ALLOWED_REQUEST_HEADERS)
+
+
+def _preflight_acceptable(headers, path, browser_origin):
+    if not _origin_is_allowed(headers, browser_origin):
+        return False
+    expected = 'POST' if path == LOCAL_CALL_PATH else 'GET'
+    if _one_header(headers, 'Access-Control-Request-Method') != expected:
+        return False
+    if headers.get_all('Access-Control-Request-Private-Network') is not None:
+        return False
+    return _requested_headers_allowed(headers)
+
+
 def build_server(
     host,
     port,
@@ -766,9 +879,12 @@ def build_server(
     max_in_flight=MAX_IN_FLIGHT,
     max_journal_records=MAX_JOURNAL_RECORDS,
     max_journal_bytes=MAX_JOURNAL_BYTES,
+    browser_origin=None,
 ):
     if host != LOOPBACK_HOST:
         raise GateStartupError('REFUSING_NON_LOOPBACK_BIND')
+    if browser_origin is not None and browser_origin != BROWSER_ALLOWED_ORIGIN:
+        raise GateStartupError('REFUSING_BROWSER_ORIGIN')
     if not isinstance(port, int) or port < 0 or port > 65535:
         raise GateStartupError('REFUSING_PORT')
     if timeout_seconds <= 0 or max_body_bytes < 1:
@@ -802,6 +918,7 @@ def build_server(
             max_in_flight,
             max_journal_records,
             max_journal_bytes,
+            browser_origin=browser_origin,
         )
     except Exception:
         if store is not None:
@@ -822,11 +939,17 @@ def parse_args(argv):
     parser.add_argument('--max-body-bytes', type=int, default=MAX_BODY_BYTES)
     parser.add_argument('--max-in-flight', type=int, default=MAX_IN_FLIGHT)
     parser.add_argument('--readiness-dir', default=None)
+    parser.add_argument('--browser-origin', action='append')
     return parser.parse_args(argv)
 
 
 def main(argv=None):
     args = parse_args(argv)
+    browser_origins = args.browser_origin
+    if browser_origins is not None and len(browser_origins) != 1:
+        print('REFUSING_BROWSER_ORIGIN', file=sys.stderr)
+        return 2
+    browser_origin = None if browser_origins is None else browser_origins[0]
     if not (0.05 <= args.timeout_seconds <= 120):
         print('REFUSING_LIMITS', file=sys.stderr)
         return 2
@@ -844,6 +967,7 @@ def main(argv=None):
             args.max_body_bytes,
             readiness_dir=args.readiness_dir,
             max_in_flight=args.max_in_flight,
+            browser_origin=browser_origin,
         )
     except GateStartupError as exc:
         print(exc.code, file=sys.stderr)

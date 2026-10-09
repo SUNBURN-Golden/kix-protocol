@@ -298,7 +298,7 @@ Wave 5 목은 액면 스냅샷에 대한 메모 예약과 해제만 고정했다
 F04·E06은 **설계중**이다. 이 절이 그 라벨을 올리지 않는다.
 
 이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
-OpenAPI 카탈로그도 바꾸지 않는다. 새 프로토콜 명령이 필요하면 `DECISION_REQUIRED · Astra`다.
+OpenAPI 카탈로그에는 이 기계의 `REPLAYABLE`만 `credit_<op>`로 있다. 2026-10-09 소유자 결정(JunTae)이 그 출처와 와이어 이름을 승인했다. 그 집합 밖의 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`다.
 이 깊이는 그 명령을 요구하지 않는다. 수락 기준은 이 참조 모듈 안의 결정이다. 법적 권위, 체인 권위, 대주, 면허, 은행 권한이 아니다.
 조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.
 `provenance`는 `MOCK_CREDIT_F04_ONLY`다.
@@ -509,4 +509,4 @@ REJECTED                               DEFAULTED
 - 직접 `MockCredit` 호출은 이 단계 게이트를 지나지 않는 Wave 5 술어다.
 - §5.1의 선택지 A는 채택된 목 경계다. 정책 숫자의 승인이 아니다. 조회의 `open_terms`는 `decided_value`가 없다.
 - 라이브 HTTP, 언더라이팅, KYC-AML, PG·은행 레일, 실여신, commerce-apps 변경은 없다.
-- 새 `protocol_contract` 명령과 OpenAPI 카탈로그 명령은 없다.
+- 새 `protocol_contract` 명령은 없다. OpenAPI에는 이 기계의 `REPLAYABLE`이 `credit_<op>`로 있다. 2026-10-09 소유자 결정(JunTae).

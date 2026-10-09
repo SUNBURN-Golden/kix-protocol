@@ -13,6 +13,7 @@ import {
   COMMAND_SCHEMAS,
   COMMANDS,
   ENVELOPE_REQUIRED,
+  FSM_COMMAND_MACHINES,
   OPENAPI_PIN,
 } from "../generated/catalogue.ts";
 import {
@@ -133,7 +134,7 @@ function runVerifier(manifestPath) {
       "--expect-kind",
       "BOOTSTRAP",
       "--expect-revision",
-      "bootstrap-1",
+      "bootstrap-2",
     ],
     { cwd: ROOT, encoding: "utf8" },
   );
@@ -143,9 +144,22 @@ test("catalogue pin matches the contract-only OpenAPI and the source contract", 
   const openapiBytes = read(OPENAPI_PATH);
   const sourceBytes = read(SOURCE_PATH);
   const openapi = JSON.parse(openapiBytes.toString("utf8"));
-  assert.equal(COMMANDS.length, 40);
-  assert.equal(OPENAPI_PIN.commandCount, 40);
-  assert.equal(openapi["x-kix-source"].commandCount, 40);
+  assert.equal(COMMANDS.length, 84);
+  assert.equal(OPENAPI_PIN.commandCount, 84);
+  assert.equal(OPENAPI_PIN.coreCommandCount, 40);
+  assert.equal(OPENAPI_PIN.fsmCommandCount, 44);
+  assert.equal(openapi["x-kix-source"].commandCount, 84);
+  assert.equal(openapi["x-kix-source"].coreCommandCount, 40);
+  assert.equal(COMMANDS.includes("capture"), true);
+  assert.equal(COMMANDS.includes("settlement_capture"), true);
+  assert.equal(COMMANDS.includes("admission_authorize_admission"), true);
+  assert.equal(COMMANDS.includes("admission_consume"), true);
+  assert.equal(COMMANDS.includes("consume_admission"), false);
+  assert.equal(COMMANDS.includes("authorize_admission"), false);
+  assert.equal(Object.keys(FSM_COMMAND_MACHINES).length, 44);
+  assert.equal(FSM_COMMAND_MACHINES.settlement_capture, "settlement");
+  assert.equal(FSM_COMMAND_MACHINES.admission_consume, "admission");
+  assert.equal(FSM_COMMAND_MACHINES.credit_draw, "credit");
   assert.equal(OPENAPI_PIN.domain, DOMAIN);
   assert.equal(OPENAPI_PIN.sha256, sha256Hex(openapiBytes));
   assert.equal(OPENAPI_PIN.gitBlob, gitBlobId(openapiBytes));
@@ -210,9 +224,10 @@ test("every catalogue command accepts a minimal body and rejects schema violatio
     );
 
     const mismatched = { ...body, domain: "other-domain" };
+    const domainCode = (schema.required ?? []).includes("domain") ? "DOMAIN_MISMATCH" : "UNKNOWN_FIELD";
     assert.equal(
       rejectionCode(() => client.invoke({ operationId: "op-1", actor: "actor-1", action: name, body: mismatched })),
-      "DOMAIN_MISMATCH",
+      domainCode,
       name,
     );
     assert.equal(calls, 1, name);
@@ -307,13 +322,13 @@ test("canonical encoding vectors", () => {
 });
 
 test("mixed-input vectors and the committed manifest", () => {
-  const manifestPath = resolve(ROOT, "sdk/compat/manifests/manifest.bootstrap-1.json");
+  const manifestPath = resolve(ROOT, "sdk/compat/manifests/manifest.bootstrap-2.json");
   const happy = runVerifier(manifestPath);
   assert.equal(happy.status, 0, happy.stderr || happy.stdout);
   const verdict = JSON.parse(happy.stdout);
   assert.equal(verdict.ok, true);
   assert.equal(verdict.profile_kind, "BOOTSTRAP");
-  assert.equal(verdict.profile_revision, "bootstrap-1");
+  assert.equal(verdict.profile_revision, "bootstrap-2");
   const sidecar = readFileSync(`${manifestPath}.sha256`, "utf8");
   assert.equal(sidecar, `${verdict.manifest_sha256}\n`);
   assert.equal(readFileSync(manifestPath, "utf8").includes(verdict.manifest_sha256), false);
@@ -342,7 +357,8 @@ test("mixed-input vectors and the committed manifest", () => {
           cursor = cursor[part];
         }
         const leaf = parts[parts.length - 1];
-        cursor[leaf] = item.op === "copy" ? getPath(copy, item.from) : item.value;
+        const value = item.name === "wrong-revision" ? "bootstrap-9" : item.value;
+        cursor[leaf] = item.op === "copy" ? getPath(copy, item.from) : value;
         const encoded = canonicalStringify(copy);
         writeFileSync(target, encoded);
         writeFileSync(`${target}.sha256`, `${sha256Hex(encoded)}\n`);
