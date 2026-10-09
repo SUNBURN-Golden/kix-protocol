@@ -61,9 +61,9 @@
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
 | [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | 실 PG 호출 전에 필요한 Toss sandbox 적합성 증거의 시험 사례, 필요한 토스 답변, 증거 기록 위치 | 문서 전용 계획. 호출·자격 증명 없음. sandbox 증거는 실자금 잠금을 열지 않음 |
-| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL·catalogue·SDK 행은 2026-10-09 위치 동기화 기준 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 그 밖은 2026-10-06 `2554173` 스냅샷 |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL-3 onchain·TL-4 행은 2026-10-09 위치 동기화 기준 `5e20a467160148ad5c2debfe357dfb8da084a30a`. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 나머지는 2026-10-06 `2554173` 스냅샷 |
 
-[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 TL·catalogue·SDK 행은 위 위치 동기화 기준의 경로로 맞췄다. 그 밖은 2026-10-06 `2554173` 스냅샷이다.
+[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a` 기준으로 맞췄다. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
 
 같은 날짜의 검증 기록:
 
@@ -78,6 +78,8 @@
 - [k2-retention-proposal](../validation/2026-10-09-k2-retention-proposal/README.md) — Document only. No code, no new tests, no duration numbers, no new protocol command.
 - [toss-sandbox-conformance-plan](../validation/2026-10-09-toss-sandbox-conformance-plan/README.md) — Document only. No Toss call, no credential, no new test, no new protocol command.
 - [k-stage4-adoption-decision](../validation/2026-10-09-k-stage4-adoption-decision/README.md) — Document only. No code, no new tests, no backend implementation, no second comparison table, no SLO or cost numbers.
+- [ci-wire-token-reward-suite](../validation/2026-10-09-ci-wire-token-reward-suite/README.md) — No new tests and no policy values. No independent verification of TK-4, TK-7, TK-8, TK-12, or V6.
+- [tl-4-token-layer-verification](../validation/2026-10-09-tl-4-token-layer-verification/README.md) — No independent verification. No production endpoint, public host, real payment, KYC, bank, or venue call. No Sui testnet or mainnet. … It does not close the blueprint TL-4 acceptance line that asks for independent verification of TK-1 through TK-9 with no open blockers.
 
 ## 2026-10-09 병합 문서 색인 — 토큰 계층(TL)
 
@@ -92,6 +94,8 @@
 | [TL-2는 열리지 않음](decisions/TL2_DOES_NOT_OPEN_20261009.md) | TL-2가 열리지 않는다는 기록 | 상태: 기록. 패키지가 아니다. |
 | [token_reward 참조](../reference/token_reward/) | 보상–거래 결합의 오프라인 참조 술어 | Offline reference predicates for reward–transaction coupling. |
 | [외부 검토 질문서](status/TOKEN_LEGAL_REVIEW_BRIEF_KO.md) | 법률·회계·세무·금융 질문서 | 상태: 질문서만이다. 전송하지 않았다. … 검토됨으로 표시하지 않는다. |
+| [TL-3 on-chain은 열리지 않음](decisions/TL3_ONCHAIN_DOES_NOT_OPEN_20261009.md) | TL-3 온체인 부분이 열리지 않는다는 기록; Move 패키지·보상 기록 스키마 없음 | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. |
+| [TL-4 위협 모델](decisions/TL4_THREAT_MODEL_20261009.md) | 오프체인 토큰 계층의 위협 모델과 작성자 측 하네스; 패키지가 필요한 술어는 NOT VERIFIABLE | 상태: 기록, 작성자=빌더, 독립 검토 아님. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. 자기 검토를 독립 PASS로 세지 않는다. |
 
 ## 역사 문서와 증거
 

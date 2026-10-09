@@ -616,6 +616,8 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 | [TL-2는 열리지 않음](decisions/TL2_DOES_NOT_OPEN_20261009.md) | #149 | `1cb2d26c4b6d8cc7aa2d362bf017e4d30f5a2080` | BeautifulMind-JT | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. | 효력 발생(User 병합) |
 | [token_reward 참조](../reference/token_reward/) | #150 | `fff19605f0ccff71b6f24e61f1f8114b5c0ddd57` | BeautifulMind-JT | 기록된 채택 문장 없음(소스 디렉터리). Offline reference predicates for reward–transaction coupling. | 효력 발생(User 병합) |
 | [외부 검토 질문서](status/TOKEN_LEGAL_REVIEW_BRIEF_KO.md) | #151 | `c2cde86e21a6e5ba6f24a56548636db6d0a34c6f` | BeautifulMind-JT | 상태: 질문서만이다. 전송하지 않았다. 자문 주체의 이름, 조직의 이름, 착수 시점을 적지 않는다. 작성자가 빌더이므로 비작성자 검토가 아니고, 법률 의견이 아니다. 검토됨으로 표시하지 않는다. | 효력 발생(User 병합) |
+| [TL-3 on-chain은 열리지 않음](decisions/TL3_ONCHAIN_DOES_NOT_OPEN_20261009.md) | #159 | `6bdd571fcb88496c98e25b32213c60017e209198` | BeautifulMind-JT | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. | 효력 발생(User 병합) |
+| [TL-4 위협 모델](decisions/TL4_THREAT_MODEL_20261009.md) | #162 | `4e2122a3f61a0feea2c43035c1ae834e7097e429` | BeautifulMind-JT | 상태: 기록, 작성자=빌더, 독립 검토 아님. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. 자기 검토를 독립 PASS로 세지 않는다. | 효력 발생(User 병합) |
 
 ### 18.2 의존성과 우선순위
 
