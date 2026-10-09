@@ -8,6 +8,9 @@
 그 선행의 ACCEPTED/병합 판정은 host 소유이며 이 문서는 재판정하지 않는다.
 관측 origin/main, 작업 HEAD, 요구·소스 기준은 모두
 `2554173ebdda0922aaf7a0bc7ea773075187a3d9` (2026-10-06)이다.
+그 줄은 당시 스냅샷의 기록으로 둔다.
+위치 동기화 기준: observed origin/main `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42` (2026-10-09).
+2026-10-09 위치 동기화는 TL-A, TL-0, TL-1, TL price source / coin-lock ADR, TL-2, TL-3 offchain, TL-3 onchain, EV-GATE, K3, P catalogue/gate/readiness 행의 경로만 그 기준으로 옮긴다. 등급은 올리지 않는다. 실행 근거가 없는 자리는 not covered로 둔다. 나머지 행은 2026-10-06 스냅샷이다.
 프로그램 blob은 `ff0f39a8129ca8b8d30818cce35c3d4e588872fc`.
 `git show <base>:<path>`로 고정 입력과 현재 바이트를 대조했다.
 이 register는 현재 소스의 색인이다. 기존 라벨·승인·완료 predicate를 바꾸지 않는다.
@@ -38,7 +41,7 @@
 ## 공유 evidence 색인
 
 동일 ID는 아래의 동일 자산을 참조한다. 여러 행 연결을 여러 구현/독립 시험으로 세지 않는다.
-모든 현재 경로는 위 base SHA에 고정한다. 역사 앵커 K/M/Q/J는
+2026-10-06 스냅샷 행의 경로는 그 base SHA에 고정한다. 2026-10-09 위치 동기화로 옮긴 행은 그 동기화 기준의 경로다. 역사 앵커 K/M/Q/J는
 `docs/status/ORIGINAL_32_STATUS.md`의 원 SHA/blob/CI로만 해석한다.
 
 | ID | 현재 source | contract | fixture / coverage와 한계 |
@@ -51,7 +54,7 @@
 | EV-SET | `reference/settlement_f01_f03/{mock_settlement,settlement_fsm}.py` | `docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md` | `reference/settlement_f01_f03/{test_mock_settlement,test_settlement_fsm}.py`; MOCK 정수 KRW, first result·refund/replay, 지급 아님 |
 | EV-BRA | `reference/booking_resale_admission/{mock_gates,reservation_fsm,resale_fsm,admission_fsm}.py` | `docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md` | `reference/booking_resale_admission/test_*.py`; MOCK overlapping holds, transfer/entry race, stale ownership, external-source refusal |
 | EV-CREDIT | `reference/credit_advance_f04/{mock_credit,credit_fsm}.py` | `docs/contracts/CREDIT_ADVANCE_F04.md` | `reference/credit_advance_f04/{test_mock_credit,test_credit_fsm}.py`; MOCK exposure·draw/repay·COMMITTED query, 규제 여신 아님 |
-| EV-GATE | `integration_gate/{catalogue,schema,server,recovery}.py` | `docs/contracts/openapi/{kix-protocol.contract-only.openapi,kix-protocol.integration-gate.openapi}.json`, `README.md` | `integration_gate/test_http_gate.py`, `scripts/check_openapi_contract.py`, `scripts/check_integration_gate_openapi.py`; MOCK opt-in loopback, actor fixture, 40-command core catalogue; FSM 이름을 새 endpoint로 추정 금지 |
+| EV-GATE | `integration_gate/{catalogue,schema,server,recovery}.py` | `docs/contracts/openapi/{kix-protocol.contract-only.openapi,kix-protocol.integration-gate.openapi}.json`, `docs/contracts/openapi/fsm-command-contract.json`, `README.md` | `integration_gate/test_http_gate.py`, `scripts/check_openapi_contract.py`, `scripts/check_integration_gate_openapi.py`; MOCK opt-in loopback, actor fixture, 84 commands (40 core plus 44 FSM); FSM 이름을 새 endpoint로 추정 금지 |
 | EV-READY | `readiness/{store,boundary,local_adapter,conformance}.py` | `docs/contracts/READINESS_RUNTIME.md`, `readiness/CONFORMANCE.md` | `readiness/test_faults.py`; LOCAL_DURABLE single writer, torn-tail/checksum/schema/restart/budget, production/truth/FSM durable false |
 | EV-BCS | `runtime/crates/kix-bcs1/src/lib.rs`, `reference/v0.3-rc1/canonical_encoding.py`, `client/canonical_encoding.ts` | `runtime/CANONICAL_BINARY_BCS_V1.md` | `runtime/crates/kix-bcs1/tests/golden_vectors.rs`, `reference/v0.3-rc1/fixtures/canonical_encoding_v1.json`, `test_canonical_encoding.py`; SOURCE_ONLY/current execution NOT_RUN, BCS와 JSON/CE1 namespace는 별개 |
 | EV-IR | `runtime/crates/kix-feature-ir/src/validation.rs`, `kix-feature-semantics/src/lib.rs` (같은 `runtime/crates/` 아래) | `runtime/FEATURE_SEMANTICS_V1.md` | `runtime/crates/kix-feature-ir/tests/{audit_regressions,schema_bound}.rs`; SOURCE_ONLY validator/scalar helpers, 전체 Polars/DuckDB/GPU compiler·dataset 인증 없음 |
@@ -110,7 +113,7 @@ assertions를 재사용한다. 이미 충분한 이 경계를 복제하는 runti
 |---|---|---|
 | K1 E-4·수명·측정 | EV-K, EV-PERF; `docs/tasks/TASK_003A_E4_MODEL_SCHEMA.md`, `TASK_003B_E4_PROPERTY_EXPANSION.md`, `TASK_004_PERFORMANCE_MEASUREMENT.md` | partial; 국소 regression 충분, clean-room residual review·I06 identity·I12 cut proof·열린 입력/evidence close 남음 |
 | K2 lifecycle v5·retention | EV-K의 기존 경계만; `docs/contracts/STATE_LIFECYCLE.md`, `FIRST_BATCH_OPEN_INPUTS.md` | 새 v5 source/fixture 없음; 설계 User 병합·A3·보존 입력 뒤 별도 crate, 잠금 v4 수정 불가 |
-| K3 schema·SDK | EV-BCS, EV-GATE | partial; p-sdk-1·supported schema별 독립 tuple conformance; stable 1.0/publish/rename 별도 결정 |
+| K3 schema·SDK | EV-BCS, EV-GATE; `sdk/README.md`, `sdk/sdk-pin.json`, `docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md` | partial. bootstrap-2 exists; semantic conformance consumer HOLD. p-sdk-1·supported schema별 독립 tuple conformance; stable 1.0/publish/rename 별도 결정 |
 | K4 backend 비교 | EV-PERF, EV-READY; `docs/DEVELOPMENT_PLAN.md` §9 | partial 준비 문서/공통 local fault; 후보 adapter·동등 ACK/goodput/p99/비용 fixture 없음, backend 채택 없음 |
 | K5 durable tx/inbox/outbox | EV-READY/EV-STORE는 대체 아님; `docs/DEVELOPMENT_PLAN.md` §10 | not covered Rust adopted backend; User ADOPT+v5 선행, DEFERRED/none yet/불명확 HOLD |
 | K on-sale admission | `runtime/ONSALE_ADMISSION_CONTROL.md`만 | not covered; stage5와 아키텍처/정책 결정 후 구현 |
@@ -123,7 +126,7 @@ assertions를 재사용한다. 이미 충분한 이 경계를 복제하는 runti
 | P Wave3 settlement | EV-SET | MOCK 범위 충분한 기존 suite; §7 policy/accounting·durability·실 지급 gap |
 | P Wave4 booking/resale/admission | EV-BRA | MOCK 범위 기존 races/negative suite 재사용; §7 policy·real currentness·routing gap |
 | P Wave5 credit | EV-CREDIT | MOCK 범위 기존 exposure/replay suite 재사용; 상품 정책·실여신/법적 담보 gap |
-| P catalogue/gate/readiness | EV-GATE, EV-READY | partial; 계약 catalogue 존재 ≠ 새 FSM HTTP binding. generated SDK/manifest·read queries·CORS 결정/구현 gap |
+| P catalogue/gate/readiness | EV-GATE, EV-READY; `sdk/README.md`, `sdk/sdk-pin.json`, `docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md` | partial. 84 commands (40 core plus 44 FSM). 계약 catalogue 존재 ≠ 새 FSM HTTP binding. bootstrap-2 exists; semantic conformance consumer HOLD. read queries·CORS 결정/구현 gap |
 | P Wave6 commerce | `docs/decisions/PROGRAM_ROADMAP_20260930.md` R-7/R-8의 외부 포인터 | 외부 `kix-commerce-apps` source/browser/tests 이 checkout에서 미검증; stub/mock/loopback·w6a-evidence 구분, 병합/수용 host gate |
 | P Wave7 marketing | pending catalogue, 원 M01–M05 | source/fixture 없음; commerce w6a-evidence 병합 확인+별도 plan revision, marketing stub는 계약 구현 아님 |
 | P AI delegation | 모델1, Task005, `FIRST_BATCH_OPEN_INPUTS.md` I11/I12 | contract/mock/integration 현재 fixture 없음; A3 계약·RS-3a/3b·실행 결정 후, AI 자기 권한 확대 금지 |
@@ -145,10 +148,13 @@ RS/TL 구현 evidence로 세지 않는다.
 | RS-3b | EV-K 비교만 | not covered; RS-3a+v5; GA counter/slot·4,096 cap·세대/회수 대응 미확인 |
 | RS-4 L1→L2→L3 | 없음 | not covered; 실제 1,024→16,384→65,536/복수 공연 raw workload·분모/지연·경로별 predecessors |
 | RS-5 / testnet keys | 없음 | not covered; independent Move/circuit audit·키관리 결정·testnet 운영·책임자·User 운영 결정 |
-| TL-A / TL-0 / TL-1 | 청사진 SOURCE_ONLY | role/supply/authority/lifecycle 아직 계약·source/fixture 없음; A3·사용자 계약 결정 |
-| TL price source / coin-lock ADR | 없음 | not covered; conversion 필요 여부·가격원·독립 Astra 재결정+User 병합; coin/TIX lock 유지 |
-| TL-2 | 없음 | not covered; 실제 표현 선택/잠금 해제 이후 localnet 별도 package, 티켓 package와 독립 |
-| TL-3 offchain / onchain | 없음 | not covered; offchain TL-1 후 합성 보상, onchain TL-2+offchain 후; KRW와 token 분리 |
+| TL-A | `docs/adr/0002-token-layer-scope-and-limits.md` | SOURCE_ONLY. 범위·한계 기록. 실행 가능한 authority fixture 없음. coin/TIX 잠금 해제 아님 |
+| TL-0 | `docs/contracts/TOKEN_ROLE_AND_SUPPLY.md` | SOURCE_ONLY. 역할·공급 계약. 실행 가능한 authority fixture 없음. 그 계약은 이 계층의 시험이 아직 없다고 적는다 |
+| TL-1 | `docs/contracts/TOKEN_AUTHORITY_AND_LIFECYCLE.md` | SOURCE_ONLY. 권한·수명 계약. 실행 가능한 authority fixture 없음. 그 계약 §12: 이 계층의 권한 시험은 아직 없다 |
+| TL price source / coin-lock ADR | `docs/decisions/TL_PRICE_SOURCE_NOT_NEEDED_20261009.md`, `docs/adr/0003-coin-tix-lock-localnet-re-ruling-request.md` | SOURCE_ONLY. not needed under the TL-0 recommendation. Astra re-ruling not recorded. lock unchanged. 가격원 값과 패키지 실행은 not covered |
+| TL-2 | `docs/decisions/TL2_DOES_NOT_OPEN_20261009.md` | SOURCE_ONLY 기록. package와 fixture는 not covered. 잠금은 열리지 않음 |
+| TL-3 offchain | `reference/token_reward/{token_reward_model,reward_fsm,test_reward_model,test_reward_fsm}.py` | MOCK. `.github/workflows/protocol.yml:140`에 suite가 연결되어 있다(PR #153). 37 tests는 `validation/2026-10-09-ci-wire-token-reward-suite/README.md`의 이전 로컬 기록이다. 이 위치 동기화는 그 기록을 실행 근거로 올리지 않는다. TL-4가 독립 검증을 소유한다 |
+| TL-3 onchain | 없음 | not covered. onchain은 TL-2와 offchain 뒤. KRW와 token은 분리 |
 | TL-4 | 없음 | not covered; TL-2/3 후 비작성자 독립 검증·부정/재생/보존 corpus |
 | TL-L / TL-5 | 없음 | not covered; 외부 법무/회계/세무/금융 서면·키/감사/운영 승인, issuance 자동 개방 없음 |
 
@@ -201,6 +207,8 @@ A3/ARCHITECTURE 감사·merged dependencies·법무/회계/세무·provider 답�
 | `python3 scripts/check_integration_gate_openapi.py` 및 `--self-test` | 40 commands, productionEndpoint/publicHost false OK; negative self-test PASS |
 | `git diff --check`, `git status --short` | whitespace OK; 새 register 하나만 변경 |
 | Python inline integrity check | 32 원 ID/이름 유일·일치, 12 EV 참조 완결, brace/glob 확장 97 경로 존재; 잠금 2 blobs·원 program blob/dependency 일치; reference 108 tracked files를 base 바이트와 대조해 불변 |
+
+위 표의 「40 commands」 수치는 2026-10-06 `2554173` 기준의 기록이다.
 
 첫 inline 검사에서는 `git ls-tree`의 quoted Unicode 경로를 그대로 `git show`에
 넘겨 exit 1이었다. NUL-delimited `git ls-tree -rz --name-only`로 수정한 재검사는

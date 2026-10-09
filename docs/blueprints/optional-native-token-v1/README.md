@@ -65,7 +65,7 @@ KIX 자체 경제자산(가칭 "KIX 토큰", 이름·기호 미정)의 **역할�
 | 자산 간 산술 | 서로 다른 자산의 `Amount`는 더할 수 없다: `ASSET_MISMATCH`(`:72`). 계약은 "no FX"다(`:1`) |
 | 레지스트리 | `RegistryContext`는 "caller-approved fixture/configuration, NOT an authenticated registry, token oracle, credential, observation or execution authorization"이다(`execution_contracts.py:3-4`). 여기서 "token oracle"은 자산 명세를 인증하는 권위가 아니라는 뜻으로 읽힌다 **[해석]**(`assets.py:133`도 같은 표현). 환율·가격 입력은 이 계약에 없다(`assets.py:1`의 "no FX"). 가격원 계약은 **현재 없다** |
 | 승인 자산 | KRW는 `AssetSpec("fiat", "KRW", 0, MAX_ATOMS)`(`assets.py:157`). 스테이블코인 항목은 시험 픽스처일 뿐이다(`test_commerce.py:121`) |
-| 정산·환불 | 정산 계약과 환불 의무는 KRW 정수 산술이다. "체인 기록이 은행 자금·계약상 채무·공연 이행을 보증하지 않는다"(`docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md:38`). 모두 mock이다 |
+| 정산·환불 | 정산 계약과 환불 의무는 KRW 정수 산술이다. "체인 기록이 은행 자금·계약상 채무·공연 이행을 보증하지 않는다"(`docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md:68`). 모두 mock이다 |
 | 금융 | "금융 메모는 관람·검표 권한이 아니다"(`docs/contracts/CREDIT_ADVANCE_F04.md:47`). F04는 mock·시뮬레이션만이다 |
 | 결제 | 결제수단 1단계는 토스 경유 국내 KRW 일반 카드이고 PG는 잠정 선택이다(`docs/contracts/PG_TOSS_CARD_PROFILE.md:5`). 리셀·금융 가맹 범위와 일반 결제 웹훅 서명은 미확정이다(`:7`) |
 | 안정 명령 정체성 | `CommandId`는 "Stable business scope and caller identity. NEVER includes the owner fence."(`runtime/crates/kix-kernel/src/lib.rs:26-28`, 읽기만) |
@@ -81,7 +81,7 @@ KIX 자체 경제자산(가칭 "KIX 토큰", 이름·기호 미정)의 **역할�
 | 대상 | 무엇인가 | 원천·권위 | 자동으로 생기지 않는 것 |
 |---|---|---|---|
 | 관람권 | 특정 공연·슬롯·세대의 입장·이전·검표 권리 | 체인(모델 1). `kix::rights`의 `Ticket` **[현재]** | 토큰 보유·결제 사실·채권에서 자동 생성되지 않는다 |
-| 정산채권 | 정수 KRW 총액에 묶인 청구와 수취인별 의무 액면. 법적 채무자, 채권의 발생·소멸, 수익 귀속은 아직 고정되지 않았다(`docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md:26`) | 오프체인 계약과 정산 계약 **[현재: mock]** | 토큰이나 관람권 보유로 생성·소멸하지 않는다 |
+| 정산채권 | 정수 KRW 총액에 묶인 청구와 수취인별 의무 액면. 법적 채무자, 채권의 발생·소멸, 수익 귀속은 아직 고정되지 않았다(`docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md:56`) | 오프체인 계약과 정산 계약 **[현재: mock]** | 토큰이나 관람권 보유로 생성·소멸하지 않는다 |
 | 대출채권·금융 포지션 | 선지급·여신 | 별도 금융 계약 **[비활성: mock only]** | 토큰 보유가 원금 상환청구권이 되지 않는다 |
 | 담보·처분 제한 | 채권에 대한 부담 | 별도 계약 **[미구현]** | 토큰 잠금이 담보 완성으로 간주되지 않는다 |
 | KIX 토큰(가칭) | 이 청사진의 설계 대상 | 토큰 패키지(가칭) **[미구현·비활성]** | 어떤 권리도 자동으로 부여하지 않는다 |

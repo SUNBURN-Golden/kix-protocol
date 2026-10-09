@@ -24,8 +24,8 @@ Task 005 Wave 3. 문서일: 2026-09-26.
 소유자 JunTae가 2026-10-09 12:34 KST에 0.2의 권고 L0, W0, R0, S0, T0, B0, P0를 이 목의 자세로 채택했다.
 이 세션에서 확인한 `origin/main`은 `17c8a7dc66e49b090067b94ff7bc68cb6d79c5ee`다.
 작업 브랜치 HEAD는 `771545ae4b64f069396667f399b5200c44fd9af0`이고, 그 `origin/main`보다 48커밋 뒤다.
-이 개정은 그 브랜치의 0.2 초안을 이어 고친다. main을 이 브랜치에 병합하지 않는다.
-`origin/main`의 정산 계약은 §9에서 OpenAPI 카탈로그의 `settlement_<op>`를 말한다. 그 카탈로그 바이트는 이 브랜치에 없다. 이 개정은 그 바이트를 다시 만들지 않고, 이 트리가 그 명령을 가진 것처럼 적지 않는다.
+이 개정은 그 브랜치의 0.2 초안을 이어 고친다. 그 세션은 main을 병합하지 않았고, 카탈로그 바이트를 다시 만들지 않았다.
+병합된 `origin/main` `31eac0637a324244aeca00e849fdb0f7c685232e`가 카탈로그 바이트와 §9의 `settlement_<op>` 문장을 가져온다. 0.3은 그 바이트를 고치지 않는다.
 채택은 목의 지금 술어를 자세로 고정하는 일이다. 산술 파일 `mock_settlement.py`와 `settlement_fsm.py`는 바꾸지 않는다.
 세율, 준비율, 리셀 bps, waterfall의 상한·원가·구간·지급 시점, 잔여 단위의 수취인 지명은 권고가 비운 그대로 `UNDETERMINED`다.
 법률상 채무자·채권자, 세금의 성격, 예수·준비금의 회계 분류도 `UNDETERMINED`다. 담당 경로는 I10이다.
@@ -463,7 +463,8 @@ F01·F02·F03·P04는 **설계중**이다. 이 절이 그 라벨을 올리지 �
 
 이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
 역사 스키마의 `capture`와 `settle_capture`는 로컬 호출 목록에 남아 있고, 이 기계는 그 명령을 실행하지 않는다.
-이 개정은 OpenAPI 카탈로그 바이트를 바꾸지 않는다. `origin/main` `17c8a7dc66e49b090067b94ff7bc68cb6d79c5ee`의 같은 절은, 카탈로그에 이 기계의 `REPLAYABLE`만 `settlement_<op>`로 있다고 적는다. 그 카탈로그 변경은 이 브랜치에 없다. 그 집합 밖의 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`다.
+이 개정은 OpenAPI 카탈로그 바이트를 바꾸지 않는다. 다음 문장은 병합된 `origin/main`의 문장이다.
+OpenAPI 카탈로그에는 이 기계의 `REPLAYABLE`만 `settlement_<op>`로 있다. 2026-10-09 소유자 결정(JunTae)이 그 출처와 와이어 이름을 승인했다. 그 집합 밖의 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`다.
 
 수락 기준은 이 참조 모듈 안의 결정이다. 법적 권위, 체인 권위, 은행 권한이 아니다.
 조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.

@@ -137,7 +137,7 @@ jobs:
       - name: Offline reference state machines and OpenAPI pins
         if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: |
-          for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04; do
+          for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation token_reward; do
             PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "reference/$suite" -t "reference/$suite"
           done
           python3 scripts/check_openapi_contract.py

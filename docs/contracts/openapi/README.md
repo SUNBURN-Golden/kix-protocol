@@ -2,16 +2,17 @@
 
 **운영 엔드포인트는 없다. 공개 호스트는 없다. 로컬 HTTP 테스트의 성공은 운영 승인이 아니다.**
 
-`kix-protocol.contract-only.openapi.json`은 `reference/v0.3-rc1/protocol_contract.json`의 로컬 호출 명령을 OpenAPI 3.1로 옮긴 **계약 전용 핀**이다. 그 파일은 라이브 서버를 선언하지 않는다. `x-kix-live-http-server`는 `false`이고 `x-kix-production-endpoint`는 `false`다. 명령을 새로 만들거나, 인증·재시도·전송 보장·운영 URL을 정하지 않는다.
+`kix-protocol.contract-only.openapi.json`은 `reference/v0.3-rc1/protocol_contract.json`의 로컬 호출 명령과 `fsm-command-contract.json`의 FSM `REPLAYABLE` 명령을 OpenAPI 3.1로 옮긴 **계약 전용 핀**이다. 그 파일은 라이브 서버를 선언하지 않는다. `x-kix-live-http-server`는 `false`이고 `x-kix-production-endpoint`는 `false`다. 그 두 집합 밖의 명령을 새로 만들거나, 인증·재시도·전송 보장·운영 URL을 정하지 않는다.
 
-`kix-protocol.integration-gate.openapi.json`은 그 같은 40개 명령과 같은 로컬 호출 경로를 **비운영 루프백 통합 관문**으로 적는다. `python3 -m integration_gate`는 `127.0.0.1`에만 붙고, `POST /x-kix-contract-only/local-call` 봉투를 `Core.execute`로 넘긴다. 기본 상태는 인메모리 참조 모형이다. `--readiness-dir`를 주면 커밋된 로컬 호출을 프로세스 로컬 파일에 남기고 재시작 뒤 한 번만 재생한다. 그 파일은 준비 런타임이지 프로토콜 정본이 아니고, 운영 적합 선언이 아니다. PG·KYC·공연장·은행 실연동을 만들지 않는다. 한계는 [READINESS_RUNTIME.md](../READINESS_RUNTIME.md)에 있다.
+`kix-protocol.integration-gate.openapi.json`은 그 같은 84개 명령과 같은 로컬 호출 경로를 **비운영 루프백 통합 관문**으로 적는다. `python3 -m integration_gate`는 `127.0.0.1`에만 붙고, 핵심 40개 명령은 `Core.execute`로, FSM 44개 명령은 같은 워커의 인프로세스 기계로 넘긴다. 기본 상태는 인메모리 참조 모형이다. `--readiness-dir`를 주면 커밋된 로컬 호출을 프로세스 로컬 파일에 남기고 재시작 뒤 한 번만 재생한다. 그 파일은 준비 런타임이지 프로토콜 정본이 아니고, 운영 적합 선언이 아니다. PG·KYC·공연장·은행 실연동을 만들지 않는다. 한계는 [READINESS_RUNTIME.md](../READINESS_RUNTIME.md)에 있다.
 
 ## 파일
 
 | 파일 | 역할 |
 |---|---|
-| [`kix-protocol.contract-only.openapi.json`](kix-protocol.contract-only.openapi.json) | 계약 전용 OpenAPI 3.1 문서. 라이브 서버를 선언하지 않는다 |
-| [`kix-protocol.integration-gate.openapi.json`](kix-protocol.integration-gate.openapi.json) | 비운영 루프백 통합 관문 설명. 명령은 40개 그대로다 |
+| [`kix-protocol.contract-only.openapi.json`](kix-protocol.contract-only.openapi.json) | 계약 전용 OpenAPI 3.1 문서. 라이브 서버를 선언하지 않는다. 명령은 84개다 |
+| [`fsm-command-contract.json`](fsm-command-contract.json) | FSM `REPLAYABLE` 44개의 두 번째 핀. 핵심 계약 파일을 바꾸지 않는다 |
+| [`kix-protocol.integration-gate.openapi.json`](kix-protocol.integration-gate.openapi.json) | 비운영 루프백 통합 관문 설명. 명령은 84개다 |
 | [`../../../scripts/check_openapi_contract.py`](../../../scripts/check_openapi_contract.py) | 계약 전용 문서의 명령 키·본문 스키마·핀 검사 |
 | [`../../../scripts/check_integration_gate_openapi.py`](../../../scripts/check_integration_gate_openapi.py) | 통합 관문 문서가 같은 40개 명령·비운영 표식을 유지하는지 검사 |
 | [`../../../integration_gate/`](../../../integration_gate/) | 루프백 HTTP 프로세스. 운영 배치물이 아니다 |
@@ -29,6 +30,10 @@ OpenAPI 산출물은 JSON이다. 검사는 Python 표준 라이브러리만 쓰�
 | git blob | `619ae21c82ca3df5661bd3831613f15fa65225ff` |
 | sha256 | `ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e` |
 | domain | `kix:fixture:lifecycle:0.3` |
+| FSM 원본 경로 | `docs/contracts/openapi/fsm-command-contract.json` |
+| FSM git blob | `3771a8739b906a478b54c597df37e27d1afc5f21` |
+| FSM sha256 | `342e97cb37b199622d7bb436ca9164690d969b797058aaa539ff417cab01411c` |
+| FSM domain | `kix:fixture:fsm-catalogue:0.3` |
 | `x-kix-contract-status` | `contract-only` |
 
 `info.version`은 `0.3-rc1+sha256:` 뒤에 위 sha256을 붙인다. `info.summary`는 “Contract-only. No live HTTP server. No production endpoint.”다.
@@ -41,7 +46,7 @@ OpenAPI 산출물은 JSON이다. 검사는 Python 표준 라이브러리만 쓰�
 |---|---|
 | `operationId` | 호출 한 건의 식별자. 명령 이름이 아니다. |
 | `actor` | 참조 모형의 픽스처 문자열. 권한 증명으로 쓰지 않는다. |
-| `action` | `protocol_contract.json`의 `commands` 키. 본문 스키마를 고른다. |
+| `action` | 핵심 명령 키 또는 `<machine>_<op>` FSM 키. 본문 스키마를 고른다. |
 | `body` | 그 명령의 JSON Schema. `additionalProperties: false`. |
 
 v0.1 통합명세 §9.1은 봉투 필드를 `protocolDomain, operationId, actorContext, action, body`로 적는다. 현재 Python 함수는 `actorContext`를 받지 않고 `body.domain`을 검사한다. `actorContext`는 명세가 인증·서명 검증 결과로 부르는 이름이다. 이 문서는 인증 스킴을 만들지 않는다. `sourceAuthentication: FIXTURE_ONLY`는 원본에 적힌 라벨이며 HTTP 보안 스킴이 아니다.
@@ -52,7 +57,7 @@ OpenAPI `paths`에는 자리 표시 하나뿐 있다.
 - `x-kix-transport: contract-only-placeholder`
 - `operationId: invokeLocalCall`
 
-이 절은 계약 전용 파일의 자리다. 그 경로는 프로토콜의 자원 나무가 아니고, 공개된 HTTP 서비스도 아니다. `POST`는 그 파일에서 문법 자리였다. 통합 관문 문서는 같은 경로의 POST만 비운영 루프백 전송으로 적고, 명령을 늘리지 않는다. `servers`는 어느 문서에도 없다.
+이 절은 계약 전용 파일의 자리다. 그 경로는 프로토콜의 자원 나무가 아니고, 공개된 HTTP 서비스도 아니다. `POST`는 그 파일에서 문법 자리였다. 통합 관문 문서는 같은 경로의 POST만 비운영 루프백 전송으로 적는다. 핵심 40개 밖의 추가는 핀된 FSM `REPLAYABLE`뿐이다. `servers`는 어느 문서에도 없다.
 
 명령마다의 대응은 경로가 아니라 `x-kix-local-call-operations`에 있다. 그 `operationId`는 명령 이름이고 Python의 `action`과 같다. 호출 식별자인 봉투 `operationId`와 섞지 않는다. 본문은 `components.schemas.<명령>`이며 `x-kix-action-body-map`이 `action`에서 그 스키마로 연결한다. 같은 본문 스키마를 쓰는 명령이 있으므로, 필드 모양만으로 명령을 구분하지 않는다.
 
@@ -71,15 +76,19 @@ OpenAPI `paths`에는 자리 표시 하나뿐 있다.
 
 ## 명령 집합
 
-v0.3-rc1 `commands` 키를 모두 싣는다. `x-kix-omitted-commands`는 빈 배열이다. 이 핀의 명령은 40개다.
+v0.3-rc1 `commands` 키 40개를 그대로 싣고, FSM `REPLAYABLE` 44개를 `<machine>_<op>` 이름으로 더한다. `x-kix-omitted-commands`는 빈 배열이다. 이 핀의 명령은 84개다. 핵심 40개 스키마 바이트는 `protocol_contract.json`과 같다.
 
-아래 계약은 이 JSON의 키가 아니다. 일부를 빼서 숨긴 것이 아니라, 이 카탈로그의 범위 밖이다.
+2026-10-09 소유자 결정(JunTae)이 두 번째 핀, 균일 접두 와이어 이름, `bootstrap-2`, 루프백 의미를 승인했다. `consume_admission`은 카탈로그 이름이 아니다. 입장 소비의 이름은 `admission_consume`이다. `authorize_admission`이라는 접두 없는 이름도 없다. 예약 기계의 같은 연산은 `reservation_authorize_admission`이다.
+
+`--readiness-dir`가 있으면 FSM 명령은 저널에 쓰기 전에 `READINESS_FSM_REFUSED`로 거절한다. 그 철자는 승인된 실패-닫힘 동작의 루프백 라벨이다. 철자를 바꾸는 주체는 Astra다. 봉투 `operationId`는 FSM `idempotency_key`로 다시 쓰지 않는다. `OPERATION_ID_CONFLICT`는 핵심 명령 규칙으로 남는다.
+
+아래는 이 JSON의 키가 아니다. 일부를 빼서 숨긴 것이 아니라, 이 카탈로그의 범위 밖이다.
 
 | 경로 | 이유 |
 |---|---|
-| `reference/booking_resale_admission/` | 별도 오프라인 목 |
-| `reference/settlement_f01_f03/` | 별도 오프라인 목 |
-| `reference/credit_advance_f04/` | 별도 오프라인 목 |
+| `reference/booking_resale_admission/`의 `view*`, `reconcile`, `export_journal`, `restore`, `reject_*` | 조회·복구. `read-model-reference` 범위 |
+| `reference/settlement_f01_f03/`의 같은 종류의 비-`REPLAYABLE` | 조회·복구 |
+| `reference/credit_advance_f04/`의 `attempt_execution`과 그 밖 비-`REPLAYABLE` | 실연 거절과 조회. 실자금 종류는 기계 안의 거절로 남는다 |
 | `reference/v0.3-rc1/commerce_driver.py` | 계산 전용 `{action, args}` 봉투. 이 명령 카탈로그가 아님 |
 
 ## 상거래 앱이 나중에 읽는 방법
@@ -92,7 +101,7 @@ v0.3-rc1 `commands` 키를 모두 싣는다. `x-kix-omitted-commands`는 빈 배
 4. 본문의 알려지지 않은 필드는 거절한다 (`additionalProperties: false`, `unknownFields: REJECT`).
 5. `actor`를 인증 결과로 믿지 않는다. 인증 구현은 이 문서에 없다.
 6. 재시도, 전송 성공, 운영 엔드포인트를 이 문서에서 추론하지 않는다.
-7. 비운영 루프백 통합 관문은 아래 절이 적는다. 그 관문은 운영 엔드포인트가 아니고, 상거래 앱 결합도 아니다.
+7. 비운영 루프백 통합 관문은 아래 절이 적는다. 그 관문은 운영 엔드포인트가 아니고, 상거래 앱 결합도 아니다. 브라우저 전송은 `--browser-origin http://127.0.0.1:5173`일 때만 열린다. 기본은 꺼져 있다. 그 전송은 운영 결합, 공개 엔드포인트, 인증, 프로토콜 정본이 아니다.
 
 ## 검사
 
@@ -118,8 +127,15 @@ python3 -m integration_gate --port 8765
 |---|---|
 | `POST /x-kix-contract-only/local-call` | 봉투 `operationId`, `actor`, `action`, `body`. 본문은 그 명령의 공개 스키마로 검사한 뒤 `Core.execute` |
 | `GET /health` | 프로세스가 응답하는지만 본다. 프로토콜 명령이 아니다 |
-| `GET /ready` | 인메모리 참조 코어와 40개 명령 카탈로그가 열려 있는지만 본다. 운영 준비가 아니다 |
-| 그 밖 경로·메서드 | 실패로 닫는다. 이벤트·티켓·결제·공연장·시장의 REST 트리는 없다 |
+| `GET /ready` | 인메모리 참조 코어와 84개 명령 카탈로그가 열려 있는지만 본다. 운영 준비가 아니다 |
+| `OPTIONS` (플래그가 켜진 경우만) | 로컬 호출·`/health`·`/ready`에서 허용 출처의 프리플라이트만 204. 코어를 호출하지 않는다 |
+| 그 밖 경로·메서드 | 기본은 실패로 닫는다. 이벤트·티켓·결제·공연장·시장의 REST 트리는 없다 |
+
+플래그 `--browser-origin http://127.0.0.1:5173`를 준 경우에만 브라우저 전송이 열린다. 기본은 꺼져 있다. 켜지면 `Host`는 `127.0.0.1` 또는 `127.0.0.1:<듣는 포트>`만 받는다. 그 밖, 없거나 두 개인 `Host`는 400이고 CORS 헤더는 없다. 허용 출처 `http://127.0.0.1:5173`의 프리플라이트는 204이고 본문이 없다. 같은 출처의 실제 응답에는 `Access-Control-Allow-Origin`과 `Vary: Origin`만 더한다. 자격 증명 헤더는 없다. `Access-Control-Expose-Headers`도 없으므로 페이지 스크립트는 `X-Request-Id`를 읽지 못한다. `Access-Control-Allow-Private-Network`는 보내지 않는다. 헤더를 파싱하기 전에 만든 응답(414, 잘못된 요청)에는 CORS 헤더가 없다. OpenAPI 문서 자체는 바꾸지 않았다. 서버 URL, 보안 스킴, `OPTIONS` 오퍼레이션은 없다.
+
+```bash
+python3 -m integration_gate --port 8765 --browser-origin http://127.0.0.1:5173
+```
 
 거절은 HTTP 200으로 숨기지 않는다. 스키마·봉투 오류는 4xx이고, `Core.execute`가 `Rejected`를 던지면 422에 그 코드가 담긴다. 본문 상한은 65536바이트, 요청 시간 상한은 5초, 헤더 상한은 8192바이트다.
 

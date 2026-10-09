@@ -17,18 +17,25 @@ import time
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
+from unittest.mock import patch
 
 from integration_gate.catalogue import load_catalogue, reference_types
 from integration_gate.constants import (
+    BROWSER_ALLOWED_ORIGIN,
+    BROWSER_ALLOWED_REQUEST_HEADERS,
     COMMAND_COUNT,
+    CORE_COMMAND_COUNT,
     DEFAULT_TIMEOUT_SECONDS,
+    HEADER_LIMIT_BYTES,
     HEALTH_PATH,
     LIVE_HTTP_SERVER_MODE,
     LOCAL_CALL_PATH,
     LOOPBACK_HOST,
     MAX_BODY_BYTES,
+    READINESS_FSM_REFUSED,
     READY_PATH,
 )
+from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.openapi_doc import self_test, validate
 from integration_gate.schema import problems
 from integration_gate.server import build_server, main
@@ -108,6 +115,35 @@ def assert_gate_headers(test, header_map):
     test.assertTrue(header_map.get('content-type', '').startswith('application/json'))
 
 
+def assert_no_cors(test, header_map):
+    for key in header_map:
+        test.assertFalse(key.startswith('access-control-'), key)
+    test.assertNotIn('vary', header_map)
+
+
+def raw_message(method, path, header_lines):
+    lines = ['%s %s HTTP/1.1' % (method, path)]
+    lines.extend(header_lines)
+    lines.append('Connection: close')
+    return ('\r\n'.join(lines) + '\r\n\r\n').encode('iso-8859-1')
+
+
+def parse_response(blob):
+    head, _, body = blob.partition(b'\r\n\r\n')
+    rows = head.split(b'\r\n')
+    status = int(rows[0].split()[1])
+    headers = {}
+    seen = []
+    for row in rows[1:]:
+        if not row:
+            continue
+        name, _, value = row.partition(b':')
+        key = name.decode('iso-8859-1').lower()
+        seen.append(key)
+        headers.setdefault(key, value.decode('iso-8859-1').strip())
+    return status, body, headers, seen
+
+
 def envelope(op, actor, action, body):
     return {'operationId': op, 'actor': actor, 'action': action, 'body': body}
 
@@ -126,6 +162,7 @@ def run_with_server(
     readiness_dir=None,
     max_in_flight=8,
     max_journal_records=4096,
+    browser_origin=None,
 ):
     httpd = build_server(
         LOOPBACK_HOST,
@@ -135,6 +172,7 @@ def run_with_server(
         readiness_dir=readiness_dir,
         max_in_flight=max_in_flight,
         max_journal_records=max_journal_records,
+        browser_origin=browser_origin,
     )
     port = httpd.server_address[1]
     error = []
@@ -177,6 +215,16 @@ def wait_ready(port):
         last = (status, raw)
         time.sleep(0.02)
     raise RuntimeError(last)
+
+
+def wait_admit_idle(httpd, timeout=3):
+    """Poll until the gate's admit slot is free. Test harness only."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if httpd.admit.view()['inFlight'] == 0:
+            return
+        time.sleep(0.005)
+    raise AssertionError('admit slot not released')
 
 
 def raw_http(port, payload, timeout=2):
@@ -362,7 +410,7 @@ class TransportTests(unittest.TestCase):
 
         def run(_httpd, port):
             for _pass in (1, 2):
-                for action in catalogue.names:
+                for action in catalogue.core_names:
                     body = minimal_body(catalogue.commands[action], catalogue.domain)
                     self.assertEqual(problems(body, catalogue.commands[action], 'body'), [])
                     core = Core()
@@ -383,7 +431,7 @@ class TransportTests(unittest.TestCase):
                     seen.append(action)
 
         run_with_server(run)
-        self.assertEqual(len(set(seen)), COMMAND_COUNT)
+        self.assertEqual(len(set(seen)), CORE_COMMAND_COUNT)
 
     def test_representative_commands_match_local_call(self):
         catalogue = load_catalogue(ROOT)
@@ -569,7 +617,6 @@ class TransportTests(unittest.TestCase):
                 'bank_transfer',
                 'venue_scan',
                 'marketplace_list',
-                'authorize_admission',
                 'consume_admission',
                 'create_event ',
             ):
@@ -586,6 +633,164 @@ class TransportTests(unittest.TestCase):
             self.assertEqual(payload['sequence'], 1)
 
         run_with_server(run)
+
+    def test_fsm_commands_match_a_direct_machine_call(self):
+        catalogue = load_catalogue(ROOT)
+        shadow = FsmHost()
+
+        def invoke(action, body):
+            try:
+                return 200, shadow.call(action, body)
+            except FsmRejected as exc:
+                return 422, {'error': exc.code, 'rejected': True}
+
+        def run(_httpd, port):
+            for action in catalogue.fsm_names:
+                body = minimal_body(catalogue.commands[action], catalogue.domain)
+                self.assertEqual(problems(body, catalogue.commands[action], 'body'), [], action)
+                status, payload = invoke(action, body)
+                http_status, http_payload, _headers = post_call(
+                    port, 'fsm-' + action, 'operator', action, body,
+                )
+                self.assertEqual(http_status, status, (action, http_payload))
+                if status == 200:
+                    self.assertEqual(http_payload, payload, action)
+                else:
+                    self.assertEqual(http_payload['error'], payload['error'], action)
+                    self.assertIs(http_payload['rejected'], True)
+
+        run_with_server(run)
+        self.assertEqual(len(catalogue.fsm_names), 44)
+
+    def test_admission_happy_path_over_http(self):
+        booking = str(ROOT / 'reference' / 'booking_resale_admission')
+        if booking not in sys.path:
+            sys.path.insert(0, booking)
+        from mock_gates import ADMISSION_WINDOW_MS, OFFER_WINDOW_MS
+
+        price = 10001
+        now = 1000000
+        expires = now + OFFER_WINDOW_MS
+        admit_expires = now + ADMISSION_WINDOW_MS
+        pay = 'ab' * 32
+        request = '11' * 32
+        show = {
+            'organizer_role': 'organizer',
+            'capacity': 2,
+            'gate_roles': ['gate-a', 'gate-b'],
+            'primary_price': price,
+            'resale_cap': 20000,
+            'resale_allowed': True,
+            'organizer_bps': 1,
+            'platform_bps': 1,
+        }
+
+        def run(_httpd, port):
+            steps = [
+                ('reservation_set_clock', {'subject_id': 'clock', 'idempotency_key': 'clock-1', 'now_ms': now}),
+                ('reservation_register_show', dict(show_id='show-1', idempotency_key='show-1', **show)),
+                ('reservation_hold', {
+                    'reservation_id': 'reserve-1', 'idempotency_key': 'hold-1', 'show_id': 'show-1',
+                    'slot': 0, 'buyer_role': 'buyer-1', 'expires_ms': expires,
+                }),
+                ('reservation_confirm', {
+                    'order_id': 'order-1', 'idempotency_key': 'confirm-1', 'reservation_id': 'reserve-1',
+                    'amount': price, 'quote_ref': 'quote-1',
+                }),
+                ('reservation_observe_payment', {
+                    'order_id': 'order-1', 'idempotency_key': 'pay-1', 'payment_ref': pay, 'amount': price,
+                }),
+                ('reservation_issue', {
+                    'issuance_id': 'issue-1', 'idempotency_key': 'issue-1', 'order_id': 'order-1',
+                }),
+                ('admission_set_clock', {'subject_id': 'clock', 'idempotency_key': 'gate-clock', 'now_ms': now}),
+                ('admission_adopt_issued', dict(
+                    right_id='issue-1', idempotency_key='adopt-1', show_id='show-1', slot=0,
+                    buyer_role='buyer-1', expires_ms=expires, order_id='order-1', amount=price,
+                    payment_ref=pay, reservation_id='reserve-1', quote_ref='quote-1', **show,
+                )),
+                ('admission_authorize_admission', {
+                    'admission_id': 'admit-1', 'idempotency_key': 'admit-1', 'right_id': 'issue-1',
+                    'version': 1, 'holder_role': 'buyer-1', 'gate_role': 'gate-a', 'request': request,
+                    'expires_ms': admit_expires,
+                }),
+                ('admission_consume', {
+                    'consume_id': 'consume-1', 'idempotency_key': 'consume-1', 'right_id': 'issue-1',
+                    'version': 1, 'gate_role': 'gate-a', 'request': request,
+                }),
+            ]
+            for index, (action, body) in enumerate(steps):
+                status, payload, _headers = post_call(port, 'admit-path-%d' % index, 'operator', action, body)
+                self.assertEqual(status, 200, (action, payload))
+                self.assertIs(payload['duplicate'], False, action)
+            self.assertEqual(payload['evidence']['decision'], 'CONSUMED_ONCE')
+            self.assertIs(payload['admission_routing_production'], False)
+            self.assertIs(payload['funds_executed'], False)
+
+        run_with_server(run)
+
+    def test_fsm_idempotency_key_replays_without_using_operation_id(self):
+        body = {
+            'settlement_id': 'claim-1',
+            'idempotency_key': 'init-1',
+            'trade_id': 'trade-1',
+            'gross': 10001,
+            'debtor_role': 'fixture-merchant',
+            'policy': {
+                'kind': 'PRIMARY_FEE_BPS',
+                'fee_bps': 0,
+                'residual_payee': 'organizer',
+                'fee_payee': 'platform',
+            },
+        }
+
+        def run(_httpd, port):
+            first_status, first, _headers = post_call(
+                port, 'settle-op-1', 'operator', 'settlement_initiate', body,
+            )
+            second_status, second, _headers = post_call(
+                port, 'settle-op-2', 'operator', 'settlement_initiate', body,
+            )
+            self.assertEqual(first_status, 200, first)
+            self.assertEqual(second_status, 200, second)
+            self.assertIs(first['duplicate'], False)
+            self.assertIs(second['duplicate'], True)
+            self.assertIsNone(second['applied'])
+            self.assertIs(second['funds_executed'], False)
+
+        run_with_server(run)
+
+    def test_readiness_directory_refuses_fsm_commands(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            def run(_httpd, port):
+                body = {
+                    'settlement_id': 'claim-1',
+                    'idempotency_key': 'init-1',
+                    'trade_id': 'trade-1',
+                    'gross': 10001,
+                    'debtor_role': 'fixture-merchant',
+                    'policy': {'kind': 'PRIMARY_FEE_BPS', 'fee_bps': 0,
+                               'residual_payee': 'organizer', 'fee_payee': 'platform'},
+                }
+                status, payload, _headers = post_call(
+                    port, 'fsm-refused', 'operator', 'settlement_initiate', body,
+                )
+                self.assertEqual(status, 422, payload)
+                self.assertEqual(payload['error'], READINESS_FSM_REFUSED)
+                self.assertIs(payload['rejected'], True)
+                domain = load_catalogue(ROOT).domain
+                status, payload, _headers = post_call(
+                    port, 'core-still-open', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 1},
+                )
+                self.assertEqual(status, 200, payload)
+                self.assertEqual(payload['sequence'], 1)
+
+            run_with_server(run, readiness_dir=tmp)
+            journal = Path(tmp) / 'journal.v1'
+            raw = journal.read_bytes()
+            self.assertNotIn(b'settlement_initiate', raw)
+            self.assertIn(b'advance_clock', raw)
 
     def test_transport_limits_and_malformed_bodies(self):
         domain = load_catalogue(ROOT).domain
@@ -1009,6 +1214,554 @@ class TransportTests(unittest.TestCase):
         self.assertIs(overloaded[0]['productionReadiness'], False)
         self.assertNotIn('body', overloaded[0])
         self.assertNotIn('now', json.dumps(overloaded[0]))
+
+
+class BrowserAccessTests(unittest.TestCase):
+    def test_flag_off_keeps_today_including_origin_and_hostile_host(self):
+        domain = load_catalogue(ROOT).domain
+
+        def run(_httpd, port):
+            for path, allow in (
+                (LOCAL_CALL_PATH, 'POST'),
+                (HEALTH_PATH, 'GET'),
+                (READY_PATH, 'GET'),
+            ):
+                status, raw, headers = exchange(
+                    port, 'OPTIONS', path,
+                    headers={
+                        'Origin': BROWSER_ALLOWED_ORIGIN,
+                        'Access-Control-Request-Method': allow,
+                    },
+                )
+                self.assertEqual(status, 405, path)
+                self.assertEqual(parse_json(raw)['error'], 'METHOD_NOT_ALLOWED')
+                self.assertEqual(headers.get('allow'), allow)
+                assert_no_cors(self, headers)
+            status, raw, headers = exchange(
+                port, 'GET', HEALTH_PATH, headers={'Origin': BROWSER_ALLOWED_ORIGIN}
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(parse_json(raw)['status'], 'up')
+            assert_no_cors(self, headers)
+            status, payload, headers = post_call(
+                port, 'op-off', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 1},
+                headers={'Origin': BROWSER_ALLOWED_ORIGIN},
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(payload['sequence'], 1)
+            assert_no_cors(self, headers)
+            for host in _host_cases(port):
+                status, body, _headers, _seen = self._raw(
+                    port, 'GET', HEALTH_PATH, host, origin=BROWSER_ALLOWED_ORIGIN
+                )
+                self.assertEqual(status, 200, host)
+                self.assertEqual(parse_json(body)['status'], 'up')
+                assert_no_cors(self, _headers)
+
+        run_with_server(run)
+
+    def test_preflight_for_the_allowed_origin(self):
+        def run(_httpd, port):
+            for path, method in (
+                (LOCAL_CALL_PATH, 'POST'),
+                (HEALTH_PATH, 'GET'),
+                (READY_PATH, 'GET'),
+            ):
+                status, body, headers, seen = self._raw(
+                    port, 'OPTIONS', path,
+                    ['Host: 127.0.0.1:%d' % port],
+                    origin=BROWSER_ALLOWED_ORIGIN,
+                    extra=['Access-Control-Request-Method: ' + method],
+                )
+                self.assertEqual(status, 204, path)
+                self.assertEqual(body, b'')
+                self.assertEqual(seen.count('access-control-allow-origin'), 1)
+                self._assert_preflight(headers, seen, method)
+            status, body, headers, seen = self._raw(
+                port, 'OPTIONS', LOCAL_CALL_PATH,
+                ['Host: 127.0.0.1'],
+                origin=BROWSER_ALLOWED_ORIGIN,
+                extra=[
+                    'Access-Control-Request-Method: POST',
+                    'Access-Control-Request-Headers: Content-Type , X-Request-Id',
+                ],
+            )
+            self.assertEqual(status, 204)
+            self.assertEqual(body, b'')
+            self._assert_preflight(headers, seen, 'POST')
+            status, _body, headers, seen = self._raw(
+                port, 'OPTIONS', HEALTH_PATH,
+                ['Host: 127.0.0.1:%d' % port],
+                origin=BROWSER_ALLOWED_ORIGIN,
+                extra=[
+                    'Access-Control-Request-Method: GET',
+                    'Access-Control-Request-Headers: content-type, x-request-id, x-correlation-id',
+                ],
+            )
+            self.assertEqual(status, 204)
+            self._assert_preflight(headers, seen, 'GET')
+
+        run_with_server(run, browser_origin=BROWSER_ALLOWED_ORIGIN)
+
+    def test_preflight_does_not_take_an_admit_slot_or_advance_the_core(self):
+        domain = load_catalogue(ROOT).domain
+
+        def run(httpd, port):
+            self.assertEqual(httpd.try_admit(), 'OK')
+            try:
+                status, body, headers, _seen = self._raw(
+                    port, 'OPTIONS', LOCAL_CALL_PATH,
+                    ['Host: 127.0.0.1:%d' % port],
+                    origin=BROWSER_ALLOWED_ORIGIN,
+                    extra=['Access-Control-Request-Method: POST'],
+                )
+                self.assertEqual(status, 204)
+                self.assertEqual(body, b'')
+                self.assertEqual(
+                    headers.get('access-control-allow-origin'), BROWSER_ALLOWED_ORIGIN
+                )
+            finally:
+                httpd.release_admit()
+            status, payload, _headers = post_call(
+                port, 'op-after-preflight', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 2},
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(payload['sequence'], 1)
+            self.assertEqual(payload['result']['logicalTime'], 2)
+
+        run_with_server(run, max_in_flight=1, browser_origin=BROWSER_ALLOWED_ORIGIN)
+
+    def test_refused_origins_and_preflight_shapes_stay_closed(self):
+        origins = [
+            'http://localhost:5173',
+            'http://[::1]:5173',
+            'https://127.0.0.1:5173',
+            'http://127.0.0.1:5174',
+            'null',
+            'chrome-extension://x',
+            'http://192.168.0.8:5173',
+            'http://127.0.0.1:5173/',
+            'http://127.0.0.1:5173 ',
+            'http://user@127.0.0.1:5173',
+            'HTTP://127.0.0.1:5173',
+        ]
+
+        def run(_httpd, port):
+            host = ['Host: 127.0.0.1:%d' % port]
+            for origin in origins:
+                status, body, headers, _seen = self._raw(
+                    port, 'OPTIONS', LOCAL_CALL_PATH, host,
+                    origin=origin,
+                    extra=['Access-Control-Request-Method: POST'],
+                )
+                self.assertEqual(status, 405, origin)
+                self.assertEqual(parse_json(body)['error'], 'METHOD_NOT_ALLOWED')
+                self.assertEqual(headers.get('allow'), 'POST')
+                assert_no_cors(self, headers)
+            status, body, headers, _seen = self._raw(
+                port, 'OPTIONS', LOCAL_CALL_PATH, host,
+                extra=['Access-Control-Request-Method: POST'],
+            )
+            self.assertEqual(status, 405)
+            self.assertEqual(headers.get('allow'), 'POST')
+            assert_no_cors(self, headers)
+            status, body, headers, _seen = self._raw(
+                port, 'OPTIONS', LOCAL_CALL_PATH,
+                host + [
+                    'Origin: ' + BROWSER_ALLOWED_ORIGIN,
+                    'Origin: ' + BROWSER_ALLOWED_ORIGIN,
+                ],
+                extra=['Access-Control-Request-Method: POST'],
+            )
+            self.assertEqual(status, 405)
+            self.assertEqual(headers.get('allow'), 'POST')
+            assert_no_cors(self, headers)
+            shapes = [
+                ['Access-Control-Request-Method: PUT'],
+                ['Access-Control-Request-Method: POST', 'Access-Control-Request-Method: POST'],
+                ['Access-Control-Request-Method: POST', 'Access-Control-Request-Headers: authorization'],
+                ['Access-Control-Request-Method: POST', 'Access-Control-Request-Headers: cookie'],
+                ['Access-Control-Request-Method: POST',
+                 'Access-Control-Request-Headers: content-type, content-type'],
+                ['Access-Control-Request-Method: POST', 'Access-Control-Request-Headers:'],
+                ['Access-Control-Request-Method: POST',
+                 'Access-Control-Request-Headers: content-type',
+                 'Access-Control-Request-Headers: x-request-id'],
+                ['Access-Control-Request-Method: POST',
+                 'Access-Control-Request-Private-Network: true'],
+                ['Access-Control-Request-Method: GET'],
+            ]
+            for extra in shapes:
+                status, body, headers, _seen = self._raw(
+                    port, 'OPTIONS', LOCAL_CALL_PATH, host,
+                    origin=BROWSER_ALLOWED_ORIGIN,
+                    extra=extra,
+                )
+                self.assertEqual(status, 405, extra)
+                self.assertEqual(parse_json(body)['error'], 'METHOD_NOT_ALLOWED')
+                self.assertEqual(headers.get('allow'), 'POST')
+                assert_no_cors(self, headers)
+            status, body, headers, _seen = self._raw(
+                port, 'OPTIONS', HEALTH_PATH, host,
+                origin=BROWSER_ALLOWED_ORIGIN,
+                extra=['Access-Control-Request-Method: POST'],
+            )
+            self.assertEqual(status, 405)
+            self.assertEqual(headers.get('allow'), 'GET')
+            assert_no_cors(self, headers)
+
+        run_with_server(run, browser_origin=BROWSER_ALLOWED_ORIGIN)
+
+    def test_real_responses_add_cors_only_for_the_allowed_origin(self):
+        domain = load_catalogue(ROOT).domain
+        missing = {'domain': domain, 'eventId': 'missing'}
+
+        def run(httpd, port):
+            status, raw, headers = exchange(port, 'GET', HEALTH_PATH)
+            self.assertEqual(status, 200)
+            assert_no_cors(self, headers)
+            status_on, raw_on, headers_on = exchange(
+                port, 'GET', HEALTH_PATH, headers={'Origin': BROWSER_ALLOWED_ORIGIN}
+            )
+            self.assertEqual(status_on, 200)
+            self.assertEqual(raw_on, raw)
+            self._assert_simple_cors(headers_on)
+            status_other, raw_other, headers_other = exchange(
+                port, 'GET', HEALTH_PATH, headers={'Origin': 'http://localhost:5173'}
+            )
+            self.assertEqual(status_other, 200)
+            self.assertEqual(raw_other, raw)
+            assert_no_cors(self, headers_other)
+
+            def paired(method, path, payload, origin_headers, plain_headers=None):
+                status_a, raw_a, headers_a = exchange(
+                    port, method, path, payload=payload, headers=origin_headers
+                )
+                wait_admit_idle(httpd)
+                status_b, raw_b, headers_b = exchange(
+                    port, method, path, payload=payload, headers=plain_headers
+                )
+                wait_admit_idle(httpd)
+                self.assertEqual(status_a, status_b)
+                self.assertEqual(raw_a, raw_b)
+                self._assert_simple_cors(headers_a)
+                assert_no_cors(self, headers_b)
+                return status_a, parse_json(raw_a)
+
+            status, payload = paired(
+                'POST', LOCAL_CALL_PATH, {},
+                {'Origin': BROWSER_ALLOWED_ORIGIN},
+            )
+            self.assertEqual(status, 400)
+            self.assertEqual(payload['error'], 'ENVELOPE_INVALID')
+            status, payload = paired(
+                'POST', LOCAL_CALL_PATH, {},
+                {'Origin': BROWSER_ALLOWED_ORIGIN, 'Content-Type': 'text/plain'},
+                {'Content-Type': 'text/plain'},
+            )
+            self.assertEqual(status, 415)
+            self.assertEqual(payload['error'], 'UNSUPPORTED_MEDIA_TYPE')
+            status_a, payload_a, headers_a = post_call(
+                port, 'op-miss-a', 'operator', 'cancel_event', missing,
+                headers={'Origin': BROWSER_ALLOWED_ORIGIN},
+            )
+            wait_admit_idle(httpd)
+            status_b, payload_b, headers_b = post_call(
+                port, 'op-miss-b', 'operator', 'cancel_event', missing,
+            )
+            wait_admit_idle(httpd)
+            self.assertEqual(status_a, 422)
+            self.assertEqual(status_b, 422)
+            self.assertEqual(payload_a, payload_b)
+            self.assertEqual(payload_a['error'], 'EVENT_NOT_FOUND')
+            self._assert_simple_cors(headers_a)
+            assert_no_cors(self, headers_b)
+            status, payload, headers = post_call(
+                port, 'op-ok', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 6},
+                headers={'Origin': BROWSER_ALLOWED_ORIGIN},
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(payload['sequence'], 1)
+            self.assertEqual(payload['result']['logicalTime'], 6)
+            self.assertNotIn('rejected', payload)
+            self._assert_simple_cors(headers)
+            wait_admit_idle(httpd)
+            self.assertEqual(httpd.try_admit(), 'OK')
+            try:
+                status, payload, headers = post_call(
+                    port, 'op-busy', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 7},
+                    headers={'Origin': BROWSER_ALLOWED_ORIGIN},
+                )
+                self.assertEqual(status, 503)
+                self.assertEqual(payload['error'], 'OVERLOADED')
+                self._assert_simple_cors(headers)
+                status_plain, payload_plain, headers_plain = post_call(
+                    port, 'op-busy-plain', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 8},
+                )
+                self.assertEqual(status_plain, 503)
+                self.assertEqual(payload_plain, payload)
+                assert_no_cors(self, headers_plain)
+            finally:
+                httpd.release_admit()
+
+        run_with_server(run, max_in_flight=1, browser_origin=BROWSER_ALLOWED_ORIGIN)
+
+    def test_response_can_complete_while_admit_slot_is_held(self):
+        """Characterization of the current handler order, not a contract claim.
+
+        GateHandler writes the response and only then releases the admit slot.
+        docs/contracts/READINESS_RUNTIME.md does not define that order.
+        """
+        domain = load_catalogue(ROOT).domain
+        release_gate = threading.Event()
+
+        def run(httpd, port):
+            original = httpd.release_admit
+
+            def blocking_release():
+                release_gate.wait()
+                original()
+
+            httpd.release_admit = blocking_release
+            try:
+                status, raw, _headers = exchange(
+                    port, 'POST', LOCAL_CALL_PATH, payload={},
+                    headers={'Content-Type': 'text/plain'},
+                )
+                self.assertEqual(status, 415)
+                self.assertEqual(parse_json(raw)['error'], 'UNSUPPORTED_MEDIA_TYPE')
+                self.assertEqual(httpd.admit.view()['inFlight'], 1)
+                with self.assertRaises(AssertionError) as caught:
+                    wait_admit_idle(httpd, timeout=0.2)
+                self.assertEqual(str(caught.exception), 'admit slot not released')
+                release_gate.set()
+                wait_admit_idle(httpd)
+                status, _payload, _headers = post_call(
+                    port, 'op-after-release', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 1},
+                )
+                self.assertEqual(status, 200)
+            finally:
+                release_gate.set()
+
+        run_with_server(run, max_in_flight=1, browser_origin=BROWSER_ALLOWED_ORIGIN)
+
+    def test_existing_rejections_stay_ahead_of_cors_and_preflight(self):
+        def run(_httpd, port):
+            host = 'Host: 127.0.0.1:%d' % port
+            cases = [
+                ('OPTIONS', '/health?ready=1', [host], 400, 'QUERY_NOT_ALLOWED'),
+                ('OPTIONS', '/no-such', [host], 404, 'NOT_FOUND'),
+                (
+                    'OPTIONS', HEALTH_PATH,
+                    [host, 'Expect: 100-continue'],
+                    417, 'EXPECTATION_FAILED',
+                ),
+                (
+                    'OPTIONS', HEALTH_PATH,
+                    [host, 'Transfer-Encoding: chunked'],
+                    400, 'UNSUPPORTED_TRANSFER',
+                ),
+                (
+                    'OPTIONS', HEALTH_PATH,
+                    [host, 'X-Pad: ' + ('a' * (HEADER_LIMIT_BYTES + 64))],
+                    431, 'HEADER_TOO_LARGE',
+                ),
+            ]
+            for method, path, fields, status_code, error in cases:
+                status, body, headers, _seen = self._raw(
+                    port, method, path, fields,
+                    origin=BROWSER_ALLOWED_ORIGIN,
+                    extra=['Access-Control-Request-Method: GET'],
+                )
+                self.assertEqual(status, status_code, path)
+                self.assertEqual(parse_json(body)['error'], error)
+                assert_no_cors(self, headers)
+            line = b'GET /' + (b'a' * 70000) + b' HTTP/1.1\r\n'
+            status, _body, blob = raw_http(port, line)
+            self.assertEqual(status, 414)
+            self.assertNotIn(b'access-control-', blob.lower())
+            self.assertNotIn(b'\r\nvary:', blob.lower())
+            status, _body, blob = raw_http(port, b'BAD\r\n\r\n')
+            self.assertEqual(status, 400)
+            self.assertNotIn(b'access-control-', blob.lower())
+            self.assertNotIn(b'\r\nvary:', blob.lower())
+
+        run_with_server(run, browser_origin=BROWSER_ALLOWED_ORIGIN)
+
+    def test_host_check_applies_only_when_the_flag_is_on(self):
+        def run(_httpd, port):
+            for host in _host_cases(port):
+                allowed = host in (
+                    ['Host: 127.0.0.1'],
+                    ['Host: 127.0.0.1:%d' % port],
+                )
+                status, body, headers, _seen = self._raw(
+                    port, 'GET', HEALTH_PATH, host, origin=BROWSER_ALLOWED_ORIGIN
+                )
+                if allowed:
+                    self.assertEqual(status, 200, host)
+                    self.assertEqual(parse_json(body)['status'], 'up')
+                    self._assert_simple_cors(headers)
+                else:
+                    self.assertEqual(status, 400, host)
+                    self.assertEqual(parse_json(body)['error'], 'BAD_REQUEST')
+                    assert_no_cors(self, headers)
+            status, body, headers, _seen = self._raw(
+                port, 'OPTIONS', LOCAL_CALL_PATH,
+                ['Host: localhost:%d' % port],
+                origin=BROWSER_ALLOWED_ORIGIN,
+                extra=['Access-Control-Request-Method: POST'],
+            )
+            self.assertEqual(status, 400)
+            self.assertEqual(parse_json(body)['error'], 'BAD_REQUEST')
+            assert_no_cors(self, headers)
+
+        run_with_server(run, browser_origin=BROWSER_ALLOWED_ORIGIN)
+
+    def test_startup_refuses_any_browser_origin_other_than_the_one_value(self):
+        refused = [
+            ['--browser-origin', 'http://localhost:5173'],
+            ['--browser-origin', ''],
+            ['--browser-origin', BROWSER_ALLOWED_ORIGIN, '--browser-origin', BROWSER_ALLOWED_ORIGIN],
+            ['--browser-origin', BROWSER_ALLOWED_ORIGIN + '/'],
+            ['--browser-origin', '*'],
+        ]
+        for argv in refused:
+            buf = io.StringIO()
+            with redirect_stderr(buf):
+                code = main(argv + ['--port', '9'])
+            self.assertEqual(code, 2, argv)
+            self.assertIn('REFUSING_BROWSER_ORIGIN', buf.getvalue())
+        buf = io.StringIO()
+        with redirect_stderr(buf):
+            code = main([
+                '--host', '0.0.0.0',
+                '--browser-origin', BROWSER_ALLOWED_ORIGIN,
+                '--port', '9',
+            ])
+        self.assertEqual(code, 2)
+        self.assertIn('REFUSING_NON_LOOPBACK_BIND', buf.getvalue())
+        self.assertNotIn('REFUSING_BROWSER_ORIGIN', buf.getvalue())
+
+    def test_environment_does_not_enable_browser_origin(self):
+        names = {
+            'BROWSER_ORIGIN': BROWSER_ALLOWED_ORIGIN,
+            'KIX_BROWSER_ORIGIN': BROWSER_ALLOWED_ORIGIN,
+            'INTEGRATION_GATE_BROWSER_ORIGIN': BROWSER_ALLOWED_ORIGIN,
+        }
+        with patch.dict('os.environ', names):
+            proc, port = start_process()
+        try:
+            status, raw, headers = exchange(
+                port, 'OPTIONS', HEALTH_PATH,
+                headers={
+                    'Origin': BROWSER_ALLOWED_ORIGIN,
+                    'Access-Control-Request-Method': 'GET',
+                },
+            )
+            self.assertEqual(status, 405)
+            self.assertEqual(parse_json(raw)['error'], 'METHOD_NOT_ALLOWED')
+            self.assertEqual(headers.get('allow'), 'GET')
+            assert_no_cors(self, headers)
+        finally:
+            stop_process(proc)
+
+    def test_subprocess_flag_serves_the_opt_in_preflight(self):
+        proc, port = start_process(['--browser-origin', BROWSER_ALLOWED_ORIGIN])
+        try:
+            status, body, headers, seen = self._raw(
+                port, 'OPTIONS', READY_PATH,
+                ['Host: 127.0.0.1:%d' % port],
+                origin=BROWSER_ALLOWED_ORIGIN,
+                extra=['Access-Control-Request-Method: GET'],
+            )
+            self.assertEqual(status, 204)
+            self.assertEqual(body, b'')
+            self._assert_preflight(headers, seen, 'GET')
+        finally:
+            stop_process(proc)
+
+    def _raw(self, port, method, path, host_lines, origin=None, extra=None):
+        fields = list(host_lines)
+        if origin is not None:
+            fields.append('Origin: ' + origin)
+        if extra:
+            fields.extend(extra)
+        _status, _body, blob = raw_http(port, raw_message(method, path, fields))
+        return parse_response(blob)
+
+    def _assert_simple_cors(self, headers):
+        self.assertEqual(headers.get('access-control-allow-origin'), BROWSER_ALLOWED_ORIGIN)
+        self.assertEqual(headers.get('vary'), 'Origin')
+        for key in headers:
+            if key.startswith('access-control-') and key != 'access-control-allow-origin':
+                self.fail(key)
+        self.assertNotIn('*', headers.get('access-control-allow-origin', ''))
+
+    def _assert_preflight(self, headers, seen, method):
+        self.assertEqual(set(seen), {
+            'connection',
+            'cache-control',
+            'x-content-type-options',
+            'x-kix-transport',
+            'x-kix-production-endpoint',
+            'x-kix-protocol-truth',
+            'x-kix-production-conformance',
+            'x-request-id',
+            'x-correlation-id',
+            'access-control-allow-origin',
+            'vary',
+            'access-control-allow-methods',
+            'access-control-allow-headers',
+            'allow',
+        })
+        self.assertEqual(len(seen), len(set(seen)))
+        self.assertEqual(headers['access-control-allow-origin'], BROWSER_ALLOWED_ORIGIN)
+        self.assertEqual(headers['access-control-allow-methods'], method)
+        self.assertEqual(
+            headers['access-control-allow-headers'],
+            ', '.join(BROWSER_ALLOWED_REQUEST_HEADERS),
+        )
+        self.assertEqual(headers['allow'], method)
+        self.assertEqual(headers['vary'], 'Origin')
+        self.assertEqual(headers['cache-control'], 'no-store')
+        self.assertEqual(headers['x-content-type-options'], 'nosniff')
+        self.assertEqual(headers['x-kix-transport'], 'integration-gate')
+        self.assertEqual(headers['x-kix-production-endpoint'], 'false')
+        self.assertEqual(headers['x-kix-protocol-truth'], 'false')
+        self.assertEqual(headers['x-kix-production-conformance'], 'false')
+        self.assertEqual(headers['connection'], 'close')
+        self.assertTrue(headers['x-request-id'])
+        self.assertEqual(headers['x-correlation-id'], headers['x-request-id'])
+        self.assertNotIn('content-type', headers)
+        self.assertNotIn('content-length', headers)
+        for banned in (
+            'access-control-allow-credentials',
+            'access-control-allow-private-network',
+            'access-control-max-age',
+            'access-control-expose-headers',
+        ):
+            self.assertNotIn(banned, headers)
+        self.assertNotIn('*', ''.join(headers.values()))
+
+
+def _host_cases(port):
+    return [
+        ['Host: evil.example'],
+        [],
+        ['Host: 127.0.0.1', 'Host: 127.0.0.1'],
+        ['Host: 127.0.0.1:1' if port != 1 else 'Host: 127.0.0.1:2'],
+        ['Host: localhost:%d' % port],
+        ['Host: 127.0.0.1.evil.example'],
+        ['Host: 127.0.0.1'],
+        ['Host: 127.0.0.1:%d' % port],
+    ]
 
 
 if __name__ == '__main__':
