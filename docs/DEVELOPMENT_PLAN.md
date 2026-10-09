@@ -604,6 +604,18 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 - TL: TL-A ADR [ADR-0002](adr/0002-token-layer-scope-and-limits.md) 병합됨(#126). 범위·한계 기록이며 coin/TIX 잠금 해제가 아니다.
 - RS: RS-0 프로파일 0.1·결정 기록 병합됨(#125): [프로파일](contracts/RIGHTS_SCALE_PROFILE.md), [결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md). 확정 조건은 그 문서가 정한다.
 
+병합된 TL 문서 위치(2026-10-09, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [토큰 역할·공급 (TL-0)](contracts/TOKEN_ROLE_AND_SUPPLY.md) | #145 | `5714603158ddac1a5dcbe2e645c902e26f2b20a9` | BeautifulMind-JT | 사용자가 이 문서를 문장 수정 없이 병합하면, 이 문서에서 「권고」로 표시한 갈래만 채택되고, `DECISION_REQUIRED` 또는 `UNDETERMINED`로 적힌 값은 멈춘 채로 남는다. 이 채택은 새 coin/TIX 모듈 잠금의 해제도, `tl-coin-lock-adr`도, Astra 재결정도 아니다. | 효력 발생(User 병합) |
+| [토큰 가격원 기록](decisions/TL_PRICE_SOURCE_NOT_NEEDED_20261009.md) | #146 | `28539987d1e676f0724081c41b22db51e731a967` | BeautifulMind-JT | 상태: 기록. 가격원 계약의 초안이 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. | 효력 발생(User 병합) |
+| [토큰 권한·수명 (TL-1)](contracts/TOKEN_AUTHORITY_AND_LIFECYCLE.md) | #147 | `841408e77065c841ea73e2cf04fe8c03fbd35f5d` | BeautifulMind-JT | 사용자가 이 문서를 문장 수정 없이 병합하면, 이 문서에서 「권고」로 표시한 갈래만 채택되고, `DECISION_REQUIRED` 또는 `UNDETERMINED`로 적힌 값은 멈춘 채로 남는다. 이 채택은 새 coin/TIX 모듈 잠금의 해제도, `tl-coin-lock-adr`도, Astra 재결정도 아니다. | 효력 발생(User 병합) |
+| [ADR-0003 coin/TIX 잠금 재결정 요청](adr/0003-coin-tix-lock-localnet-re-ruling-request.md) | #148 | `ad3cee9e6aa68aa14c3b35901f66b6cab40cf75a` | BeautifulMind-JT | Status: proposed. This is a User decision document. … A lift of the new coin/TIX module lock takes effect only if an Astra re-ruling exists before that merge. Writing this file does not lift the lock. | 병합됨(User). Astra 재결정 기록 없음(ADR §5). 잠금 변경 없음 |
+| [TL-2는 열리지 않음](decisions/TL2_DOES_NOT_OPEN_20261009.md) | #149 | `1cb2d26c4b6d8cc7aa2d362bf017e4d30f5a2080` | BeautifulMind-JT | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. | 효력 발생(User 병합) |
+| [token_reward 참조](../reference/token_reward/) | #150 | `fff19605f0ccff71b6f24e61f1f8114b5c0ddd57` | BeautifulMind-JT | 기록된 채택 문장 없음(소스 디렉터리). Offline reference predicates for reward–transaction coupling. | 효력 발생(User 병합) |
+| [외부 검토 질문서](status/TOKEN_LEGAL_REVIEW_BRIEF_KO.md) | #151 | `c2cde86e21a6e5ba6f24a56548636db6d0a34c6f` | BeautifulMind-JT | 상태: 질문서만이다. 전송하지 않았다. 자문 주체의 이름, 조직의 이름, 착수 시점을 적지 않는다. 작성자가 빌더이므로 비작성자 검토가 아니고, 법률 의견이 아니다. 검토됨으로 표시하지 않는다. | 효력 발생(User 병합) |
+
 ### 18.2 의존성과 우선순위
 
 - TL과 RS는 **서로의 선행조건이 아니다.** 다른 트랙에 대한 **직접** 의존은 RS-3b가 Track K(2단계 v5 설계·승인·구현)에, TL-2가 새 coin/TIX 모듈 잠금 해제에 두는 것뿐이다. TL-3의 온체인 부분과 TL-4·TL-5는 TL-2를 거쳐 간접 의존하고, TL-5는 프로그램 결정 §5에도 직접 의존한다. 현재 canonical 선행은 `.aiops/program.json`의 각 노드 정의를 따른다.
