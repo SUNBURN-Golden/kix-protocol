@@ -83,6 +83,7 @@
 - [tl-4-token-layer-verification](../validation/2026-10-09-tl-4-token-layer-verification/README.md) — No independent verification. No production endpoint, public host, real payment, KYC, bank, or venue call. No Sui testnet or mainnet. … It does not close the blueprint TL-4 acceptance line that asks for independent verification of TK-1 through TK-9 with no open blockers.
 - [f04-real-funds-lift-criteria](../validation/2026-10-09-f04-real-funds-lift-criteria/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command.
 - [audit3-openapi-promotion-owner-decision-record](../validation/2026-10-09-audit3-openapi-promotion-owner-decision-record/README.md) — Pointer record only. No new authorisation, no contract edit, no code, no new protocol command.
+- [tl-5-decision](../validation/2026-10-09-tl-5-decision/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command. Criteria for testnet, mainnet, and issuance. They stay locked. The recommendation is not acted on.
 
 ## 2026-10-09 병합 문서 색인 — 토큰 계층(TL)
 
@@ -99,6 +100,7 @@
 | [외부 검토 질문서](status/TOKEN_LEGAL_REVIEW_BRIEF_KO.md) | 법률·회계·세무·금융 질문서 | 상태: 질문서만이다. 전송하지 않았다. … 검토됨으로 표시하지 않는다. |
 | [TL-3 on-chain은 열리지 않음](decisions/TL3_ONCHAIN_DOES_NOT_OPEN_20261009.md) | TL-3 온체인 부분이 열리지 않는다는 기록; Move 패키지·보상 기록 스키마 없음 | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. |
 | [TL-4 위협 모델](decisions/TL4_THREAT_MODEL_20261009.md) | 오프체인 토큰 계층의 위협 모델과 작성자 측 하네스; 패키지가 필요한 술어는 NOT VERIFIABLE | 상태: 기록, 작성자=빌더, 독립 검토 아님. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. 자기 검토를 독립 PASS로 세지 않는다. |
+| [TL-5 운영 활성화 결정 제안](decisions/TL5_ACTIVATION_DECISION_PROPOSAL_20261009.md) | testnet 배포, mainnet 배포, 발행의 조건 목록 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 조건 목록을 채택해도 활성화가 아니며 세 관문은 잠긴 채로 남는다. |
 
 ## 역사 문서와 증거
 
