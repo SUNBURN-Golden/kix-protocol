@@ -143,6 +143,7 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [백엔드 채택 제안](decisions/BACKEND_ADOPTION_PROPOSAL_20261009.md) | #140 | `bb193efb5d238581096372c8a20bee1271dfe4df` | BeautifulMind-JT | 사용자가 이 문서를 문장 수정 없이 병합하면, 선택지 A만 채택되고, 채택되는 backend는 5단계의 로컬·비운영 PostgreSQL 17.11(Debian 17.11-0+deb13u1)이며, 그 범위는 단일 프로세스·단일 작성자·기본 꺼짐·운영 플래그 false·R2와 복제와 합의는 열지 않음·이미 멈춘 항목은 멈춘 채로다. | 효력 발생(User 병합) |
 | [통합 (a) 잔여 공수 재산정](decisions/INTEGRATION_A_REESTIMATE_20261009.md) | #141 | `57a3e3049c84a2ac0112371594e9bb4b85a8296f` | BeautifulMind-JT | 추정. 결정 아님. | 효력 발생(User 병합) |
 | [통합 (a) 결정 제안](decisions/INTEGRATION_A_DECISION_PROPOSAL_20261009.md) | #142 | `b6cc9978c64b1ff54f822ea930424b5d78dfca2a` | BeautifulMind-JT | 사용자가 이 문서를 문장 수정 없이 병합하면, 선택지 B만 채택되고, 통합 (a)는 DEFERRED이며, 착수·R2·저널·저장 엔진은 열리지 않고, 재개한다면 대상은 v4가 아니며 별도 프레임 저널을 두지 않고, 이미 멈춘 항목은 멈춘 채로다. | 효력 발생(User 병합) |
+| [OpenAPI 카탈로그 승격 — 소유자 결정 위치 기록](decisions/OPENAPI_CATALOGUE_PROMOTION_OWNER_DECISION_20261009.md) | — | — | — | 기록된 채택 문장 없음(위치 포인터). 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. | 위치 포인터. 새 승인 아님. 결정이 인용한 병합: #152 `d63768dd…` |
 
 ## 6. E-4와 상태 수명
 
