@@ -10,6 +10,9 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from integration_gate.fsm_contract import drift_problems, load_fsm
 SOURCE_PATH = ROOT / 'reference/v0.3-rc1/protocol_contract.json'
 OPENAPI_PATH = ROOT / 'docs/contracts/openapi/kix-protocol.contract-only.openapi.json'
 SPEC_ENVELOPE = 'reference/v0.1/KIX_프로토콜_통합명세_v0.1.md §9.1'
@@ -27,10 +30,16 @@ def render(document):
     return json.dumps(document, ensure_ascii=False, indent=2) + '\n'
 
 
-def build_document(contract, source_bytes):
-    """Canonical OpenAPI 3.1 catalogue. Command schemas are copied, not rewritten."""
-    commands = contract['commands']
+def build_document(contract, source_bytes, fsm, fsm_bytes):
+    """Canonical OpenAPI 3.1 catalogue. Core and FSM schemas are copied, not rewritten."""
+    core_commands = contract['commands']
+    fsm_schemas = {name: spec['schema'] for name, spec in fsm['commands'].items()}
+    commands = {}
+    commands.update(core_commands)
+    commands.update(fsm_schemas)
     names = list(commands)
+    fsm_sha256 = hashlib.sha256(fsm_bytes).hexdigest()
+    fsm_blob = git_blob_id(fsm_bytes)
     sha256 = hashlib.sha256(source_bytes).hexdigest()
     blob = git_blob_id(source_bytes)
     schemas = {name: copy.deepcopy(schema) for name, schema in commands.items()}
@@ -98,8 +107,8 @@ def build_document(contract, source_bytes):
                 'enum': names,
                 'description': (
                     'Command name. Third argument of Core.execute. '
-                    'Selects the body schema. Equal to a key of '
-                    'protocol_contract.json commands.'
+                    'Selects the body schema. Equal to a core command key or '
+                    'an FSM catalogue key of the form machine_op.'
                 ),
             },
             'body': {
@@ -177,7 +186,14 @@ def build_document(contract, source_bytes):
                 'Specification envelope fields are protocolDomain, operationId, '
                 'actorContext, action, and body. The Python function takes '
                 'operationId, actor, action, and body, and checks body.domain. '
-                'A caller-supplied actor string must not be treated as authority.'
+                'A caller-supplied actor string must not be treated as authority.\n\n'
+                'The 40 core command schemas are copied from '
+                'protocol_contract.json. The FSM command schemas are copied from '
+                'docs/contracts/openapi/fsm-command-contract.json. Wire names are '
+                'machine_op. consume_admission is not a catalogue name. '
+                'Queries, reconcile, export_journal, restore, reject, and '
+                'attempt_execution are not in this catalogue. '
+                'There is still no live HTTP server and no production endpoint.'
             ),
         },
         'x-kix-contract-status': 'contract-only',
@@ -193,6 +209,17 @@ def build_document(contract, source_bytes):
             'sourceAuthentication': contract['sourceAuthentication'],
             'handlerConstraints': contract['handlerConstraints'],
             'commandCount': len(names),
+            'coreCommandCount': len(core_commands),
+            'fsmSource': {
+                'path': 'docs/contracts/openapi/fsm-command-contract.json',
+                'gitBlob': fsm_blob,
+                'sha256': fsm_sha256,
+                'domain': fsm['domain'],
+                'unknownFields': fsm['unknownFields'],
+                'sourceAuthentication': fsm['sourceAuthentication'],
+                'handlerConstraints': fsm['handlerConstraints'],
+                'commandCount': len(fsm_schemas),
+            },
         },
         'x-kix-specification-envelope': {
             'source': SPEC_ENVELOPE,
@@ -284,11 +311,17 @@ def _walk(value):
             yield from _walk(child)
 
 
-def validate(contract, source_bytes, document):
-    """Independent checks against the source contract. Returns error strings."""
+def validate(contract, source_bytes, document, fsm, fsm_bytes):
+    """Independent checks against both pinned sources. Returns error strings."""
     errors = []
-    commands = contract['commands']
+    core_commands = contract['commands']
+    fsm_schemas = {name: spec['schema'] for name, spec in fsm['commands'].items()}
+    commands = {}
+    commands.update(core_commands)
+    commands.update(fsm_schemas)
     names = list(commands)
+    for item in drift_problems(fsm):
+        errors.append(item)
 
     def need(condition, message):
         if not condition:
@@ -320,6 +353,21 @@ def validate(contract, source_bytes, document):
     need(source.get('handlerConstraints') == contract['handlerConstraints'],
          'handlerConstraints drift')
     need(source.get('commandCount') == len(names), 'commandCount drift')
+    need(source.get('coreCommandCount') == len(core_commands), 'coreCommandCount drift')
+    fsm_source = source.get('fsmSource') or {}
+    fsm_sha256 = hashlib.sha256(fsm_bytes).hexdigest()
+    fsm_blob = git_blob_id(fsm_bytes)
+    need(fsm_source.get('path') == 'docs/contracts/openapi/fsm-command-contract.json',
+         'fsm source path drift')
+    need(fsm_source.get('gitBlob') == fsm_blob, 'fsm source git blob drift')
+    need(fsm_source.get('sha256') == fsm_sha256, 'fsm source sha256 drift')
+    need(fsm_source.get('domain') == fsm['domain'], 'fsm domain drift')
+    need(fsm_source.get('unknownFields') == fsm['unknownFields'], 'fsm unknownFields drift')
+    need(fsm_source.get('sourceAuthentication') == fsm['sourceAuthentication'],
+         'fsm sourceAuthentication drift')
+    need(fsm_source.get('handlerConstraints') == fsm['handlerConstraints'],
+         'fsm handlerConstraints drift')
+    need(fsm_source.get('commandCount') == len(fsm_schemas), 'fsm commandCount drift')
     need(contract['unknownFields'] == 'REJECT', 'source unknownFields is not REJECT')
     need(contract['sourceAuthentication'] == 'FIXTURE_ONLY', 'sourceAuthentication is not FIXTURE_ONLY')
 
@@ -332,7 +380,12 @@ def validate(contract, source_bytes, document):
     schemas = ((document.get('components') or {}).get('schemas')) or {}
     need(set(schemas) == set(names) | {'LocalCallEnvelope'},
          'schema names drifted from protocol_contract.json commands')
-    for name, schema in commands.items():
+    for name, schema in core_commands.items():
+        if schemas.get(name) != schema:
+            errors.append('command schema drift: ' + name)
+        elif schema.get('additionalProperties') is not False:
+            errors.append('additionalProperties is not false: ' + name)
+    for name, schema in fsm_schemas.items():
         if schemas.get(name) != schema:
             errors.append('command schema drift: ' + name)
         elif schema.get('additionalProperties') is not False:
@@ -382,29 +435,41 @@ def validate(contract, source_bytes, document):
     return errors
 
 
-def self_test(contract, source_bytes):
-    document = build_document(contract, source_bytes)
-    if validate(contract, source_bytes, document):
+def self_test(contract, source_bytes, fsm, fsm_bytes):
+    document = build_document(contract, source_bytes, fsm, fsm_bytes)
+    if validate(contract, source_bytes, document, fsm, fsm_bytes):
         print('self-test: canonical document failed validation', file=sys.stderr)
         return 1
     broken = copy.deepcopy(document)
     broken['components']['schemas']['abort_effect'].pop('additionalProperties')
-    if not any('abort_effect' in item for item in validate(contract, source_bytes, broken)):
+    if not any('abort_effect' in item for item in validate(contract, source_bytes, broken, fsm, fsm_bytes)):
         print('self-test: dropped additionalProperties was accepted', file=sys.stderr)
         return 1
     broken = copy.deepcopy(document)
+    broken['components']['schemas']['settlement_initiate'].pop('additionalProperties')
+    if not any('settlement_initiate' in item for item in validate(contract, source_bytes, broken, fsm, fsm_bytes)):
+        print('self-test: dropped FSM additionalProperties was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
     del broken['components']['schemas']['capture']
-    if not validate(contract, source_bytes, broken):
+    if not validate(contract, source_bytes, broken, fsm, fsm_bytes):
         print('self-test: missing command was accepted', file=sys.stderr)
+        return 1
+    broken_fsm = copy.deepcopy(fsm)
+    broken_fsm['machines']['settlement']['replayable'] = [
+        op for op in broken_fsm['machines']['settlement']['replayable'] if op != 'initiate'
+    ]
+    if not any('REPLAYABLE' in item or 'command set' in item for item in drift_problems(broken_fsm)):
+        print('self-test: command missing from REPLAYABLE was accepted', file=sys.stderr)
         return 1
     broken = copy.deepcopy(document)
     broken['servers'] = [{'url': 'https://example.invalid'}]
-    if not validate(contract, source_bytes, broken):
+    if not validate(contract, source_bytes, broken, fsm, fsm_bytes):
         print('self-test: servers entry was accepted', file=sys.stderr)
         return 1
     broken = copy.deepcopy(document)
     broken['x-kix-contract-status'] = 'live'
-    if not validate(contract, source_bytes, broken):
+    if not validate(contract, source_bytes, broken, fsm, fsm_bytes):
         print('self-test: live status was accepted', file=sys.stderr)
         return 1
     print('self-test: pass')
@@ -414,9 +479,10 @@ def self_test(contract, source_bytes):
 def main(argv):
     source_bytes = SOURCE_PATH.read_bytes()
     contract = json.loads(source_bytes)
-    document = build_document(contract, source_bytes)
+    fsm, fsm_bytes = load_fsm(ROOT)
+    document = build_document(contract, source_bytes, fsm, fsm_bytes)
     if '--self-test' in argv:
-        return self_test(contract, source_bytes)
+        return self_test(contract, source_bytes, fsm, fsm_bytes)
     if '--write' in argv:
         OPENAPI_PATH.parent.mkdir(parents=True, exist_ok=True)
         OPENAPI_PATH.write_text(render(document), encoding='utf-8')
@@ -426,7 +492,7 @@ def main(argv):
         print('missing ' + str(OPENAPI_PATH), file=sys.stderr)
         return 1
     actual = json.loads(OPENAPI_PATH.read_text(encoding='utf-8'))
-    errors = validate(contract, source_bytes, actual)
+    errors = validate(contract, source_bytes, actual, fsm, fsm_bytes)
     if actual != document:
         errors.append('committed OpenAPI document != canonical derivation')
     if errors:
@@ -435,8 +501,14 @@ def main(argv):
             print('- ' + item, file=sys.stderr)
         return 1
     print(
-        'openapi contract pin ok: commands=%d sha256=%s gitBlob=%s'
-        % (len(contract['commands']), hashlib.sha256(source_bytes).hexdigest(), git_blob_id(source_bytes))
+        'openapi contract pin ok: commands=%d core=%d fsm=%d sha256=%s gitBlob=%s'
+        % (
+            len(document['x-kix-local-call-operations']),
+            len(contract['commands']),
+            len(fsm['commands']),
+            hashlib.sha256(source_bytes).hexdigest(),
+            git_blob_id(source_bytes),
+        )
     )
     return 0
 

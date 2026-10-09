@@ -10,6 +10,6 @@
   "scripts": {
     "generate": "node generate/generate_client.mjs && node generate/generate_manifest.mjs",
     "conformance": "node --test conformance/conformance.test.mjs",
-    "verify-compat": "node compat/verify_compat.mjs --manifest compat/manifests/manifest.bootstrap-1.json --expect-kind BOOTSTRAP --expect-revision bootstrap-1"
+    "verify-compat": "node compat/verify_compat.mjs --manifest compat/manifests/manifest.bootstrap-2.json --expect-kind BOOTSTRAP --expect-revision bootstrap-2"
   }
 }

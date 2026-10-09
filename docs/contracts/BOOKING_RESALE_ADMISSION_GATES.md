@@ -17,7 +17,7 @@ Wave 4 목과 §9 예약 기계는 그대로다. R01–R05는 **설계중**이�
 2026-09-26 admission depth가 §11의 수락 상태 기계를 앞에 둔다.
 그 세션에서 확인한 `origin/main`은 `5c59d95ec52379e010f8e9c660da11cfa6498def`다.
 Wave 4 목, §9 예약 기계, §10 리셀 기계는 그대로다. B01–B05, R01–R05, P03은 **설계중**이다.
-`protocol_contract.json`과 OpenAPI 카탈로그는 그대로다.
+`protocol_contract.json`은 그대로다. OpenAPI 카탈로그는 2026-10-09 소유자 결정(JunTae) 뒤 이 기계의 `REPLAYABLE` 명령을 `<machine>_<op>` 이름으로 싣는다.
 
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 [PROTOCOL_MASTERPLAN_V2.md](../PROTOCOL_MASTERPLAN_V2.md)는 역사 계획이다.
@@ -288,7 +288,7 @@ Wave 4 목은 슬롯, 가격, 주입된 결제 사실, 검표 술어를 고정�
 B01–B05, R01–R05, P03은 **설계중**이다. 이 절이 그 라벨을 올리지 않는다.
 
 이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
-OpenAPI 카탈로그도 바꾸지 않는다. 새 프로토콜 명령이 필요하면 `DECISION_REQUIRED · Astra`다.
+OpenAPI 카탈로그에는 이 기계의 `REPLAYABLE`만 `<machine>_<op>`로 있다. 2026-10-09 소유자 결정(JunTae)이 그 출처와 와이어 이름을 승인했다. 그 집합 밖의 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`다.
 이 깊이는 그 명령을 요구하지 않는다. 수락 기준은 이 참조 모듈 안의 결정이다. 법적 권위, 체인 권위, 입장 권한이 아니다.
 조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.
 `provenance`는 `MOCK_GATE_ONLY`다.
@@ -450,7 +450,7 @@ Wave 4 목은 리스팅, 주입된 리셀 결제 사실, 보유자 교체, 버�
 R01–R05는 **설계중**이다. 이 절이 그 라벨을 올리지 않는다.
 
 이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
-OpenAPI 카탈로그도 바꾸지 않는다. 새 프로토콜 명령이 필요하면 `DECISION_REQUIRED · Astra`다.
+OpenAPI 카탈로그에는 이 기계의 `REPLAYABLE`만 `<machine>_<op>`로 있다. 2026-10-09 소유자 결정(JunTae)이 그 출처와 와이어 이름을 승인했다. 그 집합 밖의 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`다.
 이 깊이는 그 명령을 요구하지 않는다. 수락 기준은 이 참조 모듈 안의 결정이다. 법적 권위, 체인 권위, 마켓 권한, 입장 권한이 아니다.
 조회 라벨 `lifecycle_authority = IN_MEMORY_FSM`은 그 한계를 적는다.
 `provenance`는 `MOCK_GATE_ONLY`다.
@@ -675,10 +675,9 @@ Wave 4 목과 §9는 발행된 권리의 허가와 1회 소비를 고정했다. 
 P03은 **설계중**이다. 이 절이 그 라벨을 올리지 않는다. B01–B05, R01–R05도 그대로다.
 
 이 기계는 `protocol_contract.json`에 명령을 넣지 않는다.
-OpenAPI 카탈로그도 바꾸지 않는다.
+OpenAPI 카탈로그에는 `admission_set_clock`, `admission_adopt_issued`, `admission_authorize_admission`, `admission_consume`이 있다. 2026-10-09 소유자 결정(JunTae)이 접두 와이어 이름을 승인했다.
 
-`DECISION_REQUIRED · Astra`: `authorize_admission`과 `consume`을 게시된 카탈로그 명령으로 올리는 일은 이 PR에서 멈추었다.
-카탈로그에는 그 이름이 없다. 루프백은 그 액션을 `UNKNOWN_ACTION`으로 거절한다.
+접두 없는 `authorize_admission`과 `consume_admission`은 카탈로그 이름이 아니다. 루프백은 그 액션을 `UNKNOWN_ACTION`으로 거절한다.
 게시된 `admit`과 `open_admission`은 그대로다. 이 기계가 그 명령을 다시 정의하지 않는다.
 없는 티켓의 `admit`은 로컬 `Core.execute`와 루프백이 같이 `TICKET_NOT_FOUND`다. 그것은 운영 검표가 아니다.
 
@@ -847,4 +846,4 @@ OpenAPI 카탈로그도 바꾸지 않는다.
 - 이 저널은 내구 원장, 체인 커밋먼트, 은행 exactly-once, 현장 exactly-once가 아니다.
 - 직접 `MockGates` 호출과 예약 기계에 바로 넣은 허가·소비는 이 신선도 게이트를 지나지 않는다.
 - 라이브 HTTP에 이 기계의 명령을 올리지 않았다. 공개 엔드포인트, 현장 장비, 운영 자격 발급·회수, PG, KYC, commerce-apps 변경은 없다.
-- 카탈로그에 `authorize_admission` / `consume_admission`을 넣는 일은 `DECISION_REQUIRED · Astra`로 멈춰 있다.
+- 카탈로그 이름은 `admission_authorize_admission`과 `admission_consume`이다. `consume_admission`은 이름이 아니다. 2026-10-09 소유자 결정(JunTae).

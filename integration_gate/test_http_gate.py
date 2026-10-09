@@ -24,6 +24,7 @@ from integration_gate.constants import (
     BROWSER_ALLOWED_ORIGIN,
     BROWSER_ALLOWED_REQUEST_HEADERS,
     COMMAND_COUNT,
+    CORE_COMMAND_COUNT,
     DEFAULT_TIMEOUT_SECONDS,
     HEADER_LIMIT_BYTES,
     HEALTH_PATH,
@@ -31,8 +32,10 @@ from integration_gate.constants import (
     LOCAL_CALL_PATH,
     LOOPBACK_HOST,
     MAX_BODY_BYTES,
+    READINESS_FSM_REFUSED,
     READY_PATH,
 )
+from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.openapi_doc import self_test, validate
 from integration_gate.schema import problems
 from integration_gate.server import build_server, main
@@ -407,7 +410,7 @@ class TransportTests(unittest.TestCase):
 
         def run(_httpd, port):
             for _pass in (1, 2):
-                for action in catalogue.names:
+                for action in catalogue.core_names:
                     body = minimal_body(catalogue.commands[action], catalogue.domain)
                     self.assertEqual(problems(body, catalogue.commands[action], 'body'), [])
                     core = Core()
@@ -428,7 +431,7 @@ class TransportTests(unittest.TestCase):
                     seen.append(action)
 
         run_with_server(run)
-        self.assertEqual(len(set(seen)), COMMAND_COUNT)
+        self.assertEqual(len(set(seen)), CORE_COMMAND_COUNT)
 
     def test_representative_commands_match_local_call(self):
         catalogue = load_catalogue(ROOT)
@@ -614,7 +617,6 @@ class TransportTests(unittest.TestCase):
                 'bank_transfer',
                 'venue_scan',
                 'marketplace_list',
-                'authorize_admission',
                 'consume_admission',
                 'create_event ',
             ):
@@ -631,6 +633,164 @@ class TransportTests(unittest.TestCase):
             self.assertEqual(payload['sequence'], 1)
 
         run_with_server(run)
+
+    def test_fsm_commands_match_a_direct_machine_call(self):
+        catalogue = load_catalogue(ROOT)
+        shadow = FsmHost()
+
+        def invoke(action, body):
+            try:
+                return 200, shadow.call(action, body)
+            except FsmRejected as exc:
+                return 422, {'error': exc.code, 'rejected': True}
+
+        def run(_httpd, port):
+            for action in catalogue.fsm_names:
+                body = minimal_body(catalogue.commands[action], catalogue.domain)
+                self.assertEqual(problems(body, catalogue.commands[action], 'body'), [], action)
+                status, payload = invoke(action, body)
+                http_status, http_payload, _headers = post_call(
+                    port, 'fsm-' + action, 'operator', action, body,
+                )
+                self.assertEqual(http_status, status, (action, http_payload))
+                if status == 200:
+                    self.assertEqual(http_payload, payload, action)
+                else:
+                    self.assertEqual(http_payload['error'], payload['error'], action)
+                    self.assertIs(http_payload['rejected'], True)
+
+        run_with_server(run)
+        self.assertEqual(len(catalogue.fsm_names), 44)
+
+    def test_admission_happy_path_over_http(self):
+        booking = str(ROOT / 'reference' / 'booking_resale_admission')
+        if booking not in sys.path:
+            sys.path.insert(0, booking)
+        from mock_gates import ADMISSION_WINDOW_MS, OFFER_WINDOW_MS
+
+        price = 10001
+        now = 1000000
+        expires = now + OFFER_WINDOW_MS
+        admit_expires = now + ADMISSION_WINDOW_MS
+        pay = 'ab' * 32
+        request = '11' * 32
+        show = {
+            'organizer_role': 'organizer',
+            'capacity': 2,
+            'gate_roles': ['gate-a', 'gate-b'],
+            'primary_price': price,
+            'resale_cap': 20000,
+            'resale_allowed': True,
+            'organizer_bps': 1,
+            'platform_bps': 1,
+        }
+
+        def run(_httpd, port):
+            steps = [
+                ('reservation_set_clock', {'subject_id': 'clock', 'idempotency_key': 'clock-1', 'now_ms': now}),
+                ('reservation_register_show', dict(show_id='show-1', idempotency_key='show-1', **show)),
+                ('reservation_hold', {
+                    'reservation_id': 'reserve-1', 'idempotency_key': 'hold-1', 'show_id': 'show-1',
+                    'slot': 0, 'buyer_role': 'buyer-1', 'expires_ms': expires,
+                }),
+                ('reservation_confirm', {
+                    'order_id': 'order-1', 'idempotency_key': 'confirm-1', 'reservation_id': 'reserve-1',
+                    'amount': price, 'quote_ref': 'quote-1',
+                }),
+                ('reservation_observe_payment', {
+                    'order_id': 'order-1', 'idempotency_key': 'pay-1', 'payment_ref': pay, 'amount': price,
+                }),
+                ('reservation_issue', {
+                    'issuance_id': 'issue-1', 'idempotency_key': 'issue-1', 'order_id': 'order-1',
+                }),
+                ('admission_set_clock', {'subject_id': 'clock', 'idempotency_key': 'gate-clock', 'now_ms': now}),
+                ('admission_adopt_issued', dict(
+                    right_id='issue-1', idempotency_key='adopt-1', show_id='show-1', slot=0,
+                    buyer_role='buyer-1', expires_ms=expires, order_id='order-1', amount=price,
+                    payment_ref=pay, reservation_id='reserve-1', quote_ref='quote-1', **show,
+                )),
+                ('admission_authorize_admission', {
+                    'admission_id': 'admit-1', 'idempotency_key': 'admit-1', 'right_id': 'issue-1',
+                    'version': 1, 'holder_role': 'buyer-1', 'gate_role': 'gate-a', 'request': request,
+                    'expires_ms': admit_expires,
+                }),
+                ('admission_consume', {
+                    'consume_id': 'consume-1', 'idempotency_key': 'consume-1', 'right_id': 'issue-1',
+                    'version': 1, 'gate_role': 'gate-a', 'request': request,
+                }),
+            ]
+            for index, (action, body) in enumerate(steps):
+                status, payload, _headers = post_call(port, 'admit-path-%d' % index, 'operator', action, body)
+                self.assertEqual(status, 200, (action, payload))
+                self.assertIs(payload['duplicate'], False, action)
+            self.assertEqual(payload['evidence']['decision'], 'CONSUMED_ONCE')
+            self.assertIs(payload['admission_routing_production'], False)
+            self.assertIs(payload['funds_executed'], False)
+
+        run_with_server(run)
+
+    def test_fsm_idempotency_key_replays_without_using_operation_id(self):
+        body = {
+            'settlement_id': 'claim-1',
+            'idempotency_key': 'init-1',
+            'trade_id': 'trade-1',
+            'gross': 10001,
+            'debtor_role': 'fixture-merchant',
+            'policy': {
+                'kind': 'PRIMARY_FEE_BPS',
+                'fee_bps': 0,
+                'residual_payee': 'organizer',
+                'fee_payee': 'platform',
+            },
+        }
+
+        def run(_httpd, port):
+            first_status, first, _headers = post_call(
+                port, 'settle-op-1', 'operator', 'settlement_initiate', body,
+            )
+            second_status, second, _headers = post_call(
+                port, 'settle-op-2', 'operator', 'settlement_initiate', body,
+            )
+            self.assertEqual(first_status, 200, first)
+            self.assertEqual(second_status, 200, second)
+            self.assertIs(first['duplicate'], False)
+            self.assertIs(second['duplicate'], True)
+            self.assertIsNone(second['applied'])
+            self.assertIs(second['funds_executed'], False)
+
+        run_with_server(run)
+
+    def test_readiness_directory_refuses_fsm_commands(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            def run(_httpd, port):
+                body = {
+                    'settlement_id': 'claim-1',
+                    'idempotency_key': 'init-1',
+                    'trade_id': 'trade-1',
+                    'gross': 10001,
+                    'debtor_role': 'fixture-merchant',
+                    'policy': {'kind': 'PRIMARY_FEE_BPS', 'fee_bps': 0,
+                               'residual_payee': 'organizer', 'fee_payee': 'platform'},
+                }
+                status, payload, _headers = post_call(
+                    port, 'fsm-refused', 'operator', 'settlement_initiate', body,
+                )
+                self.assertEqual(status, 422, payload)
+                self.assertEqual(payload['error'], READINESS_FSM_REFUSED)
+                self.assertIs(payload['rejected'], True)
+                domain = load_catalogue(ROOT).domain
+                status, payload, _headers = post_call(
+                    port, 'core-still-open', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 1},
+                )
+                self.assertEqual(status, 200, payload)
+                self.assertEqual(payload['sequence'], 1)
+
+            run_with_server(run, readiness_dir=tmp)
+            journal = Path(tmp) / 'journal.v1'
+            raw = journal.read_bytes()
+            self.assertNotIn(b'settlement_initiate', raw)
+            self.assertIn(b'advance_clock', raw)
 
     def test_transport_limits_and_malformed_bodies(self):
         domain = load_catalogue(ROOT).domain
