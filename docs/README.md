@@ -59,6 +59,7 @@
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
+| [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | 실 PG 호출 전에 필요한 Toss sandbox 적합성 증거의 시험 사례, 필요한 토스 답변, 증거 기록 위치 | 문서 전용 계획. 호출·자격 증명 없음. sandbox 증거는 실자금 잠금을 열지 않음 |
 | [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL·catalogue·SDK 행은 2026-10-09 위치 동기화 기준 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 그 밖은 2026-10-06 `2554173` 스냅샷 |
 
 [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 TL·catalogue·SDK 행은 위 위치 동기화 기준의 경로로 맞췄다. 그 밖은 2026-10-06 `2554173` 스냅샷이다.
@@ -74,6 +75,7 @@
 - [openapi-catalogue-promotion](../validation/2026-10-09-openapi-catalogue-promotion/README.md) — Evidence for the contract-only catalogue promotion of the 44 FSM `REPLAYABLE` commands.
 - [audit2-gate-browser-access-test-determinism](../validation/2026-10-09-audit2-gate-browser-access-test-determinism/README.md) — Test harness only.
 - [k2-retention-proposal](../validation/2026-10-09-k2-retention-proposal/README.md) — Document only. No code, no new tests, no duration numbers, no new protocol command.
+- [toss-sandbox-conformance-plan](../validation/2026-10-09-toss-sandbox-conformance-plan/README.md) — Document only. No Toss call, no credential, no new test, no new protocol command.
 - [k-stage4-adoption-decision](../validation/2026-10-09-k-stage4-adoption-decision/README.md) — Document only. No code, no new tests, no backend implementation, no second comparison table, no SLO or cost numbers.
 
 ## 2026-10-09 병합 문서 색인 — 토큰 계층(TL)
