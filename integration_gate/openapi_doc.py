@@ -14,7 +14,10 @@ from integration_gate.catalogue import ROOT, git_blob_id, load_catalogue
 from integration_gate.constants import (
     COMMAND_COUNT,
     CONTRACT_ONLY_OPENAPI,
+    CORE_COMMAND_COUNT,
     DEFAULT_TIMEOUT_SECONDS,
+    FSM_COMMAND_COUNT,
+    FSM_CONTRACT,
     GENERIC_OPERATION_ID,
     HEADER_LIMIT_BYTES,
     INTEGRATION_GATE_OPENAPI,
@@ -25,6 +28,7 @@ from integration_gate.constants import (
     MAX_IN_FLIGHT,
     MAX_JOURNAL_BYTES,
     MAX_JOURNAL_RECORDS,
+    READINESS_FSM_REFUSED,
 )
 
 DESCRIPTION = (
@@ -34,10 +38,12 @@ DESCRIPTION = (
     'The only protocol path is POST /x-kix-contract-only/local-call. '
     'The JSON body is the published local-call envelope: operationId, actor, '
     'action, and body. action is one of the published command keys. body is '
-    'validated against that command JSON Schema, then passed to '
-    'Core.execute(operationId, actor, action, body). No new protocol command '
-    'is defined. No REST resource tree is defined for events, tickets, '
-    'payments, venues, or marketplaces.\n\n'
+    'validated against that command JSON Schema. A core action is passed to '
+    'Core.execute(operationId, actor, action, body). An FSM action, named '
+    'machine_op, is passed to the in-process machine on the same worker. '
+    'The catalogue does not define a command outside the pinned core set and '
+    'the pinned FSM REPLAYABLE sets. No REST resource tree is defined for '
+    'events, tickets, payments, venues, or marketplaces.\n\n'
     'Default state is the in-memory reference model. It is not durable across '
     'process restart. An optional process-local file journal can replay '
     'committed local-call receipts after a restart of this loopback process. '
@@ -45,8 +51,13 @@ DESCRIPTION = (
     'not a production conformance claim. Inside one process, and after a '
     'recovered journal, the same operationId with the same actor, action, and '
     'body replays the stored receipt. A different fingerprint for that '
-    'operationId is OPERATION_ID_CONFLICT. An HTTP Idempotency-Key header is '
-    'not consulted.\n\n'
+    'operationId is OPERATION_ID_CONFLICT. That rule is the core-command rule. '
+    'An FSM body idempotency_key is not rewritten from the envelope '
+    'operationId. An HTTP Idempotency-Key header is not consulted. '
+    'When a readiness directory is set, FSM actions are refused with '
+    + READINESS_FSM_REFUSED +
+    ' before any journal append. The spelling of that refusal is the loopback '
+    'label for the approved fail-closed behavior.\n\n'
     'External payment, KYC, venue, and bank adapters are not attached. Fixture '
     'reject codes from the reference model stay reject codes. GET /health and '
     'GET /ready are process probes, not protocol commands. Readiness is not '
@@ -86,8 +97,24 @@ def build_document(root=None):
     root = Path(root) if root is not None else ROOT
     catalogue = load_catalogue(root)
     names = catalogue.names
-    operations = [
-        {
+    operations = []
+    for name in names:
+        if name in catalogue.fsm_name_set:
+            description = (
+                'Published FSM command, dispatched by the loopback gate to the '
+                'in-process machine. operationId here is the command name '
+                '(Python action), not the per-invocation operationId argument '
+                'and not the body idempotency_key. Not a production operation. '
+                'Refused when a readiness directory is set.'
+            )
+        else:
+            description = (
+                'Published command, dispatched by the loopback gate through '
+                'Core.execute. operationId here is the command name (Python '
+                'action), not the per-invocation operationId argument. Not a '
+                'production operation.'
+            )
+        operations.append({
             'operationId': name,
             'action': name,
             'x-kix-transport': 'integration-gate',
@@ -97,15 +124,8 @@ def build_document(root=None):
                 'kix-protocol.contract-only.openapi.json#/components/schemas/' + name
             ),
             'localCallParameters': ['operationId', 'actor', 'action', 'body'],
-            'description': (
-                'Published command, dispatched by the loopback gate through '
-                'Core.execute. operationId here is the command name (Python '
-                'action), not the per-invocation operationId argument. Not a '
-                'production operation.'
-            ),
-        }
-        for name in names
-    ]
+            'description': description,
+        })
     return {
         'openapi': '3.1.0',
         'info': {
@@ -131,6 +151,15 @@ def build_document(root=None):
             'sha256': catalogue.sha256,
             'domain': catalogue.domain,
             'commandCount': len(names),
+            'coreCommandCount': CORE_COMMAND_COUNT,
+            'fsmCommandCount': FSM_COMMAND_COUNT,
+            'fsmSource': {
+                'path': FSM_CONTRACT,
+                'gitBlob': catalogue.fsm_git_blob,
+                'sha256': catalogue.fsm_sha256,
+                'domain': catalogue.fsm_domain,
+                'commandCount': FSM_COMMAND_COUNT,
+            },
             'contractCatalogue': CONTRACT_ONLY_OPENAPI,
             'localCall': 'reference/v0.3-rc1/core.py Core.execute',
             'unknownFields': catalogue.contract['unknownFields'],
@@ -163,6 +192,8 @@ def build_document(root=None):
             'conflict': 'OPERATION_ID_CONFLICT',
             'durableAcrossRestart': False,
             'httpIdempotencyKeyHeader': False,
+            'fsmIdempotencyKey': 'body.idempotency_key',
+            'fsmOperationIdRemap': False,
         },
         'x-kix-external-adapters': {
             'pg': 'forbidden',
@@ -261,8 +292,10 @@ def build_document(root=None):
                         },
                         '422': {
                             'description': (
-                                'Core.execute raised Rejected. error is that '
-                                'reject code. Not HTTP 200.'
+                                'Core.execute raised Rejected, or an FSM handler '
+                                'raised its error code, or a readiness directory '
+                                'refused an FSM action. error is that reject code. '
+                                'Not HTTP 200.'
                             ),
                         },
                         '503': {
@@ -311,7 +344,9 @@ def validate(root=None, document=None):
         if document != build_document(root):
             errors.append('committed integration-gate OpenAPI != canonical derivation')
     names = catalogue.names
-    need(len(names) == COMMAND_COUNT, 'command count must stay 40')
+    need(len(names) == COMMAND_COUNT, 'command count must stay 84')
+    need(len(catalogue.core_names) == CORE_COMMAND_COUNT, 'core command count drift')
+    need(len(catalogue.fsm_names) == FSM_COMMAND_COUNT, 'fsm command count drift')
     need(document.get('openapi') == '3.1.0', 'openapi version must be 3.1.0')
     info = document.get('info') or {}
     description = info.get('description') or ''
@@ -330,6 +365,13 @@ def validate(root=None, document=None):
     need(source.get('sha256') == catalogue.sha256, 'source sha256 drift')
     need(source.get('gitBlob') == git_blob_id(catalogue.source_bytes), 'source git blob drift')
     need(source.get('commandCount') == COMMAND_COUNT, 'source commandCount drift')
+    need(source.get('coreCommandCount') == CORE_COMMAND_COUNT, 'coreCommandCount drift')
+    need(source.get('fsmCommandCount') == FSM_COMMAND_COUNT, 'fsmCommandCount drift')
+    fsm_source = source.get('fsmSource') or {}
+    need(fsm_source.get('path') == FSM_CONTRACT, 'fsm source path drift')
+    need(fsm_source.get('sha256') == catalogue.fsm_sha256, 'fsm source sha256 drift')
+    need(fsm_source.get('gitBlob') == catalogue.fsm_git_blob, 'fsm source git blob drift')
+    need(fsm_source.get('commandCount') == FSM_COMMAND_COUNT, 'fsm source commandCount drift')
     need(source.get('domain') == catalogue.domain, 'domain drift')
     need(source.get('unknownFields') == 'REJECT', 'unknownFields drift')
     need(source.get('sourceAuthentication') == 'FIXTURE_ONLY', 'sourceAuthentication drift')
@@ -346,6 +388,8 @@ def validate(root=None, document=None):
     idempotency = document.get('x-kix-idempotency') or {}
     need(idempotency.get('httpIdempotencyKeyHeader') is False, 'HTTP Idempotency-Key must stay unused')
     need(idempotency.get('durableAcrossRestart') is False, 'idempotency durability must stay false')
+    need(idempotency.get('fsmIdempotencyKey') == 'body.idempotency_key', 'fsm idempotency key drift')
+    need(idempotency.get('fsmOperationIdRemap') is False, 'fsm operationId remap must stay false')
     adapters = document.get('x-kix-external-adapters') or {}
     for name in ('pg', 'kyc', 'venue', 'bank'):
         need(adapters.get(name) == 'forbidden', 'adapter must stay forbidden: ' + name)
