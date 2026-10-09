@@ -124,7 +124,7 @@ Owner of this group: `UNDETERMINED · external counsel`. The User names who star
 | C-4 | Exposure caps for the named product | An Astra decision. No cap is stated here | `DECISION_REQUIRED · Astra` | Roadmap `:28`. F04 §5 `:164` (product-policy numbers belong to Astra) |
 | C-5 | Custody and segregation of lent funds from other flows | A written answer from the User, the bank, and Toss, including the still-open merchant scope | `UNDETERMINED · User/bank/Toss` | Open input I03 `:27`. Toss profile `:170`. Program decisions §5 `:109` |
 | C-6 | APR and fees, if any | An Astra decision on `interest-apr-schedule`. The mock rejects a product object | `DECISION_REQUIRED · Astra` | F04 §5.2 `:210`. F04 §3 `:108` |
-| C-7 | Who bears an open refund against an advance, while the settlement bearer is `UNDEFINED` | An Astra decision that waits on the settlement-policy dependency. This document does not pick a bearer | `DECISION_REQUIRED · Astra` | F04 §2 `:79` and §3 `:112`. Settlement contract `:195-196` (`refund_bearer_policy = UNDEFINED`). Roadmap node `settlement-policy-deepening` `:67` |
+| C-7 | Who bears an open refund against an advance, while the settlement bearer is `UNDEFINED` | An Astra decision that waits on the settlement-policy dependency. This document does not pick a bearer | `DECISION_REQUIRED · Astra` | F04 §2 `:79` and §3 `:112`. Settlement contract `:225-226` (`refund_bearer_policy = UNDEFINED`). Roadmap node `settlement-policy-deepening` `:67` |
 
 ### R. Risk
 
@@ -323,7 +323,7 @@ Pinned to observed `origin/main` `9b12626b61765f8c8d1ee6ad07d528c4b7eb20c1`.
 - `docs/decisions/PROGRAM_ROADMAP_20260930.md` §0 `:14-15`; §1 `:26`, `:28`, `:45`; R-6 `:39`; §3.6 `:139-142`; §5 `:213-220`.
 - `docs/decisions/AUTHORITY_MODEL_1.md:12-13`.
 - `docs/contracts/CREDIT_ADVANCE_F04.md:18-19`, `:47-49`, `:63-67`, `:79`, `:87-88`, `:108`, `:112`, `:118-119`, `:123`, `:131-132`, `:164`, `:168-169`, `:174`, `:193`, `:209-213`, `:261`, `:263`, `:268`, `:281`, `:300-301`, `:327`, `:334-335`, `:347`, `:503-511`.
-- `docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md:195-196`.
+- `docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md:225-226` (`refund_bearer_policy = UNDEFINED`. The pinned main had these bullets at `:195-196`; `SET-POLICY-DRAFT-0.3` moved them).
 - `docs/contracts/PG_TOSS_CARD_PROFILE.md:7`, `:170-171`.
 - `docs/contracts/FIRST_BATCH_OPEN_INPUTS.md:27`, `:29`, `:34-35`, `:37`, `:107`.
 - `docs/status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md:63`.
