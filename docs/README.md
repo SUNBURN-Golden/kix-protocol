@@ -58,9 +58,9 @@
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
-| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | 2026-10-06 `2554173` 시점 스냅샷. 이후 병합분은 반영하지 않음 |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL·catalogue·SDK 행은 2026-10-09 위치 동기화 기준 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 그 밖은 2026-10-06 `2554173` 스냅샷 |
 
-[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) 본문은 이 색인에서 고치지 않았다. 그 행은 2026-10-06 `2554173` 스냅샷의 한계이며, 그 뒤 들어온 문서를 반영하지 않는다.
+[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 TL·catalogue·SDK 행은 위 위치 동기화 기준의 경로로 맞췄다. 그 밖은 2026-10-06 `2554173` 스냅샷이다.
 
 같은 날짜의 검증 기록:
 
@@ -70,6 +70,24 @@
 - [k1-evidence-close](../validation/2026-10-08-k1-evidence-close/README.md) — 첫 묶음 통합 검토·증거 마감 기록. 수명 입력 반영과 고정 환경 성능 반복은 미완결로 둔다.
 - [k-a-reestimate](../validation/2026-10-09-k-a-reestimate/README.md) — 2026-10-09 통합 (a) 잔여 공수 재산정 기록. 계획용 추정이며 착수 승인이 아니다.
 - [k-a-integration-decision](../validation/2026-10-09-k-a-integration-decision/README.md) — 2026-10-09 통합 (a) 결정 제안 기록. 권고는 실행하지 않음. 사용자 병합 때에만 효력.
+- [openapi-catalogue-promotion](../validation/2026-10-09-openapi-catalogue-promotion/README.md) — Evidence for the contract-only catalogue promotion of the 44 FSM `REPLAYABLE` commands.
+- [audit2-gate-browser-access-test-determinism](../validation/2026-10-09-audit2-gate-browser-access-test-determinism/README.md) — Test harness only.
+- [k2-retention-proposal](../validation/2026-10-09-k2-retention-proposal/README.md) — Document only. No code, no new tests, no duration numbers, no new protocol command.
+- [k-stage4-adoption-decision](../validation/2026-10-09-k-stage4-adoption-decision/README.md) — Document only. No code, no new tests, no backend implementation, no second comparison table, no SLO or cost numbers.
+
+## 2026-10-09 병합 문서 색인 — 토큰 계층(TL)
+
+이 절은 문서의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
+|---|---|---|
+| [토큰 역할·공급 (TL-0)](contracts/TOKEN_ROLE_AND_SUPPLY.md) | 역할 등급, 표현 선택지, 공급 술어 | 상태: 제안. 효력은 사용자가 이 문서를 병합할 때에만 생긴다 (로드맵 §1). |
+| [토큰 가격원 기록](decisions/TL_PRICE_SOURCE_NOT_NEEDED_20261009.md) | 가격원이 이 권고 아래 필요하지 않다는 기록 | 상태: 기록. 가격원 계약의 초안이 아니다. |
+| [토큰 권한·수명 (TL-1)](contracts/TOKEN_AUTHORITY_AND_LIFECYCLE.md) | 권한 분리, 키 사건, 정지·업그레이드 수명 | 상태: 제안. 효력은 사용자가 이 문서를 병합할 때에만 생긴다 (로드맵 §1). |
+| [ADR-0003](adr/0003-coin-tix-lock-localnet-re-ruling-request.md) | coin/TIX 잠금의 localnet 재결정 요청 | Status: proposed. This is a User decision document. … Writing this file does not lift the lock. |
+| [TL-2는 열리지 않음](decisions/TL2_DOES_NOT_OPEN_20261009.md) | TL-2가 열리지 않는다는 기록 | 상태: 기록. 패키지가 아니다. |
+| [token_reward 참조](../reference/token_reward/) | 보상–거래 결합의 오프라인 참조 술어 | Offline reference predicates for reward–transaction coupling. |
+| [외부 검토 질문서](status/TOKEN_LEGAL_REVIEW_BRIEF_KO.md) | 법률·회계·세무·금융 질문서 | 상태: 질문서만이다. 전송하지 않았다. … 검토됨으로 표시하지 않는다. |
 
 ## 역사 문서와 증거
 
