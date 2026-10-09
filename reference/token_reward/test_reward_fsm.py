@@ -3,8 +3,9 @@
 Fixture numbers, caps, ceilings, and digests are not policy values.
 TK-7 and TK-8 are exercised here. They are not independently verified.
 
-This suite is local evidence. The protocol workflow's reference loop does
-not name this directory.
+This suite runs in the protocol workflow's offline reference loop
+(.github/workflows/protocol.yml). A passing run is not an independent
+verification.
 """
 
 import inspect
