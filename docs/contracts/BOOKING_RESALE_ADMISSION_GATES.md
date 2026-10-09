@@ -19,6 +19,13 @@ Wave 4 목과 §9 예약 기계는 그대로다. R01–R05는 **설계중**이�
 Wave 4 목, §9 예약 기계, §10 리셀 기계는 그대로다. B01–B05, R01–R05, P03은 **설계중**이다.
 `protocol_contract.json`은 그대로다. OpenAPI 카탈로그는 2026-10-09 소유자 결정(JunTae) 뒤 이 기계의 `REPLAYABLE` 명령을 `<machine>_<op>` 이름으로 싣는다.
 
+2026-10-09 노드 `booking-resale-admission-deepening`이 §7을 **초안 0.2**로 개정한다.
+개정 ID는 `BRA-OPEN-ITEMS-DRAFT-0.2`다. 이 세션에서 확인한 `origin/main`은 `17c8a7dc66e49b090067b94ff7bc68cb6d79c5ee`다.
+2026-10-09 소유자 결정(JunTae)이 선택지 A를 목 경계로 채택했다. 정책 숫자는 채우지 않고 `UNDETERMINED`로 둔다. 담당은 §7.1에 있다.
+§1–§6과 §8–§11의 술어, 오류 코드, 단계, 명령 목록은 그대로다. 응답에 필드를 더하지 않는다.
+B01–B05, R01–R05, P03은 **설계중**이다. 초안 0.2가 그 라벨을 올리지 않는다.
+이 개정은 OpenAPI 카탈로그, `protocol_contract.json`, 생성 SDK, manifest-v1 입력을 바꾸지 않는다.
+
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 [PROTOCOL_MASTERPLAN_V2.md](../PROTOCOL_MASTERPLAN_V2.md)는 역사 계획이다.
 아래 수치는 그 계획을 제품 규칙으로 다시 정한 것이 아니라, 이미 저장소에 있는
@@ -49,6 +56,7 @@ Wave 4 목, §9 예약 기계, §10 리셀 기계는 그대로다. B01–B05, R0
 예약 수락 상태 기계는 `reference/booking_resale_admission/reservation_fsm.py`다. §9.
 리셀 수락 상태 기계는 `reference/booking_resale_admission/resale_fsm.py`다. §10.
 검표 자격 수락 상태 기계는 `reference/booking_resale_admission/admission_fsm.py`다. §11.
+§7 초안 0.2의 채택 표는 `reference/booking_resale_admission/open_items.py`다. 그 파일은 게이트를 호출하지 않고 명령을 늘리지 않는다.
 리셀 명령은 예약 기계에 넣지 않는다. 검표 기계의 명령도 예약 기계와 리셀 기계에 더하지 않는다.
 실행 방법과 비청구는 [validation/2026-09-26-wave4-booking-resale-admission/README.md](../../validation/2026-09-26-wave4-booking-resale-admission/README.md)에 있다.
 `mock_gates.py`는 네트워크, 파일, PG, 은행, 커널, Move, `zk_gate`, 정산 목을 호출하지 않는다.
@@ -248,27 +256,125 @@ Wave 3 계약이 리셀 분할을 정산 정책으로 다시 정하지 않은 �
 
 `MOCK_INVARIANT`는 목 내부 불변식이 깨진 구현 오류다. 호출자가 맞출 입력 거절이 아니다.
 
-## 7. 의도적으로 비운 항목
+## 7. 초안 0.2 — 채택된 목 경계
 
-다음에 값을 채워 넣지 않는다. 제품 정책이 필요하면 `DECISION_REQUIRED · Astra`다.
+개정 ID `BRA-OPEN-ITEMS-DRAFT-0.2`. 계약 버전 `0.2`.
+이전의 "의도적으로 비운 항목"은 이 개정에서 선택지와 채택된 목 경계로 다시 적는다. 정책 숫자는 여전히 비어 있다.
 
-- 주최자·판매자·구매자·게이트의 인증과 권한 회수
-- 체인 grant, durable ShowConfig, 지정석 이름, lifecycle 300석과의 단일 상한
-- 승인된 예약 TTL. 900_000ms는 Move offer 상수의 픽스처다
-- 할인, 쿠폰, 견적 재계산, 정책 버전 승인
-- 라이브 PG, 결제 증명자(`payment_attesters`) 권한, 은행 자금, 웹훅
-- 결제 사실 이후의 만료·실패에 대한 보상, 환불 의무, 재고 반환
+2026-10-09 소유자 결정(JunTae)이 권고된 선택지 A를 목 경계로 채택했다.
+선택지 B와 C는 기록만 있고 채택하지 않는다.
+`decided_value`는 없다. 참조 모듈은 그 항목을 채우지 않는다.
+
+결정 규칙은 [PROGRAM_ROADMAP_20260930.md](../decisions/PROGRAM_ROADMAP_20260930.md) §2 R-9와 노드 `settlement-policy-deepening`과 같다.
+정책 숫자와 법률·세무·회계·제공자 답변은 `UNDETERMINED`이고 담당을 이름 붙인다.
+새 프로토콜 명령, 재시도, 인증 의미, 권한은 넣지 않는다.
+실자금, 실 PG·은행·KYC, 공개 엔드포인트, Sui testnet·mainnet, 저장 엔진은 [PROGRAM_DECISIONS_20260928.md](../decisions/PROGRAM_DECISIONS_20260928.md) §5 잠금 그대로다.
+하드웨어, 유료 서비스, 비밀, 운영 런타임도 이 개정 밖에 둔다.
+
+기계가 읽는 표는 `reference/booking_resale_admission/open_items.py`다.
+OpenAPI 카탈로그, `protocol_contract.json`, 생성 SDK, manifest-v1 입력은 이 개정이 바꾸지 않는다.
+이미 실린 `<machine>_<op>` 이름은 2026-10-09 카탈로그 승격의 소유자 결정이다. 이 개정은 그 집합에 `refund`, `revoke`, `shield`, `gift`, `cancel_show`, `consume_private`, 위임 세션을 더하지 않는다.
+BOOTSTRAP은 이 개정을 적격화하지 않는다. 이 개정은 의미를 확대하지 않는다.
+소비자는 이 개정에 대해 새 `SEMANTIC_CONFORMANCE`를 요구하지 않는다. 기존 카탈로그 소비 규칙은 그대로다.
+
+### 7.1 이 노드가 분류하는 항목
+
+| ID | 지금 목이 하는 일 | 채택 | 정책 숫자 | 그 밖의 미정 |
+|---|---|---|---|---|
+| `actor-authentication-revocation` | 역할 문자열만 저장한다. `role_authenticated`와 `organizer_authenticated`는 거짓이다. 인증·회수 명령이 없다 | A | `UNDETERMINED` | 신원·KYC의 법적 취급은 `UNDETERMINED`. 담당은 사용자와 법률·개인정보 담당 |
+| `durable-show-config` | 공연 설정은 프로세스 메모리다. `durable`은 거짓이다. 파일을 쓰지 않는다 | A | `UNDETERMINED` | 저장 엔진은 §5 잠금. 이 행에 법률 값은 없다 |
+| `approved-reservation-ttl` | 예약·리스팅 창은 `900_000`ms다. Move `offer` 픽스처이고 승인된 상품 TTL이 아니다. 검표 창 `120_000`ms도 `authorize_admission` 픽스처다 | A | `UNDETERMINED` | 법정 보유 상한이 있는지는 `UNDETERMINED`. 담당은 사용자와 법률 담당 |
+| `discounts-and-coupons` | 주문 금액이 `primary_price`와 다르면 `PRIMARY_PRICE_MISMATCH`. `quote_ref`는 불투명하다. `discount_applied`와 `quote_policy_approved`는 거짓이다 | A | `UNDETERMINED` | 할인·쿠폰의 세무·회계는 `UNDETERMINED`. 담당은 사용자와 세무·회계 담당 |
+| `payment-attesters-authority` | `register_show`는 `payment_attesters`를 받지 않는다. 주입된 32바이트 사실은 증명자 권한을 검사하지 않는다. `provider_fact_live`는 거짓이다 | A | `UNDETERMINED` | 토스 증명·웹훅 서명의 의미는 `UNDETERMINED`. 담당은 사용자와 토스 기술 담당 (I02, I04) |
+| `compensation-after-payment-fact` | 결제 사실 뒤의 중단·취소는 `COMPENSATION_UNDEFINED`. 보상·환불·재고 반환 레코드가 없다. `compensation_defined`는 거짓이다 | A | `UNDETERMINED` | 환불 의무는 `UNDETERMINED`. 담당은 사용자와 법률 담당. 회계 처리는 `UNDETERMINED`. 담당은 사용자와 회계 담당. 정산 부담자는 `settlement-policy-deepening` |
+| `resale-failure-compensation-seller-payout` | 만료된 리스팅은 결제 사실이 있어도 `LISTING_NOT_OPEN`. 결제 사실 뒤의 리스팅 취소는 `COMPENSATION_UNDEFINED`. `seller_due`는 정수 액면이고 판매자 지급이 아니다. `funds_executed`는 거짓이다 | A | `UNDETERMINED` | 판매자 지급의 법률·세무·회계는 `UNDETERMINED`. 담당은 사용자와 법률·세무·회계 담당. 리셀 대금의 가맹 범위는 `UNDETERMINED`. 담당은 사용자와 토스 영업 담당 (I03) |
+| `refund-revoke-shield-gift-cancel-show` | 그 이름의 명령이 예약·리셀·검표 기계에 없다. 세대는 1이다. 발행 뒤 `cancel`은 `CANCEL_AFTER_ISSUE`다 | A | `UNDETERMINED` | 환불·회수·공연 취소의 법적 효과는 `UNDETERMINED`. 담당은 사용자와 법률 담당 |
+| `consume-private-delegated-sessions` | 공개 `authorize_admission` / `consume`만 흉내 낸다. `consume_private`와 위임 세션 명령이 없다. `private_proof_verified`는 거짓이다 | A | `UNDETERMINED` | 위임 세션의 개인정보 취급은 `UNDETERMINED`. 담당은 사용자와 법률·개인정보 담당. 개인 소비 회로는 `rs-2`의 일이고 이 개정은 그 회로를 호출하지 않는다 |
+
+### 7.2 선택지
+
+각 항목의 채택은 A다. B와 C는 기록만 있고 채택하지 않는다.
+
+`actor-authentication-revocation`
+
+- A. 역할 라벨은 권한이 아니다. 인증과 회수를 이 목에 넣지 않는다. 두 플래그는 거짓으로 남는다.
+- B. 호출자가 넣은 증명 객체로 메모리 인증을 연다. 인증 방식을 이 문서가 정하는 일이다.
+- C. 외부 신원 제공자에 묶는다. 자격 증명, 공개 엔드포인트, KYC가 필요하고 §5에 막혀 있다.
+
+`durable-show-config`
+
+- A. ShowConfig는 이 프로세스 메모리에만 있다. `durable`은 거짓이다.
+- B. 채택된 5단계 로컬 백엔드에 남긴다. `k-stage4-adoption-decision`과 `k-stage5-durable-tx` 앞이고, R2와 자체 저장 엔진은 잠금이다.
+- C. 체인 `Show`를 내구 설정으로 읽는다. 체인 최종성을 주장하지 않는다. testnet·mainnet은 잠금이다.
+
+`approved-reservation-ttl`
+
+- A. `900_000`과 `120_000`은 이름 붙은 픽스처로 남긴다. 승인 플래그는 거짓이다. 숫자를 정책 필드에 복사하지 않는다.
+- B. Astra가 상품 예약 TTL을 밀리초로 정한다. 이 개정은 그 숫자를 적지 않는다.
+- C. 역사 lifecycle의 `reservationSeconds` 1..900을 가져온다. 단위와 창이 바뀌는 상품 정책이다.
+
+`discounts-and-coupons`
+
+- A. 금액은 `primary_price`와 같아야 한다. 할인과 쿠폰을 계산하지 않는다. 두 플래그는 거짓이다.
+- B. 호출자가 넣은 할인만큼 금액을 줄인다. 가격 정책을 정하는 일이다.
+- C. `reference/v0.3-rc1/commerce.py`로 견적을 다시 계산한다. 이 목은 그 재계산을 하지 않는다.
+
+`payment-attesters-authority`
+
+- A. 주입된 사실은 권한이 아닌 관찰이다. 증명자 목록을 만들지 않는다.
+- B. 설정된 증명자 집합의 서명 없이는 사실을 거절한다. 권한 모델을 정하는 일이고, 이 개정은 allowlist를 만들지 않는다.
+- C. 토스·PG를 호출해 증명한다. 실 PG는 잠금이다.
+
+`compensation-after-payment-fact`
+
+- A. 거절을 유지한다. 보상 레코드를 만들지 않는다.
+- B. 환불 의무가 아닌 목 보상 상태를 더한다. 새 상태이고 상품 정책이다.
+- C. 환불 의무와 재고 반환을 정한다. 법적 의무는 이 문서가 만들지 않는다. 실환불은 잠금이다.
+
+`resale-failure-compensation-seller-payout`
+
+- A. 액면 산술과 거절을 유지한다. 판매자 지급과 실패 보상 레코드가 없다.
+- B. 목 판매자 채무를 적는다. 지급 정책이고, 자금 이동처럼 읽히면 안 된다.
+- C. 정산 `distribute`를 호출한다. 정산 명령은 이 목의 일이 아니고, 실지급은 잠금이다.
+
+`refund-revoke-shield-gift-cancel-show`
+
+- A. `refund`, `revoke`, `shield`, `gift`, `cancel_show`를 세 기계의 명령으로 넣지 않는다. 세대는 1이다.
+- B. 목 전이로 더한다. 새 프로토콜 명령이라 이 개정은 B를 고르지 않는다.
+- C. 기존 `cancel`이나 `consume`에 그 이름을 조용히 겹친다. 명령을 다시 정의하는 일이라 하지 않는다.
+
+`consume-private-delegated-sessions`
+
+- A. 공개 목 경로만 둔다. 개인 증명과 위임 세션이 없다.
+- B. 호출자가 넣은 증명 바이트로 `private_proof_verified`를 참으로 만든다. 검증하지 않은 증명을 주장하는 일이라 하지 않는다.
+- C. `zk_gate`의 `consume_private`를 실행하거나 위임 세션을 연다. 새 인증 의미다. 이 개정은 그 의미와 권한을 만들지 않는다.
+
+### 7.3 이 개정이 열지 않는 나머지 공백
+
+아래는 초안 0.2의 대상이 아니다. 값을 채우지 않고 선택지도 만들지 않는다.
+
+- 체인 grant, 지정석 이름, lifecycle 300석과의 단일 상한
+- 라이브 PG, 은행 자금, 웹훅 그 자체. 증명자 권한의 분류는 §7.1이고, 라이브 호출은 여전히 없다
 - 구매자에게 발행 증거가 실제로 남는 경로, 체인 최종성
-- 리셀 실패 보상, 판매자 지급, 정산 분개, F04 여신
 - 다른 실행자·채널에 대한 현재성
-- `consume_private` 증명, 운영 검표 라우팅, 위임 세션
-- `refund`, `revoke`, `shield`, 증여, `cancel_show`. 세대는 1에서 올리지 않는다
+- 운영 검표 라우팅
 - 커널 수명 상태. 이 목의 `CONSUMED`는 커널 전이가 아니다
-- 내구성, 체인 최종성, 규제 준수, 제품 TPS, p99, 실패율
+- 내구성 일반, 체인 최종성, 규제 준수, 제품 TPS, p99, 실패율. SLO 숫자를 만들지 않는다
 - 화면, 앱, 실자금
 - 이 상태 기계의 저널을 내구 원장, 체인 커밋먼트, 은행 exactly-once로 읽는 일
 - 발행 성공을 경제 최종성이나 운영 검표로 읽는 일
-- 리셀 리스팅, 이전, F04 여신을 이 기계의 명령으로 넣는 일
+- 리셀 리스팅, 이전, F04 여신을 예약 기계의 명령으로 넣는 일
+- 정산 분개. 정산 계약 §7은 `settlement-policy-deepening`의 일이다
+
+### 7.4 이 개정의 비청구
+
+- 통과가 B01–B05, R01–R05, P03의 구현이나 설계확정이 아니다.
+- 선택지 A는 채택된 목 경계다. 정책 숫자의 승인이 아니다.
+- `900_000`과 `120_000`은 승인된 TTL이 아니다.
+- `seller_due`는 판매자 지급이 아니다. `COMPENSATION_UNDEFINED`는 보상 규칙이 아니다.
+- 역할 문자열은 인증 결과가 아니다. 주입된 결제 사실은 증명자 권한이 아니다.
+- 이 개정은 `protocol_contract.json`에 명령을 넣지 않는다. 그 파일의 명령 수는 40이다.
+- 이 개정은 OpenAPI 카탈로그의 명령 집합을 바꾸지 않는다. `refund`, `revoke`, `shield`, `gift`, `cancel_show`, `consume_private`, `delegate_session`은 그 집합에 없다.
 
 ## 8. 비청구
 
