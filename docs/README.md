@@ -60,6 +60,7 @@
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
+| [F04 실자금 해제 조건](decisions/F04_REAL_FUNDS_LIFT_CRITERIA_20261009.md) | 실제 여신 잠금을 풀자는 제안이 갖춰야 할 조건 목록(법률·자본·위험·운영·승인) | Status: proposed. This is a User decision document. It takes effect only when the User merges it …. 조건 목록 채택은 해제가 아니며 잠금은 그대로다 |
 | [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | 실 PG 호출 전에 필요한 Toss sandbox 적합성 증거의 시험 사례, 필요한 토스 답변, 증거 기록 위치 | 문서 전용 계획. 호출·자격 증명 없음. sandbox 증거는 실자금 잠금을 열지 않음 |
 | [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL-3 onchain·TL-4 행은 2026-10-09 위치 동기화 기준 `5e20a467160148ad5c2debfe357dfb8da084a30a`. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 나머지는 2026-10-06 `2554173` 스냅샷 |
 
@@ -80,6 +81,8 @@
 - [k-stage4-adoption-decision](../validation/2026-10-09-k-stage4-adoption-decision/README.md) — Document only. No code, no new tests, no backend implementation, no second comparison table, no SLO or cost numbers.
 - [ci-wire-token-reward-suite](../validation/2026-10-09-ci-wire-token-reward-suite/README.md) — No new tests and no policy values. No independent verification of TK-4, TK-7, TK-8, TK-12, or V6.
 - [tl-4-token-layer-verification](../validation/2026-10-09-tl-4-token-layer-verification/README.md) — No independent verification. No production endpoint, public host, real payment, KYC, bank, or venue call. No Sui testnet or mainnet. … It does not close the blueprint TL-4 acceptance line that asks for independent verification of TK-1 through TK-9 with no open blockers.
+- [f04-real-funds-lift-criteria](../validation/2026-10-09-f04-real-funds-lift-criteria/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command.
+- [audit3-openapi-promotion-owner-decision-record](../validation/2026-10-09-audit3-openapi-promotion-owner-decision-record/README.md) — Pointer record only. No new authorisation, no contract edit, no code, no new protocol command.
 
 ## 2026-10-09 병합 문서 색인 — 토큰 계층(TL)
 
