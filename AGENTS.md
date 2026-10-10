@@ -321,3 +321,13 @@ Do not commit private keys, proving keys, credentials, non-public notes, local c
 Do not broaden repository permissions or external-service access as part of an ordinary task.
 
 Prefer separation between the coding agent and GitHub publication credentials where automation permits it.
+
+## Cursor Cloud specific instructions
+
+These notes are how a Cloud Agent uses the pinned local toolchain. They do not authorize R2, production calls, or a change to the locked kernel.
+
+- Python 3.12, Node 24, and Sui `mainnet-v1.79.1` (localnet only) come from `toolchains.json`. Rust 1.98.1 with rustfmt and clippy comes from `rust-toolchain.toml`. Run Cargo from the repository so that override applies.
+- `scripts/bootstrap.sh` exits unless `python3` is 3.12 and `node` is major 24. The image binary at `/exec-daemon/node` is not Node 24. The environment install puts Node 24 on `/usr/local/cargo/bin`, which login shells search before `/exec-daemon`. `python3.12-venv` is required before the bootstrap.
+- `source scripts/env.sh` adds `.local/bin` (`sui`) and `.venv/bin` to `PATH`.
+- There is no long-running service to boot. `.venv/bin/python scripts/run_localnet.py` binds `127.0.0.1:9000` and `127.0.0.1:9123`, runs one disposable public journey, and stops only the chain it started. It exits if either port is already taken.
+- Local checks that exercise this environment: `python3 scripts/verify_runtime_architecture.py`, `npm --prefix sdk run conformance`, `.venv/bin/python scripts/verify_runtime.py`, `cargo test --manifest-path runtime/Cargo.toml --workspace --locked`, and `.venv/bin/python scripts/run_localnet.py`.
