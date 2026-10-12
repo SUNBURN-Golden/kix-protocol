@@ -51,6 +51,7 @@
 | [RS-0 결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) | 권리 확장의 객체·재고 권위 | 결정 초안. 확정 조건은 그 문서가 정한다 |
 | [루프백 관문의 브라우저 접근](decisions/GATE_BROWSER_ACCESS_DECISION_20261008.md) | 브라우저가 루프백 관문에 닿는 방식의 비교 | "채택 제안"(그 문서의 표현). 관문 코드 변경 없음 |
 | [I12 절단 증명](decisions/CUT_PROOF_I12_20261008.md) | C_g/H_g 절단, 옛 작성자 차단, 미발행 약정 보존 | 증명 초안, 사용자 병합 때에만 효력. I12는 미완결 |
+| [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | 절단 증명의 명제 P1–P4·가정 A1–A10별 기존 근거 대응표 | 빌더 작성 검토 자료 묶음. 독립 검토·수락·상태 변경 아님. I12는 미완결 |
 | [v5 crate 설계 결정](decisions/STAGE2_V5_CRATE_DESIGN_DECISION_20261008.md) | 종결·슬롯 해제·기록 회수·review 해제·색인을 잠금 v4 밖에 둘 새 crate | 설계 결정 제안. 사용자 병합 때에만 효력. 구현 없음 |
 | [백엔드 채택 결정 제안](decisions/BACKEND_ADOPTION_PROPOSAL_20261009.md) | 5단계에 쓸 로컬·비운영 backend, 또는 아직 없음 | 결정 제안, 사용자 병합 때에만 효력, 구현 없음 |
 | [통합 (a) 잔여 공수 재산정](decisions/INTEGRATION_A_REESTIMATE_20261009.md) | PR #11 저널 통합 (a)의 잔여 계획 인일. 대상은 잠금 v4, 계획된 v5 crate, 5단계 로컬 PostgreSQL | 추정 기록. 결정이 아님. (a)·R2·저널·저장을 승인하지 않음 |
