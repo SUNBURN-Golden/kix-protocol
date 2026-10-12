@@ -195,7 +195,9 @@ A3/ARCHITECTURE 감사·merged dependencies·법무/회계/세무·provider 답�
 `validation/2026-10-12-register-nontl-rows-sync/README.md` 넷이다. runtime/contract/CI/program/역사
 evidence/reference는 수정하지 않았다. 새 runtime test는 없음.
 `scripts/check_status_register.py`가 이 register 안의 backtick·link 경로 존재, EV-*
-참조의 정의, 32개 원 ID의 첫 열 유일성을 검사한다(stdlib만, CI 미연결은 후속 후보).
+참조의 정의, 32개 원 ID의 첫 열 유일성을 검사한다(stdlib만). 이 checker와
+`scripts/check_rs_profile_traceability.py`는 `.github/workflows/protocol.yml`의
+guard 없는 step으로 연결됐다: docs-only 실행을 포함한 모든 non-draft 실행에서 돈다.
 나머지 검사 명령과 결과는 그 validation 기록에 적는다. fixture 색인 자체를 실행
 PASS로 사용하지 않는다.
 

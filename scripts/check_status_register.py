@@ -21,9 +21,11 @@ Runs three checks on docs/status/CURRENT_CAPABILITY_REGISTER.md:
    table-row key.
 
 Existence is checked against the checked-out working tree, which is what
-CI tests. Standard library only. Not wired into CI; that is a follow-up
-candidate. ``--self-test`` mutates an in-memory copy of the register and
-requires each check to catch its break.
+CI tests. Standard library only. Wired into
+``.github/workflows/protocol.yml`` as a step with no docs_only or
+verified-tree guard: it runs on every non-draft execution including
+docs-only and same-tree-skip runs. ``--self-test`` mutates an in-memory
+copy of the register and requires each check to catch its break.
 """
 import re
 import sys
