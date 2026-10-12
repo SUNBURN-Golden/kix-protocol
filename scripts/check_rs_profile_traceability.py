@@ -18,9 +18,11 @@ blueprint, missing in profile, duplicated in profile, extra in profile.
 Exits 0 when every expected id appears exactly once on both sides and no
 extra ids are present; exits 1 printing each discrepancy otherwise.
 
-Standard library only. Not wired into CI; that is a follow-up candidate.
-``--self-test`` mutates in-memory copies and requires each check to catch
-its break (a removed id must be reported).
+Standard library only. Wired into ``.github/workflows/protocol.yml`` as a
+step with no docs_only or verified-tree guard: it runs on every non-draft
+execution including docs-only and same-tree-skip runs. ``--self-test``
+mutates in-memory copies and requires each check to catch its break (a
+removed id must be reported).
 """
 import re
 import sys
