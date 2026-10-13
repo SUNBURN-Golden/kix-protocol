@@ -104,6 +104,17 @@
 | [TL-4 위협 모델](decisions/TL4_THREAT_MODEL_20261009.md) | 오프체인 토큰 계층의 위협 모델과 작성자 측 하네스; 패키지가 필요한 술어는 NOT VERIFIABLE | 상태: 기록, 작성자=빌더, 독립 검토 아님. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. 자기 검토를 독립 PASS로 세지 않는다. |
 | [TL-5 운영 활성화 결정 제안](decisions/TL5_ACTIVATION_DECISION_PROPOSAL_20261009.md) | testnet 배포, mainnet 배포, 발행의 조건 목록 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 조건 목록을 채택해도 활성화가 아니며 세 관문은 잠긴 채로 남는다. |
 
+## 2026-10-13 색인 보정 — 위치 안내만
+
+이 절은 문서의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
+|---|---|---|
+| [RS-0 검토 자료 묶음](status/RS0_REVIEW_PACK.md) | RS-0 프로파일·결정 기록의 Astra 검토를 위한 명제·가정별 근거 대응표와 열린 항목 | 빌더 작성 검토 자료. 검토·수락·상태 변경·rs-1 해제 아님 |
+| [정산 분배 F01–F03 목 계약](contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) | Wave 3 정산 mock 술어와 §7 정책 선택지 | 목 계약. F01·F02·F03·P04는 설계중 그대로. §7 권고 0.3 |
+| [예매·리셀·검표 게이트 목 계약](contracts/BOOKING_RESALE_ADMISSION_GATES.md) | Wave 4 예매·리셀·검표 mock 술어와 수락 상태 기계 | 목 계약. B01–B05, R01–R05, P03은 설계중 그대로. §7 초안 0.2 |
+| [여신·신용 선지급 F04 목 계약](contracts/CREDIT_ADVANCE_F04.md) | Wave 5 F04 mock 술어 | 목 계약. mock/sim only. F04·E06은 설계중 그대로 |
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
