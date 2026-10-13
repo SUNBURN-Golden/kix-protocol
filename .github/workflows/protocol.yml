@@ -22,6 +22,33 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  rights-scale:
+    # RS-1 extended-profile public path (localnet only). Required check per the
+    # 2026-10-13 owner decision; additive — it changes no existing step or job.
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: reference/rights_scale/client/package-lock.json
+      - name: Install pinned CLI and locked dependencies
+        run: bash scripts/bootstrap.sh
+      - name: Rights-scale Move and model tests
+        run: |
+          source scripts/env.sh
+          sui move --client.config "$KIX_SUI_CONFIG" --build-env mainnet test --path reference/rights_scale/sui
+          python3 -m unittest discover -s reference/rights_scale -t reference/rights_scale
+      - name: Rights-scale public path on a disposable local chain
+        run: .venv/bin/python scripts/run_localnet_rights_scale.py
   protocol:
     # Draft PRs are skipped without a runner; push and workflow_dispatch always run.
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft

@@ -1,0 +1,821 @@
+{
+ "comment": "Operation scripts replayed by reference/rights_scale/test_model.py (against model.py) and by client/localnet.mjs (against the localnet package); the driver then compares the chain state with the model state. Fixture values only: none is an operational default. expect.abort is a Move abort code of kix_rights_scale::rights_scale, or EObjectAlreadyExists for sui::derived_object.",
+ "scenarios": [
+  {
+   "name": "l1_1024_public_path",
+   "create": {
+    "seated": 1024,
+    "ga": 0,
+    "page_size": 64,
+    "shards": 4
+   },
+   "steps": [
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 8
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "seal",
+     "expect": {
+      "abort": 14
+     }
+    },
+    {
+     "op": "claim_pages",
+     "from": 4,
+     "count": 8,
+     "expect": {
+      "abort": "EObjectAlreadyExists"
+     }
+    },
+    {
+     "op": "claim_pages",
+     "from": 8,
+     "count": 8
+    },
+    {
+     "op": "claim_shards",
+     "from": 0,
+     "count": 2
+    },
+    {
+     "op": "seal",
+     "expect": {
+      "abort": 14
+     }
+    },
+    {
+     "op": "claim_shards",
+     "from": 1,
+     "count": 2,
+     "expect": {
+      "abort": "EObjectAlreadyExists"
+     }
+    },
+    {
+     "op": "claim_shards",
+     "from": 2,
+     "count": 2
+    },
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 1,
+     "expect": {
+      "abort": "EObjectAlreadyExists"
+     }
+    },
+    {
+     "op": "seal"
+    },
+    {
+     "op": "seal",
+     "expect": {
+      "abort": 13
+     }
+    },
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 1,
+     "expect": {
+      "abort": 13
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 63,
+     "gen": 0,
+     "holder": "a",
+     "label": "t63"
+    },
+    {
+     "op": "issue",
+     "slot": 64,
+     "gen": 0,
+     "holder": "b",
+     "label": "t64"
+    },
+    {
+     "op": "issue",
+     "slot": 63,
+     "gen": 0,
+     "holder": "a",
+     "expect": {
+      "abort": 3
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 64,
+     "gen": 0,
+     "holder": "b",
+     "page": 3,
+     "expect": {
+      "abort": 15
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 1024,
+     "gen": 0,
+     "holder": "a",
+     "expect": {
+      "abort": 9
+     }
+    },
+    {
+     "op": "bundle",
+     "first": 100,
+     "declared": 4,
+     "issues": 4,
+     "holder": "a"
+    },
+    {
+     "op": "bundle",
+     "first": 126,
+     "declared": 4,
+     "issues": 4,
+     "holder": "b"
+    },
+    {
+     "op": "bundle",
+     "first": 129,
+     "declared": 4,
+     "issues": 4,
+     "holder": "a",
+     "expect": {
+      "abort": 3
+     }
+    },
+    {
+     "op": "bundle",
+     "first": 130,
+     "declared": 7,
+     "issues": 7,
+     "holder": "a"
+    },
+    {
+     "op": "bundle",
+     "first": 140,
+     "declared": 8,
+     "issues": 8,
+     "holder": "a"
+    },
+    {
+     "op": "bundle",
+     "first": 150,
+     "declared": 9,
+     "issues": 9,
+     "holder": "a",
+     "expect": {
+      "abort": 10
+     }
+    },
+    {
+     "op": "bundle",
+     "first": 150,
+     "declared": 3,
+     "issues": 2,
+     "holder": "a",
+     "expect": {
+      "abort": 11
+     }
+    },
+    {
+     "op": "bundle",
+     "first": 150,
+     "declared": 2,
+     "issues": 3,
+     "holder": "a",
+     "expect": {
+      "abort": 12
+     }
+    },
+    {
+     "op": "bundle",
+     "first": 150,
+     "declared": 0,
+     "issues": 0,
+     "holder": "a",
+     "expect": {
+      "abort": 6
+     }
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 200,
+     "gen": 0,
+     "buyer": "a",
+     "amount": 50000,
+     "ref": 1
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 200,
+     "gen": 0,
+     "buyer": "b",
+     "amount": 50000,
+     "ref": 2,
+     "expect": {
+      "abort": 9
+     }
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 201,
+     "gen": 0,
+     "buyer": "b",
+     "amount": 50000,
+     "ref": 1,
+     "expect": {
+      "abort": 7
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 200,
+     "gen": 0,
+     "holder": "b",
+     "expect": {
+      "abort": 9
+     }
+    },
+    {
+     "op": "issue_paid",
+     "slot": 200,
+     "label": "t200"
+    },
+    {
+     "op": "refund",
+     "ticket": "t200",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 200,
+     "gen": 0,
+     "buyer": "a",
+     "amount": 50000,
+     "ref": 3,
+     "expect": {
+      "abort": 3
+     }
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 200,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 60000,
+     "ref": 4
+    },
+    {
+     "op": "cancel_issuance",
+     "slot": 200
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 200,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 60000,
+     "ref": 4
+    },
+    {
+     "op": "issue_paid",
+     "slot": 200,
+     "label": "t200b"
+    },
+    {
+     "op": "offer",
+     "ticket": "t200",
+     "sender": "a",
+     "version": 2,
+     "recipient": "b",
+     "amount": 0,
+     "ttl_ms": 600000,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "offer",
+     "ticket": "t63",
+     "sender": "a",
+     "version": 1,
+     "recipient": "b",
+     "amount": 0,
+     "ttl_ms": 600000
+    },
+    {
+     "op": "accept_gift",
+     "ticket": "t63",
+     "sender": "a",
+     "expect": {
+      "abort": 3
+     }
+    },
+    {
+     "op": "accept_gift",
+     "ticket": "t63",
+     "sender": "b"
+    },
+    {
+     "op": "authorize",
+     "ticket": "t63",
+     "sender": "a",
+     "version": 2,
+     "ttl_ms": 100000,
+     "expect": {
+      "abort": 2
+     }
+    },
+    {
+     "op": "authorize",
+     "ticket": "t63",
+     "sender": "b",
+     "version": 2,
+     "ttl_ms": 100000
+    },
+    {
+     "op": "consume",
+     "ticket": "t63",
+     "sender": "gate",
+     "version": 2
+    },
+    {
+     "op": "consume",
+     "ticket": "t63",
+     "sender": "gate",
+     "version": 3,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "offer",
+     "ticket": "t64",
+     "sender": "b",
+     "version": 1,
+     "recipient": "a",
+     "amount": 100000,
+     "ttl_ms": 600000
+    },
+    {
+     "op": "attest_payment",
+     "ticket": "t64",
+     "ref": 5
+    },
+    {
+     "op": "attest_payment",
+     "ticket": "t64",
+     "ref": 5,
+     "expect": {
+      "abort": 7
+     }
+    },
+    {
+     "op": "accept_sale",
+     "ticket": "t64",
+     "sender": "a"
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 300,
+     "gen": 0,
+     "buyer": "a",
+     "amount": 50000,
+     "ref": 5,
+     "expect": {
+      "abort": 7
+     }
+    },
+    {
+     "op": "revoke",
+     "ticket": "t64"
+    },
+    {
+     "op": "issue",
+     "slot": 64,
+     "gen": 2,
+     "holder": "a",
+     "expect": {
+      "abort": 9
+     }
+    },
+    {
+     "op": "revoke",
+     "ticket": "t64",
+     "expect": {
+      "abort": 3
+     }
+    },
+    {
+     "op": "refund",
+     "ticket": "t64",
+     "sender": "a",
+     "version": 3,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 400,
+     "gen": 0,
+     "buyer": "b",
+     "amount": 50000,
+     "ref": 6
+    },
+    {
+     "op": "cancel_show"
+    },
+    {
+     "op": "cancel_show",
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 401,
+     "gen": 0,
+     "holder": "a",
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "bundle",
+     "first": 410,
+     "declared": 2,
+     "issues": 2,
+     "holder": "a",
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 402,
+     "gen": 0,
+     "buyer": "b",
+     "amount": 50000,
+     "ref": 7,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "issue_paid",
+     "slot": 400,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "offer",
+     "ticket": "t200b",
+     "sender": "b",
+     "version": 1,
+     "recipient": "a",
+     "amount": 0,
+     "ttl_ms": 600000,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "refund",
+     "ticket": "t200b",
+     "sender": "b",
+     "version": 1,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 1,
+     "expect": {
+      "abort": 13
+     }
+    },
+    {
+     "op": "cancel_issuance",
+     "slot": 400
+    },
+    {
+     "op": "revoke",
+     "ticket": "t200b"
+    }
+   ]
+  },
+  {
+   "name": "ga_small_conservation",
+   "create": {
+    "seated": 8,
+    "ga": 8,
+    "page_size": 4,
+    "shards": 2
+   },
+   "steps": [
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 4
+    },
+    {
+     "op": "claim_shards",
+     "from": 0,
+     "count": 2
+    },
+    {
+     "op": "seal"
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "label": "g0"
+    },
+    {
+     "op": "refund",
+     "ticket": "g0",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 0,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 10
+    },
+    {
+     "op": "cancel_issuance",
+     "slot": 0
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 0,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 40
+    },
+    {
+     "op": "issue_paid",
+     "slot": 0,
+     "label": "p0"
+    },
+    {
+     "op": "refund",
+     "ticket": "p0",
+     "sender": "b",
+     "version": 1
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 2,
+     "holder": "a",
+     "label": "r0"
+    },
+    {
+     "op": "revoke",
+     "ticket": "r0"
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 4,
+     "holder": "a",
+     "expect": {
+      "abort": 9
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 8,
+     "gen": 0,
+     "holder": "a",
+     "label": "g8"
+    },
+    {
+     "op": "refund",
+     "ticket": "g8",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 8,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 18
+    },
+    {
+     "op": "cancel_issuance",
+     "slot": 8
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 8,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 48
+    },
+    {
+     "op": "issue_paid",
+     "slot": 8,
+     "label": "p8"
+    },
+    {
+     "op": "refund",
+     "ticket": "p8",
+     "sender": "b",
+     "version": 1
+    },
+    {
+     "op": "issue",
+     "slot": 8,
+     "gen": 2,
+     "holder": "a",
+     "label": "r8"
+    },
+    {
+     "op": "revoke",
+     "ticket": "r8"
+    },
+    {
+     "op": "issue",
+     "slot": 8,
+     "gen": 4,
+     "holder": "a",
+     "expect": {
+      "abort": 9
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 12,
+     "gen": 0,
+     "holder": "a",
+     "label": "g12"
+    },
+    {
+     "op": "refund",
+     "ticket": "g12",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 12,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 22
+    },
+    {
+     "op": "cancel_issuance",
+     "slot": 12
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 12,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 52
+    },
+    {
+     "op": "issue_paid",
+     "slot": 12,
+     "label": "p12"
+    },
+    {
+     "op": "refund",
+     "ticket": "p12",
+     "sender": "b",
+     "version": 1
+    },
+    {
+     "op": "issue",
+     "slot": 12,
+     "gen": 2,
+     "holder": "a",
+     "label": "r12"
+    },
+    {
+     "op": "revoke",
+     "ticket": "r12"
+    },
+    {
+     "op": "issue",
+     "slot": 12,
+     "gen": 4,
+     "holder": "a",
+     "expect": {
+      "abort": 9
+     }
+    }
+   ]
+  }
+ ],
+ "matrix": {
+  "comment": "Per case: stage every page and shard, seal, issue the edge slots, then the slot at capacity is rejected with abort 9.",
+  "cases": [
+   {
+    "seated": 15,
+    "ga": 0,
+    "page_size": 4,
+    "shards": 2
+   },
+   {
+    "seated": 16,
+    "ga": 0,
+    "page_size": 4,
+    "shards": 2
+   },
+   {
+    "seated": 17,
+    "ga": 0,
+    "page_size": 4,
+    "shards": 2
+   },
+   {
+    "seated": 15,
+    "ga": 0,
+    "page_size": 64,
+    "shards": 1
+   },
+   {
+    "seated": 16,
+    "ga": 0,
+    "page_size": 64,
+    "shards": 1
+   },
+   {
+    "seated": 17,
+    "ga": 0,
+    "page_size": 64,
+    "shards": 1
+   },
+   {
+    "seated": 1023,
+    "ga": 0,
+    "page_size": 64,
+    "shards": 4
+   },
+   {
+    "seated": 1024,
+    "ga": 0,
+    "page_size": 64,
+    "shards": 4
+   },
+   {
+    "seated": 1025,
+    "ga": 0,
+    "page_size": 64,
+    "shards": 4
+   },
+   {
+    "seated": 1024,
+    "ga": 0,
+    "page_size": 1024,
+    "shards": 2
+   },
+   {
+    "seated": 1025,
+    "ga": 0,
+    "page_size": 1024,
+    "shards": 2
+   },
+   {
+    "seated": 1024,
+    "ga": 0,
+    "page_size": 256,
+    "shards": 8
+   }
+  ]
+ }
+}

@@ -51,7 +51,7 @@
 |---|---|---|---|
 | EV-K | `runtime/crates/kix-kernel/src/lib.rs` | `docs/contracts/CONTRACT_INVARIANTS.md`, `STATE_LIFECYCLE.md` | `runtime/crates/kix-kernel/tests/{transitions,quarantine_capacity,observation_slots,contract_invariants,contract_edge_cases,e4_state_model}.rs`; MOCK(memory). E-4 `support/model_v4.rs`는 source-informed, clean-room 아님 |
 | EV-PERF | `runtime/crates/kix-kernel/tests/support/perf_probe.rs`, `examples/r1_perf_probe.rs` | `docs/contracts/PERFORMANCE_MEASUREMENT.md` | `runtime/crates/kix-kernel/tests/performance_harness.rs`; memory smoke/과거 Task 004 `validation/2026-09-25-task-004-perf-measurement/README.md`, DB/체인 p99 아님 |
-| EV-MOVE | `reference/v0.3-rc1/sui/sources/{rights,zk_gate}.move` | `reference/v0.3-rc1/DESIGN_SUI_ZK.md`, `runtime/MOVE_PRODUCTION_TOPOLOGY.md` | `reference/v0.3-rc1/sui/tests/rights_tests.move`, `client/{localnet,localnet-paid,private,zk-regression}.mjs`, `zk/circuits/{mint,spend}.circom`; 16슬롯 reference, LOCALNET 재현 경로, 이번 NOT_RUN |
+| EV-MOVE | `reference/v0.3-rc1/sui/sources/{rights,zk_gate}.move` | `reference/v0.3-rc1/DESIGN_SUI_ZK.md`, `runtime/MOVE_PRODUCTION_TOPOLOGY.md` | `reference/v0.3-rc1/sui/tests/rights_tests.move`, `reference/v0.3-rc1/client/{localnet,localnet-paid,private,zk-regression}.mjs`, `zk/circuits/{mint,spend}.circom`; 16슬롯 reference, LOCALNET 재현 경로, 이번 NOT_RUN |
 | EV-REF | `reference/v0.3-rc1/{core,commerce,assets,finance,execution_contracts}.py` | `reference/v0.3-rc1/protocol_contract.json` | `reference/v0.3-rc1/{test_core,test_commerce,test_assets,test_execution_contracts}.py`; MOCK 합성 계산·명령, 인증/실자금 아님 |
 | EV-STORE | `reference/v0.3-rc1/{lifecycle,paid_recovery,paid_archive,storage_receipt}.py` | `reference/v0.3-rc1/KIX_v0.3_rc1_구현결과와_실행조건.md` | `reference/v0.3-rc1/{test_storage_receipt,test_paid_recovery,test_paid_archive}.py`; SQLite/local continuity fixture, LOCAL_DURABLE 경로, Rust stage5 아님 |
 | EV-SET | `reference/settlement_f01_f03/{mock_settlement,settlement_fsm}.py` | `docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md` §7 채택 초안(인용 위치 `docs/decisions/POLICY_DEEPENING_OWNER_DECISION_20261009.md`) | `reference/settlement_f01_f03/{test_mock_settlement,test_settlement_fsm,test_adopted_policy}.py`; MOCK 정수 KRW, first result·refund/replay·채택 정책 고정, 지급 아님 |
@@ -145,7 +145,7 @@ RS/TL 구현 evidence로 세지 않는다.
 | 요구 | source/fixture | coverage / 미충족 gate |
 |---|---|---|
 | RS-0 | `docs/contracts/RIGHTS_SCALE_PROFILE.md` 초안 0.1, `docs/decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md`(#125 병합), 청사진 SOURCE_ONLY | 결정 초안 문서 병합만; 확정 조건의 Astra 아키텍처 검토·RS-C/IM 처리·상한·RR 선택·측정은 미충족 |
-| RS-1, issuer-cap probe | EV-MOVE 비교만, 새 source 없음; rs-1 노드는 not merged / DECISION_REQUIRED | not covered; RS-0 후 1,024 public localnet/IssuerCap 동시 probe |
+| RS-1, issuer-cap probe | `reference/rights_scale/` Move 패키지·model·vectors·localnet driver | in progress; authorized against draft 0.1 @ 9b12626b (`docs/decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md`); not merged / DECISION_REQUIRED; RS-0 후 1,024 public localnet/IssuerCap 동시 probe |
 | RS-2 | 기존 circuit 비교만, 새 source 없음 | not covered; RS-1·RR 채택 후 root/circuit/verifier/manifest-v2·cross-context 거부 |
 | RS-3a | 없음 | not covered; page grant/GrantControl/revocation cut, RS-1/A3 |
 | RS-3b | EV-K 비교만 | not covered; RS-3a+v5; GA counter/slot·4,096 cap·세대/회수 대응 미확인 |

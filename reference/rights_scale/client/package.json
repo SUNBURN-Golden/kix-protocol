@@ -1,0 +1,16 @@
+{
+  "name": "kix-rights-scale-localnet-prototype",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Localnet-only driver for the extended rights-scale public path (RS-1). Replays shared operation vectors against an actual Sui localnet and records observed chain state for comparison with reference/rights_scale/model.py. No real funds, no public endpoints, no ZK.",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "journey": "node localnet.mjs"
+  },
+  "dependencies": {
+    "@mysten/sui": "2.30.0"
+  }
+}
