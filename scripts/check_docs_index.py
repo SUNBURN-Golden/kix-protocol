@@ -29,11 +29,12 @@ link that points into a scanned subtree at a target that does not exist
 (a renamed or deleted document).
 
 Exits 0 when there is nothing to report; exits 1 printing each problem
-otherwise. Standard library only. Not wired into CI; wiring it into the
-stdlib offline document checks step of ``.github/workflows/protocol.yml``
-is a separate node. ``--self-test`` mutates in-memory copies and
-requires each check to catch its break (a removed index link must be
-reported).
+otherwise. Standard library only. Wired into the ``Stdlib offline
+document checks`` step of ``.github/workflows/protocol.yml``, which has
+no docs_only or verified-tree guard: it runs on every non-draft
+execution including docs-only and same-tree-skip runs. ``--self-test``
+mutates in-memory copies and requires each check to catch its break (a
+removed index link must be reported).
 """
 import posixpath
 import re
