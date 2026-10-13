@@ -147,6 +147,14 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [F04 실자금 해제 조건](decisions/F04_REAL_FUNDS_LIFT_CRITERIA_20261009.md) | #160 | `d7549d1473258dda617e241fff22bcbd697fbb17` | BeautifulMind-JT | If the User merges without edits, only O1 is adopted; every `DECISION_REQUIRED`/`UNDETERMINED` value stays empty; the lock stays. | 효력 발생(User 병합) |
 | [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | #161 | `31eac0637a324244aeca00e849fdb0f7c685232e` | BeautifulMind-JT | 문서 전용 계획. 채택 문장 없음. Status: document-only plan. | 문서 전용 계획. 새 승인 아님. |
 
+병합된 문서 위치(2026-10-13, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [RS-0 검토 자료 묶음](status/RS0_REVIEW_PACK.md) | #168 | `77517f0c74cd892ca299cacf987cbab64a03337d` | BeautifulMind-JT | This document is not a review, not an acceptance, and not a change of status. | 위치 포인터. 새 승인 아님. |
+| [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md) | #169 | `1eb7d7d2978950073973a43e495ec5e31c5f543e` | BeautifulMind-JT | 이 문서는 아무것도 결정하지 않는다. 어느 선택지도 고르지 않는다. 아무것도 보내지 않았고, 어느 담당의 회신도 아니다. | 위치 포인터. 새 승인 아님. |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | #167 | `ba352dfe9789af89983e9c1b1a303461ea240016` | BeautifulMind-JT | 위치 동기화 기준(비-TL 잔여 행): observed origin/main `3ce6e4975b7f439d67482451bb47a22c940add26` (2026-10-12). … 등급은 올리지 않는다. | 위치 포인터. 새 승인 아님. |
+
 ## 6. E-4와 상태 수명
 
 ### 6.1 E-4
