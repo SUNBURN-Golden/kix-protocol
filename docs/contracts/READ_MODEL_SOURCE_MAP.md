@@ -114,11 +114,18 @@
 
 ## 5. 카탈로그 부재 확인
 
-`protocol_contract.json`(40개)과 `fsm-command-contract.json`(44개)의 `commands` 키 어느 쪽에도 13개 조회 이름이 없다. `check_read_model_source_map.py`가 두 JSON을 직접 열어 부재를 다시 확인하고, 세 목록 이름의 `def`가 해당 모듈에 없음도 확인한다. 이 문서는 그 부재를 바꾸지 않는다.
+`protocol_contract.json`(40개)과 `fsm-command-contract.json`(44개)의 `commands` 키 어느 쪽에도 13개 조회 이름이 없다. `check_read_model_source_map.py`가 아래 표의 `기대`대로 각 JSON의 `commands`를 대조하고, 세 목록 이름의 `def`가 해당 모듈에 없음도 §6 앵커로 확인한다. 이 문서는 그 부재를 바꾸지 않는다.
+
+아래 표가 검사기가 파싱하는 카탈로그 기대다. `기대`가 `ABSENT`이면 그 파일의 `commands`에 13개 이름이 하나도 없어야 하고, `PRESENT: <이름>[, <이름>…]`이면 적힌 이름만 들어 있고 나머지 13개 이름은 없어야 한다. 후속 노드가 조회 이름을 새 카탈로그 파일에 넣으면 행을 하나 추가한다.
+
+| id | 대상 | 카탈로그 파일 | 기대 |
+|---|---|---|---|
+| C01 | 잠금 핵심 | reference/v0.3-rc1/protocol_contract.json | `ABSENT` |
+| C02 | 가산 FSM 핀 | docs/contracts/openapi/fsm-command-contract.json | `ABSENT` |
 
 ## 6. 검사 표 (기계 판독)
 
-아래 표는 `scripts/check_read_model_source_map.py`가 파싱한다. 규칙: `줄`이 양의 정수면 `파일`의 그 줄에 `포함 문자열`이 있어야 하고, `-`이면 그 파일 어디에도 없어야 한다. 실패는 앵커가 낡았다는 뜻이며 표면을 다시 대조해 문서를 고치라는 신호다 (AGENTS §8).
+아래 표는 `scripts/check_read_model_source_map.py`가 파싱한다. 규칙: `줄`이 양의 정수면 `파일`의 그 줄에 `포함 문자열`이 있어야 하고, `-`이면 그 파일 어디에도 없어야 한다. `대상` 칸이 `` `<조회이름>` 원천 `` 모양(백틱으로 감싼 이름 뒤 공백과 `원천`)이면 §2에서 그 조회의 `SOURCE_FOUND` 뒷받침 앵커이고, `SOURCE_MISSING`은 `포함 문자열`이 `def <이름>(`을 담은 `-` 앵커로 증명한다 — 검사기는 §2 상태 칸과 이 표 라벨의 일치를 요구한다. 실패는 앵커가 낡았다는 뜻이며 표면을 다시 대조해 문서를 고치라는 신호다 (AGENTS §8). 후속 노드는 소스를 바꾸는 같은 PR에서 이 문서의 표 행(§2 상태 칸, 이 표의 앵커, §5 카탈로그 기대, 앞부분의 blob 인용)을 함께 갱신한다.
 
 | 앵커 id | 대상 | 파일 | 줄 | 포함 문자열 |
 |---|---|---|---|---|
