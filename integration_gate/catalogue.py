@@ -6,7 +6,12 @@ import json
 import sys
 from pathlib import Path
 
-from integration_gate.constants import FSM_COMMAND_COUNT, FSM_CONTRACT, PROTOCOL_CONTRACT
+from integration_gate.constants import (
+    FSM_COMMAND_COUNT,
+    FSM_CONTRACT,
+    PROTOCOL_CONTRACT,
+    READ_COMMAND_COUNT,
+)
 from integration_gate.fsm_contract import drift_problems
 from integration_gate.schema import unsupported_schema
 
@@ -30,10 +35,16 @@ class Catalogue:
         }
         self.fsm_names = list(self.fsm_commands)
         self.fsm_name_set = set(self.fsm_names)
+        self.read_commands = {
+            name: spec['schema'] for name, spec in fsm['queries'].items()
+        }
+        self.read_names = list(self.read_commands)
+        self.read_name_set = set(self.read_names)
         self.commands = {}
         self.commands.update(self.core_commands)
         self.commands.update(self.fsm_commands)
-        self.names = self.core_names + self.fsm_names
+        self.commands.update(self.read_commands)
+        self.names = self.core_names + self.fsm_names + self.read_names
         self.domain = contract['domain']
         self.fsm_domain = fsm['domain']
         self.source_bytes = source_bytes
@@ -87,6 +98,13 @@ def load_catalogue(root=None):
     if set(schemas) & set(commands):
         raise CatalogueError('REFUSING_CONTRACT')
     _reject_names(schemas)
+    queries = fsm.get('queries')
+    if not isinstance(queries, dict) or len(queries) != READ_COMMAND_COUNT:
+        raise CatalogueError('REFUSING_CONTRACT')
+    read_schemas = {name: spec.get('schema') for name, spec in queries.items()}
+    if set(read_schemas) & (set(commands) | set(schemas)):
+        raise CatalogueError('REFUSING_CONTRACT')
+    _reject_names(read_schemas)
     return Catalogue(contract, source_bytes, fsm, fsm_bytes)
 
 

@@ -537,6 +537,9 @@ class CreditMachine:
         finally:
             self._guard(before)
 
+    def accepted_through(self) -> dict:
+        return {"journal_entries": len(self._journal)}
+
     def export_journal(self) -> list:
         return _copy(self._journal)
 

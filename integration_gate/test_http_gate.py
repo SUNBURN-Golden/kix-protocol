@@ -5,6 +5,7 @@ claim production readiness, durability, or a live payment, KYC, venue, or bank.
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import socket
@@ -33,6 +34,7 @@ from integration_gate.constants import (
     LOOPBACK_HOST,
     MAX_BODY_BYTES,
     READINESS_FSM_REFUSED,
+    READ_COMMAND_COUNT,
     READY_PATH,
 )
 from integration_gate.fsm_host import FsmHost, FsmRejected
@@ -1762,6 +1764,454 @@ def _host_cases(port):
         ['Host: 127.0.0.1'],
         ['Host: 127.0.0.1:%d' % port],
     ]
+
+
+def _query_digest(action, body):
+    encoded = json.dumps(
+        {'action': action, 'body': body},
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(',', ':'),
+        allow_nan=False,
+    )
+    return hashlib.sha256(encoded.encode('utf-8')).hexdigest()
+
+
+def _machine_snapshot(host):
+    found = {}
+    for name, machine in host.machines.items():
+        found[name] = (
+            machine.canonical_state(),
+            machine.export_journal(),
+            getattr(machine, '_now', None),
+        )
+    return found
+
+
+def _read_body(catalogue, action, subject, holder='buyer-1'):
+    schema = catalogue.commands[action]
+    body = {}
+    for key in schema['required']:
+        if key == 'version':
+            body[key] = 1
+        elif key == 'holder_role':
+            body[key] = holder
+        else:
+            body[key] = subject
+    return body
+
+
+_UNKNOWN = {
+    'get_show': 'UNKNOWN_SHOW',
+    'get_booking': 'UNKNOWN_RESERVATION',
+    'get_right': 'UNKNOWN_RIGHT',
+    'get_presentation': 'UNKNOWN_RIGHT',
+    'get_listing': 'UNKNOWN_LISTING',
+    'get_admission': 'UNKNOWN_RIGHT',
+    'get_credential': 'UNKNOWN_RIGHT',
+    'get_settlement': 'UNKNOWN_SETTLEMENT',
+    'get_credit_advance': 'UNKNOWN_ADVANCE',
+    'get_credit_claim': 'UNKNOWN_CLAIM',
+}
+
+
+def _show_body():
+    return {
+        'organizer_role': 'organizer',
+        'capacity': 2,
+        'gate_roles': ['gate-a', 'gate-b'],
+        'primary_price': 10001,
+        'resale_cap': 20000,
+        'resale_allowed': True,
+        'organizer_bps': 1,
+        'platform_bps': 1,
+    }
+
+
+def _fee_policy():
+    return {
+        'kind': 'PRIMARY_FEE_BPS',
+        'fee_bps': 0,
+        'residual_payee': 'organizer',
+        'fee_payee': 'platform',
+    }
+
+
+class ReadQueryHostTests(unittest.TestCase):
+    def test_each_query_matches_the_live_view_and_does_not_mutate(self):
+        catalogue = load_catalogue(ROOT)
+        self.assertEqual(len(catalogue.core_names), CORE_COMMAND_COUNT)
+        self.assertEqual(len(catalogue.read_names), READ_COMMAND_COUNT)
+        self.assertEqual(
+            catalogue.names,
+            catalogue.core_names + catalogue.fsm_names + catalogue.read_names,
+        )
+        host = FsmHost()
+        self._assert_rejections_leave_state(host, catalogue)
+        self._populate(host)
+        self._assert_rejections_leave_state(host, catalogue)
+        for action in catalogue.read_names:
+            with self.subTest(action):
+                subject = {
+                    'get_show': 'show-1',
+                    'get_booking': 'reserve-1',
+                    'get_right': 'issue-1',
+                    'get_presentation': 'issue-1',
+                    'get_listing': 'list-1',
+                    'get_admission': 'issue-1',
+                    'get_credential': 'issue-1',
+                    'get_settlement': 'settle-1',
+                    'get_credit_advance': 'adv-1',
+                    'get_credit_claim': 'settle-1',
+                }[action]
+                body = _read_body(catalogue, action, subject)
+                before = _machine_snapshot(host)
+                payload = host.read(action, body)
+                self.assertEqual(_machine_snapshot(host), before, action)
+                spec = host._queries[action]
+                machine = host.machines[spec['machine']]
+                kwargs = {
+                    key: value for key, value in body.items() if key != spec['subject_field']
+                }
+                direct = getattr(machine, spec['method'])(body[spec['subject_field']], **kwargs)
+                self.assertEqual(_machine_snapshot(host), before, action)
+                self.assertEqual(payload['result'], direct, action)
+                self.assertEqual(set(payload['result']), set(direct), action)
+                self.assertEqual(payload['query'], action)
+                self.assertEqual(payload['query_digest'], _query_digest(action, body))
+                self.assertEqual(payload['read_schema_version'], '0.1')
+                self.assertEqual(payload['fixture_mode'], 'REFERENCE_IN_MEMORY')
+                self.assertEqual(payload['accepted_through'], machine.accepted_through())
+        booking = host.read('get_booking', {'reservation_id': 'reserve-1'})
+        self.assertIsInstance(booking['result']['right'], dict)
+        self.assertIsNone(host.read('get_booking', {'reservation_id': 'reserve-open'})['result']['right'])
+        settled = host.read('get_settlement', {'settlement_id': 'settle-1'})
+        self.assertIsInstance(settled['result']['claim'], dict)
+        opened = host.read('get_settlement', {'settlement_id': 'settle-open'})
+        self.assertIsNone(opened['result']['claim'])
+        presented = host.read('get_presentation', {
+            'right_id': 'issue-1', 'version': 1, 'holder_role': 'buyer-1',
+        })
+        self.assertIs(presented['result']['presentation']['matches_current_right'], False)
+        advance = host.read('get_credit_advance', {'advance_id': 'adv-1'})
+        self.assertIn('open_terms', advance['result'])
+        claim = host.read('get_credit_claim', {'claim_id': 'settle-1'})
+        self.assertIsNotNone(claim['result'])
+        self.assertIn('open_terms', claim['result'])
+
+    def _assert_rejections_leave_state(self, host, catalogue):
+        for action, code in _UNKNOWN.items():
+            body = _read_body(catalogue, action, 'missing-subject')
+            before = _machine_snapshot(host)
+            with self.assertRaises(FsmRejected) as caught:
+                host.read(action, body)
+            self.assertEqual(caught.exception.code, code, action)
+            self.assertEqual(_machine_snapshot(host), before, action)
+            invalid = _read_body(catalogue, action, ' bad')
+            before = _machine_snapshot(host)
+            with self.assertRaises(FsmRejected) as caught:
+                host.read(action, invalid)
+            self.assertEqual(caught.exception.code, 'INVALID_ID', action)
+            self.assertEqual(_machine_snapshot(host), before, action)
+
+    def _populate(self, host):
+        booking = str(ROOT / 'reference' / 'booking_resale_admission')
+        if booking not in sys.path:
+            sys.path.insert(0, booking)
+        from mock_gates import OFFER_WINDOW_MS
+
+        price = 10001
+        now = 1000000
+        expires = now + OFFER_WINDOW_MS
+        pay = 'ab' * 32
+        show = _show_body()
+        steps = [
+            ('reservation_set_clock', {'subject_id': 'clock', 'idempotency_key': 'clock-1', 'now_ms': now}),
+            ('reservation_register_show', dict(show_id='show-1', idempotency_key='show-1', **show)),
+            ('reservation_hold', {
+                'reservation_id': 'reserve-open', 'idempotency_key': 'hold-open', 'show_id': 'show-1',
+                'slot': 1, 'buyer_role': 'buyer-1', 'expires_ms': expires,
+            }),
+            ('reservation_hold', {
+                'reservation_id': 'reserve-1', 'idempotency_key': 'hold-1', 'show_id': 'show-1',
+                'slot': 0, 'buyer_role': 'buyer-1', 'expires_ms': expires,
+            }),
+            ('reservation_confirm', {
+                'order_id': 'order-1', 'idempotency_key': 'confirm-1', 'reservation_id': 'reserve-1',
+                'amount': price, 'quote_ref': 'quote-1',
+            }),
+            ('reservation_observe_payment', {
+                'order_id': 'order-1', 'idempotency_key': 'pay-1', 'payment_ref': pay, 'amount': price,
+            }),
+            ('reservation_issue', {
+                'issuance_id': 'issue-1', 'idempotency_key': 'issue-1', 'order_id': 'order-1',
+            }),
+            ('resale_set_clock', {'subject_id': 'clock', 'idempotency_key': 'resale-clock', 'now_ms': now}),
+            ('resale_adopt_issued', dict(
+                right_id='issue-1', idempotency_key='resale-adopt', show_id='show-1', slot=0,
+                buyer_role='buyer-1', expires_ms=expires, order_id='order-1', amount=price,
+                payment_ref=pay, reservation_id='reserve-1', quote_ref='quote-1', **show,
+            )),
+            ('resale_list_resale', {
+                'listing_id': 'list-1', 'idempotency_key': 'list-1', 'right_id': 'issue-1',
+                'version': 1, 'seller_role': 'buyer-1', 'recipient_role': 'buyer-2',
+                'amount': price, 'expires_ms': expires,
+            }),
+            ('admission_set_clock', {'subject_id': 'clock', 'idempotency_key': 'gate-clock', 'now_ms': now}),
+            ('admission_adopt_issued', dict(
+                right_id='issue-1', idempotency_key='adopt-1', show_id='show-1', slot=0,
+                buyer_role='buyer-1', expires_ms=expires, order_id='order-1', amount=price,
+                payment_ref=pay, reservation_id='reserve-1', quote_ref='quote-1', **show,
+            )),
+            ('settlement_initiate', {
+                'settlement_id': 'settle-open', 'idempotency_key': 'init-open',
+                'trade_id': 'trade-open', 'gross': 100000, 'debtor_role': 'fixture-merchant',
+                'policy': _fee_policy(),
+            }),
+            ('settlement_initiate', {
+                'settlement_id': 'settle-1', 'idempotency_key': 'init-1',
+                'trade_id': 'trade-1', 'gross': 100000, 'debtor_role': 'fixture-merchant',
+                'policy': _fee_policy(),
+            }),
+            ('settlement_authorize', {'settlement_id': 'settle-1', 'idempotency_key': 'auth-1'}),
+            ('settlement_capture', {'settlement_id': 'settle-1', 'idempotency_key': 'cap-1'}),
+            ('settlement_commit', {
+                'settlement_id': 'settle-1', 'idempotency_key': 'commit-1', 'movement_id': 'move-1',
+                'gross': 100000, 'amount': 100000, 'fee': 0, 'tax': 0, 'held': 0, 'adjustment': 0,
+            }),
+        ]
+        for action, body in steps:
+            host.call(action, body)
+        face = host.machines['settlement'].view('settle-1')['claim']
+        host.call('credit_offer', {
+            'advance_id': 'adv-1',
+            'idempotency_key': 'offer-1',
+            'face': face,
+            'amount': 1000,
+            'beneficiary_role': 'fixture-label',
+        })
+        host.call('credit_approve', {'advance_id': 'adv-1', 'idempotency_key': 'approve-1'})
+        host.call('credit_draw', {
+            'advance_id': 'adv-1', 'idempotency_key': 'draw-1', 'draw_id': 'draw-1',
+        })
+
+
+class ReadQueryLoopbackTests(unittest.TestCase):
+    def test_admission_path_then_all_point_queries(self):
+        catalogue = load_catalogue(ROOT)
+        booking = str(ROOT / 'reference' / 'booking_resale_admission')
+        if booking not in sys.path:
+            sys.path.insert(0, booking)
+        from mock_gates import ADMISSION_WINDOW_MS, OFFER_WINDOW_MS
+
+        price = 10001
+        now = 1000000
+        expires = now + OFFER_WINDOW_MS
+        admit_expires = now + ADMISSION_WINDOW_MS
+        pay = 'ab' * 32
+        request = '11' * 32
+        show = _show_body()
+
+        def run(_httpd, port):
+            ready = wait_ready(port)
+            self.assertEqual(ready['commandCount'], COMMAND_COUNT)
+            steps = [
+                ('reservation_set_clock', {'subject_id': 'clock', 'idempotency_key': 'clock-1', 'now_ms': now}),
+                ('reservation_register_show', dict(show_id='show-1', idempotency_key='show-1', **show)),
+                ('reservation_hold', {
+                    'reservation_id': 'reserve-1', 'idempotency_key': 'hold-1', 'show_id': 'show-1',
+                    'slot': 0, 'buyer_role': 'buyer-1', 'expires_ms': expires,
+                }),
+                ('reservation_confirm', {
+                    'order_id': 'order-1', 'idempotency_key': 'confirm-1', 'reservation_id': 'reserve-1',
+                    'amount': price, 'quote_ref': 'quote-1',
+                }),
+                ('reservation_observe_payment', {
+                    'order_id': 'order-1', 'idempotency_key': 'pay-1', 'payment_ref': pay, 'amount': price,
+                }),
+                ('reservation_issue', {
+                    'issuance_id': 'issue-1', 'idempotency_key': 'issue-1', 'order_id': 'order-1',
+                }),
+                ('admission_set_clock', {'subject_id': 'clock', 'idempotency_key': 'gate-clock', 'now_ms': now}),
+                ('admission_adopt_issued', dict(
+                    right_id='issue-1', idempotency_key='adopt-1', show_id='show-1', slot=0,
+                    buyer_role='buyer-1', expires_ms=expires, order_id='order-1', amount=price,
+                    payment_ref=pay, reservation_id='reserve-1', quote_ref='quote-1', **show,
+                )),
+                ('admission_authorize_admission', {
+                    'admission_id': 'admit-1', 'idempotency_key': 'admit-1', 'right_id': 'issue-1',
+                    'version': 1, 'holder_role': 'buyer-1', 'gate_role': 'gate-a', 'request': request,
+                    'expires_ms': admit_expires,
+                }),
+                ('admission_consume', {
+                    'consume_id': 'consume-1', 'idempotency_key': 'consume-1', 'right_id': 'issue-1',
+                    'version': 1, 'gate_role': 'gate-a', 'request': request,
+                }),
+                ('reservation_hold', {
+                    'reservation_id': 'reserve-2', 'idempotency_key': 'hold-2', 'show_id': 'show-1',
+                    'slot': 1, 'buyer_role': 'buyer-2', 'expires_ms': expires,
+                }),
+                ('reservation_confirm', {
+                    'order_id': 'order-2', 'idempotency_key': 'confirm-2', 'reservation_id': 'reserve-2',
+                    'amount': price, 'quote_ref': 'quote-2',
+                }),
+                ('reservation_observe_payment', {
+                    'order_id': 'order-2', 'idempotency_key': 'pay-2', 'payment_ref': 'cd' * 32, 'amount': price,
+                }),
+                ('reservation_issue', {
+                    'issuance_id': 'issue-2', 'idempotency_key': 'issue-2', 'order_id': 'order-2',
+                }),
+                ('resale_set_clock', {'subject_id': 'clock', 'idempotency_key': 'resale-clock', 'now_ms': now}),
+                ('resale_adopt_issued', dict(
+                    right_id='issue-2', idempotency_key='resale-adopt', show_id='show-1', slot=1,
+                    buyer_role='buyer-2', expires_ms=expires, order_id='order-2', amount=price,
+                    payment_ref='cd' * 32, reservation_id='reserve-2', quote_ref='quote-2', **show,
+                )),
+                ('resale_list_resale', {
+                    'listing_id': 'list-1', 'idempotency_key': 'list-1', 'right_id': 'issue-2',
+                    'version': 1, 'seller_role': 'buyer-2', 'recipient_role': 'buyer-3',
+                    'amount': price, 'expires_ms': expires,
+                }),
+                ('settlement_initiate', {
+                    'settlement_id': 'settle-1', 'idempotency_key': 'init-1', 'trade_id': 'trade-1',
+                    'gross': 100000, 'debtor_role': 'fixture-merchant', 'policy': _fee_policy(),
+                }),
+                ('settlement_authorize', {'settlement_id': 'settle-1', 'idempotency_key': 'auth-1'}),
+                ('settlement_capture', {'settlement_id': 'settle-1', 'idempotency_key': 'cap-1'}),
+                ('settlement_commit', {
+                    'settlement_id': 'settle-1', 'idempotency_key': 'commit-1', 'movement_id': 'move-1',
+                    'gross': 100000, 'amount': 100000, 'fee': 0, 'tax': 0, 'held': 0, 'adjustment': 0,
+                }),
+            ]
+            face = None
+            for index, (action, body) in enumerate(steps):
+                status, payload, _headers = post_call(port, 'setup-%d' % index, 'operator', action, body)
+                self.assertEqual(status, 200, (action, payload))
+                if action == 'settlement_commit':
+                    face = payload['settlement']['claim']
+            self.assertIsInstance(face, dict)
+            status, payload, _headers = post_call(port, 'setup-credit', 'operator', 'credit_offer', {
+                'advance_id': 'adv-1', 'idempotency_key': 'offer-1', 'face': face,
+                'amount': 1000, 'beneficiary_role': 'fixture-label',
+            })
+            self.assertEqual(status, 200, payload)
+            status, payload, _headers = post_call(
+                port, 'setup-approve', 'operator', 'credit_approve',
+                {'advance_id': 'adv-1', 'idempotency_key': 'approve-1'},
+            )
+            self.assertEqual(status, 200, payload)
+            status, payload, _headers = post_call(
+                port, 'setup-draw', 'operator', 'credit_draw',
+                {'advance_id': 'adv-1', 'idempotency_key': 'draw-1', 'draw_id': 'draw-1'},
+            )
+            self.assertEqual(status, 200, payload)
+            subjects = {
+                'get_show': 'show-1',
+                'get_booking': 'reserve-1',
+                'get_right': 'issue-2',
+                'get_presentation': 'issue-2',
+                'get_listing': 'list-1',
+                'get_admission': 'issue-1',
+                'get_credential': 'issue-1',
+                'get_settlement': 'settle-1',
+                'get_credit_advance': 'adv-1',
+                'get_credit_claim': 'settle-1',
+            }
+            holders = {'get_presentation': 'buyer-2'}
+            first = None
+            for action in catalogue.read_names:
+                body = _read_body(
+                    catalogue, action, subjects[action], holder=holders.get(action, 'buyer-1'),
+                )
+                status, payload, headers = post_call(port, 'read-' + action, 'fixture-actor', action, body)
+                self.assertEqual(status, 200, (action, payload))
+                assert_gate_headers(self, headers)
+                self.assertEqual(set(payload), {
+                    'read_schema_version', 'query', 'query_digest', 'fixture_mode',
+                    'accepted_through', 'result',
+                })
+                self.assertEqual(payload['query'], action)
+                self.assertEqual(payload['query_digest'], _query_digest(action, body))
+                self.assertEqual(payload['fixture_mode'], 'REFERENCE_IN_MEMORY')
+                self.assertNotIn('idempotency_key', payload)
+                if action == 'get_show':
+                    first = payload
+            again_status, again, _headers = post_call(
+                port, 'read-get-show-again', 'other-actor', 'get_show', {'show_id': 'show-1'},
+            )
+            self.assertEqual(again_status, 200, again)
+            self.assertEqual(again['result'], first['result'])
+            self.assertEqual(again['accepted_through'], first['accepted_through'])
+            same_id_status, same_id, _headers = post_call(
+                port, 'read-get_show', 'fixture-actor', 'get_show', {'show_id': 'show-1'},
+            )
+            self.assertEqual(same_id_status, 200, same_id)
+            self.assertEqual(same_id['result'], first['result'])
+            self.assertNotEqual(same_id.get('error'), 'OPERATION_ID_CONFLICT')
+            extra_status, extra, _headers = post_call(
+                port, 'read-extra', 'fixture-actor', 'get_show', {'show_id': 'show-1', 'note': 'no'},
+            )
+            self.assertEqual(extra_status, 400, extra)
+            self.assertEqual(extra['error'], 'SCHEMA_REJECTED')
+            write_status, write_body, _headers = post_call(
+                port, 'read-write-shape', 'fixture-actor', 'get_show', {
+                    'show_id': 'show-1', 'idempotency_key': 'nope', 'organizer_role': 'organizer',
+                },
+            )
+            self.assertEqual(write_status, 400, write_body)
+            self.assertEqual(write_body['error'], 'SCHEMA_REJECTED')
+            clock_status, clock, _headers = post_call(
+                port, 'core-after-reads', 'operator', 'advance_clock',
+                {'domain': catalogue.domain, 'now': 1},
+            )
+            self.assertEqual(clock_status, 200, clock)
+            self.assertEqual(clock['sequence'], 1)
+
+        run_with_server(run)
+
+    def test_readiness_directory_refuses_reads_without_touching_the_journal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            def run(_httpd, port):
+                ready = wait_ready(port)
+                self.assertEqual(ready['commandCount'], COMMAND_COUNT)
+                journal = Path(tmp) / 'journal.v1'
+                before = journal.read_bytes()
+                status, payload, _headers = post_call(
+                    port, 'read-refused', 'fixture-actor', 'get_show', {'show_id': 'show-1'},
+                )
+                self.assertEqual(status, 422, payload)
+                self.assertEqual(payload['error'], READINESS_FSM_REFUSED)
+                self.assertEqual(journal.read_bytes(), before)
+                self.assertNotIn(b'get_show', journal.read_bytes())
+                domain = load_catalogue(ROOT).domain
+                status, payload, _headers = post_call(
+                    port, 'core-still-open', 'operator', 'advance_clock',
+                    {'domain': domain, 'now': 1},
+                )
+                self.assertEqual(status, 200, payload)
+                self.assertEqual(payload['sequence'], 1)
+                raw = journal.read_bytes()
+                self.assertIn(b'advance_clock', raw)
+                self.assertNotIn(b'get_show', raw)
+
+            run_with_server(run, readiness_dir=tmp)
+
+    def test_read_cors_matches_the_existing_loopback_rule(self):
+        def run(_httpd, port):
+            status, _payload, headers = post_call(
+                port, 'cors-read', 'fixture-actor', 'get_show', {'show_id': 'missing'},
+                headers={'Origin': BROWSER_ALLOWED_ORIGIN},
+            )
+            self.assertEqual(status, 422)
+            self.assertEqual(headers.get('access-control-allow-origin'), BROWSER_ALLOWED_ORIGIN)
+            self.assertEqual(headers.get('vary'), 'Origin')
+            status, _payload, headers = post_call(
+                port, 'cors-read-off', 'fixture-actor', 'get_booking', {'reservation_id': 'missing'},
+            )
+            self.assertEqual(status, 422)
+            assert_no_cors(self, headers)
+
+        run_with_server(run, browser_origin=BROWSER_ALLOWED_ORIGIN)
 
 
 if __name__ == '__main__':

@@ -83,6 +83,21 @@ MACHINE_TABLE = (
     },
 )
 
+# Approved point queries. List queries stay out until Astra names their policy values.
+# subject_field is the first live parameter. Extra fields come from the signature.
+QUERY_TABLE = (
+    {'name': 'get_show', 'machine': 'reservation', 'method': 'view_show', 'subject_field': 'show_id'},
+    {'name': 'get_booking', 'machine': 'reservation', 'method': 'view', 'subject_field': 'reservation_id'},
+    {'name': 'get_right', 'machine': 'resale', 'method': 'view_right', 'subject_field': 'right_id'},
+    {'name': 'get_presentation', 'machine': 'resale', 'method': 'view_presentation', 'subject_field': 'right_id'},
+    {'name': 'get_listing', 'machine': 'resale', 'method': 'view', 'subject_field': 'listing_id'},
+    {'name': 'get_admission', 'machine': 'admission', 'method': 'view', 'subject_field': 'right_id'},
+    {'name': 'get_credential', 'machine': 'admission', 'method': 'view_credential', 'subject_field': 'right_id'},
+    {'name': 'get_settlement', 'machine': 'settlement', 'method': 'view', 'subject_field': 'settlement_id'},
+    {'name': 'get_credit_advance', 'machine': 'credit', 'method': 'view', 'subject_field': 'advance_id'},
+    {'name': 'get_credit_claim', 'machine': 'credit', 'method': 'view_claim', 'subject_field': 'claim_id'},
+)
+
 INTEGER_FIELDS = frozenset({
     'gross', 'amount', 'fee', 'tax', 'held', 'adjustment', 'capacity',
     'primary_price', 'resale_cap', 'organizer_bps', 'platform_bps', 'slot',
@@ -130,6 +145,51 @@ def live_signatures():
     return found
 
 
+def _signature_parts(fn):
+    names = []
+    required = []
+    subject = None
+    defaults = {}
+    for param in inspect.signature(fn).parameters.values():
+        if param.name == 'self':
+            continue
+        if subject is None:
+            subject = param.name
+        names.append(param.name)
+        defaults[param.name] = param.default
+        if param.default is inspect.Parameter.empty:
+            required.append(param.name)
+    return names, required, subject, defaults
+
+
+def live_query_signatures():
+    """Return query name -> method metadata from the live view* signatures."""
+    machines = live_signatures()
+    replayable = set()
+    for spec in MACHINE_TABLE:
+        replayable |= machines[spec['name']]['replayable']
+    found = {}
+    for spec in QUERY_TABLE:
+        live = machines[spec['machine']]
+        method_name = spec['method']
+        fn = getattr(live['class'], method_name, None)
+        if fn is None:
+            found[spec['name']] = None
+            continue
+        names, required, subject, defaults = _signature_parts(fn)
+        found[spec['name']] = {
+            'machine': spec['machine'],
+            'method': method_name,
+            'subject': subject,
+            'names': names,
+            'required': required,
+            'defaults': defaults,
+            'replayable': method_name in replayable,
+            'view': method_name.startswith('view'),
+        }
+    return found
+
+
 def _property_schema(name, optional_null):
     if name in OBJECT_FIELDS:
         schema = {'type': 'object'}
@@ -164,11 +224,7 @@ def canonical_fsm_document():
         for op in spec['replayable']:
             names, required, subject = live['ops'][op]
             fn = getattr(live['class'], op)
-            defaults = {
-                param.name: param.default
-                for param in inspect.signature(fn).parameters.values()
-                if param.name != 'self'
-            }
+            _names, _required, _subject, defaults = _signature_parts(fn)
             properties = {}
             for name in names:
                 optional_null = (
@@ -187,6 +243,26 @@ def canonical_fsm_document():
                     'properties': properties,
                 },
             }
+    queries = {}
+    query_live = live_query_signatures()
+    for spec in QUERY_TABLE:
+        live = query_live[spec['name']]
+        properties = {}
+        for name in live['names']:
+            default = live['defaults'][name]
+            optional_null = default is None and default is not inspect.Parameter.empty
+            properties[name] = _property_schema(name, optional_null)
+        queries[spec['name']] = {
+            'machine': spec['machine'],
+            'method': spec['method'],
+            'subject_field': live['subject'],
+            'schema': {
+                'type': 'object',
+                'additionalProperties': False,
+                'required': list(live['required']),
+                'properties': properties,
+            },
+        }
     return {
         'domain': FSM_DOMAIN,
         'unknownFields': 'REJECT',
@@ -194,6 +270,7 @@ def canonical_fsm_document():
         'handlerConstraints': HANDLER_CONSTRAINTS,
         'machines': machines,
         'commands': commands,
+        'queries': queries,
     }
 
 
@@ -260,6 +337,47 @@ def drift_problems(document):
                 need(list(properties) == names, 'fsm signature properties drift: ' + action)
             need(schema.get('required') == required, 'fsm signature required drift: ' + action)
     need(list(commands) == expected_commands, 'fsm command set drift')
+    queries = document.get('queries')
+    need(isinstance(queries, dict), 'fsm queries missing')
+    if isinstance(queries, dict):
+        expected_queries = [spec['name'] for spec in QUERY_TABLE]
+        need(list(queries) == expected_queries, 'fsm query set drift')
+        query_live = live_query_signatures()
+        replayable_names = set()
+        for spec in MACHINE_TABLE:
+            replayable_names |= signatures[spec['name']]['replayable']
+        for spec in QUERY_TABLE:
+            action = spec['name']
+            query = queries.get(action)
+            live = query_live.get(action)
+            if not isinstance(query, dict) or live is None:
+                errors.append('fsm query missing: ' + action)
+                continue
+            documented = query.get('method')
+            need(query.get('machine') == spec['machine'], 'fsm query machine drift: ' + action)
+            need(isinstance(documented, str) and documented.startswith('view'),
+                 'fsm query method is not a view method: ' + action)
+            need(documented not in replayable_names,
+                 'fsm query method is replayable: ' + action)
+            need(documented == spec['method'] == live['method'],
+                 'fsm query method drift: ' + action)
+            need(live['view'] and not live['replayable'],
+                 'fsm query live method is not a read: ' + action)
+            need(query.get('subject_field') == spec['subject_field'] == live['subject'],
+                 'fsm query subject_field drift: ' + action)
+            schema = query.get('schema')
+            if not isinstance(schema, dict):
+                errors.append('fsm query schema missing: ' + action)
+                continue
+            need(schema.get('type') == 'object', 'fsm query schema type drift: ' + action)
+            need(schema.get('additionalProperties') is False,
+                 'additionalProperties is not false: ' + action)
+            properties = schema.get('properties')
+            need(isinstance(properties, dict), 'fsm query properties missing: ' + action)
+            if isinstance(properties, dict):
+                need(list(properties) == live['names'], 'fsm query signature properties drift: ' + action)
+                need('idempotency_key' not in properties, 'fsm query has idempotency_key: ' + action)
+            need(schema.get('required') == live['required'], 'fsm query signature required drift: ' + action)
     return errors
 
 

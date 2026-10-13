@@ -4,7 +4,7 @@
     "title": "KIX integration-gate local-call transport",
     "version": "0.3-rc1-integration-gate+sha256:ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e",
     "summary": "Non-production loopback integration gate. No production endpoint. No public host.",
-    "description": "Non-production loopback integration gate for the published KIX v0.3-rc1 local call. There is no production endpoint and no public host. Successful local HTTP tests are not production approval.\n\nThe only protocol path is POST /x-kix-contract-only/local-call. The JSON body is the published local-call envelope: operationId, actor, action, and body. action is one of the published command keys. body is validated against that command JSON Schema. A core action is passed to Core.execute(operationId, actor, action, body). An FSM action, named machine_op, is passed to the in-process machine on the same worker. The catalogue does not define a command outside the pinned core set and the pinned FSM REPLAYABLE sets. No REST resource tree is defined for events, tickets, payments, venues, or marketplaces.\n\nDefault state is the in-memory reference model. It is not durable across process restart. An optional process-local file journal can replay committed local-call receipts after a restart of this loopback process. That journal is a readiness runtime. It is not protocol truth and it is not a production conformance claim. Inside one process, and after a recovered journal, the same operationId with the same actor, action, and body replays the stored receipt. A different fingerprint for that operationId is OPERATION_ID_CONFLICT. That rule is the core-command rule. An FSM body idempotency_key is not rewritten from the envelope operationId. An HTTP Idempotency-Key header is not consulted. When a readiness directory is set, FSM actions are refused with READINESS_FSM_REFUSED before any journal append. The spelling of that refusal is the loopback label for the approved fail-closed behavior.\n\nExternal payment, KYC, venue, and bank adapters are not attached. Fixture reject codes from the reference model stay reject codes. GET /health and GET /ready are process probes, not protocol commands. Readiness is not production readiness.\n\nThe contract-only catalogue remains a pin that does not declare a live server. This document only describes the local integration-gate transport."
+    "description": "Non-production loopback integration gate for the published KIX v0.3-rc1 local call. There is no production endpoint and no public host. Successful local HTTP tests are not production approval.\n\nThe only protocol path is POST /x-kix-contract-only/local-call. The JSON body is the published local-call envelope: operationId, actor, action, and body. action is one of the published command keys. body is validated against that command JSON Schema. A core action is passed to Core.execute(operationId, actor, action, body). An FSM action, named machine_op, is passed to the in-process machine on the same worker. The catalogue is the pinned core set, the pinned FSM REPLAYABLE sets, and the ten approved point queries. A point query is read-only: it calls an existing view* method and does not mutate state. The envelope actor is a fixture actor with no access control. List queries are not in this catalogue. No REST resource tree is defined for events, tickets, payments, venues, or marketplaces.\n\nDefault state is the in-memory reference model. It is not durable across process restart. An optional process-local file journal can replay committed local-call receipts after a restart of this loopback process. That journal is a readiness runtime. It is not protocol truth and it is not a production conformance claim. Inside one process, and after a recovered journal, the same operationId with the same actor, action, and body replays the stored receipt. A different fingerprint for that operationId is OPERATION_ID_CONFLICT. That rule is the core-command rule. An FSM body idempotency_key is not rewritten from the envelope operationId. An HTTP Idempotency-Key header is not consulted. When a readiness directory is set, FSM actions and point queries are refused with READINESS_FSM_REFUSED before any journal append and before a query touches a machine. The spelling of that refusal is the loopback label for the approved fail-closed behavior.\n\nExternal payment, KYC, venue, and bank adapters are not attached. Fixture reject codes from the reference model stay reject codes. GET /health and GET /ready are process probes, not protocol commands. Readiness is not production readiness.\n\nThe contract-only catalogue remains a pin that does not declare a live server. This document only describes the local integration-gate transport."
   },
   "x-kix-contract-status": "integration-gate",
   "x-kix-live-http-server": {
@@ -33,13 +33,14 @@
     "gitBlob": "619ae21c82ca3df5661bd3831613f15fa65225ff",
     "sha256": "ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e",
     "domain": "kix:fixture:lifecycle:0.3",
-    "commandCount": 84,
+    "commandCount": 94,
     "coreCommandCount": 40,
     "fsmCommandCount": 44,
+    "readCommandCount": 10,
     "fsmSource": {
       "path": "docs/contracts/openapi/fsm-command-contract.json",
-      "gitBlob": "3771a8739b906a478b54c597df37e27d1afc5f21",
-      "sha256": "342e97cb37b199622d7bb436ca9164690d969b797058aaa539ff417cab01411c",
+      "gitBlob": "d3eaf469e4b3c1ffda7d7ecd5b52a84524525356",
+      "sha256": "2732173bd7a4fe71cfea4201f53261aaae59b0fe5416f64fe0a4e216ecd73f5f",
       "domain": "kix:fixture:fsm-catalogue:0.3",
       "commandCount": 44
     },
@@ -1353,6 +1354,176 @@
         "body"
       ],
       "description": "Published FSM command, dispatched by the loopback gate to the in-process machine. operationId here is the command name (Python action), not the per-invocation operationId argument and not the body idempotency_key. Not a production operation. Refused when a readiness directory is set."
+    },
+    {
+      "operationId": "get_show",
+      "action": "get_show",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_show",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_booking",
+      "action": "get_booking",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_booking",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_right",
+      "action": "get_right",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_right",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_presentation",
+      "action": "get_presentation",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_presentation",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_listing",
+      "action": "get_listing",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_listing",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_admission",
+      "action": "get_admission",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_admission",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_credential",
+      "action": "get_credential",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_credential",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_settlement",
+      "action": "get_settlement",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_settlement",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_credit_advance",
+      "action": "get_credit_advance",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_credit_advance",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
+    },
+    {
+      "operationId": "get_credit_claim",
+      "action": "get_credit_claim",
+      "x-kix-transport": "integration-gate",
+      "x-kix-production-endpoint": false,
+      "x-kix-not-a-public-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "kix-protocol.contract-only.openapi.json#/components/schemas/get_credit_claim",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Approved read-only point query, dispatched to an existing view* method. operationId here is the query name, not the envelope operationId. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state. Refused when a readiness directory is set. Not a production operation."
     }
   ],
   "paths": {
@@ -1401,7 +1572,7 @@
             "description": "Media type is not application/json."
           },
           "422": {
-            "description": "Core.execute raised Rejected, or an FSM handler raised its error code, or a readiness directory refused an FSM action. error is that reject code. Not HTTP 200."
+            "description": "Core.execute raised Rejected, or an FSM handler raised its error code, or a read query raised an existing view error code, or a readiness directory refused an FSM action or a point query. error is that reject code. Not HTTP 200."
           },
           "503": {
             "description": "Process is up but the in-memory core is not accepting calls. Not production readiness."

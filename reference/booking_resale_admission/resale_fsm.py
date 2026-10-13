@@ -692,6 +692,9 @@ class ResaleMachine:
         }
         return self._envelope(applied="view_presentation", presentation=presentation, right=right)
 
+    def accepted_through(self) -> dict:
+        return {"journal_entries": len(self._journal), "logical_time_ms": self._now}
+
     def export_journal(self) -> list:
         return _copy(self._journal)
 

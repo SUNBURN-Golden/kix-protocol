@@ -10,7 +10,7 @@
 1. [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) — 현재 계획·승인 범위.
 2. [기준 commit·태그 표](status/BASELINES.md) — 현재 main, 고정 R1 태그, PR 검토 SHA, #11 실험을 구분. [main 상태 정합 기록](status/MAIN_STATE_20260928.md) — 2026-09-25~27 병합 범위, hosted CI 공백, D-1~D-3 결정 전 사실. [프로그램 결정 D-1~D-3](decisions/PROGRAM_DECISIONS_20260928.md) — 2026-09-28 #73 병합으로 승인. Track K/P, Wave 게이트, readiness 저널 한도, 유지되는 잠금과 해제 조건.
 3. [모델 1 결정](decisions/AUTHORITY_MODEL_1.md) — 체인 권위 / 오프체인 위임 실행. R2·(a) 착수 승인이 아님.
-4. [수명 계약 초안](contracts/STATE_LIFECYCLE.md), [열린 입력·답할 주체](contracts/FIRST_BATCH_OPEN_INPUTS.md), [담당자 질문서](status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md)(위치만. 회신·정책 결정이 아니다).
+4. [수명 계약 초안](contracts/STATE_LIFECYCLE.md), [열린 입력·답할 주체](contracts/FIRST_BATCH_OPEN_INPUTS.md), [담당자 질문서](status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md)(위치만. 회신·정책 결정이 아니다), [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md)(위치만. 결정·채택·회신이 아니다).
 5. [계약 불변식·비교 모델의 한계](contracts/CONTRACT_INVARIANTS.md), [첫 묶음 실행 근거](../validation/2026-09-16-first-batch/README.md).
 6. [측정 계약](contracts/PERFORMANCE_MEASUREMENT.md), [고정 smoke 조건](contracts/PERFORMANCE_BASELINE_V4.md)(역사적 debug 논리 서명, 제품 p99 아님), [Task 004 장치 메모](../validation/2026-09-25-task-004-perf-measurement/README.md).
 7. [잠금의 실제 CI 경로](status/LOCK_ENFORCEMENT.md), [위생 목록 — 실행 금지](CODE_HYGIENE_BACKLOG.md).
@@ -20,7 +20,7 @@
 
 ## 계약 전용 OpenAPI
 
-[계약 전용 OpenAPI](contracts/openapi/README.md)는 `reference/v0.3-rc1/protocol_contract.json`의 로컬 호출 명령과 FSM `REPLAYABLE` 명령을 담은 OpenAPI 3.1 핀이다. 그 핀은 라이브 서버를 선언하지 않고, 운영 엔드포인트도 없다. 같은 84개 명령과 같은 로컬 호출 경로를 루프백에서 부르는 비운영 통합 관문이 따로 있다. 공개 호스트·실 PG·KYC·공연장·은행 연동이 아니며, 로컬 HTTP 성공은 운영 승인이 아니다. 선택적 로컬 파일 저널과 재시작 재생은 [준비 런타임 경계](contracts/READINESS_RUNTIME.md)에 적는다. 그 저장은 프로토콜 정본이 아니고, 공개 배치·운영 적합·외부 연동의 승인이 아니다.
+[계약 전용 OpenAPI](contracts/openapi/README.md)는 `reference/v0.3-rc1/protocol_contract.json`의 로컬 호출 명령, FSM `REPLAYABLE` 명령, 승인된 점 조회를 담은 OpenAPI 3.1 핀이다. 그 핀은 라이브 서버를 선언하지 않고, 운영 엔드포인트도 없다. 같은 94개 명령과 같은 로컬 호출 경로를 루프백에서 부르는 비운영 통합 관문이 따로 있다. 공개 호스트·실 PG·KYC·공연장·은행 연동이 아니며, 로컬 HTTP 성공은 운영 승인이 아니다. 선택적 로컬 파일 저널과 재시작 재생은 [준비 런타임 경계](contracts/READINESS_RUNTIME.md)에 적는다. 그 저장은 프로토콜 정본이 아니고, 공개 배치·운영 적합·외부 연동의 승인이 아니다.
 
 `reference/v0.1/KIX_프로토콜_통합명세_v0.1.md` §9.1의 “HTTP 서버·OpenAPI 서비스는 아직 없다”는 그 명세를 쓰던 시점의 기록이다. 그 파일은 당시 패키지 해시에 묶인 역사 증거라 본문을 고치지 않았다. 예매·리셀·검표 목과 신용 목의 “HTTP 서버는 없다”는 각 목 함수에 대한 설명으로 그대로 둔다.
 
@@ -44,24 +44,19 @@
 | 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
 |---|---|---|
 | [어댑터 전송·이벤트·결제·operation 정체성](contracts/ADAPTER_EVENT_IDENTITY.md) | 전송·원문 증거·이벤트·결제·경제 operation의 묶음 | 계약 초안 0.1. 구현·schema·wire 아님 |
-| [조회·목록 쿼리](contracts/READ_MODEL_QUERIES.md) | 상거래 표면의 조회·목록 의미 | 초안 0.1. 와이어 본문·카탈로그 삽입 없음 |
+| [조회·목록 쿼리](contracts/READ_MODEL_QUERIES.md) | 상거래 표면의 조회·목록 의미 | 초안 0.1. 그 파일은 그대로다. 점 조회 10개는 카탈로그에 들어갔고, 목록 3개는 아직 없다 |
 | [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md) | 조회·제안·실행 권한. 오프라인 목의 술어 | 초안 0.1. 실행을 켜지 않음. 목은 `reference/ai_delegation/` |
 | [1차 발행 가격·수수료](contracts/MOVE_PRIMARY_ISSUANCE_PRICE_FEE.md) | 1차 발행의 구조·바인딩·산술·사건 의미 | 초안 0.1. 가격·수수료 값은 정하지 않음 |
 | [확장 권리 프로파일](contracts/RIGHTS_SCALE_PROFILE.md) | 확장 프로파일 계약 | 초안 0.1. 미검토·미측정 |
 | [RS-0 결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) | 권리 확장의 객체·재고 권위 | 결정 초안. 확정 조건은 그 문서가 정한다 |
 | [루프백 관문의 브라우저 접근](decisions/GATE_BROWSER_ACCESS_DECISION_20261008.md) | 브라우저가 루프백 관문에 닿는 방식의 비교 | "채택 제안"(그 문서의 표현). 관문 코드 변경 없음 |
 | [I12 절단 증명](decisions/CUT_PROOF_I12_20261008.md) | C_g/H_g 절단, 옛 작성자 차단, 미발행 약정 보존 | 증명 초안, 사용자 병합 때에만 효력. I12는 미완결 |
-| [v5 crate 설계 결정](decisions/STAGE2_V5_CRATE_DESIGN_DECISION_20261008.md) | 종결·슬롯 해제·기록 회수·review 해제·색인을 잠금 v4 밖에 둘 새 crate | 설계 결정 제안. 사용자 병합 때에만 효력. 구현 없음 |
-| [백엔드 채택 결정 제안](decisions/BACKEND_ADOPTION_PROPOSAL_20261009.md) | 5단계에 쓸 로컬·비운영 backend, 또는 아직 없음 | 결정 제안, 사용자 병합 때에만 효력, 구현 없음 |
-| [통합 (a) 잔여 공수 재산정](decisions/INTEGRATION_A_REESTIMATE_20261009.md) | PR #11 저널 통합 (a)의 잔여 계획 인일. 대상은 잠금 v4, 계획된 v5 crate, 5단계 로컬 PostgreSQL | 추정 기록. 결정이 아님. (a)·R2·저널·저장을 승인하지 않음 |
-| [통합 (a) 결정 제안](decisions/INTEGRATION_A_DECISION_PROPOSAL_20261009.md) | PR #11 저널 통합 (a)를 지금 할지, 한다면 잠금 v4·v5 프레임 저널·v5와 로컬 PostgreSQL 중 어디인지 | 결정 제안, 사용자 병합 때에만 효력, 구현 없음. 문장 수정 없이 병합하면 DEFERRED |
-| [OpenAPI 카탈로그 승격 — 소유자 결정 위치 기록](decisions/OPENAPI_CATALOGUE_PROMOTION_OWNER_DECISION_20261009.md) | 2026-10-09 소유자 결정(JunTae)이 인용되는 위치와 네 항목의 산출물 포인터 | 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. |
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
-| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL·catalogue·SDK 행은 2026-10-09 위치 동기화 기준 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 그 밖은 2026-10-06 `2554173` 스냅샷 |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL-3 onchain·TL-4 행은 2026-10-09 위치 동기화 기준 `5e20a467160148ad5c2debfe357dfb8da084a30a`. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 비-TL 잔여 행은 2026-10-12 `3ce6e4975b7f439d67482451bb47a22c940add26` 기준. 그 외 행은 2026-10-06 `2554173` 스냅샷 |
 
-[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 TL·catalogue·SDK 행은 위 위치 동기화 기준의 경로로 맞췄다. 그 밖은 2026-10-06 `2554173` 스냅샷이다.
+[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a` 기준으로 맞췄다. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`다. 비-TL 잔여 행은 2026-10-12에 `3ce6e4975b7f439d67482451bb47a22c940add26` 기준으로 다시 맞췄다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
 
 같은 날짜의 검증 기록:
 
@@ -69,12 +64,36 @@
 - [ai-delegation-contract-mock](../validation/2026-10-08-ai-delegation-contract-mock/README.md) — 오프라인 목 시험 기록.
 - [k1-adapter-event-identity](../validation/2026-10-08-k1-adapter-event-identity/README.md) — 초안 증거 기록.
 - [k1-evidence-close](../validation/2026-10-08-k1-evidence-close/README.md) — 첫 묶음 통합 검토·증거 마감 기록. 수명 입력 반영과 고정 환경 성능 반복은 미완결로 둔다.
+
+## 2026-10-09 병합 문서 색인 — 계약·결정·기록
+
+이 절은 문서의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
+|---|---|---|
+| [v5 crate 설계 결정](decisions/STAGE2_V5_CRATE_DESIGN_DECISION_20261008.md) | 종결·슬롯 해제·기록 회수·review 해제·색인을 잠금 v4 밖에 둘 새 crate | 설계 결정 제안. 사용자 병합 때에만 효력. 구현 없음 |
+| [백엔드 채택 결정 제안](decisions/BACKEND_ADOPTION_PROPOSAL_20261009.md) | 5단계에 쓸 로컬·비운영 backend, 또는 아직 없음 | 결정 제안, 사용자 병합 때에만 효력, 구현 없음 |
+| [통합 (a) 잔여 공수 재산정](decisions/INTEGRATION_A_REESTIMATE_20261009.md) | PR #11 저널 통합 (a)의 잔여 계획 인일. 대상은 잠금 v4, 계획된 v5 crate, 5단계 로컬 PostgreSQL | 추정 기록. 결정이 아님. (a)·R2·저널·저장을 승인하지 않음 |
+| [통합 (a) 결정 제안](decisions/INTEGRATION_A_DECISION_PROPOSAL_20261009.md) | PR #11 저널 통합 (a)를 지금 할지, 한다면 잠금 v4·v5 프레임 저널·v5와 로컬 PostgreSQL 중 어디인지 | 결정 제안, 사용자 병합 때에만 효력, 구현 없음. 문장 수정 없이 병합하면 DEFERRED |
+| [OpenAPI 카탈로그 승격 — 소유자 결정 위치 기록](decisions/OPENAPI_CATALOGUE_PROMOTION_OWNER_DECISION_20261009.md) | 2026-10-09 소유자 결정(JunTae)이 인용되는 위치와 네 항목의 산출물 포인터 | 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. |
+| [정산·예매/리셀/검표·F04 정책 심화 — 소유자 결정 위치 기록](decisions/POLICY_DEEPENING_OWNER_DECISION_20261009.md) | 2026-10-09 소유자 결정(JunTae)이 정산(L0/W0/R0/S0/T0/B0/P0), 예매·리셀·검표(선택지 A), F04(선택지 A) 계약에서 인용되는 위치 | 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. |
+| [F04 실자금 해제 조건](decisions/F04_REAL_FUNDS_LIFT_CRITERIA_20261009.md) | 실제 여신 잠금을 풀자는 제안이 갖춰야 할 조건 목록(법률·자본·위험·운영·승인) | Status: proposed. This is a User decision document. It takes effect only when the User merges it …. 조건 목록 채택은 해제가 아니며 잠금은 그대로다 |
+| [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | 실 PG 호출 전에 필요한 Toss sandbox 적합성 증거의 시험 사례, 필요한 토스 답변, 증거 기록 위치 | 문서 전용 계획. 호출·자격 증명 없음. sandbox 증거는 실자금 잠금을 열지 않음 |
+
+같은 날짜의 검증 기록:
+
 - [k-a-reestimate](../validation/2026-10-09-k-a-reestimate/README.md) — 2026-10-09 통합 (a) 잔여 공수 재산정 기록. 계획용 추정이며 착수 승인이 아니다.
 - [k-a-integration-decision](../validation/2026-10-09-k-a-integration-decision/README.md) — 2026-10-09 통합 (a) 결정 제안 기록. 권고는 실행하지 않음. 사용자 병합 때에만 효력.
 - [openapi-catalogue-promotion](../validation/2026-10-09-openapi-catalogue-promotion/README.md) — Evidence for the contract-only catalogue promotion of the 44 FSM `REPLAYABLE` commands.
 - [audit2-gate-browser-access-test-determinism](../validation/2026-10-09-audit2-gate-browser-access-test-determinism/README.md) — Test harness only.
 - [k2-retention-proposal](../validation/2026-10-09-k2-retention-proposal/README.md) — Document only. No code, no new tests, no duration numbers, no new protocol command.
+- [toss-sandbox-conformance-plan](../validation/2026-10-09-toss-sandbox-conformance-plan/README.md) — Document only. No Toss call, no credential, no new test, no new protocol command.
 - [k-stage4-adoption-decision](../validation/2026-10-09-k-stage4-adoption-decision/README.md) — Document only. No code, no new tests, no backend implementation, no second comparison table, no SLO or cost numbers.
+- [ci-wire-token-reward-suite](../validation/2026-10-09-ci-wire-token-reward-suite/README.md) — No new tests and no policy values. No independent verification of TK-4, TK-7, TK-8, TK-12, or V6.
+- [tl-4-token-layer-verification](../validation/2026-10-09-tl-4-token-layer-verification/README.md) — No independent verification. No production endpoint, public host, real payment, KYC, bank, or venue call. No Sui testnet or mainnet. … It does not close the blueprint TL-4 acceptance line that asks for independent verification of TK-1 through TK-9 with no open blockers.
+- [f04-real-funds-lift-criteria](../validation/2026-10-09-f04-real-funds-lift-criteria/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command.
+- [audit3-openapi-promotion-owner-decision-record](../validation/2026-10-09-audit3-openapi-promotion-owner-decision-record/README.md) — Pointer record only. No new authorisation, no contract edit, no code, no new protocol command.
+- [tl-5-decision](../validation/2026-10-09-tl-5-decision/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command. Criteria for testnet, mainnet, and issuance. They stay locked. The recommendation is not acted on.
 
 ## 2026-10-09 병합 문서 색인 — 토큰 계층(TL)
 
@@ -89,6 +108,22 @@
 | [TL-2는 열리지 않음](decisions/TL2_DOES_NOT_OPEN_20261009.md) | TL-2가 열리지 않는다는 기록 | 상태: 기록. 패키지가 아니다. |
 | [token_reward 참조](../reference/token_reward/) | 보상–거래 결합의 오프라인 참조 술어 | Offline reference predicates for reward–transaction coupling. |
 | [외부 검토 질문서](status/TOKEN_LEGAL_REVIEW_BRIEF_KO.md) | 법률·회계·세무·금융 질문서 | 상태: 질문서만이다. 전송하지 않았다. … 검토됨으로 표시하지 않는다. |
+| [TL-3 on-chain은 열리지 않음](decisions/TL3_ONCHAIN_DOES_NOT_OPEN_20261009.md) | TL-3 온체인 부분이 열리지 않는다는 기록; Move 패키지·보상 기록 스키마 없음 | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. |
+| [TL-4 위협 모델](decisions/TL4_THREAT_MODEL_20261009.md) | 오프체인 토큰 계층의 위협 모델과 작성자 측 하네스; 패키지가 필요한 술어는 NOT VERIFIABLE | 상태: 기록, 작성자=빌더, 독립 검토 아님. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. 자기 검토를 독립 PASS로 세지 않는다. |
+| [TL-5 운영 활성화 결정 제안](decisions/TL5_ACTIVATION_DECISION_PROPOSAL_20261009.md) | testnet 배포, mainnet 배포, 발행의 조건 목록 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 조건 목록을 채택해도 활성화가 아니며 세 관문은 잠긴 채로 남는다. |
+
+## 2026-10-13 색인 보정 — 위치 안내만
+
+이 절은 문서의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
+|---|---|---|
+| [RS-0 검토 자료 묶음](status/RS0_REVIEW_PACK.md) | RS-0 프로파일·결정 기록의 Astra 검토를 위한 명제·가정별 근거 대응표와 열린 항목 | 빌더 작성 검토 자료. 검토·수락·상태 변경·rs-1 해제 아님 |
+| [정산 분배 F01–F03 목 계약](contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) | Wave 3 정산 mock 술어와 §7 정책 선택지 | 목 계약. F01·F02·F03·P04는 설계중 그대로. §7 권고 0.3 |
+| [예매·리셀·검표 게이트 목 계약](contracts/BOOKING_RESALE_ADMISSION_GATES.md) | Wave 4 예매·리셀·검표 mock 술어와 수락 상태 기계 | 목 계약. B01–B05, R01–R05, P03은 설계중 그대로. §7 초안 0.2 |
+| [여신·신용 선지급 F04 목 계약](contracts/CREDIT_ADVANCE_F04.md) | Wave 5 F04 mock 술어 | 목 계약. mock/sim only. F04·E06은 설계중 그대로 |
+| [조회 원천 지도](contracts/READ_MODEL_SOURCE_MAP.md) | 승인된 13개 조회 이름의 소스 표면·보존 술어·카탈로그 기작 | 입력 자료. 결정 문서가 아니다. 점 조회 10개가 카탈로그에 들어간 변경에서 줄 앵커와 카탈로그 상태를 맞췄다. 목록 3개는 카탈로그에 없다 |
+| [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | 절단 증명의 명제 P1–P4·가정 A1–A10별 기존 근거 대응표 | 빌더 작성 검토 자료 묶음. 독립 검토·수락·상태 변경 아님. I12는 미완결 |
 
 ## 역사 문서와 증거
 

@@ -12,8 +12,8 @@ import { fileURLToPath } from "node:url";
 import { canonicalStringify, compareCodePoints } from "../src/jsonschema.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
-const SOURCE_COMMIT = "c2cde86e21a6e5ba6f24a56548636db6d0a34c6f";
-const SOURCE_TREE = "394084b15e01bbe4a5612aeb3431f3278c43dd85";
+const SOURCE_COMMIT = "ab42cfef43a40c6b86fd3f22b69f00e134cc472e";
+const SOURCE_TREE = "4e10dfda71896d385a4ff37cd8588e1ae13e8fb4";
 const EXPECTED_SOURCE_SHA256 = "ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e";
 const EXPECTED_SOURCE_BLOB = "619ae21c82ca3df5661bd3831613f15fa65225ff";
 
@@ -23,9 +23,9 @@ const SOURCE_PATH = "reference/v0.3-rc1/protocol_contract.json";
 const FSM_PATH = "docs/contracts/openapi/fsm-command-contract.json";
 const GENERATOR_PATH = "sdk/generate/generate_client.mjs";
 const CATALOGUE_PATH = "sdk/generated/catalogue.ts";
-const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
-const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
-const SIDECAR_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json.sha256";
+const PROFILE_PATH = "sdk/compat/profiles/bootstrap-3.profile.json";
+const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-3.json";
+const SIDECAR_PATH = "sdk/compat/manifests/manifest.bootstrap-3.json.sha256";
 const CANONICAL_VECTOR = "sdk/conformance/vectors/canonical-encoding.vectors.json";
 const MIXED_VECTOR = "sdk/conformance/vectors/mixed-input.vectors.json";
 
@@ -105,8 +105,8 @@ function main() {
   const names = Object.keys(schemas)
     .filter((name) => name !== "LocalCallEnvelope")
     .sort(compareCodePoints);
-  if (names.length !== 84) {
-    fail("command count must stay 84 for bootstrap-2");
+  if (names.length !== 94) {
+    fail("command count must stay 94 for bootstrap-3");
   }
   const schemaDigests = {};
   for (const name of names) {
@@ -141,7 +141,7 @@ function main() {
       "not audit or approval evidence",
     ],
     profile_kind: "BOOTSTRAP",
-    profile_revision: "bootstrap-2",
+    profile_revision: "bootstrap-3",
     vectors,
   };
   const profileBytes = Buffer.from(canonicalStringify(profile), "utf8");
@@ -164,7 +164,7 @@ function main() {
       source_tree: SOURCE_TREE,
     },
     profile_kind: "BOOTSTRAP",
-    profile_revision: "bootstrap-2",
+    profile_revision: "bootstrap-3",
     profile_sha256: sha256(profileBytes),
     sdk_output: {
       path: CATALOGUE_PATH,

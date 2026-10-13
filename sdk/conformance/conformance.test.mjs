@@ -134,7 +134,7 @@ function runVerifier(manifestPath) {
       "--expect-kind",
       "BOOTSTRAP",
       "--expect-revision",
-      "bootstrap-2",
+      "bootstrap-3",
     ],
     { cwd: ROOT, encoding: "utf8" },
   );
@@ -144,12 +144,14 @@ test("catalogue pin matches the contract-only OpenAPI and the source contract", 
   const openapiBytes = read(OPENAPI_PATH);
   const sourceBytes = read(SOURCE_PATH);
   const openapi = JSON.parse(openapiBytes.toString("utf8"));
-  assert.equal(COMMANDS.length, 84);
-  assert.equal(OPENAPI_PIN.commandCount, 84);
+  assert.equal(COMMANDS.length, 94);
+  assert.equal(OPENAPI_PIN.commandCount, 94);
   assert.equal(OPENAPI_PIN.coreCommandCount, 40);
   assert.equal(OPENAPI_PIN.fsmCommandCount, 44);
-  assert.equal(openapi["x-kix-source"].commandCount, 84);
+  assert.equal(OPENAPI_PIN.readCommandCount, 10);
+  assert.equal(openapi["x-kix-source"].commandCount, 94);
   assert.equal(openapi["x-kix-source"].coreCommandCount, 40);
+  assert.equal(openapi["x-kix-source"].readCommandCount, 10);
   assert.equal(COMMANDS.includes("capture"), true);
   assert.equal(COMMANDS.includes("settlement_capture"), true);
   assert.equal(COMMANDS.includes("admission_authorize_admission"), true);
@@ -322,13 +324,13 @@ test("canonical encoding vectors", () => {
 });
 
 test("mixed-input vectors and the committed manifest", () => {
-  const manifestPath = resolve(ROOT, "sdk/compat/manifests/manifest.bootstrap-2.json");
+  const manifestPath = resolve(ROOT, "sdk/compat/manifests/manifest.bootstrap-3.json");
   const happy = runVerifier(manifestPath);
   assert.equal(happy.status, 0, happy.stderr || happy.stdout);
   const verdict = JSON.parse(happy.stdout);
   assert.equal(verdict.ok, true);
   assert.equal(verdict.profile_kind, "BOOTSTRAP");
-  assert.equal(verdict.profile_revision, "bootstrap-2");
+  assert.equal(verdict.profile_revision, "bootstrap-3");
   const sidecar = readFileSync(`${manifestPath}.sha256`, "utf8");
   assert.equal(sidecar, `${verdict.manifest_sha256}\n`);
   assert.equal(readFileSync(manifestPath, "utf8").includes(verdict.manifest_sha256), false);

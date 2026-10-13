@@ -1571,5 +1571,193 @@
         }
       }
     }
+  },
+  "queries": {
+    "get_show": {
+      "machine": "reservation",
+      "method": "view_show",
+      "subject_field": "show_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "show_id"
+        ],
+        "properties": {
+          "show_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_booking": {
+      "machine": "reservation",
+      "method": "view",
+      "subject_field": "reservation_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reservation_id"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_right": {
+      "machine": "resale",
+      "method": "view_right",
+      "subject_field": "right_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "right_id"
+        ],
+        "properties": {
+          "right_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_presentation": {
+      "machine": "resale",
+      "method": "view_presentation",
+      "subject_field": "right_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "right_id",
+          "version",
+          "holder_role"
+        ],
+        "properties": {
+          "right_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "holder_role": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_listing": {
+      "machine": "resale",
+      "method": "view",
+      "subject_field": "listing_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "listing_id"
+        ],
+        "properties": {
+          "listing_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_admission": {
+      "machine": "admission",
+      "method": "view",
+      "subject_field": "right_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "right_id"
+        ],
+        "properties": {
+          "right_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_credential": {
+      "machine": "admission",
+      "method": "view_credential",
+      "subject_field": "right_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "right_id",
+          "version",
+          "holder_role"
+        ],
+        "properties": {
+          "right_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "holder_role": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_settlement": {
+      "machine": "settlement",
+      "method": "view",
+      "subject_field": "settlement_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "settlement_id"
+        ],
+        "properties": {
+          "settlement_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_credit_advance": {
+      "machine": "credit",
+      "method": "view",
+      "subject_field": "advance_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "advance_id"
+        ],
+        "properties": {
+          "advance_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "get_credit_claim": {
+      "machine": "credit",
+      "method": "view_claim",
+      "subject_field": "claim_id",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_id"
+        ],
+        "properties": {
+          "claim_id": {
+            "type": "string"
+          }
+        }
+      }
+    }
   }
 }

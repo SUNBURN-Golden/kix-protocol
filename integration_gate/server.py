@@ -279,6 +279,8 @@ class GateServer(ThreadingMixIn, HTTPServer):
             observation['journalDecision'] = 'not_attempted'
             observation['admit'] = 'NOT_READY'
             return 503, _not_ready(), observation
+        if action in self.catalogue.read_name_set:
+            return self._perform_read(action, body, observation)
         if action in self.catalogue.fsm_name_set:
             return self._perform_fsm(action, body, observation)
         fresh = self.store is None or not self.store.has_operation(operation_id)
@@ -344,6 +346,27 @@ class GateServer(ThreadingMixIn, HTTPServer):
             return 422, _error(READINESS_FSM_REFUSED), observation
         try:
             result = self.fsm.call(action, body)
+        except FsmRejected as exc:
+            observation['journalDecision'] = 'inactive'
+            return 422, _error(exc.code), observation
+        except Exception as exc:
+            print('integration-gate internal error: ' + type(exc).__name__, file=sys.stderr)
+            observation['journalDecision'] = 'not_attempted'
+            return 500, _error('INTERNAL_ERROR'), observation
+        observation['journalDecision'] = 'inactive'
+        return 200, result, observation
+
+    def _perform_read(self, action, body, observation):
+        """Point queries ignore the envelope operationId and actor.
+
+        They do not write the core, the FSM journal, or a readiness file.
+        A readiness directory refuses them before the machines are touched.
+        """
+        if self.store is not None:
+            observation['journalDecision'] = 'not_attempted'
+            return 422, _error(READINESS_FSM_REFUSED), observation
+        try:
+            result = self.fsm.read(action, body)
         except FsmRejected as exc:
             observation['journalDecision'] = 'inactive'
             return 422, _error(exc.code), observation

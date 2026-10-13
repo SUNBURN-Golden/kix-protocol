@@ -12,6 +12,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from integration_gate.constants import READ_COMMAND_COUNT
 from integration_gate.fsm_contract import drift_problems, load_fsm
 SOURCE_PATH = ROOT / 'reference/v0.3-rc1/protocol_contract.json'
 OPENAPI_PATH = ROOT / 'docs/contracts/openapi/kix-protocol.contract-only.openapi.json'
@@ -34,9 +35,11 @@ def build_document(contract, source_bytes, fsm, fsm_bytes):
     """Canonical OpenAPI 3.1 catalogue. Core and FSM schemas are copied, not rewritten."""
     core_commands = contract['commands']
     fsm_schemas = {name: spec['schema'] for name, spec in fsm['commands'].items()}
+    read_schemas = {name: spec['schema'] for name, spec in fsm['queries'].items()}
     commands = {}
     commands.update(core_commands)
     commands.update(fsm_schemas)
+    commands.update(read_schemas)
     names = list(commands)
     fsm_sha256 = hashlib.sha256(fsm_bytes).hexdigest()
     fsm_blob = git_blob_id(fsm_bytes)
@@ -106,9 +109,11 @@ def build_document(contract, source_bytes, fsm, fsm_bytes):
                 'type': 'string',
                 'enum': names,
                 'description': (
-                    'Command name. Third argument of Core.execute. '
-                    'Selects the body schema. Equal to a core command key or '
-                    'an FSM catalogue key of the form machine_op.'
+                    'Command or point-query name. Third argument of the local-call '
+                    'envelope. Selects the body schema. Equal to a core command key, '
+                    'an FSM catalogue key of the form machine_op, or an approved '
+                    'point query. For a point query the envelope operationId and '
+                    'actor are ignored. The actor is a fixture actor with no access control.'
                 ),
             },
             'body': {
@@ -143,22 +148,37 @@ def build_document(contract, source_bytes, fsm, fsm_bytes):
             'constNotAddedToCommandSchema': True,
         },
     }
-    operations = [
-        {
+    operations = []
+    for name in names:
+        if name in read_schemas:
+            description = (
+                'Local-call analogue of this read-only point query. Not bound to '
+                'an HTTP path. operationId here is the query name, not the '
+                'per-invocation operationId argument. The envelope operationId and '
+                'actor are ignored. The actor is a fixture actor with no access '
+                'control. The query does not mutate state.'
+            )
+            markers = {
+                'x-kix-read-only': True,
+                'x-kix-mutates-state': False,
+            }
+        else:
+            description = (
+                'Local-call analogue of this command. Not bound to an HTTP path. '
+                'operationId here is the command name (Python action), not the '
+                'per-invocation operationId argument.'
+            )
+            markers = {}
+        operations.append({
             'operationId': name,
             'action': name,
             'x-kix-transport': 'contract-only-placeholder',
             'x-kix-not-a-published-http-service': True,
+            **markers,
             'requestBodySchema': '#/components/schemas/' + name,
             'localCallParameters': ['operationId', 'actor', 'action', 'body'],
-            'description': (
-                'Local-call analogue of this command. Not bound to an HTTP path. '
-                'operationId here is the command name (Python action), not the '
-                'per-invocation operationId argument.'
-            ),
-        }
-        for name in names
-    ]
+            'description': description,
+        })
     return {
         'openapi': '3.1.0',
         'info': {
@@ -191,7 +211,10 @@ def build_document(contract, source_bytes, fsm, fsm_bytes):
                 'protocol_contract.json. The FSM command schemas are copied from '
                 'docs/contracts/openapi/fsm-command-contract.json. Wire names are '
                 'machine_op. consume_admission is not a catalogue name. '
-                'Queries, reconcile, export_journal, restore, reject, and '
+                'The ten approved point queries are in this catalogue. Each is '
+                'marked x-kix-read-only and does not mutate state. The envelope '
+                'actor is a fixture actor with no access control. '
+                'List queries, reconcile, export_journal, restore, reject, and '
                 'attempt_execution are not in this catalogue. '
                 'There is still no live HTTP server and no production endpoint.'
             ),
@@ -210,6 +233,7 @@ def build_document(contract, source_bytes, fsm, fsm_bytes):
             'handlerConstraints': contract['handlerConstraints'],
             'commandCount': len(names),
             'coreCommandCount': len(core_commands),
+            'readCommandCount': len(read_schemas),
             'fsmSource': {
                 'path': 'docs/contracts/openapi/fsm-command-contract.json',
                 'gitBlob': fsm_blob,
@@ -258,6 +282,26 @@ def build_document(contract, source_bytes, fsm, fsm_bytes):
                 'The specification also says an external consumer stores its own '
                 'cursor and receipt id. No message broker or consumer is defined. '
                 'These keys are not an HTTP response contract.'
+            ),
+        },
+        'x-kix-read-response-observed': {
+            'keys': [
+                'read_schema_version',
+                'query',
+                'query_digest',
+                'fixture_mode',
+                'accepted_through',
+                'result',
+            ],
+            'note': (
+                'A successful point query returns these keys. result is the '
+                'existing view dict and is not schemaed here. query_digest is '
+                'sha256 over canonical JSON of {action, body}, using the machines '
+                'canonical encoding. The envelope actor is a fixture actor with '
+                'no access control. fresh, matches_current_right, and '
+                'source-unavailable decision codes stay inside result. These keys '
+                'are not an HTTP response contract. ReadObservationV1 fields are '
+                'not in this envelope.'
             ),
         },
         'paths': {
@@ -316,9 +360,11 @@ def validate(contract, source_bytes, document, fsm, fsm_bytes):
     errors = []
     core_commands = contract['commands']
     fsm_schemas = {name: spec['schema'] for name, spec in fsm['commands'].items()}
+    read_schemas = {name: spec['schema'] for name, spec in (fsm.get('queries') or {}).items()}
     commands = {}
     commands.update(core_commands)
     commands.update(fsm_schemas)
+    commands.update(read_schemas)
     names = list(commands)
     for item in drift_problems(fsm):
         errors.append(item)
@@ -354,6 +400,8 @@ def validate(contract, source_bytes, document, fsm, fsm_bytes):
          'handlerConstraints drift')
     need(source.get('commandCount') == len(names), 'commandCount drift')
     need(source.get('coreCommandCount') == len(core_commands), 'coreCommandCount drift')
+    need(source.get('readCommandCount') == len(read_schemas) == READ_COMMAND_COUNT,
+         'readCommandCount drift')
     fsm_source = source.get('fsmSource') or {}
     fsm_sha256 = hashlib.sha256(fsm_bytes).hexdigest()
     fsm_blob = git_blob_id(fsm_bytes)
@@ -390,6 +438,11 @@ def validate(contract, source_bytes, document, fsm, fsm_bytes):
             errors.append('command schema drift: ' + name)
         elif schema.get('additionalProperties') is not False:
             errors.append('additionalProperties is not false: ' + name)
+    for name, schema in read_schemas.items():
+        if schemas.get(name) != schema:
+            errors.append('command schema drift: ' + name)
+        elif schema.get('additionalProperties') is not False:
+            errors.append('additionalProperties is not false: ' + name)
 
     envelope = schemas.get('LocalCallEnvelope') or {}
     need(envelope.get('additionalProperties') is False, 'LocalCallEnvelope must reject unknown fields')
@@ -414,11 +467,27 @@ def validate(contract, source_bytes, document, fsm, fsm_bytes):
     operations = document.get('x-kix-local-call-operations') or []
     operation_ids = [item.get('operationId') for item in operations]
     need(operation_ids == names, 'local-call operationIds drifted from command keys')
+    observed = document.get('x-kix-read-response-observed') or {}
+    need(observed.get('keys') == [
+        'read_schema_version', 'query', 'query_digest', 'fixture_mode',
+        'accepted_through', 'result',
+    ], 'read response keys drift')
+    need('not schemaed' in (observed.get('note') or ''), 'read response must leave result unschemaed')
+    need('fixture actor' in (observed.get('note') or ''), 'read response must name the fixture actor')
     for item in operations:
+        operation_id = str(item.get('operationId'))
         need(item.get('x-kix-transport') == 'contract-only-placeholder',
-             'command analogue missing contract-only-placeholder: ' + str(item.get('operationId')))
+             'command analogue missing contract-only-placeholder: ' + operation_id)
         need(item.get('x-kix-not-a-published-http-service') is True,
-             'command analogue must not claim an HTTP service: ' + str(item.get('operationId')))
+             'command analogue must not claim an HTTP service: ' + operation_id)
+        if operation_id in read_schemas:
+            need(item.get('x-kix-read-only') is True, 'read-only marker missing: ' + operation_id)
+            need(item.get('x-kix-mutates-state') is False, 'mutates-state marker drift: ' + operation_id)
+        else:
+            need(item.get('x-kix-read-only') is not True,
+                 'write operation marked read-only: ' + operation_id)
+            need(item.get('x-kix-mutates-state') is not False or 'x-kix-mutates-state' not in item,
+                 'write operation marked non-mutating: ' + operation_id)
 
     paths = document.get('paths') or {}
     need(list(paths) == [PLACEHOLDER_PATH], 'placeholder path set drift')
@@ -472,6 +541,23 @@ def self_test(contract, source_bytes, fsm, fsm_bytes):
     if not validate(contract, source_bytes, broken, fsm, fsm_bytes):
         print('self-test: live status was accepted', file=sys.stderr)
         return 1
+    broken_fsm = copy.deepcopy(fsm)
+    broken_fsm['queries']['get_show']['method'] = 'hold'
+    if not any('view' in item or 'replayable' in item for item in drift_problems(broken_fsm)):
+        print('self-test: query mapped to a write method was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    for item in broken['x-kix-local-call-operations']:
+        if item.get('operationId') == 'get_show':
+            item.pop('x-kix-read-only', None)
+    if not any('read-only' in item for item in validate(contract, source_bytes, broken, fsm, fsm_bytes)):
+        print('self-test: missing read-only marker was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    broken['x-kix-source']['readCommandCount'] = READ_COMMAND_COUNT - 1
+    if not any('readCommandCount' in item for item in validate(contract, source_bytes, broken, fsm, fsm_bytes)):
+        print('self-test: read count drift was accepted', file=sys.stderr)
+        return 1
     print('self-test: pass')
     return 0
 
@@ -501,11 +587,12 @@ def main(argv):
             print('- ' + item, file=sys.stderr)
         return 1
     print(
-        'openapi contract pin ok: commands=%d core=%d fsm=%d sha256=%s gitBlob=%s'
+        'openapi contract pin ok: commands=%d core=%d fsm=%d read=%d sha256=%s gitBlob=%s'
         % (
             len(document['x-kix-local-call-operations']),
             len(contract['commands']),
             len(fsm['commands']),
+            len(fsm['queries']),
             hashlib.sha256(source_bytes).hexdigest(),
             git_blob_id(source_bytes),
         )
