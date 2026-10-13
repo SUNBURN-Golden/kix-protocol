@@ -1,0 +1,84 @@
+{
+  "chain": "FqFRCoykP1t3dY78D1DRr34TZhWidN2AUj74K3WuPqh4",
+  "packageId": "0xb989712f5c2aa5aee8ff69c9a8976da851f10ebf09c47c62420e99db4b9b97a6",
+  "actors": {
+    "issuer": "0xc0dcf65fde66bc5ee9b18d43f8c56f8a7294f307e92ffa123b0bb3664160d120",
+    "a": "0xfa885bd73b85208d512088134d5030d6672819ffccfd1084ac6f843696e6731d",
+    "b": "0x22ab7d6b7171cdf61ce0702f91d622c7cc6082493138d3dd843c338c4bc1c54a",
+    "gate": "0x83d3f1da99fc510ee74e9c11d8137d346d69fb2ecf8dce3fc700573b92cedec4",
+    "attester": "0x98821a339377c0530e03a72602ca89162609d86fabf993eefcabf40888c9c1ce"
+  },
+  "scenariosRun": [
+    "matrix_15_0_p4_s2"
+  ],
+  "probes": {
+    "issuerCap": {
+      "a": "ok",
+      "b": {
+        "abort": "SUBMISSION_REJECTED",
+        "detail": "Transaction is rejected as invalid by more than 1/3 of validators by stake (non-retriable). Non-retriable errors: [Object (0xb0b349dedb6d5804438c5f66322dd991d3b8d2dabafab60d49407849cfd60b10, SequenceNumber(631), o#J7zYhaPNSNtTVozFANF4BouS1B3WYE3RDB3SZynRuDtb) already locked by a different transaction: TransactionDigest(91PciNtpZVy3J9D2E3nBNGYHN7juwQGzs9LrEWdwzP32) { k#99f25ef6.. } with 10000 stake]."
+      },
+      "note": "two concurrent issuer-signed issues sharing &IssuerCap; outcome recorded, not assumed"
+    },
+    "duplicateSlotRace": {
+      "a": "ok",
+      "b": {
+        "abort": 9
+      },
+      "exactlyOneSucceeded": true
+    },
+    "bundleRace": {
+      "a": "ok",
+      "b": {
+        "abort": "SUBMISSION_REJECTED",
+        "detail": "Transaction is rejected as invalid by more than 1/3 of validators by stake (non-retriable). Non-retriable errors: [Object (0xb0b349dedb6d5804438c5f66322dd991d3b8d2dabafab60d49407849cfd60b10, SequenceNumber(632), o#Bna3iUhZxYzucLbh6bnsZZotiZYqX5KXnCjXAd5S4jf9) already locked by a different transaction: TransactionDigest(aMtrTKgqCdYBgHPKnq46D4PFx8a24rSfPxPd1pFq5E8) { k#99f25ef6.. } with 10000 stake]."
+      },
+      "exactlyOneSucceeded": true
+    },
+    "cancelVersusIssue": {
+      "issue": "ok",
+      "cancel": {
+        "abort": "SUBMISSION_REJECTED",
+        "detail": "Transaction is rejected as invalid by more than 1/3 of validators by stake (non-retriable). Non-retriable errors: [Object (0xb0b349dedb6d5804438c5f66322dd991d3b8d2dabafab60d49407849cfd60b10, SequenceNumber(633), o#13uThhoydVTcv3fGhXWL8NsPCpJ6gpq8E2P2DtZ418gs) already locked by a different transaction: TransactionDigest(FJcZ6tWuYJ2QYx92Wjx81DtV5uku5jJs6g8RHXqxJXgY) { k#99f25ef6.. } with 10000 stake]."
+      },
+      "serialConsistent": true,
+      "cancelRetry": "ok"
+    },
+    "probeShowConserved": true
+  },
+  "measurements": {
+    "claimPages": {
+      "claims": 4,
+      "what": "page",
+      "changedObjects": 11,
+      "createdObjects": 8,
+      "createdPerClaim": 2,
+      "idOperations": [
+        "Created",
+        "None"
+      ],
+      "note": "created objects in effects per claimed page: the page plus its derived_object Claimed marker; measured, a lower bound on new IDs"
+    },
+    "claimShards": {
+      "claims": 2,
+      "what": "shard",
+      "changedObjects": 9,
+      "createdObjects": 6,
+      "createdPerClaim": 3,
+      "idOperations": [
+        "Created",
+        "None"
+      ],
+      "note": "created objects in effects per claimed shard: the shard plus its derived_object Claimed marker (an empty Table adds no object until it has entries); measured, a lower bound on new IDs"
+    }
+  },
+  "status": "PASSED_ACTUAL_LOCALNET",
+  "authority": "SUI_MOVE",
+  "kixServicesCalled": 0,
+  "ownGas": true,
+  "zk": false,
+  "localCommitteeSize": 1,
+  "networkFaultToleranceTested": false,
+  "zkLoginBackgroundKeyFetchDisabled": true,
+  "limitation": "Localnet probe only. One validator, exploratory; the recorded concurrency outcome is observed behavior, not a performance or production claim. RPC is trusted; no private path, no delegation."
+}
