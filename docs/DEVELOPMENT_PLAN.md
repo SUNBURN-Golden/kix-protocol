@@ -144,6 +144,20 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [통합 (a) 잔여 공수 재산정](decisions/INTEGRATION_A_REESTIMATE_20261009.md) | #141 | `57a3e3049c84a2ac0112371594e9bb4b85a8296f` | BeautifulMind-JT | 추정. 결정 아님. | 효력 발생(User 병합) |
 | [통합 (a) 결정 제안](decisions/INTEGRATION_A_DECISION_PROPOSAL_20261009.md) | #142 | `b6cc9978c64b1ff54f822ea930424b5d78dfca2a` | BeautifulMind-JT | 사용자가 이 문서를 문장 수정 없이 병합하면, 선택지 B만 채택되고, 통합 (a)는 DEFERRED이며, 착수·R2·저널·저장 엔진은 열리지 않고, 재개한다면 대상은 v4가 아니며 별도 프레임 저널을 두지 않고, 이미 멈춘 항목은 멈춘 채로다. | 효력 발생(User 병합) |
 | [OpenAPI 카탈로그 승격 — 소유자 결정 위치 기록](decisions/OPENAPI_CATALOGUE_PROMOTION_OWNER_DECISION_20261009.md) | — | — | — | 기록된 채택 문장 없음(위치 포인터). 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. | 위치 포인터. 새 승인 아님. 결정이 인용한 병합: #152 `d63768dd…` |
+| [F04 실자금 해제 조건](decisions/F04_REAL_FUNDS_LIFT_CRITERIA_20261009.md) | #160 | `d7549d1473258dda617e241fff22bcbd697fbb17` | BeautifulMind-JT | If the User merges without edits, only O1 is adopted; every `DECISION_REQUIRED`/`UNDETERMINED` value stays empty; the lock stays. | 효력 발생(User 병합) |
+| [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | #161 | `31eac0637a324244aeca00e849fdb0f7c685232e` | BeautifulMind-JT | 문서 전용 계획. 채택 문장 없음. Status: document-only plan. | 문서 전용 계획. 새 승인 아님. |
+
+병합된 문서 위치(2026-10-13, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [RS-0 검토 자료 묶음](status/RS0_REVIEW_PACK.md) | #168 | `77517f0c74cd892ca299cacf987cbab64a03337d` | BeautifulMind-JT | This document is not a review, not an acceptance, and not a change of status. | 위치 포인터. 새 승인 아님. |
+| [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md) | #169 | `1eb7d7d2978950073973a43e495ec5e31c5f543e` | BeautifulMind-JT | 이 문서는 아무것도 결정하지 않는다. 어느 선택지도 고르지 않는다. 아무것도 보내지 않았고, 어느 담당의 회신도 아니다. | 위치 포인터. 새 승인 아님. |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | #167 | `ba352dfe9789af89983e9c1b1a303461ea240016` | BeautifulMind-JT | 위치 동기화 기준(비-TL 잔여 행): observed origin/main `3ce6e4975b7f439d67482451bb47a22c940add26` (2026-10-12). … 등급은 올리지 않는다. | 위치 포인터. 새 승인 아님. |
+| [정산·예매/리셀/검표·F04 정책 심화 — 소유자 결정 위치 기록](decisions/POLICY_DEEPENING_OWNER_DECISION_20261009.md) | #163 | `5e20a467160148ad5c2debfe357dfb8da084a30a` | BeautifulMind-JT | 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. | 위치 포인터. 새 승인 아님. |
+| [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | #171 | `cb59612b847fc2e6ef71810202be5e2ca5f76724` | BeautifulMind-JT | This document is not a review, not an acceptance, and not a change of status. | 위치 포인터. 새 승인 아님. |
+| [조회 원천 지도](contracts/READ_MODEL_SOURCE_MAP.md) | #172 | `3b8067d48cbda967cbf531258215c5243b96fbcd` | BeautifulMind-JT | 상태: **입력 자료. 결정 문서가 아니다.** | 위치 포인터. 새 승인 아님. |
+| [docs 색인 coverage 검사 기록](../validation/2026-10-13-docs-index-coverage-check/README.md) | #173 | `db9152ab1c5ef113b8727749d4309ec70505480f` | BeautifulMind-JT | The check indexes nothing and approves nothing; it reports coverage only. | 위치 포인터. 새 승인 아님. |
 
 ## 6. E-4와 상태 수명
 
@@ -616,6 +630,9 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 | [TL-2는 열리지 않음](decisions/TL2_DOES_NOT_OPEN_20261009.md) | #149 | `1cb2d26c4b6d8cc7aa2d362bf017e4d30f5a2080` | BeautifulMind-JT | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. | 효력 발생(User 병합) |
 | [token_reward 참조](../reference/token_reward/) | #150 | `fff19605f0ccff71b6f24e61f1f8114b5c0ddd57` | BeautifulMind-JT | 기록된 채택 문장 없음(소스 디렉터리). Offline reference predicates for reward–transaction coupling. | 효력 발생(User 병합) |
 | [외부 검토 질문서](status/TOKEN_LEGAL_REVIEW_BRIEF_KO.md) | #151 | `c2cde86e21a6e5ba6f24a56548636db6d0a34c6f` | BeautifulMind-JT | 상태: 질문서만이다. 전송하지 않았다. 자문 주체의 이름, 조직의 이름, 착수 시점을 적지 않는다. 작성자가 빌더이므로 비작성자 검토가 아니고, 법률 의견이 아니다. 검토됨으로 표시하지 않는다. | 효력 발생(User 병합) |
+| [TL-3 on-chain은 열리지 않음](decisions/TL3_ONCHAIN_DOES_NOT_OPEN_20261009.md) | #159 | `6bdd571fcb88496c98e25b32213c60017e209198` | BeautifulMind-JT | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. | 효력 발생(User 병합) |
+| [TL-4 위협 모델](decisions/TL4_THREAT_MODEL_20261009.md) | #162 | `4e2122a3f61a0feea2c43035c1ae834e7097e429` | BeautifulMind-JT | 상태: 기록, 작성자=빌더, 독립 검토 아님. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. 자기 검토를 독립 PASS로 세지 않는다. | 효력 발생(User 병합) |
+| [TL-5 운영 활성화 결정 제안](decisions/TL5_ACTIVATION_DECISION_PROPOSAL_20261009.md) | #166 | `3ce6e4975b7f439d67482451bb47a22c940add26` | BeautifulMind-JT | 효력은 사용자가 이 문서를 병합할 때에만 생긴다. 수정 없이 병합하면 권고만 채택되고, 잠금은 풀리지 않는다. | 효력 발생(User 병합) |
 
 ### 18.2 의존성과 우선순위
 

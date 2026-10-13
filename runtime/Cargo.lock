@@ -100,6 +100,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "kix-kernel-v5"
+version = "0.1.0"
+dependencies = [
+ "kix-kernel",
+ "kix-types",
+]
+
+[[package]]
 name = "kix-types"
 version = "0.0.0"
 

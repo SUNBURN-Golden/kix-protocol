@@ -20,7 +20,7 @@
 
 - [docs/contracts/openapi/README.md](../contracts/openapi/README.md) 81행
 - [docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md](../contracts/BOOKING_RESALE_ADMISSION_GATES.md) 20, 291, 453, 678, 849행
-- [docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) 288행
+- [docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) 467행. 카탈로그 승격이 병합된 트리에서는 288행이었다. `SET-POLICY-DRAFT-0.3`을 그 위에 다시 얹은 뒤의 자리다.
 - [docs/contracts/CREDIT_ADVANCE_F04.md](../contracts/CREDIT_ADVANCE_F04.md) 197, 407행
 - [validation/2026-10-09-openapi-catalogue-promotion/README.md](../../validation/2026-10-09-openapi-catalogue-promotion/README.md) 13행
 
@@ -33,7 +33,7 @@
 | 항목 | 라벨 | 산출물 | 원문 (`file:line`) |
 |---|---|---|---|
 | DR-1, 두 번째 핀 | B | [fsm-command-contract.json](../contracts/openapi/fsm-command-contract.json) (git blob `3771a8739b906a478b54c597df37e27d1afc5f21`, [openapi/README.md](../contracts/openapi/README.md) 34행과 같음). 같은 README 14행, 33–35행, 79행. [검증 README](../../validation/2026-10-09-openapi-catalogue-promotion/README.md) 19행 | `validation/2026-10-09-openapi-catalogue-promotion/README.md:19` — Second pin `docs/contracts/openapi/fsm-command-contract.json` (44 commands, wire names `<machine>_<op>`). |
-| DR-2, 접두 와이어 이름 | A | [openapi/README.md](../contracts/openapi/README.md) 49행, 81행. [BOOKING_RESALE_ADMISSION_GATES.md](../contracts/BOOKING_RESALE_ADMISSION_GATES.md) 20, 291, 453, 678, 849행. [SETTLEMENT_DISTRIBUTION_F01_F03.md](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) 288행. [CREDIT_ADVANCE_F04.md](../contracts/CREDIT_ADVANCE_F04.md) 197, 407행 | `docs/contracts/openapi/README.md:81` — 2026-10-09 소유자 결정(JunTae)이 두 번째 핀, 균일 접두 와이어 이름, `bootstrap-2`, 루프백 의미를 승인했다. |
+| DR-2, 접두 와이어 이름 | A | [openapi/README.md](../contracts/openapi/README.md) 49행, 81행. [BOOKING_RESALE_ADMISSION_GATES.md](../contracts/BOOKING_RESALE_ADMISSION_GATES.md) 20, 291, 453, 678, 849행. [SETTLEMENT_DISTRIBUTION_F01_F03.md](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) 467행. [CREDIT_ADVANCE_F04.md](../contracts/CREDIT_ADVANCE_F04.md) 197, 407행 | `docs/contracts/openapi/README.md:81` — 2026-10-09 소유자 결정(JunTae)이 두 번째 핀, 균일 접두 와이어 이름, `bootstrap-2`, 루프백 의미를 승인했다. |
 | DR-3, `bootstrap-2` | `bootstrap-2` | [manifest.bootstrap-2.json](../../sdk/compat/manifests/manifest.bootstrap-2.json). [bootstrap-2.profile.json](../../sdk/compat/profiles/bootstrap-2.profile.json). [COMPATIBILITY_MANIFEST_V1.md](../contracts/sdk/COMPATIBILITY_MANIFEST_V1.md). [검증 README](../../validation/2026-10-09-openapi-catalogue-promotion/README.md) 22행 | `validation/2026-10-09-openapi-catalogue-promotion/README.md:22` — TypeScript 0.x client regenerated. New manifest revision `bootstrap-2`. `bootstrap-1` files are unchanged historical pins. |
 | DR-4, readiness 거절 | 13행에 글자 라벨 없음 | [integration_gate/server.py](../../integration_gate/server.py). [integration_gate/constants.py](../../integration_gate/constants.py). [integration_gate/test_http_gate.py](../../integration_gate/test_http_gate.py). [openapi/README.md](../contracts/openapi/README.md) 83행. [검증 README](../../validation/2026-10-09-openapi-catalogue-promotion/README.md) 21행, 83행 | `docs/contracts/openapi/README.md:83` — `--readiness-dir`가 있으면 FSM 명령은 저널에 쓰기 전에 `READINESS_FSM_REFUSED`로 거절한다. 그 철자는 승인된 실패-닫힘 동작의 루프백 라벨이다. 철자를 바꾸는 주체는 Astra다. `validation/2026-10-09-openapi-catalogue-promotion/README.md:83` — DR-4 left the readiness refusal token for Astra to name and said not to invent one. The loopback label used here is `READINESS_FSM_REFUSED` (HTTP 422, `rejected: true`). It names the approved fail-closed behavior. A different spelling is Astra's. It is not a product-policy number. |
 
@@ -95,7 +95,7 @@
 
 > 그 집합 밖의 새 프로토콜 명령은 `DECISION_REQUIRED · Astra`다.
 
-같은 문장은 [BOOKING_RESALE_ADMISSION_GATES.md](../contracts/BOOKING_RESALE_ADMISSION_GATES.md) 453행, [SETTLEMENT_DISTRIBUTION_F01_F03.md](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) 288행, [CREDIT_ADVANCE_F04.md](../contracts/CREDIT_ADVANCE_F04.md) 197행에도 있다.
+같은 문장은 [BOOKING_RESALE_ADMISSION_GATES.md](../contracts/BOOKING_RESALE_ADMISSION_GATES.md) 453행, [SETTLEMENT_DISTRIBUTION_F01_F03.md](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) 467행, [CREDIT_ADVANCE_F04.md](../contracts/CREDIT_ADVANCE_F04.md) 197행에도 있다.
 
 출처: `docs/contracts/openapi/README.md:60`
 
