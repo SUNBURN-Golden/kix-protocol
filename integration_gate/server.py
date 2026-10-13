@@ -22,6 +22,7 @@ import time
 
 from integration_gate.audit import emit
 from integration_gate.catalogue import CatalogueError, load_catalogue, reference_types
+from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.constants import (
     BROWSER_ALLOWED_ORIGIN,
     BROWSER_ALLOWED_REQUEST_HEADERS,
@@ -37,6 +38,7 @@ from integration_gate.constants import (
     MAX_JOURNAL_BYTES,
     MAX_JOURNAL_RECORDS,
     ORIGIN_HEADER,
+    READINESS_FSM_REFUSED,
     READY_PATH,
     TRACE_HEADER,
 )
@@ -107,6 +109,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         self.max_journal_records = max_journal_records
         self.max_journal_bytes = max_journal_bytes
         self.core = None
+        self.fsm = None
         self.Rejected = None
         self._accepting = False
         self._core_failed = False
@@ -176,6 +179,11 @@ class GateServer(ThreadingMixIn, HTTPServer):
         Core, Rejected = reference_types()
         core = Core()
         try:
+            fsm = FsmHost()
+        except Exception as exc:
+            self._fail_unpublished(core)
+            raise GateStartupError('CORE_UNAVAILABLE') from exc
+        try:
             domain = core.snapshot().get('domain')
         except Exception as exc:
             self._fail_unpublished(core)
@@ -194,6 +202,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         with self._admit_lock:
             self.Rejected = Rejected
             self.core = core
+            self.fsm = fsm
             if not self._draining and not self._diverged and not self._core_failed:
                 self._accepting = True
 
@@ -202,6 +211,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
             self._core_failed = True
             self._accepting = False
             self.core = None
+            self.fsm = None
         _close_quietly(core)
 
     def _mark_diverged(self):
@@ -269,6 +279,8 @@ class GateServer(ThreadingMixIn, HTTPServer):
             observation['journalDecision'] = 'not_attempted'
             observation['admit'] = 'NOT_READY'
             return 503, _not_ready(), observation
+        if action in self.catalogue.fsm_name_set:
+            return self._perform_fsm(action, body, observation)
         fresh = self.store is None or not self.store.has_operation(operation_id)
         if self.store is not None and fresh:
             code, limit = self.store.budget_decision(
@@ -321,6 +333,26 @@ class GateServer(ThreadingMixIn, HTTPServer):
             return 503, _error('DURABILITY_DIVERGENCE'), observation
         observation['journalDecision'] = 'appended'
         return 200, receipt, observation
+
+    def _perform_fsm(self, action, body, observation):
+        """FSM calls stay on this worker. A readiness journal refuses them.
+
+        The envelope operationId is not copied into idempotency_key.
+        """
+        if self.store is not None:
+            observation['journalDecision'] = 'not_attempted'
+            return 422, _error(READINESS_FSM_REFUSED), observation
+        try:
+            result = self.fsm.call(action, body)
+        except FsmRejected as exc:
+            observation['journalDecision'] = 'inactive'
+            return 422, _error(exc.code), observation
+        except Exception as exc:
+            print('integration-gate internal error: ' + type(exc).__name__, file=sys.stderr)
+            observation['journalDecision'] = 'not_attempted'
+            return 500, _error('INTERNAL_ERROR'), observation
+        observation['journalDecision'] = 'inactive'
+        return 200, result, observation
 
     def ready_view(self):
         self._ensure_core_on_worker()

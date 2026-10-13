@@ -16,9 +16,17 @@ GENERATOR = ROOT / 'sdk/generate/generate_client.mjs'
 MANIFEST_GENERATOR = ROOT / 'sdk/generate/generate_manifest.mjs'
 CATALOGUE_PATH = ROOT / 'sdk/generated/catalogue.ts'
 PIN_PATH = ROOT / 'sdk/sdk-pin.json'
-PROFILE_PATH = ROOT / 'sdk/compat/profiles/bootstrap-1.profile.json'
-MANIFEST_PATH = ROOT / 'sdk/compat/manifests/manifest.bootstrap-1.json'
-SIDECAR_PATH = ROOT / 'sdk/compat/manifests/manifest.bootstrap-1.json.sha256'
+PROFILE_PATH = ROOT / 'sdk/compat/profiles/bootstrap-2.profile.json'
+MANIFEST_PATH = ROOT / 'sdk/compat/manifests/manifest.bootstrap-2.json'
+SIDECAR_PATH = ROOT / 'sdk/compat/manifests/manifest.bootstrap-2.json.sha256'
+HISTORICAL_BOOTSTRAP_1 = {
+    ROOT / 'sdk/compat/profiles/bootstrap-1.profile.json':
+        '4c92cf6d905f83fb3f5cd52e166dbadf057451ae46441fce1f91baaaa4367d34',
+    ROOT / 'sdk/compat/manifests/manifest.bootstrap-1.json':
+        '1cce4ee5a9aa64ef40825c0e6dedf920050e594cf20ea0aaf087ecbde46f0cca',
+    ROOT / 'sdk/compat/manifests/manifest.bootstrap-1.json.sha256':
+        'fd568b8117a010d1e259323af6f788efe97d497ec8e15406d99d53cddc389d89',
+}
 SOURCE_SHA256 = 'ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e'
 SOURCE_BLOB = '619ae21c82ca3df5661bd3831613f15fa65225ff'
 NODE = shutil.which('node')
@@ -69,6 +77,9 @@ def regenerate(directory):
 
 def source_pin_errors():
     errors = []
+    for path, digest in HISTORICAL_BOOTSTRAP_1.items():
+        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            errors.append('historical bootstrap-1 pin changed: ' + str(path.relative_to(ROOT)))
     source = SOURCE_PATH.read_bytes()
     if hashlib.sha256(source).hexdigest() != SOURCE_SHA256:
         errors.append('protocol_contract.json sha256 drift')
@@ -88,9 +99,9 @@ def compare_outputs(directory):
     expected = {
         CATALOGUE_PATH: catalogue.read_bytes(),
         PIN_PATH: (directory / 'sdk-pin.json').read_bytes(),
-        PROFILE_PATH: (directory / 'sdk/compat/profiles/bootstrap-1.profile.json').read_bytes(),
-        MANIFEST_PATH: (directory / 'sdk/compat/manifests/manifest.bootstrap-1.json').read_bytes(),
-        SIDECAR_PATH: (directory / 'sdk/compat/manifests/manifest.bootstrap-1.json.sha256').read_bytes(),
+        PROFILE_PATH: (directory / 'sdk/compat/profiles/bootstrap-2.profile.json').read_bytes(),
+        MANIFEST_PATH: (directory / 'sdk/compat/manifests/manifest.bootstrap-2.json').read_bytes(),
+        SIDECAR_PATH: (directory / 'sdk/compat/manifests/manifest.bootstrap-2.json.sha256').read_bytes(),
     }
     for path, actual in expected.items():
         if not path.is_file() or path.read_bytes() != actual:
@@ -155,7 +166,7 @@ def write_outputs():
     if manifest.returncode != 0:
         print(manifest.stderr, file=sys.stderr)
         return manifest.returncode
-    print('wrote sdk client, pin, and BOOTSTRAP manifest')
+    print('wrote sdk client, pin, and bootstrap-2 manifest')
     return 0
 
 
@@ -174,7 +185,7 @@ def main(argv):
         for item in errors:
             print('- ' + item, file=sys.stderr)
         return 1
-    print('sdk client pin ok: commands=40 node=%s sourceSha256=%s' % (version, SOURCE_SHA256))
+    print('sdk client pin ok: commands=84 node=%s sourceSha256=%s' % (version, SOURCE_SHA256))
     return 0
 
 

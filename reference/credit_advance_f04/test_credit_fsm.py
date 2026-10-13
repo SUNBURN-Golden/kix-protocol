@@ -19,7 +19,7 @@ from credit_fsm import (
     CreditError,
     CreditMachine,
 )
-from mock_credit import PROVENANCE
+from mock_credit import PROVENANCE, open_terms
 
 _ROOT = Path(__file__).resolve().parents[1]
 for _path in (_ROOT / "settlement_f01_f03", _ROOT / "booking_resale_admission"):
@@ -799,6 +799,7 @@ class CreditFsmTests(unittest.TestCase):
         )
         self.assertEqual(self.machine.view("adv-1"), before)
         self.assertEqual(before["outstanding_exposure"], 10)
+        self.assertEqual(before["open_terms"], open_terms())
         self.assertEqual(
             codes(lambda: self.machine.attempt_execution("missing", kind="draw")),
             "EXECUTION_KIND",
@@ -955,4 +956,80 @@ class CreditFsmTests(unittest.TestCase):
         self.assertEqual(noted["advance"]["status"], "NOTED")
         self.assertEqual(noted["advance"]["provenance"], PROVENANCE)
         self.assertIs(noted["advance"]["funds_executed"], False)
+        self.assertEqual(noted["advance"]["open_terms"], open_terms())
         self.assertEqual(codes(lambda: self.machine.view("adv-1")), "UNKNOWN_ADVANCE")
+
+    def test_adopted_boundary_does_not_price_rank_or_recalculate(self):
+        face = self.face
+        self.assertEqual(
+            codes(lambda: self.machine.offer(
+                "priced",
+                idempotency_key="offer-schedule",
+                face=face,
+                amount=1,
+                beneficiary_role="fixture-label",
+                product={"apr_bps": 1200, "schedule": [{"day": 30, "amount": 1}]},
+            )),
+            "CREDIT_PRODUCT_UNDEFINED",
+        )
+        self.assertEqual(codes(lambda: self.machine.view("priced")), "UNKNOWN_ADVANCE")
+
+        first = self.offer("senior-a", amount=60_000, key="offer-senior-a", beneficiary_role="lender")
+        self.assertEqual(first["credit"]["open_terms"], open_terms())
+        self.assertIs(first["credit"]["legal_debtor_bound"], False)
+        self.assertIs(first["interest_defined"], False)
+        self.machine.approve("senior-a", idempotency_key="approve-senior-a")
+        self.machine.draw("senior-a", idempotency_key="draw-senior-a", draw_id="draw-senior-a")
+        self.offer("senior-b", amount=40_000, key="offer-senior-b", beneficiary_role="borrower")
+        self.machine.approve("senior-b", idempotency_key="approve-senior-b")
+        second = self.machine.draw("senior-b", idempotency_key="draw-senior-b", draw_id="draw-senior-b")
+        self.assertEqual(second["credit"]["phase"], DRAWN)
+        self.assertEqual(second["credit"]["reserved_open"], 100_000)
+        self.assertEqual(second["credit"]["open_face"], 100_000)
+        self.assertEqual(second["credit"]["confirmed_cash_on_face"], 97_000)
+        for advance_id in ("senior-a", "senior-b"):
+            view = self.machine.view(advance_id)
+            self.assertIs(view["priority_bound"], False)
+            self.assertIs(view["collateral_perfected"], False)
+            self.assertIs(view["interest_defined"], False)
+            self.assertNotIn("seniority_rank", view)
+            self.assertNotIn("apr_bps", view)
+            self.assertEqual(view["open_terms"], open_terms())
+        self.offer("senior-c", amount=1, key="offer-senior-c")
+        self.machine.approve("senior-c", idempotency_key="approve-senior-c")
+        self.assertEqual(
+            codes(lambda: self.machine.draw(
+                "senior-c",
+                idempotency_key="draw-senior-c",
+                draw_id="draw-senior-c",
+            )),
+            "ADVANCE_EXCEEDS_OPEN_FACE",
+        )
+
+        self.book.distribute(
+            "claim-1",
+            idempotency_key="dist-terms",
+            order=["organizer", "platform"],
+        )
+        moved = self.book.view("claim-1")["claim"]
+        self.assertLess(sum(line["outstanding"] for line in moved["obligations"]), 100_000)
+        self.assertEqual(self.machine.view("senior-a")["open_face"], 100_000)
+        self.offer("revalued", amount=1, key="offer-revalued", face=moved)
+        self.machine.approve("revalued", idempotency_key="approve-revalued")
+        self.assertEqual(
+            codes(lambda: self.machine.draw(
+                "revalued",
+                idempotency_key="draw-revalued",
+                draw_id="draw-revalued",
+            )),
+            "FACE_SNAPSHOT_FROZEN",
+        )
+        self.assertEqual(self.machine.view("revalued")["phase"], APPROVED)
+        self.assertEqual(self.machine.view("senior-a")["open_face"], 100_000)
+        digest = self.machine.state_digest()
+        self.assertEqual(codes(lambda: self.machine.reject_unsupported("INTEREST")), "CREDIT_PRODUCT_UNDEFINED")
+        self.assertEqual(codes(lambda: self.machine.reject_unsupported("PRIORITY")), "CREDIT_PRODUCT_UNDEFINED")
+        self.assertEqual(codes(lambda: self.machine.reject_unsupported("PERFECT")), "CREDIT_PRODUCT_UNDEFINED")
+        self.assertEqual(self.machine.state_digest(), digest)
+        self.assertIs(self.machine.view("senior-a")["interest_defined"], False)
+        self.assertIs(self.machine.view("senior-a")["collateral_perfected"], False)

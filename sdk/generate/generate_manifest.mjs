@@ -12,23 +12,20 @@ import { fileURLToPath } from "node:url";
 import { canonicalStringify, compareCodePoints } from "../src/jsonschema.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
-const SOURCE_COMMIT = "7481b0e16ce9b903abbffa62249bb91cd9e63cfe";
-const SOURCE_TREE = "8495c7651e456cead3a8812b9e6fb183f818acd2";
+const SOURCE_COMMIT = "c2cde86e21a6e5ba6f24a56548636db6d0a34c6f";
+const SOURCE_TREE = "394084b15e01bbe4a5612aeb3431f3278c43dd85";
 const EXPECTED_SOURCE_SHA256 = "ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e";
 const EXPECTED_SOURCE_BLOB = "619ae21c82ca3df5661bd3831613f15fa65225ff";
-const EXPECTED_CONTRACT_SHA256 = "fdeb1a49276249816757354cb9812a1a1463037bd1a8fc03aca33ec036c7088e";
-const EXPECTED_CONTRACT_BLOB = "93d6661f9db3a215d45762f7a29a92130f692dab";
-const EXPECTED_GATE_SHA256 = "2a2af554cb1a8b128f2cf1b1d5b8cf6b1c8fa90adf30865dbc3e64932b3bd13f";
-const EXPECTED_GATE_BLOB = "ab973d517e893d905d7d2c9ec653aab84b3e9356";
 
 const CONTRACT_PATH = "docs/contracts/openapi/kix-protocol.contract-only.openapi.json";
 const GATE_PATH = "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json";
 const SOURCE_PATH = "reference/v0.3-rc1/protocol_contract.json";
+const FSM_PATH = "docs/contracts/openapi/fsm-command-contract.json";
 const GENERATOR_PATH = "sdk/generate/generate_client.mjs";
 const CATALOGUE_PATH = "sdk/generated/catalogue.ts";
-const PROFILE_PATH = "sdk/compat/profiles/bootstrap-1.profile.json";
-const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-1.json";
-const SIDECAR_PATH = "sdk/compat/manifests/manifest.bootstrap-1.json.sha256";
+const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
+const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
+const SIDECAR_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json.sha256";
 const CANONICAL_VECTOR = "sdk/conformance/vectors/canonical-encoding.vectors.json";
 const MIXED_VECTOR = "sdk/conformance/vectors/mixed-input.vectors.json";
 
@@ -62,13 +59,8 @@ function readBytes(path) {
   return readFileSync(resolve(ROOT, path));
 }
 
-function fileRef(path, bytes, expectedSha, expectedBlob) {
-  const digest = sha256(bytes);
-  const blob = gitBlobId(bytes);
-  if (digest !== expectedSha || blob !== expectedBlob) {
-    fail(`${path} drifted from the BOOTSTRAP pin`);
-  }
-  return { gitBlob: blob, path, sha256: digest };
+function fileRef(path, bytes) {
+  return { gitBlob: gitBlobId(bytes), path, sha256: sha256(bytes) };
 }
 
 function main() {
@@ -76,6 +68,7 @@ function main() {
   const sourceBytes = readBytes(SOURCE_PATH);
   const contractBytes = readBytes(CONTRACT_PATH);
   const gateBytes = readBytes(GATE_PATH);
+  const fsmBytes = readBytes(FSM_PATH);
   const generatorBytes = readBytes(GENERATOR_PATH);
   const catalogueBytes = readBytes(CATALOGUE_PATH);
   const canonicalBytes = readBytes(CANONICAL_VECTOR);
@@ -87,11 +80,19 @@ function main() {
   if (toolchains.nodeMajor !== 24) {
     fail("toolchains.json nodeMajor must be 24");
   }
-  const sourceRef = fileRef(SOURCE_PATH, sourceBytes, EXPECTED_SOURCE_SHA256, EXPECTED_SOURCE_BLOB);
-  const contractRef = fileRef(CONTRACT_PATH, contractBytes, EXPECTED_CONTRACT_SHA256, EXPECTED_CONTRACT_BLOB);
-  const gateRef = fileRef(GATE_PATH, gateBytes, EXPECTED_GATE_SHA256, EXPECTED_GATE_BLOB);
+  const sourceRef = fileRef(SOURCE_PATH, sourceBytes);
+  if (sourceRef.sha256 !== EXPECTED_SOURCE_SHA256 || sourceRef.gitBlob !== EXPECTED_SOURCE_BLOB) {
+    fail("protocol_contract.json drifted from the core pin");
+  }
+  const contractRef = fileRef(CONTRACT_PATH, contractBytes);
+  const gateRef = fileRef(GATE_PATH, gateBytes);
+  const fsmRef = fileRef(FSM_PATH, fsmBytes);
   if (contract["x-kix-source"].sha256 !== sourceRef.sha256) {
     fail("openapi source sha256 drift");
+  }
+  const fsmPin = contract["x-kix-source"].fsmSource;
+  if (!fsmPin || fsmPin.sha256 !== fsmRef.sha256 || fsmPin.gitBlob !== fsmRef.gitBlob || fsmPin.path !== FSM_PATH) {
+    fail("openapi fsm source pin drift");
   }
   if (contract["x-kix-source"].domain !== source.domain) {
     fail("domain drift");
@@ -104,8 +105,8 @@ function main() {
   const names = Object.keys(schemas)
     .filter((name) => name !== "LocalCallEnvelope")
     .sort(compareCodePoints);
-  if (names.length !== 40) {
-    fail("command count must stay 40 for BOOTSTRAP");
+  if (names.length !== 84) {
+    fail("command count must stay 84 for bootstrap-2");
   }
   const schemaDigests = {};
   for (const name of names) {
@@ -140,7 +141,7 @@ function main() {
       "not audit or approval evidence",
     ],
     profile_kind: "BOOTSTRAP",
-    profile_revision: "bootstrap-1",
+    profile_revision: "bootstrap-2",
     vectors,
   };
   const profileBytes = Buffer.from(canonicalStringify(profile), "utf8");
@@ -163,14 +164,18 @@ function main() {
       source_tree: SOURCE_TREE,
     },
     profile_kind: "BOOTSTRAP",
-    profile_revision: "bootstrap-1",
+    profile_revision: "bootstrap-2",
     profile_sha256: sha256(profileBytes),
     sdk_output: {
       path: CATALOGUE_PATH,
       sha256: sha256(catalogueBytes),
     },
     source_references: {
-      extension_profile: false,
+      extension_profile: {
+        gitBlob: fsmRef.gitBlob,
+        path: FSM_PATH,
+        sha256: fsmRef.sha256,
+      },
       fixture_profile: SOURCE_PATH,
     },
     vectors,
