@@ -142,7 +142,7 @@ RS/TL 구현 evidence로 세지 않는다.
 | 요구 | source/fixture | coverage / 미충족 gate |
 |---|---|---|
 | RS-0 | 청사진 SOURCE_ONLY | RS-C/IM 처리·객체/권위·상한·RR 선택, A3/사용자 수락 |
-| RS-1, issuer-cap probe | EV-MOVE 비교만, 새 source 없음 | not covered; RS-0 후 1,024 public localnet/IssuerCap 동시 probe |
+| RS-1, issuer-cap probe | `reference/rights_scale/` Move 패키지·model·vectors·localnet driver | in progress; authorized against draft 0.1 @ 9b12626b (`docs/decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md`) |
 | RS-2 | 기존 circuit 비교만, 새 source 없음 | not covered; RS-1·RR 채택 후 root/circuit/verifier/manifest-v2·cross-context 거부 |
 | RS-3a | 없음 | not covered; page grant/GrantControl/revocation cut, RS-1/A3 |
 | RS-3b | EV-K 비교만 | not covered; RS-3a+v5; GA counter/slot·4,096 cap·세대/회수 대응 미확인 |
