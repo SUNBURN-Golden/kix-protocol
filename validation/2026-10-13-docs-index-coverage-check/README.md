@@ -185,10 +185,12 @@ production runtime were touched or needed.
 
 ## Follow-up candidates
 
-- Wire `scripts/check_docs_index.py` into the unguarded `Stdlib offline
-  document checks` step of `.github/workflows/protocol.yml` (the node
-  spec leaves this to a later node; the sibling checkers' wiring was
-  the separate merged node, PR #170).
+- Discharged: `scripts/check_docs_index.py` is wired into the unguarded
+  `Stdlib offline document checks` step of
+  `.github/workflows/protocol.yml` by node
+  `audit5-docs-index-check-ci-wire` (KIX audit #5 finding 3; record at
+  `validation/2026-10-13-audit5-docs-index-check-ci-wire/`). The dated
+  "not wired into CI" statements above stay as historical fact.
 - If a later node adds genuinely unindexable files under a scanned
   subtree (e.g. binary evidence), extend the inline allowlist with a
   reason rather than weakening the check.
