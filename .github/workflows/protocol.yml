@@ -127,14 +127,17 @@ jobs:
           summary "### 같은 트리를 이미 전체 검증함: 무거운 검증 생략" "" \
             "이 커밋의 tree \`$tree\`는 PR head \`$head\`의 실행 [$found]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$found)에서 전체 검증에 성공했습니다." \
             "이 초록 표시는 이 커밋에서 새로 돈 전체 검증이 아닙니다."
-      - name: Capability register and rights-scale traceability
-        # Stdlib-only doc checks with no docs_only/verified-tree guard: the register and the
-        # profile contract are docs, so a register-sync PR is exactly the docs-only case.
+      - name: Stdlib offline document checks
+        # Stdlib-only doc checks with no docs_only/verified-tree guard: the register, the
+        # profile contract and the read-model source map are docs, so a doc-sync PR is
+        # exactly the docs-only case.
         run: |
           python3 scripts/check_status_register.py
           python3 scripts/check_status_register.py --self-test
           python3 scripts/check_rs_profile_traceability.py
           python3 scripts/check_rs_profile_traceability.py --self-test
+          python3 scripts/check_read_model_source_map.py
+          python3 scripts/check_read_model_source_map.py --self-test
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         with:
