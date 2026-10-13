@@ -6,4 +6,5 @@ members = [
     "crates/kix-feature-ir",
     "crates/kix-bcs1",
     "crates/kix-kernel",
+    "crates/kix-kernel-v5",
 ]
