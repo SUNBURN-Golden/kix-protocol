@@ -343,7 +343,8 @@ async function snapshot(show) {
   for(const index of Object.keys(show.pages).map(Number).sort((x,y)=>x-y)) {
     const f=deep(await getFields(show.pages[index],InventoryPage));
     pages.push({index:f.index,start:f.start,end:f.end,mode:f.mode,generations:f.generations,occupied:f.occupied,
-      issuances:f.issuances,free:f.free,reserved:f.reserved,issued:f.issued,retired:f.retired});
+      issuances:f.issuances,free:f.free,reserved:f.reserved,issued:f.issued,retired:f.retired,
+      delegated_to:f.delegated_to??null});
   }
   const tickets={};
   for(const m of show.mints) {

@@ -43,3 +43,13 @@ export const RevocationLeaf=bcs.struct('RevocationLeaf',{show:bcs.Address,slot:b
 export const PrivateAdmission=bcs.struct('PrivateAdmission',{show:bcs.Address,nullifier:bcs.u256(),gate:bcs.Address,challenge:bcs.u256(),note_root:bcs.u256()});
 export const Change=bcs.struct('Change',{show:bcs.Address,ticket:bcs.Address,version:bcs.u64(),state:bcs.u8(),holder:bcs.Address,kind:bcs.u8()});
 export const Verifier=bcs.struct('Verifier',{id:bcs.Address,circuit_manifest_hash:bytes,mint_vk:bytes,spend_vk:bytes});
+
+// RS-3a: delegation. GrantControl is an ordinary shared object (grants are dynamic,
+// not derived); delegated_to on InventoryPage is already in the parser above.
+export const GrantControl=bcs.struct('GrantControl',{id:bcs.Address,show:bcs.Address,issuer:bcs.Address,
+  delegate:bcs.Address,generation:bcs.u64(),open:bcs.bool()});
+export const GrantCreated=bcs.struct('GrantCreated',{show:bcs.Address,grant:bcs.Address,delegate:bcs.Address,
+  generation:bcs.u64()});
+export const PageDelegated=bcs.struct('PageDelegated',{show:bcs.Address,page:bcs.Address,grant:bcs.Address});
+export const GrantRevoked=bcs.struct('GrantRevoked',{show:bcs.Address,grant:bcs.Address,generation:bcs.u64()});
+export const PageUndelegated=bcs.struct('PageUndelegated',{show:bcs.Address,page:bcs.Address,grant:bcs.Address});

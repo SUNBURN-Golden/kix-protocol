@@ -12,6 +12,10 @@ from model import Abort, Show
 VECTORS = Path(__file__).resolve().parent / 'vectors' / 'public_path.json'
 DEFAULT_SENDER = {
     'attest_issuance': 'attester', 'attest_payment': 'attester', 'consume': 'gate',
+    # RS-3a: the delegated paths are signed by the grant's delegate.
+    'issue_delegated': 'delegate', 'bundle_delegated': 'delegate',
+    'attest_issuance_delegated': 'delegate', 'issue_paid_delegated': 'delegate',
+    'cancel_issuance_delegated': 'delegate',
 }
 
 
@@ -57,6 +61,37 @@ def run_step(show, step, labels):
         return t
     if op == 'cancel_issuance':
         return show.cancel_issuance(sender, step['slot'])
+    # RS-3a. `grant` in a step is the label of an earlier create_grant step.
+    if op == 'create_grant':
+        g = show.create_grant(sender, step['delegate'])
+        if 'label' in step:
+            labels[step['label']] = g
+        return g
+    if op == 'revoke_grant':
+        return show.revoke_grant(sender, labels[step['grant']])
+    if op == 'delegate_page':
+        return show.delegate_page(sender, step['page'], labels[step['grant']])
+    if op == 'undelegate_page':
+        return show.undelegate_page(sender, step['page'], labels[step['grant']])
+    if op == 'issue_delegated':
+        t = show.issue_delegated(sender, step['slot'], step['gen'], step['holder'], labels[step['grant']],
+                                 page_index=page)
+        if 'label' in step:
+            labels[step['label']] = t.id
+        return t
+    if op == 'bundle_delegated':
+        return show.bundle_delegated(sender, step['first'], step['declared'], step['issues'], step['holder'],
+                                     labels[step['grant']])
+    if op == 'attest_issuance_delegated':
+        return show.attest_issuance_delegated(sender, step['slot'], step['gen'], step['buyer'], step['amount'],
+                                            ref(step['ref']), labels[step['grant']])
+    if op == 'issue_paid_delegated':
+        t = show.issue_paid_delegated(sender, step['slot'], labels[step['grant']])
+        if 'label' in step:
+            labels[step['label']] = t.id
+        return t
+    if op == 'cancel_issuance_delegated':
+        return show.cancel_issuance_delegated(sender, step['slot'], labels[step['grant']])
     ticket = labels[step['ticket']] if 'ticket' in step else None
     if op == 'offer':
         return show.offer(sender, ticket, step['version'], step['recipient'], step['amount'], step['ttl_ms'])
@@ -72,6 +107,8 @@ def run_step(show, step, labels):
         return show.consume(sender, ticket, step['version'], ref(1))
     if op == 'refund':
         return show.refund(sender, ticket, step['version'])
+    if op == 'refund_delegated':
+        return show.refund_delegated(sender, ticket, step['version'], labels[step['grant']])
     if op == 'revoke':
         return show.revoke(sender, ticket)
     raise ValueError(f'unknown op {op}')

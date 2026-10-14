@@ -15,7 +15,7 @@ import {SuiGrpcClient} from '@mysten/sui/grpc';
 import {Ed25519Keypair} from '@mysten/sui/keypairs/ed25519';
 import {Transaction} from '@mysten/sui/transactions';
 import {ShowControl,InventoryPage,PaymentRefShard,Ticket,IssuancePayment,PaymentEvidence,
-  PageClaimed,ShardClaimed,Issuance,Clock} from './types.mjs';
+  PageClaimed,ShardClaimed,Issuance,Clock,GrantControl,GrantCreated} from './types.mjs';
 
 const here=fileURLToPath(new URL('.',import.meta.url));
 const endpoint=process.env.KIX_LOCAL_RPC??'http://127.0.0.1:9000';
@@ -30,7 +30,10 @@ const GAS_BUDGET=500000000;
 const MODULE='rights_scale';
 const CLOCK_ID='0x6';
 const ZERO_ID='0x'+'0'.repeat(64);
-const DEFAULT_SENDER={attest_issuance:'attester',attest_payment:'attester',consume:'gate'};
+const DEFAULT_SENDER={attest_issuance:'attester',attest_payment:'attester',consume:'gate',
+  // RS-3a: the delegated paths are signed by the grant's delegate.
+  issue_delegated:'delegate',bundle_delegated:'delegate',attest_issuance_delegated:'delegate',
+  issue_paid_delegated:'delegate',cancel_issuance_delegated:'delegate'};
 const refBytes=tag=>Array(32).fill(tag);
 const deep=v=>v instanceof Uint8Array?Array.from(v):Array.isArray(v)?v.map(deep)
   :v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,deep(x)]))
@@ -39,7 +42,7 @@ const hex=b=>Buffer.from(b).toString('hex');
 
 const rpc=new SuiGrpcClient({network:'localnet',baseUrl:endpoint});
 const actors={};
-for(const name of ['issuer','a','b','gate','attester'])actors[name]=Ed25519Keypair.generate();
+for(const name of ['issuer','a','b','gate','attester','delegate'])actors[name]=Ed25519Keypair.generate();
 const addr=n=>actors[n].toSuiAddress();
 
 async function faucet(address,times=1){
@@ -49,7 +52,8 @@ async function faucet(address,times=1){
     if(!response.ok)throw Error('LOCAL_FAUCET_FAILED:'+response.status);
   }
 }
-await Promise.all([faucet(addr('issuer'),4),faucet(addr('a'),2),faucet(addr('b'),2),faucet(addr('gate'),2),faucet(addr('attester'),3)]);
+await Promise.all([faucet(addr('issuer'),4),faucet(addr('a'),2),faucet(addr('b'),2),faucet(addr('gate'),2),
+  faucet(addr('attester'),3),faucet(addr('delegate'),2)]);
 {
   const deadline=Date.now()+30000;
   while(true){
@@ -249,7 +253,7 @@ async function createShow(create){
 function newShow(create,controlId){
   const seatedPages=create.seated===0?0:Math.ceil(create.seated/create.page_size);
   return {
-    create,controlId,pages:{},shards:{},labels:{},ticketSlot:{},pageOverride:null,
+    create,controlId,pages:{},shards:{},grants:{},labels:{},ticketSlot:{},pageOverride:null,
     pageIndex(slot){
       if(slot<create.seated)return Math.floor(slot/create.page_size);
       return seatedPages+Math.floor((slot-create.seated)/create.page_size);
@@ -343,6 +347,88 @@ async function runStep(show,step,sender,record){
         arguments:[t.object(show.controlId),t.object(show.pageFor(step.slot)),t.object(shard),
           t.object(issuerCapId),t.object(payment.id)]});}));
     }
+    // RS-3a. `grant` in a step is the label of an earlier create_grant step; the
+    // chain-side object id is what labels holds, resolved per step.
+    case 'create_grant':{
+      const r=await submitOne(sender,t=>{t.moveCall({target:target('create_grant'),
+        arguments:[t.object(show.controlId),t.object(issuerCapId),t.pure.address(addr(step.delegate))]});});
+      const out0=abortOf(r);
+      if(out0==='ok'){
+        for(const e of events(r,'GrantCreated',GrantCreated)){
+          show.grants[e.grant]=e.grant;
+          if(step.label)show.labels[step.label]=e.grant;
+        }
+      }
+      return out0;
+    }
+    case 'revoke_grant':
+      return abortOf(await submitOne(sender,t=>{t.moveCall({target:target('revoke_grant'),
+        arguments:[t.object(show.labels[step.grant]),t.object(issuerCapId)]});}));
+    case 'delegate_page':
+      return abortOf(await submitOne(sender,t=>{t.moveCall({target:target('delegate_page'),
+        arguments:[t.object(show.controlId),t.object(show.pages[step.page]),t.object(show.labels[step.grant]),
+          t.object(issuerCapId)]});}));
+    case 'undelegate_page':
+      return abortOf(await submitOne(sender,t=>{t.moveCall({target:target('undelegate_page'),
+        arguments:[t.object(show.controlId),t.object(show.pages[step.page]),t.object(show.labels[step.grant]),
+          t.object(issuerCapId)]});}));
+    case 'issue_delegated':{
+      const r=await submitOne(sender,t=>{t.moveCall({target:target('issue_delegated'),
+        arguments:[t.object(show.controlId),t.object(show.pageFor(step.slot)),t.object(show.labels[step.grant]),
+          t.pure.u64(step.slot),t.pure.u64(step.gen),t.pure.address(addr(step.holder))]});});
+      const out0=abortOf(r);
+      if(out0==='ok')recordMints(show,r,record,step);
+      return out0;
+    }
+    case 'bundle_delegated':{
+      const r=await submitOne(sender,t=>{
+        const b=t.moveCall({target:target('begin_bundle'),arguments:[t.object(show.controlId),t.pure.u64(step.declared)]});
+        for(let i=0;i<step.issues;i++){
+          const slot=step.first+i;
+          t.moveCall({target:target('bundle_issue_delegated'),arguments:[b,t.object(show.controlId),
+            t.object(show.pageFor(slot)),t.object(show.labels[step.grant]),t.pure.u64(slot),t.pure.u64(0),
+            t.pure.address(addr(step.holder))]});
+        }
+        t.moveCall({target:target('finish_bundle'),arguments:[b]});
+      });
+      const out0=abortOf(r);
+      if(out0==='ok')recordMints(show,r,record,step);
+      return out0;
+    }
+    case 'attest_issuance_delegated':{
+      const ref=refBytes(step.ref);
+      const shard=await show.shardFor(ref);
+      const r=await submitOne(sender,t=>{t.moveCall({target:target('attest_issuance_delegated'),
+        arguments:[t.object(show.controlId),t.object(show.pageFor(step.slot)),t.object(shard),
+          t.object(show.labels[step.grant]),t.pure.u64(step.slot),t.pure.u64(step.gen),
+          t.pure.address(addr(step.buyer)),t.pure.u64(step.amount),t.pure.vector('u8',ref)]});});
+      return abortOf(r);
+    }
+    case 'issue_paid_delegated':{
+      // Delegated attestations mint the IssuancePayment to the delegate.
+      const payment=await paymentFor('delegate',show.controlId,step.slot);
+      if(!payment)return {abort:'DRIVER_NO_PAYMENT_OBJECT'};
+      const shard=await show.shardFor(Array.from(payment.fields.payment_ref));
+      const r=await submitOne(sender,t=>{t.moveCall({target:target('issue_paid_delegated'),
+        arguments:[t.object(show.controlId),t.object(show.pageFor(step.slot)),t.object(shard),
+          t.object(show.labels[step.grant]),t.object(payment.id)]});});
+      const out0=abortOf(r);
+      if(out0==='ok')recordMints(show,r,record,step);
+      return out0;
+    }
+    case 'cancel_issuance_delegated':{
+      const payment=await paymentFor('delegate',show.controlId,step.slot);
+      if(!payment)return {abort:'DRIVER_NO_PAYMENT_OBJECT'};
+      const shard=await show.shardFor(Array.from(payment.fields.payment_ref));
+      return abortOf(await submitOne(sender,t=>{t.moveCall({target:target('cancel_issuance_delegated'),
+        arguments:[t.object(show.controlId),t.object(show.pageFor(step.slot)),t.object(shard),
+          t.object(show.labels[step.grant]),t.object(payment.id)]});}));
+    }
+    case 'refund_delegated':
+      return abortOf(await submitOne(sender,t=>{t.moveCall({target:target('refund_delegated'),
+        arguments:[t.object(show.controlId),t.object(show.pageFor(show.ticketSlot[show.labels[step.ticket]])),
+          t.object(show.labels[step.grant]),t.object(show.labels[step.ticket]),t.pure.u64(step.version),
+          t.object(CLOCK_ID)]});}));
     case 'offer':{
       const expires=(await chainNow())+step.ttl_ms;
       return abortOf(await submitOne(sender,t=>{t.moveCall({target:target('offer'),
@@ -399,7 +485,14 @@ async function snapshot(show){
   for(const index of Object.keys(show.pages).map(Number).sort((x,y)=>x-y)){
     const f=await getFields(show.pages[index],InventoryPage);
     pages.push({index:f.index,start:f.start,end:f.end,mode:f.mode,generations:f.generations,
-      occupied:f.occupied,issuances:f.issuances,free:f.free,reserved:f.reserved,issued:f.issued,retired:f.retired});
+      occupied:f.occupied,issuances:f.issuances,free:f.free,reserved:f.reserved,issued:f.issued,
+      retired:f.retired,delegated_to:f.delegated_to??null});
+  }
+  const grants=[];
+  for(const id of Object.keys(show.grants)){
+    const f=await getFields(id,GrantControl);
+    grants.push({id,delegate:Object.entries(report.actors).find(([,a])=>a===f.delegate)?.[0]??f.delegate,
+      generation:f.generation,open:f.open});
   }
   const shards=[];
   for(const index of Object.keys(show.shards).map(Number).sort((x,y)=>x-y)){
@@ -415,10 +508,13 @@ async function snapshot(show){
       version:f.version,state:f.state,last_amount:f.last_amount};
   }
   const payments=[];
-  for(const o of await listOwned(addr('issuer'),'IssuancePayment')){
-    const p=deep(IssuancePayment.parse(o.content));
-    if(p.show===show.controlId)payments.push({slot:p.slot,expected_generation:p.expected_generation,
-      buyer:Object.entries(report.actors).find(([,a])=>a===p.buyer)?.[0]??p.buyer,amount:p.amount,payment_ref:hex(p.payment_ref)});
+  // A delegated attestation mints the IssuancePayment to the delegate; record who holds it.
+  for(const name of ['issuer','delegate']){
+    for(const o of await listOwned(addr(name),'IssuancePayment')){
+      const p=deep(IssuancePayment.parse(o.content));
+      if(p.show===show.controlId)payments.push({holder:name,slot:p.slot,expected_generation:p.expected_generation,
+        buyer:Object.entries(report.actors).find(([,a])=>a===p.buyer)?.[0]??p.buyer,amount:p.amount,payment_ref:hex(p.payment_ref)});
+    }
   }
   const evidence=[];
   for(const name of Object.keys(actors)){
@@ -432,7 +528,7 @@ async function snapshot(show){
   }
   return {control:{open:control.open,sealed:control.sealed,cancel_generation:control.cancel_generation,
     claimed_pages:control.claimed_pages,claimed_shards:control.claimed_shards,claim_sequence:control.claim_sequence},
-    pages,shards,tickets,payments,evidence};
+    pages,grants,shards,tickets,payments,evidence};
 }
 const mintRegistry=new Map(); // controlId -> mint list accumulated across recordMints
 function show_mints(show){return mintRegistry.get(show.controlId)??[];}

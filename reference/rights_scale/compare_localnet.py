@@ -73,17 +73,33 @@ def compare(report_path, scenarios_path, out_path):
         # 2. control fields.
         if snap['control'] != want['control']:
             failures.append(f'{name}: control mismatch chain={snap["control"]} model={want["control"]}')
-        # 3. pages (all fields, in index order).
+        # 3. grants (RS-3a): chain GrantControl objects map to model grants by
+        # creation order, so grant_map translates chain ids to model ids for the
+        # pages' delegated_to comparison.
+        chain_grants = snap.get('grants', [])
+        want_grants = want['grants']
+        if len(chain_grants) != len(want_grants):
+            failures.append(f'{name}: grant count chain {len(chain_grants)} != model {len(want_grants)}')
+        grant_map = {}
+        for cg, wg in zip(chain_grants, want_grants):
+            grant_map[cg['id']] = wg['id']
+            for field in ('delegate', 'generation', 'open'):
+                if cg.get(field) != wg[field]:
+                    failures.append(f'{name}: grant {wg["id"]} chain {field}={cg.get(field)} '
+                                    f'!= model {wg[field]}')
+        # 4. pages (all fields, in index order); delegated_to is translated.
+        for p in snap['pages']:
+            p['delegated_to'] = grant_map.get(p.get('delegated_to'), p.get('delegated_to'))
         if snap['pages'] != want['pages']:
             for a, b in zip(snap['pages'], want['pages']):
                 if a != b:
                     failures.append(f'{name}: page {a.get("index")} mismatch chain={a} model={b}')
             if len(snap['pages']) != len(want['pages']):
                 failures.append(f'{name}: page count {len(snap["pages"])} != {len(want["pages"])}')
-        # 4. shards (reference sets per index).
+        # 5. shards (reference sets per index).
         if snap['shards'] != want['shards']:
             failures.append(f'{name}: shard refs mismatch chain={snap["shards"]} model={want["shards"]}')
-        # 5. tickets: chain objects map to model tickets by mint order.
+        # 6. tickets: chain objects map to model tickets by mint order.
         mints = record.get('mints', [])
         model_tickets = list(show.tickets.values())
         if len(mints) != len(model_tickets):
@@ -101,9 +117,10 @@ def compare(report_path, scenarios_path, out_path):
                 continue
             if fields != want['tickets'][mid]:
                 failures.append(f'{name}: ticket {mid} mismatch chain={fields} model={want["tickets"][mid]}')
-        # 6. outstanding issuance payments and payment evidence.
+        # 7. outstanding issuance payments and payment evidence. A delegated
+        # attestation mints the payment object to the delegate; holder records who.
         payments = sorted(snap.get('payments', []), key=lambda p: p['slot'])
-        want_payments = sorted(({'slot': p.slot, 'expected_generation': p.expected_generation,
+        want_payments = sorted(({'holder': p.holder, 'slot': p.slot, 'expected_generation': p.expected_generation,
                                  'buyer': p.buyer, 'amount': p.amount, 'payment_ref': p.payment_ref.hex()}
                                 for p in show.payments.values()), key=lambda p: p['slot'])
         if payments != want_payments:
@@ -130,9 +147,11 @@ def compare(report_path, scenarios_path, out_path):
         'ownGas': True,
         'zk': False,
         'failures': failures,
-        'limitation': ('Localnet prototype only. RPC is trusted; no private path (RS-2), no delegation '
-                       '(RS-3a), no GA redistribution (DECISION_REQUIRED, Astra), no coin/TIX module, '
-                       'no performance or production claims.'),
+        'limitation': ('Localnet prototype only. RPC is trusted; the private path (RS-2) is exercised by '
+                       'the separate private journey; delegation is limited to the RS-3a primitives '
+                       '(page grant, GrantControl, the revocation cut) — no RS-3b executor mapping, no '
+                       'GA redistribution (DECISION_REQUIRED, Astra), no coin/TIX module, no performance '
+                       'or production claims.'),
     }
     if failures:
         receipt['status'] = 'FAILED_MODEL_DIVERGENCE'
