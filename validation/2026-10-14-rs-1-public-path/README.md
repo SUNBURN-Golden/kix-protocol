@@ -16,7 +16,7 @@ are unchanged. This session did not commit, push, open a pull request, or edit
 | Branch | `agent/kix-rs-1` |
 | Task base (session-start HEAD) | `9b12626b61765f8c8d1ee6ad07d528c4b7eb20c1` — the commit the owner decision names. The branch is behind `origin/main` by 43 commits; no rebase or merge was performed |
 | Implementation commit | none. The supervisor owns git. The worktree is dirty on the task base |
-| Authorization | owner delegate Option 2, 2026-10-13 — implement against draft profile 0.1 @ `9b12626b…` as it sits; recorded in `docs/decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md` and `state/rs-1.decision_answer.md` |
+| Authorization | owner delegate Option 2, 2026-10-13 — implement against draft profile 0.1 @ `9b12626b…` as it sits; recorded in `docs/decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md` and `docs/decisions/archive/rs-1.decision_answer.md` |
 | Profile status | `docs/contracts/RIGHTS_SCALE_PROFILE.md` stays draft (`초안`) until Astra review at the RS-1 ARCHITECTURE gate. Not edited |
 
 ## What landed
@@ -63,7 +63,8 @@ are unchanged. This session did not commit, push, open a pull request, or edit
 - `docs/status/CURRENT_CAPABILITY_REGISTER.md` — RS-1 row updated to
   `in progress; authorized against draft 0.1 @ 9b12626b`. RS-0 row unchanged.
 - `docs/decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md` and
-  `state/rs-1.decision_answer.md` — owner-decision records, per the decision.
+  `docs/decisions/archive/rs-1.decision_answer.md` — owner-decision records,
+  per the decision.
 
 ## Locks
 
@@ -220,8 +221,10 @@ the supervisor opens the PR. AGENTS.md §10 exact-head evidence is therefore
 - GA redistribution operation: `DECISION_REQUIRED · Astra` (unchanged).
 - Astra architecture review of profile 0.1 + RS-0 decision record happens at
   the RS-1 gate; the profile stays draft until then.
-- `state/rs-1.decision_answer.md` is kept until the RS-1 gate closes, then
-  archived under `docs/decisions/archive/` per the owner decision.
+- `state/rs-1.decision_answer.md` was archived to
+  `docs/decisions/archive/rs-1.decision_answer.md` by node
+  `audit6-rs1-state-answer-archive` after RS-1 merged as #180, content bytes
+  unchanged, per the owner decision's retention rule.
 - Whether `revoke` should also require `open` is contract-undefined (class B);
   both the model and the Move package allow revoke after cancel and this is
   tested. Flag for Astra if the contract intended otherwise.

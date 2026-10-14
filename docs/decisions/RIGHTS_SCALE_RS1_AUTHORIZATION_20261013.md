@@ -28,5 +28,5 @@
 ## 4. 기록 위치
 
 - 이 기록: `docs/decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md`
-- `state/rs-1.decision_answer.md`에 owner 답변 원문을 보존한다.
+- `docs/decisions/archive/rs-1.decision_answer.md`에 owner 답변 원문을 보존한다.
 - `docs/status/CURRENT_CAPABILITY_REGISTER.md`의 RS-1 행을 "in progress; authorized against draft 0.1 @ 9b12626b"로 갱신한다. RS-0 행은 `SOURCE_ONLY`로 남는다.
