@@ -1,10 +1,20 @@
-# 확장 권리 프로파일 — 계약 0.1 (초안)
+# 확장 권리 프로파일 — 계약 0.2 (초안)
 
-문서 버전 0.1 · 작성 2026-10-08 · 상태: **초안. 미검토. 미측정.**
+문서 버전 0.2 (초안) · 작성 2026-10-08 · 개정 2026-10-14 · 상태: **초안. 미검토. 미측정.**
 
 이 문서는 [권리 확장 청사진 v1](../blueprints/rights-scale-v1/README.md)의 §1–§8·§10과 RS-0 항목을 확장 프로파일의 계약으로 옮긴다. 채택 근거와 아직 고르지 않은 항목은 [RS-0 결정 기록](../decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md)에 있다. 청사진은 역사적 제안으로 그대로 둔다.
 
 이 버전은 구현, 배포, 운영 활성화, 측정 결과가 아니다. Astra 아키텍처 검토와 사용자 병합 전에는 확정이 아니다. 구조가 경합을 줄인다는 주장을 하지 않는다. 쓰기 집합이 페이지·샤드와 `cancel_show`로 나뉜다는 것은 구조 서술이다.
+
+## 0. 개정 이력
+
+| 개정 | 날짜 | 병합 | 변경 | 검증 기록 |
+|---|---|---|---|---|
+| 0.1 | 2026-10-08 | PR #125 `68a58ae` | 최초 초안(RS-0). [RS-1 착수 권한 기록](../decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md)이 인용하는 「초안 0.1 @ `9b12626b61765f8c8d1ee6ad07d528c4b7eb20c1`」는 이 버전이다(그 commit까지 본문은 아래 0.2 편집 전과 바이트가 같다) | [RS-0 결정 기록](../decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) |
+| 0.2 | 2026-10-14 | PR #183 `adcddc5` (RS-3a) | §3 객체 표 `GrantControl` 행, §3 연산 표 위임 연산 8행(`create_grant`, `revoke_grant`, `delegate_page`·`undelegate_page`, `issue_delegated`·`bundle_issue_delegated`, `attest_issuance_delegated`, `issue_paid_delegated`, `cancel_issuance_delegated`, `refund_delegated`), §10 서두·항목 2–5·항목 8(신규) | [rs-3a 기록](../../validation/2026-10-14-rs-3a-delegation-primitives/README.md) |
+| 0.2 | 2026-10-14 | PR #184 `ced0e2f` (RS-3b) | §5 두 불릿(지정석 페이지-커널 `Inventory` 구간 대응, GA 최저 빈 슬롯 결정론 배정), §10 항목 7, §13 두 행(페이지와 커널 구간의 대응, 온체인 GA의 빈 슬롯 선택과 커널 카운터 대응) | [rs-3b 기록](../../validation/2026-10-14-rs-3b-delegated-exec/README.md) |
+
+0.2는 위 표에 적은 RS-3a·RS-3b 편집 외에 0.1의 본문을 그대로 계승한다. 본문에 남은 「0.1」 서술(§4·§6·§7·§8·§9·§11·§13)은 0.1 시점의 기준 문장이지 이 개정이 그 규칙을 다시 정의한 것이 아니다. RS-C/IM/RR id, 상태 표기, 채택 문장은 바꾸지 않았다. 상태는 여전히 **초안. 미검토. 미측정.**이며 확정은 Astra 아키텍처 검토와 사용자 병합이다.
 
 ## 1. 기준과 비주장
 
@@ -25,7 +35,7 @@
 | 16슬롯 참조 프로파일 | `reference/v0.3-rc1/sui`의 `kix::rights`, 회로 깊이 4 산출물, 그 클라이언트와 시험 | 수정하지 않는다. 파일·시험·역사 문서의 "16개 슬롯" 문장을 확장된 것처럼 고치지 않는다 |
 | 확장 프로파일 | 새 패키지, 새 회로, manifest 스키마 v2, 도메인에 들어가는 `profile_version`과 회로 manifest 해시 | 경로와 모듈 이름의 최종 값은 RS-1·RS-2가 고른다. 이 계약은 그 경로가 `reference/v0.3-rc1/**` 밖일 것만 요구한다 |
 
-문서 버전 0.1과 온체인 `profile_version`은 다른 값이다. RS-1이 패키지에 넣을 상수는 참조 프로파일과 구분되어야 한다. 참조 프로파일의 domain은 show id이며 `profile_version`을 넣지 않는다. 확장 프로파일의 domain은 show id, `profile_version`, 회로 manifest 해시를 묶는다. 두 프로파일의 증명은 서로 재사용할 수 없다.
+문서 버전과 온체인 `profile_version`은 다른 값이다. RS-1이 패키지에 넣을 상수는 참조 프로파일과 구분되어야 한다. 참조 프로파일의 domain은 show id이며 `profile_version`을 넣지 않는다. 확장 프로파일의 domain은 show id, `profile_version`, 회로 manifest 해시를 묶는다. 두 프로파일의 증명은 서로 재사용할 수 없다.
 
 Wave 2가 `rights`를 제자리에서 확장한 기록이 있다. 이번 변경은 16 가정 자체이므로 제자리 수정이 아니라 새 패키지로 둔다. 새 패키지는 coin/TIX 모듈이 아니다. 프로그램 결정 §2.1의 `rights`·`zk_gate` 확장으로 읽는 해석은 결정 기록의 Astra 조건 (a)~(e)를 따른다.
 
