@@ -8,8 +8,11 @@
 /// root (RR-2, RR-3, RR-6), and `NullifierShard`s / `ChallengeShard`s routed by the hash
 /// of the nullifier or challenge alone (RS-C09, RS-C11, RS-C17). The private objects are
 /// opt-in per show (`claim_zk`, before `seal`), so the RS-1 public path is unchanged.
-/// GrantControl / delegation (RS-3a) is deliberately absent, and so is any GA
-/// redistribution operation (RS-C02 sentence 2: DECISION_REQUIRED, Astra).
+/// RS-3a adds page-level delegation (profile section 10): one shared `GrantControl`
+/// per grant, the page's `delegated_to` binding, grant-checked delegated
+/// consumption paths and the revocation cut as a single write on the grant.
+/// GA redistribution remains deliberately absent (RS-C02 sentence 2:
+/// DECISION_REQUIRED, Astra).
 /// Fiat evidence is an authorized attester assertion, never proof of bank funds.
 /// No coin, TIX or other economic-asset type is defined by this package.
 module kix_rights_scale::rights_scale;
@@ -45,6 +48,8 @@ const ERoot: u64 = 19;         // note root outside the history, or a revocation
 const ETreeFull: u64 = 20;     // note tree leaf capacity reached
 const ERootRequired: u64 = 21; // plain `revoke` on a show whose revocation root must be updated
 const EVerifier: u64 = 22;     // `claim_zk` with a verifier object that is not the one pinned at creation
+const EDelegated: u64 = 23;    // RS-3a: direct call on a delegated page, or a delegated call with the wrong grant/page
+const EGrantClosed: u64 = 24;  // RS-3a: delegated path after the revocation cut, or a cut/reclaim in the wrong state
 
 const ACTIVE: u8 = 0;
 const CONSUMED: u8 = 1;
@@ -142,7 +147,8 @@ public struct InventoryPage has key {
     reserved: u64,
     issued: u64,
     retired: u64,
-    // Always none in RS-1 (delegation is RS-3a).
+    // RS-3a: the id of the `GrantControl` this page is delegated to; `none` is the
+    // direct issuer path. Set by `delegate_page`, cleared by `undelegate_page`.
     delegated_to: Option<ID>,
 }
 
@@ -196,6 +202,20 @@ public struct ChallengeShard has key {
     show: ID,
     index: u64,
     used: Table<u256, bool>,
+}
+
+/// RS-3a: one shared `GrantControl` per grant — the single chain-side record of grant
+/// currentness (profile section 10.4). Pages hold only the grant id; every delegated
+/// consumption/release path reads this object, and the revocation cut is one write
+/// on it. `generation` starts at 1 and bumps once, at the cut — the generation the
+/// grant's affected commitments are retired into (authority model 1, A-4).
+public struct GrantControl has key {
+    id: UID,
+    show: ID,
+    issuer: address,
+    delegate: address,
+    generation: u64,
+    open: bool,
 }
 
 public struct Terms has copy, drop {
@@ -260,6 +280,13 @@ public struct Issuance has copy, drop {
     show: ID, ticket: ID, slot: u64, generation: u64, holder: address,
     kind: u8, amount: u64, payment_ref: vector<u8>,
 }
+/// RS-3a grant lifecycle events. `GrantCreated` records the grant's first
+/// generation; `GrantRevoked` is the durable record of the cut — the generation the
+/// grant's affected commitments are retired into.
+public struct GrantCreated has copy, drop { show: ID, grant: ID, delegate: address, generation: u64 }
+public struct PageDelegated has copy, drop { show: ID, page: ID, grant: ID }
+public struct GrantRevoked has copy, drop { show: ID, grant: ID, generation: u64 }
+public struct PageUndelegated has copy, drop { show: ID, page: ID, grant: ID }
 
 fun init(ctx: &mut TxContext) {
     transfer::transfer(IssuerCap { id: object::new(ctx) }, ctx.sender());
@@ -502,6 +529,23 @@ fun authority(c: &ShowControl, _cap: &IssuerCap, ctx: &TxContext) {
     assert!(ctx.sender() == c.issuer, EAuthority);
 }
 
+/// RS-3a: the grant-currentness check every delegated path runs. The grant belongs
+/// to this show, has not been cut, and is the grant `p` is delegated to. Read-only
+/// on `g` (profile section 10.3).
+fun check_grant(c: &ShowControl, p: &InventoryPage, g: &GrantControl) {
+    assert!(g.show == object::id(c), EShard);
+    assert!(g.open, EGrantClosed);
+    assert!(p.delegated_to == option::some(object::id(g)), EDelegated);
+}
+
+/// RS-3a: `p` is a claimed page of this show — its id is the derived claim for its
+/// own index and it points back at `c`. The delegation calls have no slot to pin
+/// the page with, so they check the binding directly.
+fun check_page(c: &ShowControl, p: &InventoryPage) {
+    assert!(object::id(p).to_address() == derived_object::derive_address(object::id(c), PageKey { index: p.index })
+        && p.show == object::id(c), EPage);
+}
+
 fun range_of(c: &ShowControl, index: u64): (u64, u64, u8) {
     if (index < c.seated_pages) {
         let start = index * c.page_size;
@@ -586,6 +630,15 @@ fun mint(c: &ShowControl, p: &mut InventoryPage, off: u64, slot: u64, holder: ad
 public fun issue(c: &ShowControl, p: &mut InventoryPage, cap: &IssuerCap, slot: u64,
     expected_generation: u64, holder: address, ctx: &mut TxContext) {
     authority(c, cap, ctx);
+    // RS-3a: a delegated page refuses the direct path; the grant-checked variant serves it.
+    assert!(p.delegated_to.is_none(), EDelegated);
+    issue_body(c, p, slot, expected_generation, holder, ctx);
+}
+
+/// The tail of `issue` after the caller's authority gate (`IssuerCap` on the direct
+/// path, the grant on the delegated path).
+fun issue_body(c: &ShowControl, p: &mut InventoryPage, slot: u64, expected_generation: u64,
+    holder: address, ctx: &mut TxContext) {
     assert!(c.open, EClosed);
     let off = offset(c, p, slot);
     assert!(p.generations[off] == expected_generation, EStale);
@@ -601,6 +654,17 @@ public fun issue(c: &ShowControl, p: &mut InventoryPage, cap: &IssuerCap, slot: 
 public fun attest_issuance(c: &ShowControl, p: &mut InventoryPage, s: &mut PaymentRefShard, slot: u64,
     expected_generation: u64, buyer: address, amount: u64, payment_ref: vector<u8>, ctx: &mut TxContext) {
     assert!(c.payment_attesters.contains(&ctx.sender()), EAuthority);
+    // RS-3a: a delegated page refuses the direct path; the grant-checked variant serves it.
+    assert!(p.delegated_to.is_none(), EDelegated);
+    attest_issuance_body(c, p, s, slot, expected_generation, buyer, amount, payment_ref, c.issuer, ctx);
+}
+
+/// The tail of `attest_issuance` after the caller's authority gate. `payment_holder`
+/// receives the `IssuancePayment`: the issuer on the direct path, the delegate on
+/// the delegated path (only the delegate can present it to `issue_paid_delegated`).
+fun attest_issuance_body(c: &ShowControl, p: &mut InventoryPage, s: &mut PaymentRefShard, slot: u64,
+    expected_generation: u64, buyer: address, amount: u64, payment_ref: vector<u8>, payment_holder: address,
+    ctx: &mut TxContext) {
     assert!(c.open, EClosed);
     let off = offset(c, p, slot);
     assert!(p.generations[off] == expected_generation, EStale);
@@ -613,13 +677,19 @@ public fun attest_issuance(c: &ShowControl, p: &mut InventoryPage, s: &mut Payme
     p.reserved = p.reserved + 1;
     s.refs.add(payment_ref, REF_PRIMARY);
     transfer::transfer(IssuancePayment { id: object::new(ctx), show: object::id(c), slot, expected_generation,
-        buyer, amount, payment_ref }, c.issuer);
+        buyer, amount, payment_ref }, payment_holder);
 }
 
 /// Allowed on a cancelled show: a reservation can always be dropped.
 public fun cancel_issuance(c: &ShowControl, p: &mut InventoryPage, s: &mut PaymentRefShard,
     cap: &IssuerCap, payment: IssuancePayment, ctx: &TxContext) {
     authority(c, cap, ctx);
+    // RS-3a: a delegated page refuses the direct path; the grant-checked variant serves it.
+    assert!(p.delegated_to.is_none(), EDelegated);
+    cancel_issuance_body(c, p, s, payment);
+}
+fun cancel_issuance_body(c: &ShowControl, p: &mut InventoryPage, s: &mut PaymentRefShard,
+    payment: IssuancePayment) {
     let IssuancePayment { id, show, slot, expected_generation: _, buyer: _, amount: _, payment_ref } = payment;
     assert!(show == object::id(c), EPayment);
     let off = offset(c, p, slot);
@@ -637,6 +707,12 @@ public fun cancel_issuance(c: &ShowControl, p: &mut InventoryPage, s: &mut Payme
 public fun issue_paid(c: &ShowControl, p: &mut InventoryPage, s: &PaymentRefShard, cap: &IssuerCap,
     payment: IssuancePayment, ctx: &mut TxContext) {
     authority(c, cap, ctx);
+    // RS-3a: a delegated page refuses the direct path; the grant-checked variant serves it.
+    assert!(p.delegated_to.is_none(), EDelegated);
+    issue_paid_body(c, p, s, payment, ctx);
+}
+fun issue_paid_body(c: &ShowControl, p: &mut InventoryPage, s: &PaymentRefShard,
+    payment: IssuancePayment, ctx: &mut TxContext) {
     let IssuancePayment { id, show, slot, expected_generation, buyer, amount, payment_ref } = payment;
     assert!(show == object::id(c), EPayment);
     assert!(c.open, EClosed);
@@ -668,6 +744,15 @@ public fun bundle_issue(b: &mut Bundle, c: &ShowControl, p: &mut InventoryPage, 
     assert!(b.show == object::id(c) && b.remaining > 0, EBundleMismatch);
     b.remaining = b.remaining - 1;
     issue(c, p, cap, slot, expected_generation, holder, ctx);
+}
+/// RS-3a: `bundle_issue` on a delegated page, signed by the grant's delegate. A
+/// bundle that crosses the delegation boundary aborts atomically like a page
+/// crossing does (profile section 5).
+public fun bundle_issue_delegated(b: &mut Bundle, c: &ShowControl, p: &mut InventoryPage, g: &GrantControl,
+    slot: u64, expected_generation: u64, holder: address, ctx: &mut TxContext) {
+    assert!(b.show == object::id(c) && b.remaining > 0, EBundleMismatch);
+    b.remaining = b.remaining - 1;
+    issue_delegated(c, p, g, slot, expected_generation, holder, ctx);
 }
 public fun finish_bundle(b: Bundle) {
     let Bundle { show: _, remaining } = b;
@@ -752,7 +837,13 @@ public fun consume(c: &ShowControl, p: &InventoryPage, t: &mut Ticket, version: 
 /// obligation is off-chain (reference profile behaviour, IM-08).
 public fun refund(c: &ShowControl, p: &mut InventoryPage, t: &mut Ticket, version: u64, clk: &Clock,
     ctx: &TxContext) {
-    live(c, p, t, version); assert!(ctx.sender() == t.holder, ENotHolder); idle(t, clk);
+    live(c, p, t, version); assert!(ctx.sender() == t.holder, ENotHolder);
+    // RS-3a: a delegated page refuses the direct path; the grant-checked variant serves it.
+    assert!(p.delegated_to.is_none(), EDelegated);
+    idle(t, clk);
+    refund_apply(c, p, t);
+}
+fun refund_apply(c: &ShowControl, p: &mut InventoryPage, t: &mut Ticket) {
     let off = offset(c, p, t.slot);
     t.state = VOID; t.version = t.version + 1; t.offer = option::none(); t.admission = option::none();
     *p.occupied.borrow_mut(off) = false;
@@ -799,6 +890,118 @@ fun revoke_ticket(c: &ShowControl, p: &mut InventoryPage, cap: &IssuerCap, t: &m
     p.retired = p.retired + 1;
     t.state = VOID; t.version = t.version + 1; t.offer = option::none(); t.admission = option::none();
     changed(t, 4);
+}
+
+// ---------------------------------------------------------------- delegation (RS-3a)
+
+/// Creates and shares one grant for `delegate`. Grants are dynamic, not derived
+/// claims: an ordinary shared object, one per grant (profile section 3). Requires
+/// an open show. No expiry and no allowed-operation set are defined — adding
+/// either is a profile decision, not a fixture.
+public fun create_grant(c: &ShowControl, cap: &IssuerCap, delegate: address, ctx: &mut TxContext) {
+    authority(c, cap, ctx);
+    assert!(c.open, EClosed);
+    assert!(delegate != @0x0, EPolicy);
+    let g = GrantControl { id: object::new(ctx), show: object::id(c), issuer: c.issuer, delegate,
+        generation: 1, open: true };
+    event::emit(GrantCreated { show: g.show, grant: object::id(&g), delegate, generation: 1 });
+    transfer::share_object(g);
+}
+
+/// The revocation cut (profile section 10.4–10.5): a single write on the grant.
+/// `open` flips, `generation` bumps to the generation the grant's affected
+/// commitments are retired into, and `GrantRevoked` is the durable record. Pre-cut
+/// obligations — live tickets, refund duties — are not touched; every delegated
+/// path aborts with `EGrantClosed` from this write on.
+public fun revoke_grant(g: &mut GrantControl, _cap: &IssuerCap, ctx: &TxContext) {
+    assert!(ctx.sender() == g.issuer, EAuthority);
+    assert!(g.open, EGrantClosed);
+    g.open = false;
+    g.generation = g.generation + 1;
+    event::emit(GrantRevoked { show: g.show, grant: object::id(g), generation: g.generation });
+}
+
+/// Page-level grant assignment: the delegation unit (profile section 10.2). A page
+/// holding an unresolved reservation (`reserved > 0`) cannot be delegated — the
+/// direct-path `IssuancePayment` would be stranded (RS-C07b) — and neither can a
+/// page already delegated. `revoke` keeps working on a delegated page: it is not
+/// in the delegated five-path list, and a revoked slot stays retired either way.
+public fun delegate_page(c: &ShowControl, p: &mut InventoryPage, g: &GrantControl, cap: &IssuerCap,
+    ctx: &TxContext) {
+    authority(c, cap, ctx);
+    assert!(c.open, EClosed);
+    assert!(g.show == object::id(c), EShard);
+    assert!(g.open, EGrantClosed);
+    check_page(c, p);
+    assert!(p.delegated_to.is_none() && p.reserved == 0, EDelegated);
+    p.delegated_to = option::some(object::id(g));
+    event::emit(PageDelegated { show: object::id(c), page: object::id(p), grant: object::id(g) });
+}
+
+/// Reclaims the page after the cut: clears `delegated_to` so the direct paths
+/// serve it again (profile section 10.4, the per-page write after the cut). An
+/// open grant cannot be undelegated — `revoke_grant` first — and a page holding a
+/// stranded pre-cut reservation (`reserved > 0`, whose delegate-owned payment no
+/// path can present) is not "validated unused" and cannot be reclaimed.
+public fun undelegate_page(c: &ShowControl, p: &mut InventoryPage, g: &GrantControl, cap: &IssuerCap,
+    ctx: &TxContext) {
+    authority(c, cap, ctx);
+    assert!(g.show == object::id(c), EShard);
+    assert!(!g.open, EGrantClosed);
+    check_page(c, p);
+    assert!(p.delegated_to == option::some(object::id(g)) && p.reserved == 0, EDelegated);
+    p.delegated_to = option::none();
+    event::emit(PageUndelegated { show: object::id(c), page: object::id(p), grant: object::id(g) });
+}
+
+/// `issue` on a delegated page, signed by the grant's delegate.
+public fun issue_delegated(c: &ShowControl, p: &mut InventoryPage, g: &GrantControl, slot: u64,
+    expected_generation: u64, holder: address, ctx: &mut TxContext) {
+    assert!(ctx.sender() == g.delegate, EAuthority);
+    check_grant(c, p, g);
+    issue_body(c, p, slot, expected_generation, holder, ctx);
+}
+
+/// `attest_issuance` on a delegated page, signed by the grant's delegate. The
+/// `IssuancePayment` is minted to the delegate, not the issuer.
+public fun attest_issuance_delegated(c: &ShowControl, p: &mut InventoryPage, s: &mut PaymentRefShard,
+    g: &GrantControl, slot: u64, expected_generation: u64, buyer: address, amount: u64,
+    payment_ref: vector<u8>, ctx: &mut TxContext) {
+    assert!(ctx.sender() == g.delegate, EAuthority);
+    check_grant(c, p, g);
+    attest_issuance_body(c, p, s, slot, expected_generation, buyer, amount, payment_ref, g.delegate, ctx);
+}
+
+/// `issue_paid` on a delegated page. Only the delegate holds the payment object a
+/// delegated `attest_issuance` minted, so only it can complete the reservation.
+public fun issue_paid_delegated(c: &ShowControl, p: &mut InventoryPage, s: &PaymentRefShard, g: &GrantControl,
+    payment: IssuancePayment, ctx: &mut TxContext) {
+    assert!(ctx.sender() == g.delegate, EAuthority);
+    check_grant(c, p, g);
+    issue_paid_body(c, p, s, payment, ctx);
+}
+
+/// `cancel_issuance` on a delegated page, signed by the delegate holding the
+/// payment object. Still allowed on a cancelled show, like the direct path.
+public fun cancel_issuance_delegated(c: &ShowControl, p: &mut InventoryPage, s: &mut PaymentRefShard,
+    g: &GrantControl, payment: IssuancePayment, ctx: &TxContext) {
+    assert!(ctx.sender() == g.delegate, EAuthority);
+    check_grant(c, p, g);
+    cancel_issuance_body(c, p, s, payment);
+}
+
+/// `refund` on a delegated page. The caller stays the ticket holder — the grant
+/// check replaces the `delegated_to.is_none()` gate, it does not re-bind the
+/// sender (profile section 10.3 includes `refund` in the grant-checked set).
+/// After the cut this aborts with `EGrantClosed`; the release obligation is then
+/// off-chain like a cancelled show's (IM-08).
+public fun refund_delegated(c: &ShowControl, p: &mut InventoryPage, g: &GrantControl, t: &mut Ticket,
+    version: u64, clk: &Clock, ctx: &TxContext) {
+    assert!(ctx.sender() == t.holder, ENotHolder);
+    check_grant(c, p, g);
+    live(c, p, t, version);
+    idle(t, clk);
+    refund_apply(c, p, t);
 }
 
 // ---------------------------------------------------------------- private path
@@ -908,6 +1111,7 @@ public fun page_issuances(p: &InventoryPage): u64 { p.issuances }
 public fun page_generation(p: &InventoryPage, slot: u64): u64 { p.generations[slot - p.start] }
 public fun page_occupied(p: &InventoryPage, slot: u64): bool { p.occupied[slot - p.start] }
 public fun page_delegated(p: &InventoryPage): bool { p.delegated_to.is_some() }
+public fun page_grant(p: &InventoryPage): Option<ID> { p.delegated_to }
 public fun page_conserved(p: &InventoryPage): bool {
     p.free + p.reserved + p.issued + p.retired == p.end - p.start
 }
@@ -917,6 +1121,12 @@ public fun shard_has(s: &PaymentRefShard, payment_ref: vector<u8>): bool { s.ref
 public fun payment_slot(p: &IssuancePayment): u64 { p.slot }
 public fun payment_ref(p: &IssuancePayment): vector<u8> { p.payment_ref }
 public fun payment_expected_generation(p: &IssuancePayment): u64 { p.expected_generation }
+
+public fun grant_show(g: &GrantControl): ID { g.show }
+public fun grant_issuer(g: &GrantControl): address { g.issuer }
+public fun grant_delegate(g: &GrantControl): address { g.delegate }
+public fun grant_generation(g: &GrantControl): u64 { g.generation }
+public fun grant_open(g: &GrantControl): bool { g.open }
 
 public fun holder(t: &Ticket): address { t.holder }
 public fun version(t: &Ticket): u64 { t.version }

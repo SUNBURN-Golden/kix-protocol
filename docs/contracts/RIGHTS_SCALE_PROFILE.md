@@ -47,7 +47,7 @@ Wave 2가 `rights`를 제자리에서 확장한 기록이 있다. 이번 변경�
 | `ChallengeShard` | 공유. challenge 바이트의 해시로만 라우팅. 초안 이름이며 RS-2가 모듈 이름을 맞출 수 있다 | `consume_private` | 없음 |
 | 노트 트리 | 공유. 공연당 하나. append-only | `shield` | `consume_private` (루트 비교) |
 | 폐기 트리 | 공유. 공연당 루트 하나. 체인은 루트만 저장한다 | `revoke` | `consume_private` (현재 루트 비교) |
-| `GrantControl` | 공유. grant마다 하나 | 회수 | 위임된 페이지의 소비·해제 경로. 읽기 전용 |
+| `GrantControl` | 공유. grant마다 하나. 동적이므로 `object::new`로 만든다 | `create_grant`(생성·공유), `revoke_grant`(cut) | 위임된 페이지의 소비·해제 경로와 `delegate_page`·`undelegate_page`의 현재성 확인. 읽기 전용 |
 | `Ticket` | 공유 | 이전, 허가, 검표, 환불, 폐기, `shield` | 그 함수들 |
 
 `ShowControl`이 담는 필드: show id, 발행자, `profile_version`, `open`, `cancel_generation`, verifier ID, domain, 게이트 목록, 결제확인자 목록, 불변 범위표(페이지 크기, 페이지 개수, 각 페이지의 반개구간, GA 범위). 페이지 ID 목록은 담지 않는다. 65,536개 ID는 객체 크기 한도를 넘긴다는 산술은 청사진 §3.5에 있다.
@@ -72,6 +72,14 @@ Wave 2가 `rights`를 제자리에서 확장한 기록이 있다. 이번 변경�
 | `cancel_show` | `ShowControl` | 없음 | `IssuerCap` 참조 |
 | `shield` | 노트 트리, `Ticket` | `ShowControl`, 페이지, `Verifier`, `Clock` | 없음 |
 | `consume_private` | `NullifierShard`, `ChallengeShard` | `ShowControl`, 노트 트리, 폐기 루트, `Verifier`, `Clock` | 없음. 발신자는 게이트 |
+| `create_grant` | 새 `GrantControl`(공유) | `ShowControl` | `IssuerCap` 참조 |
+| `revoke_grant` | `GrantControl`(cut) | 없음 | `IssuerCap` 참조. 발신자는 `g.issuer` |
+| `delegate_page`, `undelegate_page` | 페이지 | `ShowControl`, `GrantControl` | `IssuerCap` 참조 |
+| `issue_delegated`, `bundle_issue_delegated` | 페이지, 새 `Ticket` | `ShowControl`, `GrantControl` | 없음. 발신자는 `g.delegate` |
+| `attest_issuance_delegated` | 페이지, `PaymentRefShard`, 새 `IssuancePayment`(delegate 소유) | `ShowControl`, `GrantControl` | 없음. 발신자는 `g.delegate` |
+| `issue_paid_delegated` | 페이지, 새 `Ticket` | `ShowControl`, `PaymentRefShard`, `GrantControl` | `IssuancePayment` 값. 발신자는 `g.delegate` |
+| `cancel_issuance_delegated` | 페이지, `PaymentRefShard` | `ShowControl`, `GrantControl` | `IssuancePayment` 값. 발신자는 `g.delegate` |
+| `refund_delegated` | 페이지, `Ticket` | `ShowControl`, `GrantControl`, `Clock` | 없음. 발신자는 티켓 소유자 |
 
 `Verifier`는 공연 생성 때 한 번 고정하고 이후 바꾸는 함수가 없다. `Clock`은 프레임워크 시간 객체다.
 
@@ -175,15 +183,16 @@ RR-2-T1이 확인할 관찰: 발급과 환불은 폐기 루트를 바꾸지 않�
 
 ## 10. 위임 경계
 
-모델 1은 승인되어 있다. grant와 비협조 회수는 미구현이고 위임 실행은 비활성이다. 이 절은 RS-3a·RS-3b가 쓸 초안이며, 그 구현을 이 노드가 하지 않는다. 회수 cut은 온체인 grant 무효화와 페이지 소비 차단으로 한정한다. 커널의 종결·회수·해제·색인·GC는 범위가 아니다.
+모델 1은 승인되어 있다. RS-3a가 이 절의 온체인 프리미티브를 `reference/rights_scale`에 구현했다: 페이지 단위 grant(`InventoryPage.delegated_to`), grant당 하나의 공유 `GrantControl`, `revoke_grant`의 한 번의 쓰기인 회수 cut, 그리고 그 뒤의 페이지별 `undelegate_page` 회수다. 위임 실행은 여전히 비활성이며 RS-3b가 담당한다. 커널의 종결·회수·해제·색인·GC는 범위가 아니다.
 
 1. 한 슬롯의 원권위는 그 슬롯을 소유한 페이지 하나다.
-2. 위임의 최소 단위는 페이지 또는 GA 샤드다. 페이지 안의 일부 슬롯만 위임하지 않는다. P가 그 단위의 크기다. P는 §4에서 UNDETERMINED다. 운영상 충분한지는 측정 전이다.
-3. 위임된 페이지는 `delegated_to`에 grant ID를 둔다. 위임 중 `issue`, `attest_issuance`, `issue_paid`, `cancel_issuance`, `refund`는 `GrantControl`을 읽기 전용으로 확인한 경로만 허용되고, 온체인 직접 호출은 거절된다. `refund`와 `cancel_issuance`를 포함한다.
-4. grant의 현재성은 `GrantControl` 한 곳에 둔다. 페이지는 grant ID만 가리킨다. 신규 약정 차단 cut은 `GrantControl`에 대한 한 번의 쓰기다. 페이지별 `delegated_to` 해제는 그 뒤 검증된 미사용 잔량을 회수하는 단계이며 페이지마다 별도 쓰기다.
-5. 회수 순서는 모델 1의 A-4(`docs/decisions/AUTHORITY_MODEL_1.md`)와 LC-CUT(`docs/contracts/STATE_LIFECYCLE.md` §4)를 청사진 §6이 제안한 순서로 구성하는 초안이다. 그 두 문서에는 이 다섯 단계가 순서대로 적혀 있지 않다. 회수 의사 기록, 신규 약정 차단 cut, 체인 경계 확정, cut 이전의 미발행 약정·늦은 capture·반환 의무 보존, 검증된 미사용 잔량만 회수. 시간 경과만으로 전량 회수하지 않는다. cut을 증명하지 못하면 해당 페이지의 새 소비와 재위임을 보류한다.
+2. 위임의 최소 단위는 페이지 또는 GA 샤드다. 페이지 안의 일부 슬롯만 위임하지 않는다. P가 그 단위의 크기다. P는 §4에서 UNDETERMINED다. 운영상 충분한지는 측정 전이다. 구현된 위임 단위는 페이지다(`delegate_page`/`undelegate_page`).
+3. 위임된 페이지는 `delegated_to`에 grant ID를 둔다. 위임 중 `issue`, `attest_issuance`, `issue_paid`, `cancel_issuance`, `refund`는 `GrantControl`을 읽기 전용으로 확인한 경로만 허용되고, 온체인 직접 호출은 `EDelegated`로 거절된다. `refund`와 `cancel_issuance`를 포함한다. 구현된 grant 확인 경로는 `issue_delegated`, `bundle_issue_delegated`, `attest_issuance_delegated`, `issue_paid_delegated`, `cancel_issuance_delegated`, `refund_delegated`다. 확인은 `check_grant` 한 곳이다: `g.show == id(c)`, `g.open`, `p.delegated_to == id(g)`. 발행자·결제확인 측 네 경로와 묶음은 발신자가 `g.delegate`여야 하고(`EAuthority`), `refund_delegated`의 발신자는 계속 티켓 소유자다. 위임 `attest_issuance`가 만드는 `IssuancePayment`는 delegate에게 돌아간다.
+4. grant의 현재성은 `GrantControl` 한 곳에 둔다. 페이지는 grant ID만 가리킨다. 신규 약정 차단 cut은 `GrantControl`에 대한 한 번의 쓰기다(`revoke_grant`: `open`을 false로, `generation`을 한 번 올린다; `GrantRevoked` 이벤트가 지속 기록이다). 페이지별 `delegated_to` 해제는 그 뒤 검증된 미사용 잔량을 회수하는 단계이며 페이지마다 별도 쓰기다. `undelegate_page`는 닫힌 grant와 `reserved == 0`을 요구한다.
+5. 회수 순서는 모델 1의 A-4(`docs/decisions/AUTHORITY_MODEL_1.md`)와 LC-CUT(`docs/contracts/STATE_LIFECYCLE.md` §4)를 청사진 §6이 제안한 순서로 구성하는 초안이다. 그 두 문서에는 이 다섯 단계가 순서대로 적혀 있지 않다. 회수 의사 기록, 신규 약정 차단 cut, 체인 경계 확정, cut 이전의 미발행 약정·늦은 capture·반환 의무 보존, 검증된 미사용 잔량만 회수. 시간 경과만으로 전량 회수하지 않는다. cut을 증명하지 못하면 해당 페이지의 새 소비와 재위임을 보류한다. cut 뒤 남은 미해소 예약은 delegate 소유 `IssuancePayment`를 어느 경로도 제시할 수 없으므로 그 페이지는 '검증된 미사용'이 아니며 회수가 거절된다.
 6. 응답 유실·timeout·NotFound는 미실행이 아니다. 새 거래를 만들지 않고 같은 서명 바이트로 조회·대사한다. 재전송은 현재 실행 허가와 fence가 확인된 경우의 같은 바이트로만 한다. 이것은 R2 fence의 구현이 아니다.
 7. 페이지 하나를 커널 인벤토리 하나에 대응시킬 수 있는지는 RS-3b가 확인한다. 이 계약은 대응이 가능하다고 하지 않는다. 4,096석을 넘는 지정석이나 64를 넘는 좌석 묶음의 위임 실행은 잠금 파일을 그대로 둔 새 crate이며 Track K v5의 별도 승인 뒤다.
+8. RS-3a 구현에서 관측된 특성. `cancel_show`는 grant를 자동으로 회수하지 않는다 — 위임 경로는 `c.open`을 별도로 확인하므로 취소된 공연은 거절된다. `revoke`는 §10.3의 다섯 경로 목록에 없으므로 위임된 페이지에서도 그대로 동작한다. `shield`·`consume_private`는 `occupied`를 쓰지 않아 위임 검사를 받지 않는다. 위임 경로는 `IssuerCap`을 받지 않는다(§13의 선택은 열린 채로 둔다). grant의 만료·TTL과 허용 연산 집합은 정의하지 않는다.
 
 ## 11. 이전과 공존
 

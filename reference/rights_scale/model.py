@@ -6,9 +6,10 @@ It is a model for differential tests and for reading, not an implementation of a
 and not a performance model. Every constant marked "localnet default" is Astra-owned and
 is not a protocol value (docs/contracts/RIGHTS_SCALE_PROFILE.md section 13).
 
-Scope: the public path (RS-1) and the private path (RS-2: claim_zk, shield,
-consume_private, revoke_with_root). GrantControl and delegation (RS-3a) and GA
-redistribution (RS-C02 sentence 2, DECISION_REQUIRED for Astra) are deliberately absent.
+Scope: the public path (RS-1), the private path (RS-2: claim_zk, shield,
+consume_private, revoke_with_root) and on-chain delegation (RS-3a: GrantControl,
+page delegation, the delegated consumption paths and the revocation cut). GA
+redistribution (RS-C02 sentence 2, DECISION_REQUIRED for Astra) stays absent.
 
 The private path is modelled WITHOUT hashes or proofs. A note root is the number of leaves
 the tree had when the root was made (the tree is append-only, so that number identifies the
@@ -30,6 +31,7 @@ EInventory = 9
 EBundleTooLarge, EBundleIncomplete, EBundleMismatch = 10, 11, 12
 ESealed, ENotComplete, EPage, EShard, ERange = 13, 14, 15, 16, 17
 EZk, ERoot, ETreeFull, ERootRequired, EVerifier = 18, 19, 20, 21, 22
+EDelegated, EGrantClosed = 23, 24
 # A proof Groth16 rejects aborts with code 2 inside kix_rights_scale::zk_gate.
 EBadProof = 'zk_gate:2'
 # sui::derived_object::EObjectAlreadyExists: a second claim of the same (parent, key).
@@ -92,7 +94,7 @@ class Page:
     reserved: int = 0
     issued: int = 0
     retired: int = 0
-    delegated_to: object = None  # always None in RS-1
+    delegated_to: object = None  # grant id while delegated (RS-3a); None is the direct path
 
     def conserved(self):
         return self.free + self.reserved + self.issued + self.retired == self.end - self.start
@@ -120,12 +122,23 @@ class Ticket:
 
 
 @dataclass
+class Grant:  # GrantControl
+    id: str
+    show: bytes
+    issuer: str
+    delegate: str
+    generation: int = 1
+    open: bool = True
+
+
+@dataclass
 class Payment:  # IssuancePayment
     slot: int
     expected_generation: int
     buyer: str
     amount: int
     payment_ref: bytes
+    holder: str = ''  # the address that owns the object: issuer direct, delegate delegated
 
 
 @dataclass
@@ -194,6 +207,9 @@ class Show:
         self.revocations = 0     # one per revoke_with_root: identifies the revocation root
         self.spent_nullifiers = set()
         self.spent_challenges = set()
+        # RS-3a: grant id -> Grant (GrantControl objects, in creation order).
+        self.grants = {}
+        self._grant_seq = 0
 
     # ------------------------------------------------------------------ helpers
     @property
@@ -219,6 +235,30 @@ class Show:
     def _page(self, index):
         """The page object at a derived address; None when it was never claimed."""
         return self.pages.get(index)
+
+    def _passed_index(self, slot, page_index):
+        """The page index the caller passes: `page_index` if given (cross-page
+        predicates), else the range table's page for `slot`, else the first claimed
+        page — what a driver passes for an out-of-range slot."""
+        if page_index is not None:
+            return page_index
+        if 0 <= slot < self.capacity:
+            return self.page_index_of(slot)
+        return next(iter(self.pages), None)
+
+    def _check_grant(self, p, g):
+        """Move `check_grant`: show binding, live grant, page binding, in that order."""
+        check(g.show == self.show_id, EShard)
+        check(g.open, EGrantClosed)
+        check(p is not None and p.delegated_to == g.id, EDelegated)
+
+    def _delegate_check(self, sender, g, page_index):
+        """The delegated-path gate: the sender is the delegate and the grant is current.
+        `g` is the GrantControl object the caller passes."""
+        g = self._resolve_grant(g)
+        check(sender == g.delegate, EAuthority)
+        self._check_grant(self._page(page_index), g)
+        return g
 
     def offset(self, page_index_given, slot):
         """`page_index_given` stands for the page object the caller passed."""
@@ -310,6 +350,12 @@ class Show:
     # ------------------------------------------------------------------ issuance
     def _issue(self, sender, page_index, slot, expected_generation, holder):
         self.authority(sender)
+        # RS-3a: a delegated page refuses the direct path.
+        p = self._page(page_index)
+        check(p is None or p.delegated_to is None, EDelegated)
+        return self._issue_body(page_index, slot, expected_generation, holder)
+
+    def _issue_body(self, page_index, slot, expected_generation, holder):
         check(self.open, EClosed)
         p, off = self.offset(page_index, slot)
         check(p.generations[off] == expected_generation, EStale)
@@ -319,10 +365,14 @@ class Show:
         p.issued += 1
         return self._mint(p, off, slot, holder, b'', 0, holder, DIRECT)
 
+    def _issue_delegated(self, sender, g, page_index, slot, expected_generation, holder):
+        self._delegate_check(sender, g, page_index)
+        return self._issue_body(page_index, slot, expected_generation, holder)
+
     @atomic
     def issue(self, sender, slot, expected_generation, holder, page_index=None):
         """`page_index` overrides the page the caller passes (cross-page predicates)."""
-        return self._issue(sender, self.page_index_of(slot) if page_index is None else page_index, slot,
+        return self._issue(sender, self._passed_index(slot, page_index), slot,
                            expected_generation, holder)
 
     @atomic
@@ -345,8 +395,17 @@ class Show:
     def attest_issuance(self, sender, slot, expected_generation, buyer, amount, payment_ref,
                         page_index=None, shard_index=None):
         check(sender in self.attesters, EAuthority)
+        p = self._page(self._passed_index(slot, page_index))
+        check(p is None or p.delegated_to is None, EDelegated)
+        self._attest_body(slot, expected_generation, buyer, amount, payment_ref, self.issuer,
+                          self._passed_index(slot, page_index), shard_index)
+
+    def _attest_body(self, slot, expected_generation, buyer, amount, payment_ref, payment_holder,
+                     page_index, shard_index):
+        """The tail of `attest_issuance`; `payment_holder` is the issuer on the direct
+        path and the delegate on the delegated one."""
         check(self.open, EClosed)
-        p, off = self.offset(self.page_index_of(slot) if page_index is None else page_index, slot)
+        p, off = self.offset(page_index, slot)
         check(p.generations[off] == expected_generation, EStale)
         check(not p.occupied[off], EInventory)
         check(amount > 0 and len(payment_ref) == 32, EPayment)
@@ -356,13 +415,19 @@ class Show:
         p.free -= 1
         p.reserved += 1
         shard.refs[payment_ref] = REF_PRIMARY
-        self.payments[slot] = Payment(slot, expected_generation, buyer, amount, payment_ref)
+        self.payments[slot] = Payment(slot, expected_generation, buyer, amount, payment_ref,
+                                      holder=payment_holder)
 
     @atomic
-    def cancel_issuance(self, sender, slot):
+    def cancel_issuance(self, sender, slot, page_index=None):
         self.authority(sender)
+        p = self._page(self._passed_index(slot, page_index))
+        check(p is None or p.delegated_to is None, EDelegated)
+        self._cancel_body(slot, self._passed_index(slot, page_index))
+
+    def _cancel_body(self, slot, page_index):
         pay = self.payments[slot]
-        p, off = self.offset(self.page_index_of(slot), slot)
+        p, off = self.offset(page_index, slot)
         check(p.occupied[off] and p.reserved > 0, EInventory)
         shard = self.check_shard(self.routed(pay.payment_ref), pay.payment_ref)
         check(pay.payment_ref in shard.refs, EPayment)
@@ -373,11 +438,16 @@ class Show:
         p.free += 1
 
     @atomic
-    def issue_paid(self, sender, slot):
+    def issue_paid(self, sender, slot, page_index=None):
         self.authority(sender)
+        p = self._page(self._passed_index(slot, page_index))
+        check(p is None or p.delegated_to is None, EDelegated)
+        return self._issue_paid_body(slot, self._passed_index(slot, page_index))
+
+    def _issue_paid_body(self, slot, page_index):
         pay = self.payments[slot]
         check(self.open, EClosed)
-        p, off = self.offset(self.page_index_of(slot), slot)
+        p, off = self.offset(page_index, slot)
         check(p.occupied[off] and p.reserved > 0, EInventory)
         check(p.generations[off] == pay.expected_generation, EStale)
         shard = self.check_shard(self.routed(pay.payment_ref), pay.payment_ref)
@@ -482,7 +552,12 @@ class Show:
         t = self.tickets[ticket]
         p, off = self.live(self._page_of(t, page_index), t, version)
         check(sender == t.holder, ENotHolder)
+        # RS-3a: a delegated page refuses the direct path.
+        check(p.delegated_to is None, EDelegated)
         self.idle(t)
+        self._refund_apply(p, off, t)
+
+    def _refund_apply(self, p, off, t):
         t.state = VOID
         t.version += 1
         t.offer = t.admission = None
@@ -511,6 +586,123 @@ class Show:
         t.offer = t.admission = None
         self.events.append(('Change', t.id, t.version, t.state, t.holder, 4))
         return t
+
+    # ------------------------------------------------------------------ delegation (RS-3a)
+    def _resolve_grant(self, g):
+        """The canonical record of a passed GrantControl object. An aborted step
+        restores deep copies (`atomic`), so a caller-held handle can be stale;
+        the grant registered under the id is authoritative. A foreign show's
+        grant is returned as-is — its `show` field still fails the EShard gate."""
+        if g.show == self.show_id and g.id in self.grants:
+            return self.grants[g.id]
+        return g
+
+    @atomic
+    def create_grant(self, sender, delegate):
+        self.authority(sender)
+        check(self.open, EClosed)
+        check(delegate not in (None, '', '0x0'), EPolicy)
+        self._grant_seq += 1
+        g = Grant(f'G{self._grant_seq}', self.show_id, self.issuer, delegate)
+        self.grants[g.id] = g
+        self.events.append(('GrantCreated', g.id, delegate, g.generation))
+        return g
+
+    @atomic
+    def revoke_grant(self, sender, g):
+        """The cut: one write on the grant; pre-cut obligations are untouched.
+        `g` is the GrantControl object the caller passes."""
+        g = self._resolve_grant(g)
+        check(sender == g.issuer, EAuthority)
+        check(g.open, EGrantClosed)
+        g.open = False
+        g.generation += 1
+        self.events.append(('GrantRevoked', g.id, g.generation))
+        return g
+
+    @atomic
+    def delegate_page(self, sender, index, g):
+        """`index` is the page's position in the range table (what the caller passes);
+        `g` is the GrantControl object."""
+        self.authority(sender)
+        check(self.open, EClosed)
+        g = self._resolve_grant(g)
+        check(g.show == self.show_id, EShard)
+        check(g.open, EGrantClosed)
+        p = self._page(index)
+        check(p is not None, EPage)
+        check(p.delegated_to is None and p.reserved == 0, EDelegated)
+        p.delegated_to = g.id
+        self.events.append(('PageDelegated', index, g.id))
+        return p
+
+    @atomic
+    def undelegate_page(self, sender, index, g):
+        """Per-page reclaim after the cut; an open grant cannot be undelegated.
+        `g` is the GrantControl object the caller passes."""
+        self.authority(sender)
+        g = self._resolve_grant(g)
+        check(g.show == self.show_id, EShard)
+        check(not g.open, EGrantClosed)
+        p = self._page(index)
+        check(p is not None, EPage)
+        # A page holding a stranded pre-cut reservation is not "validated unused".
+        check(p.delegated_to == g.id and p.reserved == 0, EDelegated)
+        p.delegated_to = None
+        self.events.append(('PageUndelegated', index, g.id))
+        return p
+
+    @atomic
+    def issue_delegated(self, sender, slot, expected_generation, holder, g, page_index=None):
+        """`issue` on a delegated page, signed by the grant's delegate."""
+        return self._issue_delegated(sender, g, self._passed_index(slot, page_index), slot,
+                                     expected_generation, holder)
+
+    @atomic
+    def bundle_delegated(self, sender, first_slot, declared, issues, holder, g):
+        """begin_bundle(declared), `issues` x bundle_issue_delegated, finish_bundle."""
+        check(declared > 0, EPolicy)
+        check(declared <= MAX_BUNDLE_CHAIN, EBundleTooLarge)
+        check(self.open, EClosed)
+        remaining = declared
+        tickets = []
+        for i in range(issues):
+            check(remaining > 0, EBundleMismatch)
+            remaining -= 1
+            slot = first_slot + i
+            tickets.append(self._issue_delegated(sender, g, self.page_index_of(slot), slot, 0, holder))
+        check(remaining == 0, EBundleIncomplete)
+        return tickets
+
+    @atomic
+    def attest_issuance_delegated(self, sender, slot, expected_generation, buyer, amount, payment_ref,
+                                  g, page_index=None, shard_index=None):
+        g = self._delegate_check(sender, g, self._passed_index(slot, page_index))
+        self._attest_body(slot, expected_generation, buyer, amount, payment_ref, g.delegate,
+                          self._passed_index(slot, page_index), shard_index)
+
+    @atomic
+    def issue_paid_delegated(self, sender, slot, g, page_index=None):
+        self._delegate_check(sender, g, self._passed_index(slot, page_index))
+        return self._issue_paid_body(slot, self._passed_index(slot, page_index))
+
+    @atomic
+    def cancel_issuance_delegated(self, sender, slot, g, page_index=None):
+        """Still allowed on a cancelled show, like the direct path."""
+        self._delegate_check(sender, g, self._passed_index(slot, page_index))
+        self._cancel_body(slot, self._passed_index(slot, page_index))
+
+    @atomic
+    def refund_delegated(self, sender, ticket, version, g, page_index=None):
+        """Holder-signed release on a delegated page; the grant must be current.
+        `g` is the GrantControl object the caller passes."""
+        t = self.tickets[ticket]
+        check(sender == t.holder, ENotHolder)
+        pidx = self._page_of(t, page_index)
+        self._check_grant(self._page(pidx), self._resolve_grant(g))
+        p, off = self.live(pidx, t, version)
+        self.idle(t)
+        self._refund_apply(p, off, t)
 
     # ------------------------------------------------------------------ private path (RS-2)
     @atomic
@@ -601,7 +793,8 @@ class Show:
         for p in self.pages.values():
             assert p.conserved(), f'page {p.index} does not conserve its range'
             assert sum(p.occupied) == p.reserved + p.issued + p.retired, f'page {p.index} occupancy'
-            assert p.delegated_to is None
+            assert p.delegated_to is None or p.delegated_to in self.grants, \
+                f'page {p.index} delegated to an unknown grant'
             covered += p.end - p.start
         if self.sealed:
             assert covered == self.capacity and len(self.pages) == self.page_count
@@ -646,7 +839,10 @@ class Show:
                         'claim_sequence': self.claim_sequence},
             'pages': [dict(index=p.index, start=p.start, end=p.end, mode=p.mode, generations=list(p.generations),
                            occupied=list(p.occupied), issuances=p.issuances, free=p.free, reserved=p.reserved,
-                           issued=p.issued, retired=p.retired) for _, p in sorted(self.pages.items())],
+                           issued=p.issued, retired=p.retired, delegated_to=p.delegated_to)
+                      for _, p in sorted(self.pages.items())],
+            'grants': [dict(id=g.id, delegate=g.delegate, generation=g.generation, open=g.open)
+                       for g in self.grants.values()],
             'shards': [dict(index=s.index, refs=sorted(r.hex() for r in s.refs)) for _, s in sorted(self.shards.items())],
             'tickets': {t.id: dict(slot=t.slot, generation=t.generation, holder=t.holder, version=t.version,
                                    state=t.state, last_amount=t.last_amount) for t in self.tickets.values()},

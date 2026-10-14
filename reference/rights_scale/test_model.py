@@ -60,7 +60,7 @@ class MoveParity(unittest.TestCase):
     def test_error_codes_match_the_move_source(self):
         for name in ('EClosed', 'ENotHolder', 'EStale', 'EAuthority', 'ELocked', 'EPolicy', 'EPayment', 'EInventory',
                      'EBundleTooLarge', 'EBundleIncomplete', 'EBundleMismatch', 'ESealed', 'ENotComplete', 'EPage',
-                     'EShard', 'ERange'):
+                     'EShard', 'ERange', 'EDelegated', 'EGrantClosed'):
             self.assertEqual(self.constant(name), getattr(model, name), name)
 
     def test_routing_known_answers_match_the_move_test(self):
@@ -100,7 +100,11 @@ class MoveParity(unittest.TestCase):
                   'finish_bundle', 'offer', 'accept_gift', 'attest_payment', 'accept_sale', 'authorize_admission',
                   'consume', 'refund', 'revoke',
                   # RS-2: the private path (section 3 shield / consume_private, and revoke with a root).
-                  'claim_zk', 'revoke_with_root', 'shield', 'consume_private']
+                  'claim_zk', 'revoke_with_root', 'shield', 'consume_private',
+                  # RS-3a: grant lifecycle and the delegated inventory paths.
+                  'create_grant', 'revoke_grant', 'delegate_page', 'undelegate_page',
+                  'issue_delegated', 'bundle_issue_delegated', 'attest_issuance_delegated',
+                  'issue_paid_delegated', 'cancel_issuance_delegated', 'refund_delegated']
 
     def test_the_package_surface_is_exactly_the_section_3_operations_plus_read_only_views(self):
         names = self.public_functions()
@@ -111,7 +115,7 @@ class MoveParity(unittest.TestCase):
             self.assertRegex(name, r'^(profile_version|max_bundle_chain|localnet_\w+|control_\w+|page_\w+|shard_\w+|'
                                    r'route_index|payment_\w+|holder|version|state|slot|generation|last_\w+|'
                                    r'zk_depth|shielded_state|domain_of|tree_\w+|root_in_history|revocation_\w+|'
-                                   r'nullifier_\w+|challenge_\w+)$', name)
+                                   r'nullifier_\w+|challenge_\w+|grant_\w+)$', name)
         # No view mutates: read-only views never take a mutable reference or a TxContext.
         for m in re.finditer(r'^public fun (\w+)\(([^)]*)\)', MOVE, re.M):
             if m.group(1) in views:
@@ -386,6 +390,130 @@ class Predicates(unittest.TestCase):
         before = len(show.events)
         show.bundle('issuer', 0, 3, 3, 'a')
         self.assertEqual(len(show.events) - before, 6)
+
+
+class Delegation(unittest.TestCase):
+    """RS-3a: page-level grants, GrantControl currentness and the revocation cut."""
+
+    def test_delegation_lifecycle(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        self.assertEqual((g.delegate, g.generation, g.open), ('dele', 1, True))
+        show.delegate_page('issuer', 0, g)
+        self.assertEqual(show.pages[0].delegated_to, g.id)
+        t = show.issue_delegated('dele', 0, 0, 'a', g)
+        self.assertEqual((t.holder, t.generation), ('a', 1))
+        show.check_invariants()
+
+    def test_only_the_delegate_and_the_grant_issuer(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        self.assertTrue(aborts(model.EAuthority, show.create_grant, 'b', 'dele2'))
+        self.assertTrue(aborts(model.EAuthority, show.revoke_grant, 'b', g))
+        show.delegate_page('issuer', 0, g)
+        self.assertTrue(aborts(model.EAuthority, show.issue_delegated, 'b', 0, 0, 'a', g))
+        self.assertTrue(aborts(model.EAuthority, show.attest_issuance_delegated, 'attester', 1, 0, 'b', 5,
+                               REF(60), g))
+
+    def test_delegated_page_refuses_the_direct_paths(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        for fn, args in ((show.issue, ('issuer', 0, 0, 'a')),
+                         (show.attest_issuance, ('attester', 0, 0, 'b', 5, REF(60))),
+                         (show.bundle, ('issuer', 0, 2, 2, 'a'))):
+            self.assertTrue(aborts(model.EDelegated, fn, *args), fn.__name__)
+        t = show.issue_delegated('dele', 0, 0, 'a', g)
+        self.assertTrue(aborts(model.EDelegated, show.refund, 'a', t.id, 1))
+        show.check_invariants()
+
+    def test_wrong_grant_wrong_page_and_double_delegation(self):
+        show = make()
+        g0 = show.create_grant('issuer', 'dele')
+        g1 = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g0)
+        self.assertTrue(aborts(model.EDelegated, show.issue_delegated, 'dele', 0, 0, 'a', g1))
+        self.assertTrue(aborts(model.EDelegated, show.issue_delegated, 'dele', 4, 0, 'a', g0))
+        self.assertTrue(aborts(model.EDelegated, show.delegate_page, 'issuer', 0, g1))
+        other = make(show_id=b'\xff' * 32)  # a different show: every on-chain object id is unique
+        foreign = other.create_grant('issuer', 'dele')
+        self.assertTrue(aborts(model.EShard, show.delegate_page, 'issuer', 1, foreign))
+
+    def test_an_open_reservation_blocks_delegation(self):
+        show = make()
+        show.attest_issuance('attester', 0, 0, 'b', 5, REF(60))
+        g = show.create_grant('issuer', 'dele')
+        self.assertTrue(aborts(model.EDelegated, show.delegate_page, 'issuer', 0, g))
+        show.cancel_issuance('issuer', 0)
+        show.delegate_page('issuer', 0, g)
+
+    def test_the_cut_blocks_every_delegated_path_and_delegation(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        t = show.issue_delegated('dele', 0, 0, 'a', g)
+        show.attest_issuance_delegated('dele', 1, 0, 'b', 5, REF(60), g)
+        show.revoke_grant('issuer', g)
+        self.assertEqual((g.open, g.generation), (False, 2))
+        for fn, args in ((show.issue_delegated, ('dele', 2, 0, 'a', g)),
+                         (show.attest_issuance_delegated, ('dele', 2, 0, 'b', 5, REF(61), g)),
+                         (show.issue_paid_delegated, ('dele', 1, g)),
+                         (show.cancel_issuance_delegated, ('dele', 1, g)),
+                         (show.refund_delegated, ('a', t.id, 1, g)),
+                         (show.delegate_page, ('issuer', 1, g)),
+                         (show.revoke_grant, ('issuer', g))):
+            self.assertTrue(aborts(model.EGrantClosed, fn, *args), fn.__name__)
+        # The stranded reservation blocks the reclaim.
+        self.assertTrue(aborts(model.EDelegated, show.undelegate_page, 'issuer', 0, g))
+        show.check_invariants()
+
+    def test_undelegate_restores_the_direct_path(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        t = show.issue_delegated('dele', 0, 0, 'a', g)
+        show.revoke_grant('issuer', g)
+        show.undelegate_page('issuer', 0, g)
+        self.assertIsNone(show.pages[0].delegated_to)
+        show.refund('a', t.id, 1)          # pre-cut ticket releases on the direct path
+        show.issue('issuer', 0, 1, 'a')    # and the issuer resumes
+        show.check_invariants()
+
+    def test_undelegate_requires_the_grant_closed_first(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        self.assertTrue(aborts(model.EGrantClosed, show.undelegate_page, 'issuer', 0, g))
+
+    def test_delegated_paid_flow_and_cancel(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        show.attest_issuance_delegated('dele', 0, 0, 'b', 5, REF(60), g)
+        self.assertEqual(show.payments[0].holder, 'dele')
+        t = show.issue_paid_delegated('dele', 0, g)
+        self.assertEqual(t.holder, 'b')
+        show.attest_issuance_delegated('dele', 1, 0, 'b', 5, REF(61), g)
+        show.cancel_issuance_delegated('dele', 1, g)
+        show.check_invariants()
+        self.assertEqual(show.totals()[0], 12 - 1)
+
+    def test_cancel_show_does_not_revoke_a_grant(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        show.cancel_show('issuer')
+        self.assertTrue(g.open)
+        self.assertTrue(aborts(model.EClosed, show.issue_delegated, 'dele', 0, 0, 'a', g))
+
+    def test_revoke_still_works_on_a_delegated_page(self):
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        t = show.issue_delegated('dele', 0, 0, 'a', g)
+        show.revoke('issuer', t.id)
+        self.assertEqual(show.totals(), (11, 0, 0, 1))
+        show.check_invariants()
 
 
 class Scripts(unittest.TestCase):

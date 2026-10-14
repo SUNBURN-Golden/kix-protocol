@@ -739,6 +739,280 @@
      }
     }
    ]
+  },
+  {
+   "name": "rs3a_delegation_cut",
+   "create": {
+    "seated": 8,
+    "ga": 0,
+    "page_size": 4,
+    "shards": 2
+   },
+   "steps": [
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 2
+    },
+    {
+     "op": "claim_shards",
+     "from": 0,
+     "count": 2
+    },
+    {
+     "op": "seal"
+    },
+    {
+     "op": "create_grant",
+     "delegate": "delegate",
+     "label": "g0"
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 1,
+     "gen": 0,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 30
+    },
+    {
+     "op": "delegate_page",
+     "page": 0,
+     "grant": "g0",
+     "expect": {
+      "abort": 23
+     },
+     "comment": "an open reservation blocks delegation"
+    },
+    {
+     "op": "cancel_issuance",
+     "slot": 1
+    },
+    {
+     "op": "delegate_page",
+     "page": 0,
+     "grant": "g0"
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "expect": {
+      "abort": 23
+     },
+     "comment": "the direct path refuses a delegated page"
+    },
+    {
+     "op": "issue_delegated",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "grant": "g0",
+     "label": "d0"
+    },
+    {
+     "op": "issue_delegated",
+     "slot": 1,
+     "gen": 0,
+     "holder": "a",
+     "grant": "g0",
+     "sender": "a",
+     "expect": {
+      "abort": 4
+     },
+     "comment": "only the delegate signs"
+    },
+    {
+     "op": "attest_issuance_delegated",
+     "slot": 1,
+     "gen": 0,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 31,
+     "grant": "g0"
+    },
+    {
+     "op": "issue_paid_delegated",
+     "slot": 1,
+     "grant": "g0",
+     "label": "d1"
+    },
+    {
+     "op": "refund",
+     "ticket": "d1",
+     "sender": "b",
+     "version": 1,
+     "expect": {
+      "abort": 23
+     },
+     "comment": "direct refund on a delegated page is refused"
+    },
+    {
+     "op": "refund_delegated",
+     "ticket": "d1",
+     "sender": "b",
+     "version": 1,
+     "grant": "g0"
+    },
+    {
+     "op": "bundle_delegated",
+     "first": 2,
+     "declared": 2,
+     "issues": 2,
+     "holder": "a",
+     "grant": "g0"
+    },
+    {
+     "op": "refund_delegated",
+     "ticket": "d0",
+     "sender": "a",
+     "version": 1,
+     "grant": "g0"
+    },
+    {
+     "op": "attest_issuance_delegated",
+     "slot": 0,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 33,
+     "grant": "g0",
+     "comment": "the reservation that outlives its grant"
+    },
+    {
+     "op": "revoke_grant",
+     "grant": "g0",
+     "comment": "the cut: one write on GrantControl"
+    },
+    {
+     "op": "issue_delegated",
+     "slot": 0,
+     "gen": 1,
+     "holder": "a",
+     "grant": "g0",
+     "expect": {
+      "abort": 24
+     }
+    },
+    {
+     "op": "attest_issuance_delegated",
+     "slot": 1,
+     "gen": 1,
+     "buyer": "b",
+     "amount": 5000,
+     "ref": 34,
+     "grant": "g0",
+     "expect": {
+      "abort": 24
+     }
+    },
+    {
+     "op": "issue_paid_delegated",
+     "slot": 0,
+     "grant": "g0",
+     "expect": {
+      "abort": 24
+     }
+    },
+    {
+     "op": "cancel_issuance_delegated",
+     "slot": 0,
+     "grant": "g0",
+     "expect": {
+      "abort": 24
+     }
+    },
+    {
+     "op": "undelegate_page",
+     "page": 0,
+     "grant": "g0",
+     "expect": {
+      "abort": 23
+     },
+     "comment": "a stranded reservation is not validated-unused inventory"
+    },
+    {
+     "op": "create_grant",
+     "delegate": "delegate",
+     "label": "g1"
+    },
+    {
+     "op": "delegate_page",
+     "page": 1,
+     "grant": "g0",
+     "expect": {
+      "abort": 24
+     },
+     "comment": "a closed grant takes no new pages"
+    },
+    {
+     "op": "delegate_page",
+     "page": 1,
+     "grant": "g1"
+    },
+    {
+     "op": "issue_delegated",
+     "slot": 0,
+     "gen": 1,
+     "holder": "a",
+     "grant": "g1",
+     "expect": {
+      "abort": 23
+     },
+     "comment": "page 0 is g0's page, not g1's"
+    },
+    {
+     "op": "issue_delegated",
+     "slot": 4,
+     "gen": 0,
+     "holder": "a",
+     "grant": "g1",
+     "label": "d4"
+    },
+    {
+     "op": "refund_delegated",
+     "ticket": "d4",
+     "sender": "a",
+     "version": 1,
+     "grant": "g1",
+     "comment": "grants are independent: g1 still serves after g0's cut"
+    },
+    {
+     "op": "revoke_grant",
+     "grant": "g1"
+    },
+    {
+     "op": "undelegate_page",
+     "page": 1,
+     "grant": "g1",
+     "comment": "reclaim of validated-unused inventory"
+    },
+    {
+     "op": "issue",
+     "slot": 4,
+     "gen": 1,
+     "holder": "a",
+     "label": "e4",
+     "comment": "the direct path resumes on the reclaimed page"
+    },
+    {
+     "op": "create_grant",
+     "delegate": "delegate",
+     "label": "g2"
+    },
+    {
+     "op": "refund_delegated",
+     "ticket": "e4",
+     "sender": "a",
+     "version": 1,
+     "grant": "g2",
+     "expect": {
+      "abort": 23
+     },
+     "comment": "a grant does not serve an undelegated page"
+    }
+   ]
   }
  ],
  "matrix": {

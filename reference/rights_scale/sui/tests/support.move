@@ -5,13 +5,14 @@ module kix_rights_scale::support;
 use kix_rights_scale::rights_scale::{Self as rs, ShowControl, InventoryPage, PaymentRefShard, IssuerCap, Ticket, IssuancePayment};
 use sui::clock::{Self, Clock};
 use sui::test_scenario::{Self as ts, Scenario};
-use kix_rights_scale::rights_scale::{PaymentEvidence, Bundle};
+use kix_rights_scale::rights_scale::{PaymentEvidence, Bundle, GrantControl};
 
 const A: address = @0xA;
 const B: address = @0xB;
 const C: address = @0xC;
 const GATE: address = @0xD;
 const ATT: address = @0xE;
+const DELE: address = @0xF;
 const STAGE_BATCH: u64 = 128;
 const ISSUE_BATCH: u64 = 128;
 
@@ -20,6 +21,7 @@ public fun b(): address { B }
 public fun c(): address { C }
 public fun gate(): address { GATE }
 public fun att(): address { ATT }
+public fun dele(): address { DELE }
 
 public fun ref_bytes(tag: u8): vector<u8> {
     let mut out = vector[];
@@ -366,4 +368,208 @@ public fun totals(sc: &mut Scenario, show: ID): (u64, u64, u64, u64) {
     return_pages(pages);
     ts::return_shared(c);
     (free, reserved, issued, retired)
+}
+
+// ---------------------------------------------------------------- delegation (RS-3a)
+
+/// Creates and shares one grant; returns the `GrantControl` id.
+public fun create_grant(sc: &mut Scenario, show: ID, delegate: address): ID {
+    sc.next_tx(A);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let cap = sc.take_from_sender<IssuerCap>();
+    rs::create_grant(&c, &cap, delegate, sc.ctx());
+    ts::return_shared(c);
+    sc.return_to_sender(cap);
+    grant_id(sc)
+}
+public fun grant_id(sc: &mut Scenario): ID {
+    sc.next_tx(A);
+    ts::most_recent_id_shared<GrantControl>().destroy_some()
+}
+public fun create_grant_as(sc: &mut Scenario, sender: address, show: ID, delegate: address) {
+    sc.next_tx(sender);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    // A non-issuer sender cannot own the cap; test_scenario lets it present A's
+    // cap object anyway, so the `authority` sender check is what is exercised.
+    let cap = ts::take_from_address<IssuerCap>(sc, A);
+    rs::create_grant(&c, &cap, delegate, sc.ctx());
+    ts::return_shared(c);
+    ts::return_to_address(A, cap);
+}
+
+/// Delegates page `index` (its position in the range table) to `grant`.
+public fun delegate(sc: &mut Scenario, show: ID, index: u64, grant: ID) {
+    sc.next_tx(A);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, index));
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    let cap = sc.take_from_sender<IssuerCap>();
+    rs::delegate_page(&c, &mut p, &g, &cap, sc.ctx());
+    ts::return_shared(g); ts::return_shared(p); ts::return_shared(c);
+    sc.return_to_sender(cap);
+}
+public fun delegate_with(sc: &mut Scenario, control: ID, page: ID, grant: ID) {
+    sc.next_tx(A);
+    let c = sc.take_shared_by_id<ShowControl>(control);
+    let mut p = sc.take_shared_by_id<InventoryPage>(page);
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    let cap = sc.take_from_sender<IssuerCap>();
+    rs::delegate_page(&c, &mut p, &g, &cap, sc.ctx());
+    ts::return_shared(g); ts::return_shared(p); ts::return_shared(c);
+    sc.return_to_sender(cap);
+}
+
+/// The revocation cut — one write on the grant, signed by the grant's issuer.
+public fun revoke_grant(sc: &mut Scenario, grant: ID) {
+    revoke_grant_as(sc, A, grant);
+}
+public fun revoke_grant_as(sc: &mut Scenario, sender: address, grant: ID) {
+    sc.next_tx(sender);
+    let mut g = sc.take_shared_by_id<GrantControl>(grant);
+    // `authority`-style sender check: a non-issuer test caller presents A's cap
+    // object, which only test_scenario permits.
+    let cap = ts::take_from_address<IssuerCap>(sc, A);
+    rs::revoke_grant(&mut g, &cap, sc.ctx());
+    ts::return_shared(g);
+    ts::return_to_address(A, cap);
+}
+
+/// Per-page reclaim after the cut.
+public fun undelegate(sc: &mut Scenario, show: ID, index: u64, grant: ID) {
+    sc.next_tx(A);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, index));
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    let cap = sc.take_from_sender<IssuerCap>();
+    rs::undelegate_page(&c, &mut p, &g, &cap, sc.ctx());
+    ts::return_shared(g); ts::return_shared(p); ts::return_shared(c);
+    sc.return_to_sender(cap);
+}
+
+/// `issue` on a delegated page, sent by the grant's delegate.
+public fun issue_delegated(sc: &mut Scenario, show: ID, slot: u64, generation: u64, grant: ID, holder: address) {
+    issue_delegated_as(sc, DELE, show, slot, generation, grant, holder);
+}
+public fun issue_delegated_as(sc: &mut Scenario, sender: address, show: ID, slot: u64, generation: u64,
+    grant: ID, holder: address) {
+    sc.next_tx(sender);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, rs::page_index_for_slot(&c, slot)));
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    rs::issue_delegated(&c, &mut p, &g, slot, generation, holder, sc.ctx());
+    ts::return_shared(g); ts::return_shared(p); ts::return_shared(c);
+}
+
+/// `attest_issuance` on a delegated page, sent by the delegate. The payment object
+/// lands with the delegate.
+public fun reserve_delegated(sc: &mut Scenario, show: ID, slot: u64, generation: u64, grant: ID,
+    buyer: address, amount: u64, payment_ref: vector<u8>) {
+    sc.next_tx(DELE);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, rs::page_index_for_slot(&c, slot)));
+    let mut s = sc.take_shared_by_id<PaymentRefShard>(shard_id(&c, rs::shard_index_for_ref(&c, copy payment_ref)));
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    rs::attest_issuance_delegated(&c, &mut p, &mut s, &g, slot, generation, buyer, amount, payment_ref, sc.ctx());
+    ts::return_shared(g); ts::return_shared(s); ts::return_shared(p); ts::return_shared(c);
+}
+
+/// `issue_paid`/`cancel_issuance` on a delegated page: the delegate presents the
+/// payment object it owns.
+public fun pay_delegated(sc: &mut Scenario, show: ID, grant: ID) {
+    sc.next_tx(DELE);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let payment = sc.take_from_sender<IssuancePayment>();
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, rs::page_index_for_slot(&c, payment_slot(&payment))));
+    let s = sc.take_shared_by_id<PaymentRefShard>(shard_id(&c, rs::shard_index_for_ref(&c, payment_ref_of(&payment))));
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    rs::issue_paid_delegated(&c, &mut p, &s, &g, payment, sc.ctx());
+    ts::return_shared(g); ts::return_shared(s); ts::return_shared(p); ts::return_shared(c);
+}
+public fun unpaid_delegated(sc: &mut Scenario, show: ID, grant: ID) {
+    sc.next_tx(DELE);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let payment = sc.take_from_sender<IssuancePayment>();
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, rs::page_index_for_slot(&c, payment_slot(&payment))));
+    let mut s = sc.take_shared_by_id<PaymentRefShard>(shard_id(&c, rs::shard_index_for_ref(&c, payment_ref_of(&payment))));
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    rs::cancel_issuance_delegated(&c, &mut p, &mut s, &g, payment, sc.ctx());
+    ts::return_shared(g); ts::return_shared(s); ts::return_shared(p); ts::return_shared(c);
+}
+
+/// The issuer presents another address's payment object on the direct path —
+/// reaches the EDelegated guard on a delegated page.
+public fun pay_direct_with(sc: &mut Scenario, show: ID, owner: address) {
+    sc.next_tx(A);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let cap = sc.take_from_sender<IssuerCap>();
+    let payment = ts::take_from_address<IssuancePayment>(sc, owner);
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, rs::page_index_for_slot(&c, payment_slot(&payment))));
+    let s = sc.take_shared_by_id<PaymentRefShard>(shard_id(&c, rs::shard_index_for_ref(&c, payment_ref_of(&payment))));
+    rs::issue_paid(&c, &mut p, &s, &cap, payment, sc.ctx());
+    ts::return_shared(s); ts::return_shared(p); ts::return_shared(c);
+    sc.return_to_sender(cap);
+}
+public fun unpaid_direct_with(sc: &mut Scenario, show: ID, owner: address) {
+    sc.next_tx(A);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let cap = sc.take_from_sender<IssuerCap>();
+    let payment = ts::take_from_address<IssuancePayment>(sc, owner);
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, rs::page_index_for_slot(&c, payment_slot(&payment))));
+    let mut s = sc.take_shared_by_id<PaymentRefShard>(shard_id(&c, rs::shard_index_for_ref(&c, payment_ref_of(&payment))));
+    rs::cancel_issuance(&c, &mut p, &mut s, &cap, payment, sc.ctx());
+    ts::return_shared(s); ts::return_shared(p); ts::return_shared(c);
+    sc.return_to_sender(cap);
+}
+
+/// Holder-signed `refund` on a delegated page; the grant must still be current.
+public fun refund_delegated(sc: &mut Scenario, show: ID, ticket: ID, version: u64, grant: ID, sender: address) {
+    sc.next_tx(sender);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let mut t = sc.take_shared_by_id<Ticket>(ticket);
+    let mut p = sc.take_shared_by_id<InventoryPage>(page_id(&c, rs::page_index_for_slot(&c, rs::slot(&t))));
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    let clk = sc.take_shared<Clock>();
+    rs::refund_delegated(&c, &mut p, &g, &mut t, version, &clk, sc.ctx());
+    ts::return_shared(clk); ts::return_shared(g); ts::return_shared(p); ts::return_shared(t); ts::return_shared(c);
+}
+
+/// One PTB-shaped bundle issued by the delegate against a delegated page.
+public fun bundle_delegated(sc: &mut Scenario, show: ID, first: u64, declared: u64, issues: u64,
+    grant: ID, holder: address) {
+    sc.next_tx(DELE);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let mut pages = take_pages(sc, &c);
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    let mut b: Bundle = rs::begin_bundle(&c, declared);
+    let mut i = 0;
+    while (i < issues) {
+        let slot = first + i;
+        let idx = rs::page_index_for_slot(&c, slot);
+        rs::bundle_issue_delegated(&mut b, &c, pages.borrow_mut(idx), &g, slot, 0, holder, sc.ctx());
+        i = i + 1;
+    };
+    rs::finish_bundle(b);
+    ts::return_shared(g);
+    return_pages(pages);
+    ts::return_shared(c);
+}
+
+/// Reads the grant's fields in one transaction.
+public fun grant_fields(sc: &mut Scenario, grant: ID): (ID, address, address, u64, bool) {
+    sc.next_tx(A);
+    let g = sc.take_shared_by_id<GrantControl>(grant);
+    let (gshow, issuer, delegate, generation, open) = (rs::grant_show(&g), rs::grant_issuer(&g),
+        rs::grant_delegate(&g), rs::grant_generation(&g), rs::grant_open(&g));
+    ts::return_shared(g);
+    (gshow, issuer, delegate, generation, open)
+}
+
+/// Reads the page's delegation binding.
+public fun page_grant(sc: &mut Scenario, show: ID, index: u64): Option<ID> {
+    sc.next_tx(A);
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let p = sc.take_shared_by_id<InventoryPage>(page_id(&c, index));
+    let out = rs::page_grant(&p);
+    ts::return_shared(p); ts::return_shared(c);
+    out
 }
