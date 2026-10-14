@@ -107,7 +107,7 @@ Move는 유지한다. TypeScript SDK나 Python 시험 도구까지 Rust로 강�
 | 단계 | 범위 | 현재 착수 판단 |
 |---|---|---|
 | 1 | v4 E-4, 수명 계약, 성능 계약·측정 장치 | 첫 묶음 승인. v4 코드 수정 금지 |
-| 2 | 종결·회수·보존·재시도·격리 해제와 색인 | R-4 문서 위치는 아래 2026-10-09 표의 #138. 열린 입력에 기대는 부분만 정지. 잠금 v4 불변 |
+| 2 | 종결·회수·보존·재시도·격리 해제와 색인 | R-4 문서 위치는 아래 2026-10-09 표의 #138. v5 in-memory fixture 기록은 [k-stage2-v5-impl](../validation/2026-10-13-k-stage2-v5-impl/README.md)(#179). 열린 입력에 기대는 부분만 정지. 잠금 v4 불변 |
 | 3 | schema·버전·SDK·독립 클라이언트 적합성 | R-5: 적합성 작업 승인, p-sdk-1 선행. 안정 1.0·공개 배포·일괄 명칭 치환은 별도 결정 |
 | 4 | 실행·저장 후보 비교 | §9의 단일 비교표 사용. 실측 범위 별도 확정 |
 | 5 | 선택 backend의 영속 거래·inbox/outbox | R-6 문서 위치는 아래 2026-10-09 표의 #140. 5단계의 선행은 v5 구현이다. 자체 R2·복제·합의 잠금 유지 |
@@ -147,7 +147,7 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [F04 실자금 해제 조건](decisions/F04_REAL_FUNDS_LIFT_CRITERIA_20261009.md) | #160 | `d7549d1473258dda617e241fff22bcbd697fbb17` | BeautifulMind-JT | If the User merges without edits, only O1 is adopted; every `DECISION_REQUIRED`/`UNDETERMINED` value stays empty; the lock stays. | 효력 발생(User 병합) |
 | [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | #161 | `31eac0637a324244aeca00e849fdb0f7c685232e` | BeautifulMind-JT | 문서 전용 계획. 채택 문장 없음. Status: document-only plan. | 문서 전용 계획. 새 승인 아님. |
 
-병합된 문서 위치(2026-10-13, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
+병합된 문서 위치(2026-10-13~14, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
 
 | 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
 |---|---|---|---|---|---|
@@ -158,6 +158,15 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | #171 | `cb59612b847fc2e6ef71810202be5e2ca5f76724` | BeautifulMind-JT | This document is not a review, not an acceptance, and not a change of status. | 위치 포인터. 새 승인 아님. |
 | [조회 원천 지도](contracts/READ_MODEL_SOURCE_MAP.md) | #172 | `3b8067d48cbda967cbf531258215c5243b96fbcd` | BeautifulMind-JT | 상태: **입력 자료. 결정 문서가 아니다.** | 위치 포인터. 새 승인 아님. |
 | [docs 색인 coverage 검사 기록](../validation/2026-10-13-docs-index-coverage-check/README.md) | #173 | `db9152ab1c5ef113b8727749d4309ec70505480f` | BeautifulMind-JT | The check indexes nothing and approves nothing; it reports coverage only. | 위치 포인터. 새 승인 아님. |
+| [조회 원천 지도 검사기 분리 기록](../validation/2026-10-13-audit5-source-map-checker-decouple/README.md) | #174 | `aba875635f682bb9914e0dee016ced58e130cc04` | BeautifulMind-JT | This record raises no evidence grade, marks nothing reviewed or operational, and keeps the operational count at 0. | 위치 포인터. 새 승인 아님. |
+| [audit5 계획·색인 동기화 기록](../validation/2026-10-13-audit5-plan-index-sync-b/README.md) | #175 | `2862f34b588e70841a57762d8ce756fd240f5e95` | BeautifulMind-JT | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [docs 색인 검사 CI 배선 기록](../validation/2026-10-13-audit5-docs-index-check-ci-wire/README.md) | #176 | `ab42cfef43a40c6b86fd3f22b69f00e134cc472e` | BeautifulMind-JT | This record raises no evidence grade, marks nothing reviewed or operational, and keeps the operational count at 0. | 위치 포인터. 새 승인 아님. |
+| [k-stage2 v5 in-memory 구현 기록](../validation/2026-10-13-k-stage2-v5-impl/README.md) | #179 | `4813388b5bcde72c298c7392ff5230316da44470` | BeautifulMind-JT | This record claims `merge-ready` for nothing; the node state is implementation complete locally, awaiting exact-head CI, non-author review, Astra's architecture audit and the user merge. | 위치 포인터. 새 승인 아님. |
+| [RS-1 공개 경로 기록](../validation/2026-10-14-rs-1-public-path/README.md) | #180 | `7b6a293e903845ff9c06a19f9a02c075d1790089` | BeautifulMind-JT | `docs/contracts/RIGHTS_SCALE_PROFILE.md` stays draft (`초안`) until Astra review at the RS-1 ARCHITECTURE gate. | 위치 포인터. 새 승인 아님. |
+| [RS-1 IssuerCap 프로브 기록](../validation/2026-10-14-rs-1-issuercap-probe/README.md) | #181 | `dd92e1146ec8eb7024da6c0f62aa721bdc1be780` | BeautifulMind-JT | This node records the measured fact; it does not pick an option, and the cap-split RS-C01 test remains closed until that choice is made. | 위치 포인터. 새 승인 아님. |
+| [RS-2 비공개 경로 기록](../validation/2026-10-14-rs-2-private-path/README.md) | #182 | `bd367efcc9127663b902b973850ffafc179469df` | BeautifulMind-JT | **Everything here is a localnet fixture.** | 위치 포인터. 새 승인 아님. |
+| [RS-3a 위임 primitives 기록](../validation/2026-10-14-rs-3a-delegation-primitives/README.md) | #183 | `adcddc510a66ff70725084c0846830c29ef9ebbe` | BeautifulMind-JT | **Everything here is a localnet fixture.** | 위치 포인터. 새 승인 아님. |
+| [RS-3b 위임 실행 map 기록](../validation/2026-10-14-rs-3b-delegated-exec/README.md) | #184 | `ced0e2f42c0491753db91acf87bd61574eb37ce4` | BeautifulMind-JT | No delegated execution is enabled (`runtime/ARCHITECTURE.toml` keeps `delegated_execution_enabled = false` and the architecture verifier still passes). | 위치 포인터. 새 승인 아님. |
 
 ## 6. E-4와 상태 수명
 
@@ -519,9 +528,12 @@ PG 선택을 다시 미정으로 쓰거나 잠정 선택을 모든 경제 기능
 
 모델 1의 chain inventory/Right, 배타 grant·회수·미발행 약정 보존·잔여 회수,
 취소 placement 및 현재성, 지정석·GA·SaleIntent·PaymentEvidence·검표 nullifier,
-비공개 증명·권한, 운영 ZK와 키 이관을 닫아야 한다. 실제 grant·비협조 회수는
-미구현이므로 위임 실행 비활성을 유지한다. 체인 클라이언트나 자체 암호를 이번에
-추가하지 않는다. 기존 shared-Show Move는 회귀 자산이다.
+비공개 증명·권한, 운영 ZK와 키 이관을 닫아야 한다. localnet grant
+primitives(GrantControl·delegate_page·revoke_grant)와 확장 프로파일 패키지
+(`reference/rights_scale`)는 fixture로 병합됐다(#180~#184, 위 §5 표). 프로파일은
+Astra 검토 전 초안이고 위임 실행 비활성을 유지한다. 운영 grant·비협조 회수는
+미구현이다. 체인 클라이언트나 자체 암호를 이번에 추가하지 않는다. 기존
+shared-Show Move는 회귀 자산이다.
 
 ## 13. 데이터 처리
 
@@ -605,7 +617,7 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 | 보완 항목 | 성격 | 청사진 | 현재 상태 |
 |---|---|---|---|
 | **TL** 선택적 자체 토큰 발행·운영 계층 | 독립 개발 대상. 토큰 없이도 기본 예매·이전·검표·환불·정산이 성립해야 한다 | [optional-native-token-v1](blueprints/optional-native-token-v1/README.md) | 구체 설계·구현 미완료. 토큰 모듈 없음 |
-| **RS** 확장형 권리·재고·검표 계층 | 핵심 개발 과제. 16슬롯 참조 프로파일은 회귀 기준으로 보존하고, 새 프로파일은 구조를 바꿔 16을 넘는다 | [rights-scale-v1](blueprints/rights-scale-v1/README.md) | 16슬롯 참조 프로파일만 있음 |
+| **RS** 확장형 권리·재고·검표 계층 | 핵심 개발 과제. 16슬롯 참조 프로파일은 회귀 기준으로 보존하고, 새 프로파일은 구조를 바꿔 16을 넘는다 | [rights-scale-v1](blueprints/rights-scale-v1/README.md) | 16슬롯 참조 프로파일은 회귀 기준으로 보존. 확장 프로파일 localnet 패키지(`reference/rights_scale`)와 grant primitives·in-memory executor map(`runtime/crates/kix-delegated-exec`)은 fixture로 존재(#180~#184). 프로파일 초안 Astra 검토 전. 위임 실행 비활성. 운영 배포 없음 |
 
 ### 18.1 승인된 것과 승인되지 않은 것
 
@@ -617,7 +629,7 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 현재 문서 포인터:
 
 - TL: TL-A ADR [ADR-0002](adr/0002-token-layer-scope-and-limits.md) 병합됨(#126). 범위·한계 기록이며 coin/TIX 잠금 해제가 아니다.
-- RS: RS-0 프로파일 0.1·결정 기록 병합됨(#125): [프로파일](contracts/RIGHTS_SCALE_PROFILE.md), [결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md). 확정 조건은 그 문서가 정한다.
+- RS: RS-0 프로파일 0.1·결정 기록 병합됨(#125): [프로파일](contracts/RIGHTS_SCALE_PROFILE.md), [결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md). 확정 조건은 그 문서가 정한다. RS-1·IssuerCap 프로브·RS-2·RS-3a·RS-3b의 localnet·in-memory fixture 병합 위치는 §5 「병합된 문서 위치(2026-10-13~14, 위치 안내만)」 표의 #180~#184 행과 [docs 색인](README.md)의 「2026-10-13/14 병합 기록 색인」 절이다.
 
 병합된 TL 문서 위치(2026-10-09, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
 

@@ -55,9 +55,9 @@
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
-| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL-3 onchain·TL-4 행은 2026-10-09 위치 동기화 기준 `5e20a467160148ad5c2debfe357dfb8da084a30a`. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 비-TL 잔여 행은 2026-10-12 `3ce6e4975b7f439d67482451bb47a22c940add26` 기준. 그 외 행은 2026-10-06 `2554173` 스냅샷 |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | 행별 위치 동기화 기준: TL·catalogue·SDK `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b·EV-V5/EV-DELEG/EV-RS `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14). 그 외 행은 2026-10-06 `2554173` 스냅샷 |
 
-[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a` 기준으로 맞췄다. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`다. 비-TL 잔여 행은 2026-10-12에 `3ce6e4975b7f439d67482451bb47a22c940add26` 기준으로 다시 맞췄다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
+[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 위치 동기화 기준은 행별로 다르다. TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행은 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 행은 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b와 새 EV-V5·EV-DELEG·EV-RS 행은 `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14) 기준이다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
 
 같은 날짜의 검증 기록:
 
@@ -125,6 +125,21 @@
 | [여신·신용 선지급 F04 목 계약](contracts/CREDIT_ADVANCE_F04.md) | Wave 5 F04 mock 술어 | 목 계약. mock/sim only. F04·E06은 설계중 그대로 |
 | [조회 원천 지도](contracts/READ_MODEL_SOURCE_MAP.md) | 승인된 13개 조회 이름의 소스 표면·보존 술어·카탈로그 기작 | 입력 자료. 결정·구현·카탈로그 변경 없음 |
 | [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | 절단 증명의 명제 P1–P4·가정 A1–A10별 기존 근거 대응표 | 빌더 작성 검토 자료 묶음. 독립 검토·수락·상태 변경 아님. I12는 미완결 |
+
+## 2026-10-13/14 병합 기록 색인 — 위치 안내만
+
+이 절은 문서·기록의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 기록 | 다루는 것 | 상태(기록이 스스로 적은 대로) |
+|---|---|---|
+| [k-stage2-v5-impl 기록](../validation/2026-10-13-k-stage2-v5-impl/README.md) | 잠금 v4 밖 새 in-memory v5 커널 slice | This record claims `merge-ready` for nothing; the node state is implementation complete locally, awaiting exact-head CI, non-author review, Astra's architecture audit and the user merge. |
+| [rs-1-public-path 기록](../validation/2026-10-14-rs-1-public-path/README.md) | 확장 프로파일 공개 경로 Move 패키지·모델·localnet | `docs/contracts/RIGHTS_SCALE_PROFILE.md` stays draft (`초안`) until Astra review at the RS-1 ARCHITECTURE gate. |
+| [rs-1-issuercap-probe 기록](../validation/2026-10-14-rs-1-issuercap-probe/README.md) | `IssuerCap` 동시 사용 직렬화 localnet 프로브 | This node records the measured fact; it does not pick an option, and the cap-split RS-C01 test remains closed until that choice is made. |
+| [rs-2-private-path 기록](../validation/2026-10-14-rs-2-private-path/README.md) | 루트 규칙·depth-10 회로·Verifier·manifest v2 | **Everything here is a localnet fixture.** |
+| [rs-3a-delegation-primitives 기록](../validation/2026-10-14-rs-3a-delegation-primitives/README.md) | 페이지 단위 grant·GrantControl·회수 cut | **Everything here is a localnet fixture.** |
+| [rs-3b-delegated-exec 기록](../validation/2026-10-14-rs-3b-delegated-exec/README.md) | 페이지↔커널·GA 카운터 대응 in-memory crate | No delegated execution is enabled (`runtime/ARCHITECTURE.toml` keeps `delegated_execution_enabled = false` and the architecture verifier still passes). |
+| [kix-kernel-v5](../runtime/crates/kix-kernel-v5/README.md) | 새 in-memory v5 커널 crate | It is not a durable service, a storage engine, or a production runtime. |
+| [kix-delegated-exec](../runtime/crates/kix-delegated-exec/README.md) | 위임 실행 map crate | It is not a service, not a chain client, not a storage engine, and not a production runtime. |
 
 ## 역사 문서와 증거
 
