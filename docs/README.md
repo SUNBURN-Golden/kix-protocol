@@ -139,6 +139,7 @@
 | [rs-2-private-path 기록](../validation/2026-10-14-rs-2-private-path/README.md) | 루트 규칙·depth-10 회로·Verifier·manifest v2 | **Everything here is a localnet fixture.** |
 | [rs-3a-delegation-primitives 기록](../validation/2026-10-14-rs-3a-delegation-primitives/README.md) | 페이지 단위 grant·GrantControl·회수 cut | **Everything here is a localnet fixture.** |
 | [rs-3b-delegated-exec 기록](../validation/2026-10-14-rs-3b-delegated-exec/README.md) | 페이지↔커널·GA 카운터 대응 in-memory crate | No delegated execution is enabled (`runtime/ARCHITECTURE.toml` keeps `delegated_execution_enabled = false` and the architecture verifier still passes). |
+| [docs-index-check-validation-records 기록](../validation/2026-10-15-docs-index-check-validation-records/README.md) | `validation/*/README.md`의 색인 연결 검사 추가 | This record extends a checker and its allowlist only; it retroactively indexes no historical record, raises no evidence grade, and marks nothing reviewed or operational. |
 | [kix-kernel-v5](../runtime/crates/kix-kernel-v5/README.md) | 새 in-memory v5 커널 crate | It is not a durable service, a storage engine, or a production runtime. |
 | [kix-delegated-exec](../runtime/crates/kix-delegated-exec/README.md) | 위임 실행 map crate | It is not a service, not a chain client, not a storage engine, and not a production runtime. |
 
