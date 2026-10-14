@@ -225,6 +225,53 @@ fn a_payment_operation_binds_at_most_one_order_across_pages() {
 }
 
 #[test]
+fn an_order_id_binds_at_most_one_page_across_pages() {
+    let mut show = two_page_seat_show();
+    // The first reserve binds the order id on page 0.
+    let held = show.reserve(ctx(1), &reserve(1, 0, 1)).unwrap();
+    assert_eq!(held.original, ReserveOutcome::Held(id(1)));
+
+    // A different command carrying the same order id routed to a different
+    // page gets the kernel's own rejection value, binds nothing on page 1,
+    // and stores no record there.
+    let mut second = reserve(2, 4_096, 1);
+    second.order_id = id(1);
+    let rejected = show.reserve(ctx(2), &second).unwrap();
+    assert_eq!(
+        rejected.original,
+        ReserveOutcome::Rejected(Rejection::OrderExists)
+    );
+    assert!(!rejected.replayed);
+    assert_eq!(show.page_kernel(1).unwrap().order_count(), 0);
+    assert_eq!(show.remaining(1), Some(2_904));
+    // A kernel never removes an order record, so an identical retry answers
+    // the same synthesized rejection.
+    let retry = show.reserve(ctx(3), &second).unwrap();
+    assert_eq!(retry.original, rejected.original);
+    assert!(!retry.replayed);
+
+    // On the bound page itself the kernel's own stored rejection answers
+    // and replays.
+    let mut third = reserve(3, 5, 1);
+    third.order_id = id(1);
+    let rejected = show.reserve(ctx(4), &third).unwrap();
+    assert_eq!(
+        rejected.original,
+        ReserveOutcome::Rejected(Rejection::OrderExists)
+    );
+    assert!(!rejected.replayed);
+    assert!(show.reserve(ctx(5), &third).unwrap().replayed);
+
+    // The binding still points at page 0: expiry reaches the original order
+    // and releases its inventory — nothing was stranded on page 1.
+    assert!(show.expire(ctx(100), id(1)).unwrap());
+    assert_eq!(show.order(id(1)).unwrap().state, OrderState::Expired);
+    assert_eq!(show.remaining(0), Some(4_096));
+    assert_eq!(show.remaining(1), Some(2_904));
+    assert_eq!(show.page_kernel(1).unwrap().order_count(), 0);
+}
+
+#[test]
 fn capture_observations_route_to_the_bound_operations_page() {
     let mut show = show(
         RangeTable::new(&[

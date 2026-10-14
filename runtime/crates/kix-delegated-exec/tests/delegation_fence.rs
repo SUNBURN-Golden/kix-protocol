@@ -254,6 +254,139 @@ fn undelegation_requires_a_closed_grant_and_a_validated_unused_remainder() {
 }
 
 #[test]
+fn a_failed_authority_transition_bumps_no_epoch_and_stays_retryable() {
+    let mut show = show_two_pages();
+    // A stored rejection advances the page kernel's clock without holding an
+    // order, so the page stays delegatable.
+    let mut stale = reserve(1, 0, 1);
+    stale.expected_business_epoch = 2;
+    show.reserve(ctx(10), &stale).unwrap();
+
+    // A caller-supplied `now_ms` behind the kernel's clock fails the
+    // re-fence. The epoch mirror must not move, so the retry — under the
+    // same current fence, not an inflated one — is what recovers.
+    show.create_grant(id(50), id(60)).unwrap();
+    assert_eq!(
+        show.delegate_page(5, id(50), 0),
+        Err(MappingError::Kernel(KernelError::ClockRegression))
+    );
+    let delegated = show.delegate_page(20, id(50), 0).unwrap();
+    assert_eq!(
+        delegated,
+        ExecutionFence {
+            owner: id(60),
+            generation: 2
+        }
+    );
+    assert_eq!(show.page_fence(0), Some(delegated));
+
+    // The same discipline holds on the way back: a regressed undelegation
+    // fails without moving the epoch, and the retry restores the issuer.
+    show.revoke_grant(30, id(50)).unwrap();
+    assert_eq!(
+        show.undelegate_page(25, id(50), 0),
+        Err(MappingError::Kernel(KernelError::ClockRegression))
+    );
+    let restored = show.undelegate_page(40, id(50), 0).unwrap();
+    assert_eq!(
+        restored,
+        ExecutionFence {
+            owner: id(1),
+            generation: 4
+        }
+    );
+    assert_eq!(show.page_fence(0), Some(restored));
+}
+
+#[test]
+fn a_revoke_cut_completes_page_by_page_and_retries_pending_pages() {
+    let mut show = show(
+        RangeTable::new(&[
+            page(0, 0, 4_096, PageKind::Seat),
+            page(1, 4_096, 7_000, PageKind::Seat),
+            page(2, 7_000, 8_000, PageKind::Seat),
+        ])
+        .unwrap(),
+    );
+    show.create_grant(id(50), id(60)).unwrap();
+    let delegated = show.delegate_page(1, id(50), 0).unwrap();
+    assert_eq!(show.delegate_page(2, id(50), 1).unwrap(), delegated);
+    assert_eq!(show.delegate_page(3, id(50), 2).unwrap(), delegated);
+
+    // Stored rejections advance the kernel clocks of pages 1 and 2 past the
+    // coming revoke time, so their cuts fail mid-loop after page 0's lands.
+    let mut stale = reserve(1, 4_096, 1);
+    stale.expected_business_epoch = 2;
+    show.reserve(ctx_for(20, delegated), &stale).unwrap();
+    let mut stale = reserve(2, 7_000, 1);
+    stale.expected_business_epoch = 2;
+    show.reserve(ctx_for(21, delegated), &stale).unwrap();
+
+    // The mirror closes and page 0's tombstone lands; page 1's kernel
+    // refuses the regressed clock and the loop stops there.
+    assert_eq!(
+        show.revoke_grant(10, id(50)),
+        Err(MappingError::Kernel(KernelError::ClockRegression))
+    );
+    assert!(!show.grant(id(50)).unwrap().open);
+    assert_eq!(show.grant(id(50)).unwrap().generation, 2);
+    assert_eq!(
+        show.page_fence(0),
+        Some(ExecutionFence {
+            owner: id(50),
+            generation: 3
+        })
+    );
+    // The still-pending pages keep answering to the delegate fence their
+    // kernels hold, and new consumption on them is already refused.
+    for (pending, slot) in [(1, 4_097), (2, 7_001)] {
+        assert_eq!(show.page_fence(pending), Some(delegated));
+        assert_eq!(show.grant_of_page(pending), Some(id(50)));
+        assert_eq!(
+            show.reserve(ctx_for(22, delegated), &reserve(9, slot, 1)),
+            Err(MappingError::GrantClosed)
+        );
+    }
+
+    // A pending page can also be undelegated straight back to the issuer:
+    // its kernel fence is still the delegate's, and the epoch only moves
+    // once the kernel accepts.
+    let restored = show.undelegate_page(30, id(50), 2).unwrap();
+    assert_eq!(
+        restored,
+        ExecutionFence {
+            owner: id(1),
+            generation: 3
+        }
+    );
+    assert_eq!(show.grant_of_page(2), None);
+
+    // Retrying the revoke finishes the cut for the pages still pending.
+    show.revoke_grant(40, id(50)).unwrap();
+    assert_eq!(
+        show.page_fence(1),
+        Some(ExecutionFence {
+            owner: id(50),
+            generation: 3
+        })
+    );
+    // With nothing pending, a further revoke reports GrantClosed.
+    assert_eq!(
+        show.revoke_grant(41, id(50)),
+        Err(MappingError::GrantClosed)
+    );
+    // The finished page undelegates under its tombstone fence.
+    let restored = show.undelegate_page(50, id(50), 1).unwrap();
+    assert_eq!(
+        restored,
+        ExecutionFence {
+            owner: id(1),
+            generation: 4
+        }
+    );
+}
+
+#[test]
 fn grant_identity_collisions_are_invalid_configuration() {
     let mut show = show_two_pages();
     // grant id, delegate and issuer (id(1)) must be three distinct

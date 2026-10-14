@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 
 use common::{ctx, ga_reserve, id, page, reserve, show};
 use kix_delegated_exec::{DelegatedShow, MappingError, PageKind, RangeTable};
-use kix_kernel_v5::{KernelError, ReserveOutcome};
+use kix_kernel_v5::{KernelError, Rejection, ReserveOutcome};
 
 /// Seat page [0, 4,096) plus GA page [4,096, 4,104): capacity 8.
 fn seat_and_ga_show() -> DelegatedShow {
@@ -133,6 +133,41 @@ fn a_stored_ga_command_replays_on_its_pinned_page_after_capacity_shifts() {
         show.reserve(ctx(103), &reserve(2, 0, 1)),
         Err(MappingError::CommandConflict)
     );
+}
+
+#[test]
+fn an_order_id_bound_on_one_page_cannot_rebind_on_another_ga_page() {
+    let mut show = show(
+        RangeTable::new(&[page(0, 0, 6, PageKind::Ga), page(1, 6, 16, PageKind::Ga)]).unwrap(),
+    );
+    let held = show.reserve(ctx(1), &ga_reserve(1, 4)).unwrap();
+    assert_eq!(held.original, ReserveOutcome::Held(id(1)));
+    let slots = show.slot_hold(id(1)).unwrap().slots.clone();
+    assert_eq!(show.slot_hold(id(1)).unwrap().page_index, 0);
+
+    // Page 0 cannot serve 8, so a different command carrying the same order
+    // id routes to page 1 and is answered with the kernel's own rejection
+    // value: it holds nothing, consumes no free slots, and the first hold's
+    // recorded slot set survives.
+    let mut second = ga_reserve(2, 8);
+    second.order_id = id(1);
+    let rejected = show.reserve(ctx(2), &second).unwrap();
+    assert_eq!(
+        rejected.original,
+        ReserveOutcome::Rejected(Rejection::OrderExists)
+    );
+    assert!(!rejected.replayed);
+    assert_eq!(show.page_kernel(1).unwrap().order_count(), 0);
+    assert_eq!(show.slot_hold(id(1)).unwrap().slots, slots);
+    assert_conservation(&show, 0, 6);
+    assert_conservation(&show, 1, 10);
+
+    // Expiry still reaches the page-0 order and returns its slots to the
+    // free set.
+    assert!(show.expire(ctx(100), id(1)).unwrap());
+    assert!(show.slot_hold(id(1)).is_none());
+    assert_conservation(&show, 0, 6);
+    assert_conservation(&show, 1, 10);
 }
 
 #[test]

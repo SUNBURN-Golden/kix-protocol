@@ -253,3 +253,68 @@ the wrong-scope case (that is the separate `WrongScope` variant).
 
 No commit, push, PR, comment, `.aiops/`, `docs/tasks/` or CI edit; the supervisor owns git.
 Exact-head CI: none available — nothing committed.
+
+## Fix round 2 (independent review)
+
+One blocking finding and the non-blocking unrecoverable-retry note next to it
+were fixed in `runtime/crates/kix-delegated-exec/src/lib.rs`; everything above
+remains the earlier record.
+
+1. **Cross-page `order_id` double-binding [blocking].** `reserve` never checked
+   whether `request.order_id` was already bound on another page; `order_pages`
+   and `ga_holds` silently overwrote on the second `Held`. `expire`/`order`/
+   `mark_payment_unknown` then acted on the second page's order, the first
+   order's inventory leaked permanently (its page stayed non-delegatable under
+   `has_unresolved`), and a GA first hold's recorded `SlotHold` was dropped so
+   its slots vanished from both the free and held sets, breaking the asserted
+   `free + held == end - start` conservation. Fix: on a fresh command the map
+   checks `order_pages` before `operation_pages` — the kernel evaluates
+   `OrderExists` before `OperationAlreadyBound` (`kix-kernel-v5` lib.rs:699,
+   707) — and answers the kernel's own `Rejected(OrderExists)` when the id is
+   bound on another page. The rejection is synthesized: no kernel stores a
+   record, no route is pinned, and it is stable because a kernel never removes
+   an order record. A same-page duplicate still reaches the kernel for its own
+   stored rejection and replay.
+2. **Unrecoverable authority-transition retry (non-blocking note).**
+   `delegate_page`/`revoke_grant`/`undelegate_page` bumped `page.epoch` before
+   `replace_owner`, so a mid-call kernel error (e.g. a caller-supplied
+   regressed `now_ms` → `ClockRegression`) left the epoch mirror ahead of the
+   kernel fence and bricked the page: a `revoke_grant` retry could not even
+   run (the mirror was already closed). The epoch mirror now advances only
+   after the kernel accepts a re-fence, and a new per-page `tombstoned` bit
+   marks a finished cut: a retried `revoke_grant` completes the still-pending
+   pages (none pending → `GrantClosed`, unchanged), `page_fence` reports the
+   delegate fence a pending page's kernel still holds, and `undelegate_page`
+   returns a pending page straight to the issuer. New consumption on a
+   pending page was already refused from the mirror write on.
+
+### New tests (fix round 2)
+
+| Test | File | Covers |
+|---|---|---|
+| `an_order_id_binds_at_most_one_page_across_pages` | `routing.rs` | finding: cross-page `OrderExists` synthesis, stability across retries, kernel-stored same-page case, expiry reaches the bound page and releases its inventory |
+| `an_order_id_bound_on_one_page_cannot_rebind_on_another_ga_page` | `ga_slots.rs` | finding, GA half: no second hold, no free-set consumption, first `SlotHold` survives, `free + held` conservation, expiry returns the slots |
+| `a_failed_authority_transition_bumps_no_epoch_and_stays_retryable` | `delegation_fence.rs` | note: `ClockRegression` mid-`delegate_page`/mid-`undelegate_page` leaves the epoch mirror unmoved; retry succeeds under the same current fence |
+| `a_revoke_cut_completes_page_by_page_and_retries_pending_pages` | `delegation_fence.rs` | note: mid-loop `revoke_grant` failure leaves pending pages under the delegate fence with new consumption already refused; undelegate-a-pending-page and retry-to-finish paths; `GrantClosed` when nothing is pending |
+
+38 crate tests total (was 34).
+
+### Commands actually run (fix round 2)
+
+| Command | Result |
+|---|---|
+| `cargo test -p kix-delegated-exec` | 38/38 pass |
+| `cargo clippy -p kix-delegated-exec --all-targets --locked -- -D warnings` | clean |
+| `cargo fmt -p kix-delegated-exec -- --check` | reformatted once, then clean |
+| `cargo test --workspace --locked` | 221/221 pass across all crates |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | clean |
+| `cargo fmt --all -- --check` | clean |
+| `python3 scripts/verify_runtime_architecture.py` | `architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified` |
+| `python3 scripts/test_runtime_architecture.py` | 7/7 tests OK |
+| `python3 scripts/check_status_register.py` | pass |
+| `python3 scripts/check_rs_profile_traceability.py` | pass |
+| `python3 scripts/check_docs_index.py` | pass |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `69564b16…`, `b607996c…` — both match, before and after |
+
+No commit, push, PR, comment, `.aiops/`, `docs/tasks/` or CI edit; the supervisor
+owns git. Exact-head CI: none available — nothing committed.

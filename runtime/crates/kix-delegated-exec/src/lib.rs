@@ -48,6 +48,13 @@
 //!   `Rejected(OperationAlreadyBound)` — synthesized by the map, not
 //!   stored, and stable because a kernel never unbinds an operation — and
 //!   observations route to the bound page only.
+//! - Order identity: `order_pages` binds each `order_id` to the single page
+//!   whose kernel holds the order, mirroring the kernel's `OrderExists`
+//!   rejection across pages. A fresh reserve routed to a different page than
+//!   the bound one is answered with the kernel's own `Rejected(OrderExists)`
+//!   — synthesized by the map, not stored, and stable because a kernel never
+//!   removes an order record. The map checks it before the operation
+//!   binding, matching the kernel's rejection order.
 //! - Delegation mirrors `GrantControl` (rs-3a): `delegate_page` replaces the
 //!   page kernel's fence owner with the grant's delegate and bumps a per-page
 //!   delegation epoch; `revoke_grant` closes the grant and replaces every
@@ -57,7 +64,11 @@
 //!   cut because the kernel checks the command record before the fence, so
 //!   pre-cut commitments are preserved while new commands under the old fence
 //!   get `KernelError::ExecutionFenced` and new consumption is refused with
-//!   `GrantClosed` before any kernel call.
+//!   `GrantClosed` before any kernel call. A page's epoch mirror advances
+//!   only after the kernel accepts a re-fence, so a mid-call kernel error
+//!   (for example a caller-supplied regressed `now_ms`) leaves the
+//!   transition retryable, and a retried `revoke_grant` completes the cut
+//!   for the pages still pending.
 //!
 //! What this crate is not: it performs no I/O, clock reads, random generation,
 //! replication, consensus, storage, or chain access. It does not authenticate
@@ -248,6 +259,11 @@ struct Page {
     /// strictly increases on every authority transition for this page.
     epoch: u64,
     grant: Option<KixId>,
+    /// Whether `revoke_grant` has moved this page's kernel fence to the
+    /// grant-id tombstone. While false on a granted page the kernel still
+    /// answers to the delegate fence — either because the grant is open or
+    /// because this page's cut is pending after a mid-call kernel error.
+    tombstoned: bool,
     orders: BTreeSet<KixId>,
     /// Free show slots for GA pages; `None` for seat pages.
     ga_free: Option<BTreeSet<u32>>,
@@ -267,6 +283,10 @@ pub struct DelegatedShow {
     /// never recomputed — which is the cross-page half of the
     /// command-conflict rule.
     routed_commands: BTreeMap<(KixId, KixId), u32>,
+    /// `order_id` -> page index, recorded on `Held` and never removed,
+    /// mirroring the kernel's permanent order records. The cross-page half
+    /// of the kernel's `OrderExists` rule: `reserve` does not bind an order
+    /// id already bound on another page.
     order_pages: BTreeMap<KixId, u32>,
     /// `ProviderOperation` -> page index, recorded on `Held`. The
     /// cross-page half of the kernel's one-operation→one-order rule:
@@ -339,6 +359,7 @@ impl DelegatedShow {
                     kernel,
                     epoch: 1,
                     grant: None,
+                    tombstoned: false,
                     orders: BTreeSet::new(),
                     ga_free,
                 },
@@ -373,8 +394,9 @@ impl DelegatedShow {
 
     /// The fence a command context must carry to be accepted by this page's
     /// kernel right now: the issuer on the direct path, the delegate while
-    /// its grant is open, and the grant id itself (a held tombstone) between
-    /// the cut and `undelegate_page`.
+    /// its grant is open (and still on a granted page whose tombstone cut is
+    /// pending after a mid-call `revoke_grant` error), and the grant id
+    /// itself (a held tombstone) between the cut and `undelegate_page`.
     pub fn page_fence(&self, page_index: u32) -> Option<ExecutionFence> {
         let page = self.pages.get(&page_index)?;
         Some(self.fence_of(page))
@@ -384,7 +406,10 @@ impl DelegatedShow {
         let owner = match page.grant {
             None => self.issuer,
             Some(grant_id) => match self.grants.get(&grant_id) {
-                Some(grant) if grant.open => grant.delegate,
+                // The kernel answers to the delegate while the grant is
+                // open, and keeps answering to it until this page's
+                // tombstone cut has actually reached the kernel.
+                Some(grant) if grant.open || !page.tombstoned => grant.delegate,
                 _ => grant_id,
             },
         };
@@ -449,8 +474,9 @@ impl DelegatedShow {
     /// to `(page scope, principal, request)`; a retry of identical bytes is
     /// the kernel's own first-result replay. A command the kernel already
     /// stored is pinned to its page — the route is never recomputed from
-    /// current capacity — and a fresh command whose payment operation is
-    /// already bound on a different page is answered with the kernel's own
+    /// current capacity — and a fresh command whose order id or payment
+    /// operation is already bound on a different page is answered with the
+    /// kernel's own `Rejected(OrderExists)` or
     /// `Rejected(OperationAlreadyBound)` without a kernel call.
     pub fn reserve(
         &mut self,
@@ -471,7 +497,7 @@ impl DelegatedShow {
             Some(pinned) => (pinned, self.pinned_selection(pinned, request.selection)?),
             None => self.route(request.selection)?,
         };
-        // The cut gate and the operation-binding check apply only to
+        // The cut gate and the cross-page binding checks apply only to
         // commands the kernel has not stored, matching the kernel's own
         // order (the command record is checked before the fence and the
         // rejection evaluation). A stored command goes through so the
@@ -482,6 +508,24 @@ impl DelegatedShow {
                 && !self.grants[&grant_id].open
             {
                 return Err(MappingError::GrantClosed);
+            }
+            // The cross-page half of the kernel's `OrderExists` rule: an
+            // order id already bound on another page must not bind a second
+            // order here — a second `Held` would strand the first order
+            // (`expire`/`mark_payment_unknown`/`order` and the GA `SlotHold`
+            // would all follow the newest binding). The kernel answer is a
+            // stored `Rejected(OrderExists)`; the map synthesizes the same
+            // value, stable without a stored route because a kernel never
+            // removes an order record, and pins no route because no kernel
+            // stored one. The kernel evaluates `OrderExists` before
+            // `OperationAlreadyBound`, so this check precedes the next.
+            if let Some(bound) = self.order_pages.get(&request.order_id)
+                && *bound != page_index
+            {
+                return Ok(AppliedReservation {
+                    original: ReserveOutcome::Rejected(Rejection::OrderExists),
+                    replayed: false,
+                });
             }
             // The cross-page half of the kernel's one-operation→one-order
             // rule: a payment already bound on another page must not bind a
@@ -763,6 +807,9 @@ impl DelegatedShow {
             return Err(MappingError::OutstandingReservations);
         }
         // The current fence is the direct path: issuer at the current epoch.
+        // The epoch mirror advances only after the kernel accepts the
+        // re-fence, so a mid-call kernel error (for example a caller-supplied
+        // regressed `now_ms`) leaves the page retryable under the same fence.
         let ctx = Context {
             fence: ExecutionFence {
                 owner: issuer,
@@ -771,15 +818,16 @@ impl DelegatedShow {
             now_ms,
             semantics_version: SEMANTICS_VERSION,
         };
-        page.epoch += 1;
         let next = ExecutionFence {
             owner: delegate,
-            generation: page.epoch,
+            generation: page.epoch + 1,
         };
         page.kernel
             .replace_owner(ctx, next)
             .map_err(MappingError::Kernel)?;
+        page.epoch += 1;
         page.grant = Some(grant_id);
+        page.tombstoned = false;
         Ok(next)
     }
 
@@ -790,51 +838,57 @@ impl DelegatedShow {
     /// are refused with `GrantClosed`, and commands carrying the old delegate
     /// fence fail the kernel's own fence check with `ExecutionFenced`.
     /// Pre-cut stored results still replay; `expire` and `observe_capture`
-    /// continue under the held tombstone fence.
+    /// continue under the held tombstone fence. A mid-call kernel error
+    /// (for example a caller-supplied regressed `now_ms`) stops the page
+    /// loop with the mirror already closed: new consumption stays refused,
+    /// the still-pending pages keep answering to the delegate fence their
+    /// kernels hold, and a retry completes the cut for them. With no page
+    /// left pending, a repeat call reports `GrantClosed`.
     pub fn revoke_grant(&mut self, now_ms: u64, grant_id: KixId) -> Result<(), MappingError> {
         let grant = self
             .grants
             .get(&grant_id)
             .ok_or(MappingError::UnknownGrant)?;
-        if !grant.open {
+        let delegate = grant.delegate;
+        if grant.open {
+            // The commit point is the single write on the grant mirror.
+            let grant = self.grants.get_mut(&grant_id).expect("checked grant");
+            grant.open = false;
+            grant.generation += 1;
+        } else if !self
+            .pages
+            .values()
+            .any(|page| page.grant == Some(grant_id) && !page.tombstoned)
+        {
             return Err(MappingError::GrantClosed);
         }
-        let delegate = grant.delegate;
-        // The current delegated fences must be captured before the grant is
-        // closed: the post-cut fence owner is the grant id itself.
-        let affected: Vec<(u32, ExecutionFence)> = self
-            .pages
-            .iter()
-            .filter(|(_, page)| page.grant == Some(grant_id))
-            .map(|(&index, page)| {
-                (
-                    index,
-                    ExecutionFence {
-                        owner: delegate,
-                        generation: page.epoch,
-                    },
-                )
-            })
-            .collect();
-        let grant = self.grants.get_mut(&grant_id).expect("checked grant");
-        grant.open = false;
-        grant.generation += 1;
-        for (index, current) in affected {
-            let page = self.pages.get_mut(&index).expect("delegated page");
-            page.epoch += 1;
+        // A pending page's kernel still answers to the delegate fence at the
+        // mirrored epoch; the epoch and the tombstone bit advance only after
+        // the kernel accepts, so a failed call can be retried to finish the
+        // cut page by page.
+        for page in self.pages.values_mut() {
+            if page.grant != Some(grant_id) || page.tombstoned {
+                continue;
+            }
+            let next = ExecutionFence {
+                owner: grant_id,
+                generation: page.epoch + 1,
+            };
             page.kernel
                 .replace_owner(
                     Context {
-                        fence: current,
+                        fence: ExecutionFence {
+                            owner: delegate,
+                            generation: page.epoch,
+                        },
                         now_ms,
                         semantics_version: SEMANTICS_VERSION,
                     },
-                    ExecutionFence {
-                        owner: grant_id,
-                        generation: page.epoch,
-                    },
+                    next,
                 )
                 .map_err(MappingError::Kernel)?;
+            page.epoch += 1;
+            page.tombstoned = true;
         }
         Ok(())
     }
@@ -857,6 +911,7 @@ impl DelegatedShow {
         if grant.open {
             return Err(MappingError::GrantOpen);
         }
+        let delegate = grant.delegate;
         let issuer = self.issuer;
         let page = self
             .pages
@@ -868,25 +923,30 @@ impl DelegatedShow {
         if Self::has_unresolved(page) {
             return Err(MappingError::OutstandingReservations);
         }
-        // The current fence is the held tombstone: the grant id at the
-        // current epoch, set by `revoke_grant`.
+        // The current fence is the held tombstone for a page whose cut
+        // completed, or still the delegate's while the page's cut is pending
+        // after a mid-call `revoke_grant` error; undelegating finishes the
+        // transition to the direct path either way. The epoch mirror
+        // advances only after the kernel accepts the re-fence.
+        let owner = if page.tombstoned { grant_id } else { delegate };
         let ctx = Context {
             fence: ExecutionFence {
-                owner: grant_id,
+                owner,
                 generation: page.epoch,
             },
             now_ms,
             semantics_version: SEMANTICS_VERSION,
         };
-        page.epoch += 1;
         let next = ExecutionFence {
             owner: issuer,
-            generation: page.epoch,
+            generation: page.epoch + 1,
         };
         page.kernel
             .replace_owner(ctx, next)
             .map_err(MappingError::Kernel)?;
+        page.epoch += 1;
         page.grant = None;
+        page.tombstoned = false;
         Ok(next)
     }
 
