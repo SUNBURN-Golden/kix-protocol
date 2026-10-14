@@ -146,7 +146,7 @@ RS/TL 구현 evidence로 세지 않는다.
 |---|---|---|
 | RS-0 | `docs/contracts/RIGHTS_SCALE_PROFILE.md` 초안 0.1, `docs/decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md`(#125 병합), 청사진 SOURCE_ONLY | 결정 초안 문서 병합만; 확정 조건의 Astra 아키텍처 검토·RS-C/IM 처리·상한·RR 선택·측정은 미충족 |
 | RS-1, issuer-cap probe | `reference/rights_scale/` Move 패키지·model·vectors·localnet driver | in progress; authorized against draft 0.1 @ 9b12626b (`docs/decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md`); not merged / DECISION_REQUIRED; RS-0 후 1,024 public localnet/IssuerCap 동시 probe |
-| RS-2 | 기존 circuit 비교만, 새 source 없음 | not covered; RS-1·RR 채택 후 root/circuit/verifier/manifest-v2·cross-context 거부 |
+| RS-2 | `reference/rights_scale/sui/sources/zk_gate.move`, `reference/rights_scale/zk/circuits/{common,mint_scale,spend_scale}.circom`, `reference/rights_scale/client/{setup-zk,private-scale,private-localnet,zk-regression}.mjs`, `reference/rights_scale/vectors/private_path.json`, `validation/2026-10-14-rs-2-private-path/README.md` | in progress; localnet fixture만 (깊이 10 회로·Verifier·manifest v2·루트 규칙 RR-1~RR-6·비공개 여정, 단일 당사자 fixture ceremony, K·샤드 수·깊이는 시험 전용 값); not merged / DECISION_REQUIRED (Astra ARCHITECTURE 게이트·User 병합 전); 익명성·운영 ceremony·회로 감사·성능은 미주장, 비공개 리셀·환불·재발행·키 교체와 RS-4 측정은 not covered |
 | RS-3a | 없음 | not covered; page grant/GrantControl/revocation cut, RS-1/A3 |
 | RS-3b | EV-K 비교만 | not covered; RS-3a+v5; GA counter/slot·4,096 cap·세대/회수 대응 미확인 |
 | RS-4 L1→L2→L3 | 없음 | not covered; 실제 1,024→16,384→65,536/복수 공연 raw workload·분모/지연·경로별 predecessors |

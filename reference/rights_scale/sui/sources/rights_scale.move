@@ -1,12 +1,15 @@
-/// LOCALNET PROTOTYPE, RS-1: the public path of the extended rights profile
-/// (docs/contracts/RIGHTS_SCALE_PROFILE.md, draft 0.1). Not production, not measured.
+/// LOCALNET PROTOTYPE, RS-1 + RS-2: the public and private paths of the extended rights
+/// profile (docs/contracts/RIGHTS_SCALE_PROFILE.md, draft 0.1). Not production, not measured.
 ///
 /// Authority is split into independent shared objects: a read-mostly `ShowControl`,
 /// `InventoryPage`s whose IDs are `derived_object` claims on the control's UID, and
-/// `PaymentRefShard`s routed by payment-reference bytes. Only the public path exists
-/// here: shield / consume_private / root trees (RS-2) and GrantControl / delegation
-/// (RS-3a) are deliberately absent, and so is any GA redistribution operation
-/// (RS-C02 sentence 2: DECISION_REQUIRED, Astra).
+/// `PaymentRefShard`s routed by payment-reference bytes. RS-2 adds the private path:
+/// one `NoteTree` (RR-1, RR-5), one `RevocationState` holding only the sparse revocation
+/// root (RR-2, RR-3, RR-6), and `NullifierShard`s / `ChallengeShard`s routed by the hash
+/// of the nullifier or challenge alone (RS-C09, RS-C11, RS-C17). The private objects are
+/// opt-in per show (`claim_zk`, before `seal`), so the RS-1 public path is unchanged.
+/// GrantControl / delegation (RS-3a) is deliberately absent, and so is any GA
+/// redistribution operation (RS-C02 sentence 2: DECISION_REQUIRED, Astra).
 /// Fiat evidence is an authorized attester assertion, never proof of bank funds.
 /// No coin, TIX or other economic-asset type is defined by this package.
 module kix_rights_scale::rights_scale;
@@ -15,7 +18,9 @@ use sui::clock::Clock;
 use sui::derived_object;
 use sui::event;
 use sui::hash;
+use sui::poseidon;
 use sui::table::{Self, Table};
+use kix_rights_scale::zk_gate::{Self, Verifier};
 
 const EClosed: u64 = 1;
 const ENotHolder: u64 = 2;
@@ -24,7 +29,7 @@ const EAuthority: u64 = 4;
 const ELocked: u64 = 5;
 const EPolicy: u64 = 6;
 const EPayment: u64 = 7;
-// 8 is the reference profile's EProof; the proof path is RS-2 and has no code here.
+const EProof: u64 = 8;
 const EInventory: u64 = 9;
 const EBundleTooLarge: u64 = 10;
 const EBundleIncomplete: u64 = 11;
@@ -34,16 +39,24 @@ const ENotComplete: u64 = 14;
 const EPage: u64 = 15;
 const EShard: u64 = 16;
 const ERange: u64 = 17;
+// RS-2. A proof the verifier rejects aborts inside kix_rights_scale::zk_gate (code 2).
+const EZk: u64 = 18;           // private path not enabled, or a wrong / missing private-path object
+const ERoot: u64 = 19;         // note root outside the history, or a revocation witness not matching the root
+const ETreeFull: u64 = 20;     // note tree leaf capacity reached
+const ERootRequired: u64 = 21; // plain `revoke` on a show whose revocation root must be updated
+const EVerifier: u64 = 22;     // `claim_zk` with a verifier object that is not the one pinned at creation
 
 const ACTIVE: u8 = 0;
 const CONSUMED: u8 = 1;
 const VOID: u8 = 2;
+const SHIELDED: u8 = 3;
 const DIRECT: u8 = 0;
 const PAID: u8 = 1;
 const SEATED: u8 = 0;
 const GA: u8 = 1;
 const REF_PRIMARY: u8 = 1;
 const REF_SECONDARY: u8 = 2;
+const FR: u256 = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
 // Localnet defaults; Astra-owned. These are not protocol values; the operational
 // values stay UNDETERMINED (profile section 13). Owner decision 2026-10-13.
@@ -56,11 +69,24 @@ const LOCALNET_SHOW_SLOTS: u64 = 1024;
 const LOCALNET_PAGE_SLOTS: u64 = 64;
 // Not set by the owner decision: a fixture value chosen in RS-1's test matrix (1, 2, 4, 8).
 const LOCALNET_PAYMENT_SHARDS: u64 = 4;
+// RS-2 localnet fixture values; Astra-owned. None is a protocol value and none is an
+// operational default: K, the shard counts and the depth stay UNDETERMINED for mainnet
+// (profile sections 4 and 13). `ZK_DEPTH` is the depth of both trees and the width of the
+// circuit's slot range check, so it also caps the slots of a show that enables the private path.
+const ZK_DEPTH: u64 = 10;
+const LOCALNET_ROOT_HISTORY_K: u64 = 4;
+const LOCALNET_NULLIFIER_SHARDS: u64 = 4;
+const LOCALNET_CHALLENGE_SHARDS: u64 = 4;
 
 /// Key space of page claims. A different type from `ShardKey`, so the two derived
 /// address spaces cannot collide even though both use small integers.
 public struct PageKey has copy, drop, store { index: u64 }
 public struct ShardKey has copy, drop, store { index: u64 }
+/// RS-2 key spaces, each a type of its own so they cannot collide with pages, payment
+/// shards or each other. `TreeKey` 0 is the note tree and 1 the revocation state.
+public struct TreeKey has copy, drop, store { index: u64 }
+public struct NullifierKey has copy, drop, store { index: u64 }
+public struct ChallengeKey has copy, drop, store { index: u64 }
 
 /// Temporary owned input of the issuer-signed operations (profile section 3 and 13).
 /// Minted once to the publisher in `init`; `key` only, so no `public_transfer`, and
@@ -94,6 +120,9 @@ public struct ShowControl has key {
     claimed_pages: u64,
     claimed_shards: u64,
     claim_sequence: u64,
+    // RS-C11: Poseidon(show id mod FR, profile_version, manifest hash mod FR). Zero until
+    // `claim_zk` enables the private path; fixed afterwards.
+    domain: u256,
 }
 
 /// Owns the half-open slot range [start, end). Conservation: free + reserved +
@@ -122,6 +151,51 @@ public struct PaymentRefShard has key {
     show: ID,
     index: u64,
     refs: Table<vector<u8>, u8>,
+}
+
+/// RR-1 / RR-5: the one append-only incremental note tree of a show. Holds the frontier,
+/// the root and the K most recent roots; leaves live in `NoteAdded` events.
+public struct NoteTree has key {
+    id: UID,
+    show: ID,
+    depth: u64,
+    history_k: u64,
+    leaf_count: u64,
+    // Frontier: the left node pending at each level. `zeros[l]` is the root of an empty
+    // subtree of height l (zeros[0] = 0), so `zeros[depth]` is the empty-tree root.
+    frontier: vector<u256>,
+    zeros: vector<u256>,
+    root: u256,
+    // The K most recent roots, current included. `head` is the oldest once the ring is full.
+    roots: vector<u256>,
+    head: u64,
+}
+
+/// RR-2 / RR-3 / RR-6: only the root of the slot-indexed sparse revocation tree is stored.
+/// The leaf at a slot is the highest revoked generation of that slot (default 0). Only
+/// `revoke_with_root` writes it; the caller supplies the sibling path.
+public struct RevocationState has key {
+    id: UID,
+    show: ID,
+    depth: u64,
+    root: u256,
+    revocations: u64,
+}
+
+public struct NullifierShard has key {
+    id: UID,
+    show: ID,
+    index: u64,
+    spent: Table<u256, bool>,
+}
+
+/// RS-C17: challenges are unique show-wide through their own hash-routed family, not
+/// through the nullifier shard.
+public struct ChallengeShard has key {
+    id: UID,
+    show: ID,
+    index: u64,
+    used: Table<u256, bool>,
 }
 
 public struct Terms has copy, drop {
@@ -158,6 +232,16 @@ public struct ShowControlCreated has copy, drop {
 }
 public struct PageClaimed has copy, drop { show: ID, index: u64, page: ID, claim_sequence: u64 }
 public struct ShardClaimed has copy, drop { show: ID, index: u64, shard: ID, claim_sequence: u64 }
+public struct ZkClaimed has copy, drop {
+    show: ID, domain: u256, note_tree: ID, revocation: ID, nullifier_shards: vector<ID>,
+    challenge_shards: vector<ID>, depth: u64, history_k: u64, claim_sequence: u64,
+}
+/// The public tree data a witness is rebuilt from (RR-4): `index` is the insertion index.
+public struct NoteAdded has copy, drop { show: ID, index: u64, commitment: u256, root: u256 }
+public struct RevocationLeaf has copy, drop { show: ID, slot: u64, generation: u64, root: u256 }
+public struct PrivateAdmission has copy, drop {
+    show: ID, nullifier: u256, gate: address, challenge: u256, note_root: u256,
+}
 public struct ShowSealed has copy, drop { show: ID }
 public struct ShowCancelled has copy, drop { show: ID, cancel_generation: u64 }
 public struct Change has copy, drop {
@@ -199,7 +283,8 @@ public fun create_show_control(_cap: &IssuerCap, seated_capacity: u64, ga_capaci
     transfer::share_object(ShowControl { id, issuer: ctx.sender(), profile_version: PROFILE_VERSION,
         open: false, sealed: false, cancel_generation: 0, verifier, gates, payment_attesters,
         resale_cap, organizer_bps, platform_bps, page_size, seated_capacity, ga_capacity,
-        seated_pages, page_count, shard_count, claimed_pages: 0, claimed_shards: 0, claim_sequence: 0 });
+        seated_pages, page_count, shard_count, claimed_pages: 0, claimed_shards: 0, claim_sequence: 0,
+        domain: 0 });
 }
 
 /// Claims, builds and shares pages `[from, from + count)`. A second claim of any index
@@ -243,6 +328,59 @@ public fun claim_shards(c: &mut ShowControl, cap: &IssuerCap, from: u64, count: 
     };
 }
 
+/// Enables the private path (RS-2). Claims, builds and shares the one `NoteTree`, the one
+/// `RevocationState`, and the nullifier and challenge shard families, and fixes the show's
+/// domain from its ID, `profile_version` and the pinned verifier's manifest hash (RS-C11).
+/// Creation stage only, like the other claims; a second call aborts. A show that never
+/// calls it keeps the RS-1 public path unchanged and has no private operation.
+public fun claim_zk(c: &mut ShowControl, cap: &IssuerCap, v: &Verifier, ctx: &mut TxContext) {
+    authority(c, cap, ctx);
+    assert!(!c.sealed && c.cancel_generation == 0, ESealed);
+    assert!(c.domain == 0, EZk);
+    assert!(c.verifier == object::id(v), EVerifier);
+    // The circuit range-checks the slot to ZK_DEPTH bits and both trees have 2^ZK_DEPTH leaves.
+    assert!(c.seated_capacity + c.ga_capacity <= (1u64 << (ZK_DEPTH as u8)), ERange);
+    let show = object::id(c);
+    c.domain = domain_of(show, c.profile_version, zk_gate::manifest_hash(v));
+    assert!(c.domain != 0, EZk);
+
+    let tree_uid = derived_object::claim(&mut c.id, TreeKey { index: 0 });
+    c.claim_sequence = c.claim_sequence + 1;
+    let (zeros, frontier) = empty_tree(ZK_DEPTH, LOCALNET_ROOT_HISTORY_K);
+    let empty_root = zeros[ZK_DEPTH];
+    let tree = NoteTree { id: tree_uid, show, depth: ZK_DEPTH, history_k: LOCALNET_ROOT_HISTORY_K, leaf_count: 0,
+        frontier, zeros, root: empty_root, roots: vector[empty_root], head: 0 };
+    let note_tree = object::id(&tree);
+
+    let rev_uid = derived_object::claim(&mut c.id, TreeKey { index: 1 });
+    c.claim_sequence = c.claim_sequence + 1;
+    let revocation = RevocationState { id: rev_uid, show, depth: ZK_DEPTH, root: empty_root, revocations: 0 };
+    let revocation_id = object::id(&revocation);
+
+    let mut nullifier_shards = vector[];
+    let mut index = 0;
+    while (index < LOCALNET_NULLIFIER_SHARDS) {
+        let uid = derived_object::claim(&mut c.id, NullifierKey { index });
+        c.claim_sequence = c.claim_sequence + 1;
+        nullifier_shards.push_back(uid.to_inner());
+        transfer::share_object(NullifierShard { id: uid, show, index, spent: table::new(ctx) });
+        index = index + 1;
+    };
+    let mut challenge_shards = vector[];
+    index = 0;
+    while (index < LOCALNET_CHALLENGE_SHARDS) {
+        let uid = derived_object::claim(&mut c.id, ChallengeKey { index });
+        c.claim_sequence = c.claim_sequence + 1;
+        challenge_shards.push_back(uid.to_inner());
+        transfer::share_object(ChallengeShard { id: uid, show, index, used: table::new(ctx) });
+        index = index + 1;
+    };
+    event::emit(ZkClaimed { show, domain: c.domain, note_tree, revocation: revocation_id, nullifier_shards,
+        challenge_shards, depth: ZK_DEPTH, history_k: LOCALNET_ROOT_HISTORY_K, claim_sequence: c.claim_sequence });
+    transfer::share_object(tree);
+    transfer::share_object(revocation);
+}
+
 /// Opens the show once every page and shard of the range table is claimed. After this
 /// no function changes the verifier or the range table, and no page can be added.
 public fun seal(c: &mut ShowControl, cap: &IssuerCap, ctx: &TxContext) {
@@ -267,6 +405,98 @@ public fun cancel_show(c: &mut ShowControl, cap: &IssuerCap, ctx: &TxContext) {
 
 fun ceil_div(n: u64, d: u64): u64 { if (n == 0) 0 else (n - 1) / d + 1 }
 fun min(a: u64, b: u64): u64 { if (a < b) a else b }
+fun h2(a: u256, b: u256): u256 { poseidon::poseidon_bn254(&vector[a, b]) }
+
+/// RS-C11: the domain binds the show, the profile version and the circuit manifest hash.
+/// Both 32-byte inputs are read big-endian and reduced modulo FR, as the reference
+/// profile does for the show ID.
+public fun domain_of(show: ID, profile_version: u64, manifest_hash: vector<u8>): u256 {
+    assert!(manifest_hash.length() == 32, EZk);
+    let show_field = sui::address::to_u256(object::id_to_address(&show)) % FR;
+    let manifest_field = sui::address::to_u256(sui::address::from_bytes(manifest_hash)) % FR;
+    poseidon::poseidon_bn254(&vector[show_field, (profile_version as u256), manifest_field])
+}
+
+// ---------------------------------------------------------------- root rules
+
+/// Empty-subtree roots `zeros[0..=depth]` (zeros[0] = 0) and the initial frontier.
+fun empty_tree(depth: u64, history_k: u64): (vector<u256>, vector<u256>) {
+    assert!(depth > 0 && depth < 32 && history_k > 0, EZk);
+    let mut zeros = vector[0u256];
+    let mut frontier = vector[];
+    let mut level = 0;
+    while (level < depth) {
+        let below = zeros[level];
+        zeros.push_back(h2(below, below));
+        frontier.push_back(0u256);
+        level = level + 1;
+    };
+    (zeros, frontier)
+}
+
+/// RR-1: appends one leaf, updates the frontier and the root, and records the new root in
+/// the K-entry history. Leaves are never changed or removed, so an inclusion proof against
+/// any recorded root stays true for every later root.
+fun tree_insert(tree: &mut NoteTree, leaf: u256) {
+    assert!(tree.leaf_count < (1u64 << (tree.depth as u8)), ETreeFull);
+    let mut index = tree.leaf_count;
+    let mut node = leaf;
+    let mut level = 0;
+    while (level < tree.depth) {
+        if (index % 2 == 0) {
+            *tree.frontier.borrow_mut(level) = node;
+            node = h2(node, tree.zeros[level]);
+        } else {
+            node = h2(tree.frontier[level], node);
+        };
+        index = index / 2;
+        level = level + 1;
+    };
+    tree.leaf_count = tree.leaf_count + 1;
+    tree.root = node;
+    if (tree.roots.length() < tree.history_k) {
+        tree.roots.push_back(node);
+    } else {
+        *tree.roots.borrow_mut(tree.head) = node;
+        tree.head = (tree.head + 1) % tree.history_k;
+    };
+}
+
+/// RR-2: root of a sparse tree whose only non-default leaf on the path is `leaf` at index
+/// `slot`; `siblings[l]` is the sibling at level l. Default leaves are 0.
+fun sparse_root(depth: u64, leaf: u256, slot: u64, siblings: &vector<u256>): u256 {
+    assert!(siblings.length() == depth && slot < (1u64 << (depth as u8)), ERoot);
+    let mut node = leaf;
+    let mut index = slot;
+    let mut level = 0;
+    while (level < depth) {
+        let sibling = siblings[level];
+        assert!(sibling < FR, ERoot);
+        node = if (index % 2 == 0) h2(node, sibling) else h2(sibling, node);
+        index = index / 2;
+        level = level + 1;
+    };
+    node
+}
+
+fun check_tree(c: &ShowControl, tree: &NoteTree) {
+    assert!(c.domain != 0 && tree.show == object::id(c)
+        && object::id(tree).to_address() == derived_object::derive_address(object::id(c), TreeKey { index: 0 }), EZk);
+}
+fun check_revocation(c: &ShowControl, rev: &RevocationState) {
+    assert!(c.domain != 0 && rev.show == object::id(c)
+        && object::id(rev).to_address() == derived_object::derive_address(object::id(c), TreeKey { index: 1 }), EZk);
+}
+fun check_nullifier_shard(c: &ShowControl, s: &NullifierShard, nullifier: u256) {
+    let index = route(object::id(c), &bcs::to_bytes(&nullifier), c.profile_version, LOCALNET_NULLIFIER_SHARDS);
+    assert!(object::id(s).to_address() == derived_object::derive_address(object::id(c), NullifierKey { index }), EShard);
+    assert!(s.show == object::id(c) && s.index == index, EShard);
+}
+fun check_challenge_shard(c: &ShowControl, s: &ChallengeShard, challenge: u256) {
+    let index = route(object::id(c), &bcs::to_bytes(&challenge), c.profile_version, LOCALNET_CHALLENGE_SHARDS);
+    assert!(object::id(s).to_address() == derived_object::derive_address(object::id(c), ChallengeKey { index }), EShard);
+    assert!(s.show == object::id(c) && s.index == index, EShard);
+}
 
 fun authority(c: &ShowControl, _cap: &IssuerCap, ctx: &TxContext) {
     assert!(ctx.sender() == c.issuer, EAuthority);
@@ -534,8 +764,31 @@ public fun refund(c: &ShowControl, p: &mut InventoryPage, t: &mut Ticket, versio
 }
 
 /// Bumps the slot generation and retires the slot. Does NOT reopen inventory: private
-/// or physical use could be unknown. Without a revocation root (RS-2).
+/// or physical use could be unknown. For a show that enabled the private path the
+/// revocation root must move with the generation, so only `revoke_with_root` serves it.
 public fun revoke(c: &ShowControl, p: &mut InventoryPage, cap: &IssuerCap, t: &mut Ticket, ctx: &TxContext) {
+    assert!(c.domain == 0, ERootRequired);
+    revoke_ticket(c, p, cap, t, ctx);
+}
+
+/// RR-2: `revoke` for a show with a revocation root. The caller supplies the leaf value
+/// the slot currently has (`prior_revoked`, 0 if never revoked) and the sibling path; the
+/// chain checks them against the stored root and stores the root for the leaf
+/// `t.generation`, the highest revoked generation of the slot. Two revocations built on
+/// the same root conflict: the second fails with `ERoot` and is rebuilt (RR-2 storage (b)).
+/// Issuance and refund never touch the root.
+public fun revoke_with_root(c: &ShowControl, p: &mut InventoryPage, rev: &mut RevocationState, cap: &IssuerCap,
+    t: &mut Ticket, prior_revoked: u64, siblings: vector<u256>, ctx: &TxContext) {
+    check_revocation(c, rev);
+    assert!(t.generation > prior_revoked, ERoot);
+    assert!(sparse_root(rev.depth, (prior_revoked as u256), t.slot, &siblings) == rev.root, ERoot);
+    revoke_ticket(c, p, cap, t, ctx);
+    rev.root = sparse_root(rev.depth, (t.generation as u256), t.slot, &siblings);
+    rev.revocations = rev.revocations + 1;
+    event::emit(RevocationLeaf { show: t.show, slot: t.slot, generation: t.generation, root: rev.root });
+}
+
+fun revoke_ticket(c: &ShowControl, p: &mut InventoryPage, cap: &IssuerCap, t: &mut Ticket, ctx: &TxContext) {
     authority(c, cap, ctx);
     assert!(t.show == object::id(c), EStale);
     let off = offset(c, p, t.slot);
@@ -546,6 +799,72 @@ public fun revoke(c: &ShowControl, p: &mut InventoryPage, cap: &IssuerCap, t: &m
     p.retired = p.retired + 1;
     t.state = VOID; t.version = t.version + 1; t.offer = option::none(); t.admission = option::none();
     changed(t, 4);
+}
+
+// ---------------------------------------------------------------- private path
+
+/// Public to private: keeps the slot occupied, marks the ticket SHIELDED (so every public
+/// operation, refund and reissue is refused, RS-C10) and appends the note commitment.
+/// The mint proof binds (commitment, slot, generation, domain); the holder and the slot
+/// stay public at this step.
+public fun shield(c: &ShowControl, p: &InventoryPage, tree: &mut NoteTree, t: &mut Ticket, version: u64,
+    commitment: u256, proof: vector<u8>, v: &Verifier, clk: &Clock, ctx: &TxContext) {
+    let inputs = shield_inputs(c, p, tree, t, version, commitment, v, clk, ctx);
+    zk_gate::mint(v, inputs, proof);
+    shield_apply(tree, t, commitment);
+}
+fun shield_inputs(c: &ShowControl, p: &InventoryPage, tree: &NoteTree, t: &Ticket, version: u64,
+    commitment: u256, v: &Verifier, clk: &Clock, ctx: &TxContext): vector<u256> {
+    live(c, p, t, version); assert!(ctx.sender() == t.holder, ENotHolder); idle(t, clk);
+    assert!(c.verifier == object::id(v) && commitment > 0 && commitment < FR, EProof);
+    check_tree(c, tree);
+    assert!(tree.leaf_count < (1u64 << (tree.depth as u8)), ETreeFull);
+    vector[commitment, (t.slot as u256), (t.generation as u256), c.domain]
+}
+fun shield_apply(tree: &mut NoteTree, t: &mut Ticket, commitment: u256) {
+    let index = tree.leaf_count;
+    tree_insert(tree, commitment);
+    t.state = SHIELDED; t.version = t.version + 1; t.offer = option::none(); t.admission = option::none();
+    event::emit(NoteAdded { show: t.show, index, commitment, root: tree.root });
+    changed(t, 5);
+}
+
+/// Private admission, sent by a gate. `note_root` is the note-tree root the proof was made
+/// against: it must be one of the K most recent (RR-1). The revocation root is not a
+/// parameter: the chain supplies its current value, so a proof made before a `revoke`
+/// is rejected after it (RR-3, W = 0). The context binds the gate address, challenge and
+/// expiry. Nullifier and challenge are each recorded in their own hash-routed shard.
+public fun consume_private(c: &ShowControl, tree: &NoteTree, rev: &RevocationState, ns: &mut NullifierShard,
+    cs: &mut ChallengeShard, v: &Verifier, note_root: u256, nullifier: u256, challenge: u256, expires_ms: u64,
+    proof: vector<u8>, clk: &Clock, ctx: &TxContext) {
+    let inputs = private_inputs(c, tree, rev, ns, cs, v, note_root, nullifier, challenge, expires_ms, clk, ctx);
+    zk_gate::spend(v, inputs, proof);
+    private_apply(c, ns, cs, note_root, nullifier, challenge, ctx);
+}
+fun private_inputs(c: &ShowControl, tree: &NoteTree, rev: &RevocationState, ns: &NullifierShard,
+    cs: &ChallengeShard, v: &Verifier, note_root: u256, nullifier: u256, challenge: u256, expires_ms: u64,
+    clk: &Clock, ctx: &TxContext): vector<u256> {
+    assert!(c.open && c.gates.contains(&ctx.sender()) && c.verifier == object::id(v), EAuthority);
+    check_tree(c, tree);
+    check_revocation(c, rev);
+    check_nullifier_shard(c, ns, nullifier);
+    check_challenge_shard(c, cs, challenge);
+    assert!(nullifier > 0 && nullifier < FR && challenge > 0 && challenge < FR
+        && !ns.spent.contains(nullifier) && !cs.used.contains(challenge), EProof);
+    assert!(expires_ms > clk.timestamp_ms() && expires_ms - clk.timestamp_ms() <= 120000, EPolicy);
+    assert!(tree.roots.contains(&note_root), ERoot);
+    let gate = sui::address::to_u256(ctx.sender());
+    let context = poseidon::poseidon_bn254(&vector[gate % 340282366920938463463374607431768211456,
+        gate / 340282366920938463463374607431768211456, challenge, (expires_ms as u256), 1]);
+    vector[note_root, rev.root, nullifier, context, c.domain, 1]
+}
+fun private_apply(c: &ShowControl, ns: &mut NullifierShard, cs: &mut ChallengeShard, note_root: u256,
+    nullifier: u256, challenge: u256, ctx: &TxContext) {
+    ns.spent.add(nullifier, true);
+    cs.used.add(challenge, true);
+    // No public ticket ID is needed for private admission. A SHIELDED slot cannot be
+    // resold, refunded or reissued by this deliberately limited profile (RS-C14).
+    event::emit(PrivateAdmission { show: object::id(c), nullifier, gate: ctx.sender(), challenge, note_root });
 }
 
 // ---------------------------------------------------------------- read-only views
@@ -608,5 +927,84 @@ public fun last_amount(t: &Ticket): u64 { t.last_amount }
 public fun last_payer(t: &Ticket): address { t.last_payer }
 public fun last_payment(t: &Ticket): vector<u8> { t.last_payment }
 
+public fun zk_depth(): u64 { ZK_DEPTH }
+public fun localnet_root_history_k(): u64 { LOCALNET_ROOT_HISTORY_K }
+public fun localnet_nullifier_shards(): u64 { LOCALNET_NULLIFIER_SHARDS }
+public fun localnet_challenge_shards(): u64 { LOCALNET_CHALLENGE_SHARDS }
+public fun shielded_state(): u8 { SHIELDED }
+
+public fun control_domain(c: &ShowControl): u256 { c.domain }
+public fun control_zk_enabled(c: &ShowControl): bool { c.domain != 0 }
+public fun tree_address(c: &ShowControl): address { derived_object::derive_address(object::id(c), TreeKey { index: 0 }) }
+public fun revocation_address(c: &ShowControl): address { derived_object::derive_address(object::id(c), TreeKey { index: 1 }) }
+public fun nullifier_shard_address(c: &ShowControl, index: u64): address {
+    derived_object::derive_address(object::id(c), NullifierKey { index })
+}
+public fun challenge_shard_address(c: &ShowControl, index: u64): address {
+    derived_object::derive_address(object::id(c), ChallengeKey { index })
+}
+public fun nullifier_shard_index(c: &ShowControl, nullifier: u256): u64 {
+    route(object::id(c), &bcs::to_bytes(&nullifier), c.profile_version, LOCALNET_NULLIFIER_SHARDS)
+}
+public fun challenge_shard_index(c: &ShowControl, challenge: u256): u64 {
+    route(object::id(c), &bcs::to_bytes(&challenge), c.profile_version, LOCALNET_CHALLENGE_SHARDS)
+}
+
+public fun tree_depth(t: &NoteTree): u64 { t.depth }
+public fun tree_history_k(t: &NoteTree): u64 { t.history_k }
+public fun tree_leaf_count(t: &NoteTree): u64 { t.leaf_count }
+public fun tree_root(t: &NoteTree): u256 { t.root }
+public fun tree_roots(t: &NoteTree): vector<u256> { t.roots }
+public fun tree_zero(t: &NoteTree, level: u64): u256 { t.zeros[level] }
+public fun tree_frontier(t: &NoteTree, level: u64): u256 { t.frontier[level] }
+public fun root_in_history(t: &NoteTree, root: u256): bool { t.roots.contains(&root) }
+public fun revocation_root(r: &RevocationState): u256 { r.root }
+public fun revocation_count(r: &RevocationState): u64 { r.revocations }
+public fun nullifier_spent(s: &NullifierShard, nullifier: u256): bool { s.spent.contains(nullifier) }
+public fun nullifier_shard_size(s: &NullifierShard): u64 { s.spent.length() }
+public fun challenge_used(s: &ChallengeShard, challenge: u256): bool { s.used.contains(challenge) }
+public fun challenge_shard_size(s: &ChallengeShard): u64 { s.used.length() }
+
 #[test_only]
 public fun init_for_testing(ctx: &mut TxContext) { init(ctx) }
+
+/// Test-only: the same checks as `shield`, then the same state change, with the proof step
+/// removed (a unit test cannot build a valid proof). Returns the public inputs.
+#[test_only]
+public fun shield_unproven_for_testing(c: &ShowControl, p: &InventoryPage, tree: &mut NoteTree, t: &mut Ticket,
+    version: u64, commitment: u256, v: &Verifier, clk: &Clock, ctx: &TxContext): vector<u256> {
+    let inputs = shield_inputs(c, p, tree, t, version, commitment, v, clk, ctx);
+    shield_apply(tree, t, commitment);
+    inputs
+}
+
+/// Test-only: the same checks as `consume_private` and the same recording, without the
+/// proof step. Returns the six public inputs the verifier would receive.
+#[test_only]
+public fun consume_private_unproven_for_testing(c: &ShowControl, tree: &NoteTree, rev: &RevocationState,
+    ns: &mut NullifierShard, cs: &mut ChallengeShard, v: &Verifier, note_root: u256, nullifier: u256,
+    challenge: u256, expires_ms: u64, clk: &Clock, ctx: &TxContext): vector<u256> {
+    let inputs = private_inputs(c, tree, rev, ns, cs, v, note_root, nullifier, challenge, expires_ms, clk, ctx);
+    private_apply(c, ns, cs, note_root, nullifier, challenge, ctx);
+    inputs
+}
+
+/// Test-only: a tree of any small depth, to reach the leaf capacity and wrap the ring.
+#[test_only]
+public fun new_tree_for_testing(show: ID, depth: u64, history_k: u64, ctx: &mut TxContext): NoteTree {
+    let (zeros, frontier) = empty_tree(depth, history_k);
+    let root = zeros[depth];
+    NoteTree { id: object::new(ctx), show, depth, history_k, leaf_count: 0, frontier, zeros, root,
+        roots: vector[root], head: 0 }
+}
+#[test_only]
+public fun tree_insert_for_testing(tree: &mut NoteTree, leaf: u256) { tree_insert(tree, leaf) }
+#[test_only]
+public fun destroy_tree_for_testing(tree: NoteTree) {
+    let NoteTree { id, show: _, depth: _, history_k: _, leaf_count: _, frontier: _, zeros: _, root: _, roots: _, head: _ } = tree;
+    object::delete(id);
+}
+#[test_only]
+public fun sparse_root_for_testing(depth: u64, leaf: u256, slot: u64, siblings: vector<u256>): u256 {
+    sparse_root(depth, leaf, slot, &siblings)
+}

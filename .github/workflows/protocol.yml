@@ -49,6 +49,36 @@ jobs:
           python3 -m unittest discover -s reference/rights_scale -t reference/rights_scale
       - name: Rights-scale public path on a disposable local chain
         run: .venv/bin/python scripts/run_localnet_rights_scale.py
+      # RS-2 private path, additive to the steps above and to the job's 30-minute budget. Fixture
+      # ceremony only; reuses the circuit-independent phase 1 that the protocol job caches.
+      - name: ZK phase-1 cache key (extended profile)
+        id: zkkey
+        shell: bash
+        env:
+          INPUTS: ${{ hashFiles('reference/v0.3-rc1/client/package-lock.json', 'reference/v0.3-rc1/client/setup-zk.mjs') }}
+        run: |
+          # Same key series as the protocol job, so the file a main run saved is found here.
+          prefix="kix-zk-phase1-v1-$INPUTS-"
+          echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
+          echo "key=$prefix$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+      - name: Restore ZK phase-1 parameters
+        id: phase1
+        # Restore only: the protocol job on main owns saving and the weekly regeneration.
+        if: github.event_name != 'schedule'
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .local/zk-phase1/pot-final.ptau
+          key: ${{ steps.zkkey.outputs.key }}
+          restore-keys: ${{ steps.zkkey.outputs.prefix }}
+      - name: Generate extended-profile fixture proving artifacts
+        env:
+          # Reuses only phase 1 (an undersized file is ignored). Phase-2 keys are contributed fresh on every run.
+          KIX_ZK_PHASE1_PTAU: ${{ steps.phase1.outputs.cache-matched-key != '' && format('{0}/.local/zk-phase1/pot-final.ptau', github.workspace) || '' }}
+        run: npm --prefix reference/rights_scale/client run setup:zk
+      - name: Reject compensated proofs and refused witnesses with contributed keys (extended profile)
+        run: npm --prefix reference/rights_scale/client run test:zk
+      - name: Rights-scale private path on a disposable local chain
+        run: .venv/bin/python scripts/run_localnet_rights_scale_private.py
   protocol:
     # Draft PRs are skipped without a runner; push and workflow_dispatch always run.
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft

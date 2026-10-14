@@ -3,14 +3,25 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Localnet-only driver for the extended rights-scale public path (RS-1). Replays shared operation vectors against an actual Sui localnet and records observed chain state for comparison with reference/rights_scale/model.py. No real funds, no public endpoints, no ZK.",
+  "description": "Localnet-only drivers for the extended rights-scale profile: the public path (RS-1) and the private ZK path (RS-2: depth-10 circuits, manifest v2, witness reconstruction). Replays shared operation vectors against an actual Sui localnet and records observed chain state for comparison with reference/rights_scale/model.py. No real funds, no public endpoints. The fixture ceremony is single-party and is not an operational ceremony.",
   "engines": {
     "node": ">=24 <25"
   },
   "scripts": {
-    "journey": "node localnet.mjs"
+    "journey": "node localnet.mjs",
+    "build:circuits": "node compile-circuits.mjs",
+    "setup:zk": "node setup-zk.mjs",
+    "test:zk": "node zk-regression.mjs",
+    "test:offline": "node --test offline.test.mjs",
+    "journey:private": "node private-localnet.mjs"
   },
   "dependencies": {
-    "@mysten/sui": "2.30.0"
+    "@mysten/sui": "2.30.0",
+    "circomlib": "2.0.5",
+    "circomlibjs": "0.1.7",
+    "snarkjs": "0.7.5"
+  },
+  "devDependencies": {
+    "circom2": "0.2.22"
   }
 }

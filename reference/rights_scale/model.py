@@ -1,4 +1,4 @@
-"""In-memory reference model of the extended-profile public path (RS-1).
+"""In-memory reference model of the extended-profile public path (RS-1) and private path (RS-2).
 
 Mirrors `sui/sources/rights_scale.move` operation by operation, including the order of
 the checks, so a failing operation reports the same abort code the Move package does.
@@ -6,24 +6,36 @@ It is a model for differential tests and for reading, not an implementation of a
 and not a performance model. Every constant marked "localnet default" is Astra-owned and
 is not a protocol value (docs/contracts/RIGHTS_SCALE_PROFILE.md section 13).
 
-Scope: the public path only. shield / consume_private / root trees (RS-2), GrantControl
-and delegation (RS-3a), and GA redistribution (RS-C02 sentence 2, DECISION_REQUIRED for
-Astra) are deliberately absent.
+Scope: the public path (RS-1) and the private path (RS-2: claim_zk, shield,
+consume_private, revoke_with_root). GrantControl and delegation (RS-3a) and GA
+redistribution (RS-C02 sentence 2, DECISION_REQUIRED for Astra) are deliberately absent.
+
+The private path is modelled WITHOUT hashes or proofs. A note root is the number of leaves
+the tree had when the root was made (the tree is append-only, so that number identifies the
+root); the revocation root is the number of revocations so far (every revoke adds a leaf, so
+the set only grows). The Groth16 verifier is replaced by what the spend circuit proves: the
+proof's domain, note root, revocation root, gate and expiry must equal the values the chain
+feeds the verifier, and a revoked note has no proof at all. Root equality with the real
+Poseidon trees is asserted by the localnet driver against circomlibjs, not here.
 """
 import copy
 import hashlib
 import struct
 from dataclasses import dataclass, field
 
-# Error codes: same numbers as the Move package. 8 (reference EProof) has no use here.
+# Error codes: same numbers as the Move package.
 EClosed, ENotHolder, EStale, EAuthority, ELocked, EPolicy, EPayment = 1, 2, 3, 4, 5, 6, 7
+EProof = 8
 EInventory = 9
 EBundleTooLarge, EBundleIncomplete, EBundleMismatch = 10, 11, 12
 ESealed, ENotComplete, EPage, EShard, ERange = 13, 14, 15, 16, 17
+EZk, ERoot, ETreeFull, ERootRequired, EVerifier = 18, 19, 20, 21, 22
+# A proof Groth16 rejects aborts with code 2 inside kix_rights_scale::zk_gate.
+EBadProof = 'zk_gate:2'
 # sui::derived_object::EObjectAlreadyExists: a second claim of the same (parent, key).
 EObjectAlreadyExists = 'EObjectAlreadyExists'
 
-ACTIVE, CONSUMED, VOID = 0, 1, 2
+ACTIVE, CONSUMED, VOID, SHIELDED = 0, 1, 2, 3
 DIRECT, PAID = 0, 1
 SEATED, GA = 0, 1
 REF_PRIMARY, REF_SECONDARY = 1, 2
@@ -34,6 +46,11 @@ MAX_BUNDLE_CHAIN = 8
 LOCALNET_SHOW_SLOTS = 1024
 LOCALNET_PAGE_SLOTS = 64
 LOCALNET_PAYMENT_SHARDS = 4
+# RS-2 localnet fixture values; Astra-owned; none is a protocol value or an operational default.
+ZK_DEPTH = 10
+LOCALNET_ROOT_HISTORY_K = 4
+LOCALNET_NULLIFIER_SHARDS = 4
+LOCALNET_CHALLENGE_SHARDS = 4
 
 MAX_OFFER_MS = 900000
 MAX_ADMISSION_MS = 120000
@@ -144,7 +161,7 @@ class Show:
 
     def __init__(self, issuer, seated_capacity, ga_capacity, page_size, shard_count, gates,
                  payment_attesters, resale_cap=150000, organizer_bps=200, platform_bps=300,
-                 show_id: bytes = b'\x00' * 31 + b'\x01'):
+                 show_id: bytes = b'\x00' * 31 + b'\x01', verifier=None):
         check(page_size > 0 and shard_count > 0 and seated_capacity + ga_capacity > 0 and len(gates) > 0, EPolicy)
         check(organizer_bps <= 10000 and platform_bps <= 10000 and organizer_bps + platform_bps <= 10000, EPolicy)
         self.show_id = show_id
@@ -169,6 +186,14 @@ class Show:
         self.now_ms = 0
         self.events = []  # (kind, ...) in emission order
         self._ticket_seq = 0
+        # RS-2. `verifier` is an opaque label for the Verifier object pinned at creation.
+        self.verifier = verifier
+        self.domain = None       # set by claim_zk: (show id, profile version, manifest label)
+        self.leaves = []         # note commitments (labels) in insertion order
+        self.revoked = {}        # slot -> highest revoked generation (revocation tree leaf)
+        self.revocations = 0     # one per revoke_with_root: identifies the revocation root
+        self.spent_nullifiers = set()
+        self.spent_challenges = set()
 
     # ------------------------------------------------------------------ helpers
     @property
@@ -469,6 +494,11 @@ class Show:
 
     @atomic
     def revoke(self, sender, ticket, page_index=None):
+        """The plain public-path revoke. A show with a revocation root must use revoke_with_root."""
+        check(self.domain is None, ERootRequired)
+        self._revoke_ticket(sender, ticket, page_index)
+
+    def _revoke_ticket(self, sender, ticket, page_index=None):
         self.authority(sender)
         t = self.tickets[ticket]
         p, off = self.offset(self._page_of(t, page_index), t.slot)
@@ -480,6 +510,84 @@ class Show:
         t.version += 1
         t.offer = t.admission = None
         self.events.append(('Change', t.id, t.version, t.state, t.holder, 4))
+        return t
+
+    # ------------------------------------------------------------------ private path (RS-2)
+    @atomic
+    def claim_zk(self, sender, verifier, manifest):
+        """`verifier` is the Verifier object passed, `manifest` its circuit manifest label."""
+        self.authority(sender)
+        check(not self.sealed and self.cancel_generation == 0, ESealed)
+        check(self.domain is None, EZk)
+        check(verifier == self.verifier, EVerifier)
+        check(self.capacity <= 2 ** ZK_DEPTH, ERange)
+        self.domain = (self.show_id, self.profile_version, manifest)
+        # One claim sequence number each: tree, revocation state, nullifier and challenge shards.
+        self.claim_sequence += 2 + LOCALNET_NULLIFIER_SHARDS + LOCALNET_CHALLENGE_SHARDS
+        self.events.append(('ZkClaimed', self.domain))
+
+    def history(self):
+        """Note-root counts the chain accepts: the roots of the last K states, current included."""
+        n = len(self.leaves)
+        return range(max(0, n - LOCALNET_ROOT_HISTORY_K + 1), n + 1)
+
+    @atomic
+    def shield(self, sender, ticket, version, commitment, verifier=None, proof_domain=None,
+               proof_commitment=None, page_index=None):
+        t = self.tickets[ticket]
+        self.live(self._page_of(t, page_index), t, version)
+        check(sender == t.holder, ENotHolder)
+        self.idle(t)
+        check((verifier or self.verifier) == self.verifier, EProof)
+        check(self.domain is not None, EZk)
+        check(len(self.leaves) < 2 ** ZK_DEPTH, ETreeFull)
+        # The mint proof binds (commitment, slot, generation, domain).
+        check((proof_domain or self.domain) == self.domain and (proof_commitment or commitment) == commitment,
+              EBadProof)
+        self.leaves.append(commitment)
+        t.state = SHIELDED
+        t.version += 1
+        t.offer = t.admission = None
+        self.events.append(('NoteAdded', len(self.leaves) - 1, commitment))
+        self.events.append(('Change', t.id, t.version, t.state, t.holder, 5))
+
+    @atomic
+    def consume_private(self, sender, proof, note_root=None, ttl_ms=None, verifier=None, wrong_shard=None):
+        """`proof` is what the prover made (see replay.Prover); the other arguments are the call's.
+
+        note_root: the note-root count passed (default: the proof's); ttl_ms: the expiry passed
+        relative to now (default: the proof's); wrong_shard: 'nullifier' or 'challenge'.
+        """
+        check(self.open and sender in self.gates and (verifier or self.verifier) == self.verifier, EAuthority)
+        check(self.domain is not None, EZk)
+        check(wrong_shard is None, EShard)
+        nullifier, challenge = proof['nullifier'], proof['challenge']
+        check(nullifier not in self.spent_nullifiers and challenge not in self.spent_challenges, EProof)
+        ttl = proof['ttl_ms'] if ttl_ms is None else ttl_ms
+        check(0 < ttl <= MAX_ADMISSION_MS, EPolicy)
+        count = proof['note_count'] if note_root is None else note_root
+        check(count in self.history(), ERoot)
+        # What Groth16 checks: the public inputs the chain feeds the verifier equal the proof's.
+        check(proof['domain'] == self.domain and proof['show'] == self.show_id and proof['note_count'] == count
+              and proof['revocations'] == self.revocations and proof['gate'] == sender
+              and proof['ttl_ms'] == ttl, EBadProof)
+        self.spent_nullifiers.add(nullifier)
+        self.spent_challenges.add(challenge)
+        self.events.append(('PrivateAdmission', nullifier, sender, challenge, count))
+
+    @atomic
+    def revoke_with_root(self, sender, ticket, stale_witness=False, page_index=None):
+        """The issuer supplies the sibling path of the CURRENT tree; `stale_witness` supplies the
+        empty tree's path, which only matches while nothing has been revoked."""
+        check(self.domain is not None, EZk)
+        t = self.tickets[ticket]
+        check(t.generation > self.revoked.get(t.slot, 0), ERoot)
+        check(not stale_witness or self.revocations == 0, ERoot)
+        generation = t.generation
+        self._revoke_ticket(sender, ticket, page_index)
+        self.revoked[t.slot] = generation
+        self.revocations += 1
+        self.events.append(('RevocationLeaf', t.slot, generation))
 
     # ------------------------------------------------------------------ read-only views
     def totals(self):
@@ -499,7 +607,7 @@ class Show:
             assert covered == self.capacity and len(self.pages) == self.page_count
         live = {}
         for t in self.tickets.values():
-            if t.state in (ACTIVE, CONSUMED):
+            if t.state in (ACTIVE, CONSUMED, SHIELDED):
                 assert t.slot not in live, f'two live rights on slot {t.slot}'
                 live[t.slot] = t
                 p = self.pages[self.page_index_of(t.slot)]
@@ -509,6 +617,26 @@ class Show:
         for shard in self.shards.values():
             for ref in shard.refs:
                 assert self.routed(ref) == shard.index, 'reference in the wrong shard'
+        # RS-2: the private path keeps the right count and the append-only tree consistent.
+        shielded = sum(1 for t in self.tickets.values() if t.state == SHIELDED)
+        assert shielded <= len(self.leaves) <= 2 ** ZK_DEPTH, 'a SHIELDED ticket without a note'
+        assert len(set(self.leaves)) == len(self.leaves), 'a note was added twice'
+        if self.domain is None:
+            assert not self.leaves and not self.revoked and not self.spent_nullifiers
+        assert all(n[0] == 'nf' and n[1] in self.leaves for n in self.spent_nullifiers), 'nullifier without a note'
+        assert self.revocations >= len(self.revoked)
+
+    def private_snapshot(self):
+        """The private-path state a driver can read from chain objects and events without hashes."""
+        return {
+            'zk_enabled': self.domain is not None,
+            'leaf_count': len(self.leaves),
+            'history_len': min(LOCALNET_ROOT_HISTORY_K, len(self.leaves) + 1),
+            'revocations': self.revocations,
+            'revoked': {str(slot): gen for slot, gen in sorted(self.revoked.items())},
+            'nullifiers': len(self.spent_nullifiers),
+            'challenges': len(self.spent_challenges),
+        }
 
     def snapshot(self):
         """Plain-data state, comparable with what the localnet driver reads from the chain."""

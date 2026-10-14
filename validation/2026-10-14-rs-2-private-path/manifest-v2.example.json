@@ -1,0 +1,56 @@
+{
+  "format": "kix-zk-artifacts-v2",
+  "setup": "INSECURE_SINGLE_PARTY_LOCAL_FIXTURE",
+  "curve": "BN254",
+  "depth": 10,
+  "slotBits": 10,
+  "profileVersion": 1,
+  "rootHistoryK": 4,
+  "phase1": {
+    "source": "FRESH_SINGLE_PARTY_LOCAL_FIXTURE",
+    "ptauSha256": "ffe1b91501120c46f3d0a48cdbfbcd2aee7dce027f8620bf7937cac0a4c5d903",
+    "ptauPower": 14
+  },
+  "phase2Contributions": {
+    "mint_scale": 1,
+    "spend_scale": 1
+  },
+  "constraints": {
+    "mint_scale": 912,
+    "spend_scale": 13439
+  },
+  "publicInputs": {
+    "mint_scale": [
+      "commitment",
+      "slot",
+      "generation",
+      "domain"
+    ],
+    "spend_scale": [
+      "noteRoot",
+      "revocationRoot",
+      "nullifier",
+      "context",
+      "domain",
+      "action"
+    ]
+  },
+  "circuits": {
+    "common.circom": "aae8aedc092ae0de58f716979ae3175e0110871d4d45f6eaa84ebb8a780aed54",
+    "mint_scale.circom": "1a0b66b9789c975983eee9bc191318e4e79942e93b77ab34687d1bf409c07120",
+    "spend_scale.circom": "86f5c9fec552784fb1eed1fc2f684d6672c43c54ed2399a0165568c1705a9459"
+  },
+  "files": {
+    "mint_scale.r1cs": "afb449c42fce2b00cd60e67072bee687b487989137488cf847479b19ea3182c3",
+    "mint_scale.zkey": "54e5cf248f4433c8bf9f0c4a8c435f16a897d05bc4802871ed041ed572a6699d",
+    "mint_scale.vkey.json": "3a410e182b76d01b70a739f310999857dac7020a8918b5310840e7863757d48e",
+    "mint_scale.vk.bin": "ef32463ce05a8414f302dee44c33c02a4144dd8614f1772058bdd57b8efc9376",
+    "mint_scale_js/mint_scale.wasm": "fd9982bec8a8bffe8e10b17448df4712d7d6a7907afff34210cc8ffd5d867877",
+    "spend_scale.r1cs": "c92e3ab5e6c678ffca26094a2c5a6a5ab5a5aa7a1673decccf0f738bc3cbbbc6",
+    "spend_scale.zkey": "f76bf90a86931c667b48a5afecc2977893a4f1fe68b312eda7864fe213b1c10c",
+    "spend_scale.vkey.json": "2478a9466e2533ec785c9259ce2b7955c1f4ab77b6199a6b22b65e67a6eda3b9",
+    "spend_scale.vk.bin": "312444fd05b57f7bef54d68cf7ca198e6edd118ff5e4a3b4ac141aba47b889aa",
+    "spend_scale_js/spend_scale.wasm": "402555b1e847ec5c35b012cc55add18cec0a230b90e68382b5084102caa3848c"
+  },
+  "suiSerializationVerified": false
+}
