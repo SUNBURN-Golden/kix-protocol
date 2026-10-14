@@ -192,3 +192,64 @@ binding value:**
   Astra if a product value is ever needed.
 - Whether the executor needs a read-only command-record lookup in v5 for post-cut reconcile
   views beyond `order()`.
+
+## Fix round 1 (independent review)
+
+Two blocking findings and one latent defect they exposed were fixed in
+`runtime/crates/kix-delegated-exec/src/lib.rs`; everything above remains the round-0 record.
+
+1. **Stored GA commands lost first-result replay.** `reserve` recomputed the GA page choice
+   from current `kernel.remaining()` before comparing against `routed_commands`, so an
+   identical retry could re-route after a capacity shift and get `CommandConflict` instead of
+   reaching the pinned page's kernel, which would return `replayed: true`. This also broke the
+   post-cut replay path, since the `GrantClosed` gate is keyed to the stored route. Fix: a
+   stored command is pinned to its recorded page and `pinned_selection` translates the
+   selection there; a payload that cannot be expressed on the pinned page is the map's
+   cross-page `CommandConflict`, and an expressible difference is the kernel's own.
+2. **Cross-page `ProviderOperation` double-binding.** `operation_pages.insert` on `Held`
+   silently overwrote, so a different command carrying an already-bound payment could hold a
+   second order on another page, and `observe_capture` would then route only to the last-bound
+   page, stranding the first order's reconciliation. Fix: a reserve-time check (after the
+   `GrantClosed` gate, mirroring the kernel's record→fence→rejection order) answers the
+   kernel's own `Rejected(OperationAlreadyBound)` when the operation is bound on another
+   page. The rejection is synthesized — no kernel stores a record, no route is pinned — and
+   stable because a kernel never unbinds an operation.
+3. **Latent, exposed by fix 1:** the `Held` bookkeeping popped GA free slots even when
+   `applied.replayed`, so once replays actually reached the kernel they would have consumed
+   the free set a second time and broken `free + held == end - start`. Bookkeeping is now
+   gated on `!applied.replayed`. `tests/ga_slots.rs` asserts the pinned-page replay leaves
+   the free set, slot hold, and conservation untouched.
+
+Also fixed the minor review note: `MappingError::CommandConflict`'s doc no longer mentions
+the wrong-scope case (that is the separate `WrongScope` variant).
+
+### New tests (fix round 1)
+
+| Test | File | Covers |
+|---|---|---|
+| `a_replayed_ga_hold_consumes_no_free_slots` | `ga_slots.rs` | finding 1 + latent defect: replayed Held frees/consumes nothing |
+| `a_stored_ga_command_replays_on_its_pinned_page_after_capacity_shifts` | `ga_slots.rs` | finding 1: pinned replay, kernel and map conflict halves |
+| `the_cut_still_replays_a_stored_ga_result_on_its_pinned_page` | `delegation_fence.rs` | finding 1 post-cut: gate keyed to the pin, `GrantClosed` only for fresh commands |
+| `a_payment_operation_binds_at_most_one_order_across_pages` | `routing.rs` | finding 2: cross-page rejection value, stability, kernel-stored same-page case, observation routing |
+
+34 crate tests total (was 30).
+
+### Commands actually run (fix round 1)
+
+| Command | Result |
+|---|---|
+| `cargo test -p kix-delegated-exec` | 34/34 pass |
+| `cargo clippy -p kix-delegated-exec --all-targets --locked -- -D warnings` | clean |
+| `cargo fmt -p kix-delegated-exec -- --check` | reformatted once, then clean |
+| `cargo test --workspace --locked` | 217/217 pass across all crates |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | clean |
+| `cargo fmt --all -- --check` | clean |
+| `python3 scripts/verify_runtime_architecture.py` | `architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified` |
+| `python3 scripts/test_runtime_architecture.py` | 7/7 tests OK |
+| `python3 scripts/check_status_register.py` | pass |
+| `python3 scripts/check_rs_profile_traceability.py` | pass |
+| `python3 scripts/check_docs_index.py` | pass |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `69564b16…`, `b607996c…` — both match, before and after |
+
+No commit, push, PR, comment, `.aiops/`, `docs/tasks/` or CI edit; the supervisor owns git.
+Exact-head CI: none available — nothing committed.

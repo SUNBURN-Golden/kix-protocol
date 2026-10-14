@@ -4,6 +4,7 @@ use std::collections::BTreeSet;
 
 use common::{ctx, ga_reserve, id, page, reserve, show};
 use kix_delegated_exec::{DelegatedShow, MappingError, PageKind, RangeTable};
+use kix_kernel_v5::{KernelError, ReserveOutcome};
 
 /// Seat page [0, 4,096) plus GA page [4,096, 4,104): capacity 8.
 fn seat_and_ga_show() -> DelegatedShow {
@@ -78,6 +79,59 @@ fn expire_returns_the_slots_to_the_page_free_set() {
     assert_eq!(
         show.slot_hold(id(2)).unwrap().slots,
         BTreeSet::from([4_096, 4_097])
+    );
+}
+
+#[test]
+fn a_replayed_ga_hold_consumes_no_free_slots() {
+    let mut show = seat_and_ga_show();
+    let held = show.reserve(ctx(1), &ga_reserve(1, 3)).unwrap();
+    let replay = show.reserve(ctx(2), &ga_reserve(1, 3)).unwrap();
+    assert!(replay.replayed);
+    assert_eq!(replay.original, held.original);
+    // The replayed Held changed no kernel inventory, so the free set and
+    // the recorded slot hold are untouched.
+    assert_eq!(
+        show.slot_hold(id(1)).unwrap().slots,
+        BTreeSet::from([4_096, 4_097, 4_098])
+    );
+    assert_eq!(show.ga_free_slots(1).unwrap().len(), 5);
+    assert_conservation(&show, 1, 8);
+}
+
+#[test]
+fn a_stored_ga_command_replays_on_its_pinned_page_after_capacity_shifts() {
+    let mut show = show(
+        RangeTable::new(&[page(0, 0, 6, PageKind::Ga), page(1, 6, 16, PageKind::Ga)]).unwrap(),
+    );
+    // Fill page 0, so the five-seat request lands on page 1.
+    show.reserve(ctx(1), &ga_reserve(1, 6)).unwrap();
+    let held = show.reserve(ctx(2), &ga_reserve(2, 5)).unwrap();
+    assert_eq!(held.original, ReserveOutcome::Held(id(2)));
+    assert_eq!(show.slot_hold(id(2)).unwrap().page_index, 1);
+    let slots = show.slot_hold(id(2)).unwrap().slots.clone();
+    // Releasing page 0's hold lets a fresh identical request route to page
+    // 0, but the stored command stays pinned to page 1 and replays there.
+    assert!(show.expire(ctx(100), id(1)).unwrap());
+    assert_eq!(show.remaining(0), Some(6));
+    let replay = show.reserve(ctx(101), &ga_reserve(2, 5)).unwrap();
+    assert!(replay.replayed);
+    assert_eq!(replay.original, held.original);
+    assert_eq!(show.slot_hold(id(2)).unwrap().slots, slots);
+    assert_eq!(show.remaining(0), Some(6));
+    assert_eq!(show.remaining(1), Some(5));
+    assert_conservation(&show, 0, 6);
+    assert_conservation(&show, 1, 10);
+    // A changed payload on the stored identity reaches the pinned page's
+    // own conflict check; a payload that cannot be expressed on it is the
+    // map's cross-page CommandConflict.
+    assert_eq!(
+        show.reserve(ctx(102), &ga_reserve(2, 4)),
+        Err(MappingError::Kernel(KernelError::CommandConflict))
+    );
+    assert_eq!(
+        show.reserve(ctx(103), &reserve(2, 0, 1)),
+        Err(MappingError::CommandConflict)
     );
 }
 

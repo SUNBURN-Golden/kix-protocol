@@ -4,7 +4,7 @@ use common::{amount, ctx, ga_reserve, id, page, reserve, show};
 use kix_delegated_exec::{DelegatedShow, MappingError, PageKind, RangeTable};
 use kix_kernel_v5::{
     CaptureObservation, KernelError, MAX_BUNDLE, ObservationOutcome, OrderState, ProviderOperation,
-    ReserveOutcome, Selection,
+    Rejection, ReserveOutcome, Selection,
 };
 use kix_types::Hash32;
 
@@ -161,6 +161,67 @@ fn kernel_rejections_pass_through_with_the_command_record() {
     assert_eq!(replay.original, rejected.original);
     assert!(replay.replayed);
     assert_eq!(show.page_kernel(0).unwrap().order_count(), 0);
+}
+
+#[test]
+fn a_payment_operation_binds_at_most_one_order_across_pages() {
+    let mut show = two_page_seat_show();
+    // The first reserve binds the operation on page 0.
+    let held = show.reserve(ctx(1), &reserve(1, 0, 1)).unwrap();
+    assert_eq!(held.original, ReserveOutcome::Held(id(1)));
+
+    // A different command carrying the same payment operation routed to a
+    // different page gets the kernel's own rejection value, binds nothing
+    // on page 1, and stores no record there.
+    let mut second = reserve(2, 4_096, 1);
+    second.payment = reserve(1, 0, 1).payment;
+    let rejected = show.reserve(ctx(2), &second).unwrap();
+    assert_eq!(
+        rejected.original,
+        ReserveOutcome::Rejected(Rejection::OperationAlreadyBound)
+    );
+    assert!(!rejected.replayed);
+    assert!(show.order(id(2)).is_none());
+    assert_eq!(show.remaining(1), Some(2_904));
+    assert_eq!(show.page_kernel(1).unwrap().order_count(), 0);
+    // A kernel never unbinds an operation, so an identical retry answers
+    // the same synthesized rejection.
+    let retry = show.reserve(ctx(3), &second).unwrap();
+    assert_eq!(retry.original, rejected.original);
+    assert!(!retry.replayed);
+
+    // On the bound page itself the kernel's own stored rejection answers
+    // and replays.
+    let mut third = reserve(3, 5, 1);
+    third.payment = reserve(1, 0, 1).payment;
+    let rejected = show.reserve(ctx(4), &third).unwrap();
+    assert_eq!(
+        rejected.original,
+        ReserveOutcome::Rejected(Rejection::OperationAlreadyBound)
+    );
+    assert!(!rejected.replayed);
+    assert!(show.reserve(ctx(5), &third).unwrap().replayed);
+
+    // Observations still route only to the bound page: the order on page 0
+    // reconciles and nothing is stranded on page 1.
+    show.mark_payment_unknown(ctx(6), id(1)).unwrap();
+    let outcome = show
+        .observe_capture(
+            ctx(7),
+            CaptureObservation {
+                event_id: id(40),
+                operation: reserve(1, 0, 1).payment,
+                amount: amount(10_000),
+                evidence_hash: Hash32::from_bytes([40; 32]),
+            },
+        )
+        .unwrap();
+    assert_eq!(outcome, ObservationOutcome::PaymentConfirmed);
+    assert_eq!(
+        show.order(id(1)).unwrap().state,
+        OrderState::PaymentConfirmed
+    );
+    assert!(show.order(id(2)).is_none());
 }
 
 #[test]

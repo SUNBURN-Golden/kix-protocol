@@ -1,6 +1,6 @@
 mod common;
 
-use common::{ctx, ctx_for, id, page, reserve, show};
+use common::{ctx, ctx_for, ga_reserve, id, page, reserve, show};
 use kix_delegated_exec::{DelegatedShow, MappingError, PageKind, RangeTable};
 use kix_kernel_v5::{ExecutionFence, KernelError, OrderState, ReserveOutcome};
 
@@ -148,6 +148,40 @@ fn the_cut_refuses_new_commitments_but_replays_stored_results() {
             .unwrap()
     );
     assert_eq!(show.order(id(1)).unwrap().state, OrderState::Expired);
+}
+
+#[test]
+fn the_cut_still_replays_a_stored_ga_result_on_its_pinned_page() {
+    let mut show = show(
+        RangeTable::new(&[page(0, 0, 6, PageKind::Ga), page(1, 6, 16, PageKind::Ga)]).unwrap(),
+    );
+    // Fill page 0 so the GA reserve lands on page 1, delegate page 1 and
+    // hold under the delegate fence, then cut the grant and free page 0.
+    show.reserve(ctx(1), &ga_reserve(1, 6)).unwrap();
+    show.create_grant(id(50), id(60)).unwrap();
+    let delegated = show.delegate_page(2, id(50), 1).unwrap();
+    let held = show
+        .reserve(ctx_for(3, delegated), &ga_reserve(2, 5))
+        .unwrap();
+    assert_eq!(held.original, ReserveOutcome::Held(id(2)));
+    let slots = show.slot_hold(id(2)).unwrap().slots.clone();
+    show.revoke_grant(4, id(50)).unwrap();
+
+    // While page 0 is still full a fresh command can only route to the cut
+    // page 1 and is refused by the gate.
+    assert_eq!(
+        show.reserve(ctx_for(20, show.page_fence(1).unwrap()), &ga_reserve(3, 5)),
+        Err(MappingError::GrantClosed)
+    );
+    // Freeing page 0 lets a fresh route pick it, but the stored command
+    // stays pinned to page 1: the cut gate is keyed to the pin, so it does
+    // not fire, and the kernel's record check precedes its fence check.
+    assert!(show.expire(ctx(100), id(1)).unwrap());
+    assert_eq!(show.remaining(0), Some(6));
+    let replay = show.reserve(ctx(101), &ga_reserve(2, 5)).unwrap();
+    assert!(replay.replayed);
+    assert_eq!(replay.original, held.original);
+    assert_eq!(show.slot_hold(id(2)).unwrap().slots, slots);
 }
 
 #[test]

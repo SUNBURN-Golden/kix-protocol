@@ -34,10 +34,20 @@
 //!   the kernel command `CommandId { scope = page scope, principal, request }`
 //!   of the page that owns the routed slot. The range table is immutable, so
 //!   identical show-level bytes deterministically reach the same kernel and
-//!   its first-result replay applies. The map additionally rejects the same
-//!   `(principal, request)` pair routed to a different page as
-//!   `CommandConflict`, which is the cross-page half of the kernel's own
-//!   conflict rule.
+//!   its first-result replay applies. A command the kernel already stored is
+//!   pinned to that page — the GA page choice is not recomputed from current
+//!   `remaining()` — so a capacity shift cannot steal an identical retry
+//!   away from the kernel holding the record. The cross-page half of the
+//!   kernel's conflict rule: a stored command identity whose new payload
+//!   does not fit inside the pinned page is `CommandConflict`, and an
+//!   expressible difference is the kernel's own `CommandConflict`.
+//! - Operation identity: `operation_pages` binds each `ProviderOperation`
+//!   to the single page that held it, mirroring the kernel's
+//!   one-operation→one-order rule across pages. A fresh reserve routed to
+//!   a different page than the bound one is answered with the kernel's own
+//!   `Rejected(OperationAlreadyBound)` — synthesized by the map, not
+//!   stored, and stable because a kernel never unbinds an operation — and
+//!   observations route to the bound page only.
 //! - Delegation mirrors `GrantControl` (rs-3a): `delegate_page` replaces the
 //!   page kernel's fence owner with the grant's delegate and bumps a per-page
 //!   delegation epoch; `revoke_grant` closes the grant and replaces every
@@ -64,7 +74,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use kix_kernel_v5::{
     AppliedReservation, CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel,
     KernelError, Limits, MAX_BUNDLE, MAX_SEATS, ObservationOutcome, Order, ProviderOperation,
-    Reserve, ReserveOutcome, SEMANTICS_VERSION, Selection,
+    Rejection, Reserve, ReserveOutcome, SEMANTICS_VERSION, Selection,
 };
 use kix_types::{AssetAmount, Hash32, KixId};
 
@@ -216,8 +226,9 @@ pub enum MappingError {
     /// The operation identity is bound to no page and its event key was never
     /// recorded, so no kernel can be routed to.
     UnknownOperation,
-    /// The same `(principal, request)` command identity routed to a different
-    /// page than before, or the request named a scope that is not this show.
+    /// The same `(principal, request)` command identity carries a payload
+    /// that cannot be expressed on its pinned page — the cross-page half of
+    /// the kernel's command-conflict rule.
     CommandConflict,
     /// The request's command scope is not this show's scope.
     WrongScope,
@@ -252,9 +263,14 @@ pub struct DelegatedShow {
     pages: BTreeMap<u32, Page>,
     grants: BTreeMap<KixId, GrantState>,
     /// `(principal, request)` -> page index, recorded when the kernel stores
-    /// the command. The cross-page half of the command-conflict rule.
+    /// the command. A stored command is pinned to that page — the route is
+    /// never recomputed — which is the cross-page half of the
+    /// command-conflict rule.
     routed_commands: BTreeMap<(KixId, KixId), u32>,
     order_pages: BTreeMap<KixId, u32>,
+    /// `ProviderOperation` -> page index, recorded on `Held`. The
+    /// cross-page half of the kernel's one-operation→one-order rule:
+    /// `reserve` does not bind an operation already bound on another page.
     operation_pages: BTreeMap<ProviderOperation, u32>,
     /// `(provider, account, event_id)` -> page index, for conflict routing of
     /// observations whose operation is not bound on this show.
@@ -424,13 +440,18 @@ impl DelegatedShow {
     /// Routes a show-level reserve to the owning page kernel. Mapping-level
     /// rejections happen before any kernel call and mutate nothing: boundary
     /// and size checks, the cross-page command-conflict check, the
-    /// show-scope check, and the closed-grant cut (`GrantClosed`) — the cut
-    /// applies only to commands the kernel never stored, so an identical
-    /// retry of a pre-cut command still reaches the kernel and returns its
-    /// stored first result (`replayed: true`) regardless of the fence.
+    /// show-scope check, the closed-grant cut (`GrantClosed`) and the
+    /// cross-page operation-binding check — the cut applies only to commands
+    /// the kernel never stored, so an identical retry of a pre-cut command
+    /// still reaches the kernel and returns its stored first result
+    /// (`replayed: true`) regardless of the fence.
     /// The command identity is `(show scope, principal, request)` translated
     /// to `(page scope, principal, request)`; a retry of identical bytes is
-    /// the kernel's own first-result replay.
+    /// the kernel's own first-result replay. A command the kernel already
+    /// stored is pinned to its page — the route is never recomputed from
+    /// current capacity — and a fresh command whose payment operation is
+    /// already bound on a different page is answered with the kernel's own
+    /// `Rejected(OperationAlreadyBound)` without a kernel call.
     pub fn reserve(
         &mut self,
         ctx: Context,
@@ -439,23 +460,44 @@ impl DelegatedShow {
         if request.id.scope != self.scope {
             return Err(MappingError::WrongScope);
         }
-        let (page_index, selection) = self.route(request.selection)?;
         let key = (request.id.principal, request.id.request);
         let seen = self.routed_commands.get(&key).copied();
-        if let Some(existing) = seen
-            && existing != page_index
-        {
-            return Err(MappingError::CommandConflict);
-        }
-        // The cut gate applies only to commands the kernel has not stored.
-        // A stored command goes through so the kernel can return its own
-        // first-result replay or CommandConflict — replay precedes the fence
-        // check there, which is what preserves pre-cut commitments.
-        if seen.is_none()
-            && let Some(grant_id) = self.pages[&page_index].grant
-            && !self.grants[&grant_id].open
-        {
-            return Err(MappingError::GrantClosed);
+        let (page_index, selection) = match seen {
+            // A stored command is pinned to the page holding its record:
+            // the GA page choice is not recomputed from current capacity,
+            // so an identical retry reaches the kernel that replays its
+            // stored first result and a changed payload reaches it for the
+            // kernel's own CommandConflict.
+            Some(pinned) => (pinned, self.pinned_selection(pinned, request.selection)?),
+            None => self.route(request.selection)?,
+        };
+        // The cut gate and the operation-binding check apply only to
+        // commands the kernel has not stored, matching the kernel's own
+        // order (the command record is checked before the fence and the
+        // rejection evaluation). A stored command goes through so the
+        // kernel can return its own first-result replay or CommandConflict,
+        // which is what preserves pre-cut commitments.
+        if seen.is_none() {
+            if let Some(grant_id) = self.pages[&page_index].grant
+                && !self.grants[&grant_id].open
+            {
+                return Err(MappingError::GrantClosed);
+            }
+            // The cross-page half of the kernel's one-operation→one-order
+            // rule: a payment already bound on another page must not bind a
+            // second order here. The kernel answer is a stored
+            // `Rejected(OperationAlreadyBound)`; the map synthesizes the
+            // same value, stable without a stored route because a kernel
+            // never unbinds an operation, and pins no route because no
+            // kernel stored a record.
+            if let Some(bound) = self.operation_pages.get(&request.payment)
+                && *bound != page_index
+            {
+                return Ok(AppliedReservation {
+                    original: ReserveOutcome::Rejected(Rejection::OperationAlreadyBound),
+                    replayed: false,
+                });
+            }
         }
         let page_scope = self.pages[&page_index].scope;
         let applied = self
@@ -485,7 +527,11 @@ impl DelegatedShow {
         // The kernel stored a command record (Ok covers Held and Rejected);
         // errors stored nothing, so they pin no route.
         self.routed_commands.insert(key, page_index);
-        if let ReserveOutcome::Held(order_id) = applied.original {
+        // First application only: a replayed Held consumed no kernel
+        // inventory, so the map must not consume its GA free set again.
+        if !applied.replayed
+            && let ReserveOutcome::Held(order_id) = applied.original
+        {
             self.order_pages.insert(order_id, page_index);
             self.operation_pages.insert(request.payment, page_index);
             let hold = {
@@ -548,6 +594,41 @@ impl DelegatedShow {
                     .min_by_key(|page| page.spec.start)
                     .ok_or(MappingError::GaSpanningPages)?;
                 Ok((page.spec.index, Selection::GeneralAdmission { count }))
+            }
+        }
+    }
+
+    /// The kernel-local selection of a command already pinned to
+    /// `page_index`. A GA selection translates unchanged; a seat selection
+    /// must fit inside the pinned page's range. One that does not is
+    /// necessarily a different payload than the stored command's — the
+    /// stored command routed to this page only because its seats fit — so
+    /// the map answers `CommandConflict`, the cross-page half of the
+    /// kernel's own conflict rule, without a kernel call.
+    fn pinned_selection(
+        &self,
+        page_index: u32,
+        selection: ShowSelection,
+    ) -> Result<Selection, MappingError> {
+        let page = self.pages.get(&page_index).expect("pinned page");
+        match selection {
+            ShowSelection::GeneralAdmission { count } => Ok(Selection::GeneralAdmission { count }),
+            ShowSelection::Seats { first, count } => {
+                let end = first
+                    .checked_add(u32::from(count))
+                    .ok_or(MappingError::CommandConflict)?;
+                if page.spec.kind != PageKind::Seat
+                    || first < page.spec.start
+                    || end > page.spec.end
+                {
+                    return Err(MappingError::CommandConflict);
+                }
+                let local = u16::try_from(first - page.spec.start)
+                    .map_err(|_| MappingError::InvalidConfiguration)?;
+                Ok(Selection::Seats {
+                    first: local,
+                    count,
+                })
             }
         }
     }
