@@ -98,7 +98,9 @@ class MoveParity(unittest.TestCase):
     OPERATIONS = ['create_show_control', 'claim_pages', 'claim_shards', 'seal', 'cancel_show', 'issue',
                   'attest_issuance', 'cancel_issuance', 'issue_paid', 'begin_bundle', 'bundle_issue',
                   'finish_bundle', 'offer', 'accept_gift', 'attest_payment', 'accept_sale', 'authorize_admission',
-                  'consume', 'refund', 'revoke']
+                  'consume', 'refund', 'revoke',
+                  # RS-2: the private path (section 3 shield / consume_private, and revoke with a root).
+                  'claim_zk', 'revoke_with_root', 'shield', 'consume_private']
 
     def test_the_package_surface_is_exactly_the_section_3_operations_plus_read_only_views(self):
         names = self.public_functions()
@@ -107,7 +109,9 @@ class MoveParity(unittest.TestCase):
         views = [n for n in names if n not in self.OPERATIONS]
         for name in views:
             self.assertRegex(name, r'^(profile_version|max_bundle_chain|localnet_\w+|control_\w+|page_\w+|shard_\w+|'
-                                   r'route_index|payment_\w+|holder|version|state|slot|generation|last_\w+)$', name)
+                                   r'route_index|payment_\w+|holder|version|state|slot|generation|last_\w+|'
+                                   r'zk_depth|shielded_state|domain_of|tree_\w+|root_in_history|revocation_\w+|'
+                                   r'nullifier_\w+|challenge_\w+)$', name)
         # No view mutates: read-only views never take a mutable reference or a TxContext.
         for m in re.finditer(r'^public fun (\w+)\(([^)]*)\)', MOVE, re.M):
             if m.group(1) in views:
@@ -126,8 +130,10 @@ class MoveParity(unittest.TestCase):
             writes = re.findall(rf'\bc\.{field} = ', MOVE)
             self.assertEqual(writes, [], field)
 
-    def test_the_package_defines_no_coin_or_token_module_and_no_proof_path(self):
-        for needle in ('coin::', 'balance::', 'TreasuryCap', 'sui::token', 'poseidon', 'groth16', 'zk_gate'):
+    def test_the_package_defines_no_coin_or_token_module(self):
+        # RS-1 also asserted "no proof path" here; RS-2 adds that path (poseidon, zk_gate), so only the
+        # economic-asset exclusion remains. test_private_model.py pins the private surface.
+        for needle in ('coin::', 'balance::', 'TreasuryCap', 'sui::token'):
             self.assertNotIn(needle, MOVE)
         self.assertEqual(len(re.findall(r'^module ', MOVE, re.M)), 1)
 

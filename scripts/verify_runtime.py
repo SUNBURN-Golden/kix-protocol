@@ -23,6 +23,8 @@ checks = [
     ('rs1-model-tests', [sys.executable, '-m', 'unittest', 'discover', '-s', str(RS1), '-t', str(RS1), '-p', 'test*.py', '-v'], ROOT),
     ('rs1-move-tests', ['sui', 'move', '--client.config', env['KIX_SUI_CONFIG'], '--build-env', 'mainnet', 'test', '--path', str(RS1 / 'sui')], ROOT),
     ('circuit-build', ['node', 'compile-circuits.mjs'], PROTO / 'client'),
+    # RS-2: the depth-10 circuits of the extended profile (reference circuits above stay as they were).
+    ('rs2-circuit-build', ['node', 'compile-circuits.mjs'], RS1 / 'client'),
 ]
 results = []
 for name, args, cwd in checks:
