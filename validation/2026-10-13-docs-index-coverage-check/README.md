@@ -191,6 +191,13 @@ production runtime were touched or needed.
   `audit5-docs-index-check-ci-wire` (KIX audit #5 finding 3; record at
   `validation/2026-10-13-audit5-docs-index-check-ci-wire/`). The dated
   "not wired into CI" statements above stay as historical fact.
+- Discharged: `validation/*/README.md` is scanned by
+  `scripts/check_docs_index.py` since node
+  `audit6-docs-index-check-validation-records` (KIX audit #6 finding 2;
+  record at `validation/2026-10-15-docs-index-check-validation-records/`).
+  The dated coverage statements above described the checker of their day
+  and stay as historical fact; records that predate the scan sit in the
+  checker's allowlist with one-line reasons, not retroactively indexed.
 - If a later node adds genuinely unindexable files under a scanned
   subtree (e.g. binary evidence), extend the inline allowlist with a
   reason rather than weakening the check.
