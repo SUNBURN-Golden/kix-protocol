@@ -29,7 +29,8 @@ const out=resolve(process.env.KIX_JOURNEY_DIR??join(here,'../results/load-l1'));
 await mkdir(out,{recursive:true});
 const scenarioPath=process.env.KIX_LOAD_SCENARIOS??join(out,'load-scenarios.json');
 const doc=JSON.parse(readFileSync(scenarioPath,'utf8'));
-if(doc.version!=='kix-rs4-l1-load-v1')throw Error('UNRECOGNIZED_LOAD_DOCUMENT:'+doc.version);
+const DOC_VERSIONS=new Set(['kix-rs4-l1-load-v1','kix-rs4-l2-load-v1']);
+if(!DOC_VERSIONS.has(doc.version))throw Error('UNRECOGNIZED_LOAD_DOCUMENT:'+doc.version);
 const ACTORS=['issuer','a','b','gate','attester','delegate'];
 const refBytes=tag=>Array(32).fill(tag);
 const startedAt=new Date().toISOString();
@@ -88,7 +89,7 @@ const constants={zk_depth:await viewU64('zk_depth'),localnet_root_history_k:awai
 for(const [chainName,want] of [['zk_depth',P.DEPTH],['localnet_root_history_k',P.ROOT_HISTORY_K],
     ['localnet_nullifier_shards',P.NULLIFIER_SHARDS],['localnet_challenge_shards',P.CHALLENGE_SHARDS],
     ['max_bundle_chain',8],['profile_version',P.PROFILE_VERSION],
-    ['localnet_show_slots',doc.settings.show.seated],['localnet_page_slots',doc.settings.show.page_size]]){
+    ['localnet_show_slots',P.SHOW_SLOTS],['localnet_page_slots',doc.settings.show.page_size]]){
   if(constants[chainName]!==want)throw Error('PACKAGE_CONSTANT_MISMATCH:'+chainName+':'+constants[chainName]+'!='+want);
 }
 
@@ -104,9 +105,11 @@ const report={packageId,chain:kit.chain,actors:Object.fromEntries(ACTORS.map(n=>
 // ---- measured submission --------------------------------------------------------------------
 // service_ms is the submit->finality window only; build_ms covers kind-build,
 // coin resolution and signing. A lost response is reconciled by digest with the
-// same signed bytes and never resubmitted (RS-C03).
+// same signed bytes and never resubmitted (RS-C03). The window is bounded but
+// wide enough for a contended single validator: 20 polls × 3s after the
+// submit/wait path already timed out.
 async function reconcileByDigest(digest){
-  for(let i=0;i<10;i++){
+  for(let i=0;i<20;i++){
     try{
       const r=await rpc.getTransaction({digest,include:{effects:true,events:true,objectTypes:true}});
       const executed=r.Transaction??r.FailedTransaction;
@@ -165,7 +168,7 @@ async function submitMeasured(name,build,gasIndex=0){
       digest,service_ms,build_ms,executed:null,gas:null};
   }
   try{
-    await rpc.waitForTransaction({result,timeout:30000});
+    await rpc.waitForTransaction({result,timeout:60000});
   }catch(e){
     const service_ms=Math.round(performance.now()-t0);
     const recovered=digest?await reconcileByDigest(digest):null;
@@ -599,7 +602,7 @@ async function runStep(pathName,show,step){
         try{
           const result=await rpc.executeTransaction({transaction:p.bytes,signatures:[signed.signature],
             include:{effects:true,events:true,objectTypes:true}});
-          await rpc.waitForTransaction({result,timeout:30000});
+          await rpc.waitForTransaction({result,timeout:60000});
           const executed=result.Transaction??result.FailedTransaction;
           const out=outcomeOf(executed);
           return {sub:p.sub,signer:p.call?.sender??null,digest,
@@ -746,7 +749,7 @@ for(const pathName of Object.keys(doc.paths)){
         +' want '+JSON.stringify(step.expect)+' got '+sample.outcome_kind
         +(sample.abort!=null?' abort='+JSON.stringify(sample.abort):'')
         +(sample.error?' '+String(sample.error).slice(0,200):''));
-    if(report.samples.length%32===0){
+    if(report.samples.length%256===0){
       await writeFile(join(out,'load-report.json'),JSON.stringify(report)+'\n');
     }
     if(report.samples.length-printed>=64){

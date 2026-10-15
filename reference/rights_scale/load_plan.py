@@ -1,30 +1,44 @@
-"""RS-4 L1 staged-load workload generator (kix-rs4-l1-load-v1).
+"""RS-4 staged-load workload generator (kix-rs4-l1-load-v1 / kix-rs4-l2-load-v1).
 
 Emits the deterministic step list the `client/load-l1.mjs` driver executes on a
 disposable one-validator localnet, plus the expected end-state the summarizer
 checks. Three paths are generated separately and must be reported separately
 (docs/blueprints/rights-scale-v1/README.md section 7 and the RS-4 node scope):
 
-  public     RS-1 path: creation staging, uniform fill of all 1,024 slots,
+  public     RS-1 path: creation staging, uniform fill of all stage slots,
              paid-issuance subset, holder/issuer operations, concurrency probes,
              cancel of the full show.
-  private    RS-2 path: 1,024 issued tickets, `shield_count` real Groth16
-             shields (default 1,024 = the depth-10 leaf-capacity boundary),
-             private consumptions, root-history eviction, one revocation and
-             the proofs it invalidates, concurrent revocation, event-source
-             witness reconstruction.
-  delegated  RS-3a path: two grants on two pages, delegated issuance (bundle,
-             single, paid), grant-shared concurrency probe, EDelegated rejects,
-             the one-write revocation cut and its post-cut refusals, page
-             reclaim, and a stranded pre-cut reservation left un-reclaimable.
+  private    RS-2 path: `private_seated` issued tickets, `shield_count` real
+             Groth16 shields (default 1,024 = the depth-10 leaf-capacity
+             boundary), private consumptions, root-history eviction, one
+             revocation and the proofs it invalidates, concurrent revocation,
+             event-source witness reconstruction.
+  delegated  RS-3a path: two grants on the last two pages, delegated issuance
+             (bundle, single, paid), grant-shared concurrency probe, EDelegated
+             rejects, the one-write revocation cut and its post-cut refusals,
+             page reclaim, and a stranded pre-cut reservation left
+             un-reclaimable.
+
+`--stage l1` (default) is the 1,024-slot L1 workload; its expansion is pinned
+byte-identical to the rs-4-l1 record. `--stage l2` is the 16,384-slot L2
+workload: public and delegated run full 16,384-seat shows (256 pages of 64),
+while the private path is contract-capped at `2^ZK_DEPTH` = 1,024 slots —
+`claim_zk` asserts `seated + ga <= 2^ZK_DEPTH` (rights_scale.move). The L2
+private leg therefore runs the same 1,024-slot workload as a regression plus a
+`probe.zk_capacity` boundary prefix: `claim_zk` on auxiliary 1,025- and
+16,384-seat shows must abort ERange. The private path at 16,384 seats is not
+measured: it needs a deeper circuit, a new fixture ceremony and a profile
+change, all outside this node. The public leg also probes the page boundary:
+`claim_pages` one past `page_count` aborts ERange and a re-claim of an already
+claimed page aborts inside `derived_object::claim` (RS-C15).
 
 This is a measurement workload, not a performance model and not a product
-statement. The fixture values (1,024 seats, page 64, payment shards 4, depth
+statement. The fixture values (stage seats, page 64, payment shards 4, depth
 10, K=4) come from model.py and are Astra-owned/test-only (profile section
 13). Everything is closed-loop (arrival_rate 0): sequential steps with fixed-k
 concurrency probes on top, never a rate claim.
 
-  --expand OUT.json [--seed N] [--shield-count N]
+  --expand OUT.json [--stage {l1,l2}] [--seed N] [--shield-count N]
                           write the expanded workload document.
 """
 import argparse
@@ -39,6 +53,8 @@ sys.path.insert(0, str(HERE))
 import model  # noqa: E402
 
 VERSION = 'kix-rs4-l1-load-v1'
+VERSIONS = {'l1': 'kix-rs4-l1-load-v1', 'l2': 'kix-rs4-l2-load-v1'}
+STAGES = {'l1': model.LOCALNET_SHOW_SLOTS, 'l2': 16384}
 DEFAULT_SEED = 20261014
 SEATS = model.LOCALNET_SHOW_SLOTS        # 1024; L1 stage size (fixture, not policy)
 PAGE_SIZE = model.LOCALNET_PAGE_SLOTS    # 64
@@ -50,11 +66,13 @@ DELEGATED_SHARDS = model.LOCALNET_PAYMENT_SHARDS
 PAID_PER_PAGE = 8
 PROBE_PAGE = 8
 PROBE_BASE = PROBE_PAGE * PAGE_SIZE      # slots 512..521 form the probe region
+ZK_LEAF_CAP = 1 << model.ZK_DEPTH        # private-path contract cap on seated+ga
 
 # Abort codes from sui/sources/rights_scale.move, used in `expect` only.
 E_CLOSED = 1
 E_STALE = 3
 E_INVENTORY = 9
+E_RANGE = 17
 E_ROOT = 19
 E_DELEGATED = 23
 E_GRANT_CLOSED = 24
@@ -122,10 +140,21 @@ def _chunks(seq, size):
     return [seq[i:i + size] for i in range(0, len(seq), size)]
 
 
-def _claim_steps(pages, shards, zk=False):
+def _claim_steps(pages, shards, zk=False, boundary_probe=False):
     steps = []
     for run in _chunks(list(range(pages)), MAX_CLAIM):
         steps.append({'op': 'claim_pages', 'from': run[0], 'count': len(run)})
+    if boundary_probe:
+        # Page boundary probes (still inside stage.create, before seal): one
+        # index past page_count aborts ERange; re-claiming a claimed page
+        # aborts inside derived_object::claim (RS-C15) — `any`, the exact
+        # abort is runtime characterization data.
+        steps.append({'op': 'claim_pages', 'from': pages, 'count': 1,
+                      'expect': {'abort': E_RANGE},
+                      'comment': 'page_index_past_page_count'})
+        steps.append({'op': 'claim_pages', 'from': 0, 'count': 1,
+                      'expect': 'any',
+                      'comment': 'reclaim_already_claimed_page'})
     if zk:
         steps.append({'op': 'claim_zk', 'verifier': 'v1'})
     steps.append({'op': 'claim_shards', 'from': 0, 'count': shards})
@@ -155,14 +184,16 @@ def _paid_steps(slots, slot_state, buyer, amount, ref_counter, delegate_grant=No
 
 
 def public_path(settings, rng):
-    """Public path on one 1,024-slot show (no ZK, domain 0)."""
-    slot_state = Slots(SEATS)
+    """Public path on one show (no ZK, domain 0); stage-sized seat count."""
+    seats = settings['show']['seated']
+    slot_state = Slots(seats)
     paid_offsets = set(range(PAGE_SIZE - PAID_PER_PAGE, PAGE_SIZE))
     probe_slots = list(range(PROBE_BASE, PROBE_BASE + 10))  # 512..521
     ref_counter = [1]
-    steps = [{'op': 'create_show', 'seated': SEATS, 'ga': 0, 'page_size': PAGE_SIZE,
+    steps = [{'op': 'create_show', 'seated': seats, 'ga': 0, 'page_size': PAGE_SIZE,
               'shards': PUBLIC_SHARDS, 'verifier': None}]
-    steps += _claim_steps(SEATS // PAGE_SIZE, PUBLIC_SHARDS)
+    steps += _claim_steps(seats // PAGE_SIZE, PUBLIC_SHARDS,
+                          boundary_probe=seats > SEATS)
 
     # ---- concurrency probes on the still-free probe region -----------------
     p = probe_slots
@@ -205,7 +236,7 @@ def public_path(settings, rng):
         slot_state.force_issued(slot)
 
     # ---- uniform fill of the remaining slots -------------------------------
-    for page in range(SEATS // PAGE_SIZE):
+    for page in range(seats // PAGE_SIZE):
         base = page * PAGE_SIZE
         free_runs, run = [], []
         for off in range(PAGE_SIZE):
@@ -228,7 +259,7 @@ def public_path(settings, rng):
         steps += _paid_steps(paid_slots, slot_state, 'a', 150000, ref_counter)
 
     # ---- hot-slot rejections -----------------------------------------------
-    issued = [s for s in range(SEATS) if slot_state.state[s] == 'issued']
+    issued = [s for s in range(seats) if slot_state.state[s] == 'issued']
     for slot in rng.sample(issued, 4):
         steps.append({'op': 'issue', 'slot': slot, 'gen': 0, 'holder': 'a',
                       'expect': {'abort': E_STALE}})
@@ -292,8 +323,8 @@ def public_path(settings, rng):
 
     # ---- cancel of the full show and post-cancel refusals ------------------
     steps.append({'op': 'cancel_show'})
-    free_after = next(s for s in range(SEATS) if slot_state.state[s] == 'free')
-    live_after = next(s for s in range(SEATS) if slot_state.state[s] == 'issued')
+    free_after = next(s for s in range(seats) if slot_state.state[s] == 'free')
+    live_after = next(s for s in range(seats) if slot_state.state[s] == 'issued')
     steps.append({'op': 'issue', 'slot': free_after, 'gen': slot_state.gen[free_after],
                   'holder': 'a', 'expect': {'abort': E_CLOSED}})
     steps.append({'op': 'attest_issuance', 'slot': free_after, 'gen': slot_state.gen[free_after],
@@ -311,7 +342,12 @@ def public_path(settings, rng):
 
 
 def private_path(settings, rng):
-    """Private path on one 1,024-slot show with the depth-10 fixture trees."""
+    """Private path with the depth-10 fixture trees. `private_seated` caps the
+    real show at the `claim_zk` contract bound (2^ZK_DEPTH); when the stage is
+    larger, a `probe.zk_capacity` prefix first proves the bound on auxiliary
+    shows and the capped leg runs unchanged as the regression workload."""
+    seated = settings['show']['seated']
+    private_seated = settings['show'].get('private_seated', seated)
     shield_count = settings['shield_count']
     # Notes 0 and 1 are pinned to the boundary probe; the revocation,
     # invalidation, race and consume subsets must fit inside the rest.
@@ -324,14 +360,30 @@ def private_path(settings, rng):
     boundary = min(4, shield_count - prefix)
     if shield_count < 12:
         raise ValueError('shield_count below 12 cannot express the K-boundary probe')
-    slot_state = Slots(SEATS)
+    slot_state = Slots(private_seated)
     ref_counter = [500]
-    steps = [{'op': 'create_show', 'seated': SEATS, 'ga': 0, 'page_size': PAGE_SIZE,
-              'shards': PRIVATE_SHARDS, 'verifier': 'v1'}]
-    steps += _claim_steps(SEATS // PAGE_SIZE, PRIVATE_SHARDS, zk=True)
+    steps = []
+    if private_seated < seated:
+        # probe.zk_capacity: the private path is contract-capped at
+        # 2^ZK_DEPTH seats. Auxiliary shows are created only to be refused by
+        # claim_zk — no slot ops are emitted for them and the last create_show
+        # below initializes the real measured show.
+        for aux_seats in (private_seated + 1, seated):
+            steps.append({'op': 'create_show', 'seated': aux_seats, 'ga': 0,
+                          'page_size': PAGE_SIZE, 'shards': PRIVATE_SHARDS,
+                          'verifier': 'v1', 'phase': 'probe.zk_capacity',
+                          'comment': 'zk_capacity_aux_show'})
+            steps.append({'op': 'claim_zk', 'verifier': 'v1',
+                          'phase': 'probe.zk_capacity',
+                          'expect': {'abort': E_RANGE},
+                          'comment': 'claim_zk_over_depth_cap'})
+    steps.append({'op': 'create_show', 'seated': private_seated, 'ga': 0,
+                  'page_size': PAGE_SIZE, 'shards': PRIVATE_SHARDS,
+                  'verifier': 'v1'})
+    steps += _claim_steps(private_seated // PAGE_SIZE, PRIVATE_SHARDS, zk=True)
 
     # Every slot gets a ticket; holder 'a' signs all shields.
-    for chunk in _chunks(list(range(SEATS)), MAX_BUNDLE):
+    for chunk in _chunks(list(range(private_seated)), MAX_BUNDLE):
         steps.append({'op': 'bundle', 'slots': chunk, 'slot': chunk[0], 'gen': 0, 'holder': 'a'})
         for slot in chunk:
             slot_state.issue(slot, 'a')
@@ -424,12 +476,13 @@ def private_path(settings, rng):
 
 
 def delegated_path(settings, rng):
-    """Delegated path: two grants on the two last pages of a 1,024-slot show."""
-    slot_state = Slots(SEATS)
+    """Delegated path: two grants on the two last pages of a stage-sized show."""
+    seats = settings['show']['seated']
+    slot_state = Slots(seats)
     ref_counter = [300]
-    pages = SEATS // PAGE_SIZE
-    g1_page, g2_page = pages - 2, pages - 1    # 14, 15
-    steps = [{'op': 'create_show', 'seated': SEATS, 'ga': 0, 'page_size': PAGE_SIZE,
+    pages = seats // PAGE_SIZE
+    g1_page, g2_page = pages - 2, pages - 1    # L1: 14, 15; L2: 254, 255
+    steps = [{'op': 'create_show', 'seated': seats, 'ga': 0, 'page_size': PAGE_SIZE,
               'shards': DELEGATED_SHARDS, 'verifier': None}]
     steps += _claim_steps(pages, DELEGATED_SHARDS)
     steps.append({'op': 'create_grant', 'label': 'g1', 'delegate': 'delegate'})
@@ -542,10 +595,18 @@ DEFAULT_SETTINGS = {
 }
 
 
-def expand(settings=None):
+def expand(settings=None, stage='l1'):
+    if stage not in STAGES:
+        raise ValueError('unknown stage: ' + str(stage))
     cfg = dict(DEFAULT_SETTINGS)
     if settings:
         cfg.update(settings)
+    if stage != 'l1':
+        # The private leg is contract-capped at 2^ZK_DEPTH seats; the stage's
+        # public/delegated shows run at full size. `private_seated` records
+        # the cap in the scenario document.
+        cfg['show'] = dict(cfg['show'], seated=STAGES[stage],
+                           private_seated=min(STAGES[stage], ZK_LEAF_CAP))
     rng = random.Random(cfg['seed'])
     paths = {}
     expected = {}
@@ -565,10 +626,15 @@ def expand(settings=None):
                 probes.append({'path': name, 'name': step.get('name'), 'k': len(step['of']),
                                'expect': step['expect']})
     cfg['concurrency_probes'] = probes
+    zk_capacity = any(s.get('phase') == 'probe.zk_capacity'
+                      for s in paths['private'])
     return {
-        'version': VERSION,
+        'version': VERSIONS[stage],
         'settings': cfg,
         'requested': {
+            **({'stage': stage,
+                'private_seated': cfg['show']['private_seated']}
+               if stage != 'l1' else {}),
             'seats_per_show': cfg['show']['seated'],
             'shield_count': cfg['shield_count'],
             'consume_count': cfg['consume_count'],
@@ -577,9 +643,11 @@ def expand(settings=None):
         'phases': {
             'public': ['stage.create', 'probe.concurrent', 'stage.fill', 'probe.hot_slot',
                        'stage.ops', 'stage.cancel'],
-            'private': ['stage.create', 'stage.issue', 'stage.shield_prefix', 'probe.boundary',
-                        'stage.shield_rest', 'stage.revocation', 'probe.concurrent_revokes',
-                        'stage.consume', 'stage.negative', 'stage.reconstruct'],
+            'private': (['probe.zk_capacity'] if zk_capacity else [])
+                       + ['stage.create', 'stage.issue', 'stage.shield_prefix',
+                          'probe.boundary', 'stage.shield_rest', 'stage.revocation',
+                          'probe.concurrent_revokes', 'stage.consume', 'stage.negative',
+                          'stage.reconstruct'],
             'delegated': ['stage.create', 'stage.delegate', 'stage.fill', 'probe.delegated',
                           'stage.cut', 'stage.stranded'],
         },
@@ -627,6 +695,7 @@ def _phase_bounds(path, steps):
                 ('stage.fill', i_hot - i_fill), ('probe.hot_slot', i_ops - i_hot),
                 ('stage.ops', i_cancel - i_ops), ('stage.cancel', len(steps) - i_cancel)]
     if path == 'private':
+        aux = sum(1 for s in steps if s.get('phase') == 'probe.zk_capacity')
         i_issue = next(i for i, s in enumerate(steps) if s['op'] == 'bundle')
         i_prefix = next(i for i, s in enumerate(steps) if s['op'] == 'shield')
         i_rest = i_prefix + 8 + 2 + 3 + 1 + 1 + 1   # prefix + preproves + 3 shields + consume + shield + consume
@@ -634,7 +703,8 @@ def _phase_bounds(path, steps):
         i_race = next(i for i, s in enumerate(steps) if s.get('name') == 'concurrent_revokes')
         i_cons = i_race + 3
         i_neg = next(i for i, s in enumerate(steps) if s['op'] == 'refund')
-        return [('stage.create', i_issue), ('stage.issue', i_prefix - i_issue),
+        return ([('probe.zk_capacity', aux)] if aux else []) + [
+                ('stage.create', i_issue - aux), ('stage.issue', i_prefix - i_issue),
                 ('stage.shield_prefix', 8), ('probe.boundary', i_rest - i_prefix - 8),
                 ('stage.shield_rest', i_rev - i_rest), ('stage.revocation', i_race - i_rev),
                 ('probe.concurrent_revokes', i_cons - i_race),
@@ -656,6 +726,7 @@ def _phase_bounds(path, steps):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--expand', metavar='OUT')
+    parser.add_argument('--stage', choices=sorted(STAGES), default='l1')
     parser.add_argument('--seed', type=int)
     parser.add_argument('--shield-count', type=int)
     parser.add_argument('--consume-count', type=int)
@@ -667,11 +738,11 @@ def main():
         settings['shield_count'] = args.shield_count
     if args.consume_count is not None:
         settings['consume_count'] = args.consume_count
-    doc = assign_phases(expand(settings))
+    doc = assign_phases(expand(settings, stage=args.stage))
     if args.expand:
         Path(args.expand).write_text(json.dumps(doc, indent=1) + '\n')
         counts = {k: len(v) for k, v in doc['paths'].items()}
-        print(f'expanded {VERSION} -> {args.expand} steps={counts}')
+        print(f'expanded {doc["version"]} -> {args.expand} steps={counts}')
         return
     parser.error('--expand is required')
 
