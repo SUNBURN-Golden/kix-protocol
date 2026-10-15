@@ -1,0 +1,41 @@
+{
+ "machine": "x86_64",
+ "system": "Linux",
+ "release": "6.12.94+",
+ "python": "3.12.15",
+ "cpu_count": 8,
+ "exploration_data": true,
+ "network": "localnet-only (one validator, committee size 1)",
+ "git_head": "cd2278c98a5ce2683090c1324c5a66fc1f182834",
+ "git_origin_main": "751c51bdff661673eb2edb9de0dea8f6cbdac2e0",
+ "git_branch": "agent/kix-rs-4-l2",
+ "cpu_model": "Intel(R) Xeon(R) Processor",
+ "locked_blob:runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+ "locked_blob:runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20",
+ "sui_version": "sui 1.79.1-808640d9b49a",
+ "node_version": "v24.19.0",
+ "npm_version": "11.17.0",
+ "toolchains": {
+  "sui": {
+   "release": "mainnet-v1.79.1",
+   "version": "1.79.1",
+   "platform": "ubuntu-x86_64",
+   "url": "https://github.com/MystenLabs/sui/releases/download/mainnet-v1.79.1/sui-mainnet-v1.79.1-ubuntu-x86_64.tgz",
+   "sha256": "547b3091e975b8a6b4078473a3868d86e985156b6715a8c4afb7fd7313a36abf",
+   "source": "https://api.github.com/repos/MystenLabs/sui/releases/tags/mainnet-v1.79.1"
+  },
+  "nodeMajor": 24,
+  "pythonMinor": "3.12",
+  "protocolPath": "reference/v0.3-rc1",
+  "network": "localnet-only"
+ },
+ "mem_total_bytes": 16779780096,
+ "resource_budget": {
+  "driver_timeout_s": 28800,
+  "committee_size": 1,
+  "epoch_duration_ms": 43200000,
+  "tx_wait_ms": 300000,
+  "tx_reconcile_ms": 300000,
+  "request": "builder machine only; no external endpoints, no spend"
+ }
+}

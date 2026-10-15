@@ -6,6 +6,7 @@
 export const PROFILE_VERSION=1;
 export const DEPTH=10;            // note tree depth, revocation tree depth, slot range-check bits
 export const SLOT_BITS=10;
+export const SHOW_SLOTS=1024;     // LOCALNET_SHOW_SLOTS: package fixture, not a workload size
 export const ROOT_HISTORY_K=4;    // test-only fixture; the operational K is UNDETERMINED (DECISION_REQUIRED, Astra)
 export const NULLIFIER_SHARDS=4;
 export const CHALLENGE_SHARDS=4;

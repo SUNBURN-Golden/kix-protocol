@@ -1,4 +1,4 @@
-"""Reduce the RS-4 L1 load driver's raw samples into per-path results.
+"""Reduce the RS-4 load driver's raw samples into per-path results.
 
 Reads `load-report.json` (written by client/load-l1.mjs) and the expanded
 `load-scenarios.json` (load_plan.py --expand) that produced it, then writes,
@@ -281,6 +281,17 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
+    r_settings = report.get('settings') or {}
+    r_show = r_settings.get('show') or {}
+    r_zk = r_settings.get('zk') or {}
+    r_shards = r_settings.get('shards') or {}
+    fixture = '%s/%s/%s/depth-%s/K=%s' % (
+        r_show.get('seated'), r_show.get('page_size'), r_shards.get('public'),
+        r_zk.get('depth'), r_zk.get('root_history_k'))
+    private_seated = r_show.get('private_seated')
+    if private_seated is not None and private_seated != r_show.get('seated'):
+        fixture += ' (private path capped at %s seats by 2^ZK_DEPTH)' % private_seated
+
     receipt = {
         'version': doc.get('version'), 'status': 'PASSED_MEASUREMENT',
         'packageId': report.get('packageId'), 'chain': report.get('chain'),
@@ -295,8 +306,8 @@ def main():
                        'virtual builder host; closed-loop baseline plus fixed-k probes; no '
                        'arrival-rate claim, no SLO, no throughput, no production readiness, '
                        'no durability or fault-tolerance claims. Fixture values '
-                       '(1,024/64/4/depth-10/K=4) are Astra-owned test values, not protocol '
-                       'values.'),
+                       '(%s) are Astra-owned test values, not protocol '
+                       'values.' % fixture),
     }
     all_failed = []
     for name in doc.get('paths', {}):

@@ -29,7 +29,8 @@ const out=resolve(process.env.KIX_JOURNEY_DIR??join(here,'../results/load-l1'));
 await mkdir(out,{recursive:true});
 const scenarioPath=process.env.KIX_LOAD_SCENARIOS??join(out,'load-scenarios.json');
 const doc=JSON.parse(readFileSync(scenarioPath,'utf8'));
-if(doc.version!=='kix-rs4-l1-load-v1')throw Error('UNRECOGNIZED_LOAD_DOCUMENT:'+doc.version);
+const DOC_VERSIONS=new Set(['kix-rs4-l1-load-v1','kix-rs4-l2-load-v1']);
+if(!DOC_VERSIONS.has(doc.version))throw Error('UNRECOGNIZED_LOAD_DOCUMENT:'+doc.version);
 const ACTORS=['issuer','a','b','gate','attester','delegate'];
 const refBytes=tag=>Array(32).fill(tag);
 const startedAt=new Date().toISOString();
@@ -88,7 +89,7 @@ const constants={zk_depth:await viewU64('zk_depth'),localnet_root_history_k:awai
 for(const [chainName,want] of [['zk_depth',P.DEPTH],['localnet_root_history_k',P.ROOT_HISTORY_K],
     ['localnet_nullifier_shards',P.NULLIFIER_SHARDS],['localnet_challenge_shards',P.CHALLENGE_SHARDS],
     ['max_bundle_chain',8],['profile_version',P.PROFILE_VERSION],
-    ['localnet_show_slots',doc.settings.show.seated],['localnet_page_slots',doc.settings.show.page_size]]){
+    ['localnet_show_slots',P.SHOW_SLOTS],['localnet_page_slots',doc.settings.show.page_size]]){
   if(constants[chainName]!==want)throw Error('PACKAGE_CONSTANT_MISMATCH:'+chainName+':'+constants[chainName]+'!='+want);
 }
 
@@ -104,9 +105,14 @@ const report={packageId,chain:kit.chain,actors:Object.fromEntries(ACTORS.map(n=>
 // ---- measured submission --------------------------------------------------------------------
 // service_ms is the submit->finality window only; build_ms covers kind-build,
 // coin resolution and signing. A lost response is reconciled by digest with the
-// same signed bytes and never resubmitted (RS-C03).
+// same signed bytes and never resubmitted (RS-C03). The window is bounded:
+// KIX_TX_WAIT_MS caps the submit/wait path, then digest reconciliation polls
+// ceil(KIX_TX_RECONCILE_MS/3000) x 3s. Defaults are the L1 record's values; a
+// contended host may widen them and the runner records them in host.json.
+const TX_WAIT_MS=Number(process.env.KIX_TX_WAIT_MS??60000);
+const TX_RECONCILE_POLLS=Math.max(1,Math.ceil(Number(process.env.KIX_TX_RECONCILE_MS??60000)/3000));
 async function reconcileByDigest(digest){
-  for(let i=0;i<10;i++){
+  for(let i=0;i<TX_RECONCILE_POLLS;i++){
     try{
       const r=await rpc.getTransaction({digest,include:{effects:true,events:true,objectTypes:true}});
       const executed=r.Transaction??r.FailedTransaction;
@@ -165,7 +171,7 @@ async function submitMeasured(name,build,gasIndex=0){
       digest,service_ms,build_ms,executed:null,gas:null};
   }
   try{
-    await rpc.waitForTransaction({result,timeout:30000});
+    await rpc.waitForTransaction({result,timeout:TX_WAIT_MS});
   }catch(e){
     const service_ms=Math.round(performance.now()-t0);
     const recovered=digest?await reconcileByDigest(digest):null;
@@ -599,7 +605,7 @@ async function runStep(pathName,show,step){
         try{
           const result=await rpc.executeTransaction({transaction:p.bytes,signatures:[signed.signature],
             include:{effects:true,events:true,objectTypes:true}});
-          await rpc.waitForTransaction({result,timeout:30000});
+          await rpc.waitForTransaction({result,timeout:TX_WAIT_MS});
           const executed=result.Transaction??result.FailedTransaction;
           const out=outcomeOf(executed);
           return {sub:p.sub,signer:p.call?.sender??null,digest,
@@ -728,13 +734,44 @@ async function snapshot(show){
   return snap;
 }
 
+// Late reconcile. A sample left 'unknown' means only that its digest was not
+// visible inside the per-step window — not that the signed bytes never ran.
+// Once every path's steps are done, before any end-state snapshot freezes the
+// record, each still-unknown digest gets one more bounded lookup while the
+// localnet is up. A digest found now is recorded with its true landed outcome
+// and recovered='late_reconcile' (the original window error is kept); a digest
+// still absent stays 'unknown' — the stronger claim, and the expected-page
+// check then compares a chain the transaction provably never touched. Nothing
+// is resubmitted (RS-C03) and expect_mismatch is recomputed from the final
+// outcomes.
+let reconciledLate=0;
+async function reconcileUnknowns(){
+  for(const sample of report.samples){
+    let touched=false;
+    if(sample.outcome_kind==='unknown'&&sample.digest){
+      const r=await reconcileByDigest(sample.digest);
+      if(r){sample.recovered='late_reconcile';Object.assign(sample,outcomeOf(r));
+        reconciledLate++;touched=true;}
+    }
+    for(const b of sample.branches??[]){
+      if(b.outcome_kind!=='unknown'||!b.digest)continue;
+      const r=await reconcileByDigest(b.digest);
+      if(r){b.recovered='late_reconcile';Object.assign(b,outcomeOf(r));
+        reconciledLate++;touched=true;}
+    }
+    if(touched)sample.expect_mismatch=!expectMet(sample.expect,sample);
+  }
+}
+
 // ---- main loop ---------------------------------------------------------------------------------
 let printed=0;
+const shows={};
 for(const pathName of Object.keys(doc.paths)){
   const steps=doc.paths[pathName];
   const cfg={seated:doc.settings.show.seated,ga:doc.settings.show.ga,
     page_size:doc.settings.show.page_size,shards:doc.settings.shards[pathName]};
   const show=newShow(cfg);
+  shows[pathName]=show;
   const tPath=Date.now();
   for(const step of steps){
     const sample=await runStep(pathName,show,step);
@@ -746,7 +783,7 @@ for(const pathName of Object.keys(doc.paths)){
         +' want '+JSON.stringify(step.expect)+' got '+sample.outcome_kind
         +(sample.abort!=null?' abort='+JSON.stringify(sample.abort):'')
         +(sample.error?' '+String(sample.error).slice(0,200):''));
-    if(report.samples.length%32===0){
+    if(report.samples.length%256===0){
       await writeFile(join(out,'load-report.json'),JSON.stringify(report)+'\n');
     }
     if(report.samples.length-printed>=64){
@@ -756,8 +793,20 @@ for(const pathName of Object.keys(doc.paths)){
     }
   }
   report.timings[pathName+'_ms']=Date.now()-tPath;
+}
+// Settle every pending digest first so the snapshots and the expected
+// end-state compare the same finalized chain. Each path runs its own show,
+// so deferring all three snapshots changes only how much has landed, never
+// what is measured.
+await reconcileUnknowns();
+report.endOfRunReconcile={rescued:reconciledLate,
+  stillUnknown:report.samples.filter(s=>s.outcome_kind==='unknown'
+    ||s.branches?.some(b=>b.outcome_kind==='unknown')).length};
+for(const pathName of Object.keys(doc.paths)){
+  const show=shows[pathName];
   report.snapshots[pathName]=await snapshot(show);
-  report.actual[pathName]={steps:steps.length,samples:report.samples.filter(s=>s.path===pathName).length,
+  report.actual[pathName]={steps:doc.paths[pathName].length,
+    samples:report.samples.filter(s=>s.path===pathName).length,
     ok:report.samples.filter(s=>s.path===pathName&&s.outcome_kind==='ok').length,
     shielded:show.notes.length,notes:show.notes.length};
 }
