@@ -26,6 +26,21 @@ export function localEndpoint() {
   return endpoint;
 }
 
+// A transient transport failure is not a chain answer: retry a single call a
+// few times before giving up (the driver's digest reconciliation does the same
+// for lost submission responses). A persistent failure still throws. `onRetry`
+// lets callers record the attempts so a flaky link is visible, not hidden.
+export async function transient(call,{tries=5,onRetry}={}) {
+  for(let attempt=0;;attempt++) {
+    try{return await call();}
+    catch(e){
+      if(attempt>=tries-1)throw e;
+      onRetry?.(e,attempt);
+      await new Promise(r=>setTimeout(r,400*(attempt+1)));
+    }
+  }
+}
+
 export async function connect(actorNames,faucetTimes={}) {
   const endpoint=localEndpoint();
   const rpc=new SuiGrpcClient({network:'localnet',baseUrl:endpoint});
@@ -41,12 +56,12 @@ export async function connect(actorNames,faucetTimes={}) {
   }));
   const deadline=Date.now()+30000;
   while(true) {
-    const balances=await Promise.all(Object.values(actors).map(k=>rpc.getBalance({owner:k.toSuiAddress()})));
+    const balances=await Promise.all(Object.values(actors).map(k=>transient(()=>rpc.getBalance({owner:k.toSuiAddress()}))));
     if(balances.every(r=>BigInt(r.balance.balance)>0n))break;
     if(Date.now()>deadline)throw Error('LOCAL_FAUCET_NOT_SETTLED');
     await new Promise(r=>setTimeout(r,300));
   }
-  let chain=await rpc.getChainIdentifier();
+  let chain=await transient(()=>rpc.getChainIdentifier());
   if(typeof chain!=='string')chain=chain.chainIdentifier;
   if(!chain)throw Error('CHAIN_IDENTIFIER_UNAVAILABLE');
 
@@ -57,13 +72,13 @@ export async function connect(actorNames,faucetTimes={}) {
     const keypair=actors[name];
     tx.setSender(keypair.toSuiAddress());
     tx.setGasBudget(GAS_BUDGET);
-    const kind=await tx.build({client:rpc,onlyTransactionKind:true});
+    const kind=await transient(()=>tx.build({client:rpc,onlyTransactionKind:true}));
     const resolved=Transaction.fromKind(kind);
     resolved.setSender(keypair.toSuiAddress());
     resolved.setGasBudget(GAS_BUDGET);
-    referenceGasPrice??=(await rpc.getReferenceGasPrice()).referenceGasPrice;
+    referenceGasPrice??=(await transient(()=>rpc.getReferenceGasPrice())).referenceGasPrice;
     resolved.setGasPrice(referenceGasPrice);
-    const {objects}=await rpc.listCoins({owner:keypair.toSuiAddress(),limit:50});
+    const {objects}=await transient(()=>rpc.listCoins({owner:keypair.toSuiAddress(),limit:50}));
     const usable=objects.filter(c=>BigInt(c.balance)>=BigInt(GAS_BUDGET));
     const gas=usable[gasIndex]??usable[0];
     if(!gas)throw Error('LOCAL_TEST_GAS_NOT_FOUND');
@@ -74,9 +89,12 @@ export async function connect(actorNames,faucetTimes={}) {
     const signed=await keypair.signTransaction(bytes);
     let result;
     try{
-      result=await rpc.executeTransaction({transaction:bytes,signatures:[signed.signature],
-        include:{effects:true,events:true,objectTypes:true}});
-      await rpc.waitForTransaction({result,timeout:30000});
+      result=await transient(async()=>{
+        const r=await rpc.executeTransaction({transaction:bytes,signatures:[signed.signature],
+          include:{effects:true,events:true,objectTypes:true}});
+        await rpc.waitForTransaction({result:r,timeout:30000});
+        return r;
+      });
     }catch(e){
       // Submission-level rejection is itself an observed outcome: recorded, never hidden.
       return {status:{success:false},submissionRejected:String(e?.message??e)};
@@ -87,14 +105,14 @@ export async function connect(actorNames,faucetTimes={}) {
   }
   const submitOne=async(name,build,gasIndex=0)=>submitSigned(await resolvedTx(name,build,gasIndex));
   async function getFields(id,parser) {
-    const {object}=await rpc.getObject({objectId:id,include:{content:true}});
+    const {object}=await transient(()=>rpc.getObject({objectId:id,include:{content:true}}));
     return exact(parser.parse(object.content));
   }
   async function chainNow(){return Number((await getFields(CLOCK_ID,Clock)).timestamp_ms);}
   async function listOwned(owner,type) {
     const all=[];let cursor=null;
     do{
-      const page=await rpc.listOwnedObjects({owner,type,limit:50,cursor,include:{content:true}});
+      const page=await transient(()=>rpc.listOwnedObjects({owner,type,limit:50,cursor,include:{content:true}}));
       all.push(...page.objects);cursor=page.hasNextPage?page.cursor:null;
     }while(cursor);
     return all;

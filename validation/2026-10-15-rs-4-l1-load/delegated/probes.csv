@@ -1,0 +1,3 @@
+path,phase,seq,probe,branch,op,slot,slots,signer,outcome_kind,abort,error,digest,service_ms,build_ms,gas_computation,gas_storage,gas_rebate,detail
+delegated,probe.delegated,1752,parallel,0,issue_delegated,984,null,delegate,ok,,,BATFXujBiwM7dLxtSrLWSRQhDWoAfU2TZj2pGKA6tqhq,1661,3,1000000,10085200,7674480,
+delegated,probe.delegated,1752,parallel,1,issue_delegated,985,null,delegate,ok,,,GU231dPUvALYARqgx2HEWC9FvKxQJv31YBsS6degAuiA,1660,2,1000000,10085200,7674480,

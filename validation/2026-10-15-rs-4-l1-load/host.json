@@ -6,15 +6,15 @@
  "cpu_count": 8,
  "exploration_data": true,
  "network": "localnet-only (one validator, committee size 1)",
- "git_head": "10e44d40abd878736b900d768f925725c95a8cd0",
+ "git_head": "82f0a5d2ecb6797a15087d13a1b7d67482de3b09",
  "git_origin_main": "10e44d40abd878736b900d768f925725c95a8cd0",
  "git_branch": "agent/kix-rs-4-l1",
  "cpu_model": "Intel(R) Xeon(R) Processor",
  "locked_blob:runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
  "locked_blob:runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20",
  "sui_version": "sui 1.79.1-808640d9b49a",
- "node_version": "v20.19.2",
- "npm_version": "9.2.0",
+ "node_version": "v24.19.0",
+ "npm_version": "11.17.0",
  "toolchains": {
   "sui": {
    "release": "mainnet-v1.79.1",

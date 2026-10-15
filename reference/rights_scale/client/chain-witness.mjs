@@ -8,22 +8,28 @@
 // so a source that omits or invents an event cannot produce an accepted witness.
 import {SuiJsonRpcClient} from '@mysten/sui/jsonRpc';
 import {NoteAdded,RevocationLeaf,NoteTree,RevocationState} from './types.mjs';
-import {exact} from './chain-kit.mjs';
+import {exact,transient} from './chain-kit.mjs';
 import {poseidon,noteTreeOf,revocationTreeOf} from './private-scale.mjs';
 import {DEPTH} from './profile-constants.mjs';
 
 const typeOf=(packageId,name)=>packageId+'::rights_scale::'+name;
 const same=(a,b)=>BigInt(a)===BigInt(b);
 
+// Transient transport failures are retried by `transient` (chain-kit); each
+// source counts its own retries so a flaky link is visible, not hidden.
+const retry=(call,state)=>transient(call,{onRetry:()=>state.retries++});
+
 /** Source 1: JSON-RPC `suix_queryEvents` by Move event type, oldest first, paged. */
 export function jsonRpcEventSource(endpoint) {
   const client=new SuiJsonRpcClient({url:endpoint,network:'localnet'});
+  const state={retries:0};
   return {
     name:'jsonrpc-queryEvents',
+    retries:()=>state.retries,
     async events(packageId,name) {
       const out=[];let cursor=null;
       do{
-        const page=await client.queryEvents({query:{MoveEventType:typeOf(packageId,name)},cursor,limit:50,order:'ascending'});
+        const page=await retry(()=>client.queryEvents({query:{MoveEventType:typeOf(packageId,name)},cursor,limit:50,order:'ascending'}),state);
         for(const e of page.data)out.push({bcs:Buffer.from(e.bcs,'base64'),digest:e.id.txDigest,seq:Number(e.id.eventSeq)});
         cursor=page.hasNextPage?page.nextCursor:null;
       }while(cursor);
@@ -40,18 +46,20 @@ export function jsonRpcEventSource(endpoint) {
 export function checkpointEventSource(rpc) {
   const seen=[];        // {type, bcs, digest, seq} of every event read so far, in chain order
   let next=0;           // first checkpoint not read yet
+  const state={retries:0};
   const samePackage=(type,packageId)=>{
     const [pkg,mod]=type.split('::');
     return mod==='rights_scale' && BigInt(pkg)===BigInt(packageId);
   };
   return {
     name:'grpc-checkpoint-scan',
+    retries:()=>state.retries,
     async events(packageId,name) {
-      const info=await rpc.ledgerService.getServiceInfo({});
+      const info=await retry(()=>rpc.ledgerService.getServiceInfo({}),state);
       const latest=Number(info.response.checkpointHeight);
       for(;next<=latest;next++) {
-        const {response}=await rpc.ledgerService.getCheckpoint({checkpointId:{oneofKind:'sequenceNumber',sequenceNumber:BigInt(next)},
-          readMask:{paths:['transactions.digest','transactions.events']}});
+        const {response}=await retry(()=>rpc.ledgerService.getCheckpoint({checkpointId:{oneofKind:'sequenceNumber',sequenceNumber:BigInt(next)},
+          readMask:{paths:['transactions.digest','transactions.events']}}),state);
         for(const tx of response.checkpoint?.transactions??[]) {
           let seq=0;
           for(const e of tx.events?.events??[]) {

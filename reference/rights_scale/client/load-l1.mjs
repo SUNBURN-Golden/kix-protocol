@@ -17,7 +17,7 @@ import {bcs} from '@mysten/sui/bcs';
 import {Transaction} from '@mysten/sui/transactions';
 import {groth16} from 'snarkjs';
 import * as T from './types.mjs';
-import {connect,abortOf,eventsOf,buildPackage,deep,CLOCK_ID,MODULE,ZERO_ID} from './chain-kit.mjs';
+import {connect,abortOf,eventsOf,buildPackage,deep,transient,CLOCK_ID,MODULE,ZERO_ID} from './chain-kit.mjs';
 import {artifacts,checkVerifier,mintNote,spendWitness,revocationUpdate,domainOf,poseidon,
   noteTreeOf,revocationTreeOf,artifactRoot} from './private-scale.mjs';
 import {jsonRpcEventSource,checkpointEventSource,rebuildTreeView} from './chain-witness.mjs';
@@ -74,7 +74,7 @@ async function view(name,args=()=>[]){
   const tx=new Transaction();
   tx.setSender(addr('issuer'));
   tx.moveCall({target:target(name),arguments:args(tx)});
-  const result=await rpc.simulateTransaction({transaction:tx,include:{commandResults:true}});
+  const result=await transient(()=>rpc.simulateTransaction({transaction:tx,include:{commandResults:true}}));
   const values=result.commandResults?.[0]?.returnValues;
   if(!values?.length)throw Error('VIEW_CALL_FAILED:'+name);
   return values[0].bcs;
@@ -472,7 +472,8 @@ function stepCall(show,step){
           treeId:show.tree,revocationId:show.revocation,domain:show.domain,getFields});
         return {noTx:true,witness_ms:Math.round(performance.now()-w0),
           detail:{source:rebuilt.source,noteEvents:rebuilt.noteEvents,
-            revocationEvents:rebuilt.revocationEvents}};
+            revocationEvents:rebuilt.revocationEvents,
+            transport_retries:source.retries?source.retries():0}};
       }};
     }
     case 'create_grant':
