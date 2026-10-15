@@ -1,4 +1,4 @@
-"""Reduce the RS-4 L1 load driver's raw samples into per-path results.
+"""Reduce the RS-4 load driver's raw samples into per-path results.
 
 Reads `load-report.json` (written by client/load-l1.mjs) and the expanded
 `load-scenarios.json` (load_plan.py --expand) that produced it, then writes,

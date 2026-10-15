@@ -40,10 +40,18 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from run_rights_scale_l1_load import (  # noqa: E402
-    ROOT, PROTO, git, host_facts, wait_ready)
+    ROOT, PROTO, host_facts, wait_ready)
 
 OUTPUT_NAME = 'rights-scale-l2-load.json'
 EPOCH_DURATION_MS = 43_200_000  # 12h: the multi-hour L2 run must stay far from rotation
+
+# Shared builder hosts stall localnet finality past the driver's default
+# observation window (60s result wait + 20x3s digest reconcile): transactions
+# do land, just late, and are then recorded 'unknown' (RS-C03). These widen only
+# how long a submitted transaction is watched before that verdict — what is
+# submitted is unchanged — and are recorded in resource_budget.
+TX_WAIT_MS = int(os.environ.get('KIX_TX_WAIT_MS', '300000'))
+TX_RECONCILE_MS = int(os.environ.get('KIX_TX_RECONCILE_MS', '300000'))
 
 
 def main():
@@ -68,6 +76,7 @@ def main():
     facts['resource_budget'] = {
         'driver_timeout_s': args.driver_timeout, 'committee_size': 1,
         'epoch_duration_ms': EPOCH_DURATION_MS,
+        'tx_wait_ms': TX_WAIT_MS, 'tx_reconcile_ms': TX_RECONCILE_MS,
         'request': 'builder machine only; no external endpoints, no spend',
     }
     (out / 'host.json').write_text(json.dumps(facts, indent=1) + '\n')
@@ -98,6 +107,8 @@ def main():
     env['KIX_LOCAL_RPC'] = 'http://127.0.0.1:9000'
     env['KIX_JOURNEY_DIR'] = str(run / 'journey')
     env['KIX_LOAD_SCENARIOS'] = str(run / 'journey' / 'load-scenarios.json')
+    env['KIX_TX_WAIT_MS'] = str(TX_WAIT_MS)
+    env['KIX_TX_RECONCILE_MS'] = str(TX_RECONCILE_MS)
     subprocess.run([sys.executable, str(ROOT / 'scripts/configure_local.py')], check=True)
     print('Local run: ' + str(run), flush=True)
     network = run / 'network'

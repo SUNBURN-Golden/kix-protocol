@@ -6,7 +6,7 @@
  "cpu_count": 8,
  "exploration_data": true,
  "network": "localnet-only (one validator, committee size 1)",
- "git_head": "751c51bdff661673eb2edb9de0dea8f6cbdac2e0",
+ "git_head": "cd2278c98a5ce2683090c1324c5a66fc1f182834",
  "git_origin_main": "751c51bdff661673eb2edb9de0dea8f6cbdac2e0",
  "git_branch": "agent/kix-rs-4-l2",
  "cpu_model": "Intel(R) Xeon(R) Processor",
@@ -31,9 +31,11 @@
  },
  "mem_total_bytes": 16779780096,
  "resource_budget": {
-  "driver_timeout_s": 18000,
+  "driver_timeout_s": 28800,
   "committee_size": 1,
   "epoch_duration_ms": 43200000,
+  "tx_wait_ms": 300000,
+  "tx_reconcile_ms": 300000,
   "request": "builder machine only; no external endpoints, no spend"
  }
 }
