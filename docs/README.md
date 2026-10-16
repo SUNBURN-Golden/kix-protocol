@@ -153,6 +153,7 @@
 | [Sui testnet 키 관리 결정 제안](decisions/TESTNET_KEY_MANAGEMENT_DECISION_PROPOSAL_20261016.md) | 장래 testnet 배포가 필요로 할 키 보관, 교체, 사고 대응, 운영 주체의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 키도 비밀도 만들지 않고 배포하지 않으며 testnet 잠금은 잠긴 채로 남는다. |
 | [위임 실행 활성화 결정 제안](decisions/AI_DELEGATION_EXECUTION_DECISION_PROPOSAL_20261016.md) | 위임 실행을 언제, 어떤 선행조건·I11 한도·회수 보장으로 켤 수 있는지의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 위임 실행은 꺼진 채로 남고 한도·이름·기간 값은 비어 있다. |
 | [AI 위임 계층 매트릭스](status/AI_DELEGATION_LAYER_MATRIX.md) | AI 위임 계약 §6의 DLG-01..DLG-36 각각에 대해 목 시험, 체인 grant, executor map, readiness wrap이 담은 것 | Builder-authored map, not a review or acceptance. 어느 계층도 충분하다고 평가하지 않으며 인용된 소스 밖의 실행·한도·회수 보장을 주장하지 않는다. |
+| [RS 술어 증거 지도](status/RS_PREDICATE_EVIDENCE_MAP.md) ([검증 기록](../validation/2026-10-16-rs-predicate-evidence-map/README.md)) | 권리 확장 프로파일 §8의 RS-C01..RS-C17과 §9의 RR-1..RR-6 각각에 대해 지금 있는 Move 시험, Python 모델 시험, Rust 메모리 시험, localnet 기록 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 어떤 간극도 닫지 않는다. |
 
 같은 날짜의 검증 기록:
 
