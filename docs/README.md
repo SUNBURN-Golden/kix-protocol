@@ -47,18 +47,18 @@
 | [조회·목록 쿼리](contracts/READ_MODEL_QUERIES.md) | 상거래 표면의 조회·목록 의미 | 초안 0.1. 와이어 본문·카탈로그 삽입 없음 |
 | [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md) | 조회·제안·실행 권한. 오프라인 목의 술어 | 초안 0.1. 실행을 켜지 않음. 목은 `reference/ai_delegation/` |
 | [1차 발행 가격·수수료](contracts/MOVE_PRIMARY_ISSUANCE_PRICE_FEE.md) | 1차 발행의 구조·바인딩·산술·사건 의미 | 초안 0.1. 가격·수수료 값은 정하지 않음 |
-| [확장 권리 프로파일](contracts/RIGHTS_SCALE_PROFILE.md) | 확장 프로파일 계약 | 초안 0.1. 미검토·미측정 |
+| [확장 권리 프로파일](contracts/RIGHTS_SCALE_PROFILE.md) | 확장 프로파일 계약 | 0.2 (초안). 미검토·미측정 |
 | [RS-0 결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) | 권리 확장의 객체·재고 권위 | 결정 초안. 확정 조건은 그 문서가 정한다 |
 | [RS-1 착수 권한 기록](decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md) | RS-1 공개 경로의 초안 0.1 기준 구현 착수 | owner 결정 기록. 구현 착수 권한만 적으며 프로파일 초안 상태는 바꾸지 않음 |
-| [RS-1 owner 답변 원문](decisions/archive/rs-1.decision_answer.md) | RS-1 착수 권한 기록 §4가 보존하는 owner 답변 원문 | 그 문서가 스스로 적은 대로: "Appended verbatim from the task input." 게이트 폐쇄 후 보존 규칙(§2)에 따라 아카이브로 이동, 내용 불변 |
+| [RS-1 owner 답변 원문](decisions/archive/rs-1.decision_answer.md) | RS-1 착수 권한 기록 §4가 보존하는 owner 답변 원문 | 그 문서가 스스로 적은 대로: "Appended verbatim from the task input." RS-1 병합(#180) 후 이동; Astra 게이트 기록은 이 트리에 없음. 보존 규칙(§2)에 따라 아카이브에 있으며 내용 불변 |
 | [루프백 관문의 브라우저 접근](decisions/GATE_BROWSER_ACCESS_DECISION_20261008.md) | 브라우저가 루프백 관문에 닿는 방식의 비교 | "채택 제안"(그 문서의 표현). 관문 코드 변경 없음 |
 | [I12 절단 증명](decisions/CUT_PROOF_I12_20261008.md) | C_g/H_g 절단, 옛 작성자 차단, 미발행 약정 보존 | 증명 초안, 사용자 병합 때에만 효력. I12는 미완결 |
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
-| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | 행별 위치 동기화 기준: TL·catalogue·SDK `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b·EV-V5/EV-DELEG/EV-RS `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14), RS-4·RS-5 / testnet keys·P AI delegation `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16). 그 외 행은 2026-10-06 `2554173` 스냅샷 |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | 행별 위치 동기화 기준: TL·catalogue·SDK `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b·EV-V5/EV-DELEG/EV-RS `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14), RS-4 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16), EV-IR·RS-0·RS-5 / testnet keys·P AI delegation `aca49f6e5498291c1f221185df1ee5cdbf333342`(2026-10-16). 그 외 행은 2026-10-06 `2554173` 스냅샷 |
 
-[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 위치 동기화 기준은 행별로 다르다. TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행은 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 행은 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b와 새 EV-V5·EV-DELEG·EV-RS 행은 `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14) 기준이고, RS-4 L1→L2→L3·RS-5 / testnet keys·P AI delegation 행은 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16) 기준이다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
+[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 위치 동기화 기준은 행별로 다르다. TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행은 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 행은 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b와 새 EV-V5·EV-DELEG·EV-RS 행은 `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14) 기준이고, RS-4 L1→L2→L3 행은 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16) 기준이고, EV-IR·RS-0·RS-5 / testnet keys·P AI delegation 행은 `aca49f6e5498291c1f221185df1ee5cdbf333342`(2026-10-16) 기준이다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
 
 같은 날짜의 검증 기록:
 
@@ -159,6 +159,7 @@
 - [ai-delegation-execution-decision](../validation/2026-10-16-ai-delegation-execution-decision/README.md) — Document only. No code, no new tests, no policy values, no new protocol command. `delegated_execution_enabled` stays `false`. The recommendation is not acted on.
 - [plan-register-index-sync-20261016](../validation/2026-10-16-plan-register-index-sync-20261016/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
 - [feature-ir-plan-limit-edge-tests](../validation/2026-10-16-feature-ir-plan-limit-edge-tests/README.md) — Characterization of the stated FeatureIR plan limits (1,024 stages, depth 64, 100,000 nodes): in-memory validator tests, not a wire, exporter, Polars/DuckDB or GPU result, and not a new budget or policy value.
+- [audit7-plan-register-index-sync-20261016b](../validation/2026-10-16-audit7-plan-register-index-sync-20261016b/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
 
 ## 역사 문서와 증거
 
