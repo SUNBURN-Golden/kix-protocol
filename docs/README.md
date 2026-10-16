@@ -144,6 +144,18 @@
 | [kix-kernel-v5](../runtime/crates/kix-kernel-v5/README.md) | 새 in-memory v5 커널 crate | It is not a durable service, a storage engine, or a production runtime. |
 | [kix-delegated-exec](../runtime/crates/kix-delegated-exec/README.md) | 위임 실행 map crate | It is not a service, not a chain client, not a storage engine, and not a production runtime. |
 
+## 2026-10-16 결정 제안 색인 — 위치 안내만
+
+이 절은 문서의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
+|---|---|---|
+| [Sui testnet 키 관리 결정 제안](decisions/TESTNET_KEY_MANAGEMENT_DECISION_PROPOSAL_20261016.md) | 장래 testnet 배포가 필요로 할 키 보관, 교체, 사고 대응, 운영 주체의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 키도 비밀도 만들지 않고 배포하지 않으며 testnet 잠금은 잠긴 채로 남는다. |
+
+같은 날짜의 검증 기록:
+
+- [testnet-key-management-decision](../validation/2026-10-16-testnet-key-management-decision/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command, no key. The recommendation is not acted on.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
