@@ -151,10 +151,12 @@
 | 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
 |---|---|---|
 | [Sui testnet 키 관리 결정 제안](decisions/TESTNET_KEY_MANAGEMENT_DECISION_PROPOSAL_20261016.md) | 장래 testnet 배포가 필요로 할 키 보관, 교체, 사고 대응, 운영 주체의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 키도 비밀도 만들지 않고 배포하지 않으며 testnet 잠금은 잠긴 채로 남는다. |
+| [위임 실행 활성화 결정 제안](decisions/AI_DELEGATION_EXECUTION_DECISION_PROPOSAL_20261016.md) | 위임 실행을 언제, 어떤 선행조건·I11 한도·회수 보장으로 켤 수 있는지의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 위임 실행은 꺼진 채로 남고 한도·이름·기간 값은 비어 있다. |
 
 같은 날짜의 검증 기록:
 
 - [testnet-key-management-decision](../validation/2026-10-16-testnet-key-management-decision/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command, no key. The recommendation is not acted on.
+- [ai-delegation-execution-decision](../validation/2026-10-16-ai-delegation-execution-decision/README.md) — Document only. No code, no new tests, no policy values, no new protocol command. `delegated_execution_enabled` stays `false`. The recommendation is not acted on.
 
 ## 역사 문서와 증거
 
