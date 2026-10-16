@@ -167,6 +167,7 @@
 - [delegation-layer-gap-matrix](../validation/2026-10-16-delegation-layer-gap-matrix/README.md) — Builder-authored map and stdlib checker; no binding designed, no command, flag, limit or value added, no layer graded sufficient, nothing enabled.
 - [settlement-seeded-property-suite](../validation/2026-10-16-settlement-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F01-F03 settlement mock and FSM; no mock or contract change, no grade change, no real payment.
 - [credit-f04-seeded-property-suite](../validation/2026-10-17-credit-f04-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F04 credit mock and FSM; MOCK only, no mock or contract change, no grade change, no real funds, not a regulated credit product.
+- [feature-semantics-v1-edge-fixtures](../validation/2026-10-17-feature-semantics-v1-edge-fixtures/README.md) — Builder-authored scalar edge tests for kix-feature-semantics with a section-to-test map; in-memory helpers only, no src change, no grade change, no tolerance policy chosen.
 
 ## 역사 문서와 증거
 
