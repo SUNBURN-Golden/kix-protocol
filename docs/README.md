@@ -152,6 +152,7 @@
 |---|---|---|
 | [Sui testnet 키 관리 결정 제안](decisions/TESTNET_KEY_MANAGEMENT_DECISION_PROPOSAL_20261016.md) | 장래 testnet 배포가 필요로 할 키 보관, 교체, 사고 대응, 운영 주체의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 키도 비밀도 만들지 않고 배포하지 않으며 testnet 잠금은 잠긴 채로 남는다. |
 | [위임 실행 활성화 결정 제안](decisions/AI_DELEGATION_EXECUTION_DECISION_PROPOSAL_20261016.md) | 위임 실행을 언제, 어떤 선행조건·I11 한도·회수 보장으로 켤 수 있는지의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 위임 실행은 꺼진 채로 남고 한도·이름·기간 값은 비어 있다. |
+| [AI 위임 계층 매트릭스](status/AI_DELEGATION_LAYER_MATRIX.md) | AI 위임 계약 §6의 DLG-01..DLG-36 각각에 대해 목 시험, 체인 grant, executor map, readiness wrap이 담은 것 | Builder-authored map, not a review or acceptance. 어느 계층도 충분하다고 평가하지 않으며 인용된 소스 밖의 실행·한도·회수 보장을 주장하지 않는다. |
 
 같은 날짜의 검증 기록:
 
@@ -162,6 +163,7 @@
 - [audit7-plan-register-index-sync-20261016b](../validation/2026-10-16-audit7-plan-register-index-sync-20261016b/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
 - [audit7-docs-index-allowlist-prune](../validation/2026-10-16-audit7-docs-index-allowlist-prune/README.md) — This record removes four allowlist entries and adds one checker rule; it retroactively indexes nothing, raises no evidence grade, and marks nothing reviewed or operational.
 - [ci-wire-i12-proof-ids-check](../validation/2026-10-16-ci-wire-i12-proof-ids-check/README.md) — This record raises no evidence grade, marks nothing reviewed or operational, and does not close I12.
+- [delegation-layer-gap-matrix](../validation/2026-10-16-delegation-layer-gap-matrix/README.md) — Builder-authored map and stdlib checker; no binding designed, no command, flag, limit or value added, no layer graded sufficient, nothing enabled.
 
 ## 역사 문서와 증거
 
