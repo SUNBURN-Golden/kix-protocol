@@ -79,6 +79,8 @@
 | [통합 (a) 결정 제안](decisions/INTEGRATION_A_DECISION_PROPOSAL_20261009.md) | PR #11 저널 통합 (a)를 지금 할지, 한다면 잠금 v4·v5 프레임 저널·v5와 로컬 PostgreSQL 중 어디인지 | 결정 제안, 사용자 병합 때에만 효력, 구현 없음. 문장 수정 없이 병합하면 DEFERRED |
 | [OpenAPI 카탈로그 승격 — 소유자 결정 위치 기록](decisions/OPENAPI_CATALOGUE_PROMOTION_OWNER_DECISION_20261009.md) | 2026-10-09 소유자 결정(JunTae)이 인용되는 위치와 네 항목의 산출물 포인터 | 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. |
 | [정산·예매/리셀/검표·F04 정책 심화 — 소유자 결정 위치 기록](decisions/POLICY_DEEPENING_OWNER_DECISION_20261009.md) | 2026-10-09 소유자 결정(JunTae)이 정산(L0/W0/R0/S0/T0/B0/P0), 예매·리셀·검표(선택지 A), F04(선택지 A) 계약에서 인용되는 위치 | 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. |
+| [k-stage2-v5-impl 잔여 정지 — 소유자 결정 위치 기록](decisions/K_STAGE2_V5_RESIDUAL_STOPS_OWNER_DECISION_20261013.md) | 2026-10-13 소유자 위임 결정이 보존된 위치, 인용하는 병합 파일, 병합된 제안·계획과 열린 충돌 표 | 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. |
+| [k-stage2-v5-impl 소유자 답변 원문](decisions/archive/k-stage2-v5-impl.decision_answer.md) | 위 위치 기록이 가리키는 소유자 위임 답변 원문(바이트 그대로) | 그 문서가 스스로 적은 대로: "Decision answer — k-stage2-v5-impl residual stops (final)" |
 | [F04 실자금 해제 조건](decisions/F04_REAL_FUNDS_LIFT_CRITERIA_20261009.md) | 실제 여신 잠금을 풀자는 제안이 갖춰야 할 조건 목록(법률·자본·위험·운영·승인) | Status: proposed. This is a User decision document. It takes effect only when the User merges it …. 조건 목록 채택은 해제가 아니며 잠금은 그대로다 |
 | [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | 실 PG 호출 전에 필요한 Toss sandbox 적합성 증거의 시험 사례, 필요한 토스 답변, 증거 기록 위치 | 문서 전용 계획. 호출·자격 증명 없음. sandbox 증거는 실자금 잠금을 열지 않음 |
 
@@ -158,6 +160,7 @@
 - [testnet-key-management-decision](../validation/2026-10-16-testnet-key-management-decision/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command, no key. The recommendation is not acted on.
 - [ai-delegation-execution-decision](../validation/2026-10-16-ai-delegation-execution-decision/README.md) — Document only. No code, no new tests, no policy values, no new protocol command. `delegated_execution_enabled` stays `false`. The recommendation is not acted on.
 - [plan-register-index-sync-20261016](../validation/2026-10-16-plan-register-index-sync-20261016/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [v5-residual-stops-owner-decision-record](../validation/2026-10-16-v5-residual-stops-owner-decision-record/README.md) — Location record and byte-identical archive only: no new approval, no value adopted, no grade raise.
 
 ## 역사 문서와 증거
 
