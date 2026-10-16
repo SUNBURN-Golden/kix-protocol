@@ -168,6 +168,19 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [RS-3a 위임 primitives 기록](../validation/2026-10-14-rs-3a-delegation-primitives/README.md) | #183 | `adcddc510a66ff70725084c0846830c29ef9ebbe` | BeautifulMind-JT | **Everything here is a localnet fixture.** | 위치 포인터. 새 승인 아님. |
 | [RS-3b 위임 실행 map 기록](../validation/2026-10-14-rs-3b-delegated-exec/README.md) | #184 | `ced0e2f42c0491753db91acf87bd61574eb37ce4` | BeautifulMind-JT | No delegated execution is enabled (`runtime/ARCHITECTURE.toml` keeps `delegated_execution_enabled = false` and the architecture verifier still passes). | 위치 포인터. 새 승인 아님. |
 
+병합된 문서 위치(2026-10-14~16, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다. merged_by는 이 빌더 호스트에서 GitHub로 읽지 못해(gh 미인증) 앞 표의 관례를 따라 적었다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [register 동기화 v5·RS 기록](../validation/2026-10-14-register-sync-v5-rs/README.md) | #185 | `9c4da8d53947a8ca049b6284fa5ca915fb5947ec` | BeautifulMind-JT | This record raises no evidence grade, marks nothing reviewed or operational, and keeps the operational count at 0. | 위치 포인터. 새 승인 아님. |
+| [audit6 계획·색인 동기화 기록](../validation/2026-10-14-audit6-plan-index-sync/README.md) | #186 | `50af6096a84f72c8c1249f23279dab0b279e4c82` | BeautifulMind-JT | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [RS 프로파일 개정 기록 0.2](../validation/2026-10-14-rs-profile-revision-log-0-2/README.md) | #187 | `52bd45eff0d77280406a819e62e33212ca50370f` | BeautifulMind-JT | No semantic rule, RS-C/IM/RR id, status notation, or adoption sentence was changed. | 위치 포인터. 새 승인 아님. |
+| [RS-1 상태·답변 아카이브 기록](../validation/2026-10-14-rs1-state-answer-archive/README.md) | #188 | `2ae8f1d0774befb0d71eb07f2e3d7454d3fcdc64` | BeautifulMind-JT | The answer text is not edited. | 위치 포인터. 새 승인 아님. |
+| [docs 색인 검사 validation 기록 확장 기록](../validation/2026-10-15-docs-index-check-validation-records/README.md) | #189 | `10e44d40abd878736b900d768f925725c95a8cd0` | BeautifulMind-JT | This record extends a checker and its allowlist only; it retroactively indexes no historical record, raises no evidence grade, and marks nothing reviewed or operational. | 위치 포인터. 새 승인 아님. |
+| [RS-4 L1 부하 기록](../validation/2026-10-15-rs-4-l1-load/README.md) | #190 | `751c51bdff661673eb2edb9de0dea8f6cbdac2e0` | BeautifulMind-JT | **Everything here is exploration data.** | 위치 포인터. 새 승인 아님. |
+| [Sui testnet 키 관리 결정 제안](decisions/TESTNET_KEY_MANAGEMENT_DECISION_PROPOSAL_20261016.md) | #192 | `47eed4b01b93dc4b00e102729bad1c74abdbae95` | BeautifulMind-JT | If the User merges this file without edits, only the recommended branch is adopted (C3, R2, I2, W2, and O1). Every `DECISION_REQUIRED` and `UNDETERMINED` value stays empty. Every lock stays. | 위치 포인터. 새 승인 아님. |
+| [위임 실행 활성화 결정 제안](decisions/AI_DELEGATION_EXECUTION_DECISION_PROPOSAL_20261016.md) | #193 | `ea867668696d6b1114a443d0fe4e840d96b948f6` | BeautifulMind-JT | If the User merges this file without edits, only the recommended branch is adopted (G2, L2, R2, and O1). Every `DECISION_REQUIRED` and `UNDETERMINED` value stays empty. Every lock stays. `delegated_execution_enabled` stays `false`. | 위치 포인터. 새 승인 아님. |
+
 ## 6. E-4와 상태 수명
 
 ### 6.1 E-4
@@ -629,7 +642,7 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 현재 문서 포인터:
 
 - TL: TL-A ADR [ADR-0002](adr/0002-token-layer-scope-and-limits.md) 병합됨(#126). 범위·한계 기록이며 coin/TIX 잠금 해제가 아니다.
-- RS: RS-0 프로파일 0.1·결정 기록 병합됨(#125): [프로파일](contracts/RIGHTS_SCALE_PROFILE.md), [결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md). 확정 조건은 그 문서가 정한다. RS-1·IssuerCap 프로브·RS-2·RS-3a·RS-3b의 localnet·in-memory fixture 병합 위치는 §5 「병합된 문서 위치(2026-10-13~14, 위치 안내만)」 표의 #180~#184 행과 [docs 색인](README.md)의 「2026-10-13/14 병합 기록 색인」 절이다.
+- RS: RS-0 프로파일 0.1·결정 기록 병합됨(#125): [프로파일](contracts/RIGHTS_SCALE_PROFILE.md), [결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md). 확정 조건은 그 문서가 정한다. RS-1·IssuerCap 프로브·RS-2·RS-3a·RS-3b의 localnet·in-memory fixture 병합 위치는 §5 「병합된 문서 위치(2026-10-13~14, 위치 안내만)」 표의 #180~#184 행과 [docs 색인](README.md)의 「2026-10-13~15 병합 기록 색인」 절이다. RS-4 L1(#190)은 localnet 탐색 측정 자료로만 병합되었고([기록](../validation/2026-10-15-rs-4-l1-load/README.md)), SLO·처리량·운영 주장이 아니다. L2는 병합되지 않은 draft PR #191에서 FAILED_MEASUREMENT로 기록되어 보류 중이며 L3는 다루지 않는다. 위치 포인터이며 새 승인이 아니다.
 
 병합된 TL 문서 위치(2026-10-09, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
 
