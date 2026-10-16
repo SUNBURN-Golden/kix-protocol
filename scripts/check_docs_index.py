@@ -29,9 +29,10 @@ additionally holds the validation records that predate the scan itself
 index entries.
 
 Reports each of: a scanned file no index link reaches, an allowlist
-entry that names a file outside the scanned set, and a resolved index
-link that points into a scanned subtree at a target that does not exist
-(a renamed or deleted document).
+entry that names a file outside the scanned set, an allowlist entry that
+an index link also reaches (``allowlisted but indexed``; the allowlist
+stays minimal), and a resolved index link that points into a scanned
+subtree at a target that does not exist (a renamed or deleted document).
 
 Exits 0 when there is nothing to report; exits 1 printing each problem
 otherwise. Standard library only. Wired into the ``Stdlib offline
@@ -67,8 +68,9 @@ SCAN_PATTERNS = (
 # scripts/check_integration_gate_openapi.py.
 # Validation records that predate the validation-record scan (KIX audit
 # #6, 2026-10) are kept below as preserved evidence rather than
-# retroactively indexed; a later index-sync node that links one of them
-# from an index file must also drop its entry here.
+# retroactively indexed. The rule is enforced: a node that links one of
+# them from an index file must also drop its entry here, otherwise the
+# checker reports 'allowlisted but indexed'.
 ALLOWLIST = {
     'docs/contracts/openapi/fsm-command-contract.json':
         'machine-readable command pin next to the linked openapi README',
@@ -172,18 +174,6 @@ ALLOWLIST = {
     'validation/2026-10-13-offline-doc-checks-ci/README.md':
         'historical record pre-dating the validation-record scan '
         '(KIX audit #6); not retroactively indexed',
-    'validation/2026-10-14-audit6-plan-index-sync/README.md':
-        'merged audit6 fix-node record; plan/index sync row belongs to '
-        'a later index-sync node',
-    'validation/2026-10-14-register-sync-v5-rs/README.md':
-        'merged audit6 fix-node record; plan/index sync row belongs to '
-        'a later index-sync node',
-    'validation/2026-10-14-rs-profile-revision-log-0-2/README.md':
-        'merged audit6 fix-node record; plan/index sync row belongs to '
-        'a later index-sync node',
-    'validation/2026-10-14-rs1-state-answer-archive/README.md':
-        'merged audit6 fix-node record; plan/index sync row belongs to '
-        'a later index-sync node',
 }
 # Prefixes a resolved link target must sit under for the missing-target
 # (broken index link) check.
@@ -236,6 +226,8 @@ def find_problems(scanned, referenced, broken_links, allowlist):
     for path in sorted(allowlist - scanned):
         problems.append(
             'allowlist names a file outside the scanned set: ' + path)
+    for path in sorted(allowlist & referenced):
+        problems.append('allowlisted but indexed: ' + path)
     for path in sorted(broken_links):
         problems.append('broken index link: ' + path)
     return problems
@@ -281,6 +273,9 @@ def self_test(scanned, referenced):
                   scanned - {dropped}, referenced, set(ALLOWLIST),
                   'allowlist names a file outside the scanned set: '
                   + dropped))
+    cases.append(('allowlisted entry also index-linked ' + dropped,
+                  scanned, referenced | {dropped}, set(ALLOWLIST),
+                  'allowlisted but indexed: ' + dropped))
     fake_link = 'docs/status/SELFTEST_MISSING_TARGET.md'
     cases.append(('broken index link ' + fake_link,
                   scanned, referenced | {fake_link}, set(ALLOWLIST),
