@@ -166,6 +166,7 @@
 - [ci-wire-i12-proof-ids-check](../validation/2026-10-16-ci-wire-i12-proof-ids-check/README.md) — This record raises no evidence grade, marks nothing reviewed or operational, and does not close I12.
 - [delegation-layer-gap-matrix](../validation/2026-10-16-delegation-layer-gap-matrix/README.md) — Builder-authored map and stdlib checker; no binding designed, no command, flag, limit or value added, no layer graded sufficient, nothing enabled.
 - [settlement-seeded-property-suite](../validation/2026-10-16-settlement-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F01-F03 settlement mock and FSM; no mock or contract change, no grade change, no real payment.
+- [credit-f04-seeded-property-suite](../validation/2026-10-17-credit-f04-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F04 credit mock and FSM; MOCK only, no mock or contract change, no grade change, no real funds, not a regulated credit product.
 
 ## 역사 문서와 증거
 
