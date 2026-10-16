@@ -161,6 +161,7 @@
 - [feature-ir-plan-limit-edge-tests](../validation/2026-10-16-feature-ir-plan-limit-edge-tests/README.md) — Characterization of the stated FeatureIR plan limits (1,024 stages, depth 64, 100,000 nodes): in-memory validator tests, not a wire, exporter, Polars/DuckDB or GPU result, and not a new budget or policy value.
 - [audit7-plan-register-index-sync-20261016b](../validation/2026-10-16-audit7-plan-register-index-sync-20261016b/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
 - [audit7-docs-index-allowlist-prune](../validation/2026-10-16-audit7-docs-index-allowlist-prune/README.md) — This record removes four allowlist entries and adds one checker rule; it retroactively indexes nothing, raises no evidence grade, and marks nothing reviewed or operational.
+- [ci-wire-i12-proof-ids-check](../validation/2026-10-16-ci-wire-i12-proof-ids-check/README.md) — This record raises no evidence grade, marks nothing reviewed or operational, and does not close I12.
 
 ## 역사 문서와 증거
 
