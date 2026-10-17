@@ -183,6 +183,21 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [plan·register·index 동기화 기록](../validation/2026-10-16-plan-register-index-sync-20261016/README.md) | #194 | `a013cb0c471be0422a4a70d6b98e86c03f7131fa` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
 | [FeatureIR plan 한도 edge test 기록](../validation/2026-10-16-feature-ir-plan-limit-edge-tests/README.md) | #196 | `aca49f6e5498291c1f221185df1ee5cdbf333342` | soulbound_jt | These are in-memory validator tests. They are not an authenticated-exporter, wire-parser, Polars/DuckDB or GPU result. | 위치 포인터. 새 승인 아님. |
 
+병합된 문서 위치(2026-10-16~17, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다. merged_by는 GitHub API가 아니라 병합 커밋의 author(`git show -s --format='%an <%ae>' <병합 커밋>`의 이름)를 읽어 적었다. 병합 커밋 author가 GitHub의 merged_by와 같다는 보증은 아니다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [audit7 plan·register·index 동기화 기록](../validation/2026-10-16-audit7-plan-register-index-sync-20261016b/README.md) | #197 | `2497471dfab21ffd68d600e6ce508e5d6d65bae5` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [audit7 docs 색인 allowlist 정리 기록](../validation/2026-10-16-audit7-docs-index-allowlist-prune/README.md) | #198 | `9d1ff76377fd7c65911c1fb7cb7b515a55489e2d` | soulbound_jt | This record removes four allowlist entries and adds one checker rule; it retroactively indexes nothing, raises no evidence grade, and marks nothing reviewed or operational. | 위치 포인터. 새 승인 아님. |
+| [I12 proof id 검사 CI 연결 기록](../validation/2026-10-16-ci-wire-i12-proof-ids-check/README.md) | #199 | `624b28d024279bd077e1247f37566333457750bd` | soulbound_jt | Wiring is a mechanical id/section check; I12 stays open. | 위치 포인터. 새 승인 아님. |
+| [위임 계층 간극 매트릭스 기록](../validation/2026-10-16-delegation-layer-gap-matrix/README.md) | #200 | `543c1438ce044479fd9646bc5e1cde933a153a4c` | soulbound_jt | This record and the matrix are a builder-authored map, not a review and not an acceptance. | 위치 포인터. 새 승인 아님. |
+| [RS 술어 증거 지도 기록](../validation/2026-10-16-rs-predicate-evidence-map/README.md) | #201 | `9f0177ab45cf3ca704ecf5a152b3c1785c8f22a7` | soulbound_jt | This record and the map are a builder-authored reading, not an Astra review and not an acceptance. | 위치 포인터. 새 승인 아님. |
+| [정산 seeded property suite 기록](../validation/2026-10-16-settlement-seeded-property-suite/README.md) | #202 | `9d0860c870e4a06f6b8e876cbee6446f50b22b15` | soulbound_jt | This suite is builder-authored. It is not an independent PASS, not an accounting or legal treatment, and not a payment. | 위치 포인터. 새 승인 아님. |
+| [F04 credit seeded property suite 기록](../validation/2026-10-17-credit-f04-seeded-property-suite/README.md) | #203 | `5eb95eabcac8b71e0c6c92b4fb322a0e4fe5bb45` | soulbound_jt | This suite is builder-authored. It is not an independent PASS, not a regulated credit product, and not a loan or payment. | 위치 포인터. 새 승인 아님. |
+| [FeatureSemantics v1 edge fixture 기록](../validation/2026-10-17-feature-semantics-v1-edge-fixtures/README.md) | #204 | `492a85d36fc79aa31d3938bd44024b73dd70dfad` | soulbound_jt | No f64 tolerance policy, zero normalisation or i64-to-f64 precision rule is chosen. | 위치 포인터. 새 승인 아님. |
+| [readiness journal byte sweep 기록](../validation/2026-10-17-readiness-journal-byte-sweep/README.md) | #205 | `7bdc99933c804b417b94d9dba40f13d370861cab` | soulbound_jt | No power-loss, OS-crash or disk-flush claim: files are rewritten in-process and `fsync` behaviour is not tested. | 위치 포인터. 새 승인 아님. |
+| [booking·resale adopt_issued 원자성 수정 기록](../validation/2026-10-17-booking-resale-adopt-issued-atomicity-fix/README.md) | #206 | `244595db1524cbb1a01148baa07d6d28cd1b8dc6` | soulbound_jt | In-memory reference mocks only: no durability, production, chain-finality or distributed-fencing claim. | 위치 포인터. 새 승인 아님. |
+
 ## 6. E-4와 상태 수명
 
 ### 6.1 E-4
