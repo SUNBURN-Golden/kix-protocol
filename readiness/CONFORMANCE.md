@@ -80,3 +80,46 @@ review, required Fable audits, draft publication, and successful exact-head KTX
 and KIX hosted checks before delivery readiness. User-only merge and post-merge
 verification remain required. Local Python checks do not supply those gates or
 prove production durability, chain finality, or external exactly-once behavior.
+
+## Journal byte sweep: observed limits
+
+`readiness.test_faults.JournalByteSweepTests` sweeps the current wrapper's
+`journal.v1` byte by byte. It is a current-wrapper test of that file format. It
+is not part of `BackendConformance`, and it is not a requirement for a
+different file format. The record is
+`validation/2026-10-17-readiness-journal-byte-sweep/README.md` (#205).
+
+A 4-frame, 839-byte journal is written through `ReadinessStore.append`. Each
+mutated copy is opened with `ReadinessStore.open`. The property checked is that
+`open()` raises `StoreError`, or the recovered records are an exact prefix of
+the originals. No altered, reordered or fabricated record was seen. Five
+families:
+
+- T: truncation at every offset 16..839 (824 cases).
+- H: header truncation to 0..15 bytes and header byte flips (32 cases).
+- F: payload and CRC byte flips (807 cases).
+- L: length-prefix byte flips (16 cases).
+- R: four CRC-consistent re-framed payload edits (4 cases).
+
+Observed characterizations (AGENTS §8 class B, builder reading; the contract
+does not define them):
+
+- A damaged length prefix on a non-final frame (above `MAX_RECORD_BYTES`, or
+  pointing past EOF) is parsed as a torn tail. `open()` truncates the file
+  there and silently drops the later complete, acknowledged frames; restoring
+  the byte does not bring them back. In the L family, 9 of 16 cases drop later
+  frames, 3 final-frame cases look exactly like a torn tail, and the 4 cases at
+  length byte 3 give `CHECKSUM_MISMATCH`.
+- A 0-byte `journal.v1` is reinitialised: the header is written and the store
+  is empty. 1..15 bytes give `JOURNAL_HEADER`.
+- A clean truncation at a frame boundary is undetectable: `open()` returns the
+  shorter prefix with no error.
+
+The Astra ruling on `docs/contracts/READINESS_RUNTIME.md` line 21 is pending.
+That line defines only a trailing incomplete frame and a complete frame with a
+bad checksum. The suite is therefore not evidence of fail-closed behaviour for
+mid-file length damage.
+
+This section changes no `readiness/*.py`, no journal format and no contract,
+and decides no classification. It makes no power-loss, OS-crash, `fsync` or
+production durability claim.
