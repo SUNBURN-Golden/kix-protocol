@@ -177,6 +177,12 @@
 - [booking-resale-adopt-issued-atomicity-fix](../validation/2026-10-17-booking-resale-adopt-issued-atomicity-fix/README.md) — Builder-authored all-or-nothing fix for adopt_issued in the resale and admission machines; no command, error code, field or policy change, no accepted-path change, no grade change, no durability or production claim.
 - [audit8-plan-register-index-sync-20261017](../validation/2026-10-17-audit8-plan-register-index-sync-20261017/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
 
+## 2026-10-18 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [audit8-rs-map-rs-c01-issuercap-open-cell](../validation/2026-10-18-audit8-rs-map-rs-c01-issuercap-open-cell/README.md) — Builder-authored wording fix in one cell of the RS predicate evidence map; no test, option choice, profile/register/checker change, no grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
