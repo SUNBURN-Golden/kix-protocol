@@ -176,6 +176,7 @@
 - [readiness-journal-byte-sweep](../validation/2026-10-17-readiness-journal-byte-sweep/README.md) — Builder-authored byte-level tear and flip sweep of the local readiness journal; tests only, no store or contract change, no grade change, no durability or production claim.
 - [booking-resale-adopt-issued-atomicity-fix](../validation/2026-10-17-booking-resale-adopt-issued-atomicity-fix/README.md) — Builder-authored all-or-nothing fix for adopt_issued in the resale and admission machines; no command, error code, field or policy change, no accepted-path change, no grade change, no durability or production claim.
 - [audit8-plan-register-index-sync-20261017](../validation/2026-10-17-audit8-plan-register-index-sync-20261017/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [ai-delegation-seeded-property-suite](../validation/2026-10-17-ai-delegation-seeded-property-suite/README.md) — Builder-authored seeded property tests for the AI delegation mock; MOCK only, no mock or contract change, no grade change, no AI service, no grant on chain, no execution.
 
 ## 2026-10-18 검증 기록 색인 — 위치 안내만
 
