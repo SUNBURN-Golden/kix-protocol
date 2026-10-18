@@ -83,7 +83,26 @@ No workflow edit: the `ai_delegation` entry in the `protocol.yml` discover loop 
 
 ## Commands actually run
 
-Results are listed in the final report of the session (package runs: 69 tests, OK, about 3 s, under `PYTHONHASHSEED` 0, 1, 2 and random). Not run: Cargo steps (no Rust touched; the locked-blob check is the substitute), Sui, Node and ZK steps.
+All run from the repository root with `PYTHONDONTWRITEBYTECODE=1` after the last edit to the suite (fix round 1 removed one vacuous assertion).
+
+| Command | Result |
+|---|---|
+| `PYTHONHASHSEED=0 python3 -m unittest discover -s reference/ai_delegation -t reference/ai_delegation` | Ran 69 tests, OK (3.3 s) |
+| same with `PYTHONHASHSEED=1` | Ran 69 tests, OK (2.6 s) |
+| same with `PYTHONHASHSEED=2` | Ran 69 tests, OK (2.6 s) |
+| same with `PYTHONHASHSEED=random` | Ran 69 tests, OK (2.7 s) |
+| `python3 -m unittest integration_gate.test_http_gate readiness.test_faults` | Ran 64 tests, OK |
+| `python3 scripts/check_delegation_layer_matrix.py` | exit 0 |
+| `python3 scripts/check_delegation_layer_matrix.py --self-test` | exit 0 |
+| `python3 scripts/check_docs_index.py` | exit 0 |
+| `python3 scripts/check_docs_index.py --self-test` | exit 0 |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs` | `69564b166f0c27f9af5d8422f0a466b18d74c20f` (matches lock) |
+| `git hash-object runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `b607996c83a119c349f1cc90469ac1ba82764e20` (matches lock) |
+| `git status --short` | only the four allowed paths changed (two new reference files, this record, `docs/README.md`) |
+
+Not run: Cargo steps (no Rust touched; the locked-blob check is the substitute), Sui, Node and ZK steps. Exact-head CI run IDs are recorded in the PR closure comment (AGENTS.md section 11), not in this file.
+
+Note on the negative controls for cumulative and count caps: they also silence the mock's own `_invariant`, otherwise `MOCK_INVARIANT` fires before the oracle is reached. They show the oracle catches a silenced cap check once the mock's own invariant is also off; the revocation and atomicity controls need no such patch.
 
 ## Non-claims
 

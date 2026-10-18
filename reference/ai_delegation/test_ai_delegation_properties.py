@@ -282,8 +282,6 @@ class RevocationTests(Base):
         self.assertGreater(counter_total("revoke:ok"), 0)
         self.assertGreater(counter_total("probe:err"), 0)
         self.assertEqual(union_codes("probe"), {"GRANT_REVOKED"})
-        for d in all_runs():
-            self.assertIn("VOIDED_BY_REVOCATION", d.phases_seen | {"VOIDED_BY_REVOCATION"})
         self.assertTrue(any("VOIDED_BY_REVOCATION" in d.phases_seen for d in all_runs()))
 
     def test_seeded_state_never_deletes(self):
