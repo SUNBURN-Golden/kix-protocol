@@ -56,9 +56,9 @@
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
-| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | 행별 위치 동기화 기준: TL·catalogue·SDK `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b·EV-V5/EV-DELEG/EV-RS `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14), RS-4 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16), EV-IR·RS-0·RS-5 / testnet keys·P AI delegation `aca49f6e5498291c1f221185df1ee5cdbf333342`(2026-10-16). 그 외 행은 2026-10-06 `2554173` 스냅샷 |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | 행별 위치 동기화 기준: TL·catalogue·SDK `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b·EV-V5/EV-DELEG/EV-RS `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14), RS-4 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16), RS-0·RS-5 / testnet keys·P AI delegation `aca49f6e5498291c1f221185df1ee5cdbf333342`(2026-10-16), EV-SET·EV-CREDIT·EV-IR·EV-BRA·EV-READY·F04·P Wave5 credit `244595db1524cbb1a01148baa07d6d28cd1b8dc6`(2026-10-17). 그 외 행은 2026-10-06 `2554173` 스냅샷 |
 
-[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 위치 동기화 기준은 행별로 다르다. TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행은 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 행은 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b와 새 EV-V5·EV-DELEG·EV-RS 행은 `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14) 기준이고, RS-4 L1→L2→L3 행은 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16) 기준이고, EV-IR·RS-0·RS-5 / testnet keys·P AI delegation 행은 `aca49f6e5498291c1f221185df1ee5cdbf333342`(2026-10-16) 기준이다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
+[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 위치 동기화 기준은 행별로 다르다. TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행은 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 행은 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b와 새 EV-V5·EV-DELEG·EV-RS 행은 `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14) 기준이고, RS-4 L1→L2→L3 행은 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16) 기준이고, RS-0·RS-5 / testnet keys·P AI delegation 행은 `aca49f6e5498291c1f221185df1ee5cdbf333342`(2026-10-16) 기준이고, EV-SET·EV-CREDIT·EV-IR·EV-BRA·EV-READY·F04·P Wave5 credit 행은 `244595db1524cbb1a01148baa07d6d28cd1b8dc6`(2026-10-17) 기준이다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
 
 같은 날짜의 검증 기록:
 
@@ -166,10 +166,16 @@
 - [ci-wire-i12-proof-ids-check](../validation/2026-10-16-ci-wire-i12-proof-ids-check/README.md) — This record raises no evidence grade, marks nothing reviewed or operational, and does not close I12.
 - [delegation-layer-gap-matrix](../validation/2026-10-16-delegation-layer-gap-matrix/README.md) — Builder-authored map and stdlib checker; no binding designed, no command, flag, limit or value added, no layer graded sufficient, nothing enabled.
 - [settlement-seeded-property-suite](../validation/2026-10-16-settlement-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F01-F03 settlement mock and FSM; no mock or contract change, no grade change, no real payment.
+
+## 2026-10-17 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
 - [credit-f04-seeded-property-suite](../validation/2026-10-17-credit-f04-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F04 credit mock and FSM; MOCK only, no mock or contract change, no grade change, no real funds, not a regulated credit product.
 - [feature-semantics-v1-edge-fixtures](../validation/2026-10-17-feature-semantics-v1-edge-fixtures/README.md) — Builder-authored scalar edge tests for kix-feature-semantics with a section-to-test map; in-memory helpers only, no src change, no grade change, no tolerance policy chosen.
 - [readiness-journal-byte-sweep](../validation/2026-10-17-readiness-journal-byte-sweep/README.md) — Builder-authored byte-level tear and flip sweep of the local readiness journal; tests only, no store or contract change, no grade change, no durability or production claim.
 - [booking-resale-adopt-issued-atomicity-fix](../validation/2026-10-17-booking-resale-adopt-issued-atomicity-fix/README.md) — Builder-authored all-or-nothing fix for adopt_issued in the resale and admission machines; no command, error code, field or policy change, no accepted-path change, no grade change, no durability or production claim.
+- [audit8-plan-register-index-sync-20261017](../validation/2026-10-17-audit8-plan-register-index-sync-20261017/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
 
 ## 역사 문서와 증거
 
