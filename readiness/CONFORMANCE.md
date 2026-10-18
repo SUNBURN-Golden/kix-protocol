@@ -123,3 +123,31 @@ mid-file length damage.
 This section changes no `readiness/*.py`, no journal format and no contract,
 and decides no classification. It makes no power-loss, OS-crash, `fsync` or
 production durability claim.
+
+## Command-level crash-point sweep
+
+`readiness/test_faults.py` `CrashPointSweepTests` takes the command sequence of
+each `BackendConformance` scenario (settlement 5, reservation 3, resale 5,
+credit 3, admission 4 commands) and, for every command index and both fault
+kinds (`partial`, `crash_before_durable`), injects the fault through
+`FsmBoundary.call(..., fault=...)`, closes, reopens and checks: the recovered
+digest and journal equal the prefix only; the resend applies once and returns
+the uninterrupted result; finishing the sequence reaches the uninterrupted
+final digest; the record count equals the accepted commands and the false
+truth labels stay false. After the fault the same boundary also refuses
+further calls with `READINESS_CLOSED`. That is 40 cases over 20 commands.
+
+It uses the public adapter surface only. The existing fault cases are kept; the
+sweep reaches the same cells (the module test
+`test_sweep_cells_subsume_the_existing_fault_cases` pins seven of them).
+
+Class B characterizations (the contract does not define them): byte-equal
+result on the first resend; digest equality across independent in-process
+instances; every command emits exactly one journal entry, so the "fault on the
+first entry only" rule is not exercised for multi-entry commands.
+
+Not claimed: power loss, OS crash, `fsync`, a lost acknowledgement after a
+durable append, concurrency, rejected commands, the `ai_delegation` machine,
+any backend adoption, any production durability. Single process, single
+writer, local files. Record:
+`validation/2026-10-18-readiness-crash-point-sweep/README.md`.

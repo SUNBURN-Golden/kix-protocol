@@ -185,6 +185,7 @@
 
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
+- [readiness-crash-point-sweep](../validation/2026-10-18-readiness-crash-point-sweep/README.md) — Builder-authored command-level crash-point sweep (40 cases) of the readiness-wrapped FSM machines; tests and record only, no readiness source, format or contract change, no grade change, no power-loss, fsync or production claim.
 - [audit8-rs-map-rs-c01-issuercap-open-cell](../validation/2026-10-18-audit8-rs-map-rs-c01-issuercap-open-cell/README.md) — Builder-authored wording fix in one cell of the RS predicate evidence map; no test, option choice, profile/register/checker change, no grade change.
 - [audit8-readiness-conformance-sweep-limit-note](../validation/2026-10-18-audit8-readiness-conformance-sweep-limit-note/README.md) — Builder-authored wording in the readiness conformance doc and one register cell; no test, store, format or contract change, no classification decision, no grade change.
 - [audit8-loop-node-canonical-crosswalk](../validation/2026-10-18-audit8-loop-node-canonical-crosswalk/README.md) — Builder-authored textual crosswalk of merged loop-proposed nodes to overlapping canonical `.aiops/program.json` nodes ([표](status/LOOP_NODE_CROSSWALK.md)); no counting decision, no test or code change, no grade change.

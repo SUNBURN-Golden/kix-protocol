@@ -22,7 +22,7 @@ from readiness.store import (
     HEADER_LEN, JOURNAL_NAME, MAX_RECORD_BYTES, ReadinessFault, ReadinessStore, StoreError,
 )
 
-from readiness.conformance import BackendConformance
+from readiness.conformance import BackendConformance, committed_face
 from readiness.local_adapter import LocalReadinessAdapter
 
 
@@ -524,3 +524,228 @@ class JournalByteSweepTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class _Recorder:
+    """Collects the (machine, step) pairs a BackendConformance helper would issue."""
+
+    def __init__(self):
+        self.steps = []
+
+    def call(self, name, fn, fault=None):
+        self.steps.append((name, fn))
+
+
+class CrashPointSweepTests(unittest.TestCase):
+    """Fault at every command of each BackendConformance scenario (class A/B map in CONFORMANCE.md).
+
+    Public adapter surface only. Single process, single writer, local files; no
+    power-loss, fsync or production claim.
+    """
+
+    backend = LocalReadinessAdapter()
+    FAULT_CODES = {'partial': 'PARTIAL_WRITE', 'crash_before_durable': 'CRASH_BEFORE_DURABLE'}
+    EXPECTED_COMMANDS = {'settlement': 5, 'reservation': 3, 'resale': 5, 'credit': 3, 'admission': 4}
+    VIEW_IDS = {
+        'settlement': 'claim-1', 'reservation': 'reserve-1', 'resale': 'list-1',
+        'credit': 'adv-1', 'admission': 'issue-1',
+    }
+    FALSE_LABELS = (
+        'durable', 'funds_executed', 'economic_finality_claimed',
+        'chain_owner_current', 'admission_routing_production', 'bank_debit_observed',
+    )
+    executed = Counter()
+    sequences = {}
+    reference = {}
+
+    @classmethod
+    def _build_sequences(cls):
+        helper = BackendConformance()
+        out = {}
+        rec = _Recorder()
+        helper._settlement_until_capture(rec)
+        rec.call('settlement', lambda m: m.commit('claim-1', idempotency_key='commit-1', **helper._commit_body()))
+        rec.call('settlement', lambda m: m.distribute(
+            'claim-1', idempotency_key='dist-1', order=['platform', 'organizer']))
+        out['settlement'] = rec.steps
+        rec = _Recorder()
+        helper._reservation_show(rec)
+        rec.call('reservation', lambda m: helper._hold(m, 'reserve-1', 'hold-1'))
+        out['reservation'] = rec.steps
+        rec = _Recorder()
+        helper._resale_until_paid(rec)
+        rec.call('resale', lambda m: m.accept_resale(
+            'transfer-1', idempotency_key='transfer-1', listing_id='list-1'))
+        out['resale'] = rec.steps
+        rec = _Recorder()
+        helper._credit_until_approved(rec, committed_face())
+        rec.call('credit', lambda m: m.draw('adv-1', idempotency_key='draw-1', draw_id='draw-1'))
+        out['credit'] = rec.steps
+        rec = _Recorder()
+        helper._admission_until_authorized(rec)
+        rec.call('admission', lambda m: helper._consume(m))
+        out['admission'] = rec.steps
+        return out
+
+    @classmethod
+    def _reference_run(cls, machine_name):
+        steps = cls.sequences[machine_name]
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = cls.backend.open_boundary(tmp)
+            try:
+                machine = boundary.machine(machine_name)
+                digests = [machine.state_digest()]
+                results = []
+                for name, step in steps:
+                    results.append(boundary.call(name, step))
+                    digests.append(boundary.machine(name).state_digest())
+                journal = boundary.machine(machine_name).export_journal()
+            finally:
+                boundary.close()
+        return {'results': results, 'digests': digests, 'journal': journal}
+
+    @classmethod
+    def setUpClass(cls):
+        cls.sequences = cls._build_sequences()
+        cls.reference = {name: cls._reference_run(name) for name in cls.sequences}
+
+    def _resend(self, boundary, name, step):
+        # Only place command i is resent after the fault.
+        return boundary.call(name, step)
+
+    def _false_labels_hold(self, value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key in self.FALSE_LABELS:
+                    self.assertIs(item, False, key)
+                self._false_labels_hold(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                self._false_labels_hold(item)
+
+    def _records(self, directory):
+        store = self.backend.open_store(directory)
+        try:
+            return list(store.records)
+        finally:
+            store.close()
+
+    def _sweep_case(self, machine_name, fault, i):
+        steps = self.sequences[machine_name]
+        ref = self.reference[machine_name]
+        n = len(steps)
+        name, step = steps[i]
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                for j in range(i):
+                    self.assertEqual(boundary.call(*steps[j]), ref['results'][j])
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call(name, step, fault=fault)
+                self.assertEqual(raised.exception.code, self.FAULT_CODES[fault])
+                with self.assertRaises(ReadinessError) as closed:
+                    boundary.call(name, step)
+                self.assertEqual(closed.exception.code, 'READINESS_CLOSED')
+            finally:
+                boundary.close()
+            records = self._records(tmp)
+            self.assertEqual(len(records), i)
+            self.assertEqual([r['entry'] for r in records], ref['journal'][:i])
+            for record in records:
+                self.assertIs(record['protocolTruth'], False)
+                self.assertIs(record['productionConformance'], False)
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                machine = boundary.machine(machine_name)
+                # (a) recovered state is the prefix state only
+                self.assertEqual(machine.state_digest(), ref['digests'][i])
+                self.assertEqual(machine.export_journal(), ref['journal'][:i])
+                # (b) resend applies exactly once with the uninterrupted result
+                first = self._resend(boundary, name, step)
+                self.assertEqual(first, ref['results'][i])
+                self.assertFalse(first['duplicate'])
+                self.assertEqual(boundary.machine(machine_name).state_digest(), ref['digests'][i + 1])
+                self.assertEqual(boundary.machine(machine_name).export_journal(), ref['journal'][:i + 1])
+                again = boundary.call(name, step)
+                self.assertIs(again['duplicate'], True)
+                self.assertIsNone(again['applied'])
+                self.assertEqual(boundary.machine(machine_name).state_digest(), ref['digests'][i + 1])
+                self.assertEqual(boundary.machine(machine_name).export_journal(), ref['journal'][:i + 1])
+                # (c) finishing reaches the uninterrupted final state
+                for j in range(i + 1, n):
+                    self.assertEqual(boundary.call(*steps[j]), ref['results'][j])
+                machine = boundary.machine(machine_name)
+                self.assertEqual(machine.state_digest(), ref['digests'][n])
+                self.assertEqual(machine.export_journal(), ref['journal'])
+                self._false_labels_hold(ref['results'])
+                self._false_labels_hold(machine.view(self.VIEW_IDS[machine_name]))
+            finally:
+                boundary.close()
+            # (d) record count equals accepted commands; labels stay false
+            records = self._records(tmp)
+            self.assertEqual(len(records), n)
+            self.assertEqual([r['entry'] for r in records], ref['journal'])
+            for record in records:
+                self.assertIs(record['protocolTruth'], False)
+                self.assertIs(record['productionConformance'], False)
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self.assertEqual(boundary.machine(machine_name).state_digest(), ref['digests'][n])
+            finally:
+                boundary.close()
+
+    def _sweep(self, machine_name):
+        ran = Counter()
+        for fault in self.FAULT_CODES:
+            for i, (_, step) in enumerate(self.sequences[machine_name]):
+                op = self.reference[machine_name]['journal'][i]['op']
+                with self.subTest(machine=machine_name, fault=fault, command=i, op=op):
+                    self._sweep_case(machine_name, fault, i)
+                    ran[fault] += 1
+        for fault in self.FAULT_CODES:
+            type(self).executed[(machine_name, fault)] += ran[fault]
+            self.assertEqual(ran[fault], self.EXPECTED_COMMANDS[machine_name], fault)
+
+    def test_crash_point_sweep_settlement(self):
+        self._sweep('settlement')
+
+    def test_crash_point_sweep_reservation(self):
+        self._sweep('reservation')
+
+    def test_crash_point_sweep_resale(self):
+        self._sweep('resale')
+
+    def test_crash_point_sweep_credit(self):
+        self._sweep('credit')
+
+    def test_crash_point_sweep_admission(self):
+        self._sweep('admission')
+
+    def test_reference_runs_are_deterministic_and_one_entry_per_command(self):
+        for name, steps in self.sequences.items():
+            with self.subTest(machine=name):
+                self.assertEqual(len(steps), self.EXPECTED_COMMANDS[name])
+                again = self._reference_run(name)
+                ref = self.reference[name]
+                self.assertEqual(again, ref)
+                # class B: every command emits exactly one journal entry
+                self.assertEqual(len(ref['journal']), len(steps))
+                self.assertEqual(len(ref['digests']), len(steps) + 1)
+
+    def test_sweep_cells_subsume_the_existing_fault_cases(self):
+        # Existing BackendConformance cases fault one command per machine; the
+        # sweep reaches the same cells: (machine, fault, op).
+        cells = [
+            ('settlement', 'partial', 'commit'),
+            ('reservation', 'partial', 'hold'),
+            ('resale', 'partial', 'accept_resale'),
+            ('credit', 'partial', 'draw'),
+            ('admission', 'partial', 'consume'),
+            ('settlement', 'crash_before_durable', 'authorize'),
+            ('reservation', 'crash_before_durable', 'hold'),
+        ]
+        for machine_name, fault, op in cells:
+            with self.subTest(machine=machine_name, fault=fault, op=op):
+                self.assertIn(fault, self.FAULT_CODES)
+                ops = [entry['op'] for entry in self.reference[machine_name]['journal']]
+                self.assertEqual(ops.count(op), 1)
