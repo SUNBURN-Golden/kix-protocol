@@ -199,6 +199,12 @@
 - [tl-predicate-evidence-map](../validation/2026-10-19-tl-predicate-evidence-map/README.md) — Builder-authored, checker-backed token-layer predicate evidence map ([TL predicate evidence map](status/TL_PREDICATE_EVIDENCE_MAP.md)); no independent verification, no package, no testnet/mainnet, no real funds, operational count stays 0.
 - [bra-fsm-error-code-coverage](../validation/2026-10-19-bra-fsm-error-code-coverage/README.md) — Builder-authored extension of the contract error-code coverage map and checker to the three FSM-added tables (booking sections 10.8 and 11.6, F04 section 7.8) plus six tests for seven unasserted codes; no contract, mock, FSM or command change, no grade change.
 
+## 2026-10-20 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [plan-rs-grant-cut-order-tests](../validation/2026-10-20-plan-rs-grant-cut-order-tests/README.md) — Builder-authored Move tests ordering the grant cut against delegated paid issue and delegated-page admission consume in both serial orders ([술어 지도](status/RS_PREDICATE_EVIDENCE_MAP.md) rows RS-C06/RS-C07); tests, row text updates and record only, no profile/Move-source/vector/contract change, no grade change, operational count stays 0.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
