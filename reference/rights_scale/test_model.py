@@ -391,6 +391,42 @@ class Predicates(unittest.TestCase):
         show.bundle('issuer', 0, 3, 3, 'a')
         self.assertEqual(len(show.events) - before, 6)
 
+    def test_the_issuance_event_carries_the_slot_and_the_generation(self):
+        # IM-04 and IM-29: the Issuance event keeps its slot and generation
+        # fields, and the Change event still accompanies each issue.
+        show = make()
+        first = show.issue('issuer', 2, 0, 'a')
+        issuances = [e for e in show.events if e[0] == 'Issuance']
+        self.assertEqual(issuances[-1][:4], ('Issuance', first.id, 2, 1))
+        show.refund('a', first.id, 1)
+        second = show.issue('issuer', 2, 1, 'b')
+        issuances = [e for e in show.events if e[0] == 'Issuance']
+        self.assertEqual(issuances[-1][:4], ('Issuance', second.id, 2, 2))
+        self.assertEqual(second.generation, show.pages[0].generations[2])
+        for index, event in enumerate(show.events):
+            if event[0] == 'Issuance':
+                self.assertEqual(show.events[index + 1][0], 'Change')
+
+    def test_offer_accept_gift_authorize_admission_and_consume_write_only_the_ticket(self):
+        # IM-03: the transfer, the check-in permit and the public check-in
+        # write only the Ticket — ShowControl, the pages, the shards and the
+        # grants are left unwritten.
+        show = make()
+        t = show.issue('issuer', 0, 0, 'a')
+        untouchables = lambda: {k: show.snapshot()[k]  # noqa: E731
+                                for k in ('control', 'pages', 'shards', 'grants')}
+        before = untouchables()
+        show.offer('a', t.id, 1, 'b', 0, 1000)
+        self.assertEqual(untouchables(), before)
+        show.accept_gift('b', t.id)
+        self.assertEqual(untouchables(), before)
+        self.assertEqual((t.holder, t.version), ('b', 2))
+        show.authorize_admission('b', t.id, 2, 'gate', REF(3), 1000)
+        self.assertEqual(untouchables(), before)
+        show.consume('gate', t.id, 2, REF(3))
+        self.assertEqual(untouchables(), before)
+        self.assertEqual(t.state, model.CONSUMED)
+
 
 class Delegation(unittest.TestCase):
     """RS-3a: page-level grants, GrantControl currentness and the revocation cut."""
@@ -465,6 +501,55 @@ class Delegation(unittest.TestCase):
             self.assertTrue(aborts(model.EGrantClosed, fn, *args), fn.__name__)
         # The stranded reservation blocks the reclaim.
         self.assertTrue(aborts(model.EDelegated, show.undelegate_page, 'issuer', 0, g))
+        show.check_invariants()
+
+    def test_the_cut_orders_a_delegated_consume_and_paid_issue_both_ways(self):
+        # RS-C06(b) and RS-C07: the grant cut against a delegated consume and
+        # against a paid issue resolves as the serial order, in both
+        # directions, and the unissued commitment survives the cut.
+        #
+        # Consume first, cut second: what committed pre-cut stands, the
+        # stranded paid issue is preserved, and every consume under the old
+        # grant is refused from the cut on.
+        show = make()
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        t = show.issue_delegated('dele', 0, 0, 'a', g)
+        show.attest_issuance_delegated('dele', 1, 0, 'b', 5, REF(60), g)
+        paid = show.issue_paid_delegated('dele', 1, g)
+        show.attest_issuance_delegated('dele', 2, 0, 'c', 5, REF(61), g)
+        show.revoke_grant('issuer', g)
+        self.assertEqual((t.state, paid.state), (model.ACTIVE, model.ACTIVE))
+        self.assertIn(2, show.payments)
+        self.assertEqual(show.payments[2].holder, 'dele')
+        for fn, args in ((show.refund_delegated, ('a', t.id, 1, g)),
+                         (show.issue_paid_delegated, ('dele', 2, g)),
+                         (show.cancel_issuance_delegated, ('dele', 2, g)),
+                         (show.issue_delegated, ('dele', 3, 0, 'a', g)),
+                         (show.attest_issuance_delegated,
+                          ('dele', 3, 0, 'c', 5, REF(62), g))):
+            self.assertTrue(aborts(model.EGrantClosed, fn, *args), fn.__name__)
+        # The stranded reservation still blocks the reclaim.
+        self.assertTrue(aborts(model.EDelegated, show.undelegate_page, 'issuer', 0, g))
+        show.check_invariants()
+
+        # Cut first, consume second: the same calls in the other order are
+        # refused the same way and leave nothing behind; with nothing
+        # stranded the page reclaims cleanly.
+        show = make()
+        other = show.issue('issuer', 4, 0, 'a')  # a ticket outside the delegated page
+        g = show.create_grant('issuer', 'dele')
+        show.delegate_page('issuer', 0, g)
+        show.revoke_grant('issuer', g)
+        for fn, args in ((show.attest_issuance_delegated,
+                          ('dele', 1, 0, 'b', 5, REF(60), g)),
+                         (show.issue_paid_delegated, ('dele', 1, g)),
+                         (show.cancel_issuance_delegated, ('dele', 1, g)),
+                         (show.issue_delegated, ('dele', 1, 0, 'a', g)),
+                         (show.refund_delegated, ('a', other.id, 1, g))):
+            self.assertTrue(aborts(model.EGrantClosed, fn, *args), fn.__name__)
+        self.assertEqual(show.payments, {})
+        show.undelegate_page('issuer', 0, g)
         show.check_invariants()
 
     def test_undelegate_restores_the_direct_path(self):

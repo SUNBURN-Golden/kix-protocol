@@ -1,8 +1,11 @@
 mod common;
 
-use common::{ctx, ctx_for, ga_reserve, id, page, reserve, show};
+use common::{amount, ctx, ctx_for, ga_reserve, id, page, reserve, show};
 use kix_delegated_exec::{DelegatedShow, MappingError, PageKind, RangeTable};
-use kix_kernel_v5::{ExecutionFence, KernelError, OrderState, ReserveOutcome};
+use kix_kernel_v5::{
+    CaptureObservation, ExecutionFence, KernelError, ObservationOutcome, OrderState, ReserveOutcome,
+};
+use kix_types::Hash32;
 
 fn show_two_pages() -> DelegatedShow {
     show(
@@ -148,6 +151,83 @@ fn the_cut_refuses_new_commitments_but_replays_stored_results() {
             .unwrap()
     );
     assert_eq!(show.order(id(1)).unwrap().state, OrderState::Expired);
+}
+
+#[test]
+fn a_consume_committed_before_the_cut_still_reconciles_late_facts() {
+    // The grant cut against a delegated consume resolves as the serial
+    // order, in both directions (RS-C06b/RS-C07 mirror, in memory only).
+    let mut show = show_two_pages();
+    let delegated = grant(&mut show, 50, 60);
+
+    // Consume, then cut: the first order is held and its first external
+    // send already authorized under the delegate fence before the cut
+    // lands; a second order stays Held so its first send is still pending.
+    show.reserve(ctx_for(10, delegated), &reserve(1, 0, 1))
+        .unwrap();
+    show.mark_payment_unknown(ctx_for(11, delegated), id(1))
+        .unwrap();
+    show.reserve(ctx_for(12, delegated), &reserve(2, 1, 1))
+        .unwrap();
+
+    show.revoke_grant(20, id(50)).unwrap();
+    let tombstone = show.page_fence(0).unwrap();
+    assert_eq!(
+        tombstone,
+        ExecutionFence {
+            owner: id(50),
+            generation: 3
+        }
+    );
+
+    // Cut, then consume: a fresh commitment and the still-pending first
+    // send of the pre-cut order are refused at the map before any kernel
+    // call, whatever fence the caller carries.
+    for fence in [delegated, tombstone] {
+        assert_eq!(
+            show.reserve(ctx_for(21, fence), &reserve(3, 2, 1)),
+            Err(MappingError::GrantClosed)
+        );
+        assert_eq!(
+            show.mark_payment_unknown(ctx_for(22, fence), id(2)),
+            Err(MappingError::GrantClosed)
+        );
+    }
+
+    // The committed consume still reconciles its late fact, but under the
+    // current authority — the tombstone fence — never under the dead
+    // delegate fence.
+    let capture = CaptureObservation {
+        event_id: id(40),
+        operation: reserve(1, 0, 1).payment,
+        amount: amount(10_000),
+        evidence_hash: Hash32::from_bytes([40; 32]),
+    };
+    assert_eq!(
+        show.observe_capture(ctx_for(23, delegated), capture.clone()),
+        Err(MappingError::Kernel(KernelError::ExecutionFenced))
+    );
+    assert_eq!(
+        show.observe_capture(ctx_for(24, tombstone), capture.clone()),
+        Ok(ObservationOutcome::PaymentConfirmed)
+    );
+    assert_eq!(
+        show.order(id(1)).unwrap().state,
+        OrderState::PaymentConfirmed
+    );
+    // An identical observation replays its stored result under the current
+    // fence.
+    assert_eq!(
+        show.observe_capture(ctx_for(25, tombstone), capture),
+        Ok(ObservationOutcome::PaymentConfirmed)
+    );
+    // The Held order whose first send never went out is still there: the
+    // page cannot be reclaimed while it is unresolved.
+    assert_eq!(show.order(id(2)).unwrap().state, OrderState::Held);
+    assert_eq!(
+        show.undelegate_page(30, id(50), 0),
+        Err(MappingError::OutstandingReservations)
+    );
 }
 
 #[test]
