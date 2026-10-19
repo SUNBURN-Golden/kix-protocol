@@ -3,12 +3,13 @@
 
 Compares three inputs:
 
-- the first table after the error-code heading of four contracts (the first
-  cell of each row holds one or more backticked codes; ``MOCK_INVARIANT`` is
-  excluded as the contracts define it):
+- the first table after the error-code heading of seven contract tables
+  (the first cell of each row holds one or more backticked codes;
+  ``MOCK_INVARIANT`` is excluded as the contracts define it):
   ``SETTLEMENT_DISTRIBUTION_F01_F03.md`` section 6 (key SET),
-  ``BOOKING_RESALE_ADMISSION_GATES.md`` section 6 (BRA),
-  ``CREDIT_ADVANCE_F04.md`` section 4 (F04) and
+  ``BOOKING_RESALE_ADMISSION_GATES.md`` section 6 (BRA), section 10.8
+  (BRA-RES) and section 11.6 (BRA-ADM),
+  ``CREDIT_ADVANCE_F04.md`` section 4 (F04) and section 7.8 (F04-FSM), and
   ``AI_DELEGATION_AUTHORITY.md`` section 8 (AID);
 - the mock and FSM sources of each suite (an explicit allow-list), parsed with
   ``ast`` and never executed;
@@ -64,8 +65,14 @@ TABLES = {
     'BRA': ('docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md', '## 6. 오류 코드',
             'reference/booking_resale_admission',
             ('mock_gates.py', 'reservation_fsm.py', 'resale_fsm.py', 'admission_fsm.py')),
+    'BRA-RES': ('docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md', '### 10.8 거절',
+                'reference/booking_resale_admission', ('resale_fsm.py',)),
+    'BRA-ADM': ('docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md', '### 11.6 거절',
+                'reference/booking_resale_admission', ('admission_fsm.py',)),
     'F04': ('docs/contracts/CREDIT_ADVANCE_F04.md', '## 4. 오류 코드',
             'reference/credit_advance_f04', ('mock_credit.py', 'credit_fsm.py')),
+    'F04-FSM': ('docs/contracts/CREDIT_ADVANCE_F04.md', '### 7.8 이 기계가 더하는 코드',
+                'reference/credit_advance_f04', ('credit_fsm.py',)),
     'AID': ('docs/contracts/AI_DELEGATION_AUTHORITY.md', '## 8. 오류 코드와 항상 거짓인 플래그',
             'reference/ai_delegation', ('ai_delegation_mock.py',)),
 }
@@ -74,7 +81,9 @@ KEYS = tuple(TABLES)
 CODE_TOKEN = re.compile(r'`([A-Z][A-Z0-9_]+)`')
 CODE_SHAPE = re.compile(r'[A-Z][A-Z0-9_]+')
 CITATION = re.compile(r'`([^`]+)`')
-ROW_START = re.compile(r'^\|\s*(SET|BRA|F04|AID)\s*\|\s*`[A-Z][A-Z0-9_]+`\s*\|')
+ROW_START = re.compile(
+    r'^\|\s*(' + '|'.join(sorted(map(re.escape, TABLES), key=len, reverse=True))
+    + r')\s*\|\s*`[A-Z][A-Z0-9_]+`\s*\|')
 MAX_CITES = 2
 
 
@@ -522,6 +531,27 @@ def self_test(doc_text, contracts, sources):
          'not found'),
         ('COVERED row without an asserting test', corrupt_row('SET', probe, 3, 'no'), contracts,
          without_literal(asserted, probe), 'COVERED needs both'),
+    ]
+    res_probe = next(
+        (c[1].strip('`') for c in doc_rows(doc_text) if c[0] == 'BRA-RES' and c[4] == 'COVERED'),
+        None)
+    if res_probe is None:
+        print('self-test: no COVERED BRA-RES row to mutate', file=sys.stderr)
+        return 1
+    res_line = _row_line(doc_text, 'BRA-RES', res_probe)
+    res_src = sorted(derived['BRA-RES'][0][res_probe])[0].partition('::')[0]
+    cases += [
+        ('added code in the BRA-RES contract table',
+         doc_text, dict(contracts, **{'BRA-RES': contracts['BRA-RES'].replace(
+             '| `TICKET_NOT_ISSUED` |', '| `ADDED_PROBE_CODE` | probe |\n| `TICKET_NOT_ISSUED` |', 1)}),
+         sources, 'BRA-RES: ADDED_PROBE_CODE missing in doc'),
+        ('removed raise site on a BRA-RES row', doc_text, contracts,
+         without_literal(derived['BRA-RES'][0][res_probe], res_probe),
+         'cites a site but none is derived'),
+        ('citation that is not a derived site on a BRA-RES row',
+         corrupt_row('BRA-RES', res_probe, 2,
+                     split_row(res_line)[2] + ' `%s::ResaleMachine._listing`' % res_src),
+         contracts, sources, 'is not a derived site'),
     ]
     cases.append(('CLASS_B status on an asserted code with a none note',
                   _with_cell(corrupt_row('SET', probe, 4, 'CLASS_B'), 'SET', probe, 5, 'none'),

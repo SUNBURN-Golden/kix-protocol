@@ -155,7 +155,7 @@
 | [AI 위임 계층 매트릭스](status/AI_DELEGATION_LAYER_MATRIX.md) | AI 위임 계약 §6의 DLG-01..DLG-36 각각에 대해 목 시험, 체인 grant, executor map, readiness wrap이 담은 것 | Builder-authored map, not a review or acceptance. 어느 계층도 충분하다고 평가하지 않으며 인용된 소스 밖의 실행·한도·회수 보장을 주장하지 않는다. |
 | [RS 술어 증거 지도](status/RS_PREDICATE_EVIDENCE_MAP.md) ([검증 기록](../validation/2026-10-16-rs-predicate-evidence-map/README.md)) | 권리 확장 프로파일 §8의 RS-C01..RS-C17과 §9의 RR-1..RR-6 각각에 대해 지금 있는 Move 시험, Python 모델 시험, Rust 메모리 시험, localnet 기록 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 어떤 간극도 닫지 않는다. |
 | [RS 영향표 증거 지도](status/RS_IM_EVIDENCE_MAP.md) ([검증 기록](../validation/2026-10-17-rs-im-evidence-map/README.md)) | 권리 확장 프로파일 §12의 영향표 IM-01..IM-30 각각에 대해 처리 단어(유지·변경·새 프로파일·손대지 않음)와 지금 있는 Move 시험, Python 모델 시험, Rust 시험, localnet 기록, 손대지 않은 파일의 증거 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 어떤 간극도 닫지 않는다. |
-| [계약 오류 코드 커버리지](status/CONTRACT_ERROR_CODE_COVERAGE.md) ([검증 기록](../validation/2026-10-18-contract-error-code-coverage/README.md)) | 정산·예매/리셀/입장·F04·AI 위임 계약의 오류 코드 표 네 개의 코드 각각에 대해 목·FSM이 던지는 자리와 그 코드를 이름으로 대는 시험 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 이름이 시험 본문에 있다는 것만 보이고 시험이 무엇을 단언하는지는 보이지 않는다. |
+| [계약 오류 코드 커버리지](status/CONTRACT_ERROR_CODE_COVERAGE.md) ([검증 기록](../validation/2026-10-18-contract-error-code-coverage/README.md), [FSM 확장 기록](../validation/2026-10-19-bra-fsm-error-code-coverage/README.md)) | 정산·예매/리셀/입장·F04·AI 위임 계약의 오류 코드 표 일곱 개(세 FSM 추가 표 포함)의 코드 각각에 대해 목·FSM이 던지는 자리와 그 코드를 이름으로 대는 시험 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 이름이 시험 본문에 있다는 것만 보이고 시험이 무엇을 단언하는지는 보이지 않는다. |
 
 같은 날짜의 검증 기록:
 
@@ -197,6 +197,7 @@
 - [v5-lifecycle-seeded-model-test](../validation/2026-10-19-v5-lifecycle-seeded-model-test/README.md) — Builder-authored seeded model test for the v5-only lifecycle surface (terminate, holds, reclaim report); tests and record only, no src or contract change, no grade change, oracle not independent.
 - [rs-model-gap-closure](../validation/2026-10-19-rs-model-gap-closure/README.md) — Builder-authored in-memory tests closing the Python/Rust-closable PARTIAL gaps of the RS predicate and IM evidence maps ([술어 지도](status/RS_PREDICATE_EVIDENCE_MAP.md), [영향표 지도](status/RS_IM_EVIDENCE_MAP.md)); tests, row/status/counts updates and record only, no profile/Move/vector/contract change, no grade change, operational count stays 0.
 - [tl-predicate-evidence-map](../validation/2026-10-19-tl-predicate-evidence-map/README.md) — Builder-authored, checker-backed token-layer predicate evidence map ([TL predicate evidence map](status/TL_PREDICATE_EVIDENCE_MAP.md)); no independent verification, no package, no testnet/mainnet, no real funds, operational count stays 0.
+- [bra-fsm-error-code-coverage](../validation/2026-10-19-bra-fsm-error-code-coverage/README.md) — Builder-authored extension of the contract error-code coverage map and checker to the three FSM-added tables (booking sections 10.8 and 11.6, F04 section 7.8) plus six tests for seven unasserted codes; no contract, mock, FSM or command change, no grade change.
 
 ## 역사 문서와 증거
 
