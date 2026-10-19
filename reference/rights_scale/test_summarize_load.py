@@ -92,6 +92,33 @@ class TestSummarizeRules(unittest.TestCase):
             'public', report, self.doc['expected'], [])
         self.assertEqual(summary['status'], 'FAILED_MEASUREMENT')
 
+    def test_a_failed_path_is_reported_separately(self):
+        # RS-C14: per-path results are reported separately; one path's
+        # failure is not pooled into another path's verdict.
+        report = _report(self.doc)
+        report['snapshots']['public']['pages'][0]['free'] += 1
+        for name in ('private', 'delegated'):
+            summary, _samples = summarize_load.summarize_path(
+                name, report, self.doc['expected'], [])
+            self.assertEqual(summary['status'], 'PASSED_MEASUREMENT', name)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'report.json').write_text(json.dumps(report))
+            (root / 'scenarios.json').write_text(json.dumps(self.doc))
+            import subprocess
+            result = subprocess.run(
+                [sys.executable, str(HERE / 'summarize_load.py'),
+                 '--report', str(root / 'report.json'),
+                 '--scenarios', str(root / 'scenarios.json'),
+                 '--out', str(root / 'out')],
+                capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            receipt = json.loads((root / 'out' / 'receipt.json').read_text())
+            self.assertEqual(receipt['paths']['public']['status'], 'FAILED_MEASUREMENT')
+            self.assertEqual(receipt['paths']['private']['status'], 'PASSED_MEASUREMENT')
+            self.assertEqual(receipt['paths']['delegated']['status'], 'PASSED_MEASUREMENT')
+            self.assertEqual(receipt['failed_paths'], ['public'])
+
     def test_unknown_branch_fails(self):
         report = _report(self.doc)
         probe = next(s for s in report['samples'] if s['op'] == 'parallel')

@@ -195,6 +195,7 @@
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
 - [v5-lifecycle-seeded-model-test](../validation/2026-10-19-v5-lifecycle-seeded-model-test/README.md) — Builder-authored seeded model test for the v5-only lifecycle surface (terminate, holds, reclaim report); tests and record only, no src or contract change, no grade change, oracle not independent.
+- [rs-model-gap-closure](../validation/2026-10-19-rs-model-gap-closure/README.md) — Builder-authored in-memory tests closing the Python/Rust-closable PARTIAL gaps of the RS predicate and IM evidence maps ([술어 지도](status/RS_PREDICATE_EVIDENCE_MAP.md), [영향표 지도](status/RS_IM_EVIDENCE_MAP.md)); tests, row/status/counts updates and record only, no profile/Move/vector/contract change, no grade change, operational count stays 0.
 
 ## 역사 문서와 증거
 
