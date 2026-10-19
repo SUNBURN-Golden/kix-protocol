@@ -205,6 +205,8 @@ jobs:
           python3 scripts/check_rs_predicate_evidence_map.py --self-test
           python3 scripts/check_rs_im_evidence_map.py
           python3 scripts/check_rs_im_evidence_map.py --self-test
+          python3 scripts/check_tl_predicate_evidence_map.py
+          python3 scripts/check_tl_predicate_evidence_map.py --self-test
           python3 scripts/check_contract_error_codes.py
           python3 scripts/check_contract_error_codes.py --self-test
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
