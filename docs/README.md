@@ -190,6 +190,12 @@
 - [audit8-readiness-conformance-sweep-limit-note](../validation/2026-10-18-audit8-readiness-conformance-sweep-limit-note/README.md) — Builder-authored wording in the readiness conformance doc and one register cell; no test, store, format or contract change, no classification decision, no grade change.
 - [audit8-loop-node-canonical-crosswalk](../validation/2026-10-18-audit8-loop-node-canonical-crosswalk/README.md) — Builder-authored textual crosswalk of merged loop-proposed nodes to overlapping canonical `.aiops/program.json` nodes ([표](status/LOOP_NODE_CROSSWALK.md)); no counting decision, no test or code change, no grade change.
 
+## 2026-10-19 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [v5-lifecycle-seeded-model-test](../validation/2026-10-19-v5-lifecycle-seeded-model-test/README.md) — Builder-authored seeded model test for the v5-only lifecycle surface (terminate, holds, reclaim report); tests and record only, no src or contract change, no grade change, oracle not independent.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
