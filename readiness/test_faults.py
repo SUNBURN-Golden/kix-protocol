@@ -15,6 +15,7 @@ from collections import Counter
 from pathlib import Path
 
 from readiness.boundary import FsmBoundary, ReadinessError
+from readiness.ai_delegation_wrap import WrapError
 from ai_delegation_mock import AiDelegationError
 from token_reward_model import POOLS, PROVENANCE, TokenRewardError, reward_id
 from readiness.migrate import SCHEMA_VERSION, MigrationError, migrate, migrate_explicit
@@ -24,7 +25,7 @@ from readiness.store import (
     HEADER_LEN, JOURNAL_NAME, MAX_RECORD_BYTES, ReadinessFault, ReadinessStore, StoreError,
 )
 
-from readiness.conformance import BackendConformance, committed_face
+from readiness.conformance import BackendConformance, ai_delegation_issue, committed_face
 from readiness.local_adapter import LocalReadinessAdapter
 
 
@@ -484,20 +485,7 @@ class RewardWrapTests(unittest.TestCase):
 
 
 def _issue(machine):
-    return machine.issue_grant(
-        'human-issuer',
-        'g1',
-        'agent-1',
-        ['QUERY', 'PROPOSE'],
-        {'surfaces': ['surface-a']},
-        {
-            'per_action_max': 100,
-            'cumulative_max': 1000,
-            'count_max': 5,
-            'currency': 'KRW',
-        },
-        {'not_before': 10, 'not_after': 20},
-    )
+    return ai_delegation_issue(machine)
 
 
 def json_copy(value):
@@ -748,11 +736,18 @@ class CrashPointSweepTests(unittest.TestCase):
 
     backend = LocalReadinessAdapter()
     FAULT_CODES = {'partial': 'PARTIAL_WRITE', 'crash_before_durable': 'CRASH_BEFORE_DURABLE'}
-    EXPECTED_COMMANDS = {'settlement': 5, 'reservation': 3, 'resale': 5, 'credit': 3, 'admission': 4}
+    EXPECTED_COMMANDS = {
+        'settlement': 5, 'reservation': 3, 'resale': 5, 'credit': 3,
+        'admission': 4, 'ai_delegation': 3,
+    }
     VIEW_IDS = {
         'settlement': 'claim-1', 'reservation': 'reserve-1', 'resale': 'list-1',
-        'credit': 'adv-1', 'admission': 'issue-1',
+        'credit': 'adv-1', 'admission': 'issue-1', 'ai_delegation': 'g1',
     }
+    VIEW_METHODS = {'ai_delegation': 'view_grant'}
+    # class B: these resends raise the machine's own error instead of
+    # returning a duplicate result (open_registry carries no idempotency key).
+    REPLAY_ERRORS = {('ai_delegation', 0): 'ALREADY_OPEN'}
     FALSE_LABELS = (
         'durable', 'funds_executed', 'economic_finality_claimed',
         'chain_owner_current', 'admission_routing_production', 'bank_debit_observed',
@@ -788,6 +783,11 @@ class CrashPointSweepTests(unittest.TestCase):
         helper._admission_until_authorized(rec)
         rec.call('admission', lambda m: helper._consume(m))
         out['admission'] = rec.steps
+        rec = _Recorder()
+        helper._ai_delegation_opened(rec)
+        rec.call('ai_delegation', ai_delegation_issue)
+        rec.call('ai_delegation', lambda m: m.revoke_grant('human-issuer', 'g1', 'fixture-reason'))
+        out['ai_delegation'] = rec.steps
         return out
 
     @classmethod
@@ -866,12 +866,24 @@ class CrashPointSweepTests(unittest.TestCase):
                 # (b) resend applies exactly once with the uninterrupted result
                 first = self._resend(boundary, name, step)
                 self.assertEqual(first, ref['results'][i])
-                self.assertFalse(first['duplicate'])
+                if (machine_name, i) in self.REPLAY_ERRORS:
+                    self.assertNotIn('duplicate', first)
+                else:
+                    self.assertIs(first['duplicate'], False)
                 self.assertEqual(boundary.machine(machine_name).state_digest(), ref['digests'][i + 1])
                 self.assertEqual(boundary.machine(machine_name).export_journal(), ref['journal'][:i + 1])
-                again = boundary.call(name, step)
-                self.assertIs(again['duplicate'], True)
-                self.assertIsNone(again['applied'])
+                replay_error = self.REPLAY_ERRORS.get((machine_name, i))
+                if replay_error is None:
+                    again = boundary.call(name, step)
+                    self.assertIs(again['duplicate'], True)
+                    if machine_name == 'ai_delegation':
+                        self.assertNotIn('applied', again)
+                    else:
+                        self.assertIsNone(again['applied'])
+                else:
+                    with self.assertRaises(WrapError) as again:
+                        boundary.call(name, step)
+                    self.assertEqual(again.exception.code, replay_error)
                 self.assertEqual(boundary.machine(machine_name).state_digest(), ref['digests'][i + 1])
                 self.assertEqual(boundary.machine(machine_name).export_journal(), ref['journal'][:i + 1])
                 # (c) finishing reaches the uninterrupted final state
@@ -881,7 +893,11 @@ class CrashPointSweepTests(unittest.TestCase):
                 self.assertEqual(machine.state_digest(), ref['digests'][n])
                 self.assertEqual(machine.export_journal(), ref['journal'])
                 self._false_labels_hold(ref['results'])
-                self._false_labels_hold(machine.view(self.VIEW_IDS[machine_name]))
+                self._false_labels_hold(
+                    getattr(machine, self.VIEW_METHODS.get(machine_name, 'view'))(
+                        self.VIEW_IDS[machine_name],
+                    ),
+                )
             finally:
                 boundary.close()
             # (d) record count equals accepted commands; labels stay false
@@ -924,6 +940,9 @@ class CrashPointSweepTests(unittest.TestCase):
     def test_crash_point_sweep_admission(self):
         self._sweep('admission')
 
+    def test_crash_point_sweep_ai_delegation(self):
+        self._sweep('ai_delegation')
+
     def test_reference_runs_are_deterministic_and_one_entry_per_command(self):
         for name, steps in self.sequences.items():
             with self.subTest(machine=name):
@@ -946,6 +965,8 @@ class CrashPointSweepTests(unittest.TestCase):
             ('admission', 'partial', 'consume'),
             ('settlement', 'crash_before_durable', 'authorize'),
             ('reservation', 'crash_before_durable', 'hold'),
+            ('ai_delegation', 'partial', 'revoke_grant'),
+            ('ai_delegation', 'crash_before_durable', 'issue_grant'),
         ]
         for machine_name, fault, op in cells:
             with self.subTest(machine=machine_name, fault=fault, op=op):
