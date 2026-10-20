@@ -16,8 +16,10 @@ from pathlib import Path
 
 from readiness.boundary import FsmBoundary, ReadinessError
 from ai_delegation_mock import AiDelegationError
+from token_reward_model import POOLS, PROVENANCE, TokenRewardError, reward_id
 from readiness.migrate import SCHEMA_VERSION, MigrationError, migrate, migrate_explicit
 from readiness.policy import AdmitGate
+from readiness.reward_wrap import RewardWrap
 from readiness.store import (
     HEADER_LEN, JOURNAL_NAME, MAX_RECORD_BYTES, ReadinessFault, ReadinessStore, StoreError,
 )
@@ -278,6 +280,207 @@ class ExtensionTests(unittest.TestCase):
                 )
             finally:
                 recovered.close()
+
+
+REWARD_DIGEST = 'ab' * 32
+REWARD_EFFECTS = 'ef' * 32
+
+
+def _reward_opening():
+    base = {pool: 7 for pool in POOLS}
+    base['PROTOCOL_REVENUE'] = 50
+    base['TOKEN_TREASURY_REWARD'] = 50
+    return base
+
+
+def _reward_key():
+    return {
+        'program': 'program-1',
+        'source_op_id': 'op-1',
+        'recipient': 'recipient-1',
+        'kind': 'participation',
+    }
+
+
+def _reward_source_view():
+    return {
+        'phase': 'COMMITTED',
+        'currency': 'KRW',
+        'funds_executed': False,
+        'bank_debit_observed': False,
+        'legal_debtor_bound': False,
+        'external_return_closed': False,
+        'durable': False,
+    }
+
+
+def _reward_approval():
+    return {
+        'record_id': 'approval-1',
+        'generation': 1,
+        'authority_id': 'authority-slot',
+        'actor_type': 'HUMAN',
+        'action': 'point-payout',
+        'scope_ref': 'program-1',
+        'evidence_refs': ['evidence-1'],
+    }
+
+
+def _reward_rid():
+    return reward_id(**_reward_key())
+
+
+def _observe_reward(machine):
+    return machine.observe(
+        _reward_key(),
+        idempotency_key='obs-1',
+        source_view=_reward_source_view(),
+        rule_version='rule-v1',
+        amount=4,
+        source_kind='SETTLEMENT',
+    )
+
+
+def _eligible_reward(machine):
+    return machine.mark_eligible(
+        _reward_rid(),
+        idempotency_key='elig-1',
+        window_closed=True,
+        source_view=_reward_source_view(),
+        abuse_clear=True,
+    )
+
+
+class RewardWrapTests(unittest.TestCase):
+    """Restart and fault checks for the reward wrap. MOCK only; durable stays false."""
+
+    def test_reward_torn_write_replays_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = FsmBoundary(tmp)
+            try:
+                opened = boundary.call('reward', lambda machine: machine.open(_reward_opening()))
+                self.assertTrue(opened['opened'])
+                self.assertIs(opened['durable'], False)
+                boundary.call('reward', lambda machine: _observe_reward(machine))
+                held = boundary.call(
+                    'reward',
+                    lambda machine: machine.hold(_reward_rid(), idempotency_key='hold-1'),
+                )
+                self.assertEqual(held['reward']['phase'], 'HELD')
+                with self.assertRaises(ReadinessFault) as raised:
+                    boundary.call('reward', lambda machine: _eligible_reward(machine), fault='partial')
+                self.assertEqual(raised.exception.code, 'PARTIAL_WRITE')
+                self.assertEqual(boundary.last_observation['journalDecision'], 'fault')
+                self.assertEqual(boundary.last_observation['faultCode'], 'PARTIAL_WRITE')
+                self.assertIs(boundary.last_observation['fsmDurable'], False)
+            finally:
+                boundary.close()
+            recovered = FsmBoundary(tmp)
+            try:
+                self.assertEqual(recovered.machine('reward').view(_reward_rid())['phase'], 'HELD')
+                applied = recovered.call('reward', lambda machine: _eligible_reward(machine))
+                self.assertFalse(applied['duplicate'])
+                self.assertEqual(applied['reward']['phase'], 'ELIGIBLE')
+                replay = recovered.call('reward', lambda machine: _eligible_reward(machine))
+                self.assertIs(replay['duplicate'], True)
+                self.assertIsNone(replay['applied'])
+                machine = recovered.machine('reward')
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open', 'observe', 'hold', 'mark_eligible'],
+                )
+                self.assertIs(machine.view(_reward_rid())['durable'], False)
+            finally:
+                recovered.close()
+
+    def test_reward_crash_before_observe_leaves_no_reward(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = FsmBoundary(tmp)
+            try:
+                boundary.call('reward', lambda machine: machine.open(_reward_opening()))
+                with self.assertRaises(ReadinessFault) as raised:
+                    boundary.call('reward', lambda machine: _observe_reward(machine), fault='crash_before_durable')
+                self.assertEqual(raised.exception.code, 'CRASH_BEFORE_DURABLE')
+            finally:
+                boundary.close()
+            recovered = FsmBoundary(tmp)
+            try:
+                with self.assertRaises(TokenRewardError) as missing:
+                    recovered.machine('reward').view(_reward_rid())
+                self.assertEqual(missing.exception.code, 'UNKNOWN_REWARD')
+                observed = recovered.call('reward', lambda machine: _observe_reward(machine))
+                self.assertFalse(observed['duplicate'])
+                self.assertIs(observed['reward']['durable'], False)
+                replay = recovered.call('reward', lambda machine: _observe_reward(machine))
+                self.assertIs(replay['duplicate'], True)
+                self.assertEqual(
+                    [entry['op'] for entry in recovered.machine('reward').export_journal()],
+                    ['open', 'observe'],
+                )
+            finally:
+                recovered.close()
+
+    def test_reward_restore_round_trips_canonical_state_and_digest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = FsmBoundary(tmp)
+            try:
+                boundary.call('reward', lambda machine: machine.open(_reward_opening()))
+                boundary.call('reward', lambda machine: _observe_reward(machine))
+                boundary.call(
+                    'reward',
+                    lambda machine: machine.hold(_reward_rid(), idempotency_key='hold-1'),
+                )
+                boundary.call('reward', lambda machine: _eligible_reward(machine))
+                submitted = boundary.call(
+                    'reward',
+                    lambda machine: machine.submit(
+                        _reward_rid(),
+                        idempotency_key='sub-1',
+                        approval_ref=_reward_approval(),
+                        signed_bytes_digest=REWARD_DIGEST,
+                        spend_pool='TOKEN_TREASURY_REWARD',
+                    ),
+                )
+                self.assertEqual(submitted['reward']['phase'], 'ISSUING')
+                issued = boundary.call(
+                    'reward',
+                    lambda machine: machine.observe_transfer_effects(
+                        _reward_rid(),
+                        idempotency_key='fx-1',
+                        effects_digest=REWARD_EFFECTS,
+                        outcome='SUCCESS',
+                    ),
+                )
+                self.assertEqual(issued['reward']['phase'], 'ISSUED')
+                machine = boundary.machine('reward')
+                self.assertEqual(machine.view(_reward_rid())['provenance'], PROVENANCE)
+                pool = machine.pool_view()
+                self.assertEqual(pool['balances']['TOKEN_TREASURY_REWARD'], 46)
+                self.assertEqual(
+                    pool['spends'],
+                    [{'pool': 'TOKEN_TREASURY_REWARD', 'amount': 4, 'program_ref': 'program-1'}],
+                )
+                journal = machine.export_journal()
+                restored = RewardWrap.restore(journal)
+                self.assertEqual(restored.canonical_state(), machine.canonical_state())
+                self.assertEqual(restored.state_digest(), machine.state_digest())
+                self.assertEqual(restored.export_journal(), journal)
+                self.assertEqual(
+                    [entry['op'] for entry in journal],
+                    ['open', 'observe', 'hold', 'mark_eligible', 'submit', 'observe_transfer_effects'],
+                )
+                with self.assertRaises(TokenRewardError) as external:
+                    machine.reject_external('TRANSFER')
+                self.assertEqual(external.exception.code, 'EXTERNAL_EXECUTION_UNSUPPORTED')
+                self.assertIs(boundary.last_observation['fsmDurable'], False)
+            finally:
+                boundary.close()
+            again = FsmBoundary(tmp)
+            try:
+                self.assertEqual(again.machine('reward').state_digest(), restored.state_digest())
+                self.assertIs(again.machine('reward').view(_reward_rid())['durable'], False)
+            finally:
+                again.close()
 
 
 def _issue(machine):

@@ -151,3 +151,24 @@ durable append, concurrency, rejected commands, the `ai_delegation` machine,
 any backend adoption, any production durability. Single process, single
 writer, local files. Record:
 `validation/2026-10-18-readiness-crash-point-sweep/README.md`.
+
+## Token reward wrap
+
+`readiness/reward_wrap.py` wraps `reference/token_reward/reward_fsm.py`'s
+`RewardMachine` as the `reward` machine (`store.py` `FSM_MACHINES`,
+`machines.py`). It follows the AI delegation wrap: an explicit `open` records
+the caller-supplied `opening_balances` so restore is deterministic, then each
+public command whose state digest changed is journaled and replayed through
+the same public methods. `RewardWrapTests` in `readiness/test_faults.py`
+covers a torn write replayed once, a crash-before-durable observe that leaves
+no reward, and a `restore(export_journal())` round-trip of
+`canonical_state` and `state_digest`.
+
+Same bounds: single process, single writer, one local file, off unless
+`--readiness-dir`. `durable`, `protocolTruth` and the production labels stay
+false and `reject_external` still refuses. `MOCK_TOKEN_REWARD_ONLY`
+provenance passes through unchanged: a matched replay is not a payout, a
+bank debit or chain finality. The reward machine is not part of
+`BackendConformance` or the crash-point sweep, and this section is not an
+independent verification of TK-4, TK-7, TK-8, TK-12 or V6. Record:
+`validation/2026-10-20-token-reward-readiness-wrap/README.md`.
