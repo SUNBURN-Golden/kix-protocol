@@ -25,6 +25,7 @@ JOURNAL_NAME = 'journal.v1'
 
 FSM_MACHINES = frozenset({
     'settlement', 'reservation', 'resale', 'credit', 'admission', 'ai_delegation',
+    'reward',
 })
 CORE_MACHINE = 'integration_core'
 _STAMPED = frozenset({'schema', 'protocolTruth', 'productionConformance'})
