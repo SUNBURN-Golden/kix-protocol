@@ -209,6 +209,8 @@
 - [token-reward-readiness-wrap](../validation/2026-10-20-token-reward-readiness-wrap/README.md) — Builder-authored local readiness journal wrap for the token-reward FSM plus restart/fault tests; wrap, registration, tests and record only, no FSM/contract/command change, `durable` and the truth/production labels stay false, `MOCK_TOKEN_REWARD_ONLY` provenance and no-real-payout non-claims unchanged.
 - [v5-transition-evidence-map](../validation/2026-10-20-v5-transition-evidence-map/README.md) — Builder-authored per-transition evidence map from the lifecycle contract §§5–6 to the `kix-kernel-v5` test tree ([지도](status/V5_TRANSITION_EVIDENCE_MAP.md)); map, checker and record only, no src or contract change, stopped transitions stay STOPPED, no open input resolved, no grade change.
 
+- [ai-delegation-wrap-conformance](../validation/2026-10-20-ai-delegation-wrap-conformance/README.md) — Builder-authored adapter conformance scenarios and six AI delegation crash-point cells; tests and record only, no wrap, journal or contract change, execution disabled and durable false, no grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.

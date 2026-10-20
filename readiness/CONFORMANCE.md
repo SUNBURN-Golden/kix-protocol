@@ -128,29 +128,54 @@ production durability claim.
 
 `readiness/test_faults.py` `CrashPointSweepTests` takes the command sequence of
 each `BackendConformance` scenario (settlement 5, reservation 3, resale 5,
-credit 3, admission 4 commands) and, for every command index and both fault
-kinds (`partial`, `crash_before_durable`), injects the fault through
-`FsmBoundary.call(..., fault=...)`, closes, reopens and checks: the recovered
-digest and journal equal the prefix only; the resend applies once and returns
-the uninterrupted result; finishing the sequence reaches the uninterrupted
-final digest; the record count equals the accepted commands and the false
-truth labels stay false. After the fault the same boundary also refuses
-further calls with `READINESS_CLOSED`. That is 40 cases over 20 commands.
+credit 3, admission 4, ai_delegation 3 commands) and, for every command index
+and both fault kinds (`partial`, `crash_before_durable`), injects the fault
+through `FsmBoundary.call(..., fault=...)`, closes, reopens and checks: the
+recovered digest and journal equal the prefix only; the resend applies once
+and returns the uninterrupted result; finishing the sequence reaches the
+uninterrupted final digest; the record count equals the accepted commands and
+the false truth labels stay false. After the fault the same boundary also
+refuses further calls with `READINESS_CLOSED`. That is 46 cases over 23
+commands.
 
 It uses the public adapter surface only. The existing fault cases are kept; the
 sweep reaches the same cells (the module test
-`test_sweep_cells_subsume_the_existing_fault_cases` pins seven of them).
+`test_sweep_cells_subsume_the_existing_fault_cases` pins nine of them).
 
 Class B characterizations (the contract does not define them): byte-equal
 result on the first resend; digest equality across independent in-process
 instances; every command emits exactly one journal entry, so the "fault on the
-first entry only" rule is not exercised for multi-entry commands.
+first entry only" rule is not exercised for multi-entry commands. The
+`ai_delegation` `open_registry` carries no idempotency key and returns no
+`duplicate` flag: its resend raises the wrap's `WrapError('ALREADY_OPEN')`
+instead of a duplicate result (the sweep's `REPLAY_ERRORS` cell pins this; the
+journal and digest assertions afterwards are unchanged). Mock duplicate
+results carry no `applied` key.
 
 Not claimed: power loss, OS crash, `fsync`, a lost acknowledgement after a
-durable append, concurrency, rejected commands, the `ai_delegation` machine,
-any backend adoption, any production durability. Single process, single
-writer, local files. Record:
-`validation/2026-10-18-readiness-crash-point-sweep/README.md`.
+durable append, concurrency, rejected commands, the `reward` machine, any
+backend adoption, any production durability. Single process, single
+writer, local files. Records:
+`validation/2026-10-18-readiness-crash-point-sweep/README.md`,
+`validation/2026-10-20-ai-delegation-wrap-conformance/README.md`.
+
+`BackendConformance` also covers the `ai_delegation` wrap with three
+scenarios through the same adapter surface: the registry opens once across a
+restart and a journaled `issue_grant` resend returns `duplicate` with the
+identical grant view while a resent `open_registry` raises `ALREADY_OPEN`; a
+torn `revoke_grant` recovers as still `ACTIVE`, applies once on resend and
+replays `duplicate`, with `attempt_execution` still refused as
+`DELEGATED_EXECUTION_DISABLED`; and a `crash_before_durable` `issue_grant`
+leaves no grant (`UNKNOWN_GRANT` on view) until the resend applies it once.
+`durable` and `execution_enabled` stay false throughout. The two dedicated
+`ExtensionTests` cases are kept: they additionally pin `last_observation`
+fields the mixin does not.
+
+| AI delegation fault / behavior | BackendConformance case | Sweep cells |
+|---|---|---|
+| Registry opens once; issue replay across restart | `test_ai_delegation_registry_opens_once_and_issue_replays_across_restart` | `open_registry` with both faults; repeat open raises `ALREADY_OPEN` without changing journal/digest |
+| Torn revoke recovers ACTIVE; resend revokes once | `test_ai_delegation_torn_revoke_recovers_and_replays_once` | `revoke_grant` with `partial` and `crash_before_durable` |
+| Crash before issue leaves no grant; resend issues once | `test_ai_delegation_crash_before_durable_issue_leaves_no_grant` | `issue_grant` with `partial` and `crash_before_durable` |
 
 ## Token reward wrap
 

@@ -16,17 +16,25 @@ from pathlib import Path
 
 # The semantic oracle remains the existing public reference FSMs.
 ROOT = Path(__file__).resolve().parents[1]
-for suite in ("settlement_f01_f03", "booking_resale_admission", "credit_advance_f04"):
+for suite in (
+    "settlement_f01_f03",
+    "booking_resale_admission",
+    "credit_advance_f04",
+    "ai_delegation",
+):
     path = str(ROOT / "reference" / suite)
     if path not in sys.path:
         sys.path.insert(0, path)
 
 from admission_fsm import AdmissionError  # noqa: E402
+from ai_delegation_mock import AiDelegationError  # noqa: E402
 from credit_fsm import CreditError  # noqa: E402
 from mock_gates import ADMISSION_WINDOW_MS, OFFER_WINDOW_MS  # noqa: E402
 from reservation_fsm import ReservationError  # noqa: E402
 from resale_fsm import ResaleError  # noqa: E402
 from settlement_fsm import SettlementMachine  # noqa: E402
+
+from readiness.ai_delegation_wrap import WrapError  # noqa: E402
 
 PAY = 'ab' * 32
 SALE_PAY = 'cd' * 32
@@ -123,6 +131,28 @@ def code(fn, error_type):
     except error_type as exc:
         return exc.code
     raise AssertionError('expected ' + error_type.__name__)
+
+
+AI_ISSUER = 'human-issuer'
+AI_AGENT = 'agent-1'
+AI_GRANT = 'g1'
+
+
+def ai_delegation_issue(machine):
+    return machine.issue_grant(
+        AI_ISSUER,
+        AI_GRANT,
+        AI_AGENT,
+        ['QUERY', 'PROPOSE'],
+        {'surfaces': ['surface-a']},
+        {
+            'per_action_max': 100,
+            'cumulative_max': 1000,
+            'count_max': 5,
+            'currency': 'KRW',
+        },
+        {'not_before': 10, 'not_after': 20},
+    )
 
 
 class BackendConformance:
@@ -589,6 +619,120 @@ class BackendConformance:
             finally:
                 recovered.close()
 
+    def test_ai_delegation_registry_opens_once_and_issue_replays_across_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                opened = self._ai_delegation_opened(boundary)
+                self.assertIs(opened['opened'], True)
+                self.assertIs(opened['durable'], False)
+                self.assertIs(opened['execution_enabled'], False)
+                issued = boundary.call('ai_delegation', ai_delegation_issue)
+                self.assertFalse(issued['duplicate'])
+                self.assertIs(issued['grant']['durable'], False)
+                self.assertIs(issued['grant']['execution_enabled'], False)
+                digest = boundary.machine('ai_delegation').state_digest()
+                journal = boundary.machine('ai_delegation').export_journal()
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('ai_delegation')
+                self.assertEqual(machine.state_digest(), digest)
+                self.assertEqual(machine.export_journal(), journal)
+                self.assertEqual(machine.view_grant(AI_GRANT)['phase'], 'ACTIVE')
+                replay = recovered.call('ai_delegation', ai_delegation_issue)
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(replay['grant'], issued['grant'])
+                # open_registry carries no idempotency key: the wrap refuses a
+                # second open instead of returning a duplicate result (class B).
+                self.assertEqual(
+                    code(
+                        lambda: recovered.call('ai_delegation', self._ai_delegation_open_call()),
+                        WrapError,
+                    ),
+                    'ALREADY_OPEN',
+                )
+                self.assertEqual(machine.state_digest(), digest)
+                self.assertEqual(machine.export_journal(), journal)
+            finally:
+                recovered.close()
+
+    def test_ai_delegation_torn_revoke_recovers_and_replays_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._ai_delegation_opened(boundary)
+                boundary.call('ai_delegation', ai_delegation_issue)
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call(
+                        'ai_delegation',
+                        lambda machine: machine.revoke_grant(AI_ISSUER, AI_GRANT, 'fixture-reason'),
+                        fault='partial',
+                    )
+                self.assertEqual(raised.exception.code, 'PARTIAL_WRITE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('ai_delegation')
+                self.assertEqual(machine.view_grant(AI_GRANT)['phase'], 'ACTIVE')
+                self.assertIs(machine.view_grant(AI_GRANT)['durable'], False)
+                revoked = recovered.call(
+                    'ai_delegation',
+                    lambda machine: machine.revoke_grant(AI_ISSUER, AI_GRANT, 'fixture-reason'),
+                )
+                self.assertFalse(revoked['duplicate'])
+                self.assertEqual(revoked['grant']['phase'], 'REVOKED')
+                self.assertIs(revoked['grant']['durable'], False)
+                self.assertIs(revoked['grant']['execution_enabled'], False)
+                replay = recovered.call(
+                    'ai_delegation',
+                    lambda machine: machine.revoke_grant(AI_ISSUER, AI_GRANT, 'fixture-reason'),
+                )
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(replay['grant']['phase'], 'REVOKED')
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open_registry', 'issue_grant', 'revoke_grant'],
+                )
+                self.assertEqual(
+                    code(lambda: machine.attempt_execution(AI_ISSUER, 'p1'), AiDelegationError),
+                    'DELEGATED_EXECUTION_DISABLED',
+                )
+            finally:
+                recovered.close()
+
+    def test_ai_delegation_crash_before_durable_issue_leaves_no_grant(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._ai_delegation_opened(boundary)
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call('ai_delegation', ai_delegation_issue, fault='crash_before_durable')
+                self.assertEqual(raised.exception.code, 'CRASH_BEFORE_DURABLE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('ai_delegation')
+                self.assertEqual(
+                    code(lambda: machine.view_grant(AI_GRANT), AiDelegationError),
+                    'UNKNOWN_GRANT',
+                )
+                issued = recovered.call('ai_delegation', ai_delegation_issue)
+                self.assertFalse(issued['duplicate'])
+                self.assertIs(issued['grant']['durable'], False)
+                replay = recovered.call('ai_delegation', ai_delegation_issue)
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(replay['grant'], issued['grant'])
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open_registry', 'issue_grant'],
+                )
+            finally:
+                recovered.close()
+
     def test_crash_before_durable_leaves_the_attempt_out_of_the_record_budget(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = self.backend.open_store(tmp)
@@ -775,6 +919,12 @@ class BackendConformance:
             gate_role='gate-a',
             request=REQ,
         )
+
+    def _ai_delegation_open_call(self):
+        return lambda machine: machine.open_registry([AI_ISSUER], [AI_AGENT])
+
+    def _ai_delegation_opened(self, boundary):
+        return boundary.call('ai_delegation', self._ai_delegation_open_call())
 
 
 def assert_budget_rejection(test, ready_call, command_call, domain):
