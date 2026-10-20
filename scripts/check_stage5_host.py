@@ -126,14 +126,13 @@ def _check_psycopg(entry):
               'expected': 'importable psycopg, major version 3',
               'observed': entry}
     if not entry['ok']:
-        result.update(status='FAIL',
-                      reason=entry.get('error', 'import failed: %s' % (
-                          entry['stderr'] or
-                          'exit %s' % entry['returncode'])))
+        reason = entry.get('error') or 'import failed: %s' % (
+            entry['stderr'] or 'exit %s' % entry['returncode'])
+        result.update(status='FAIL', reason=reason)
         return result
     version = entry['stdout']
     major = version.split('.', 1)[0]
-    if major == '3' and version:
+    if major == '3':
         result.update(status='PASS', reason='psycopg %s' % version)
     else:
         result.update(status='FAIL',
@@ -278,6 +277,10 @@ def self_test():
          _fake_observations(psycopg={
              'ok': False, 'returncode': 1, 'stdout': '',
              'stderr': 'ModuleNotFoundError: No module named psycopg'}),
+         'FAIL', 1),
+        ('psycopg probe times out (error-key dict)',
+         _fake_observations(psycopg={
+             'ok': False, 'error': 'timeout after 10s'}),
          'FAIL', 1),
         ('psycopg major version 2',
          _fake_observations(psycopg=dict(ok_banner, stdout='2.9.10')),
