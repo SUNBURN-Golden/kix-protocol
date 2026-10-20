@@ -205,6 +205,7 @@
 
 - [plan-rs-grant-cut-order-tests](../validation/2026-10-20-plan-rs-grant-cut-order-tests/README.md) — Builder-authored Move tests ordering the grant cut against delegated paid issue and delegated-page admission consume in both serial orders ([술어 지도](status/RS_PREDICATE_EVIDENCE_MAP.md) rows RS-C06/RS-C07); tests, row text updates and record only, no profile/Move-source/vector/contract change, no grade change, operational count stays 0.
 - [plan-register-index-sync-20261020](../validation/2026-10-20-plan-register-index-sync-20261020/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [adapter-identity-evidence-map](../validation/2026-10-20-adapter-identity-evidence-map/README.md) — Builder-authored evidence map for [어댑터 정체성 계약](contracts/ADAPTER_EVENT_IDENTITY.md) §§2–4 ([지도](status/ADAPTER_IDENTITY_EVIDENCE_MAP.md)); map, checker and record only, no adapter code, no schema/domain id, no contract change, every open input stays UNDETERMINED.
 
 ## 역사 문서와 증거
 
