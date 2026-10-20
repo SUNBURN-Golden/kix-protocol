@@ -207,6 +207,7 @@
 - [plan-register-index-sync-20261020](../validation/2026-10-20-plan-register-index-sync-20261020/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
 - [adapter-identity-evidence-map](../validation/2026-10-20-adapter-identity-evidence-map/README.md) — Builder-authored evidence map for [어댑터 정체성 계약](contracts/ADAPTER_EVENT_IDENTITY.md) §§2–4 ([지도](status/ADAPTER_IDENTITY_EVIDENCE_MAP.md)); map, checker and record only, no adapter code, no schema/domain id, no contract change, every open input stays UNDETERMINED.
 - [token-reward-readiness-wrap](../validation/2026-10-20-token-reward-readiness-wrap/README.md) — Builder-authored local readiness journal wrap for the token-reward FSM plus restart/fault tests; wrap, registration, tests and record only, no FSM/contract/command change, `durable` and the truth/production labels stay false, `MOCK_TOKEN_REWARD_ONLY` provenance and no-real-payout non-claims unchanged.
+- [v5-transition-evidence-map](../validation/2026-10-20-v5-transition-evidence-map/README.md) — Builder-authored per-transition evidence map from the lifecycle contract §§5–6 to the `kix-kernel-v5` test tree ([지도](status/V5_TRANSITION_EVIDENCE_MAP.md)); map, checker and record only, no src or contract change, stopped transitions stay STOPPED, no open input resolved, no grade change.
 
 ## 역사 문서와 증거
 
