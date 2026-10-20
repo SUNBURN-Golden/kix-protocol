@@ -210,6 +210,7 @@
 - [v5-transition-evidence-map](../validation/2026-10-20-v5-transition-evidence-map/README.md) — Builder-authored per-transition evidence map from the lifecycle contract §§5–6 to the `kix-kernel-v5` test tree ([지도](status/V5_TRANSITION_EVIDENCE_MAP.md)); map, checker and record only, no src or contract change, stopped transitions stay STOPPED, no open input resolved, no grade change.
 
 - [ai-delegation-wrap-conformance](../validation/2026-10-20-ai-delegation-wrap-conformance/README.md) — Builder-authored adapter conformance scenarios and six AI delegation crash-point cells; tests and record only, no wrap, journal or contract change, execution disabled and durable false, no grade change.
+- [stage5-host-preflight-checker](../validation/2026-10-20-stage5-preflight/README.md) — Builder-authored stdlib-only read-only preflight checker (`scripts/check_stage5_host.py`) for the stage-5 pinned-host prerequisites named in the `k-stage5-durable-tx` DECISION_REQUIRED record; checker and record only, evidence preparation for option 1, no provisioning, no option selected, no acceptance run, no grade change.
 
 ## 역사 문서와 증거
 
