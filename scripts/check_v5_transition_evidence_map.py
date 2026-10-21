@@ -294,9 +294,19 @@ def find_problems(map_text, sources, root=ROOT, files=None):
                                     'citation' % (ident, name))
                 continue
             for path, symbol in cites:
+                where = '%s: %s citation %s' % (ident, name, path)
+                if symbol is not None:
+                    where += '::' + symbol
                 if not re.fullmatch(V5_TEST_PATH, path or ''):
-                    problems.append('%s: %s citation %s is not a v5 test '
-                                    'file' % (ident, name, path))
+                    problems.append('%s is not a v5 test file' % where)
+                    continue
+                if symbol is None:
+                    problems.append('%s needs a nonempty ::symbol' % where)
+                text = read(path)
+                if text is None:
+                    problems.append('%s does not exist' % where)
+                elif symbol is not None and not symbol_ok(path, text, symbol):
+                    problems.append('%s is not a #[test]-attributed fn' % where)
 
         missing_cites = [c for c in parse_cell(cells[MISSING_CELL])
                          if c[1] is not None]
@@ -376,6 +386,91 @@ def _with_cells(text, ident, changes):
     return text
 
 
+def _fixture_citation_self_test(map_text, sources):
+    """Exercise every fixture citation, including ones citations_of omits."""
+    probe_path = 'runtime/crates/kix-kernel-v5/tests/citation_probe.rs'
+    missing_path = 'runtime/crates/kix-kernel-v5/tests/citation_missing.rs'
+    existing_path = 'runtime/crates/kix-kernel-v5/tests/termination.rs'
+    files = {
+        probe_path: '#[test]\nfn first() {}\n#[test]\nfn second() {}\n'
+                    'fn helper() {}\n',
+        missing_path: None,
+    }
+    valid = '`%s::first`' % probe_path
+    multiple = valid + ', `%s::second`' % probe_path
+    needs_symbol = 'needs a nonempty ::symbol'
+    not_test = 'is not a #[test]-attributed fn'
+    # Each expected diagnostic names the row, column and offending citation.
+    negatives = [
+        ('bare existing path', existing_path, [needs_symbol]),
+        ('bare missing path', missing_path,
+         [needs_symbol, 'does not exist']),
+        ('bare injected path', probe_path, [needs_symbol]),
+        ('empty symbol', probe_path + '::', [needs_symbol]),
+        ('spaces-only symbol', probe_path + '::   ', [needs_symbol]),
+        ('tabs-only symbol', probe_path + '::\t\t', [needs_symbol]),
+        ('missing file', missing_path + '::first', ['does not exist']),
+        ('missing function', probe_path + '::absent', [not_test]),
+        ('helper function', probe_path + '::helper', [not_test]),
+        ('invalid test path', V5_LIB + '::terminate', ['is not a v5 test file']),
+    ]
+    failed = False
+    for col, name in ((TESTS_CELL, 'v5 tests'), (GUARD_CELL, 'stop guard')):
+        for label, citation, reasons in negatives:
+            path, _, symbol = citation.partition('::')
+            identity = path + ('::' + symbol.strip() if symbol.strip() else '')
+            expected = ['TERM: %s citation %s %s' % (name, identity, reason)
+                        for reason in reasons]
+            bad = '`%s`' % citation
+            for cell in (bad, valid + ', ' + bad, bad + ', ' + valid):
+                found = find_problems(
+                    _with_cell(map_text, 'TERM', col, cell), sources,
+                    files=files)
+                missing = [message for message in expected if message not in found]
+                if missing:
+                    print('self-test: %s %s missed %r in %r'
+                          % (name, label, missing, cell), file=sys.stderr)
+                    failed = True
+            print('self-test: exercised %s %s (alone and mixed lists)'
+                  % (name, label))
+
+        # All invalid members must be diagnosed, even after a valid citation.
+        cell = multiple + ', `%s`, `%s::absent`, `%s::helper`' % (
+            missing_path, probe_path, probe_path)
+        found = find_problems(_with_cell(map_text, 'TERM', col, cell),
+                              sources, files=files)
+        for identity, reason in ((missing_path, needs_symbol),
+                                 (missing_path, 'does not exist'),
+                                 (probe_path + '::absent', not_test),
+                                 (probe_path + '::helper', not_test)):
+            expected = 'TERM: %s citation %s %s' % (name, identity, reason)
+            if expected not in found:
+                print('self-test: mixed invalid members missed ' + expected,
+                      file=sys.stderr)
+                failed = True
+
+    positives = [
+        ('none tests on stopped row',
+         _with_cell(map_text, 'SLOT-RELEASE', TESTS_CELL, 'none')),
+        ('none guard on tested row',
+         _with_cell(map_text, 'TERM', GUARD_CELL, 'none')),
+        ('none guard on stopped row',
+         _with_cell(map_text, 'SLOT-RELEASE', GUARD_CELL, 'none')),
+    ]
+    for cell in (valid, multiple):
+        positives.append(('valid test and guard citations', _with_cells(
+            map_text, 'TERM', [(TESTS_CELL, cell), (GUARD_CELL, cell)])))
+        positives.append(('valid stopped guard citations', _with_cell(
+            map_text, 'SLOT-RELEASE', GUARD_CELL, cell)))
+    for name, text in positives:
+        found = find_problems(text, sources, files=files)
+        if found:
+            print('self-test: %s positive control failed: %r' % (name, found),
+                  file=sys.stderr)
+            failed = True
+    return failed
+
+
 def self_test(map_text, sources):
     """Require each check to catch a deliberately broken copy."""
     base = find_problems(map_text, sources)
@@ -400,6 +495,8 @@ def self_test(map_text, sources):
                                               'CONFLICT-INDEX')}
     if rows[tested] is None or rows[stopped] is None:
         print('self-test: could not find the rows to mutate', file=sys.stderr)
+        return 1
+    if _fixture_citation_self_test(map_text, sources):
         return 1
     counts_line = next(l for l in map_text.splitlines()
                        if l.startswith(COUNTS_LINE))
