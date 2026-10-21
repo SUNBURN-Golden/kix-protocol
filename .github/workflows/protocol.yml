@@ -44,6 +44,8 @@ jobs:
         run: node --test reference/rights_scale/client/zk-policy-v2.test.mjs
       - name: Offline public-byte encoding regressions
         run: node --test reference/rights_scale/client/zk-helpers.test.mjs
+      - name: Offline PTAU header parsing regressions
+        run: node --test reference/rights_scale/client/ptau-header.test.mjs
       - name: Install pinned CLI and locked dependencies
         run: bash scripts/bootstrap.sh
       - name: Offline witness reconstruction regressions

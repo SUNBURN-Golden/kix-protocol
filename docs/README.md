@@ -216,6 +216,7 @@
 
 ## 2026-10-21 검증 기록 색인 — 위치 안내만
 
+- [plan-rs-ptau-header-tests](../validation/2026-10-21-plan-rs-ptau-header-tests/README.md) — Source-informed phase-1 header parsing characterizations with synthetic buffers and dependency-free CI invocation; no complete PTAU validation, ceremony, cryptographic-verification or policy-value claim.
 - [plan-rs-zk-encoding-regressions](../validation/2026-10-21-plan-rs-zk-encoding-regressions/README.md) — Source-informed public-byte encoder characterizations with fabricated coordinates and dependency-free CI invocation; no curve-membership, proof-validity, independent cryptographic-verification or policy-value claim.
 - [plan-rs-manifest-offline-regressions](../validation/2026-10-21-plan-rs-manifest-offline-regressions/README.md) — Source-informed synthetic metadata regressions for existing manifest/key guards, with dependency-free CI invocation; no cryptographic verification, policy value, grade or operational-readiness claim.
 
