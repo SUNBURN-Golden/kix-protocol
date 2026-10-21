@@ -153,7 +153,10 @@ def literal_test_names(text):
     """Recognize direct top-level test('literal', ...) statements, without JS.
 
     Bounded lexer for the cited suites, not a JavaScript parser. Comments,
-    strings, templates and expression-position regex literals are opaque.
+    strings, templates and supported expression-position regex literals are
+    opaque. Outside the explicit regex-opener contexts, a second slash on the
+    same line makes regex/division ambiguous: fail closed for the whole source.
+    A lone slash on its line cannot open a valid regex and remains division.
     Names support plain single/double quotes and escaped quotes/backslashes;
     computed names, other escapes, nested calls and test modifiers are outside
     this grammar. A name must be the complete first argument, followed by a
@@ -174,14 +177,21 @@ def literal_test_names(text):
         kind, value = match.lastgroup, match.group()
         if kind == 'punct' and value in ("'", '"', '`'):
             return set()  # Unterminated literal.
-        if value == '/' and (not tokens or tokens[-1][1] in
-                             ('(', '[', '=', ',', ':', 'return', '=>', '!', '?')):
-            regex = regex_literal.match(text, pos)
-            if not regex:
-                return set()
-            tokens.append(('regex', regex.group()))
-            pos = regex.end()
-            continue
+        if value == '/':
+            if tokens and tokens[-1][1] not in (
+                    '(', '[', '=', ',', ':', 'return', '=>', '!', '?'):
+                # A slash may start a regex even after an unsupported token
+                # (e.g. the second pipe in ||). Never expose its body as code.
+                # Regex literals cannot cross a physical line terminator.
+                if '/' in re.match(r'[^\r\n\u2028\u2029]*', text[pos + 1:]).group():
+                    return set()
+            else:
+                regex = regex_literal.match(text, pos)
+                if not regex:
+                    return set()
+                tokens.append(('regex', regex.group()))
+                pos = regex.end()
+                continue
         pos = match.end()
         if kind not in ('space', 'comment'):
             tokens.append((kind, value))
@@ -449,6 +459,9 @@ def supplemental_self_test(map_text, profile_text):
 const unrelated = "test('string only', () => {})";
 const template = `test('template only', () => {})`;
 const pattern = /test\('regex only', [}]/;
+const opaque = /;test('assignment regex ghost', x);/;
+const fallback = null ?? /;test('nullish regex ghost', x);/;
+const ratio = Math.floor(index / 2);
 function nested() { test('nested only', () => {}); }
 other.test('property only', () => {});
 test('computed' + suffix, () => {});
@@ -524,8 +537,19 @@ test('escaped \'quote\' and \\ slash', () => {});
         ('localnet isolation', _with_cell(fixture, 'IM-15', 6, 'none'), {},
          'IM-15: COVERED_LOCALNET needs a localnet citation'),
     ]
+    # These contexts are deliberately outside the bounded regex grammar. The
+    # entire source must fail closed, including otherwise supported test calls.
+    for context in ('false || ', 'true && ', '0 | ', '0 & ', '0 ^ '):
+        source = "const pattern = %s/;test('ghost', x);/;" % context
+        source += "\ntest('valid reconstruction', () => {});"
+        if literal_test_names(source):
+            print('self-test: unsupported regex context accepted: %r' % context, file=sys.stderr)
+            return 1
+        cases.append(('opaque regex after ' + repr(context), cell(2, '`%s::ghost`' % path),
+                      {path: source}, where + '::ghost: test name not declared'))
     for name in ('absent', 'valid', 'comment only', 'block comment only', 'string only',
-                 'template only', 'regex only', 'nested only', 'callback only', 'property only', 'computed'):
+                 'template only', 'regex only', 'assignment regex ghost', 'nullish regex ghost', 'nested only',
+                 'callback only', 'property only', 'computed'):
         cases.append(('undeclared ' + name, cell(2, '`%s::%s`' % (path, name)), {},
                       where + '::' + name + ': test name not declared'))
     # The spend record abbreviates this name; only the full declaration counts.

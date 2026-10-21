@@ -171,3 +171,74 @@ Local completion is a supervisor handoff. Exact-head workflows and required
 non-author review remain delivery gates; no merge readiness is claimed.
 Final-head CI belongs in the authorized delivery report, outside another
 repository commit solely to record the preceding head's CI.
+
+## PR fix round 1 — regex opacity
+
+Task input: supervisor-supplied blocking review of PR #249 at
+`0ce672ec6a5c608676f90a1c5cbdd37fa4d6095f`. The branch remains
+`agent/kix-plan-rs-offline-evidence-citation-check`; cached `origin/main` is
+`93cec6aaf12f22bf8aefc0453fe545b6bd38b819`, equal to the recorded base.
+The supervisor again prohibits network actions, commits, pushes and comments.
+No fetch was attempted; remote freshness is unverified. The fix is uncommitted,
+so there is no new final task head or exact-head CI result.
+
+The blocking finding is confirmed, not rebutted. Before editing, importing only
+the Python checker and passing the reviewer's JavaScript as an in-memory string
+made `literal_test_names` return `{'ghost'}` for
+`const pattern = false || /;test('ghost', x);/;`. No JavaScript was executed.
+
+Coverage before this fix was **partial**: the existing regex control followed
+`=` and lacked an apparent statement boundary inside the regex. It did not cover
+the two-pipe token context. Other task requirements retain their existing
+coverage mapping above.
+
+The bounded lexer now fails closed for the whole source when a slash outside
+its supported regex-opener contexts has another slash before a physical line
+terminator. This prevents an unsupported regex's body from becoming declaration
+tokens. A lone slash before the line terminator cannot open a valid JavaScript
+regex, so existing single-division expressions remain supported. This is
+deliberately conservative: chained division or a division followed by a slash
+in a comment on the same line can also cause all citations from that file to
+be rejected. It remains a bounded recognizer, not a JavaScript parser.
+
+New in-memory controls cover the reported `||` expression and related `&&`,
+bitwise OR, AND and XOR contexts. They require whole-source rejection even
+with a genuine test appended, and require the specific supplemental diagnostic
+`::ghost: test name not declared`. Positive fixtures retain real declarations
+alongside division and opaque assignment/nullish-context regexes containing
+fake statement-boundary test calls; those fake names are separately rejected.
+
+Only these paths change in this fix round:
+
+- `scripts/check_rs_im_evidence_map.py`
+- `validation/2026-10-22-plan-rs-offline-evidence-citation-check/README.md`
+
+The map, docs index, contracts, workflows, `.aiops/`, `docs/tasks/`, runtime and
+historical records remain byte-identical to the reviewed head. A raw Git-blob
+comparison checks all 911 tracked files outside this two-file allowlist,
+including all 108 protected reference files. Both locked blobs match the
+required hashes in the table above before and after the code change.
+Primary statuses/counts, supplemental/localnet separation, IM-19's gate-secret
+gap, policy values and decision owners are unchanged.
+
+| Check actually run | Result |
+|---|---|
+| Pre-fix in-memory reviewer reproduction, default Python 3.13.5 | Confirmed false declaration `ghost`. |
+| Development `python3 scripts/check_rs_im_evidence_map.py --self-test` | First attempt rejected existing spend-suite divisions; second revealed a fixture incorrectly classifying the already opaque `??` context. Both corrected; third attempt passed. |
+| `python3 scripts/check_rs_im_evidence_map.py` under Python 3.12.15 | Exit 0; 30 primary rows, 179 primary citations; 3 supplemental rows, 27 citations. |
+| `python3 scripts/check_rs_im_evidence_map.py --self-test` under Python 3.12.15 | Exit 0; original mutations and new regex controls passed. |
+| `python3 scripts/check_docs_index.py` under Python 3.12.15 | Exit 0; scanned=197 indexed=162 allowlisted=35. |
+| `python3 scripts/check_docs_index.py --self-test` under Python 3.12.15 | Exit 0; self-test passed. |
+| All 26 commands extracted unchanged from the workflow's `Stdlib offline document checks` block | Exit 0 each under Python 3.12.15. Per-command results/logs: `/tmp/rs-offline-citation-fix-round-1/`. |
+| Raw blob comparison against `git ls-tree -rz HEAD`; `git hash-object` on both locked files | 911 files unchanged outside the fix allowlist; 108 protected reference files identical; both required lock hashes match. |
+| `git diff --check` | Exit 0. |
+
+All Python checks set `PYTHONDONTWRITEBYTECODE=1`. No CI failure log was supplied;
+neither workflow was queried or triggered. KTX and KIX exact-head run IDs,
+statuses and conclusions for the uncommitted fix are unavailable. Updated
+independent review and exact-head CI remain supervisor delivery gates. No merge
+or post-merge verification occurred. Rust and cited Node/Move suites were not
+rerun for this Python-only fix. This round claims citation integrity only;
+it supplies no test-execution, independent-verification or production claim.
+No new protocol-contract violation, undefined protocol behavior or product
+decision was introduced. Local readiness is a handoff to the supervisor.
