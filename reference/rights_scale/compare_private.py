@@ -20,7 +20,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import replay_private as rp  # noqa: E402
-from compare_localnet import object_id_bytes  # noqa: E402
+from compare_localnet import coverage, object_id_bytes, scenario_lookup, ticket_mapping  # noqa: E402
 
 
 def expand(out_path):
@@ -38,22 +38,42 @@ def normal(outcome):
 def compare(report_path, scenarios_path, out_path):
     report = json.loads(Path(report_path).read_text())
     doc = json.loads(Path(scenarios_path).read_text())
-    by_name = {s['name']: s for s in doc['scenarios']}
     failures = []
-    if len(report.get('scenarios', [])) != len(by_name):
-        failures.append(f'scenario count: driver {len(report.get("scenarios", []))} != {len(by_name)}')
+    by_name = scenario_lookup(doc['scenarios'], report.get('scenarios', []), failures)
     for record in report.get('scenarios', []):
         name = record['name']
         scenario = by_name.get(name)
         if scenario is None:
             failures.append(f'{name}: unknown scenario')
             continue
-        ids = {n: object_id_bytes(cid) for n, cid in record['controlIds'].items()}
+        controls = record.get('controlIds', {})
+        shows = record.get('shows', {})
+        controls_complete = coverage(f'{name}: controlIds', scenario['shows'], controls, failures)
+        shows_complete = coverage(f'{name}: shows', scenario['shows'], shows, failures)
+        if not controls_complete or not shows_complete:
+            continue
+        ids = {n: object_id_bytes(cid) for n, cid in controls.items()}
+        identity_ok = True
+        seen = {}
+        for show_name, cid in ids.items():
+            if cid in seen:
+                failures.append(f'{name}/{show_name}: duplicate control ID {controls[show_name]} '
+                                f'also used by {seen[cid]}')
+                identity_ok = False
+            seen[cid] = show_name
+            show_control = shows[show_name].get('controlId')
+            if show_control is None or object_id_bytes(show_control) != cid:
+                failures.append(f'{name}/{show_name}: mismatch controlId={shows[show_name].get("controlId")} '
+                                f'controlIds={controls[show_name]}')
+                identity_ok = False
+        if not identity_ok:
+            continue
         world, model_outcomes = rp.run_scenario(scenario, doc, show_ids=ids)
         chain_outcomes = [normal(o) for o in record['outcomes']]
         if chain_outcomes != model_outcomes:
             diffs = [i for i, (a, b) in enumerate(zip(chain_outcomes, model_outcomes)) if a != b]
             failures.append(f'{name}: outcome mismatch at steps {diffs[:6]} '
+                            f'length chain={len(chain_outcomes)} model={len(model_outcomes)} '
                             f'chain={[chain_outcomes[i] for i in diffs[:4]]} model={[model_outcomes[i] for i in diffs[:4]]}')
             continue
         for show_name, show in world.shows.items():
@@ -68,13 +88,15 @@ def compare(report_path, scenarios_path, out_path):
                 if len(snap['pages']) != len(want['pages']):
                     failures.append(f'{name}/{show_name}: page count {len(snap["pages"])} != {len(want["pages"])}')
             model_tickets = list(show.tickets.values())
-            if len(got['mints']) != len(model_tickets):
-                failures.append(f'{name}/{show_name}: mint count {len(got["mints"])} != {len(model_tickets)}')
-            for mint, t in zip(got['mints'], model_tickets):
-                chain = snap['tickets'].get(mint['ticket'])
-                expected = want['tickets'][t.id]
+            mapping = ticket_mapping(f'{name}/{show_name}', got.get('mints', []), model_tickets,
+                                     snap.get('tickets', {}), failures)
+            if mapping is None:
+                continue
+            for chain_id, mid in mapping.items():
+                chain = snap['tickets'][chain_id]
+                expected = want['tickets'][mid]
                 if chain != expected:
-                    failures.append(f'{name}/{show_name}: ticket {t.id} chain={chain} model={expected}')
+                    failures.append(f'{name}/{show_name}: ticket {mid} chain={chain} model={expected}')
             private = snap['private']
             expected = show.private_snapshot()
             if not expected['zk_enabled']:
@@ -91,7 +113,7 @@ def compare(report_path, scenarios_path, out_path):
         'structure': {s['name']: s.get('structure') for s in report.get('scenarios', [])},
         'reconstructions': {s['name']: s.get('reconstructions') for s in report.get('scenarios', [])},
         'domains': report.get('measurements', {}).get('domains'),
-        'shardSpread': {s['name']: {n: sh.get('shardSpread') for n, sh in s['shows'].items()} for s in report.get('scenarios', [])},
+        'shardSpread': {s['name']: {n: sh.get('shardSpread') for n, sh in s.get('shows', {}).items()} for s in report.get('scenarios', [])},
         'timings': report.get('timings'), 'gas': report.get('gas'),
         'authority': 'SUI_MOVE', 'kixServicesCalled': 0, 'ownGas': True, 'zk': True,
         'ceremony': 'INSECURE_SINGLE_PARTY_LOCAL_FIXTURE', 'failures': failures,

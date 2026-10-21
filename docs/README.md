@@ -216,6 +216,7 @@
 
 ## 2026-10-21 검증 기록 색인 — 위치 안내만
 
+- [plan-rs-journey-evidence-completeness](../validation/2026-10-21-plan-rs-journey-evidence-completeness/README.md) — Synthetic offline comparator regressions for exact scenario/show/ticket coverage and unique mint mappings; no new localnet, cryptographic or operational evidence.
 - [plan-rs-zk-encoding-regressions](../validation/2026-10-21-plan-rs-zk-encoding-regressions/README.md) — Source-informed public-byte encoder characterizations with fabricated coordinates and dependency-free CI invocation; no curve-membership, proof-validity, independent cryptographic-verification or policy-value claim.
 - [plan-rs-manifest-offline-regressions](../validation/2026-10-21-plan-rs-manifest-offline-regressions/README.md) — Source-informed synthetic metadata regressions for existing manifest/key guards, with dependency-free CI invocation; no cryptographic verification, policy value, grade or operational-readiness claim.
 

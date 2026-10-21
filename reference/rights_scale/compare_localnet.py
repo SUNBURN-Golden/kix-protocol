@@ -13,6 +13,7 @@
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -44,18 +45,62 @@ def normal_outcome(outcome):
     return {'abort': code}
 
 
+def coverage(context, expected, actual, failures):
+    """Require exact membership; order is immaterial."""
+    missing = sorted(set(expected) - set(actual))
+    extra = sorted(set(actual) - set(expected))
+    if missing or extra:
+        failures.append(f'{context}: missing={missing} extra={extra}')
+        return False
+    return True
+
+
+def scenario_lookup(scenarios, records, failures):
+    expected = Counter(s['name'] for s in scenarios)
+    actual = Counter(r['name'] for r in records)
+    for label, counts in (('expected', expected), ('reported', actual)):
+        duplicates = sorted(n for n, count in counts.items() if count > 1)
+        if duplicates:
+            failures.append(f'scenarios: duplicate {label} names={duplicates}')
+    coverage('scenarios (extra names are unexpected)', expected, actual, failures)
+    # Do not replay ambiguous expected inputs using an arbitrary last value.
+    return {s['name']: s for s in scenarios if expected[s['name']] == 1}
+
+
+def ticket_mapping(context, mints, model_tickets, snapshots, failures):
+    """Validate the bijection before using mint order to map object IDs."""
+    valid = True
+    if len(mints) != len(model_tickets):
+        failures.append(f'{context}: mint count {len(mints)} != model {len(model_tickets)}')
+        valid = False
+    missing_ids = [i for i, mint in enumerate(mints) if mint.get('ticket') is None]
+    if missing_ids:
+        failures.append(f'{context}: missing mint ticket IDs at indexes={missing_ids}')
+        return None
+    ids = [mint['ticket'] for mint in mints]
+    duplicates = sorted(cid for cid, count in Counter(ids).items() if count > 1)
+    if duplicates:
+        failures.append(f'{context}: duplicate mint ticket IDs={duplicates}')
+        valid = False
+    complete = coverage(f'{context}: ticket snapshots', ids, snapshots, failures)
+    if not valid or not complete:
+        return None
+    return {mint['ticket']: t.id for mint, t in zip(mints, model_tickets)}
+
+
 def compare(report_path, scenarios_path, out_path):
     report = json.loads(Path(report_path).read_text())
     scenarios = json.loads(Path(scenarios_path).read_text())['scenarios']
     failures = []
-    by_name = {s['name']: s for s in scenarios}
-    if len(report.get('scenarios', [])) != len(scenarios):
-        failures.append(f'scenario count: driver {len(report.get("scenarios", []))} != expanded {len(scenarios)}')
+    by_name = scenario_lookup(scenarios, report.get('scenarios', []), failures)
     for record in report.get('scenarios', []):
         name = record['name']
         scenario = by_name.get(name)
         if scenario is None:
             failures.append(f'{name}: driver reported an unknown scenario')
+            continue
+        if record.get('controlId') is None:
+            failures.append(f'{name}: missing controlId for show')
             continue
         show, labels, model_outcomes = replay.run_scenario(
             scenario, show_id=object_id_bytes(record['controlId']))
@@ -102,19 +147,15 @@ def compare(report_path, scenarios_path, out_path):
         # 6. tickets: chain objects map to model tickets by mint order.
         mints = record.get('mints', [])
         model_tickets = list(show.tickets.values())
-        if len(mints) != len(model_tickets):
-            failures.append(f'{name}: mint count chain {len(mints)} != model {len(model_tickets)}')
-        ticket_map = {}
+        ticket_map = ticket_mapping(name, mints, model_tickets, snap.get('tickets', {}), failures)
+        if ticket_map is None:
+            continue
         for mint, t in zip(mints, model_tickets):
-            ticket_map[mint['ticket']] = t.id
             if mint['slot'] != t.slot or mint['generation'] != t.generation:
                 failures.append(f'{name}: mint {t.id} chain slot/gen {mint["slot"]}/{mint["generation"]}'
                                 f' != model {t.slot}/{t.generation}')
-        for chain_id, fields in snap['tickets'].items():
-            mid = ticket_map.get(chain_id)
-            if mid is None or mid not in want['tickets']:
-                failures.append(f'{name}: chain ticket {chain_id} has no model counterpart')
-                continue
+        for chain_id, mid in ticket_map.items():
+            fields = snap['tickets'][chain_id]
             if fields != want['tickets'][mid]:
                 failures.append(f'{name}: ticket {mid} mismatch chain={fields} model={want["tickets"][mid]}')
         # 7. outstanding issuance payments and payment evidence. A delegated
