@@ -216,6 +216,8 @@
 
 ## 2026-10-21 검증 기록 색인 — 위치 안내만
 
+- [plan-rs-manifest-offline-regressions](../validation/2026-10-21-plan-rs-manifest-offline-regressions/README.md) — Source-informed synthetic metadata regressions for existing manifest/key guards, with dependency-free CI invocation; no cryptographic verification, policy value, grade or operational-readiness claim.
+
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
 - [settlement-multi-payee-refund-corpus](../validation/2026-10-21-settlement-multi-payee-refund-corpus/README.md) — Builder-authored seeded multi-payee refund corpus for the F01-F03 settlement mock and FSM; tests and record only, no mock, FSM or contract change, no grade change, no real payment.

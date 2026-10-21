@@ -40,6 +40,8 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: reference/rights_scale/client/package-lock.json
+      - name: Offline manifest validation regressions
+        run: node --test reference/rights_scale/client/zk-policy-v2.test.mjs
       - name: Install pinned CLI and locked dependencies
         run: bash scripts/bootstrap.sh
       - name: Offline witness reconstruction regressions
