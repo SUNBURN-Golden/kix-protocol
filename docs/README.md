@@ -231,6 +231,12 @@
 - [kix-types-boundary-fixtures](../validation/2026-10-21-kix-types-boundary-fixtures/README.md) — Builder-authored boundary fixtures for the kix-types constructors and edges; tests and record only, no src or contract change, no grade change, source-informed and not independent, no completeness claim.
 - [astra-decision-sheets-rs-stage5](../validation/2026-10-21-astra-decision-sheets-rs-stage5/README.md) — Builder-authored second decision sheet ([시트](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md)) collecting the RS profile's named-but-unsheeted open items (IssuerCap choice, test-only fixture operational values, RS-C02 sentence 2, the stage-5 record's Astra items); document and record only, no value chosen, no contract, decision, program or source change, every cited value stays UNDETERMINED/DECISION_REQUIRED with its named owner, no grade change.
 
+## 2026-10-22 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [plan-rs-offline-test-entrypoint](../validation/2026-10-22-plan-rs-offline-test-entrypoint/README.md) — Repair the offline package entry point to invoke all five existing suites; file-level and named-case results recorded separately, no tests, dependencies, workflows, policy values or qualification claims added.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
