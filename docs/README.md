@@ -233,3 +233,5 @@
 [ADR-0001](adr/0001-ktx-authority-commit-recovery.md)의 안전 관계와 [보안 보완](PROTOCOL_HARDENING.md)·[저장 조사](STORAGE_INVESTIGATION.md)·[회귀 검증](RUNTIME_VALIDATION.md)은 근거별 범위로 읽습니다. 옛 계획의 승인 효력을 폐기했다고 안전 규칙이나 사건 기록을 삭제하지 않습니다.
 
 모델 1·첫 묶음 승인은 backend 채택·커널 전환 완료·실금전 운영 승인과 다릅니다. 미정 항목, 두 잠금 blob, R2 금지, (a) 보류, 위생 일괄 금지는 유지합니다.
+
+- [plan-rs-witness-offline-regressions](../validation/2026-10-21-plan-rs-witness-offline-regressions/README.md) — Synthetic public-event reconstruction regressions with injected object reads for RR-4 / IM-19; passes locally under Node 24 and is not invoked by either workflow, no new localnet/ZK result, no grade or operational-value change.
