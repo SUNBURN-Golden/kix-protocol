@@ -236,6 +236,7 @@
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
 - [plan-rs-offline-test-entrypoint](../validation/2026-10-22-plan-rs-offline-test-entrypoint/README.md) — Repair the offline package entry point to invoke all five existing suites; file-level and named-case results recorded separately, no tests, dependencies, workflows, policy values or qualification claims added.
+- [plan-plan-rs-event-source-offline-tests](../validation/2026-10-22-plan-plan-rs-event-source-offline-tests/README.md) — Synthetic offline pagination and incremental checkpoint reader coverage for RR-4 / IM-19, package registration and additive CI invocation; unchanged readers, no live transport completeness, finality, retention, grade or policy-value claim.
 
 ## 역사 문서와 증거
 
