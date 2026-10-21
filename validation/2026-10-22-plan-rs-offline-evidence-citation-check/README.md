@@ -325,3 +325,70 @@ scope expansion was introduced. Rust and cited Node/Move/localnet/proving suites
 were not rerun for this Python-only correction. This record claims citation
 integrity only, without test-execution, independence or production assurances.
 Local readiness means handoff to the supervisor, with no merge-readiness claim.
+
+## PR fix round 3 — hashbang comment opacity
+
+Task input: the supervisor-supplied node specification and blocking review of
+PR #249 at `5100fdc4639cff1ff062f5c222076daa85fcc3dd`, on
+`agent/kix-plan-rs-offline-evidence-citation-check`. No issue or current task
+document under `docs/tasks/` exists for this node. Cached `origin/main` is
+`93cec6aaf12f22bf8aefc0453fe545b6bd38b819`, equal to the recorded base.
+The supervisor prohibits network actions, so the AGENTS.md §1 fetch was omitted;
+remote freshness remains unverified. The implementation head remains the SHA
+above. This correction is uncommitted; the final task head is unassigned.
+
+The blocking finding is confirmed and fixed. The regression added before the
+lexer change failed because `#!node;test('ghost', x);` incorrectly satisfied a
+`::ghost` citation: the required `::ghost: test name not declared` diagnostic
+was absent. No JavaScript or cited dependency was imported or executed.
+
+Existing coverage was **partial**: `supplemental_self_test` already exercised
+line/block comments, strings, templates and regexes, but had no hashbang control.
+The remaining requirements retain the coverage mapping above. The comment token
+now recognizes `#!` only at source offset zero (`\A`) and consumes its contents
+through EOF or the first JavaScript line terminator. Its body never becomes
+executable tokens. Six in-memory controls require the exact missing-test
+diagnostic for EOF, LF, CR, CRLF, U+2028 and U+2029 endings. For every nonempty
+ending a positive map fixture also requires a genuine test immediately after
+the comment to remain citeable. Prior regex/template regressions still pass.
+
+The complete changed-path list for round 3 is:
+
+- `scripts/check_rs_im_evidence_map.py`
+- `validation/2026-10-22-plan-rs-offline-evidence-citation-check/README.md`
+
+All 911 tracked files outside this two-path allowlist match their HEAD blobs,
+including all 108 files under `reference/v0.3-rc1/` (tree
+`a6ecb124dc2b2267ca6be19e39fbe2aef143074b`). Both locked kernel blobs match
+their required hashes in the preservation table above before and after work;
+the unchanged index matches too. The map and docs index, runtime, contracts,
+workflows, `.aiops/`, task documents and historical records are unchanged.
+Primary statuses/counts, supplemental/localnet separation, IM-19's gate-secret
+gap, policy values and named owners are preserved.
+
+| Command actually run | Actual result |
+|---|---|
+| Regression-first `python3 scripts/check_rs_im_evidence_map.py --self-test` | Exit 1 as intended: hashbang EOF fixture missed `::ghost: test name not declared` (found no problems). |
+| Post-fix `python3 scripts/check_rs_im_evidence_map.py --self-test` | Exit 0; six new diagnostic controls, positive controls and prior regressions pass. |
+| `python3 scripts/check_rs_im_evidence_map.py` under Python 3.12.15 | Exit 0; 30 primary rows, 179 primary citations; 3 supplemental rows, 27 citations. Primary statuses remain 11 localnet, 4 model/memory, 13 partial, 2 unchanged. |
+| `python3 scripts/check_rs_im_evidence_map.py --self-test` under Python 3.12.15 | Exit 0; self-test passes. |
+| `python3 scripts/check_docs_index.py` under Python 3.12.15 | Exit 0; scanned=197 indexed=162 allowlisted=35. |
+| `python3 scripts/check_docs_index.py --self-test` under Python 3.12.15 | Exit 0; self-test passes. |
+| All 26 commands extracted unchanged from the workflow's `Stdlib offline document checks` block | Exit 0 each under Python 3.12.15. |
+| Inline Git-blob hash comparison; `git hash-object` for both locked files | 911 excluded tracked files and 108 protected references match HEAD; both required locks match worktree/index; branch, HEAD, cached main and index unchanged; no nonignored untracked paths. |
+| `git diff --check` | Exit 0. |
+
+Python checks used `PYTHONDONTWRITEBYTECODE=1`; no dependencies were installed.
+The docs-index check/self-test and preservation checks are repeated after this
+append. No CI failure log was supplied. KTX and KIX exact-head CI run IDs,
+statuses and conclusions for this uncommitted correction are unavailable;
+neither workflow was queried or triggered. Updated non-author review and
+exact-head CI remain supervisor delivery gates. No commit, push, comment,
+GitHub action, branch/tag mutation or merge occurred; post-merge CI is inapplicable.
+
+No protocol-contract violation, undefined protocol behavior, new policy value
+or scope expansion was found. The recognizer remains bounded rather than a
+JavaScript parser. Rust and cited Node/Move/localnet/proving suites were not
+rerun for this Python-only fix. This is citation-integrity evidence only,
+without test-execution, independence or production claims. Local readiness
+means handoff to the supervisor; no merge readiness is claimed.

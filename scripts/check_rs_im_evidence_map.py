@@ -152,8 +152,8 @@ def symbol_defined(text, suffix, symbol):
 def literal_test_names(text):
     """Recognize direct top-level test('literal', ...) statements, without JS.
 
-    Bounded lexer for the cited suites, not a JavaScript parser. Comments,
-    strings, non-interpolated templates and supported expression-position regex
+    Bounded lexer for the cited suites, not a JavaScript parser. Initial hashbangs,
+    comments, strings, non-interpolated templates and expression-position regex
     literals are opaque. Template interpolation is unsupported and fails closed
     for the whole source. Outside the explicit regex-opener contexts, a second
     slash on the same line makes regex/division ambiguous: fail closed for the whole source.
@@ -164,7 +164,7 @@ def literal_test_names(text):
     comma. No cited source or dependency is imported or executed.
     """
     token = re.compile(
-        r'(?P<space>\s+)|(?P<comment>//[^\n]*|/\*[\s\S]*?\*/)|'
+        r'(?P<space>\s+)|(?P<comment>\A#![^\r\n\u2028\u2029]*|//[^\n]*|/\*[\s\S]*?\*/)|'
         r'''(?P<string>'(?:\\[\s\S]|[^'\\\r\n])*'|"(?:\\[\s\S]|[^"\\\r\n])*")|'''
         r'(?P<template>`(?:\\[\s\S]|[^`\\$]|\$(?!\{))*`)|'
         r'(?P<word>[A-Za-z_$][\w$]*)|(?P<punct>=>|\?\.|[^\s])')
@@ -541,6 +541,18 @@ test('escaped \'quote\' and \\ slash', () => {});
         ('localnet isolation', _with_cell(fixture, 'IM-15', 6, 'none'), {},
          'IM-15: COVERED_LOCALNET needs a localnet citation'),
     ]
+    # An initial hashbang is a comment through EOF or the first JS line terminator.
+    for ending in ('', '\n', '\r', '\r\n', '\u2028', '\u2029'):
+        source = "#!node;test('ghost', x);" + ending
+        if ending:
+            source += "test('valid reconstruction', () => {});"
+            found = find_problems(fixture, profile_text, files={**files, path: source})
+            if found:
+                print('self-test: real test after hashbang rejected: %r' % found, file=sys.stderr)
+                return 1
+        cases.append(('hashbang comment ending ' + repr(ending),
+                      cell(2, '`%s::ghost`' % path), {path: source},
+                      where + '::ghost: test name not declared'))
     # Interpolations are outside the bounded template grammar. In particular,
     # an inner backtick must never expose template contents as declarations.
     for name, source in (
