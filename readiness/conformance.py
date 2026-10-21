@@ -21,6 +21,7 @@ for suite in (
     "booking_resale_admission",
     "credit_advance_f04",
     "ai_delegation",
+    "token_reward",
 ):
     path = str(ROOT / "reference" / suite)
     if path not in sys.path:
@@ -33,8 +34,10 @@ from mock_gates import ADMISSION_WINDOW_MS, OFFER_WINDOW_MS  # noqa: E402
 from reservation_fsm import ReservationError  # noqa: E402
 from resale_fsm import ResaleError  # noqa: E402
 from settlement_fsm import SettlementMachine  # noqa: E402
+from token_reward_model import POOLS, TokenRewardError, reward_id  # noqa: E402
 
 from readiness.ai_delegation_wrap import WrapError  # noqa: E402
+from readiness.reward_wrap import WrapError as RewardWrapError  # noqa: E402
 
 PAY = 'ab' * 32
 SALE_PAY = 'cd' * 32
@@ -152,6 +155,59 @@ def ai_delegation_issue(machine):
             'currency': 'KRW',
         },
         {'not_before': 10, 'not_after': 20},
+    )
+
+
+def reward_opening():
+    base = {pool: 7 for pool in POOLS}
+    base['PROTOCOL_REVENUE'] = 50
+    base['TOKEN_TREASURY_REWARD'] = 50
+    return base
+
+
+def reward_key():
+    return {
+        'program': 'program-1',
+        'source_op_id': 'op-1',
+        'recipient': 'recipient-1',
+        'kind': 'participation',
+    }
+
+
+def reward_source_view():
+    return {
+        'phase': 'COMMITTED',
+        'currency': 'KRW',
+        'funds_executed': False,
+        'bank_debit_observed': False,
+        'legal_debtor_bound': False,
+        'external_return_closed': False,
+        'durable': False,
+    }
+
+
+def reward_rid():
+    return reward_id(**reward_key())
+
+
+def reward_observe(machine):
+    return machine.observe(
+        reward_key(),
+        idempotency_key='obs-1',
+        source_view=reward_source_view(),
+        rule_version='rule-v1',
+        amount=4,
+        source_kind='SETTLEMENT',
+    )
+
+
+def reward_mark_eligible(machine):
+    return machine.mark_eligible(
+        reward_rid(),
+        idempotency_key='elig-1',
+        window_closed=True,
+        source_view=reward_source_view(),
+        abuse_clear=True,
     )
 
 
@@ -733,6 +789,123 @@ class BackendConformance:
             finally:
                 recovered.close()
 
+    def test_reward_open_observe_and_hold_replay_across_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                opened = self._reward_opened(boundary)
+                self.assertIs(opened['opened'], True)
+                self.assertIs(opened['durable'], False)
+                observed = boundary.call('reward', reward_observe)
+                self.assertFalse(observed['duplicate'])
+                self.assertIs(observed['reward']['durable'], False)
+                held = boundary.call(
+                    'reward',
+                    lambda machine: machine.hold(reward_rid(), idempotency_key='hold-1'),
+                )
+                self.assertFalse(held['duplicate'])
+                self.assertEqual(held['reward']['phase'], 'HELD')
+                digest = boundary.machine('reward').state_digest()
+                journal = boundary.machine('reward').export_journal()
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('reward')
+                self.assertEqual(machine.state_digest(), digest)
+                self.assertEqual(machine.export_journal(), journal)
+                self.assertEqual(machine.view(reward_rid())['phase'], 'HELD')
+                replay = recovered.call(
+                    'reward',
+                    lambda machine: machine.hold(reward_rid(), idempotency_key='hold-1'),
+                )
+                self.assertTrue(replay['duplicate'])
+                self.assertIsNone(replay['applied'])
+                self.assertEqual(replay['reward'], held['reward'])
+                # open carries no idempotency key: the wrap refuses a second
+                # open instead of returning a duplicate result (class B).
+                self.assertEqual(
+                    code(
+                        lambda: recovered.call('reward', self._reward_open_call()),
+                        RewardWrapError,
+                    ),
+                    'ALREADY_OPEN',
+                )
+                self.assertEqual(machine.state_digest(), digest)
+                self.assertEqual(machine.export_journal(), journal)
+            finally:
+                recovered.close()
+
+    def test_reward_torn_mark_eligible_recovers_and_replays_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._reward_opened(boundary)
+                boundary.call('reward', reward_observe)
+                boundary.call(
+                    'reward',
+                    lambda machine: machine.hold(reward_rid(), idempotency_key='hold-1'),
+                )
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call('reward', reward_mark_eligible, fault='partial')
+                self.assertEqual(raised.exception.code, 'PARTIAL_WRITE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('reward')
+                self.assertEqual(machine.view(reward_rid())['phase'], 'HELD')
+                self.assertIs(machine.view(reward_rid())['durable'], False)
+                eligible = recovered.call('reward', reward_mark_eligible)
+                self.assertFalse(eligible['duplicate'])
+                self.assertEqual(eligible['reward']['phase'], 'ELIGIBLE')
+                self.assertIs(eligible['reward']['durable'], False)
+                replay = recovered.call('reward', reward_mark_eligible)
+                self.assertTrue(replay['duplicate'])
+                self.assertIsNone(replay['applied'])
+                self.assertEqual(replay['reward'], eligible['reward'])
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open', 'observe', 'hold', 'mark_eligible'],
+                )
+                self.assertIs(machine.view(reward_rid())['durable'], False)
+                self.assertEqual(
+                    code(lambda: machine.reject_external('TRANSFER'), TokenRewardError),
+                    'EXTERNAL_EXECUTION_UNSUPPORTED',
+                )
+            finally:
+                recovered.close()
+
+    def test_reward_crash_before_durable_observe_leaves_no_reward(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._reward_opened(boundary)
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call('reward', reward_observe, fault='crash_before_durable')
+                self.assertEqual(raised.exception.code, 'CRASH_BEFORE_DURABLE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('reward')
+                self.assertEqual(
+                    code(lambda: machine.view(reward_rid()), TokenRewardError),
+                    'UNKNOWN_REWARD',
+                )
+                observed = recovered.call('reward', reward_observe)
+                self.assertFalse(observed['duplicate'])
+                self.assertIs(observed['reward']['durable'], False)
+                replay = recovered.call('reward', reward_observe)
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(replay['reward'], observed['reward'])
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open', 'observe'],
+                )
+            finally:
+                recovered.close()
+
     def test_crash_before_durable_leaves_the_attempt_out_of_the_record_budget(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = self.backend.open_store(tmp)
@@ -925,6 +1098,12 @@ class BackendConformance:
 
     def _ai_delegation_opened(self, boundary):
         return boundary.call('ai_delegation', self._ai_delegation_open_call())
+
+    def _reward_open_call(self):
+        return lambda machine: machine.open(reward_opening())
+
+    def _reward_opened(self, boundary):
+        return boundary.call('reward', self._reward_open_call())
 
 
 def assert_budget_rejection(test, ready_call, command_call, domain):

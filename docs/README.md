@@ -220,6 +220,7 @@
 
 - [settlement-multi-payee-refund-corpus](../validation/2026-10-21-settlement-multi-payee-refund-corpus/README.md) — Builder-authored seeded multi-payee refund corpus for the F01-F03 settlement mock and FSM; tests and record only, no mock, FSM or contract change, no grade change, no real payment.
 - [plan-register-index-sync-20261021](../validation/2026-10-21-plan-register-index-sync-20261021/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [reward-wrap-conformance](../validation/2026-10-21-reward-wrap-conformance/README.md) — Builder-authored adapter conformance scenarios and twelve reward crash-point cells; tests and record only, no wrap, journal or contract change, `durable` and the truth/production labels stay false, no grade change.
 
 ## 역사 문서와 증거
 
