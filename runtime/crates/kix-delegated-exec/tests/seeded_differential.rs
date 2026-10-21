@@ -15,9 +15,6 @@
 //!
 //! Generator choices that exclude documented-undefined behaviour (named, not
 //! hidden):
-//! - `Profile::exclude_late_ga_capture`: a matching capture at or after expiry
-//!   on a still-owned GA hold is skipped. The map keeps the hold while the
-//!   kernel releases the inventory (see `open_defect_*` below).
 //! - capture event ids carry a page namespace, so one event key is only ever
 //!   recorded on one page. Cross-page event keys and quarantine are not asserted.
 //! - the LCG is the one of `kix-kernel-v5/tests/v4_differential.rs`, but `below`
@@ -183,7 +180,6 @@ struct Profile {
     /// exactly like a bare kernel.
     strict: bool,
     delegation: bool,
-    exclude_late_ga_capture: bool,
     /// Share of steps (percent) that are fresh reserves.
     reserve_pct: u64,
 }
@@ -216,7 +212,6 @@ fn profiles() -> Vec<Profile> {
             limits: strict_limits,
             strict: true,
             delegation: false,
-            exclude_late_ga_capture: true,
             reserve_pct: 46,
         },
         Profile {
@@ -225,7 +220,6 @@ fn profiles() -> Vec<Profile> {
             limits: strict_limits,
             strict: true,
             delegation: false,
-            exclude_late_ga_capture: true,
             reserve_pct: 46,
         },
         Profile {
@@ -234,7 +228,6 @@ fn profiles() -> Vec<Profile> {
             limits: multi_limits,
             strict: false,
             delegation: false,
-            exclude_late_ga_capture: true,
             reserve_pct: 46,
         },
         Profile {
@@ -243,7 +236,6 @@ fn profiles() -> Vec<Profile> {
             limits: multi_limits,
             strict: false,
             delegation: true,
-            exclude_late_ga_capture: true,
             reserve_pct: 30,
         },
         // Few reserves, so pages settle and the grant transitions (undelegate,
@@ -254,7 +246,6 @@ fn profiles() -> Vec<Profile> {
             limits: multi_limits,
             strict: false,
             delegation: true,
-            exclude_late_ga_capture: true,
             reserve_pct: 14,
         },
     ]
@@ -634,13 +625,14 @@ const REQUIRED_OBSERVATIONS: [&str; 5] = [
     "Conflict",
 ];
 
-const REQUIRED_EXTRA: [&str; 17] = [
+const REQUIRED_EXTRA: [&str; 18] = [
     "reserve:Held",
     "reserve:replayed",
     "reserve:synthesized-OrderExists",
     "reserve:synthesized-OperationAlreadyBound",
     "ga:hold",
     "ga:release",
+    "ga:release-on-capture",
     "expire:false",
     "grant:created",
     "grant:delegated",
@@ -1546,21 +1538,6 @@ impl<'a> Harness<'a> {
             return Ok(());
         };
         let ctx = self.m.ctx(step.fence, page, now);
-        if self.profile.exclude_late_ga_capture
-            && self.m.pages[&page].spec.kind == PageKind::Ga
-            && let Some(order) = self
-                .m
-                .op_orders
-                .get(&operation)
-                .and_then(|o| self.m.pages[&page].kernel.order(*o))
-            && order.inventory_owned
-            && order.captured.is_none()
-            && order.request.amount.atoms() == observation.amount.atoms()
-            && ctx.now_ms >= order.request.expires_at_ms
-        {
-            self.cov.hit("excluded:late-ga-capture");
-            return Ok(());
-        }
         let got = self.subject.observe(ctx, &observation)?;
         let want = self
             .m
@@ -1580,6 +1557,18 @@ impl<'a> Harness<'a> {
             self.cov
                 .hit(format!("observed:{}", observation_label(outcome)));
             self.m.event_pages.insert(key, page);
+            if outcome == ObservationOutcome::ReturnRequired
+                && let Some(order) = self.m.op_orders.get(&operation)
+                && let Some(hold) = self.m.holds.remove(order)
+            {
+                self.m
+                    .pages
+                    .get_mut(&hold.page_index)
+                    .unwrap()
+                    .free
+                    .extend(hold.slots);
+                self.cov.hit("ga:release-on-capture");
+            }
         }
         Ok(())
     }
@@ -2257,79 +2246,57 @@ fn negative_control_closed_grant_reserve_accepted_is_detected() {
     negative_control("multi-page-delegated", Fault::ClosedAccepted);
 }
 
-// ------------------------------------------------- open-defect characterization
+// --------------------------------------------------------- directed regression
 
-/// CHARACTERIZATION OF AN OPEN DEFECT, not a contract assertion (AGENTS 8.B).
-/// A matching capture at or after expiry on a held GA order makes the kernel
-/// release the inventory (`ReturnRequired`), but the map keeps the slot hold
-/// and its free set. The next GA reserve then pops an empty free set.
-/// When this test starts failing the defect is fixed: delete it and the
-/// `exclude_late_ga_capture` switch.
+/// Mirror the kernel's late-capture release before allocating another GA hold.
 #[test]
-fn open_defect_late_ga_capture_leaves_map_free_set_behind_the_kernel() {
+fn late_ga_capture_releases_slots_before_next_reserve() {
     let mut show = common::show(RangeTable::new(&[page(0, 0, 4, PageKind::Ga)]).unwrap());
-    let held = show
-        .reserve(common::ctx(1), &common::ga_reserve(1, 4))
-        .unwrap();
+    let request = common::ga_reserve(1, 4);
+    let held = show.reserve(common::ctx(1), &request).unwrap();
     assert_eq!(held.original, ReserveOutcome::Held(id(1)));
+    assert!(!held.replayed);
     let late = CaptureObservation {
         event_id: id(60),
-        operation: ProviderOperation {
-            provider: id(20),
-            account: id(21),
-            operation: id(1),
-        },
+        operation: request.payment,
         amount: amount(10_000),
         evidence_hash: Hash32::from_bytes([5; 32]),
     };
     assert_eq!(
-        show.observe_capture(common::ctx(150), late),
+        show.observe_capture(common::ctx(150), late.clone()),
         Ok(ObservationOutcome::ReturnRequired)
     );
-    assert_eq!(
-        show.remaining(0),
-        Some(4),
-        "the kernel released the inventory"
-    );
-    assert!(
-        show.ga_free_slots(0).unwrap().is_empty(),
-        "the map free set did not follow"
-    );
+    assert_eq!(show.slot_hold(id(1)), None);
+    assert_eq!(show.ga_free_slots(0), Some(&BTreeSet::from([0, 1, 2, 3])));
+    assert_eq!(show.remaining(0), Some(4));
+
     let mut next = common::ga_reserve(2, 1);
     next.expires_at_ms = 1_000;
-    let outcome = catch_unwind(AssertUnwindSafe(|| show.reserve(common::ctx(151), &next)));
-    assert!(
-        outcome.is_err(),
-        "the map no longer panics: the defect is fixed"
+    let held = show.reserve(common::ctx(151), &next).unwrap();
+    assert_eq!(held.original, ReserveOutcome::Held(id(2)));
+    assert!(!held.replayed);
+    assert_eq!(
+        show.slot_hold(id(2)),
+        Some(&SlotHold {
+            page_index: 0,
+            slots: BTreeSet::from([0]),
+        })
     );
-}
+    assert_eq!(show.ga_free_slots(0), Some(&BTreeSet::from([1, 2, 3])));
+    assert_eq!(show.remaining(0), Some(3));
 
-/// The same open defect found by the differential itself: with the exclusion
-/// switched off the one-page GA profile reports the free set falling behind the
-/// kernel's remaining (or the map panic itself). Delete with the
-/// test above when the defect is fixed.
-#[test]
-fn open_defect_is_found_by_the_differential_when_not_excluded() {
-    let mut profile = profiles()
-        .into_iter()
-        .find(|p| p.name == "one-page-ga")
-        .unwrap();
-    profile.exclude_late_ga_capture = false;
-    for seed in SEEDS {
-        if let Err(failure) = check_seed(&profile, seed, Fault::None, &mut Coverage::default()) {
-            assert!(
-                failure.message.contains("kernel remaining")
-                    || failure.message.contains("the map panicked"),
-                "{}",
-                failure.message
-            );
-            println!(
-                "open defect via the differential: seed={seed}, shrunk {} of {} steps",
-                failure.shrunk.len(),
-                failure.original
-            );
-            return;
-        }
-    }
-    panic!("no seed reached the late GA capture: the defect is fixed or the generator changed");
+    assert_eq!(
+        show.observe_capture(common::ctx(152), late),
+        Ok(ObservationOutcome::ReturnRequired)
+    );
+    assert_eq!(show.slot_hold(id(1)), None);
+    assert_eq!(
+        show.slot_hold(id(2)),
+        Some(&SlotHold {
+            page_index: 0,
+            slots: BTreeSet::from([0]),
+        })
+    );
+    assert_eq!(show.ga_free_slots(0), Some(&BTreeSet::from([1, 2, 3])));
+    assert_eq!(show.remaining(0), Some(3));
 }
