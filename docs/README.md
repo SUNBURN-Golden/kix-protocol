@@ -236,6 +236,7 @@
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
 - [plan-rs-offline-test-entrypoint](../validation/2026-10-22-plan-rs-offline-test-entrypoint/README.md) — Repair the offline package entry point to invoke all five existing suites; file-level and named-case results recorded separately, no tests, dependencies, workflows, policy values or qualification claims added.
+- [plan-rs-offline-evidence-citation-check](../validation/2026-10-22-plan-rs-offline-evidence-citation-check/README.md) — Separately checked supplemental offline citations for IM-19 and IM-14/IM-15; citation integrity only, primary statuses/counts, gaps, owners and policy values preserved, no test-execution or independent-verification claim.
 
 ## 역사 문서와 증거
 
