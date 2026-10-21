@@ -10,7 +10,7 @@
 1. [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) — 현재 계획·승인 범위.
 2. [기준 commit·태그 표](status/BASELINES.md) — 현재 main, 고정 R1 태그, PR 검토 SHA, #11 실험을 구분. [main 상태 정합 기록](status/MAIN_STATE_20260928.md) — 2026-09-25~27 병합 범위, hosted CI 공백, D-1~D-3 결정 전 사실. [프로그램 결정 D-1~D-3](decisions/PROGRAM_DECISIONS_20260928.md) — 2026-09-28 #73 병합으로 승인. Track K/P, Wave 게이트, readiness 저널 한도, 유지되는 잠금과 해제 조건.
 3. [모델 1 결정](decisions/AUTHORITY_MODEL_1.md) — 체인 권위 / 오프체인 위임 실행. R2·(a) 착수 승인이 아님.
-4. [수명 계약 초안](contracts/STATE_LIFECYCLE.md), [열린 입력·답할 주체](contracts/FIRST_BATCH_OPEN_INPUTS.md), [담당자 질문서](status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md)(위치만. 회신·정책 결정이 아니다), [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md)(위치만. 결정·채택·회신이 아니다).
+4. [수명 계약 초안](contracts/STATE_LIFECYCLE.md), [열린 입력·답할 주체](contracts/FIRST_BATCH_OPEN_INPUTS.md), [담당자 질문서](status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md)(위치만. 회신·정책 결정이 아니다), [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md)(위치만. 결정·채택·회신이 아니다), [두 번째 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md)(위치만. 결정·채택·회신이 아니다).
 5. [계약 불변식·비교 모델의 한계](contracts/CONTRACT_INVARIANTS.md), [첫 묶음 실행 근거](../validation/2026-09-16-first-batch/README.md).
 6. [측정 계약](contracts/PERFORMANCE_MEASUREMENT.md), [고정 smoke 조건](contracts/PERFORMANCE_BASELINE_V4.md)(역사적 debug 논리 서명, 제품 p99 아님), [Task 004 장치 메모](../validation/2026-09-25-task-004-perf-measurement/README.md).
 7. [잠금의 실제 CI 경로](status/LOCK_ENFORCEMENT.md), [위생 목록 — 실행 금지](CODE_HYGIENE_BACKLOG.md).
@@ -223,6 +223,7 @@
 - [reward-wrap-conformance](../validation/2026-10-21-reward-wrap-conformance/README.md) — Builder-authored adapter conformance scenarios and twelve reward crash-point cells; tests and record only, no wrap, journal or contract change, `durable` and the truth/production labels stay false, no grade change.
 - [readiness-runtime-evidence-map](../validation/2026-10-21-readiness-runtime-evidence-map/README.md) — Builder-authored clause-to-fixture evidence map for [준비 런타임 경계](contracts/READINESS_RUNTIME.md) ([지도](status/READINESS_RUNTIME_EVIDENCE_MAP.md)); map, checker and record only, no readiness/gate/contract change, the three class-B items and six `보류` stay OPEN with their owners, no grade change, operational count stays 0.
 - [kix-types-boundary-fixtures](../validation/2026-10-21-kix-types-boundary-fixtures/README.md) — Builder-authored boundary fixtures for the kix-types constructors and edges; tests and record only, no src or contract change, no grade change, source-informed and not independent, no completeness claim.
+- [astra-decision-sheets-rs-stage5](../validation/2026-10-21-astra-decision-sheets-rs-stage5/README.md) — Builder-authored second decision sheet ([시트](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md)) collecting the RS profile's named-but-unsheeted open items (IssuerCap choice, test-only fixture operational values, RS-C02 sentence 2, the stage-5 record's Astra items); document and record only, no value chosen, no contract, decision, program or source change, every cited value stays UNDETERMINED/DECISION_REQUIRED with its named owner, no grade change.
 
 ## 역사 문서와 증거
 
