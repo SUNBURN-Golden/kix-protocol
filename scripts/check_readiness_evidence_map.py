@@ -416,8 +416,29 @@ def _with_cells(text, ident, changes):
     return text
 
 
-def self_test(map_text, contract_text, owner_text):
-    """Require each check to catch a deliberately broken copy."""
+def _with_recomputed_counts(map_text):
+    """Keep counts consistent when constructing intentionally valid fixtures."""
+    counts = {s: 0 for s in STATUSES}
+    for _, cells in map_rows(map_text, set(EXPECTED_ROWS))[0]:
+        counts[cells[STATUS_CELL]] += 1
+    line = next(l for l in map_text.splitlines() if l.startswith(COUNTS_LINE))
+    replacement = COUNTS_LINE + ' ' + ' '.join(
+        '%s=%d' % (s, counts[s]) for s in STATUSES)
+    return map_text.replace(line, replacement, 1)
+
+
+def _without_partial_rows(map_text):
+    """Build an in-memory zero-PARTIAL baseline, preserving all OPEN lines."""
+    for ident, cells in map_rows(map_text, set(EXPECTED_ROWS))[0]:
+        if cells[STATUS_CELL] == 'PARTIAL':
+            map_text = _with_cells(
+                map_text, ident, [(STATUS_CELL, 'EXERCISED'),
+                                  (MISSING_CELL, 'none'), (OWNER_CELL, 'none')])
+    return _with_recomputed_counts(map_text)
+
+
+def _self_test_map(map_text, contract_text, owner_text):
+    """Require each check to catch a deliberately broken copy of one baseline."""
     base = find_problems(map_text, contract_text, owner_text)
     if base:
         print('self-test: unmodified map already fails', file=sys.stderr)
@@ -446,6 +467,31 @@ def self_test(map_text, contract_text, owner_text):
     counts_line = next(l for l in map_text.splitlines()
                        if l.startswith(COUNTS_LINE))
     torn_faults = split_row(rows[torn])[2]
+
+    # Establish PARTIAL independently of the real row's status and gap.
+    partial_fixture = _with_recomputed_counts(_with_cells(
+        map_text, partial,
+        [(2, '`readiness/test_faults.py::'
+          'test_core_record_in_an_fsm_journal_fails_closed`'),
+         (STATUS_CELL, 'PARTIAL'),
+         (MISSING_CELL, 'Synthetic self-test gap: ownership requirement is '
+          'under test.'),
+         (OWNER_CELL, 'k-readiness-conformance-suite')]))
+    found = find_problems(partial_fixture, contract_text, owner_text)
+    if found:
+        print('self-test: synthetic PARTIAL positive control failed: %r'
+              % found, file=sys.stderr)
+        return 1
+    print('self-test: synthetic PARTIAL positive control passed')
+    ownerless = _with_cell(partial_fixture, partial, OWNER_CELL, 'none')
+    found = find_problems(ownerless, contract_text, owner_text)
+    expected = [partial + ': PARTIAL row must have an owner']
+    if found != expected:
+        print('self-test: PARTIAL ownership diagnostics %r differ from %r'
+              % (found, expected), file=sys.stderr)
+        return 1
+    print('self-test: detected PARTIAL row without an owner (%s)' % found[0])
+
     cases = [
         ('removed %s row' % torn,
          map_text.replace(rows[torn] + '\n', '', 1),
@@ -511,9 +557,6 @@ def self_test(map_text, contract_text, owner_text):
         ('EXERCISED row naming a gap',
          _with_cell(map_text, exercised, MISSING_CELL, 'a leftover gap'),
          'should be'),
-        ('PARTIAL row without an owner',
-         _with_cell(map_text, partial, OWNER_CELL, 'none'),
-         'must have an owner'),
         ('wrong counts line',
          map_text.replace(counts_line,
                           counts_line.replace('OPEN=', 'OPEN=99', 1), 1),
@@ -554,6 +597,32 @@ def self_test(map_text, contract_text, owner_text):
 
     print('self-test: pass')
     return 0
+
+
+def self_test(map_text, contract_text, owner_text):
+    """Run the complete suite with the supplied map and with no PARTIAL rows."""
+    print('self-test: baseline supplied map')
+    if _self_test_map(map_text, contract_text, owner_text):
+        return 1
+
+    zero_partial = _without_partial_rows(map_text)
+    rows, _ = map_rows(zero_partial, set(EXPECTED_ROWS))
+    if any(cells[STATUS_CELL] == 'PARTIAL' for _, cells in rows):
+        print('self-test: zero-PARTIAL baseline still has PARTIAL rows',
+              file=sys.stderr)
+        return 1
+    problems = find_problems(zero_partial, contract_text, owner_text)
+    if problems:
+        print('self-test: zero-PARTIAL baseline is invalid: %r' % problems,
+              file=sys.stderr)
+        return 1
+    if any(_row_line(zero_partial, ident) != _row_line(map_text, ident)
+           for ident, cells in rows if cells[STATUS_CELL] == 'OPEN'):
+        print('self-test: zero-PARTIAL baseline changed an OPEN row',
+              file=sys.stderr)
+        return 1
+    print('self-test: baseline zero-PARTIAL map')
+    return _self_test_map(zero_partial, contract_text, owner_text)
 
 
 def main(argv):
