@@ -15,17 +15,25 @@ from collections import Counter
 from pathlib import Path
 
 from readiness.boundary import FsmBoundary, ReadinessError
-from readiness.ai_delegation_wrap import WrapError
+from readiness.ai_delegation_wrap import WrapError as AiDelegationWrapError
 from ai_delegation_mock import AiDelegationError
-from token_reward_model import POOLS, PROVENANCE, TokenRewardError, reward_id
+from token_reward_model import PROVENANCE, TokenRewardError
 from readiness.migrate import SCHEMA_VERSION, MigrationError, migrate, migrate_explicit
 from readiness.policy import AdmitGate
-from readiness.reward_wrap import RewardWrap
+from readiness.reward_wrap import RewardWrap, WrapError as RewardWrapError
 from readiness.store import (
     HEADER_LEN, JOURNAL_NAME, MAX_RECORD_BYTES, ReadinessFault, ReadinessStore, StoreError,
 )
 
-from readiness.conformance import BackendConformance, ai_delegation_issue, committed_face
+from readiness.conformance import (
+    BackendConformance,
+    ai_delegation_issue,
+    committed_face,
+    reward_mark_eligible as _eligible_reward,
+    reward_observe as _observe_reward,
+    reward_opening as _reward_opening,
+    reward_rid as _reward_rid,
+)
 from readiness.local_adapter import LocalReadinessAdapter
 
 
@@ -287,34 +295,6 @@ REWARD_DIGEST = 'ab' * 32
 REWARD_EFFECTS = 'ef' * 32
 
 
-def _reward_opening():
-    base = {pool: 7 for pool in POOLS}
-    base['PROTOCOL_REVENUE'] = 50
-    base['TOKEN_TREASURY_REWARD'] = 50
-    return base
-
-
-def _reward_key():
-    return {
-        'program': 'program-1',
-        'source_op_id': 'op-1',
-        'recipient': 'recipient-1',
-        'kind': 'participation',
-    }
-
-
-def _reward_source_view():
-    return {
-        'phase': 'COMMITTED',
-        'currency': 'KRW',
-        'funds_executed': False,
-        'bank_debit_observed': False,
-        'legal_debtor_bound': False,
-        'external_return_closed': False,
-        'durable': False,
-    }
-
-
 def _reward_approval():
     return {
         'record_id': 'approval-1',
@@ -325,31 +305,6 @@ def _reward_approval():
         'scope_ref': 'program-1',
         'evidence_refs': ['evidence-1'],
     }
-
-
-def _reward_rid():
-    return reward_id(**_reward_key())
-
-
-def _observe_reward(machine):
-    return machine.observe(
-        _reward_key(),
-        idempotency_key='obs-1',
-        source_view=_reward_source_view(),
-        rule_version='rule-v1',
-        amount=4,
-        source_kind='SETTLEMENT',
-    )
-
-
-def _eligible_reward(machine):
-    return machine.mark_eligible(
-        _reward_rid(),
-        idempotency_key='elig-1',
-        window_closed=True,
-        source_view=_reward_source_view(),
-        abuse_clear=True,
-    )
 
 
 class RewardWrapTests(unittest.TestCase):
@@ -738,16 +693,21 @@ class CrashPointSweepTests(unittest.TestCase):
     FAULT_CODES = {'partial': 'PARTIAL_WRITE', 'crash_before_durable': 'CRASH_BEFORE_DURABLE'}
     EXPECTED_COMMANDS = {
         'settlement': 5, 'reservation': 3, 'resale': 5, 'credit': 3,
-        'admission': 4, 'ai_delegation': 3,
+        'admission': 4, 'ai_delegation': 3, 'reward': 6,
     }
     VIEW_IDS = {
         'settlement': 'claim-1', 'reservation': 'reserve-1', 'resale': 'list-1',
         'credit': 'adv-1', 'admission': 'issue-1', 'ai_delegation': 'g1',
+        'reward': _reward_rid(),
     }
     VIEW_METHODS = {'ai_delegation': 'view_grant'}
-    # class B: these resends raise the machine's own error instead of
-    # returning a duplicate result (open_registry carries no idempotency key).
-    REPLAY_ERRORS = {('ai_delegation', 0): 'ALREADY_OPEN'}
+    # class B: these resends raise the wrap's own error instead of returning a
+    # duplicate result (the open calls carry no idempotency key). The wraps
+    # define distinct WrapError classes, so each cell carries its error type.
+    REPLAY_ERRORS = {
+        ('ai_delegation', 0): (AiDelegationWrapError, 'ALREADY_OPEN'),
+        ('reward', 0): (RewardWrapError, 'ALREADY_OPEN'),
+    }
     FALSE_LABELS = (
         'durable', 'funds_executed', 'economic_finality_claimed',
         'chain_owner_current', 'admission_routing_production', 'bank_debit_observed',
@@ -788,6 +748,18 @@ class CrashPointSweepTests(unittest.TestCase):
         rec.call('ai_delegation', ai_delegation_issue)
         rec.call('ai_delegation', lambda m: m.revoke_grant('human-issuer', 'g1', 'fixture-reason'))
         out['ai_delegation'] = rec.steps
+        rec = _Recorder()
+        helper._reward_opened(rec)
+        rec.call('reward', _observe_reward)
+        rec.call('reward', lambda m: m.hold(_reward_rid(), idempotency_key='hold-1'))
+        rec.call('reward', _eligible_reward)
+        rec.call('reward', lambda m: m.submit(
+            _reward_rid(), idempotency_key='sub-1', approval_ref=_reward_approval(),
+            signed_bytes_digest=REWARD_DIGEST, spend_pool='TOKEN_TREASURY_REWARD'))
+        rec.call('reward', lambda m: m.observe_transfer_effects(
+            _reward_rid(), idempotency_key='fx-1', effects_digest=REWARD_EFFECTS,
+            outcome='SUCCESS'))
+        out['reward'] = rec.steps
         return out
 
     @classmethod
@@ -881,9 +853,10 @@ class CrashPointSweepTests(unittest.TestCase):
                     else:
                         self.assertIsNone(again['applied'])
                 else:
-                    with self.assertRaises(WrapError) as again:
+                    error_type, error_code = replay_error
+                    with self.assertRaises(error_type) as again:
                         boundary.call(name, step)
-                    self.assertEqual(again.exception.code, replay_error)
+                    self.assertEqual(again.exception.code, error_code)
                 self.assertEqual(boundary.machine(machine_name).state_digest(), ref['digests'][i + 1])
                 self.assertEqual(boundary.machine(machine_name).export_journal(), ref['journal'][:i + 1])
                 # (c) finishing reaches the uninterrupted final state
@@ -943,6 +916,9 @@ class CrashPointSweepTests(unittest.TestCase):
     def test_crash_point_sweep_ai_delegation(self):
         self._sweep('ai_delegation')
 
+    def test_crash_point_sweep_reward(self):
+        self._sweep('reward')
+
     def test_reference_runs_are_deterministic_and_one_entry_per_command(self):
         for name, steps in self.sequences.items():
             with self.subTest(machine=name):
@@ -967,6 +943,8 @@ class CrashPointSweepTests(unittest.TestCase):
             ('reservation', 'crash_before_durable', 'hold'),
             ('ai_delegation', 'partial', 'revoke_grant'),
             ('ai_delegation', 'crash_before_durable', 'issue_grant'),
+            ('reward', 'partial', 'mark_eligible'),
+            ('reward', 'crash_before_durable', 'observe'),
         ]
         for machine_name, fault, op in cells:
             with self.subTest(machine=machine_name, fault=fault, op=op):

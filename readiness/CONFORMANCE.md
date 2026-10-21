@@ -128,36 +128,40 @@ production durability claim.
 
 `readiness/test_faults.py` `CrashPointSweepTests` takes the command sequence of
 each `BackendConformance` scenario (settlement 5, reservation 3, resale 5,
-credit 3, admission 4, ai_delegation 3 commands) and, for every command index
-and both fault kinds (`partial`, `crash_before_durable`), injects the fault
-through `FsmBoundary.call(..., fault=...)`, closes, reopens and checks: the
-recovered digest and journal equal the prefix only; the resend applies once
-and returns the uninterrupted result; finishing the sequence reaches the
-uninterrupted final digest; the record count equals the accepted commands and
-the false truth labels stay false. After the fault the same boundary also
-refuses further calls with `READINESS_CLOSED`. That is 46 cases over 23
-commands.
+credit 3, admission 4, ai_delegation 3, reward 6 commands) and, for every
+command index and both fault kinds (`partial`, `crash_before_durable`), injects
+the fault through `FsmBoundary.call(..., fault=...)`, closes, reopens and
+checks: the recovered digest and journal equal the prefix only; the resend
+applies once and returns the uninterrupted result; finishing the sequence
+reaches the uninterrupted final digest; the record count equals the accepted
+commands and the false truth labels stay false. After the fault the same
+boundary also refuses further calls with `READINESS_CLOSED`. That is 58 cases
+over 29 commands.
 
 It uses the public adapter surface only. The existing fault cases are kept; the
 sweep reaches the same cells (the module test
-`test_sweep_cells_subsume_the_existing_fault_cases` pins nine of them).
+`test_sweep_cells_subsume_the_existing_fault_cases` pins eleven of them).
 
 Class B characterizations (the contract does not define them): byte-equal
 result on the first resend; digest equality across independent in-process
 instances; every command emits exactly one journal entry, so the "fault on the
 first entry only" rule is not exercised for multi-entry commands. The
-`ai_delegation` `open_registry` carries no idempotency key and returns no
-`duplicate` flag: its resend raises the wrap's `WrapError('ALREADY_OPEN')`
-instead of a duplicate result (the sweep's `REPLAY_ERRORS` cell pins this; the
-journal and digest assertions afterwards are unchanged). Mock duplicate
-results carry no `applied` key.
+`ai_delegation` `open_registry` and the `reward` `open` carry no idempotency
+key and return no `duplicate` flag: their resends raise each wrap's own
+`WrapError('ALREADY_OPEN')` instead of a duplicate result (the two wraps
+define distinct `WrapError` classes; the sweep's `REPLAY_ERRORS` cells pin
+both; the journal and digest assertions afterwards are unchanged). The reward
+wrap journals a command only when the state digest changed; all six commands
+in the sweep sequence change it. The AI delegation mock's duplicate results
+carry no `applied` key.
 
 Not claimed: power loss, OS crash, `fsync`, a lost acknowledgement after a
-durable append, concurrency, rejected commands, the `reward` machine, any
-backend adoption, any production durability. Single process, single
+durable append, concurrency, rejected commands, any backend adoption, any
+production durability. Single process, single
 writer, local files. Records:
 `validation/2026-10-18-readiness-crash-point-sweep/README.md`,
-`validation/2026-10-20-ai-delegation-wrap-conformance/README.md`.
+`validation/2026-10-20-ai-delegation-wrap-conformance/README.md`,
+`validation/2026-10-21-reward-wrap-conformance/README.md`.
 
 `BackendConformance` also covers the `ai_delegation` wrap with three
 scenarios through the same adapter surface: the registry opens once across a
@@ -177,6 +181,24 @@ fields the mixin does not.
 | Torn revoke recovers ACTIVE; resend revokes once | `test_ai_delegation_torn_revoke_recovers_and_replays_once` | `revoke_grant` with `partial` and `crash_before_durable` |
 | Crash before issue leaves no grant; resend issues once | `test_ai_delegation_crash_before_durable_issue_leaves_no_grant` | `issue_grant` with `partial` and `crash_before_durable` |
 
+`BackendConformance` also covers the `reward` wrap with three scenarios
+through the same adapter surface: the wrap opens once across a restart and a
+journaled `hold` resend returns `duplicate` with the identical reward view
+while a resent `open` raises `ALREADY_OPEN`; a torn `mark_eligible` recovers
+as still `HELD`, applies once on resend and replays `duplicate`, with
+`reject_external` still refused as `EXTERNAL_EXECUTION_UNSUPPORTED`; and a
+`crash_before_durable` `observe` leaves no reward (`UNKNOWN_REWARD` on view)
+until the resend applies it once. `durable` stays false throughout. The three
+dedicated `RewardWrapTests` cases are kept: they additionally pin the
+`restore(export_journal())` canonical-state round-trip and the
+`last_observation` fields the mixin does not.
+
+| Reward fault / behavior | BackendConformance case | Sweep cells |
+|---|---|---|
+| Wrap opens once; hold replay across restart | `test_reward_open_observe_and_hold_replay_across_restart` | `open` with both faults; repeat open raises `ALREADY_OPEN` without changing journal/digest |
+| Torn mark_eligible recovers HELD; resend applies once | `test_reward_torn_mark_eligible_recovers_and_replays_once` | `mark_eligible` with `partial` and `crash_before_durable` |
+| Crash before observe leaves no reward; resend observes once | `test_reward_crash_before_durable_observe_leaves_no_reward` | `observe` with `partial` and `crash_before_durable` |
+
 ## Token reward wrap
 
 `readiness/reward_wrap.py` wraps `reference/token_reward/reward_fsm.py`'s
@@ -193,7 +215,9 @@ Same bounds: single process, single writer, one local file, off unless
 `--readiness-dir`. `durable`, `protocolTruth` and the production labels stay
 false and `reject_external` still refuses. `MOCK_TOKEN_REWARD_ONLY`
 provenance passes through unchanged: a matched replay is not a payout, a
-bank debit or chain finality. The reward machine is not part of
-`BackendConformance` or the crash-point sweep, and this section is not an
-independent verification of TK-4, TK-7, TK-8, TK-12 or V6. Record:
-`validation/2026-10-20-token-reward-readiness-wrap/README.md`.
+bank debit or chain finality. The reward machine now shares
+`BackendConformance` and the crash-point sweep through the same adapter
+surface (see the sweep section above), and this section is not an independent
+verification of TK-4, TK-7, TK-8, TK-12 or V6. Records:
+`validation/2026-10-20-token-reward-readiness-wrap/README.md`,
+`validation/2026-10-21-reward-wrap-conformance/README.md`.
