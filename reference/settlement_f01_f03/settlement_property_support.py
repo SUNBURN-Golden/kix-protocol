@@ -657,6 +657,286 @@ class MockDriver:
         return self.counts
 
 
+# --- refund corpus (plan-settlement-multi-payee-refund-corpus) ----------------
+
+BEARER_RANK = {"NONE": 0, "UNDEFINED": 1, "FIXTURE_FULL_GROSS_RECLASS": 2}
+REFUND_OPS = ("bind_refund", "observe_mock_cancel_acceptance")
+
+
+def check_refund_view(view: dict) -> None:
+    """Contract section 5 and section 7.6 (B0) refund predicates.
+
+    Typed from the contract, not from the mock's control flow: the bearer
+    label is derived only from refund_face and the reclass flag; a reclass
+    reserves each payee's unpaid face as cancelled_unpaid and its already
+    paid cash as recovery_due; a partial sum that reaches gross never
+    reclassifies (asserted through the flag, not through a bearer rule).
+    """
+
+    face = view["refund_face"]
+    accepted = view["refund_accepted"]
+    gross = view["gross"]
+    assert view["refund_outstanding"] == face - accepted
+    assert view["pg_adjustment_outstanding"] == accepted
+    assert 0 <= accepted <= face <= gross
+    reclassified = view["fixture_reclassified"]
+    bearer = view["refund_bearer_policy"]
+    assert bearer == (
+        "FIXTURE_FULL_GROSS_RECLASS" if reclassified else "UNDEFINED" if face else "NONE"
+    ), bearer
+    assert view["distribution_blocked"] is bool(face and not reclassified)
+    lines = view["obligations"]
+    assert view["recovery_due"] == sum(item["recovery_due"] for item in lines)
+    if reclassified:
+        assert face == gross, "a first full-gross refund is the only reclass"
+        for item in lines:
+            assert item["outstanding"] == 0, item
+            assert item["cancelled_unpaid"] == item["face"] - item["distributed"], item
+            assert item["recovery_due"] == item["distributed"], item
+        assert view["recovery_due"] == view["distributed_cash"]
+    else:
+        for item in lines:
+            assert item["cancelled_unpaid"] == 0 and item["recovery_due"] == 0, item
+        assert view["recovery_due"] == 0
+    assert view["provenance"] == "MOCK_SETTLEMENT_ONLY"
+
+
+class RefundCorpusDriver(MockDriver):
+    """Seeded mock driver weighted toward the refund family.
+
+    Each claim carries its own payee label pair, so obligations never share
+    a payee string across claims. The oracle checks per-payee reservation
+    and bearer monotonicity after every call, not only at the end.
+    """
+
+    CLAIM_IDS = ("claim-one", "claim-two", "claim-max")
+
+    def __init__(self, seed: int, steps: int = MOCK_STEPS):
+        super().__init__(seed, steps)
+        self.bearer: dict = {}
+        self.reclassed: set = set()
+
+    def bump(self, name: str) -> None:
+        self.counts[name] = self.counts.get(name, 0) + 1
+
+    def claim_spec(self, claim_id: str) -> tuple:
+        r = self.r
+        tag = claim_id.rsplit("-", 1)[-1]
+        gross = {
+            "claim-one": r.choice((1, 2, 3, 7, 20)),
+            "claim-two": r.randint(100, 100_000),
+            "claim-max": CONTRACT_MONEY_MAX,
+        }[claim_id]
+        bps = r.choice((0, 1, 2, 5000, 9999, 10000, r.randint(0, 10000)))
+        return (f"trade-{claim_id}", gross, "fixture-debtor", bps, f"res-{tag}", f"fee-{tag}")
+
+    def recognize(self, claim_id, spec, **kwargs) -> None:
+        had = claim_id in self.mirrors
+        super().recognize(claim_id, spec, **kwargs)
+        mirror = self.mirrors.get(claim_id)
+        if not had and mirror is not None:
+            self.bump(f"lines:{len(mirror.faces)}")
+
+    def check_all(self) -> None:
+        for cid, mirror in self.mirrors.items():
+            view = self.mock.view(cid)
+            check_claim_view(view, mirror)
+            check_refund_view(view)
+            rank = BEARER_RANK[view["refund_bearer_policy"]]
+            prev = self.bearer.get(cid)
+            if prev is not None:
+                # Contract section 5: reclass needs refund_face == 0, so only
+                # NONE can move, and nothing leaves UNDEFINED or the reclass.
+                assert rank == prev or prev == 0, (cid, prev, rank)
+            self.bearer[cid] = rank
+
+    def step(self) -> None:
+        r = self.r
+        cid = r.choice(self.CLAIM_IDS * 4 + ("claim-ghost",))
+        op = r.choice(
+            (
+                "recognize",
+                "statement",
+                "statement",
+                "distribute",
+                "fill",
+                "partreclass",
+                "refund",
+                "refund",
+                "refund",
+                "accept",
+                "accept",
+                "replay",
+            )
+        )
+        mirror = self.mirrors.get(cid)
+        if op == "recognize":
+            self.step_recognize(cid, mirror)
+            return
+        if mirror is None:
+            self.step_unknown(cid, "refund" if op in ("fill", "partreclass", "replay") else op)
+            return
+        {
+            "statement": self.step_statement,
+            "distribute": self.step_distribute,
+            "fill": self.step_fill,
+            "partreclass": self.step_partial_reclass,
+            "refund": self.step_refund,
+            "accept": self.step_accept,
+            "replay": self.step_replay,
+        }[op](cid, mirror)
+        self.check_all()
+
+    def step_fill(self, cid, mirror) -> None:
+        """Close the open receivable in one movement, then often distribute."""
+        r = self.r
+        room = mirror.gross - mirror.stmt_gross
+        if room <= 0:
+            self.step_distribute(cid, mirror)
+            return
+        mid = f"m-fill-{len(mirror.statements)}"
+        vals = (room, room, 0, 0, 0, 0, None)
+        expected = statement_static(mid, vals) or mirror.statement_state_violations(mid, vals)
+        result = self.call("observe_settlement_statement", expected, cid, **statement_kwargs(mid, vals))
+        if result is None:
+            return
+        was_known = mid in mirror.statements
+        assert result["duplicate"] is was_known and result["applied"] is None
+        mirror.apply_statement(mid, vals)
+        if was_known or r.random() >= 0.6:
+            return
+        order = list(mirror.order) if mirror.order is not None else sorted(mirror.faces)
+        result = self.call("apply_distribution", mirror.distribution_state_violations(order), cid, order=order)
+        if result is not None:
+            applied = mirror.apply_distribution(order)
+            assert result["applied"] == applied and result["duplicate"] is False
+
+    def step_refund(self, cid, mirror) -> None:
+        r = self.r
+        if 0 < mirror.refund_face < mirror.gross and r.random() < 0.15:
+            # Top up to exactly gross: contract section 5 never reclassifies
+            # a partial sum, so the claim stays bearer-UNDEFINED and blocked.
+            rid = f"r-top-{len(mirror.refunds)}"
+            vals = (mirror.gross - mirror.refund_face, mirror.beneficiary, "fixture-reason")
+            expected = mirror.refund_state_violations(rid, vals)
+            result = self.call(
+                "bind_refund",
+                expected,
+                cid,
+                refund_id=rid,
+                amount=vals[0],
+                beneficiary_role=vals[1],
+                reason=vals[2],
+            )
+            if result is not None:
+                assert result["duplicate"] is (rid in mirror.refunds) and result["applied"] is None
+                mirror.apply_refund(rid, vals)
+                assert not mirror.reclassified, "a partial sum to gross must not reclassify"
+                self.bump("partial-sum-to-gross")
+            return
+        dist_before = sum(mirror.dist.values())
+        super().step_refund(cid, mirror)
+        if mirror.reclassified and cid not in self.reclassed:
+            self.reclassed.add(cid)
+            bucket = "0" if dist_before == 0 else ("full" if dist_before == mirror.gross else "partial")
+            self.bump("reclass@" + bucket)
+
+    def step_partial_reclass(self, cid, mirror) -> None:
+        """Distribute partial cash, then bind the first full-gross refund."""
+        r = self.r
+        if mirror.refunds:
+            self.step_refund(cid, mirror)
+            return
+        room = mirror.gross - mirror.stmt_gross
+        if room >= 2:
+            # Confirmed cash lands strictly below the face sum, so the
+            # distribution that follows leaves at least one payee short.
+            amount = r.randint(1, room - 1)
+            vals = (room, amount, room - amount, 0, 0, 0, None)
+            mid = f"m-pd-{len(mirror.statements)}"
+            expected = statement_static(mid, vals) or mirror.statement_state_violations(mid, vals)
+            result = self.call("observe_settlement_statement", expected, cid, **statement_kwargs(mid, vals))
+            if result is not None:
+                assert result["duplicate"] is (mid in mirror.statements) and result["applied"] is None
+                mirror.apply_statement(mid, vals)
+        order = list(mirror.order) if mirror.order is not None else sorted(mirror.faces)
+        result = self.call("apply_distribution", mirror.distribution_state_violations(order), cid, order=order)
+        if result is not None:
+            applied = mirror.apply_distribution(order)
+            assert result["applied"] == applied and result["duplicate"] is False
+        dist = sum(mirror.dist.values())
+        rid = f"r-full-{len(mirror.refunds)}"
+        vals = (mirror.gross, "fixture-buyer", "fixture-reason")
+        result = self.call(
+            "bind_refund",
+            mirror.refund_state_violations(rid, vals),
+            cid,
+            refund_id=rid,
+            amount=vals[0],
+            beneficiary_role=vals[1],
+            reason=vals[2],
+        )
+        if result is not None:
+            assert result["duplicate"] is False and result["applied"] is None
+            mirror.apply_refund(rid, vals)
+            self.reclassed.add(cid)
+            bucket = "0" if dist == 0 else ("full" if dist == mirror.gross else "partial")
+            self.bump("reclass@" + bucket)
+
+    def step_replay(self, cid, mirror) -> None:
+        """Re-issue one known binding verbatim: duplicate, no second effect."""
+        r = self.r
+        pools = [
+            kind
+            for kind, store in (
+                ("statement", mirror.statements),
+                ("refund", mirror.refunds),
+                ("accept", mirror.accepts),
+            )
+            if store
+        ]
+        if not pools:
+            self.step_refund(cid, mirror)
+            return
+        kind = r.choice(pools)
+        if kind == "statement":
+            mid = r.choice(sorted(mirror.statements))
+            result = self.call(
+                "observe_settlement_statement",
+                set(),
+                cid,
+                **statement_kwargs(mid, mirror.statements[mid]),
+            )
+            assert result is not None and result["duplicate"] is True and result["applied"] is None
+            mirror.apply_statement(mid, mirror.statements[mid])
+        elif kind == "refund":
+            rid = r.choice(sorted(mirror.refunds))
+            amount, beneficiary, reason = mirror.refunds[rid]
+            result = self.call(
+                "bind_refund",
+                set(),
+                cid,
+                refund_id=rid,
+                amount=amount,
+                beneficiary_role=beneficiary,
+                reason=reason,
+            )
+            assert result is not None and result["duplicate"] is True and result["applied"] is None
+            mirror.apply_refund(rid, mirror.refunds[rid])
+        else:
+            sid = r.choice(sorted(mirror.accepts))
+            result = self.call(
+                "observe_mock_cancel_acceptance",
+                set(),
+                cid,
+                source_id=sid,
+                amount=mirror.accepts[sid],
+            )
+            assert result is not None and result["duplicate"] is True and result["applied"] is None
+            mirror.apply_acceptance(sid, mirror.accepts[sid])
+        self.bump("replay:" + kind)
+
+
 # --- SettlementMachine driver -------------------------------------------------
 
 MACHINE_STEPS = 80
@@ -929,3 +1209,126 @@ class MachineDriver:
                 self.check_restore()
         self.check_restore()
         return self.counts
+
+
+class RefundMachineDriver(MachineDriver):
+    """Seeded machine driver biased toward the refund command family.
+
+    Replays prefer the keys of accepted or rejected refund commands, and
+    every checkpoint additionally replays the refund keys on a restored
+    machine. Everything else (digest/journal atomicity, phase table,
+    first-result verbatim replays) is the parent's oracle.
+    """
+
+    REFUND_NEXT = {
+        None: ("initiate",),
+        "INITIATED": ("authorize",) * 9 + ("cancel", "fail"),
+        "AUTHORIZED": ("capture",) * 9 + ("cancel", "fail"),
+        "CAPTURED": (
+            "commit",
+            "commit",
+            "bind_refund",
+            "bind_refund",
+            "bind_refund",
+            "observe_mock_cancel_acceptance",
+        ),
+        "COMMITTED": (
+            "observe_statement",
+            "distribute",
+            "bind_refund",
+            "bind_refund",
+            "bind_refund",
+            "observe_mock_cancel_acceptance",
+            "observe_mock_cancel_acceptance",
+            "reconcile",
+        ),
+    }
+
+    def __init__(self, seed: int, steps: int = MACHINE_STEPS):
+        super().__init__(seed, steps)
+        self.bearer: dict = {}
+
+    def pick(self) -> tuple:
+        r = self.r
+        live = [s for s in SIDS if self.phase(s) not in TERMINAL]
+        sid = r.choice(live + list(SIDS) + ["set-ghost"] if r.random() < 0.9 else SIDS)
+        phase = self.phase(sid)
+        if phase in TERMINAL or r.random() < 0.2:
+            op = r.choice(ALL_OPS)
+        else:
+            op = r.choice(self.REFUND_NEXT[phase])
+        return op, sid
+
+    def prefer_key(self, pool: dict) -> str:
+        keys = sorted(pool)
+        refund_keys = [key for key in keys if pool[key][0] in REFUND_OPS]
+        if refund_keys and self.r.random() < 0.75:
+            return self.r.choice(refund_keys)
+        return self.r.choice(keys)
+
+    def run_command(self, op, sid, kwargs, key, *, wellformed, replay_of=None):
+        phase = self.phase(sid)
+        result, code = super().run_command(op, sid, kwargs, key, wellformed=wellformed, replay_of=replay_of)
+        if result is not None and replay_of is None:
+            self.bump(f"ok:{op}@{phase}")
+        return result, code
+
+    def check_views(self) -> None:
+        super().check_views()
+        for sid in SIDS:
+            if self.phase(sid) is None:
+                continue
+            claim = self.m.view(sid)["claim"]
+            if claim is None:
+                continue
+            check_refund_view(claim)
+            rank = BEARER_RANK[claim["refund_bearer_policy"]]
+            prev = self.bearer.get(sid)
+            if prev is not None:
+                assert rank == prev or prev == 0, (sid, prev, rank)
+            self.bearer[sid] = rank
+
+    def check_restore(self) -> None:
+        super().check_restore()
+        restored = self.machine_type.restore(self.m.export_journal())
+        digest = restored.state_digest()
+        for key, (op, sid, kwargs, settlement) in sorted(self.accepted.items()):
+            if op not in REFUND_OPS:
+                continue
+            result = getattr(restored, op)(sid, idempotency_key=key, **kwargs)
+            assert result["duplicate"] is True and result["settlement"] == settlement, key
+            self.bump("restored-replay:" + op)
+        assert restored.state_digest() == digest, "refund-key replays moved the restored machine"
+
+    def step(self) -> None:
+        r = self.r
+        roll = r.random()
+        if roll < 0.15 and self.accepted:
+            key = self.prefer_key(self.accepted)
+            op, sid, kwargs, settlement = self.accepted[key]
+            self.run_command(op, sid, kwargs, key, wellformed=True, replay_of=settlement)
+        elif roll < 0.25 and self.rejected:
+            key = self.prefer_key(self.rejected)
+            op, sid, kwargs, code = self.rejected[key]
+            _, got = self.run_command(op, sid, kwargs, key, wellformed=False, replay_of=None)
+            assert got == code, f"rejected key replay: {got} != {code}"
+        elif roll < 0.33 and (self.accepted or self.rejected):
+            pool = {k: self.accepted.get(k) or self.rejected[k] for k in set(self.accepted) | set(self.rejected)}
+            key = self.prefer_key(pool)
+            op, sid, kwargs, *_ = pool[key]
+            _, got = self.run_command(op, f"{sid}-x", kwargs, key, wellformed=False)
+            assert got == "IDEMPOTENCY_CONFLICT", f"same key, changed body: {got}"
+        elif roll < 0.38:
+            digest, journal = self.m.state_digest(), self.m.export_journal()
+            try:
+                self.m.reject_external(r.choice(("bank-debit", "pg-capture")))
+            except SettlementError as error:
+                assert error.code == "EXTERNAL_PAYMENT_UNSUPPORTED"
+            else:
+                raise AssertionError("reject_external returned")
+            assert self.m.state_digest() == digest and self.m.export_journal() == journal
+        else:
+            op, sid = self.pick()
+            kwargs, wellformed = self.build(op, sid)
+            self.run_command(op, sid, kwargs, self.new_key(), wellformed=wellformed)
+        self.check_views()
