@@ -185,9 +185,9 @@ jobs:
             "이 커밋의 tree \`$tree\`는 PR head \`$head\`의 실행 [$found]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$found)에서 전체 검증에 성공했습니다." \
             "이 초록 표시는 이 커밋에서 새로 돈 전체 검증이 아닙니다."
       - name: Stdlib offline document checks
-        # Stdlib-only doc checks with no docs_only/verified-tree guard: the register, the
-        # profile contract, the read-model source map and the doc index are docs, so a
-        # doc-sync PR is exactly the docs-only case.
+        # Stdlib-only checks over status/evidence documents and related contracts/indexes.
+        # No docs_only or verified-tree guard; docs-only and same-tree skips still run these.
+        # The run block below is the authoritative checker list.
         run: |
           python3 scripts/check_status_register.py
           python3 scripts/check_status_register.py --self-test
