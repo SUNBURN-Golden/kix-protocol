@@ -153,9 +153,10 @@ def literal_test_names(text):
     """Recognize direct top-level test('literal', ...) statements, without JS.
 
     Bounded lexer for the cited suites, not a JavaScript parser. Comments,
-    strings, templates and supported expression-position regex literals are
-    opaque. Outside the explicit regex-opener contexts, a second slash on the
-    same line makes regex/division ambiguous: fail closed for the whole source.
+    strings, non-interpolated templates and supported expression-position regex
+    literals are opaque. Template interpolation is unsupported and fails closed
+    for the whole source. Outside the explicit regex-opener contexts, a second
+    slash on the same line makes regex/division ambiguous: fail closed for the whole source.
     A lone slash on its line cannot open a valid regex and remains division.
     Names support plain single/double quotes and escaped quotes/backslashes;
     computed names, other escapes, nested calls and test modifiers are outside
@@ -165,7 +166,7 @@ def literal_test_names(text):
     token = re.compile(
         r'(?P<space>\s+)|(?P<comment>//[^\n]*|/\*[\s\S]*?\*/)|'
         r'''(?P<string>'(?:\\[\s\S]|[^'\\\r\n])*'|"(?:\\[\s\S]|[^"\\\r\n])*")|'''
-        r'(?P<template>`(?:\\[\s\S]|[^`\\])*`)|'
+        r'(?P<template>`(?:\\[\s\S]|[^`\\$]|\$(?!\{))*`)|'
         r'(?P<word>[A-Za-z_$][\w$]*)|(?P<punct>=>|\?\.|[^\s])')
     regex_literal = re.compile(r'/((?:\\[^\r\n]|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\[\r\n])+)/[a-z]*')
     tokens = []
@@ -458,6 +459,9 @@ def supplemental_self_test(map_text, profile_text):
 /* test('block comment only', () => {}); */
 const unrelated = "test('string only', () => {})";
 const template = `test('template only', () => {})`;
+const escapedInterpolation = `\${;test('escaped interpolation only', x);}`;
+const escapedBacktick = `\`;test('escaped backtick only', x);`;
+const dollars = `$ $word test('dollar template only', x);`;
 const pattern = /test\('regex only', [}]/;
 const opaque = /;test('assignment regex ghost', x);/;
 const fallback = null ?? /;test('nullish regex ghost', x);/;
@@ -537,6 +541,22 @@ test('escaped \'quote\' and \\ slash', () => {});
         ('localnet isolation', _with_cell(fixture, 'IM-15', 6, 'none'), {},
          'IM-15: COVERED_LOCALNET needs a localnet citation'),
     ]
+    # Interpolations are outside the bounded template grammar. In particular,
+    # an inner backtick must never expose template contents as declarations.
+    for name, source in (
+            ('reviewer nested template', "const text = `${`;test('ghost', x);`}`;"),
+            ('interpolated call', "const text = `${test('ghost', x)}`;"),
+            ('deeper nested template', "const text = `${`${`;test('ghost', x);`}`}`;"),
+            ('escaped backslash before interpolation', r"const text = `\\${`;test('ghost', x);`}`;")):
+        for suffix in ('', "\ntest('valid reconstruction', () => {});"):
+            rejected = source + suffix
+            if literal_test_names(rejected):
+                print('self-test: unsupported template interpolation accepted: %s' % name,
+                      file=sys.stderr)
+                return 1
+            cases.append((name + (' with real test' if suffix else ''),
+                          cell(2, '`%s::ghost`' % path), {path: rejected},
+                          where + '::ghost: test name not declared'))
     # These contexts are deliberately outside the bounded regex grammar. The
     # entire source must fail closed, including otherwise supported test calls.
     for context in ('false || ', 'true && ', '0 | ', '0 & ', '0 ^ '):
@@ -548,7 +568,8 @@ test('escaped \'quote\' and \\ slash', () => {});
         cases.append(('opaque regex after ' + repr(context), cell(2, '`%s::ghost`' % path),
                       {path: source}, where + '::ghost: test name not declared'))
     for name in ('absent', 'valid', 'comment only', 'block comment only', 'string only',
-                 'template only', 'regex only', 'assignment regex ghost', 'nullish regex ghost', 'nested only',
+                 'template only', 'escaped interpolation only', 'escaped backtick only',
+                 'dollar template only', 'regex only', 'assignment regex ghost', 'nullish regex ghost', 'nested only',
                  'callback only', 'property only', 'computed'):
         cases.append(('undeclared ' + name, cell(2, '`%s::%s`' % (path, name)), {},
                       where + '::' + name + ': test name not declared'))

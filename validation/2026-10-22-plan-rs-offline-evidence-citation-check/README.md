@@ -242,3 +242,86 @@ rerun for this Python-only fix. This round claims citation integrity only;
 it supplies no test-execution, independent-verification or production claim.
 No new protocol-contract violation, undefined protocol behavior or product
 decision was introduced. Local readiness is a handoff to the supervisor.
+
+## PR fix round 2 — template interpolation
+
+Task input: supervisor-supplied blocking review of PR #249 at
+`e228e57c0f55b1e8d6514b1ef5257da2387858ff`, on
+`agent/kix-plan-rs-offline-evidence-citation-check`. Cached `origin/main` remains
+`93cec6aaf12f22bf8aefc0453fe545b6bd38b819`, equal to the recorded base; remote
+freshness is unverified because the supervisor prohibits network actions.
+No fetch, commit, push, GitHub action or comment was performed. This fix remains
+uncommitted above the reviewed implementation head; its final task head is
+unassigned and belongs to the supervisor's delivery process.
+
+The blocking finding is confirmed. Before editing, importing only the Python
+checker and passing the reviewer's source as an in-memory string returned
+`{'ghost'}` for this JavaScript, which contains no test call:
+
+```javascript
+const text = `${`;test('ghost', x);`}`;
+```
+
+Existing template coverage was **partial**: a plain opaque template was covered,
+but nested/interpolated templates were not. The added regression failed on the
+reviewed parser before the fix. All other requirements retain the coverage
+mapping above, including the prior regex-opacity controls.
+
+The template token now accepts only non-interpolated templates: escape pairs,
+ordinary characters and dollar signs not followed by an opening brace. An
+unescaped `${` prevents the token from matching; the existing unsupported-literal
+guard then rejects the whole source at its opening backtick. An inner backtick
+cannot expose template contents as code. This deliberately fails closed for
+all template interpolation, even when genuine test declarations occur elsewhere
+in the file. Supporting interpolation later would require an explicit bounded
+grammar update; this fix does not introduce a JavaScript parser or execute JS.
+Neither cited suite currently contains template interpolation, so all existing
+citations still pass.
+
+New in-memory controls cover the exact reviewer example, an interpolated call,
+deeper nested templates and an escaped backslash immediately before real
+interpolation. Each is checked both alone and with a genuine test appended,
+requiring whole-source rejection and the specific supplemental diagnostic
+`::ghost: test name not declared`. Positive fixtures retain real test names
+beside opaque templates with escaped interpolation, escaped backticks and plain
+dollar signs; fake names inside those templates are separately rejected.
+
+Only these paths change in round 2:
+
+- `scripts/check_rs_im_evidence_map.py`
+- `validation/2026-10-22-plan-rs-offline-evidence-citation-check/README.md`
+
+The map and docs index remain byte-identical to the reviewed head. All 911
+tracked files outside this two-path allowlist match their starting bytes and
+HEAD blobs, including all 108 files under `reference/v0.3-rc1/`. Both locked
+kernel blobs match the required hashes above before and after this fix, also
+matching the unchanged index. Runtime, contracts, workflows, `.aiops/`, task
+inputs and historical records are unchanged. Primary statuses/counts and
+supplemental/localnet separation, IM-19's gate-secret gap, all policy values and
+named decision owners are preserved.
+
+| Check actually run | Result |
+|---|---|
+| Pre-fix in-memory reviewer reproduction, default Python 3.13.5 | Confirmed false declaration `ghost`; no cited code executed. |
+| Regression-first `python3 scripts/check_rs_im_evidence_map.py --self-test` | Exit 1 as intended: `unsupported template interpolation accepted: reviewer nested template`. |
+| Post-fix development `python3 scripts/check_rs_im_evidence_map.py --self-test` | Exit 0; new template controls, previous regex controls and existing mutations pass. |
+| `python3 scripts/check_rs_im_evidence_map.py` under Python 3.12.15 | Exit 0; 30 primary rows, 179 primary citations; 3 supplemental rows, 27 citations. |
+| `python3 scripts/check_rs_im_evidence_map.py --self-test` under Python 3.12.15 | Exit 0; all positive controls and diagnostic-specific mutations pass. |
+| `python3 scripts/check_docs_index.py` under Python 3.12.15 | Exit 0; scanned=197 indexed=162 allowlisted=35. |
+| `python3 scripts/check_docs_index.py --self-test` under Python 3.12.15 | Exit 0; self-test passes. |
+| All 26 commands extracted unchanged from the workflow's `Stdlib offline document checks` block | Exit 0 each under Python 3.12.15; per-command logs and results in `/tmp/rs-offline-round2/`, outside delivery. |
+| Inline snapshot/HEAD-blob comparison; `git hash-object` on locked files | 911 excluded tracked files unchanged; 108 protected reference files match; both required lock hashes match worktree/index; branch, HEAD, cached main and index unchanged. |
+| `git diff --check` | Exit 0. |
+
+All Python checks set `PYTHONDONTWRITEBYTECODE=1`; no tools or dependencies were
+installed. The docs-index check and self-test are repeated after this append.
+No CI failure log was supplied. KTX and KIX exact-head workflow run IDs, statuses
+and conclusions for the uncommitted fix remain unavailable; neither workflow
+was queried or triggered. Updated non-author review and exact-head CI remain
+supervisor delivery gates. No merge or post-merge verification occurred.
+
+No protocol-contract violation, undefined protocol behavior, product decision or
+scope expansion was introduced. Rust and cited Node/Move/localnet/proving suites
+were not rerun for this Python-only correction. This record claims citation
+integrity only, without test-execution, independence or production assurances.
+Local readiness means handoff to the supervisor, with no merge-readiness claim.
