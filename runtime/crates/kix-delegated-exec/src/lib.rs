@@ -727,12 +727,14 @@ impl DelegatedShow {
     /// operation, or on the page that first recorded the event key (the
     /// conflict path for an unbound operation). Fact recording continues
     /// after a cut: late facts are reconciled under current authority, never
-    /// dropped.
+    /// dropped. A `ReturnRequired` outcome releases any GA slot hold to mirror
+    /// the kernel's inventory release, including a capture after expiry.
     pub fn observe_capture(
         &mut self,
         ctx: Context,
         observation: CaptureObservation,
     ) -> Result<ObservationOutcome, MappingError> {
+        let operation = observation.operation;
         let event_key = (
             observation.operation.provider,
             observation.operation.account,
@@ -752,6 +754,25 @@ impl DelegatedShow {
             .observe_capture(ctx, observation)
             .map_err(MappingError::Kernel)?;
         self.event_pages.insert(event_key, page_index);
+        if result == ObservationOutcome::ReturnRequired {
+            let page = &self.pages[&page_index];
+            let order_id = page.orders.iter().copied().find(|order_id| {
+                page.kernel
+                    .order(*order_id)
+                    .is_some_and(|order| order.request.payment == operation)
+            });
+            if let Some(order_id) = order_id
+                && let Some(hold) = self.ga_holds.remove(&order_id)
+            {
+                self.pages
+                    .get_mut(&hold.page_index)
+                    .expect("GA hold page")
+                    .ga_free
+                    .as_mut()
+                    .expect("GA page free set")
+                    .extend(hold.slots);
+            }
+        }
         Ok(result)
     }
 
