@@ -235,3 +235,4 @@
 모델 1·첫 묶음 승인은 backend 채택·커널 전환 완료·실금전 운영 승인과 다릅니다. 미정 항목, 두 잠금 blob, R2 금지, (a) 보류, 위생 일괄 금지는 유지합니다.
 
 - [plan-rs-witness-offline-regressions](../validation/2026-10-21-plan-rs-witness-offline-regressions/README.md) — Synthetic public-event reconstruction regressions with injected object reads for RR-4 / IM-19; passes locally under Node 24 and is not invoked by either workflow, no new localnet/ZK result, no grade or operational-value change.
+- [plan-rs-witness-ci-wiring](../validation/2026-10-21-plan-rs-witness-ci-wiring/README.md) — Subsequent CI-wiring record: the protocol rights-scale job explicitly invokes the existing offline witness-reconstruction suite under Node 24; local execution is recorded separately from pending exact-head CI, with no grade, gap, owner or operational-value change. The preceding entry describes the earlier snapshot.
