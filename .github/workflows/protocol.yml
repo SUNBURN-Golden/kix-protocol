@@ -48,6 +48,8 @@ jobs:
         run: bash scripts/bootstrap.sh
       - name: Offline witness reconstruction regressions
         run: node --test reference/rights_scale/client/witness-reconstruction.test.mjs
+      - name: Offline spend witness regressions
+        run: node --test reference/rights_scale/client/spend-witness.test.mjs
       - name: Rights-scale Move and model tests
         run: |
           source scripts/env.sh
