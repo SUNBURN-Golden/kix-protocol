@@ -35,6 +35,11 @@ Checks, each reported on failure:
    (Rust) in the cited file; for ``.mjs``, ``.json``, ``.md`` and ``.yml`` it
    must appear as text.
 5. Counts. The ``Counts:`` line equals the statuses recomputed from the table.
+6. Supplemental offline evidence. Section 5 has its own five-column table,
+   identifiers and exact path allowlist. IM ids refer to the profile; test
+   symbols are complete literal top-level test names and record anchors are
+   whole Markdown heading lines. These citations never contribute to primary
+   statuses, counts or localnet requirements.
 
 Standard library only. Convenience check, not a contract gate. It reads the
 cited files as text and executes none of them; it proves that a cited name
@@ -75,6 +80,21 @@ COLUMNS = {
 }
 FORBIDDEN_PREFIX = 'reference/v0.3-rc1/'
 TEXT_SUFFIXES = ('.mjs', '.json', '.md', '.yml')
+SUPPLEMENTAL_SECTION = '## 5. Supplemental offline evidence'
+SUPPLEMENTAL_HEADER = ['Supplemental ID', 'IM IDs', 'Offline tests',
+                       'Validation records', 'Scope and limitations']
+OFFLINE_TEST_PATHS = (
+    'reference/rights_scale/client/witness-reconstruction.test.mjs',
+    'reference/rights_scale/client/spend-witness.test.mjs',
+)
+OFFLINE_RECORD_PATHS = (
+    'validation/2026-10-21-plan-rs-witness-offline-regressions/README.md',
+    'validation/2026-10-21-plan-rs-witness-ci-wiring/README.md',
+    'validation/2026-10-21-plan-rs-spend-witness-offline-tests/README.md',
+)
+SUPPLEMENTAL_IDS = {'RS-OFFLINE-01': ('IM-19',),
+                    'RS-OFFLINE-02': ('IM-14',),
+                    'RS-OFFLINE-03': ('IM-15',)}
 
 ID_CELL = re.compile(r'^\|\s*(IM-\d\d)\s*\|')
 CITATION = re.compile(r'`([^`]+)`')
@@ -127,6 +147,153 @@ def symbol_defined(text, suffix, symbol):
     if pattern is None:
         return False
     return re.search(pattern.replace('%s', re.escape(symbol)), text, re.M) is not None
+
+
+def literal_test_names(text):
+    """Recognize direct top-level test('literal', ...) statements, without JS.
+
+    Bounded lexer for the cited suites, not a JavaScript parser. Comments,
+    strings, templates and expression-position regex literals are opaque.
+    Names support plain single/double quotes and escaped quotes/backslashes;
+    computed names, other escapes, nested calls and test modifiers are outside
+    this grammar. A name must be the complete first argument, followed by a
+    comma. No cited source or dependency is imported or executed.
+    """
+    token = re.compile(
+        r'(?P<space>\s+)|(?P<comment>//[^\n]*|/\*[\s\S]*?\*/)|'
+        r'''(?P<string>'(?:\\[\s\S]|[^'\\\r\n])*'|"(?:\\[\s\S]|[^"\\\r\n])*")|'''
+        r'(?P<template>`(?:\\[\s\S]|[^`\\])*`)|'
+        r'(?P<word>[A-Za-z_$][\w$]*)|(?P<punct>=>|\?\.|[^\s])')
+    regex_literal = re.compile(r'/((?:\\[^\r\n]|\[(?:\\.|[^\]\\\r\n])*\]|[^/\\\[\r\n])+)/[a-z]*')
+    tokens = []
+    pos = 0
+    while pos < len(text):
+        match = token.match(text, pos)
+        if not match:
+            return set()  # Unsupported/unterminated input: fail closed.
+        kind, value = match.lastgroup, match.group()
+        if kind == 'punct' and value in ("'", '"', '`'):
+            return set()  # Unterminated literal.
+        if value == '/' and (not tokens or tokens[-1][1] in
+                             ('(', '[', '=', ',', ':', 'return', '=>', '!', '?')):
+            regex = regex_literal.match(text, pos)
+            if not regex:
+                return set()
+            tokens.append(('regex', regex.group()))
+            pos = regex.end()
+            continue
+        pos = match.end()
+        if kind not in ('space', 'comment'):
+            tokens.append((kind, value))
+
+    names = set()
+    stack = []
+    for i, (kind, value) in enumerate(tokens):
+        if (not stack and kind == 'word' and value == 'test'
+                and (i == 0 or tokens[i - 1][1] in (';', '}'))
+                and i + 3 < len(tokens) and tokens[i + 1][1] == '('
+                and tokens[i + 2][0] == 'string' and tokens[i + 3][1] == ','):
+            literal = tokens[i + 2][1][1:-1]
+            if re.fullmatch(r'''(?:[^\\]|\\[\\'"])*''', literal):
+                names.add(re.sub(r'''\\([\\'"])''', r'\1', literal))
+        if kind != 'punct':
+            continue
+        if value in ('(', '[', '{'):
+            stack.append(value)
+        elif value in (')', ']', '}'):
+            if not stack or stack.pop() != {')': '(', ']': '[', '}': '{'}[value]:
+                return set()
+    return names if not stack else set()
+
+
+def supplemental_rows(map_text):
+    """Return (rows, problems) for the designated section only."""
+    lines = map_text.splitlines()
+    starts = [i for i, line in enumerate(lines) if line == SUPPLEMENTAL_SECTION]
+    if len(starts) != 1:
+        return [], ['supplemental section: expected exactly one, found %d' % len(starts)]
+    start = starts[0] + 1
+    end = next((i for i in range(start, len(lines)) if lines[i].startswith('## ')), len(lines))
+    table = [line for line in lines[start:end] if line.lstrip().startswith('|')]
+    problems = []
+    if not table or split_row(table[0]) != SUPPLEMENTAL_HEADER:
+        problems.append('supplemental table: missing or malformed header')
+    if len(table) < 2 or len(split_row(table[1])) != 5 or not all(
+            re.fullmatch(r':?-{3,}:?', cell) for cell in split_row(table[1])):
+        problems.append('supplemental table: missing or malformed separator')
+    rows = []
+    for line in table[2:]:
+        cells = split_row(line)
+        ident = cells[0]
+        if not line.rstrip().endswith('|') or len(cells) != 5:
+            problems.append('%s: supplemental expected 5 cells, found %d' % (ident, len(cells)))
+            continue
+        rows.append((ident, cells))
+    # A damaged row must not disappear just because its opening pipe was lost.
+    for line in lines[start:end]:
+        if line.lstrip().startswith('RS-OFFLINE-'):
+            problems.append('supplemental table: malformed row: %s' % line)
+    return rows, problems
+
+
+def find_supplemental_problems(map_text, expected, root, read):
+    rows, problems = supplemental_rows(map_text)
+    seen = set()
+    for ident, cells in rows:
+        if ident in seen:
+            problems.append('%s: duplicate supplemental identifier' % ident)
+        seen.add(ident)
+        if ident not in SUPPLEMENTAL_IDS:
+            problems.append('%s: unknown supplemental identifier' % ident)
+        im_ids = tuple(part.strip() for part in cells[1].split(','))
+        for im_id in im_ids:
+            if im_id not in expected:
+                problems.append('%s: unknown IM identifier: %s' % (ident, im_id))
+        if ident in SUPPLEMENTAL_IDS and im_ids != SUPPLEMENTAL_IDS[ident]:
+            problems.append('%s: expected IM IDs: %s' % (ident, ', '.join(SUPPLEMENTAL_IDS[ident])))
+        if not cells[4]:
+            problems.append('%s: empty scope and limitations' % ident)
+        for col, name, allowed in ((2, 'offline tests', OFFLINE_TEST_PATHS),
+                                   (3, 'validation records', OFFLINE_RECORD_PATHS)):
+            cell = cells[col]
+            # Validate all members, even when valid citations surround bad text.
+            if not re.fullmatch(r'`[^`]+`(?:\s*,\s*`[^`]+`)*', cell):
+                problems.append('%s: %s cell needs comma-separated backticked citations' % (ident, name))
+            for path, symbol in parse_cell(cell):
+                where = '%s: %s citation %s' % (ident, name, path)
+                if (not path or path.startswith('/') or '\\' in path
+                        or '..' in path.split('/') or re.match(r'^[A-Za-z][\w+.-]*:', path)):
+                    problems.append('%s is not repo-relative (absolute, traversal, backslash or URL)' % where)
+                    continue
+                if path == FORBIDDEN_PREFIX.rstrip('/') or path.startswith(FORBIDDEN_PREFIX):
+                    problems.append('%s is under reference/v0.3-rc1' % where)
+                    continue
+                if path not in allowed:
+                    problems.append('%s is outside the supplemental %s paths' % (where, name))
+                    continue
+                try:
+                    target = (root / path).resolve()
+                    target.relative_to(root.resolve())
+                    if target.is_relative_to((root / FORBIDDEN_PREFIX).resolve()):
+                        problems.append('%s resolves under reference/v0.3-rc1' % where)
+                        continue
+                except (ValueError, OSError, RuntimeError):
+                    problems.append('%s resolves outside the repository or cannot be resolved' % where)
+                    continue
+                text = read(path)
+                if text is None:
+                    problems.append('%s does not exist' % where)
+                elif symbol is None:
+                    problems.append('%s needs a ::symbol' % where)
+                elif col == 2 and symbol not in literal_test_names(text):
+                    problems.append('%s::%s: test name not declared' % (where, symbol))
+                elif col == 3 and (not re.fullmatch(r'#{1,6} .+', symbol)
+                                   or symbol not in text.splitlines()):
+                    problems.append('%s::%s: record anchor not found' % (where, symbol))
+    for ident in SUPPLEMENTAL_IDS:
+        if ident not in seen:
+            problems.append('missing supplemental identifier: %s' % ident)
+    return problems
 
 
 def find_problems(map_text, profile_text, root=ROOT, files=None):
@@ -249,6 +416,7 @@ def find_problems(map_text, profile_text, root=ROOT, files=None):
         problems.append('%r line appears %d times' % (COUNTS_LINE, len(lines)))
     elif lines[0].strip() != want:
         problems.append('counts line %r differs from the table %r' % (lines[0].strip(), want))
+    problems.extend(find_supplemental_problems(map_text, expected, root, read))
     return problems
 
 
@@ -271,6 +439,144 @@ def _with_cells(text, ident, changes):
     for col, new in changes:
         text = _with_cell(text, ident, col, new)
     return text
+
+
+def supplemental_self_test(map_text, profile_text):
+    """Positive fixtures and mutations stay in memory; assert each diagnostic."""
+    probe = r'''
+// test('comment only', () => {});
+/* test('block comment only', () => {}); */
+const unrelated = "test('string only', () => {})";
+const template = `test('template only', () => {})`;
+const pattern = /test\('regex only', [}]/;
+function nested() { test('nested only', () => {}); }
+other.test('property only', () => {});
+test('computed' + suffix, () => {});
+test(`template name`, () => {});
+test('valid reconstruction', () => { test('callback only', () => {}); });
+test("valid spend", () => {});
+test('escaped \'quote\' and \\ slash', () => {});
+'''
+    want = {'valid reconstruction', 'valid spend', "escaped 'quote' and \\ slash"}
+    if literal_test_names(probe) != want:
+        print('self-test: bounded test-name recognizer failed positive/negative controls', file=sys.stderr)
+        return 1
+    for broken in ("test('unterminated", "test('x', () => {", "test('x', () => {}]);"):
+        if literal_test_names(broken):
+            print('self-test: malformed source accepted', file=sys.stderr)
+            return 1
+    rows = [
+        ['RS-OFFLINE-01', 'IM-19', '`%s::valid reconstruction`' % OFFLINE_TEST_PATHS[0],
+         '`%s::## Reconstruction`' % OFFLINE_RECORD_PATHS[0]
+         + ', `%s::## Wiring`' % OFFLINE_RECORD_PATHS[1], 'synthetic only'],
+        ['RS-OFFLINE-02', 'IM-14', '`%s::valid spend`' % OFFLINE_TEST_PATHS[1],
+         '`%s::## Spend`' % OFFLINE_RECORD_PATHS[2], 'synthetic only'],
+        ['RS-OFFLINE-03', 'IM-15', '`%s::valid spend`' % OFFLINE_TEST_PATHS[1],
+         '`%s::## Spend`' % OFFLINE_RECORD_PATHS[2], 'synthetic only'],
+    ]
+    def render(cells):
+        return '| ' + ' | '.join(cells) + ' |'
+
+    prefix = map_text.split(SUPPLEMENTAL_SECTION)[0]
+    fixture = prefix + SUPPLEMENTAL_SECTION + '\n\n' + render(SUPPLEMENTAL_HEADER) + '\n'
+    fixture += '|---|---|---|---|---|\n' + '\n'.join(render(row) for row in rows) + '\n'
+    files = {path: probe for path in OFFLINE_TEST_PATHS}
+    files.update(dict(zip(OFFLINE_RECORD_PATHS,
+                          ('## Reconstruction\n', '## Wiring\n', '## Spend\n'))))
+    found = find_problems(fixture, profile_text, files=files)
+    if found or map_rows(fixture) != map_rows(map_text):
+        print('self-test: supplemental positive fixture failed: %r' % found, file=sys.stderr)
+        return 1
+    print('self-test: supplemental positive fixture accepted; primary rows/counts unchanged')
+
+    def cell(col, new):
+        changed = rows[0][:]
+        changed[col] = new
+        return fixture.replace(render(rows[0]), render(changed), 1)
+
+    path = OFFLINE_TEST_PATHS[0]
+    where = 'RS-OFFLINE-01: offline tests citation ' + path
+    record = OFFLINE_RECORD_PATHS[0]
+    cases = [
+        ('missing section', prefix, {}, 'supplemental section: expected exactly one, found 0'),
+        ('duplicate section', fixture + '\n' + SUPPLEMENTAL_SECTION, {}, 'found 2'),
+        ('missing identifier', fixture.replace(render(rows[0]) + '\n', ''), {},
+         'missing supplemental identifier: RS-OFFLINE-01'),
+        ('duplicate identifier', fixture + render(rows[0]) + '\n', {},
+         'RS-OFFLINE-01: duplicate supplemental identifier'),
+        ('unknown supplemental ID', cell(0, 'RS-OFFLINE-99'), {}, 'unknown supplemental identifier'),
+        ('unknown IM', cell(1, 'IM-99'), {}, 'unknown IM identifier: IM-99'),
+        ('wrong IM association', cell(1, 'IM-14'), {}, 'RS-OFFLINE-01: expected IM IDs: IM-19'),
+        ('missing file', fixture, {path: None}, where + ' does not exist'),
+        ('missing record', fixture, {record: None}, 'validation records citation ' + record + ' does not exist'),
+        ('missing anchor', fixture, {record: '## Other\n'}, 'record anchor not found'),
+        ('heading substring', fixture, {record: '## Reconstruction extra\n'}, 'record anchor not found'),
+        ('heading in prose', fixture, {record: 'prose ## Reconstruction\n'}, 'record anchor not found'),
+        ('empty limitations', cell(4, ''), {}, 'empty scope and limitations'),
+        ('empty citations', cell(2, ''), {}, 'needs comma-separated backticked citations'),
+        ('missing symbol', cell(2, '`%s`' % path), {}, where + ' needs a ::symbol'),
+        ('bad width', fixture.replace(render(rows[0]), render(rows[0]) + ' extra |'), {},
+         'supplemental expected 5 cells, found 6'),
+        ('missing opening pipe', fixture.replace(render(rows[0]), render(rows[0])[2:]), {}, 'malformed row'),
+        ('bad header', fixture.replace('Supplemental ID |', 'Wrong ID |'), {}, 'malformed header'),
+        ('bad separator', fixture.replace('|---|---|---|---|---|', '|---|oops|---|---|---|'), {},
+         'malformed separator'),
+        ('localnet isolation', _with_cell(fixture, 'IM-15', 6, 'none'), {},
+         'IM-15: COVERED_LOCALNET needs a localnet citation'),
+    ]
+    for name in ('absent', 'valid', 'comment only', 'block comment only', 'string only',
+                 'template only', 'regex only', 'nested only', 'callback only', 'property only', 'computed'):
+        cases.append(('undeclared ' + name, cell(2, '`%s::%s`' % (path, name)), {},
+                      where + '::' + name + ': test name not declared'))
+    # The spend record abbreviates this name; only the full declaration counts.
+    cases.append(('short spend name', cell(2, '`%s::domain_mismatch`' % OFFLINE_TEST_PATHS[1]),
+                  {OFFLINE_TEST_PATHS[1]: "test('domain_mismatch: full name', () => {});"},
+                  '::domain_mismatch: test name not declared'))
+    for bad in ('../outside.test.mjs', '/tmp/outside.test.mjs', 'C:/outside.test.mjs',
+                'reference\\rights_scale\\x.test.mjs', 'https://example.invalid/test.mjs'):
+        cases.append(('unsafe path ' + bad, cell(2, '`%s::x`' % bad), {}, 'is not repo-relative'))
+    for bad, marker in (('reference/v0.3-rc1/client/offline.test.mjs', 'is under reference/v0.3-rc1'),
+                        ('reference/rights_scale/client/other.test.mjs', 'outside the supplemental offline tests paths'),
+                        (record, 'outside the supplemental offline tests paths')):
+        cases.append(('forbidden path ' + bad, cell(2, '`%s::x`' % bad), {}, marker))
+    valid = rows[0][2]
+    for bad in ('unquoted', '`%s`' % path, '`%s::absent`' % path):
+        marker = ('needs comma-separated' if bad == 'unquoted' else
+                  'needs a ::symbol' if '::' not in bad else 'test name not declared')
+        for members in ((bad, valid), (valid, bad), (valid, bad, valid)):
+            cases.append(('mixed citations ' + ', '.join(members), cell(2, ', '.join(members)), {}, marker))
+    for name, mutated, overrides, marker in cases:
+        found = find_problems(mutated, profile_text, files={**files, **overrides})
+        hit = [item for item in found if marker in item]
+        if not hit:
+            print('self-test: %s missed diagnostic %r (found %r)' % (name, marker, found), file=sys.stderr)
+            return 1
+        if map_rows(mutated) != map_rows(fixture) and name != 'localnet isolation':
+            print('self-test: supplemental mutation changed primary rows', file=sys.stderr)
+            return 1
+        print('self-test: detected %s (%s)' % (name, hit[0]))
+    # Model symlink resolution in memory and prove rejection precedes any read.
+    from unittest.mock import patch
+    resolve = Path.resolve
+    for destination, marker in ((ROOT.parent / 'escaped.test.mjs', 'resolves outside the repository'),
+                                (ROOT / FORBIDDEN_PREFIX / 'client/offline.test.mjs',
+                                 'resolves under reference/v0.3-rc1')):
+        reads = []
+
+        def resolved(candidate):
+            return destination if candidate == ROOT / path else resolve(candidate)
+
+        def read_fixture(candidate):
+            reads.append(candidate)
+            return files.get(candidate)
+
+        with patch.object(Path, 'resolve', resolved):
+            found = find_supplemental_problems(fixture, profile_rows(profile_text), ROOT, read_fixture)
+        if path in reads or not any(marker in item for item in found):
+            print('self-test: resolved-path fence failed: %r' % found, file=sys.stderr)
+            return 1
+        print('self-test: detected symlink target (%s); target not read' % marker)
+    return 0
 
 
 def self_test(map_text, profile_text):
@@ -345,6 +651,8 @@ def self_test(map_text, profile_text):
             print('self-test: %s was accepted' % name, file=sys.stderr)
             return 1
         print('self-test: detected %s (%s)' % (name, hit[0]))
+    if supplemental_self_test(map_text, profile_text):
+        return 1
     print('self-test: pass')
     return 0
 
@@ -376,6 +684,10 @@ def main(argv):
     print('rs im evidence map ok: rows=%d expected=%d citations=%d %s'
           % (len(rows), len(profile_rows(profile_text)), cites,
              ' '.join('%s=%d' % (s, by_status[s]) for s in STATUSES)))
+    supplement, _ = supplemental_rows(map_text)
+    print('supplemental offline evidence ok: rows=%d citations=%d'
+          % (len(supplement), sum(len(parse_cell(cells[col]))
+                                   for _, cells in supplement for col in (2, 3))))
     return 0
 
 

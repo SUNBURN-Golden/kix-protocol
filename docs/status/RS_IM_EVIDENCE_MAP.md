@@ -66,7 +66,7 @@ Counts: COVERED_LOCALNET=11 COVERED_MODEL_OR_MEMORY=4 PARTIAL=13 NOT_COVERED=0 M
 
 ## 3. Reading notes
 
-- IM-19 supplemental offline regressions: [test suite](../../reference/rights_scale/client/witness-reconstruction.test.mjs) and [original execution record](../../validation/2026-10-21-plan-rs-witness-offline-regressions/README.md). Synthetic public events and injected parsed-field projections exercise empty/populated trees, ordering, show filtering, maximum revoked generations and root/count/index guards. The read spy permits only the named NoteTree and RevocationState objects; it does not test real object BCS decoding or transport completeness. The [subsequent CI-wiring record](../../validation/2026-10-21-plan-rs-witness-ci-wiring/README.md) records actual local execution under Node 24; the [protocol workflow](../../.github/workflows/protocol.yml) now explicitly invokes the unchanged suite with `node --test` under Node 24 after locked dependency installation and before localnet/proving steps. This configuration and local execution do not establish exact-head CI success; that remains a separate delivery gate. The preserved IM-19 table cell and earlier records saying neither workflow invokes it describe the preceding snapshot. No new localnet/ZK result or independent cryptographic verification is claimed; the suite shares Poseidon with the client. These ordinary Markdown links are outside the checker's structured path/symbol validation (its allowlist excludes `.test.mjs` and these validation dates). IM-19 stays PARTIAL, including the gate-secret assertion gap. Public-tree retention and operational parameters stay UNDETERMINED, owned by Astra.
+- IM-19 supplemental offline regressions: [test suite](../../reference/rights_scale/client/witness-reconstruction.test.mjs) and [original execution record](../../validation/2026-10-21-plan-rs-witness-offline-regressions/README.md). Synthetic public events and injected parsed-field projections exercise empty/populated trees, ordering, show filtering, maximum revoked generations and root/count/index guards. The read spy permits only the named NoteTree and RevocationState objects; it does not test real object BCS decoding or transport completeness. The [subsequent CI-wiring record](../../validation/2026-10-21-plan-rs-witness-ci-wiring/README.md) records actual local execution under Node 24; the [protocol workflow](../../.github/workflows/protocol.yml) now explicitly invokes the unchanged suite with `node --test` under Node 24 after locked dependency installation and before localnet/proving steps. This configuration and local execution do not establish exact-head CI success; that remains a separate delivery gate. The preserved IM-19 table cell and earlier records saying neither workflow invokes it describe the preceding snapshot. No new localnet/ZK result or independent cryptographic verification is claimed; the suite shares Poseidon with the client. Section 5 separately checks the supplemental offline test names and validation-record headings; these ordinary Markdown links remain ordinary links, outside that structured citation grammar. The primary localnet allowlist is unchanged. IM-19 stays PARTIAL, including the gate-secret assertion gap. Public-tree retention and operational parameters stay UNDETERMINED, owned by Astra.
 
 - "Ceiling 5" in IM-11 and IM-17 is row 5 of the section 4 ceiling table, not the number 5. The root-history length K stays UNDETERMINED there; the value 4 in the fixture and in `manifest-v2.example.json` is a test fixture. The map chooses no value for page size P, shard count S, K, the revocation window W, `MAX_BUNDLE_CHAIN` or the `IssuerCap` option.
 - IM-08: the last sentence of the profile calls the off-chain refund duty an observed reference trait. `refund_apply` emits `RefundDutyRequested`, and the reference `rights.move` already emitted it; the profile does not say whether that event is a "new refund obligation". The row is `PARTIAL` and the question is left open.
@@ -81,3 +81,42 @@ Counts: COVERED_LOCALNET=11 COVERED_MODEL_OR_MEMORY=4 PARTIAL=13 NOT_COVERED=0 M
 - No Sui, ZK, localnet, Move or Node run was made to build the map; the map-building commands are listed in `validation/2026-10-17-rs-im-evidence-map/README.md`, and the Python model tests added by the gap-closure update were run as listed in `validation/2026-10-19-rs-model-gap-closure/README.md`.
 - No grade is raised and the operational count stays 0. No profile byte, test, contract, decision or register row changed.
 - A status is a builder reading of the cited test bodies. It is not a proof that the predicate holds in production, under real concurrency, or on a network other than a disposable local one.
+
+
+## 5. Supplemental offline evidence
+
+Builder-authored citation inventory, added by `plan-rs-offline-evidence-citation-check`.
+The checker validates this table separately from the primary table: supplemental
+citations cannot satisfy COVERED_LOCALNET requirements, alter primary statuses or
+counts, close gaps, change owners or raise the operational count of 0.
+
+Grammar: five cells per row; unique `RS-OFFLINE-01` through `RS-OFFLINE-03`
+identifiers; comma-separated exact profile IM identifiers (respectively IM-19,
+IM-14 and IM-15); nonempty citation and scope/limitations cells. Citations use
+comma-separated backticked `path::symbol` members. Test symbols are complete
+literal first arguments of direct top-level `test(...)` statements in the two
+suites, using single/double quotes (escaped quotes/backslashes supported).
+Computed/nested names and modifiers are outside this bounded static grammar.
+Record anchors are exact whole Markdown heading lines, including their `##`
+prefix; they are textual anchors, not generated URL fragments.
+
+The separate exact path allowlist is:
+
+- `reference/rights_scale/client/witness-reconstruction.test.mjs`
+- `reference/rights_scale/client/spend-witness.test.mjs`
+- `validation/2026-10-21-plan-rs-witness-offline-regressions/README.md`
+- `validation/2026-10-21-plan-rs-witness-ci-wiring/README.md`
+- `validation/2026-10-21-plan-rs-spend-witness-offline-tests/README.md`
+
+No imported code is executed. This checks citation integrity only, not test
+execution, assertion adequacy, independent verification, circuit correctness,
+transport completeness, localnet success or production readiness. IM-19 stays
+PARTIAL, including the gate-secret assertion gap. Public-tree retention and
+operational parameters remain UNDETERMINED, owned by Astra; IssuerCap stays OPEN.
+All primary gaps, policy values and named decision owners are preserved.
+
+| Supplemental ID | IM IDs | Offline tests | Validation records | Scope and limitations |
+|---|---|---|---|---|
+| RS-OFFLINE-01 | IM-19 | `reference/rights_scale/client/witness-reconstruction.test.mjs::dense_fixture_matches_existing_move_known_answers`, `reference/rights_scale/client/witness-reconstruction.test.mjs::empty_tree`, `reference/rights_scale/client/witness-reconstruction.test.mjs::populated_tree`, `reference/rights_scale/client/witness-reconstruction.test.mjs::reordered_notes`, `reference/rights_scale/client/witness-reconstruction.test.mjs::unrelated_show_events`, `reference/rights_scale/client/witness-reconstruction.test.mjs::maximum_revoked_generation`, `reference/rights_scale/client/witness-reconstruction.test.mjs::missing_note_index`, `reference/rights_scale/client/witness-reconstruction.test.mjs::duplicate_note_index`, `reference/rights_scale/client/witness-reconstruction.test.mjs::corrupt_intermediate_note_root`, `reference/rights_scale/client/witness-reconstruction.test.mjs::note_root_mismatch`, `reference/rights_scale/client/witness-reconstruction.test.mjs::note_count_mismatch`, `reference/rights_scale/client/witness-reconstruction.test.mjs::revocation_root_mismatch`, `reference/rights_scale/client/witness-reconstruction.test.mjs::revocation_count_mismatch`, `reference/rights_scale/client/witness-reconstruction.test.mjs::omitted_maximal_revocation`, `reference/rights_scale/client/witness-reconstruction.test.mjs::omitted_nonmaximal_revocation`, `reference/rights_scale/client/witness-reconstruction.test.mjs::duplicated_revocation` | `validation/2026-10-21-plan-rs-witness-offline-regressions/README.md::## What the new suite adds`, `validation/2026-10-21-plan-rs-witness-ci-wiring/README.md::## Local execution versus exact-head CI` | Synthetic public-event reconstruction and injected parsed-field reads; shared Poseidon, no object BCS decoding, transport completeness or gate-secret assertion. Original execution and subsequent CI-wiring records describe separate snapshots; no exact-head CI claim. |
+| RS-OFFLINE-02 | IM-14 | `reference/rights_scale/client/spend-witness.test.mjs::domain_mismatch: passing controls and exact domain diagnostic`, `reference/rights_scale/client/spend-witness.test.mjs::commitment_binding: isolated secret, slot, generation, commitment and coherent domain changes` | `validation/2026-10-21-plan-rs-spend-witness-offline-tests/README.md::## New evidence and fixture provenance` | Synthetic domain and commitment-binding construction checks; shared Poseidon and source-informed expectations, no circuit or independent cryptographic verification. |
+| RS-OFFLINE-03 | IM-15 | `reference/rights_scale/client/spend-witness.test.mjs::selected_prefix: inclusion, exclusion, missing commitment and suffix independence`, `reference/rights_scale/client/spend-witness.test.mjs::distinct_indices: note insertion 2 and revocation slot 700 use different paths and leaves`, `reference/rights_scale/client/spend-witness.test.mjs::gate_limbs_and_public_order: zero, low maximum, 128-bit boundary and unequal limbs`, `reference/rights_scale/client/spend-witness.test.mjs::context_binding: each gate limb, challenge and expiry changes context alone`, `reference/rights_scale/client/spend-witness.test.mjs::repeat_calls_preserve_inputs: identical outputs and snapshots on success and rejection` | `validation/2026-10-21-plan-rs-spend-witness-offline-tests/README.md::## New evidence and fixture provenance` | Synthetic selected-prefix membership, distinct insertion/slot indices, gate limbs/public order, context binding and repeat-call construction checks; shared Poseidon, no proof, replay/expiry enforcement or localnet result. |
