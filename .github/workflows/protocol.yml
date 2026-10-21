@@ -52,6 +52,8 @@ jobs:
         run: node --test reference/rights_scale/client/witness-reconstruction.test.mjs
       - name: Offline spend witness regressions
         run: node --test reference/rights_scale/client/spend-witness.test.mjs
+      - name: Offline event source regressions
+        run: node --test reference/rights_scale/client/event-sources.test.mjs
       - name: Rights-scale Move and model tests
         run: |
           source scripts/env.sh
