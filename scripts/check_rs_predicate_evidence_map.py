@@ -30,7 +30,10 @@ Checks, each reported on failure:
    repo-relative, lies under its column's allowed prefixes and is never under
    ``reference/v0.3-rc1/``. A symbol is a defined ``fun``/``struct``/``const``
    (Move), ``def``/``class`` (Python) or ``fn`` (Rust) in the cited file; for
-   ``.mjs``, ``.json`` and ``.md`` it must appear as text.
+   ``.mjs``, ``.json`` and ``.md`` it must appear as text. For a ``.test.mjs``
+   file the symbol is a node:test name and must appear as ``test('name'`` or
+   ``test("name"`` (a nested ``t.test(`` also matches; a template-literal name
+   is not citable).
 5. Counts. The ``Counts:`` line equals the statuses recomputed from the table.
 
 Standard library only. Convenience check, not a contract gate. It reads the
@@ -53,13 +56,14 @@ COLUMNS = {
     2: ('move', (r'reference/rights_scale/sui/tests/[a-z_]+\.move',)),
     3: ('python', (r'reference/rights_scale/test_[a-z_]+\.py',)),
     4: ('rust', (r'runtime/crates/kix-delegated-exec/tests/[a-z_]+\.rs',)),
-    5: ('local', (r'reference/rights_scale/client/[a-z0-9-]+\.mjs',
+    5: ('local', (r'reference/rights_scale/client/[a-z0-9-]+(?:\.test)?\.mjs',
                   r'reference/rights_scale/vectors/[a-z_]+\.json',
                   r'scripts/run_[a-z0-9_]*rights_scale[a-z0-9_]*\.py',
                   r'validation/2026-10-1[0-9]-[a-z0-9-]+/[A-Za-z0-9._-]+')),
 }
 FORBIDDEN_PREFIX = 'reference/v0.3-rc1/'
 TEXT_SUFFIXES = ('.mjs', '.json', '.md')
+TEST_SUFFIX = '.test.mjs'  # symbol is a node:test name, not a text string
 SPLIT_LABELS = {
     'RS-C03': ('(a)', '(b)'), 'RS-C06': ('(a)', '(b)'), 'RS-C07': ('(a)', '(b)'),
     'RS-C14': ('public', 'private', 'delegated'),
@@ -111,7 +115,18 @@ def parse_cell(cell):
     return out
 
 
+def suffix_of(path):
+    return TEST_SUFFIX if path.endswith(TEST_SUFFIX) else Path(path).suffix
+
+
+def test_named(text, name):
+    """True when ``test('name'`` or ``test("name"`` appears; a template literal name is not citable."""
+    return "test('%s'" % name in text or 'test("%s"' % name in text
+
+
 def symbol_defined(text, suffix, symbol):
+    if suffix == TEST_SUFFIX:
+        return test_named(text, symbol)
     if suffix in TEXT_SUFFIXES:
         return symbol in text
     pattern = DEF_PATTERNS.get(suffix)
@@ -207,7 +222,7 @@ def find_problems(map_text, profile_text, root=ROOT, files=None):
                     continue
                 if symbol is None:
                     problems.append('%s needs a ::symbol' % where)
-                elif not symbol_defined(text, Path(path).suffix, symbol):
+                elif not symbol_defined(text, suffix_of(path), symbol):
                     problems.append('%s::%s is not defined in the file' % (where, symbol))
 
         if status == 'NOT_COVERED' and total:
@@ -278,13 +293,22 @@ def self_test(map_text, profile_text):
         print('self-test: Move symbol pattern failed its positive control', file=sys.stderr)
         return 1
 
-    rows = {i: _row_line(map_text, i) for i in ('RS-C01', 'RS-C02', 'RS-C07', 'RR-5')}
+    node_probe = ("test('alpha_probe', () => {});\nt.test(\"beta_probe\", async () => {});\n"
+                  "test(`gamma_${x}`, () => {});\n// delta_probe\n")
+    node_controls = [symbol_defined(node_probe, TEST_SUFFIX, n) for n in ('alpha_probe', 'beta_probe')]
+    node_misses = [symbol_defined(node_probe, TEST_SUFFIX, n) for n in ('alpha_prob', 'delta_probe', 'gamma_')]
+    if not all(node_controls) or any(node_misses):
+        print('self-test: node:test name pattern failed its positive control', file=sys.stderr)
+        return 1
+
+    rows = {i: _row_line(map_text, i) for i in ('RS-C01', 'RS-C02', 'RS-C07', 'RR-4', 'RR-5')}
     if None in rows.values():
         print('self-test: could not find the rows to mutate', file=sys.stderr)
         return 1
     move01 = split_row(rows['RS-C01'])[2]
     pyc07 = split_row(rows['RS-C07'])[3]
     own02 = split_row(rows['RS-C02'])[8]
+    local04 = split_row(rows['RR-4'])[5]
     counts_line = next(l for l in map_text.splitlines() if l.startswith(COUNTS_LINE))
     cases = [
         ('removed RS-C01 row', map_text.replace(rows['RS-C01'] + '\n', '', 1),
@@ -315,6 +339,10 @@ def self_test(map_text, profile_text):
          'reference/v0.3-rc1'),
         ('split label dropped', _without_labels(map_text, 'RS-C07', ('(a)', '(b)')),
          'split label'),
+        ('misspelled node:test name',
+         _with_cell(map_text, 'RR-4', 5,
+                    local04 + ' `reference/rights_scale/client/witness-reconstruction.test.mjs::populated_tre`'),
+         'is not defined in the file'),
         ('wrong counts line', map_text.replace(counts_line, counts_line.replace('PARTIAL=', 'PARTIAL=9', 1), 1),
          'counts line'),
     ]
