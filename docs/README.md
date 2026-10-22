@@ -236,6 +236,7 @@
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
 - [plan-rs-offline-test-entrypoint](../validation/2026-10-22-plan-rs-offline-test-entrypoint/README.md) — Repair the offline package entry point to invoke all five existing suites; file-level and named-case results recorded separately, no tests, dependencies, workflows, policy values or qualification claims added.
+- [plan-rs-admission-packet-offline-tests](../validation/2026-10-22-plan-rs-admission-packet-offline-tests/README.md) — Synthetic offline packet-construction and proof-wrapper rejection regressions through the unchanged admissionProof implementation; test-only dependency mocks, no cryptographic privacy, gate transport, localnet or complete IM-19 closure claim. Operational parameters remain UNDETERMINED with Astra as owner.
 
 ## 역사 문서와 증거
 
