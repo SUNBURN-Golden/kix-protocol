@@ -256,6 +256,7 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [RS admission packet 오프라인 시험 기록](../validation/2026-10-22-plan-rs-admission-packet-offline-tests/README.md) | #251 | `9eb6b5f932cae5f4f1b431ef79c9f15874db1c36` | soulbound_jt | This evidence addresses only IM-19's packet-construction portion. It does not | 위치 포인터. 새 승인 아님. |
 | [RS mint wrapper 오프라인 시험 기록](../validation/2026-10-22-plan-rs-mint-wrapper-offline-tests/README.md) | #252 | `1c129f1a5fd73636c30c90a33ecfb9e4adf21217` | soulbound_jt | These are synthetic, source-informed wrapper tests within EV-RS, sharing | 위치 포인터. 새 승인 아님. |
 | [RS verifier binding 오프라인 시험 기록](../validation/2026-10-22-plan-rs-verifier-binding-offline-tests/README.md) | #253 | `f6558996c611f74b88c60928f5b285c553303c14` | soulbound_jt | These are synthetic, source-informed integration tests within EV-RS for IM-17 | 위치 포인터. 새 승인 아님. |
+| [열린 사용자 결정 원장 기록](../validation/2026-10-22-open-user-decisions-ledger/README.md) | — | — | — | 이 원장은 어느 선택지도 고르지 않고, 어떤 값도 정하지 않고, 무엇을 검토됨으로 표시하지도 않고, 어느 노드의 상태도 바꾸지 않는다. 소유자는 빌더 세션 밖에서 노드를 다시 발동시켜야 한다. | 위치 포인터. 새 승인 아님. |
 
 ## 6. E-4와 상태 수명
 
