@@ -12,7 +12,7 @@
     "build:circuits": "node compile-circuits.mjs",
     "setup:zk": "node setup-zk.mjs",
     "test:zk": "node zk-regression.mjs",
-    "test:offline": "node --experimental-test-module-mocks --test zk-policy-v2.test.mjs zk-helpers.test.mjs ptau-header.test.mjs witness-reconstruction.test.mjs spend-witness.test.mjs admission-packet.test.mjs mint-note.test.mjs",
+    "test:offline": "node --experimental-test-module-mocks --test zk-policy-v2.test.mjs zk-helpers.test.mjs ptau-header.test.mjs witness-reconstruction.test.mjs spend-witness.test.mjs admission-packet.test.mjs mint-note.test.mjs verifier-binding.test.mjs",
     "journey:private": "node private-localnet.mjs"
   },
   "dependencies": {
