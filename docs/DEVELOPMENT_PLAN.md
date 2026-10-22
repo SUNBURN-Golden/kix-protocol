@@ -256,7 +256,13 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [RS admission packet 오프라인 시험 기록](../validation/2026-10-22-plan-rs-admission-packet-offline-tests/README.md) | #251 | `9eb6b5f932cae5f4f1b431ef79c9f15874db1c36` | soulbound_jt | This evidence addresses only IM-19's packet-construction portion. It does not | 위치 포인터. 새 승인 아님. |
 | [RS mint wrapper 오프라인 시험 기록](../validation/2026-10-22-plan-rs-mint-wrapper-offline-tests/README.md) | #252 | `1c129f1a5fd73636c30c90a33ecfb9e4adf21217` | soulbound_jt | These are synthetic, source-informed wrapper tests within EV-RS, sharing | 위치 포인터. 새 승인 아님. |
 | [RS verifier binding 오프라인 시험 기록](../validation/2026-10-22-plan-rs-verifier-binding-offline-tests/README.md) | #253 | `f6558996c611f74b88c60928f5b285c553303c14` | soulbound_jt | These are synthetic, source-informed integration tests within EV-RS for IM-17 | 위치 포인터. 새 승인 아님. |
-| [열린 사용자 결정 원장 기록](../validation/2026-10-22-open-user-decisions-ledger/README.md) | — | — | — | 이 원장은 어느 선택지도 고르지 않고, 어떤 값도 정하지 않고, 무엇을 검토됨으로 표시하지도 않고, 어느 노드의 상태도 바꾸지 않는다. 소유자는 빌더 세션 밖에서 노드를 다시 발동시켜야 한다. | 위치 포인터. 새 승인 아님. |
+| [plan·register·index 동기화 기록](../validation/2026-10-22-plan-register-index-sync-20261022/README.md) | #254 | `8e85ef4e14c2615a94b8efca6acd60ea4fe52fb0` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [stage5 host preflight self-test CI 배선 기록](../validation/2026-10-22-ci-wire-stage5-host-preflight-selftest/README.md) | #255 | `1a69364eca0e2a219854c443f8183a9b0e733a2d` | soulbound_jt | This record raises no evidence grade, marks nothing reviewed or | 위치 포인터. 새 승인 아님. |
+| [RS-4 host 조건 기록기 기록](../validation/2026-10-22-rs4-load-host-conditions-recorder/README.md) | #256 | `f1734e00e5a167dc18bfff1a873994bee124a3f7` | soulbound_jt | Thresholds are UNDETERMINED (owner: User). This record is not a measurement, | 위치 포인터. 새 승인 아님. |
+| [RS 오프라인 suite 증거 인용 동기화 기록](../validation/2026-10-22-rs-offline-suite-evidence-sync/README.md) | #257 | `56d5f59468969825e0e2cd22f6803ebb5e6fb662` | soulbound_jt | Builder reading, not an Astra review and not an acceptance. | 위치 포인터. 새 승인 아님. |
+| [열린 사용자 결정 원장 기록](../validation/2026-10-22-open-user-decisions-ledger/README.md) | #258 | `d84cc50f78a37420ca9d12752ac23f9f9b51c5fc` | soulbound_jt | The ledger chooses no option, assigns no value, marks nothing reviewed and | 위치 포인터. 새 승인 아님. |
+| [정산·여신 거절 원자성 기록](../validation/2026-10-23-settlement-credit-rejection-atomicity/README.md) | #259 | `16aa6d528c2b2a519d99e724b986717fc090b1e3` | soulbound_jt | This record is a builder-authored reading, not an independent review. No grade is raised and nothing is claimed for production. | 위치 포인터. 새 승인 아님. |
+| [열린 사용자 결정 원장 색인 항목(docs/README)](README.md) | #260 | `2393988eeca984f12f0819ac56b6870be1a5832f` | soulbound_jt | of the five open `DECISION_REQUIRED` records | 위치 포인터. 새 승인 아님. |
 
 ## 6. E-4와 상태 수명
 
