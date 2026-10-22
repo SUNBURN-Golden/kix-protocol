@@ -54,6 +54,8 @@ jobs:
         run: node --test reference/rights_scale/client/spend-witness.test.mjs
       - name: Offline admission packet regressions
         run: node --experimental-test-module-mocks --test reference/rights_scale/client/admission-packet.test.mjs
+      - name: Offline mint note regressions
+        run: node --experimental-test-module-mocks --test reference/rights_scale/client/mint-note.test.mjs
       - name: Rights-scale Move and model tests
         run: |
           source scripts/env.sh

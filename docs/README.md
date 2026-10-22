@@ -237,6 +237,7 @@
 
 - [plan-rs-offline-test-entrypoint](../validation/2026-10-22-plan-rs-offline-test-entrypoint/README.md) — Repair the offline package entry point to invoke all five existing suites; file-level and named-case results recorded separately, no tests, dependencies, workflows, policy values or qualification claims added.
 - [plan-rs-admission-packet-offline-tests](../validation/2026-10-22-plan-rs-admission-packet-offline-tests/README.md) — Synthetic offline packet-construction and proof-wrapper rejection regressions through the unchanged admissionProof implementation; test-only dependency mocks, no cryptographic privacy, gate transport, localnet or complete IM-19 closure claim. Operational parameters remain UNDETERMINED with Astra as owner.
+- [plan-rs-mint-wrapper-offline-tests](../validation/2026-10-22-plan-rs-mint-wrapper-offline-tests/README.md) — Synthetic offline mintNote construction and public-signal binding regressions for IM-14 and the mint-specific portion of IM-27; source-informed with shared Poseidon, no circuit validity, cryptographic independence or operational-readiness claim. Owner policy values remain UNDETERMINED with their existing owners.
 
 ## 역사 문서와 증거
 
