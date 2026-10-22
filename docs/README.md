@@ -248,6 +248,12 @@
 - [rs-offline-suite-evidence-sync](../validation/2026-10-22-rs-offline-suite-evidence-sync/README.md) — Builder-authored citation sync: the eight CI-run offline Node suites cited by `.test.mjs::<node:test name>` in the [RS predicate map](status/RS_PREDICATE_EVIDENCE_MAP.md) and [RS impact-table map](status/RS_IM_EVIDENCE_MAP.md), both checkers extended to resolve such names (existence only); wording corrected where a sentence became false, no status change, no test, CI, contract or source change, no exact-head CI claim, no grade change.
 - [open-user-decisions-ledger](../validation/2026-10-22-open-user-decisions-ledger/README.md) — Builder-authored in-repo ledger ([원장](status/OPEN_USER_DECISIONS_20261022.md)) of the four open `DECISION_REQUIRED` records (`k-stage5-durable-tx` host, `rs-4-l2` host, readiness negative-controls option A/B, readiness receipt/audit checker prerequisite) and the BRA seeded-property class C stop, one row each with owner, options and recommendation as its record states them plus HEAD-verified repo facts since; chooses no option, assigns no value, marks nothing reviewed, the owner must re-trigger a node outside the builder session; document and record only, no node state change, no grade change.
 
+## 2026-10-23 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [settlement-credit-rejection-atomicity](../validation/2026-10-23-settlement-credit-rejection-atomicity/README.md) — Builder-authored rejection-atomicity audit for the settlement and credit machines repeating the #219/#228 pattern; two test modules and a record only, no FSM/mock/contract/command change, deterministic rejections leave no trace against a control machine, late-fault seams recorded as class B characterizations, no grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
