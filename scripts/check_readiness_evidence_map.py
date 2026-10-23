@@ -445,6 +445,28 @@ def self_test(map_text, contract_text, owner_text):
         return 1
     counts_line = next(l for l in map_text.splitlines()
                        if l.startswith(COUNTS_LINE))
+    # Do not depend on a live evidence gap staying open. Make a valid PARTIAL
+    # control in memory, including its owner and counts, before removing only
+    # its owner in the negative case below.
+    partial_map = _with_cells(
+        map_text, partial,
+        [(STATUS_CELL, 'PARTIAL'),
+         (MISSING_CELL, 'Synthetic self-test fixture gap'),
+         (OWNER_CELL, 'Astra')])
+    partial_rows, _ = map_rows(partial_map, set(EXPECTED_ROWS))
+    partial_counts = {status: 0 for status in STATUSES}
+    for _, cells in partial_rows:
+        partial_counts[cells[STATUS_CELL]] += 1
+    partial_map = partial_map.replace(
+        counts_line, COUNTS_LINE + ' ' + ' '.join(
+            '%s=%d' % (status, partial_counts[status]) for status in STATUSES), 1)
+    partial_problems = find_problems(partial_map, contract_text, owner_text)
+    if partial_problems:
+        print('self-test: synthetic PARTIAL control fails', file=sys.stderr)
+        for item in partial_problems:
+            print('- ' + item, file=sys.stderr)
+        return 1
+
     torn_faults = split_row(rows[torn])[2]
     cases = [
         ('removed %s row' % torn,
@@ -512,7 +534,7 @@ def self_test(map_text, contract_text, owner_text):
          _with_cell(map_text, exercised, MISSING_CELL, 'a leftover gap'),
          'should be'),
         ('PARTIAL row without an owner',
-         _with_cell(map_text, partial, OWNER_CELL, 'none'),
+         _with_cell(partial_map, partial, OWNER_CELL, 'none'),
          'must have an owner'),
         ('wrong counts line',
          map_text.replace(counts_line,
