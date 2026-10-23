@@ -258,6 +258,8 @@
 
 - [plan-rs-summary-arithmetic-tests](../validation/2026-10-23-plan-rs-summary-arithmetic-tests/README.md) — Synthetic offline RS-4 summary arithmetic and CSV regressions with fixed expected values; source-informed characterization only, no measurement, L2/L3 execution, performance claim or policy value change.
 
+- [plan-readiness-migration-edge-tests](../validation/2026-10-23-plan-readiness-migration-edge-tests/README.md) — Offline explicit-migration predicate regressions: individual missing fields, strict false labels, invalid batch suffixes, nested preservation and copy isolation; tests and record only, no migration/contract/map/CI change, no grade or operational-readiness claim.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
