@@ -870,3 +870,29 @@ class ResaleFsmTests(unittest.TestCase):
         again = restored.reconcile("list-1", idempotency_key="recon-1")
         self.assertFalse(again["duplicate"])
         self.assertTrue(again["matched"])
+
+    def test_unknown_hold_and_conflicting_hold_id_are_rejected(self):
+        self.opened()
+        journal = self.machine.export_journal()
+        self.assertEqual(
+            codes(lambda: self.machine.release_hold(
+                "hold-missing", idempotency_key="release-missing", buyer_role="buyer-2")),
+            "UNKNOWN_HOLD",
+        )
+        self.assertEqual(self.machine.export_journal(), journal)
+        held = self.hold()
+        self.assertEqual(held["listing"]["phase"], BUY_HELD)
+        self.assertEqual(
+            codes(lambda: self.hold(buyer="buyer-3", key="hold-rebind")),
+            "HOLD_BINDING_CONFLICT",
+        )
+        self.assertEqual(self.machine.view("list-1")["phase"], BUY_HELD)
+        self.assertEqual(self.machine.view("list-1")["buyer_role"], "buyer-2")
+
+    def test_reservation_bound_commands_need_a_ticket_source(self):
+        self.clock()
+        self.assertEqual(codes(lambda: self.adopt(reservation_id="reserve-1")), "TICKET_SOURCE_REQUIRED")
+        adopted = self.adopt(key="adopt-2")
+        self.assertEqual(adopted["right"]["state"], "ACTIVE")
+        self.assertEqual(codes(lambda: self.sell(reservation_id="reserve-1")), "TICKET_SOURCE_REQUIRED")
+        self.assertIs(self.machine.view_right("issue-1")["ticket"]["eligible"], True)

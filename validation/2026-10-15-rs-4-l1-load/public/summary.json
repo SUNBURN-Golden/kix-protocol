@@ -1,0 +1,1298 @@
+{
+ "path": "public",
+ "status": "PASSED_MEASUREMENT",
+ "counts": {
+  "ok": 458,
+  "abort": 19,
+  "submission_rejected": 0,
+  "client_refused": 0,
+  "unknown": 0,
+  "driver_error": 0,
+  "probe": 5,
+  "expect_mismatches": 0,
+  "branch_unknowns": 0,
+  "branch_submission_rejected": 3,
+  "steps": 482
+ },
+ "requested": {
+  "seats_per_show": 1024,
+  "shield_count": 1024,
+  "consume_count": 32,
+  "invalidation_count": 8
+ },
+ "by_op": {
+  "accept_gift": {
+   "outcomes": {
+    "ok": 8
+   },
+   "service_ms": {
+    "n": 8,
+    "min": 472,
+    "max": 1705,
+    "mean": 1187.75,
+    "p50": 802,
+    "p95": 1705,
+    "p99": 1705
+   },
+   "build_ms": {
+    "n": 8,
+    "min": 9,
+    "max": 11,
+    "mean": 10.38,
+    "p50": 10,
+    "p95": 11,
+    "p99": 11
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 8,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 8,
+     "min": 3321200,
+     "max": 3321200,
+     "mean": 3321200.0,
+     "p50": 3321200,
+     "p95": 3321200,
+     "p99": 3321200
+    },
+    "rebate": {
+     "n": 8,
+     "min": 3957624,
+     "max": 3957624,
+     "mean": 3957624.0,
+     "p50": 3957624,
+     "p95": 3957624,
+     "p99": 3957624
+    }
+   },
+   "gas_total": {
+    "computation": 8000000,
+    "storage": 26569600,
+    "rebate": 31660992
+   }
+  },
+  "attest_issuance": {
+   "outcomes": {
+    "ok": 132,
+    "abort": 3
+   },
+   "service_ms": {
+    "n": 135,
+    "min": 418,
+    "max": 1719,
+    "mean": 1083.93,
+    "p50": 793,
+    "p95": 1700,
+    "p99": 1715
+   },
+   "build_ms": {
+    "n": 135,
+    "min": 8,
+    "max": 58,
+    "mean": 11.6,
+    "p50": 10,
+    "p95": 19,
+    "p99": 34
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 135,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 135,
+     "min": 9515200,
+     "max": 13444400,
+     "mean": 13357084.44,
+     "p50": 13444400,
+     "p95": 13444400,
+     "p99": 13444400
+    },
+    "rebate": {
+     "n": 135,
+     "min": 9420048,
+     "max": 9420048,
+     "mean": 9420048.0,
+     "p50": 9420048,
+     "p95": 9420048,
+     "p99": 9420048
+    }
+   },
+   "gas_total": {
+    "computation": 135000000,
+    "storage": 1803206400,
+    "rebate": 1271706480
+   }
+  },
+  "authorize": {
+   "outcomes": {
+    "ok": 8
+   },
+   "service_ms": {
+    "n": 8,
+    "min": 415,
+    "max": 1701,
+    "mean": 1059.88,
+    "p50": 809,
+    "p95": 1701,
+    "p99": 1701
+   },
+   "build_ms": {
+    "n": 8,
+    "min": 10,
+    "max": 11,
+    "mean": 10.62,
+    "p50": 11,
+    "p95": 11,
+    "p99": 11
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 8,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 8,
+     "min": 3936800,
+     "max": 4180000,
+     "mean": 3997600.0,
+     "p50": 3936800,
+     "p95": 4180000,
+     "p99": 4180000
+    },
+    "rebate": {
+     "n": 8,
+     "min": 3287988,
+     "max": 3528756,
+     "mean": 3348180.0,
+     "p50": 3287988,
+     "p95": 3528756,
+     "p99": 3528756
+    }
+   },
+   "gas_total": {
+    "computation": 8000000,
+    "storage": 31980800,
+    "rebate": 26785440
+   }
+  },
+  "bundle": {
+   "outcomes": {
+    "ok": 111
+   },
+   "service_ms": {
+    "n": 111,
+    "min": 422,
+    "max": 1737,
+    "mean": 1054.02,
+    "p50": 778,
+    "p95": 1707,
+    "p99": 1723
+   },
+   "build_ms": {
+    "n": 111,
+    "min": 12,
+    "max": 65,
+    "mean": 16.64,
+    "p50": 14,
+    "p95": 30,
+    "p99": 47
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 111,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 111,
+     "min": 22860800,
+     "max": 27527200,
+     "mean": 27485160.36,
+     "p50": 27527200,
+     "p95": 27527200,
+     "p99": 27527200
+    },
+    "rebate": {
+     "n": 111,
+     "min": 8772984,
+     "max": 8772984,
+     "mean": 8772984.0,
+     "p50": 8772984,
+     "p95": 8772984,
+     "p99": 8772984
+    }
+   },
+   "gas_total": {
+    "computation": 111000000,
+    "storage": 3050852800,
+    "rebate": 973801224
+   }
+  },
+  "cancel_issuance": {
+   "outcomes": {
+    "ok": 2
+   },
+   "service_ms": {
+    "n": 2,
+    "min": 727,
+    "max": 742,
+    "mean": 734.5,
+    "p50": 727,
+    "p95": 742,
+    "p99": 742
+   },
+   "build_ms": {
+    "n": 2,
+    "min": 10,
+    "max": 11,
+    "mean": 10.5,
+    "p50": 10,
+    "p95": 11,
+    "p99": 11
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 2,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 2,
+     "min": 10868000,
+     "max": 10868000,
+     "mean": 10868000.0,
+     "p50": 10868000,
+     "p95": 10868000,
+     "p99": 10868000
+    },
+    "rebate": {
+     "n": 2,
+     "min": 14649228,
+     "max": 14649228,
+     "mean": 14649228.0,
+     "p50": 14649228,
+     "p95": 14649228,
+     "p99": 14649228
+    }
+   },
+   "gas_total": {
+    "computation": 2000000,
+    "storage": 21736000,
+    "rebate": 29298456
+   }
+  },
+  "cancel_show": {
+   "outcomes": {
+    "ok": 1
+   },
+   "service_ms": {
+    "n": 1,
+    "min": 1701,
+    "max": 1701,
+    "mean": 1701.0,
+    "p50": 1701,
+    "p95": 1701,
+    "p99": 1701
+   },
+   "build_ms": {
+    "n": 1,
+    "min": 12,
+    "max": 12,
+    "mean": 12.0,
+    "p50": 12,
+    "p95": 12,
+    "p99": 12
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 1,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 1,
+     "min": 5806400,
+     "max": 5806400,
+     "mean": 5806400.0,
+     "p50": 5806400,
+     "p95": 5806400,
+     "p99": 5806400
+    },
+    "rebate": {
+     "n": 1,
+     "min": 5748336,
+     "max": 5748336,
+     "mean": 5748336.0,
+     "p50": 5748336,
+     "p95": 5748336,
+     "p99": 5748336
+    }
+   },
+   "gas_total": {
+    "computation": 1000000,
+    "storage": 5806400,
+    "rebate": 5748336
+   }
+  },
+  "claim_pages": {
+   "outcomes": {
+    "ok": 2
+   },
+   "service_ms": {
+    "n": 2,
+    "min": 507,
+    "max": 1705,
+    "mean": 1106.0,
+    "p50": 507,
+    "p95": 1705,
+    "p99": 1705
+   },
+   "build_ms": {
+    "n": 2,
+    "min": 17,
+    "max": 22,
+    "mean": 19.5,
+    "p50": 17,
+    "p95": 22,
+    "p99": 22
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 2,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 2,
+     "min": 77915200,
+     "max": 77915200,
+     "mean": 77915200.0,
+     "p50": 77915200,
+     "p95": 77915200,
+     "p99": 77915200
+    },
+    "rebate": {
+     "n": 2,
+     "min": 5748336,
+     "max": 5748336,
+     "mean": 5748336.0,
+     "p50": 5748336,
+     "p95": 5748336,
+     "p99": 5748336
+    }
+   },
+   "gas_total": {
+    "computation": 2000000,
+    "storage": 155830400,
+    "rebate": 11496672
+   }
+  },
+  "claim_shards": {
+   "outcomes": {
+    "ok": 1
+   },
+   "service_ms": {
+    "n": 1,
+    "min": 768,
+    "max": 768,
+    "mean": 768.0,
+    "p50": 768,
+    "p95": 768,
+    "p99": 768
+   },
+   "build_ms": {
+    "n": 1,
+    "min": 16,
+    "max": 16,
+    "mean": 16.0,
+    "p50": 16,
+    "p95": 16,
+    "p99": 16
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 1,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 1,
+     "min": 23803200,
+     "max": 23803200,
+     "mean": 23803200.0,
+     "p50": 23803200,
+     "p95": 23803200,
+     "p99": 23803200
+    },
+    "rebate": {
+     "n": 1,
+     "min": 5748336,
+     "max": 5748336,
+     "mean": 5748336.0,
+     "p50": 5748336,
+     "p95": 5748336,
+     "p99": 5748336
+    }
+   },
+   "gas_total": {
+    "computation": 1000000,
+    "storage": 23803200,
+    "rebate": 5748336
+   }
+  },
+  "consume": {
+   "outcomes": {
+    "ok": 8
+   },
+   "service_ms": {
+    "n": 8,
+    "min": 456,
+    "max": 1662,
+    "mean": 1169.25,
+    "p50": 840,
+    "p95": 1662,
+    "p99": 1662
+   },
+   "build_ms": {
+    "n": 8,
+    "min": 9,
+    "max": 11,
+    "mean": 10.5,
+    "p50": 11,
+    "p95": 11,
+    "p99": 11
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 8,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 8,
+     "min": 3321200,
+     "max": 3564400,
+     "mean": 3382000.0,
+     "p50": 3321200,
+     "p95": 3564400,
+     "p99": 3564400
+    },
+    "rebate": {
+     "n": 8,
+     "min": 3897432,
+     "max": 4138200,
+     "mean": 3957624.0,
+     "p50": 3897432,
+     "p95": 4138200,
+     "p99": 4138200
+    }
+   },
+   "gas_total": {
+    "computation": 8000000,
+    "storage": 27056000,
+    "rebate": 31660992
+   }
+  },
+  "create_show": {
+   "outcomes": {
+    "ok": 1
+   },
+   "service_ms": {
+    "n": 1,
+    "min": 774,
+    "max": 774,
+    "mean": 774.0,
+    "p50": 774,
+    "p95": 774,
+    "p99": 774
+   },
+   "build_ms": {
+    "n": 1,
+    "min": 21,
+    "max": 21,
+    "mean": 21.0,
+    "p50": 21,
+    "p95": 21,
+    "p99": 21
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 1,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 1,
+     "min": 5806400,
+     "max": 5806400,
+     "mean": 5806400.0,
+     "p50": 5806400,
+     "p95": 5806400,
+     "p99": 5806400
+    },
+    "rebate": {
+     "n": 1,
+     "min": 2317392,
+     "max": 2317392,
+     "mean": 2317392.0,
+     "p50": 2317392,
+     "p95": 2317392,
+     "p99": 2317392
+    }
+   },
+   "gas_total": {
+    "computation": 1000000,
+    "storage": 5806400,
+    "rebate": 2317392
+   }
+  },
+  "issue": {
+   "outcomes": {
+    "ok": 4,
+    "abort": 15
+   },
+   "service_ms": {
+    "n": 19,
+    "min": 421,
+    "max": 1717,
+    "mean": 1037.16,
+    "p50": 761,
+    "p95": 1717,
+    "p99": 1717
+   },
+   "build_ms": {
+    "n": 19,
+    "min": 10,
+    "max": 20,
+    "mean": 12.32,
+    "p50": 11,
+    "p95": 20,
+    "p99": 20
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 19,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 19,
+     "min": 8861600,
+     "max": 11194800,
+     "mean": 9352800.0,
+     "p50": 8861600,
+     "p95": 11194800,
+     "p99": 11194800
+    },
+    "rebate": {
+     "n": 19,
+     "min": 8772984,
+     "max": 8772984,
+     "mean": 8772984.0,
+     "p50": 8772984,
+     "p95": 8772984,
+     "p99": 8772984
+    }
+   },
+   "gas_total": {
+    "computation": 19000000,
+    "storage": 177703200,
+    "rebate": 166686696
+   }
+  },
+  "issue_paid": {
+   "outcomes": {
+    "ok": 134
+   },
+   "service_ms": {
+    "n": 134,
+    "min": 424,
+    "max": 1731,
+    "mean": 1084.36,
+    "p50": 790,
+    "p95": 1699,
+    "p99": 1718
+   },
+   "build_ms": {
+    "n": 134,
+    "min": 8,
+    "max": 43,
+    "mean": 11.64,
+    "p50": 11,
+    "p95": 18,
+    "p99": 30
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 134,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 134,
+     "min": 11438000,
+     "max": 11438000,
+     "mean": 11438000.0,
+     "p50": 11438000,
+     "p95": 11438000,
+     "p99": 11438000
+    },
+    "rebate": {
+     "n": 134,
+     "min": 11067804,
+     "max": 11067804,
+     "mean": 11067804.0,
+     "p50": 11067804,
+     "p95": 11067804,
+     "p99": 11067804
+    }
+   },
+   "gas_total": {
+    "computation": 134000000,
+    "storage": 1532692000,
+    "rebate": 1483085736
+   }
+  },
+  "offer": {
+   "outcomes": {
+    "ok": 8
+   },
+   "service_ms": {
+    "n": 8,
+    "min": 418,
+    "max": 1695,
+    "mean": 871.25,
+    "p50": 742,
+    "p95": 1695,
+    "p99": 1695
+   },
+   "build_ms": {
+    "n": 8,
+    "min": 10,
+    "max": 11,
+    "mean": 10.62,
+    "p50": 11,
+    "p95": 11,
+    "p99": 11
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 8,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 8,
+     "min": 3997600,
+     "max": 3997600,
+     "mean": 3997600.0,
+     "p50": 3997600,
+     "p95": 3997600,
+     "p99": 3997600
+    },
+    "rebate": {
+     "n": 8,
+     "min": 3287988,
+     "max": 3287988,
+     "mean": 3287988.0,
+     "p50": 3287988,
+     "p95": 3287988,
+     "p99": 3287988
+    }
+   },
+   "gas_total": {
+    "computation": 8000000,
+    "storage": 31980800,
+    "rebate": 26303904
+   }
+  },
+  "parallel": {
+   "outcomes": {
+    "probe": 5
+   },
+   "service_ms": {
+    "n": 5,
+    "min": 844,
+    "max": 1750,
+    "mean": 1065.4,
+    "p50": 901,
+    "p95": 1750,
+    "p99": 1750
+   },
+   "build_ms": null,
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": null,
+    "storage": null,
+    "rebate": null
+   },
+   "gas_total": {}
+  },
+  "refund": {
+   "outcomes": {
+    "ok": 20,
+    "abort": 1
+   },
+   "service_ms": {
+    "n": 21,
+    "min": 423,
+    "max": 1807,
+    "mean": 971.62,
+    "p50": 769,
+    "p95": 1664,
+    "p99": 1807
+   },
+   "build_ms": {
+    "n": 21,
+    "min": 8,
+    "max": 12,
+    "mean": 10.52,
+    "p50": 10,
+    "p95": 12,
+    "p99": 12
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 21,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 21,
+     "min": 9842000,
+     "max": 10085200,
+     "mean": 9876742.86,
+     "p50": 9842000,
+     "p95": 10085200,
+     "p99": 10085200
+    },
+    "rebate": {
+     "n": 21,
+     "min": 9743580,
+     "max": 9984348,
+     "mean": 9777975.43,
+     "p50": 9743580,
+     "p95": 9984348,
+     "p99": 9984348
+    }
+   },
+   "gas_total": {
+    "computation": 21000000,
+    "storage": 207411600,
+    "rebate": 205337484
+   }
+  },
+  "revoke": {
+   "outcomes": {
+    "ok": 17
+   },
+   "service_ms": {
+    "n": 17,
+    "min": 458,
+    "max": 1732,
+    "mean": 926.88,
+    "p50": 755,
+    "p95": 1732,
+    "p99": 1732
+   },
+   "build_ms": {
+    "n": 17,
+    "min": 10,
+    "max": 12,
+    "mean": 10.71,
+    "p50": 11,
+    "p95": 12,
+    "p99": 12
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 17,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 17,
+     "min": 11194800,
+     "max": 11438000,
+     "mean": 11223411.76,
+     "p50": 11194800,
+     "p95": 11438000,
+     "p99": 11438000
+    },
+    "rebate": {
+     "n": 17,
+     "min": 11082852,
+     "max": 11323620,
+     "mean": 11111177.65,
+     "p50": 11082852,
+     "p95": 11323620,
+     "p99": 11323620
+    }
+   },
+   "gas_total": {
+    "computation": 17000000,
+    "storage": 190798000,
+    "rebate": 188890020
+   }
+  },
+  "seal": {
+   "outcomes": {
+    "ok": 1
+   },
+   "service_ms": {
+    "n": 1,
+    "min": 1632,
+    "max": 1632,
+    "mean": 1632.0,
+    "p50": 1632,
+    "p95": 1632,
+    "p99": 1632
+   },
+   "build_ms": {
+    "n": 1,
+    "min": 12,
+    "max": 12,
+    "mean": 12.0,
+    "p50": 12,
+    "p95": 12,
+    "p99": 12
+   },
+   "proof_ms": null,
+   "witness_ms": null,
+   "gas": {
+    "computation": {
+     "n": 1,
+     "min": 1000000,
+     "max": 1000000,
+     "mean": 1000000.0,
+     "p50": 1000000,
+     "p95": 1000000,
+     "p99": 1000000
+    },
+    "storage": {
+     "n": 1,
+     "min": 5806400,
+     "max": 5806400,
+     "mean": 5806400.0,
+     "p50": 5806400,
+     "p95": 5806400,
+     "p99": 5806400
+    },
+    "rebate": {
+     "n": 1,
+     "min": 5748336,
+     "max": 5748336,
+     "mean": 5748336.0,
+     "p50": 5748336,
+     "p95": 5748336,
+     "p99": 5748336
+    }
+   },
+   "gas_total": {
+    "computation": 1000000,
+    "storage": 5806400,
+    "rebate": 5748336
+   }
+  }
+ },
+ "probes": [
+  {
+   "seq": 5,
+   "expect": "any",
+   "met": true,
+   "parallel_k": 2,
+   "congestion_reject_count": 0,
+   "service_ms": 876,
+   "branches": [
+    {
+     "op": "issue",
+     "slot": 512,
+     "outcome_kind": "ok",
+     "abort": null,
+     "error": "",
+     "service_ms": 848,
+     "gas": {
+      "computation": "1000000",
+      "storage": "11194800",
+      "rebate": "8772984"
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 513,
+     "outcome_kind": "submission_rejected",
+     "abort": null,
+     "error": "Transaction is rejected as invalid by more than 1/3 of validators by stake (non-retriable). Non-retriable errors: [Object (0x09f97b4b4f5fd3a640fe57de5ae5ba10cb5",
+     "service_ms": 179,
+     "gas": null
+    }
+   ]
+  },
+  {
+   "seq": 6,
+   "expect": "one_wins",
+   "met": true,
+   "parallel_k": 2,
+   "congestion_reject_count": 0,
+   "service_ms": 956,
+   "branches": [
+    {
+     "op": "issue",
+     "slot": 514,
+     "outcome_kind": "ok",
+     "abort": null,
+     "error": "",
+     "service_ms": 898,
+     "gas": {
+      "computation": "1000000",
+      "storage": "11194800",
+      "rebate": "8772984"
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 514,
+     "outcome_kind": "submission_rejected",
+     "abort": null,
+     "error": "Transaction is rejected as invalid by more than 1/3 of validators by stake (non-retriable). Non-retriable errors: [Object (0x09f97b4b4f5fd3a640fe57de5ae5ba10cb5",
+     "service_ms": 168,
+     "gas": null
+    }
+   ]
+  },
+  {
+   "seq": 7,
+   "expect": "any",
+   "met": true,
+   "parallel_k": 2,
+   "congestion_reject_count": 0,
+   "service_ms": 1750,
+   "branches": [
+    {
+     "op": "attest_issuance",
+     "slot": 515,
+     "outcome_kind": "ok",
+     "abort": null,
+     "error": "",
+     "service_ms": 428,
+     "gas": {
+      "computation": "1000000",
+      "storage": "13444400",
+      "rebate": "9420048"
+     }
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 516,
+     "outcome_kind": "ok",
+     "abort": null,
+     "error": "",
+     "service_ms": 1678,
+     "gas": {
+      "computation": "1000000",
+      "storage": "13444400",
+      "rebate": "9420048"
+     }
+    }
+   ]
+  },
+  {
+   "seq": 8,
+   "expect": "any",
+   "met": true,
+   "parallel_k": 2,
+   "congestion_reject_count": 0,
+   "service_ms": 901,
+   "branches": [
+    {
+     "op": "attest_issuance",
+     "slot": 517,
+     "outcome_kind": "ok",
+     "abort": null,
+     "error": "",
+     "service_ms": 830,
+     "gas": {
+      "computation": "1000000",
+      "storage": "13444400",
+      "rebate": "9420048"
+     }
+    },
+    {
+     "op": "attest_issuance",
+     "slot": 518,
+     "outcome_kind": "ok",
+     "abort": null,
+     "error": "",
+     "service_ms": 831,
+     "gas": {
+      "computation": "1000000",
+      "storage": "13444400",
+      "rebate": "9420048"
+     }
+    }
+   ]
+  },
+  {
+   "seq": 9,
+   "expect": "one_wins",
+   "met": true,
+   "parallel_k": 2,
+   "congestion_reject_count": 0,
+   "service_ms": 844,
+   "branches": [
+    {
+     "op": "bundle",
+     "slot": null,
+     "outcome_kind": "ok",
+     "abort": null,
+     "error": "",
+     "service_ms": 817,
+     "gas": {
+      "computation": "1000000",
+      "storage": "13528000",
+      "rebate": "8772984"
+     }
+    },
+    {
+     "op": "bundle",
+     "slot": null,
+     "outcome_kind": "submission_rejected",
+     "abort": null,
+     "error": "Transaction is rejected as invalid by more than 1/3 of validators by stake (non-retriable). Non-retriable errors: [Object (0x09f97b4b4f5fd3a640fe57de5ae5ba10cb5",
+     "service_ms": 156,
+     "gas": null
+    }
+   ]
+  }
+ ],
+ "expect_mismatches": [],
+ "checks": [
+  {
+   "name": "public_page_conservation",
+   "ok": true,
+   "divergences": []
+  },
+  {
+   "name": "public_expected_totals",
+   "expected": {
+    "0": {
+     "free": 1,
+     "reserved": 0,
+     "issued": 61,
+     "retired": 2
+    },
+    "1": {
+     "free": 1,
+     "reserved": 0,
+     "issued": 62,
+     "retired": 1
+    },
+    "2": {
+     "free": 0,
+     "reserved": 0,
+     "issued": 62,
+     "retired": 2
+    },
+    "3": {
+     "free": 0,
+     "reserved": 0,
+     "issued": 63,
+     "retired": 1
+    },
+    "4": {
+     "free": 2,
+     "reserved": 0,
+     "issued": 62,
+     "retired": 0
+    },
+    "5": {
+     "free": 1,
+     "reserved": 0,
+     "issued": 62,
+     "retired": 1
+    },
+    "6": {
+     "free": 1,
+     "reserved": 0,
+     "issued": 62,
+     "retired": 1
+    },
+    "7": {
+     "free": 3,
+     "reserved": 0,
+     "issued": 60,
+     "retired": 1
+    },
+    "8": {
+     "free": 0,
+     "reserved": 0,
+     "issued": 61,
+     "retired": 3
+    },
+    "9": {
+     "free": 1,
+     "reserved": 0,
+     "issued": 63,
+     "retired": 0
+    },
+    "10": {
+     "free": 1,
+     "reserved": 0,
+     "issued": 62,
+     "retired": 1
+    },
+    "11": {
+     "free": 1,
+     "reserved": 0,
+     "issued": 63,
+     "retired": 0
+    },
+    "12": {
+     "free": 0,
+     "reserved": 0,
+     "issued": 63,
+     "retired": 1
+    },
+    "13": {
+     "free": 0,
+     "reserved": 0,
+     "issued": 63,
+     "retired": 1
+    },
+    "14": {
+     "free": 0,
+     "reserved": 0,
+     "issued": 62,
+     "retired": 2
+    },
+    "15": {
+     "free": 4,
+     "reserved": 0,
+     "issued": 60,
+     "retired": 0
+    }
+   },
+   "totals": {
+    "free": 16,
+    "reserved": 0,
+    "issued": 991,
+    "retired": 17
+   }
+  }
+ ],
+ "totals": {
+  "free": 16,
+  "reserved": 0,
+  "issued": 991,
+  "retired": 17
+ },
+ "control": {
+  "open": false,
+  "sealed": true,
+  "cancel_generation": 1,
+  "claimed_pages": 16,
+  "claimed_shards": 4,
+  "claim_sequence": 20,
+  "shard_count": 4,
+  "domain": "0"
+ },
+ "exploration_data": true,
+ "note": "One-validator localnet samples; closed-loop service times (arrival_rate 0) plus fixed-k probes. Not SLOs, not throughput, no production or durability claims."
+}

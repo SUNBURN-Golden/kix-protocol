@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROTO = ROOT / 'reference' / 'v0.3-rc1'
+RS1 = ROOT / 'reference' / 'rights_scale'
 OUT = ROOT / '.local' / 'verification'
 OUT.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ)
@@ -19,7 +20,11 @@ checks = [
     ('node-offline', ['node', '--test', 'offline.test.mjs'], PROTO / 'client'),
     ('sdk-import', ['node', '--input-type=module', '-e', 'const m = await import("./independent.mjs"); if (typeof m.IndependentClient !== "function") throw new Error("SDK client unavailable"); console.log("SDK import and IndependentClient export OK");'], PROTO / 'client'),
     ('move-tests', ['sui', 'move', '--client.config', env['KIX_SUI_CONFIG'], '--build-env', 'mainnet', 'test', '--path', str(PROTO / 'sui')], ROOT),
+    ('rs1-model-tests', [sys.executable, '-m', 'unittest', 'discover', '-s', str(RS1), '-t', str(RS1), '-p', 'test*.py', '-v'], ROOT),
+    ('rs1-move-tests', ['sui', 'move', '--client.config', env['KIX_SUI_CONFIG'], '--build-env', 'mainnet', 'test', '--path', str(RS1 / 'sui')], ROOT),
     ('circuit-build', ['node', 'compile-circuits.mjs'], PROTO / 'client'),
+    # RS-2: the depth-10 circuits of the extended profile (reference circuits above stay as they were).
+    ('rs2-circuit-build', ['node', 'compile-circuits.mjs'], RS1 / 'client'),
 ]
 results = []
 for name, args, cwd in checks:

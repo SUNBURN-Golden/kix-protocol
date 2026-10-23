@@ -81,6 +81,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "kix-delegated-exec"
+version = "0.1.0"
+dependencies = [
+ "kix-kernel-v5",
+ "kix-types",
+]
+
+[[package]]
 name = "kix-feature-ir"
 version = "0.1.0"
 dependencies = [
@@ -96,6 +104,14 @@ version = "0.1.0"
 name = "kix-kernel"
 version = "0.1.0"
 dependencies = [
+ "kix-types",
+]
+
+[[package]]
+name = "kix-kernel-v5"
+version = "0.1.0"
+dependencies = [
+ "kix-kernel",
  "kix-types",
 ]
 

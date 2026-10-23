@@ -1,0 +1,216 @@
+mod common;
+
+use std::collections::BTreeSet;
+
+use common::{ctx, ga_reserve, id, page, reserve, show};
+use kix_delegated_exec::{DelegatedShow, MappingError, PageKind, RangeTable};
+use kix_kernel_v5::{KernelError, Rejection, ReserveOutcome};
+
+/// Seat page [0, 4,096) plus GA page [4,096, 4,104): capacity 8.
+fn seat_and_ga_show() -> DelegatedShow {
+    show(
+        RangeTable::new(&[
+            page(0, 0, 4_096, PageKind::Seat),
+            page(1, 4_096, 4_104, PageKind::Ga),
+        ])
+        .unwrap(),
+    )
+}
+
+fn held_slots(show: &DelegatedShow, page_index: u32) -> BTreeSet<u32> {
+    (0_u8..=255)
+        .map(id)
+        .filter_map(|order| show.slot_hold(order))
+        .filter(|hold| hold.page_index == page_index)
+        .flat_map(|hold| hold.slots.iter().copied())
+        .collect()
+}
+
+fn assert_conservation(show: &DelegatedShow, page_index: u32, size: u32) {
+    let free = show.ga_free_slots(page_index).unwrap();
+    let held = held_slots(show, page_index);
+    assert!(free.is_disjoint(&held));
+    assert_eq!(free.len() + held.len(), usize::try_from(size).unwrap());
+}
+
+#[test]
+fn lowest_free_slots_are_assigned_deterministically() {
+    let mut show = seat_and_ga_show();
+    show.reserve(ctx(1), &ga_reserve(1, 3)).unwrap();
+    let hold = show.slot_hold(id(1)).unwrap();
+    assert_eq!(hold.page_index, 1);
+    assert_eq!(hold.slots, BTreeSet::from([4_096, 4_097, 4_098]));
+    // The kernel counter and the map's free set agree.
+    assert_eq!(show.remaining(1), Some(5));
+    assert_eq!(
+        *show.ga_free_slots(1).unwrap(),
+        BTreeSet::from([4_099, 4_100, 4_101, 4_102, 4_103])
+    );
+
+    show.reserve(ctx(2), &ga_reserve(2, 2)).unwrap();
+    assert_eq!(
+        show.slot_hold(id(2)).unwrap().slots,
+        BTreeSet::from([4_099, 4_100])
+    );
+    assert_conservation(&show, 1, 8);
+}
+
+#[test]
+fn expire_returns_the_slots_to_the_page_free_set() {
+    let mut show = seat_and_ga_show();
+    show.reserve(ctx(1), &ga_reserve(1, 3)).unwrap();
+    // Before expiry the check releases nothing and frees no slots.
+    assert!(!show.expire(ctx(50), id(1)).unwrap());
+    assert_eq!(show.ga_free_slots(1).unwrap().len(), 5);
+
+    assert!(show.expire(ctx(100), id(1)).unwrap());
+    assert_eq!(
+        *show.ga_free_slots(1).unwrap(),
+        BTreeSet::from([4_096, 4_097, 4_098, 4_099, 4_100, 4_101, 4_102, 4_103])
+    );
+    assert_eq!(show.remaining(1), Some(8));
+    assert!(show.slot_hold(id(1)).is_none());
+    assert_conservation(&show, 1, 8);
+
+    // The freed lowest slots are reassigned first.
+    let mut next = ga_reserve(2, 2);
+    next.expires_at_ms = 200;
+    show.reserve(ctx(101), &next).unwrap();
+    assert_eq!(
+        show.slot_hold(id(2)).unwrap().slots,
+        BTreeSet::from([4_096, 4_097])
+    );
+}
+
+#[test]
+fn a_replayed_ga_hold_consumes_no_free_slots() {
+    let mut show = seat_and_ga_show();
+    let held = show.reserve(ctx(1), &ga_reserve(1, 3)).unwrap();
+    let replay = show.reserve(ctx(2), &ga_reserve(1, 3)).unwrap();
+    assert!(replay.replayed);
+    assert_eq!(replay.original, held.original);
+    // The replayed Held changed no kernel inventory, so the free set and
+    // the recorded slot hold are untouched.
+    assert_eq!(
+        show.slot_hold(id(1)).unwrap().slots,
+        BTreeSet::from([4_096, 4_097, 4_098])
+    );
+    assert_eq!(show.ga_free_slots(1).unwrap().len(), 5);
+    assert_conservation(&show, 1, 8);
+}
+
+#[test]
+fn a_stored_ga_command_replays_on_its_pinned_page_after_capacity_shifts() {
+    let mut show = show(
+        RangeTable::new(&[page(0, 0, 6, PageKind::Ga), page(1, 6, 16, PageKind::Ga)]).unwrap(),
+    );
+    // Fill page 0, so the five-seat request lands on page 1.
+    show.reserve(ctx(1), &ga_reserve(1, 6)).unwrap();
+    let held = show.reserve(ctx(2), &ga_reserve(2, 5)).unwrap();
+    assert_eq!(held.original, ReserveOutcome::Held(id(2)));
+    assert_eq!(show.slot_hold(id(2)).unwrap().page_index, 1);
+    let slots = show.slot_hold(id(2)).unwrap().slots.clone();
+    // Releasing page 0's hold lets a fresh identical request route to page
+    // 0, but the stored command stays pinned to page 1 and replays there.
+    assert!(show.expire(ctx(100), id(1)).unwrap());
+    assert_eq!(show.remaining(0), Some(6));
+    let replay = show.reserve(ctx(101), &ga_reserve(2, 5)).unwrap();
+    assert!(replay.replayed);
+    assert_eq!(replay.original, held.original);
+    assert_eq!(show.slot_hold(id(2)).unwrap().slots, slots);
+    assert_eq!(show.remaining(0), Some(6));
+    assert_eq!(show.remaining(1), Some(5));
+    assert_conservation(&show, 0, 6);
+    assert_conservation(&show, 1, 10);
+    // A changed payload on the stored identity reaches the pinned page's
+    // own conflict check; a payload that cannot be expressed on it is the
+    // map's cross-page CommandConflict.
+    assert_eq!(
+        show.reserve(ctx(102), &ga_reserve(2, 4)),
+        Err(MappingError::Kernel(KernelError::CommandConflict))
+    );
+    assert_eq!(
+        show.reserve(ctx(103), &reserve(2, 0, 1)),
+        Err(MappingError::CommandConflict)
+    );
+}
+
+#[test]
+fn an_order_id_bound_on_one_page_cannot_rebind_on_another_ga_page() {
+    let mut show = show(
+        RangeTable::new(&[page(0, 0, 6, PageKind::Ga), page(1, 6, 16, PageKind::Ga)]).unwrap(),
+    );
+    let held = show.reserve(ctx(1), &ga_reserve(1, 4)).unwrap();
+    assert_eq!(held.original, ReserveOutcome::Held(id(1)));
+    let slots = show.slot_hold(id(1)).unwrap().slots.clone();
+    assert_eq!(show.slot_hold(id(1)).unwrap().page_index, 0);
+
+    // Page 0 cannot serve 8, so a different command carrying the same order
+    // id routes to page 1 and is answered with the kernel's own rejection
+    // value: it holds nothing, consumes no free slots, and the first hold's
+    // recorded slot set survives.
+    let mut second = ga_reserve(2, 8);
+    second.order_id = id(1);
+    let rejected = show.reserve(ctx(2), &second).unwrap();
+    assert_eq!(
+        rejected.original,
+        ReserveOutcome::Rejected(Rejection::OrderExists)
+    );
+    assert!(!rejected.replayed);
+    assert_eq!(show.page_kernel(1).unwrap().order_count(), 0);
+    assert_eq!(show.slot_hold(id(1)).unwrap().slots, slots);
+    assert_conservation(&show, 0, 6);
+    assert_conservation(&show, 1, 10);
+
+    // Expiry still reaches the page-0 order and returns its slots to the
+    // free set.
+    assert!(show.expire(ctx(100), id(1)).unwrap());
+    assert!(show.slot_hold(id(1)).is_none());
+    assert_conservation(&show, 0, 6);
+    assert_conservation(&show, 1, 10);
+}
+
+#[test]
+fn a_ga_request_spanning_pages_is_refused_before_any_kernel_call() {
+    let mut mapped = show(
+        RangeTable::new(&[page(1, 0, 5, PageKind::Ga), page(2, 5, 10, PageKind::Ga)]).unwrap(),
+    );
+    // Leave one free on page 1 and two on page 2: three slots remain across
+    // the pages but no single page can serve 3; the map does not split a
+    // request.
+    mapped.reserve(ctx(1), &ga_reserve(1, 4)).unwrap();
+    mapped.reserve(ctx(2), &ga_reserve(2, 3)).unwrap();
+    let before = (mapped.remaining(1), mapped.remaining(2));
+    assert_eq!(before, (Some(1), Some(2)));
+    assert_eq!(
+        mapped.reserve(ctx(3), &ga_reserve(3, 3)),
+        Err(MappingError::GaSpanningPages)
+    );
+    assert_eq!((mapped.remaining(1), mapped.remaining(2)), before);
+    // A show without GA pages cannot serve GA at all.
+    let mut seats_only = show(RangeTable::new(&[page(0, 0, 100, PageKind::Seat)]).unwrap());
+    seats_only.reserve(ctx(1), &reserve(1, 0, 1)).unwrap();
+    assert_eq!(
+        seats_only.reserve(ctx(2), &ga_reserve(2, 1)),
+        Err(MappingError::GaSpanningPages)
+    );
+}
+
+#[test]
+fn ga_conservation_holds_across_mixed_sequences() {
+    let mut show = seat_and_ga_show();
+    show.reserve(ctx(1), &ga_reserve(1, 8)).unwrap();
+    assert_conservation(&show, 1, 8);
+    // Page full: the next GA request cannot be served by any single page.
+    assert_eq!(
+        show.reserve(ctx(2), &ga_reserve(2, 1)),
+        Err(MappingError::GaSpanningPages)
+    );
+    // Seat inventory is independent of the GA free set.
+    show.reserve(ctx(3), &reserve(3, 10, 2)).unwrap();
+    assert_eq!(show.remaining(0), Some(4_094));
+    assert_conservation(&show, 1, 8);
+    // Releasing six of eight makes room again.
+    assert!(show.expire(ctx(100), id(1)).unwrap());
+    assert_conservation(&show, 1, 8);
+}

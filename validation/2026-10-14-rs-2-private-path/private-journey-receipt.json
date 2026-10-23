@@ -1,0 +1,406 @@
+{
+  "chain": "FZCoo5NMaMfiKz7YnFX4eT1Wu3s4WFv18r1XZHCsR2iH",
+  "packageId": "0xf8802d634d9ed55130f15bf6543867eb713063ee45e39f6f847ab6e78f437397",
+  "actors": {
+    "issuer": "0xdfcd9d3f847f87698865f7cf1ec97ceb56c4f95800cd09d7ed904bd58fade0f4",
+    "a": "0xd47d7d08c50670b239e60fb80fc14fe8e30d0a25f31f436d64dbad5f3a8539e9",
+    "b": "0x48f070602507056c2b24882516ba6896f21e331db5476b2b45d39f3880db645b",
+    "gate": "0x7cf9f81a80016d0d413892a1eba3b189456a7b8af81335bc4e828fd3e18b0c2b",
+    "gate2": "0xd99173f6f6ab75d10af7305c39f3a128ca4fa4818b5e0f986ec8b0edb69da6db",
+    "attester": "0xc42f904705072a7e5e11c72d78ecadc97815f2854171712a13128f5289c32a7a"
+  },
+  "manifest": {
+    "hash": "cac889c003888e5fa06e64aa06dbafc65b703bcc23fe63728f30aeb96dd27411",
+    "format": "kix-zk-artifacts-v2",
+    "depth": 10,
+    "rootHistoryK": 4,
+    "constraints": {
+      "mint_scale": 912,
+      "spend_scale": 13439
+    },
+    "ptauPower": 14,
+    "phase1": "FRESH_SINGLE_PARTY_LOCAL_FIXTURE",
+    "setup": "INSECURE_SINGLE_PARTY_LOCAL_FIXTURE"
+  },
+  "constants": {
+    "zk_depth": 10,
+    "localnet_root_history_k": 4,
+    "localnet_nullifier_shards": 4,
+    "localnet_challenge_shards": 4,
+    "profile_version": 1
+  },
+  "verifiers": {
+    "v1": {
+      "id": "0xfb8ae2a36daefab06ae0c60c8ba86c4deddc150e4dca9267c3f3c574d0db0234",
+      "manifestHash": "cac889c003888e5fa06e64aa06dbafc65b703bcc23fe63728f30aeb96dd27411"
+    },
+    "v2": {
+      "id": "0xba9eda1dca3fe853aa55a453579abd68abc2b003da2310e21cfba1029692979e",
+      "manifestHash": "2f1165546ff881413cd2e99b92bbd00c22a46fb6bde57b0adc8f10c4b00f0952"
+    }
+  },
+  "alternateVerifierPinCheck": "VERIFIER_KEY_PIN_MISMATCH",
+  "scenarios": [
+    "l1_1024_private_path",
+    "cross_show_and_cross_manifest_proofs",
+    "shield_conserves_the_right_count"
+  ],
+  "stepsByScenario": {
+    "l1_1024_private_path": 80,
+    "cross_show_and_cross_manifest_proofs": 25,
+    "shield_conserves_the_right_count": 15
+  },
+  "structure": {
+    "l1_1024_private_path": {
+      "S1": {
+        "noteTrees": 1,
+        "revocationRoots": 1,
+        "nullifierShards": 4,
+        "challengeShards": 4,
+        "depth": 10,
+        "historyK": 4
+      }
+    },
+    "cross_show_and_cross_manifest_proofs": {
+      "S1": {
+        "noteTrees": 1,
+        "revocationRoots": 1,
+        "nullifierShards": 4,
+        "challengeShards": 4,
+        "depth": 10,
+        "historyK": 4
+      },
+      "S2": {
+        "noteTrees": 1,
+        "revocationRoots": 1,
+        "nullifierShards": 4,
+        "challengeShards": 4,
+        "depth": 10,
+        "historyK": 4
+      },
+      "S3": {
+        "noteTrees": 1,
+        "revocationRoots": 1,
+        "nullifierShards": 4,
+        "challengeShards": 4,
+        "depth": 10,
+        "historyK": 4
+      }
+    },
+    "shield_conserves_the_right_count": {
+      "S1": {
+        "noteTrees": 1,
+        "revocationRoots": 1,
+        "nullifierShards": 4,
+        "challengeShards": 4,
+        "depth": 10,
+        "historyK": 4
+      }
+    }
+  },
+  "reconstructions": {
+    "l1_1024_private_path": [
+      {
+        "step": 44,
+        "note": "n4",
+        "sources": [
+          "jsonrpc-queryEvents",
+          "grpc-checkpoint-scan"
+        ],
+        "noteEvents": 5,
+        "revocationEvents": 0
+      },
+      {
+        "step": 45,
+        "show": "S1",
+        "sources": [
+          "jsonrpc-queryEvents",
+          "grpc-checkpoint-scan"
+        ],
+        "noteEvents": 5,
+        "revocationEvents": 0,
+        "agreeWithCache": true
+      },
+      {
+        "step": 75,
+        "note": "n0",
+        "sources": [
+          "jsonrpc-queryEvents",
+          "grpc-checkpoint-scan"
+        ],
+        "noteEvents": 8,
+        "revocationEvents": 2
+      }
+    ],
+    "cross_show_and_cross_manifest_proofs": [],
+    "shield_conserves_the_right_count": []
+  },
+  "domains": {
+    "S1": "13068090822545084186725400675285124019971162914577833432174375641188185439085",
+    "S2": "20101076643000058108214508896763216616328962126482718805865995380067581055887",
+    "S3": "2120087295454039679518585146401020189407863483662499117107972869218501835838"
+  },
+  "shardSpread": {
+    "l1_1024_private_path": {
+      "S1": null
+    },
+    "cross_show_and_cross_manifest_proofs": {
+      "S1": null,
+      "S2": null,
+      "S3": null,
+      "S4": null
+    },
+    "shield_conserves_the_right_count": {
+      "S1": null
+    }
+  },
+  "timings": {
+    "mintProofMs": [
+      408,
+      145,
+      146,
+      169,
+      157,
+      140,
+      145,
+      138,
+      140,
+      164,
+      159,
+      141,
+      138,
+      175,
+      141,
+      139,
+      183,
+      177,
+      236,
+      173,
+      166
+    ],
+    "spendProofMs": [
+      570,
+      562,
+      622,
+      557,
+      558,
+      576,
+      544,
+      536,
+      520,
+      578,
+      569,
+      633,
+      758,
+      583
+    ],
+    "stepMs": {
+      "l1_1024_private_path": 79822,
+      "cross_show_and_cross_manifest_proofs": 20997,
+      "shield_conserves_the_right_count": 15162
+    }
+  },
+  "gas": {
+    "claim_pages": [
+      {
+        "computationCost": "1000000",
+        "storageCost": "78158400",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "78158400",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "15868800",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "15868800",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "15868800",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "10959200",
+        "storageRebate": "5989104"
+      }
+    ],
+    "claim_zk": [
+      {
+        "computationCost": "1000000",
+        "storageCost": "56422400",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "56422400",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "56422400",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "56422400",
+        "storageRebate": "5989104"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "56422400",
+        "storageRebate": "5989104"
+      }
+    ],
+    "shield": [
+      {
+        "computationCost": "1000000",
+        "storageCost": "11012400",
+        "storageRebate": "10661508"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11255600",
+        "storageRebate": "10902276"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11498800",
+        "storageRebate": "11143044"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11498800",
+        "storageRebate": "11383812"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11498800",
+        "storageRebate": "11383812"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11498800",
+        "storageRebate": "11383812"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11498800",
+        "storageRebate": "11383812"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11498800",
+        "storageRebate": "11383812"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11012400",
+        "storageRebate": "10661508"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11012400",
+        "storageRebate": "10661508"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11012400",
+        "storageRebate": "10661508"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11012400",
+        "storageRebate": "10661508"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11255600",
+        "storageRebate": "10902276"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11498800",
+        "storageRebate": "11143044"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "11498800",
+        "storageRebate": "11383812"
+      }
+    ],
+    "consume_private": [
+      {
+        "computationCost": "1000000",
+        "storageCost": "8177600",
+        "storageRebate": "4935744"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "8177600",
+        "storageRebate": "4935744"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "8177600",
+        "storageRebate": "4935744"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "8177600",
+        "storageRebate": "4935744"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "8177600",
+        "storageRebate": "4935744"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "8177600",
+        "storageRebate": "4935744"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "8177600",
+        "storageRebate": "4935744"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "8177600",
+        "storageRebate": "4935744"
+      }
+    ],
+    "revoke_with_root": [
+      {
+        "computationCost": "1000000",
+        "storageCost": "13201200",
+        "storageRebate": "13069188"
+      },
+      {
+        "computationCost": "1000000",
+        "storageCost": "13201200",
+        "storageRebate": "13069188"
+      }
+    ]
+  },
+  "authority": "SUI_MOVE",
+  "kixServicesCalled": 0,
+  "ownGas": true,
+  "zk": true,
+  "ceremony": "INSECURE_SINGLE_PARTY_LOCAL_FIXTURE",
+  "failures": [],
+  "limitation": "Localnet prototype only. Single-party fixture ceremony, not an operational or audited setup; RPC is trusted; the anonymity set is the shielded notes of one show and early notes have a small set; no private resale, refund, unshield or key rotation; no delegation (RS-3a); no coin/TIX module; no performance, anonymity or production claims.",
+  "status": "PASSED_ACTUAL_LOCALNET",
+  "localCommitteeSize": 1,
+  "networkFaultToleranceTested": false,
+  "zkLoginBackgroundKeyFetchDisabled": true
+}

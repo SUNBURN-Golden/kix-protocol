@@ -1,0 +1,27 @@
+{
+  "name": "kix-rights-scale-localnet-prototype",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Localnet-only drivers for the extended rights-scale profile: the public path (RS-1) and the private ZK path (RS-2: depth-10 circuits, manifest v2, witness reconstruction). Replays shared operation vectors against an actual Sui localnet and records observed chain state for comparison with reference/rights_scale/model.py. No real funds, no public endpoints. The fixture ceremony is single-party and is not an operational ceremony.",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "journey": "node localnet.mjs",
+    "build:circuits": "node compile-circuits.mjs",
+    "setup:zk": "node setup-zk.mjs",
+    "test:zk": "node zk-regression.mjs",
+    "test:offline": "node --experimental-test-module-mocks --test zk-policy-v2.test.mjs zk-helpers.test.mjs ptau-header.test.mjs witness-reconstruction.test.mjs spend-witness.test.mjs admission-packet.test.mjs mint-note.test.mjs verifier-binding.test.mjs",
+    "journey:private": "node private-localnet.mjs"
+  },
+  "dependencies": {
+    "@mysten/sui": "2.30.0",
+    "circomlib": "2.0.5",
+    "circomlibjs": "0.1.7",
+    "snarkjs": "0.7.5"
+  },
+  "devDependencies": {
+    "circom2": "0.2.22"
+  }
+}

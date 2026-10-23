@@ -241,7 +241,6 @@ class AdmissionMachine:
                 _require(current["canon"] == canon, "ISSUANCE_BINDING_CONFLICT")
                 raise AdmissionError("ILLEGAL_TRANSITION")
             self._match_issued(normalized)
-            self._materialize(normalized)
             credential = {
                 "canon": canon,
                 "right_id": normalized["right_id"],
@@ -258,8 +257,9 @@ class AdmissionMachine:
                 "version_after": None,
                 "subject_ids": [normalized["right_id"]],
             }
-            self._credentials[normalized["right_id"]] = credential
-            self._invariant()
+            # Gate steps, the credential insert and the invariant check commit
+            # together; a rejection leaves no trace (contract 11.5).
+            self._commit_adopt(normalized, credential)
             body = {name: normalized[name] for name in _ADOPT_FIELDS}
             return self._accept(
                 key,
@@ -1101,3 +1101,17 @@ class AdmissionMachine:
                     _require(live is None, "MOCK_INVARIANT")
             if credential["phase"] == ELIGIBLE:
                 _require(right["admission_id"] is None and credential["admission_id"] is None, "MOCK_INVARIANT")
+
+    def _commit_adopt(self, normalized: dict, credential: dict) -> None:
+        from copy import deepcopy  # module-level import would move the READ_MODEL_SOURCE_MAP.md section 6 anchors
+
+        committed = self._gates
+        self._gates = deepcopy(committed)
+        try:
+            self._materialize(normalized)
+            self._credentials[normalized["right_id"]] = credential
+            self._invariant()
+        except BaseException:
+            self._gates = committed
+            self._credentials.pop(normalized["right_id"], None)
+            raise

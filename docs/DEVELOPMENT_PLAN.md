@@ -107,7 +107,7 @@ Move는 유지한다. TypeScript SDK나 Python 시험 도구까지 Rust로 강�
 | 단계 | 범위 | 현재 착수 판단 |
 |---|---|---|
 | 1 | v4 E-4, 수명 계약, 성능 계약·측정 장치 | 첫 묶음 승인. v4 코드 수정 금지 |
-| 2 | 종결·회수·보존·재시도·격리 해제와 색인 | R-4 문서 위치는 아래 2026-10-09 표의 #138. 열린 입력에 기대는 부분만 정지. 잠금 v4 불변 |
+| 2 | 종결·회수·보존·재시도·격리 해제와 색인 | R-4 문서 위치는 아래 2026-10-09 표의 #138. v5 in-memory fixture 기록은 [k-stage2-v5-impl](../validation/2026-10-13-k-stage2-v5-impl/README.md)(#179). 열린 입력에 기대는 부분만 정지. 잠금 v4 불변 |
 | 3 | schema·버전·SDK·독립 클라이언트 적합성 | R-5: 적합성 작업 승인, p-sdk-1 선행. 안정 1.0·공개 배포·일괄 명칭 치환은 별도 결정 |
 | 4 | 실행·저장 후보 비교 | §9의 단일 비교표 사용. 실측 범위 별도 확정 |
 | 5 | 선택 backend의 영속 거래·inbox/outbox | R-6 문서 위치는 아래 2026-10-09 표의 #140. 5단계의 선행은 v5 구현이다. 자체 R2·복제·합의 잠금 유지 |
@@ -146,6 +146,123 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [OpenAPI 카탈로그 승격 — 소유자 결정 위치 기록](decisions/OPENAPI_CATALOGUE_PROMOTION_OWNER_DECISION_20261009.md) | — | — | — | 기록된 채택 문장 없음(위치 포인터). 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. | 위치 포인터. 새 승인 아님. 결정이 인용한 병합: #152 `d63768dd…` |
 | [F04 실자금 해제 조건](decisions/F04_REAL_FUNDS_LIFT_CRITERIA_20261009.md) | #160 | `d7549d1473258dda617e241fff22bcbd697fbb17` | BeautifulMind-JT | If the User merges without edits, only O1 is adopted; every `DECISION_REQUIRED`/`UNDETERMINED` value stays empty; the lock stays. | 효력 발생(User 병합) |
 | [토스 sandbox 적합성 계획](operations/TOSS_SANDBOX_CONFORMANCE_PLAN.md) | #161 | `31eac0637a324244aeca00e849fdb0f7c685232e` | BeautifulMind-JT | 문서 전용 계획. 채택 문장 없음. Status: document-only plan. | 문서 전용 계획. 새 승인 아님. |
+
+병합된 문서 위치(2026-10-13~14, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [RS-0 검토 자료 묶음](status/RS0_REVIEW_PACK.md) | #168 | `77517f0c74cd892ca299cacf987cbab64a03337d` | BeautifulMind-JT | This document is not a review, not an acceptance, and not a change of status. | 위치 포인터. 새 승인 아님. |
+| [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md) | #169 | `1eb7d7d2978950073973a43e495ec5e31c5f543e` | BeautifulMind-JT | 이 문서는 아무것도 결정하지 않는다. 어느 선택지도 고르지 않는다. 아무것도 보내지 않았고, 어느 담당의 회신도 아니다. | 위치 포인터. 새 승인 아님. |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | #167 | `ba352dfe9789af89983e9c1b1a303461ea240016` | BeautifulMind-JT | 위치 동기화 기준(비-TL 잔여 행): observed origin/main `3ce6e4975b7f439d67482451bb47a22c940add26` (2026-10-12). … 등급은 올리지 않는다. | 위치 포인터. 새 승인 아님. |
+| [정산·예매/리셀/검표·F04 정책 심화 — 소유자 결정 위치 기록](decisions/POLICY_DEEPENING_OWNER_DECISION_20261009.md) | #163 | `5e20a467160148ad5c2debfe357dfb8da084a30a` | BeautifulMind-JT | 상태: 위치 기록. 결정을 새로 만들지 않는다. 검토됨으로 표시하지 않는다. | 위치 포인터. 새 승인 아님. |
+| [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | #171 | `cb59612b847fc2e6ef71810202be5e2ca5f76724` | BeautifulMind-JT | This document is not a review, not an acceptance, and not a change of status. | 위치 포인터. 새 승인 아님. |
+| [조회 원천 지도](contracts/READ_MODEL_SOURCE_MAP.md) | #172 | `3b8067d48cbda967cbf531258215c5243b96fbcd` | BeautifulMind-JT | 상태: **입력 자료. 결정 문서가 아니다.** | 위치 포인터. 새 승인 아님. |
+| [docs 색인 coverage 검사 기록](../validation/2026-10-13-docs-index-coverage-check/README.md) | #173 | `db9152ab1c5ef113b8727749d4309ec70505480f` | BeautifulMind-JT | The check indexes nothing and approves nothing; it reports coverage only. | 위치 포인터. 새 승인 아님. |
+| [조회 원천 지도 검사기 분리 기록](../validation/2026-10-13-audit5-source-map-checker-decouple/README.md) | #174 | `aba875635f682bb9914e0dee016ced58e130cc04` | BeautifulMind-JT | This record raises no evidence grade, marks nothing reviewed or operational, and keeps the operational count at 0. | 위치 포인터. 새 승인 아님. |
+| [audit5 계획·색인 동기화 기록](../validation/2026-10-13-audit5-plan-index-sync-b/README.md) | #175 | `2862f34b588e70841a57762d8ce756fd240f5e95` | BeautifulMind-JT | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [docs 색인 검사 CI 배선 기록](../validation/2026-10-13-audit5-docs-index-check-ci-wire/README.md) | #176 | `ab42cfef43a40c6b86fd3f22b69f00e134cc472e` | BeautifulMind-JT | This record raises no evidence grade, marks nothing reviewed or operational, and keeps the operational count at 0. | 위치 포인터. 새 승인 아님. |
+| [k-stage2 v5 in-memory 구현 기록](../validation/2026-10-13-k-stage2-v5-impl/README.md) | #179 | `4813388b5bcde72c298c7392ff5230316da44470` | BeautifulMind-JT | This record claims `merge-ready` for nothing; the node state is implementation complete locally, awaiting exact-head CI, non-author review, Astra's architecture audit and the user merge. | 위치 포인터. 새 승인 아님. |
+| [RS-1 공개 경로 기록](../validation/2026-10-14-rs-1-public-path/README.md) | #180 | `7b6a293e903845ff9c06a19f9a02c075d1790089` | BeautifulMind-JT | `docs/contracts/RIGHTS_SCALE_PROFILE.md` stays draft (`초안`) until Astra review at the RS-1 ARCHITECTURE gate. | 위치 포인터. 새 승인 아님. |
+| [RS-1 IssuerCap 프로브 기록](../validation/2026-10-14-rs-1-issuercap-probe/README.md) | #181 | `dd92e1146ec8eb7024da6c0f62aa721bdc1be780` | BeautifulMind-JT | This node records the measured fact; it does not pick an option, and the cap-split RS-C01 test remains closed until that choice is made. | 위치 포인터. 새 승인 아님. |
+| [RS-2 비공개 경로 기록](../validation/2026-10-14-rs-2-private-path/README.md) | #182 | `bd367efcc9127663b902b973850ffafc179469df` | BeautifulMind-JT | **Everything here is a localnet fixture.** | 위치 포인터. 새 승인 아님. |
+| [RS-3a 위임 primitives 기록](../validation/2026-10-14-rs-3a-delegation-primitives/README.md) | #183 | `adcddc510a66ff70725084c0846830c29ef9ebbe` | BeautifulMind-JT | **Everything here is a localnet fixture.** | 위치 포인터. 새 승인 아님. |
+| [RS-3b 위임 실행 map 기록](../validation/2026-10-14-rs-3b-delegated-exec/README.md) | #184 | `ced0e2f42c0491753db91acf87bd61574eb37ce4` | BeautifulMind-JT | No delegated execution is enabled (`runtime/ARCHITECTURE.toml` keeps `delegated_execution_enabled = false` and the architecture verifier still passes). | 위치 포인터. 새 승인 아님. |
+
+병합된 문서 위치(2026-10-14~16, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다. merged_by는 GitHub API가 아니라 병합 커밋의 author(`git show -s --format='%an <%ae>' <병합 커밋>`의 이름)를 읽어 적었다. 병합 커밋 author가 GitHub의 merged_by와 같다는 보증은 아니다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [register 동기화 v5·RS 기록](../validation/2026-10-14-register-sync-v5-rs/README.md) | #185 | `9c4da8d53947a8ca049b6284fa5ca915fb5947ec` | soulbound_jt | This record raises no evidence grade, marks nothing reviewed or operational, and keeps the operational count at 0. | 위치 포인터. 새 승인 아님. |
+| [audit6 계획·색인 동기화 기록](../validation/2026-10-14-audit6-plan-index-sync/README.md) | #186 | `50af6096a84f72c8c1249f23279dab0b279e4c82` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [RS 프로파일 개정 기록 0.2](../validation/2026-10-14-rs-profile-revision-log-0-2/README.md) | #187 | `52bd45eff0d77280406a819e62e33212ca50370f` | soulbound_jt | No semantic rule, RS-C/IM/RR id, status notation, or adoption sentence was changed. | 위치 포인터. 새 승인 아님. |
+| [RS-1 상태·답변 아카이브 기록](../validation/2026-10-14-rs1-state-answer-archive/README.md) | #188 | `2ae8f1d0774befb0d71eb07f2e3d7454d3fcdc64` | soulbound_jt | The answer text is not edited. | 위치 포인터. 새 승인 아님. |
+| [docs 색인 검사 validation 기록 확장 기록](../validation/2026-10-15-docs-index-check-validation-records/README.md) | #189 | `10e44d40abd878736b900d768f925725c95a8cd0` | soulbound_jt | This record extends a checker and its allowlist only; it retroactively indexes no historical record, raises no evidence grade, and marks nothing reviewed or operational. | 위치 포인터. 새 승인 아님. |
+| [RS-4 L1 부하 기록](../validation/2026-10-15-rs-4-l1-load/README.md) | #190 | `751c51bdff661673eb2edb9de0dea8f6cbdac2e0` | soulbound_jt | **Everything here is exploration data.** | 위치 포인터. 새 승인 아님. |
+| [Sui testnet 키 관리 결정 제안](decisions/TESTNET_KEY_MANAGEMENT_DECISION_PROPOSAL_20261016.md) | #192 | `47eed4b01b93dc4b00e102729bad1c74abdbae95` | soulbound_jt | If the User merges this file without edits, only the recommended branch is adopted (C3, R2, I2, W2, and O1). Every `DECISION_REQUIRED` and `UNDETERMINED` value stays empty. Every lock stays. | 효력 발생(User 병합) |
+| [위임 실행 활성화 결정 제안](decisions/AI_DELEGATION_EXECUTION_DECISION_PROPOSAL_20261016.md) | #193 | `ea867668696d6b1114a443d0fe4e840d96b948f6` | soulbound_jt | If the User merges this file without edits, only the recommended branch is adopted (G2, L2, R2, and O1). Every `DECISION_REQUIRED` and `UNDETERMINED` value stays empty. Every lock stays. `delegated_execution_enabled` stays `false`. | 효력 발생(User 병합) |
+| [plan·register·index 동기화 기록](../validation/2026-10-16-plan-register-index-sync-20261016/README.md) | #194 | `a013cb0c471be0422a4a70d6b98e86c03f7131fa` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [FeatureIR plan 한도 edge test 기록](../validation/2026-10-16-feature-ir-plan-limit-edge-tests/README.md) | #196 | `aca49f6e5498291c1f221185df1ee5cdbf333342` | soulbound_jt | These are in-memory validator tests. They are not an authenticated-exporter, wire-parser, Polars/DuckDB or GPU result. | 위치 포인터. 새 승인 아님. |
+
+병합된 문서 위치(2026-10-16~17, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다. merged_by는 GitHub API가 아니라 병합 커밋의 author(`git show -s --format='%an <%ae>' <병합 커밋>`의 이름)를 읽어 적었다. 병합 커밋 author가 GitHub의 merged_by와 같다는 보증은 아니다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [audit7 plan·register·index 동기화 기록](../validation/2026-10-16-audit7-plan-register-index-sync-20261016b/README.md) | #197 | `2497471dfab21ffd68d600e6ce508e5d6d65bae5` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [audit7 docs 색인 allowlist 정리 기록](../validation/2026-10-16-audit7-docs-index-allowlist-prune/README.md) | #198 | `9d1ff76377fd7c65911c1fb7cb7b515a55489e2d` | soulbound_jt | This record removes four allowlist entries and adds one checker rule; it retroactively indexes nothing, raises no evidence grade, and marks nothing reviewed or operational. | 위치 포인터. 새 승인 아님. |
+| [I12 proof id 검사 CI 연결 기록](../validation/2026-10-16-ci-wire-i12-proof-ids-check/README.md) | #199 | `624b28d024279bd077e1247f37566333457750bd` | soulbound_jt | Wiring is a mechanical id/section check; I12 stays open. | 위치 포인터. 새 승인 아님. |
+| [위임 계층 간극 매트릭스 기록](../validation/2026-10-16-delegation-layer-gap-matrix/README.md) | #200 | `543c1438ce044479fd9646bc5e1cde933a153a4c` | soulbound_jt | This record and the matrix are a builder-authored map, not a review and not an acceptance. | 위치 포인터. 새 승인 아님. |
+| [RS 술어 증거 지도 기록](../validation/2026-10-16-rs-predicate-evidence-map/README.md) | #201 | `9f0177ab45cf3ca704ecf5a152b3c1785c8f22a7` | soulbound_jt | This record and the map are a builder-authored reading, not an Astra review and not an acceptance. | 위치 포인터. 새 승인 아님. |
+| [정산 seeded property suite 기록](../validation/2026-10-16-settlement-seeded-property-suite/README.md) | #202 | `9d0860c870e4a06f6b8e876cbee6446f50b22b15` | soulbound_jt | This suite is builder-authored. It is not an independent PASS, not an accounting or legal treatment, and not a payment. | 위치 포인터. 새 승인 아님. |
+| [F04 credit seeded property suite 기록](../validation/2026-10-17-credit-f04-seeded-property-suite/README.md) | #203 | `5eb95eabcac8b71e0c6c92b4fb322a0e4fe5bb45` | soulbound_jt | This suite is builder-authored. It is not an independent PASS, not a regulated credit product, and not a loan or payment. | 위치 포인터. 새 승인 아님. |
+| [FeatureSemantics v1 edge fixture 기록](../validation/2026-10-17-feature-semantics-v1-edge-fixtures/README.md) | #204 | `492a85d36fc79aa31d3938bd44024b73dd70dfad` | soulbound_jt | No f64 tolerance policy, zero normalisation or i64-to-f64 precision rule is chosen. | 위치 포인터. 새 승인 아님. |
+| [readiness journal byte sweep 기록](../validation/2026-10-17-readiness-journal-byte-sweep/README.md) | #205 | `7bdc99933c804b417b94d9dba40f13d370861cab` | soulbound_jt | No power-loss, OS-crash or disk-flush claim: files are rewritten in-process and `fsync` behaviour is not tested. | 위치 포인터. 새 승인 아님. |
+| [booking·resale adopt_issued 원자성 수정 기록](../validation/2026-10-17-booking-resale-adopt-issued-atomicity-fix/README.md) | #206 | `244595db1524cbb1a01148baa07d6d28cd1b8dc6` | soulbound_jt | In-memory reference mocks only: no durability, production, chain-finality or distributed-fencing claim. | 위치 포인터. 새 승인 아님. |
+
+병합된 문서 위치(2026-10-18~20, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다. merged_by는 GitHub API가 아니라 병합 커밋의 author(`git show -s --format='%an <%ae>' <병합 커밋>`의 이름)를 읽어 적었다. 병합 커밋 author가 GitHub의 merged_by와 같다는 보증은 아니다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [audit8 plan·register·index 동기화 기록](../validation/2026-10-17-audit8-plan-register-index-sync-20261017/README.md) | #207 | `4da9f7762beddf1a93d95cf26e55d7bf64316711` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [RS-C01 IssuerCap 열린 셀 보정 기록](../validation/2026-10-18-audit8-rs-map-rs-c01-issuercap-open-cell/README.md) | #208 | `08b317e5096893432116e41c8312697793500cfe` | soulbound_jt | Wording in one cell of the map; no test, option choice, profile/register/checker change, no grade change. | 위치 포인터. 새 승인 아님. |
+| [readiness conformance sweep 한계 보정 기록](../validation/2026-10-18-audit8-readiness-conformance-sweep-limit-note/README.md) | #209 | `85acc3399a23e87ee4092693840c4e0a620867a0` | soulbound_jt | Wording in the readiness conformance doc and one register cell; no test, store, format or contract change, no classification decision, no grade change. | 위치 포인터. 새 승인 아님. |
+| [loop node canonical crosswalk 기록](../validation/2026-10-18-audit8-loop-node-canonical-crosswalk/README.md) | #210 | `e291a88211c45ee7285fd8abebcc6ef92bc39f23` | soulbound_jt | It counts no loop work toward any canonical node; that question stays `DECISION_REQUIRED · Astra`. | 위치 포인터. 새 승인 아님. |
+| [AI 위임 seeded property suite 기록](../validation/2026-10-17-ai-delegation-seeded-property-suite/README.md) | #211 | `ed1d48d52d943f000511573b78ebcfbf3cf5c114` | soulbound_jt | This suite is builder-authored. It is not an independent PASS. MOCK only: no AI service, no grant on chain, no execution, no grade change. | 위치 포인터. 새 승인 아님. |
+| [위임 실행 seeded differential 기록](../validation/2026-10-17-delegated-exec-seeded-differential/README.md) | #212 | `9eb6b9ff24c6ca5825a3d999c81932a38ae79f02` | soulbound_jt | This test is builder-authored and source-informed (the source of `kix-delegated-exec` and `kix-kernel-v5` was in view). Agreement of the map with a bare kernel is not an independence proof. It is not an independent PASS. | 위치 포인터. 새 승인 아님. |
+| [RS 영향표 증거 지도 기록](../validation/2026-10-17-rs-im-evidence-map/README.md) | #213 | `5587afb34cdf9df51b981bcea4a9507250e70528` | soulbound_jt | This record and the map are a builder-authored reading, not an Astra review and not an acceptance. No grade is raised, the operational count stays 0, no Sui, ZK, Move, localnet, Cargo or Node run was made, and the checker proves only that a cited name exists, not that the test asserts the predicate. | 위치 포인터. 새 승인 아님. |
+| [계약 오류 코드 커버리지 기록](../validation/2026-10-18-contract-error-code-coverage/README.md) | #214 | `306dfa1261eb02881d1914b34d6510fc698a9979` | soulbound_jt | This record and the map are a builder-authored reading, not an independent review and not an acceptance. No grade is raised, nothing is claimed for production, and the checker proves only that a code name appears on a raise path or in a test body. | 위치 포인터. 새 승인 아님. |
+| [readiness crash-point sweep 기록](../validation/2026-10-18-readiness-crash-point-sweep/README.md) | #215 | `90d320325a601e1f604cd901703fd2a5094ca527` | soulbound_jt | This record is a builder-authored reading, not an independent review. No grade is raised and nothing is claimed for production. | 위치 포인터. 새 승인 아님. |
+| [v5 lifecycle seeded model test 기록](../validation/2026-10-19-v5-lifecycle-seeded-model-test/README.md) | #216 | `39146a44187af4b43ac57148661bc3af2fb3104f` | soulbound_jt | independence proof (source in view). Local success is not exact-head CI and is | 위치 포인터. 새 승인 아님. |
+| [RS model gap closure 기록](../validation/2026-10-19-rs-model-gap-closure/README.md) | #217 | `fe1f8666c4e50f7740bfe48641d3015fb66ef7fc` | soulbound_jt | This record and the map updates are a builder-authored reading, not an Astra review and not an acceptance. No grade is raised, the operational count stays 0, no Sui, ZK, localnet or Node run was made, and each status remains a builder reading of the cited bodies. | 위치 포인터. 새 승인 아님. |
+| [TL 술어 증거 지도 기록](../validation/2026-10-19-tl-predicate-evidence-map/README.md) | #218 | `fe8f12832e01828a1cba80aec908d6c9971cffcf` | soulbound_jt | This file is not an independent review and not an acceptance. | 위치 포인터. 새 승인 아님. |
+| [ReservationMachine 거절 원자성 시험](../reference/booking_resale_admission/test_reservation_rejection_atomicity.py) | #219 | `77da4bcc37e227c549929740a30e4ac544efe4db` | soulbound_jt | mutation boundary a reservation command can reach | 위치 포인터. 새 승인 아님. |
+| [BRA FSM 오류 코드 커버리지 기록](../validation/2026-10-19-bra-fsm-error-code-coverage/README.md) | #220 | `08119a41b7c8088a0e9d40bd35228af33d795643` | soulbound_jt | This record and the map are a builder-authored reading, not an independent review and not an acceptance. No grade is raised, nothing is claimed for production, and the checker proves only that a code name appears on a raise path or in a test body. | 위치 포인터. 새 승인 아님. |
+| [RS grant-cut 순서 시험 기록](../validation/2026-10-20-plan-rs-grant-cut-order-tests/README.md) | #221 | `01a86f66f1a2a0de98ae00f89e49d45ec07ec8da` | soulbound_jt | This record and the map updates are a builder-authored reading, not an Astra review and not an acceptance. No grade is raised, the operational count stays 0, no Sui testnet/mainnet or localnet run was made, and each status remains a builder reading of the cited bodies. | 위치 포인터. 새 승인 아님. |
+
+병합된 문서 위치(2026-10-20~21, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다. merged_by는 GitHub API가 아니라 병합 커밋의 author(`git show -s --format='%an <%ae>' <병합 커밋>`의 이름)를 읽어 적었다. 병합 커밋 author가 GitHub의 merged_by와 같다는 보증은 아니다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [plan·register·index 동기화 기록](../validation/2026-10-20-plan-register-index-sync-20261020/README.md) | #222 | `b3f1c6c1f943dc5faccaa9451aee55fa7305dc4c` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [어댑터 정체성 증거 지도 기록](../validation/2026-10-20-adapter-identity-evidence-map/README.md) | #223 | `6cdff624203a9610ed9b84fafec8dad07995c414` | soulbound_jt | This record and the map are a builder-authored reading, not an Astra review and not an acceptance. No grade is raised, the operational count stays 0, no adapter code, schema id or domain id is written, no Sui, ZK, localnet, Move or Node run was made, and no open input is resolved. | 위치 포인터. 새 승인 아님. |
+| [token-reward readiness wrap 기록](../validation/2026-10-20-token-reward-readiness-wrap/README.md) | #224 | `b8c8d1057e8124fef09dc2301fdc841015f22b4a` | soulbound_jt | This record is a builder-authored reading, not an independent review. No grade is raised and nothing is claimed for production. | 위치 포인터. 새 승인 아님. |
+| [v5 전이 증거 지도 기록](../validation/2026-10-20-v5-transition-evidence-map/README.md) | #225 | `99c2655d38c283497b92dc24ba84a2ae6a5461fb` | soulbound_jt | This record and the map are a builder-authored reading, not an Astra review and not an acceptance. No grade is raised, no stopped transition is opened, no open input is resolved, and no v5 `src`, contract or locked-blob byte changed. | 위치 포인터. 새 승인 아님. |
+| [AI 위임 wrap 적합성 기록](../validation/2026-10-20-ai-delegation-wrap-conformance/README.md) | #226 | `2c7bc7dd7d4831b0ab3c0ce5e394999a7f72de12` | soulbound_jt | No power-loss, OS-crash, fsync, lost-ack-after-append, concurrency, rejected-command sweep, production durability, chain finality, real funds, live provider, backend adoption or independent-conformance claim. | 위치 포인터. 새 승인 아님. |
+| [stage5 host preflight 기록](../validation/2026-10-20-stage5-preflight/README.md) | #227 | `154e9aae3da1bf0044dad606fcfd7e2fb6b3f8df` | soulbound_jt | No production readiness, durability, exactly-once, or finality. | 위치 포인터. 새 승인 아님. |
+| [token-reward 거절 원자성 기록](../validation/2026-10-20-token-reward-rejection-atomicity/README.md) | #228 | `70000ed8a189b8b3b92a4a858d7cce1ed43e5d7b` | soulbound_jt | This record is a builder-authored reading, not an independent review. No grade is raised and nothing is claimed for production. | 위치 포인터. 새 승인 아님. |
+| [read-model contract fixture prep 기록](../validation/2026-10-20-read-model-contract-fixture-prep/README.md) | #229 | `aac2e72d8d5df86032ec2154172f724d07ebbcf1` | soulbound_jt | these fixtures are candidate evidence only — not conformance evidence. | 위치 포인터. 새 승인 아님. |
+| [RS-4 경로별 측정 공백 보고](../reference/rights_scale/measurement_gap.py) | #230 | `6f7559470bf2d555bbd80d0ae5d5f8a008e798f7` | soulbound_jt | Offline per-path measurement-gap report for RS-4 load records. | 위치 포인터. 새 승인 아님. |
+| [settlement multi-payee refund corpus 기록](../validation/2026-10-21-settlement-multi-payee-refund-corpus/README.md) | #231 | `a114b5bd67164dd1264bc4ad838566809b5bc0b4` | soulbound_jt | This corpus is builder-authored. It is not an independent PASS, not an accounting or legal treatment, and not a payment. | 위치 포인터. 새 승인 아님. |
+
+병합된 문서 위치(2026-10-21~22, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다. merged_by는 GitHub API가 아니라 병합 커밋의 author(`git show -s --format='%an <%ae>' <병합 커밋>`의 이름)를 읽어 적었다. 병합 커밋 author가 GitHub의 merged_by와 같다는 보증은 아니다.
+
+| 문서 | PR | 병합 커밋 | merged_by | 문서 자체의 채택 문장(원문) | 효력 표기 |
+|---|---|---|---|---|---|
+| [plan·register·index 동기화 기록](../validation/2026-10-21-plan-register-index-sync-20261021/README.md) | #232 | `4e3ce63eaca8ab766c9c88adc712554fb0027d36` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [reward wrap 적합성 기록](../validation/2026-10-21-reward-wrap-conformance/README.md) | #233 | `91d2e507362a79834c09790d9f379ee15f2a1453` | soulbound_jt | No power-loss, OS-crash, fsync, lost-ack-after-append, concurrency, rejected-command sweep, production durability, chain finality, real funds, live provider, backend adoption, payout or independent-conformance claim. | 위치 포인터. 새 승인 아님. |
+| [readiness 런타임 증거 지도 기록](../validation/2026-10-21-readiness-runtime-evidence-map/README.md) | #234 | `059410cd85bf944142175fbd70364f7cc54ea196` | soulbound_jt | The map names which existing fixtures touch each clause. It runs none of them, proves no assertion, decides no classification, reclassifies no open item and raises no grade; the operational count stays 0. | 위치 포인터. 새 승인 아님. |
+| [kix-types 경계 fixture 기록](../validation/2026-10-21-kix-types-boundary-fixtures/README.md) | #235 | `e2313ab473ea1b5a7b5b9246a564749188c1c2c8` | soulbound_jt | This record does not claim completeness: only the listed cells are pinned, and the | 위치 포인터. 새 승인 아님. |
+| [delegated-exec GA late-capture 거울 시험](../runtime/crates/kix-delegated-exec/tests/seeded_differential.rs) | #237 | `eef11daa33332c2ddfd75ab3045a8caa3b84513f` | soulbound_jt | In-memory only: no chain client, no durability, delegated execution | 위치 포인터. 새 승인 아님. |
+| [stdlib 단계 주석 정확성(워크플로)](../.github/workflows/protocol.yml) | #238 | `e9f6fc0d880b9f74213791b36df65f63ad88c1c5` | soulbound_jt | The run block below is the authoritative checker list. | 위치 포인터. 새 승인 아님. |
+| [Astra 결정 시트 RS stage5 기록](../validation/2026-10-21-astra-decision-sheets-rs-stage5/README.md) | #236 | `26f1b9535db24a6b2e9c28753f561d4d6a271815` | soulbound_jt | Builder-authored; not an Astra or User decision and not a reply from any | 위치 포인터. 새 승인 아님. |
+| [readiness checker PARTIAL fixture 기록](../validation/2026-10-21-readiness-checker-partial-fixture/README.md) | #239 | `9b462fd2cd6890cd0d8fbc2930f2cc54255e2915` | soulbound_jt | No production durability, power-loss, OS-crash, fsync correctness, distributed | 위치 포인터. 새 승인 아님. |
+| [RS witness 오프라인 회귀 기록](../validation/2026-10-21-plan-rs-witness-offline-regressions/README.md) | #240 | `45ec626e2ffcd1cd47aa982622877873b5297139` | soulbound_jt | dependency is used. Nothing is claimed about transport completeness, | 위치 포인터. 새 승인 아님. |
+| [RS witness CI 배선 기록](../validation/2026-10-21-plan-rs-witness-ci-wiring/README.md) | #241 | `8b92eb42353d5ca1058227671b3abda3142643c3` | soulbound_jt | No production, production durability, chain finality, legal compliance, | 위치 포인터. 새 승인 아님. |
+| [RS manifest 오프라인 회귀 기록](../validation/2026-10-21-plan-rs-manifest-offline-regressions/README.md) | #242 | `b761bd60f45f224b4c5db5e3af6963eb6e7dc4d5` | soulbound_jt | No cryptographic verification, artifact-byte integrity, curve membership, | 위치 포인터. 새 승인 아님. |
+| [RS ZK 인코딩 회귀 기록](../validation/2026-10-21-plan-rs-zk-encoding-regressions/README.md) | #243 | `4e5c30cc6779ea8b7d26fa40fdde6c84adfd44b7` | soulbound_jt | No curve membership, proof validity, usable verification key, clean-room | 위치 포인터. 새 승인 아님. |
+| [RS spend witness 오프라인 시험 기록](../validation/2026-10-21-plan-rs-spend-witness-offline-tests/README.md) | #245 | `20b692b0e7de91f70693d15b14ff5c5c52fc21cb` | soulbound_jt | No production readiness, durability, finality, anonymity, legal compliance, | 위치 포인터. 새 승인 아님. |
+| [RS PTAU header 시험 기록](../validation/2026-10-21-plan-rs-ptau-header-tests/README.md) | #246 | `e9caa181278048cdd0c403929d00a03d5ecd3ab4` | soulbound_jt | These small readable buffers are not valid PTAU files, cryptographic material, | 위치 포인터. 새 승인 아님. |
+| [v5 증거 인용 가드 기록](../validation/2026-10-21-v5-evidence-citation-guard/README.md) | #247 | `a2a2e29ceefd50952454c6b378363b31be84c3b4` | soulbound_jt | This record claims citation validity only. | 위치 포인터. 새 승인 아님. |
+| [RS 오프라인 시험 진입점 기록](../validation/2026-10-22-plan-rs-offline-test-entrypoint/README.md) | #248 | `93cec6aaf12f22bf8aefc0453fe545b6bd38b819` | soulbound_jt | No independent cryptographic verification, complete PTAU validation, durability, | 위치 포인터. 새 승인 아님. |
+| [RS admission packet 오프라인 시험 기록](../validation/2026-10-22-plan-rs-admission-packet-offline-tests/README.md) | #251 | `9eb6b5f932cae5f4f1b431ef79c9f15874db1c36` | soulbound_jt | This evidence addresses only IM-19's packet-construction portion. It does not | 위치 포인터. 새 승인 아님. |
+| [RS mint wrapper 오프라인 시험 기록](../validation/2026-10-22-plan-rs-mint-wrapper-offline-tests/README.md) | #252 | `1c129f1a5fd73636c30c90a33ecfb9e4adf21217` | soulbound_jt | These are synthetic, source-informed wrapper tests within EV-RS, sharing | 위치 포인터. 새 승인 아님. |
+| [RS verifier binding 오프라인 시험 기록](../validation/2026-10-22-plan-rs-verifier-binding-offline-tests/README.md) | #253 | `f6558996c611f74b88c60928f5b285c553303c14` | soulbound_jt | These are synthetic, source-informed integration tests within EV-RS for IM-17 | 위치 포인터. 새 승인 아님. |
+| [plan·register·index 동기화 기록](../validation/2026-10-22-plan-register-index-sync-20261022/README.md) | #254 | `8e85ef4e14c2615a94b8efca6acd60ea4fe52fb0` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [stage5 host preflight self-test CI 배선 기록](../validation/2026-10-22-ci-wire-stage5-host-preflight-selftest/README.md) | #255 | `1a69364eca0e2a219854c443f8183a9b0e733a2d` | soulbound_jt | This record raises no evidence grade, marks nothing reviewed or | 위치 포인터. 새 승인 아님. |
+| [RS-4 host 조건 기록기 기록](../validation/2026-10-22-rs4-load-host-conditions-recorder/README.md) | #256 | `f1734e00e5a167dc18bfff1a873994bee124a3f7` | soulbound_jt | Thresholds are UNDETERMINED (owner: User). This record is not a measurement, | 위치 포인터. 새 승인 아님. |
+| [RS 오프라인 suite 증거 인용 동기화 기록](../validation/2026-10-22-rs-offline-suite-evidence-sync/README.md) | #257 | `56d5f59468969825e0e2cd22f6803ebb5e6fb662` | soulbound_jt | Builder reading, not an Astra review and not an acceptance. | 위치 포인터. 새 승인 아님. |
+| [열린 사용자 결정 원장 기록](../validation/2026-10-22-open-user-decisions-ledger/README.md) | #258 | `d84cc50f78a37420ca9d12752ac23f9f9b51c5fc` | soulbound_jt | The ledger chooses no option, assigns no value, marks nothing reviewed and | 위치 포인터. 새 승인 아님. |
+| [정산·여신 거절 원자성 기록](../validation/2026-10-23-settlement-credit-rejection-atomicity/README.md) | #259 | `16aa6d528c2b2a519d99e724b986717fc090b1e3` | soulbound_jt | This record is a builder-authored reading, not an independent review. No grade is raised and nothing is claimed for production. | 위치 포인터. 새 승인 아님. |
+| [열린 사용자 결정 원장 색인 항목(docs/README)](README.md) | #260 | `2393988eeca984f12f0819ac56b6870be1a5832f` | soulbound_jt | of the five open `DECISION_REQUIRED` records | 위치 포인터. 새 승인 아님. |
 
 ## 6. E-4와 상태 수명
 
@@ -507,9 +624,12 @@ PG 선택을 다시 미정으로 쓰거나 잠정 선택을 모든 경제 기능
 
 모델 1의 chain inventory/Right, 배타 grant·회수·미발행 약정 보존·잔여 회수,
 취소 placement 및 현재성, 지정석·GA·SaleIntent·PaymentEvidence·검표 nullifier,
-비공개 증명·권한, 운영 ZK와 키 이관을 닫아야 한다. 실제 grant·비협조 회수는
-미구현이므로 위임 실행 비활성을 유지한다. 체인 클라이언트나 자체 암호를 이번에
-추가하지 않는다. 기존 shared-Show Move는 회귀 자산이다.
+비공개 증명·권한, 운영 ZK와 키 이관을 닫아야 한다. localnet grant
+primitives(GrantControl·delegate_page·revoke_grant)와 확장 프로파일 패키지
+(`reference/rights_scale`)는 fixture로 병합됐다(#180~#184, 위 §5 표). 프로파일은
+Astra 검토 전 초안이고 위임 실행 비활성을 유지한다. 운영 grant·비협조 회수는
+미구현이다. 체인 클라이언트나 자체 암호를 이번에 추가하지 않는다. 기존
+shared-Show Move는 회귀 자산이다.
 
 ## 13. 데이터 처리
 
@@ -593,7 +713,7 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 | 보완 항목 | 성격 | 청사진 | 현재 상태 |
 |---|---|---|---|
 | **TL** 선택적 자체 토큰 발행·운영 계층 | 독립 개발 대상. 토큰 없이도 기본 예매·이전·검표·환불·정산이 성립해야 한다 | [optional-native-token-v1](blueprints/optional-native-token-v1/README.md) | 구체 설계·구현 미완료. 토큰 모듈 없음 |
-| **RS** 확장형 권리·재고·검표 계층 | 핵심 개발 과제. 16슬롯 참조 프로파일은 회귀 기준으로 보존하고, 새 프로파일은 구조를 바꿔 16을 넘는다 | [rights-scale-v1](blueprints/rights-scale-v1/README.md) | 16슬롯 참조 프로파일만 있음 |
+| **RS** 확장형 권리·재고·검표 계층 | 핵심 개발 과제. 16슬롯 참조 프로파일은 회귀 기준으로 보존하고, 새 프로파일은 구조를 바꿔 16을 넘는다 | [rights-scale-v1](blueprints/rights-scale-v1/README.md) | 16슬롯 참조 프로파일은 회귀 기준으로 보존. 확장 프로파일 localnet 패키지(`reference/rights_scale`)와 grant primitives·in-memory executor map(`runtime/crates/kix-delegated-exec`)은 fixture로 존재(#180~#184). 프로파일 초안 Astra 검토 전. 위임 실행 비활성. 운영 배포 없음 |
 
 ### 18.1 승인된 것과 승인되지 않은 것
 
@@ -605,7 +725,7 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 현재 문서 포인터:
 
 - TL: TL-A ADR [ADR-0002](adr/0002-token-layer-scope-and-limits.md) 병합됨(#126). 범위·한계 기록이며 coin/TIX 잠금 해제가 아니다.
-- RS: RS-0 프로파일 0.1·결정 기록 병합됨(#125): [프로파일](contracts/RIGHTS_SCALE_PROFILE.md), [결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md). 확정 조건은 그 문서가 정한다.
+- RS: RS-0 프로파일 0.1·결정 기록 병합됨(#125): [프로파일](contracts/RIGHTS_SCALE_PROFILE.md), [결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md). 확정 조건은 그 문서가 정한다. RS-1·IssuerCap 프로브·RS-2·RS-3a·RS-3b의 localnet·in-memory fixture 병합 위치는 §5 「병합된 문서 위치(2026-10-13~14, 위치 안내만)」 표의 #180~#184 행과 [docs 색인](README.md)의 「2026-10-13~15 병합 기록 색인」 절이다. RS-4 L1(#190)은 localnet 탐색 측정 자료로만 병합되었고([기록](../validation/2026-10-15-rs-4-l1-load/README.md)), SLO·처리량·운영 주장이 아니다. L2는 병합되지 않은 draft PR #191에서 FAILED_MEASUREMENT로 기록되어 보류 중이며 L3는 다루지 않는다. 위치 포인터이며 새 승인이 아니다.
 
 병합된 TL 문서 위치(2026-10-09, 위치 안내만): 아래 표는 위치와 현재 상태만 적는다. 채택 문장은 병합된 파일의 문장을 그대로 옮긴 것이며, 「문장 수정 없이」 조건이 지켜졌는지는 이 표가 판단하지 않는다.
 
@@ -620,6 +740,7 @@ PR #79의 사용자 병합(`5cf4168`)으로 효력이 생겼다. 후속 범위�
 | [외부 검토 질문서](status/TOKEN_LEGAL_REVIEW_BRIEF_KO.md) | #151 | `c2cde86e21a6e5ba6f24a56548636db6d0a34c6f` | BeautifulMind-JT | 상태: 질문서만이다. 전송하지 않았다. 자문 주체의 이름, 조직의 이름, 착수 시점을 적지 않는다. 작성자가 빌더이므로 비작성자 검토가 아니고, 법률 의견이 아니다. 검토됨으로 표시하지 않는다. | 효력 발생(User 병합) |
 | [TL-3 on-chain은 열리지 않음](decisions/TL3_ONCHAIN_DOES_NOT_OPEN_20261009.md) | #159 | `6bdd571fcb88496c98e25b32213c60017e209198` | BeautifulMind-JT | 상태: 기록. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. | 효력 발생(User 병합) |
 | [TL-4 위협 모델](decisions/TL4_THREAT_MODEL_20261009.md) | #162 | `4e2122a3f61a0feea2c43035c1ae834e7097e429` | BeautifulMind-JT | 상태: 기록, 작성자=빌더, 독립 검토 아님. 패키지가 아니다. 효력은 사용자가 이 기록을 병합할 때에만 생긴다. 작성자가 빌더이므로 독립 검토가 아니고, 비작성자 exact-HEAD 검토가 아니다 … 검토됨으로 표시하지 않는다. 자기 검토를 독립 PASS로 세지 않는다. | 효력 발생(User 병합) |
+| [TL-5 운영 활성화 결정 제안](decisions/TL5_ACTIVATION_DECISION_PROPOSAL_20261009.md) | #166 | `3ce6e4975b7f439d67482451bb47a22c940add26` | BeautifulMind-JT | 효력은 사용자가 이 문서를 병합할 때에만 생긴다. 수정 없이 병합하면 권고만 채택되고, 잠금은 풀리지 않는다. | 효력 발생(User 병합) |
 
 ### 18.2 의존성과 우선순위
 
