@@ -252,6 +252,8 @@
 
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
+- [gate-fsm-seeded-journey-differential](../validation/2026-10-23-gate-fsm-seeded-journey-differential/README.md) — Seeded loopback/shadow FSM journey fixtures, replay/shrinking format and local verification limits; no grade change.
+
 - [settlement-credit-rejection-atomicity](../validation/2026-10-23-settlement-credit-rejection-atomicity/README.md) — Builder-authored rejection-atomicity audit for the settlement and credit machines repeating the #219/#228 pattern; two test modules and a record only, no FSM/mock/contract/command change, deterministic rejections leave no trace against a control machine, late-fault seams recorded as class B characterizations, no grade change.
 
 - [plan-register-index-sync-20261023](../validation/2026-10-23-plan-register-index-sync-20261023/README.md) — Location pointers only: no new approval, no decision text, no grade raise.

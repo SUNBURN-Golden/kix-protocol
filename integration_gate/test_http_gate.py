@@ -36,6 +36,9 @@ from integration_gate.constants import (
     READY_PATH,
 )
 from integration_gate.fsm_host import FsmHost, FsmRejected
+from integration_gate.journey_support import (
+    LANES, SEEDS, STEPS_PER_SEED, dump_failure, generate, load_failure, shrink,
+)
 from integration_gate.openapi_doc import self_test, validate
 from integration_gate.schema import problems
 from integration_gate.server import build_server, main
@@ -1749,6 +1752,273 @@ class BrowserAccessTests(unittest.TestCase):
         ):
             self.assertNotIn(banned, headers)
         self.assertNotIn('*', ''.join(headers.values()))
+
+
+class JourneyMismatch(AssertionError):
+    """Only differential assertions qualify for shrinking, not transport faults."""
+
+    def __init__(self, index, step, reason):
+        self.signature = (step.kind, step.action)
+        super().__init__(f'step={index} kind={step.kind} action={step.action}: {reason}')
+
+
+class SeededJourneyDifferentialTests(unittest.TestCase):
+    """Source-informed HTTP/host comparison, with observable coverage gates.
+
+    Existing coverage: TransportTests checks 44 minimal FSM bodies, one admission
+    journey, a settlement replay, and core restart. Missing coverage supplied here:
+    seeded cross-machine ordering, all-machine replay/rejection state checks,
+    accepted journals, and FSM state loss across server/process restarts.
+    """
+
+    @staticmethod
+    def _machine_snapshot(host):
+        return {name: (machine.state_digest(), machine.canonical_state(), machine.export_journal())
+                for name, machine in host.machines.items()}
+
+    def _run_sequence(self, steps, corrupt=None):
+        """Replay concrete steps on fresh hosts, comparing every prefix.
+
+        Each restart closes the old server/core and starts new ones. Snapshots
+        of the gate's machines are taken only on its single core worker.
+        """
+        catalogue = load_catalogue(ROOT)
+        Core, Rejected = reference_types()
+        segments = [[]]
+        for index, step in enumerate(steps):
+            if step.kind == 'restart':
+                segments.append([])
+            else:
+                segments[-1].append((index, step))
+        outcomes = []
+        empty = self._machine_snapshot(FsmHost())
+        for segment in segments:
+            def run(httpd, port):
+                shadow = FsmHost()
+                core = Core()
+
+                def gate_snapshot():
+                    return httpd.on_core(lambda: self._machine_snapshot(httpd.fsm),
+                                         DEFAULT_TIMEOUT_SECONDS)
+
+                try:
+                    self.assertEqual(gate_snapshot(), empty)
+                    for index, step in segment:
+                        # Schema/grammar errors are generator bugs, not a gate
+                        # mismatch, and must never become a shrinking predicate.
+                        self.assertEqual(problems(step.body, catalogue.commands[step.action], 'body'), [])
+                        before_shadow = self._machine_snapshot(shadow)
+                        before_gate = gate_snapshot()
+                        before_core = core.snapshot()
+                        before_gate_core = httpd.on_core(lambda: httpd.core.snapshot(), DEFAULT_TIMEOUT_SECONDS)
+                        body = json.loads(json.dumps(step.body))
+                        try:
+                            if step.lane == 'core':
+                                payload = core.execute(step.operation_id, step.actor, step.action, body)
+                            else:
+                                payload = shadow.call(step.action, body)
+                            status = 200
+                        except (FsmRejected, Rejected) as exc:
+                            status = 422
+                            payload = {'error': exc.code if isinstance(exc, FsmRejected) else str(exc),
+                                       'rejected': True}
+                        if corrupt is not None:
+                            payload = corrupt(step, status, payload)
+                        actual_status, actual_payload, headers = post_call(
+                            port, step.operation_id, step.actor, step.action, step.body)
+                        try:
+                            assert_gate_headers(self, headers)
+                            self.assertEqual(actual_status, status)
+                            self.assertEqual(actual_payload, payload)
+                            after_shadow = self._machine_snapshot(shadow)
+                            after_gate = gate_snapshot()
+                            self.assertEqual(after_gate, after_shadow)
+                            self.assertEqual(httpd.on_core(lambda: httpd.core.snapshot(), DEFAULT_TIMEOUT_SECONDS),
+                                             core.snapshot())
+                            if status == 422 or step.lane == 'core':
+                                self.assertEqual(after_shadow, before_shadow)
+                                self.assertEqual(after_gate, before_gate)
+                            if status == 422 or step.lane != 'core':
+                                self.assertEqual(core.snapshot(), before_core)
+                                self.assertEqual(httpd.on_core(lambda: httpd.core.snapshot(), DEFAULT_TIMEOUT_SECONDS),
+                                                 before_gate_core)
+                            if step.lane != 'core' and status == 200:
+                                self.assertIs(actual_payload['funds_executed'], False)
+                                if 'admission_routing_production' in actual_payload:
+                                    self.assertIs(actual_payload['admission_routing_production'], False)
+                        except AssertionError as exc:
+                            raise JourneyMismatch(index, step, str(exc)) from exc
+                        outcomes.append((step, status, payload))
+                    # Also check the final prefix of every segment before a
+                    # restart can discard evidence of a mismatch.
+                    self.assertEqual(gate_snapshot(), self._machine_snapshot(shadow))
+                finally:
+                    core.db.close()
+
+            run_with_server(run)
+        return outcomes
+
+    def _same_failure(self, steps, signature, corrupt=None):
+        try:
+            self._run_sequence(steps, corrupt)
+        except JourneyMismatch as exc:
+            return exc.signature == signature
+        return False
+
+    def _assert_coverage(self, seed, outcomes):
+        def result(action, kind='forward'):
+            return next((status, payload) for step, status, payload in outcomes
+                        if step.action == action and step.kind == kind)
+
+        # Labels are earned from observed outcomes, never generator tags alone.
+        labels = set()
+        for lane in LANES:
+            replay = [(step, status, payload) for step, status, payload in outcomes
+                      if step.lane == lane and step.kind == 'replay_identical']
+            self.assertEqual(len(replay), 1)
+            self.assertEqual(replay[0][1], 200)
+            self.assertIs(replay[0][2]['duplicate'], True)
+            labels.add('replay:identical:' + lane)
+            conflict = next((status, payload) for step, status, payload in outcomes
+                            if step.lane == lane and step.kind == 'replay_conflict')
+            self.assertEqual(conflict, (422, {'error': 'IDEMPOTENCY_CONFLICT', 'rejected': True}))
+            labels.add('replay:idempotency_conflict:' + lane)
+            reuse = next((status, payload) for step, status, payload in outcomes
+                         if step.lane == lane and step.kind == 'opid_reuse')
+            self.assertEqual(reuse[0], 422)
+            self.assertNotEqual(reuse[1]['error'], 'OPERATION_ID_CONFLICT')
+            labels.add('replay:opid_reuse:' + lane)
+            self.assertTrue(any(step.lane == lane and step.kind == 'out_of_order' and status == 422
+                                for step, status, _ in outcomes))
+            labels.add('out_of_order:' + lane)
+            self.assertTrue(any(step.lane == lane and step.kind == 'after_restart' and status == 422
+                                for step, status, _ in outcomes))
+        self.assertEqual(result('reservation_issue', 'before_commit'),
+                         (422, {'error': 'SETTLEMENT_NOT_COMMITTED', 'rejected': True}))
+        self.assertEqual(result('reservation_issue')[0], 200)
+        self.assertIs(result('reservation_issue')[1]['reservation']['mock_settlement_commit_observed'], True)
+        labels.add('boundary:reservation->settlement')
+        self.assertEqual(result('resale_adopt_issued')[0], 200)
+        labels.add('boundary:reservation->resale')
+        self.assertEqual(result('credit_draw')[0], 200)
+        self.assertIs(result('credit_draw')[1]['credit']['mock_settlement_commit_observed'], True)
+        self.assertEqual(result('credit_close')[0], 200)
+        labels.add('boundary:settlement->credit')
+        if seed % 2:
+            self.assertEqual(result('resale_accept_resale')[0], 200)
+            self.assertEqual(result('admission_authorize_admission'),
+                             (422, {'error': 'STALE_VERSION', 'rejected': True}))
+            self.assertEqual(result('admission_consume')[0], 422)
+            labels.add('boundary:resale->admission:stale')
+        else:
+            self.assertEqual(result('admission_authorize_admission')[0], 200)
+            self.assertEqual(result('admission_consume')[0], 200)
+            self.assertEqual(result('resale_list_resale'),
+                             (422, {'error': 'ALREADY_CONSUMED', 'rejected': True}))
+            labels.add('boundary:resale->admission:consume_first')
+        self.assertEqual(result('advance_clock', 'core_opid_conflict'),
+                         (422, {'error': 'OPERATION_ID_CONFLICT', 'rejected': True}))
+        labels.add('replay:operation_id_conflict')
+        bootstrap = result('reservation_set_clock', 'restart_bootstrap')
+        self.assertEqual(bootstrap[0], 200)
+        self.assertIs(bootstrap[1]['duplicate'], False)
+        labels.add('restart')
+        return labels
+
+    def test_seeded_journeys_match_shadow_host(self):
+        labels = set()
+        for seed in SEEDS:
+            with self.subTest(seed=seed):
+                steps = generate(seed)
+                try:
+                    outcomes = self._run_sequence(steps)
+                except JourneyMismatch as exc:
+                    reduced = shrink(steps, lambda candidate: self._same_failure(candidate, exc.signature))
+                    self.fail(f'gate-fsm journey mismatch seed={seed} {exc}\n' + dump_failure(seed, reduced))
+                labels.update(self._assert_coverage(seed, outcomes))
+        self.assertTrue({'boundary:reservation->resale', 'boundary:reservation->settlement',
+                         'boundary:settlement->credit', 'boundary:resale->admission:stale',
+                         'boundary:resale->admission:consume_first', 'restart',
+                         'replay:operation_id_conflict'} <= labels)
+
+    def test_generated_sequences_are_deterministic(self):
+        serialized = set()
+        for seed in SEEDS:
+            first, second = generate(seed), generate(seed)
+            self.assertEqual(first, second)
+            self.assertEqual(len(first), STEPS_PER_SEED)
+            serialized.add(dump_failure(seed, first))
+        self.assertEqual(len(serialized), len(SEEDS))
+
+    def test_catalogue_is_unchanged_by_the_journey(self):
+        catalogue = load_catalogue(ROOT)
+        self.assertEqual(len(catalogue.names), COMMAND_COUNT)
+        self.assertEqual(COMMAND_COUNT, 84)
+        self.assertEqual(len(catalogue.core_names), 40)
+        self.assertEqual(len(catalogue.fsm_names), 44)
+        self.assertEqual(validate(ROOT), [])
+        for seed in SEEDS:
+            for step in generate(seed):
+                if step.kind != 'restart':
+                    self.assertIn(step.action, catalogue.names)
+                    self.assertEqual(problems(step.body, catalogue.commands[step.action], 'body'), [])
+
+    def test_replay_fixture_format_round_trips(self):
+        steps = generate(SEEDS[0])
+        seed, loaded = load_failure(dump_failure(SEEDS[0], steps))
+        self.assertEqual(seed, SEEDS[0])
+        self.assertEqual(loaded, steps)
+        self._assert_coverage(seed, self._run_sequence(loaded))
+
+    def test_negative_control_shrinks_an_injected_divergence(self):
+        def corrupt(step, status, payload):
+            if step.action == 'reservation_set_clock' and step.kind == 'forward' and status == 200:
+                return dict(payload, funds_executed=True)
+            return payload
+
+        steps = generate(SEEDS[0])[:12]
+        with self.assertRaises(JourneyMismatch) as raised:
+            self._run_sequence(steps, corrupt)
+        signature = raised.exception.signature
+        reduced = shrink(steps, lambda candidate: self._same_failure(candidate, signature, corrupt))
+        self.assertEqual(len(reduced), 1)
+        seed, loaded = load_failure(dump_failure(SEEDS[0], reduced))
+        self.assertEqual(seed, SEEDS[0])
+        self.assertEqual(loaded, reduced)
+        self.assertTrue(self._same_failure(loaded, signature, corrupt))
+        self.assertFalse(self._same_failure([], signature, corrupt))
+        self._run_sequence(loaded)  # Removing the injected fault removes the mismatch.
+
+    def test_restart_drops_journey_state_in_subprocess(self):
+        # Existing subprocess helpers own and join the process; no detached job.
+        steps = generate(SEEDS[0])
+        prefix = steps[:next(i for i, step in enumerate(steps) if step.kind == 'restart')]
+        Core, Rejected = reference_types()
+
+        def replay(port, current, shadow, core):
+            for step in current:
+                try:
+                    payload = (core.execute(step.operation_id, step.actor, step.action, step.body)
+                               if step.lane == 'core' else shadow.call(step.action, step.body))
+                    status = 200
+                except (FsmRejected, Rejected) as exc:
+                    status, payload = 422, {'error': exc.code if isinstance(exc, FsmRejected) else str(exc),
+                                            'rejected': True}
+                actual_status, actual, _ = post_call(port, step.operation_id, step.actor, step.action, step.body)
+                self.assertEqual((actual_status, actual), (status, payload))
+            return status, payload
+
+        for current in (prefix, steps[len(prefix) + 1:]):
+            proc, port = start_process()
+            core = Core()
+            try:
+                status, payload = replay(port, current, FsmHost(), core)
+                self.assertEqual(status, 200)
+                if current is not prefix:
+                    self.assertIs(payload['duplicate'], False)
+            finally:
+                core.db.close()
+                stop_process(proc)
 
 
 def _host_cases(port):
