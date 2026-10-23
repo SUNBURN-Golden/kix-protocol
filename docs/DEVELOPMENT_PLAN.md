@@ -263,6 +263,15 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [열린 사용자 결정 원장 기록](../validation/2026-10-22-open-user-decisions-ledger/README.md) | #258 | `d84cc50f78a37420ca9d12752ac23f9f9b51c5fc` | soulbound_jt | The ledger chooses no option, assigns no value, marks nothing reviewed and | 위치 포인터. 새 승인 아님. |
 | [정산·여신 거절 원자성 기록](../validation/2026-10-23-settlement-credit-rejection-atomicity/README.md) | #259 | `16aa6d528c2b2a519d99e724b986717fc090b1e3` | soulbound_jt | This record is a builder-authored reading, not an independent review. No grade is raised and nothing is claimed for production. | 위치 포인터. 새 승인 아님. |
 | [열린 사용자 결정 원장 색인 항목(docs/README)](README.md) | #260 | `2393988eeca984f12f0819ac56b6870be1a5832f` | soulbound_jt | of the five open `DECISION_REQUIRED` records | 위치 포인터. 새 승인 아님. |
+| [plan·register·index 동기화 기록](../validation/2026-10-23-plan-register-index-sync-20261023/README.md) | #261 | `3a2ddab0cc56e8c2ccf60c129e8bcd309d48b5af` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [RS 요약 산술·CSV 회귀 기록](../validation/2026-10-23-plan-rs-summary-arithmetic-tests/README.md) | #262 | `471728e6488719be471eebb3ca8c30ab2948c444` | soulbound_jt | All inputs are synthetic. | 위치 포인터. 새 승인 아님. |
+| [readiness 명시 migration 경계 시험 기록](../validation/2026-10-23-plan-readiness-migration-edge-tests/README.md) | #263 | `1d8d228e6fa5cabacf341dd6add0890e8fe95421` | soulbound_jt | This finer mapping changes no map row or evidence grade. | 위치 포인터. 새 승인 아님. |
+| [owner-stop handoff 보충 기록](../validation/2026-10-23-owner-stop-handoff-addendum/README.md) | #264 | `fecb5e993c986080c63b4de41be5c5f476592610` | soulbound_jt | Source records' uncertainties remain open with their owners. | 위치 포인터. 새 승인 아님. |
+| [정산·여신 반환 데이터 격리 기록](../validation/2026-10-23-fsm-returned-data-isolation/README.md) | #265 | `afe7ded7abc1b6e6cc65c8b179c2d6dac009c891` | soulbound_jt | not independent A2 review and no capability grade increase. | 위치 포인터. 새 승인 아님. |
+| [readiness negative controls(fault sensitivity) — 검증 기록 없음, CONFORMANCE.md §'Negative controls (fault sensitivity)'](../readiness/CONFORMANCE.md) | #266 | `fc28ad4eda7e49f34324d46253dfd950533740db` | soulbound_jt | `readiness/test_conformance_sensitivity.py` binds `BackendConformance` to | 위치 포인터. 새 승인 아님. |
+| [예매·리셀·검표 seeded property 기록](../validation/2026-10-17-booking-resale-admission-seeded-property/README.md) | #267 | `f4df0d8ce0253e7b9755f7eb77e857b2d49057e0` | soulbound_jt | Builder-authored, not independent. | 위치 포인터. 새 승인 아님. |
+| [readiness receipt·audit 시험 기록](../validation/2026-10-23-readiness-receipt-audit-tests/README.md) | #268 | `a3f0fea3160fdea2f59fa8658573be173e242074` | soulbound_jt | This is builder evidence, not independent review or merge authorization. | 위치 포인터. 새 승인 아님. |
+| [BRA §9 error-code coverage 기록](../validation/2026-10-23-bra-section9-error-code-coverage/README.md) | #269 | `c7b470fc39ad6f6aa6ad59c18b5595cde41a7200` | soulbound_jt | source-informed convenience check, not a protocol or production-readiness proof. | 위치 포인터. 새 승인 아님. |
 
 ## 6. E-4와 상태 수명
 
