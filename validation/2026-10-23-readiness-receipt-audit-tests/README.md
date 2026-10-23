@@ -164,3 +164,119 @@ correctness, real provider calls, real funds, public endpoints, Sui, replication
 distributed fencing or production runtime. No production durability, external
 exactly-once, chain finality or production readiness claim is made. Heavy Move,
 ZK, SDK and backend CI work unrelated to the touched paths was not executed.
+
+## Merge conflict resolution — 2026-10-23
+
+This section records the supervisor-requested merge repair and supersedes the
+checkout/handoff state above for this resumed session. Earlier results remain
+historical evidence; they are not transferred to the merged worktree.
+Task input is the current supervisor message for
+`plan-readiness-receipt-audit-tests`; there is no issue or `docs/tasks/` task
+file for this node. No new tests or implementation changes were needed.
+
+- Branch: `agent/kix-plan-readiness-receipt-audit-tests`.
+- Observed implementation/task HEAD before and after repair:
+  `c4287ed94a0bd0295f0452fc4374a45dd661159d`.
+- Cached `origin/main` and merge target (`MERGE_HEAD`):
+  `f4df0d8ce0253e7b9755f7eb77e857b2d49057e0`.
+- Merge base: `26f1b9535db24a6b2e9c28753f561d4d6a271815`.
+  The supplied node base differs from the merge target; the existing,
+  supervisor-authorized merge brings in main's newer work. No fetch was run
+  because the supervisor prohibits network actions. No additional merge,
+  rebase, commit, push, abort or external publication was performed.
+- Final merge commit SHA does not exist yet; the supervisor commits the merge.
+  Hosted KTX and KIX protocol run IDs/status/conclusions were not queried.
+  No main merge or post-merge CI is claimed. READY means local handoff only.
+
+Resolution decisions:
+
+- `docs/README.md`: keep every main index link and both conflicting entries;
+  place receipt/audit evidence under the existing October 23 heading. Date
+  the earlier checker record's prerequisite statement to its own base rather
+  than treating it as the current node's disposition.
+- `scripts/check_readiness_evidence_map.py`: retain main's entire file
+  byte-for-byte. Its synthetic PARTIAL fixture already preserves the node's
+  intent, with a positive control, isolated ownerless diagnostic, complete
+  runs on supplied/zero-PARTIAL maps, and an injected missing-file fixture.
+  The duplicated node fixture is unnecessary; no validator rule is weakened.
+- `docs/status/READINESS_RUNTIME_EVIDENCE_MAP.md`: retain all node coverage
+  rows and counts; add a dated merge basis explaining that main now contains
+  the sensitivity module. Its column stays `none`, with no new sensitivity
+  claim or change to the blocked negative-controls node or OPEN decisions.
+- This validation record: append fresh commands/results and preservation
+  evidence without rewriting the original execution history.
+
+The four receipt/audit tests and the pre-addition coverage mapping above were
+reviewed again and are sufficient for this repair. The tests are byte-identical
+to node HEAD. Relative to main, exactly REC-CORE-COMMIT and OBS-AUDIT have
+changed table rows. The 36 final rows match node HEAD; all nine OPEN rows and
+owners match both parents byte-for-byte. Counts remain 27 EXERCISED, 0 PARTIAL,
+0 NOT_EXERCISED, 9 OPEN; the operational count stays 0.
+
+Fresh verification:
+
+| Command | Actual result |
+|---|---|
+| `python3 -m unittest integration_gate.test_http_gate.TransportTests.test_core_receipt_replay_preserves_receipt_and_journal integration_gate.test_http_gate.TransportTests.test_checksum_valid_receipt_mismatch_refuses_startup integration_gate.test_http_gate.TransportTests.test_readiness_disabled_call_audits_inactive integration_gate.test_http_gate.TransportTests.test_append_failure_diverges_and_blocks_subsequent_commands` | Exit 0; 4 tests passed before combined suite |
+| `python3 -m unittest integration_gate.test_http_gate readiness.test_faults` | Exit 0; 100 tests passed, 0 failures |
+| `python3 scripts/check_readiness_evidence_map.py` | Exit 0; 36 rows, 183 citations; 27 EXERCISED, 0 PARTIAL, 0 NOT_EXERCISED, 9 OPEN |
+| `python3 scripts/check_readiness_evidence_map.py --self-test` | Exit 0; supplied-map and zero-PARTIAL-map runs passed, including synthetic PARTIAL positive/ownerless controls |
+| `python3 scripts/check_docs_index.py` | Exit 0; scanned=214 indexed=179 allowlisted=35 |
+| `python3 scripts/check_docs_index.py --self-test` | Exit 0; all negative controls detected |
+| `python3 scripts/check_status_register.py` | Exit 0 |
+| `python3 scripts/check_status_register.py --self-test` | Exit 0 |
+| `python3 scripts/check_rs_profile_traceability.py` | Exit 0 |
+| `python3 scripts/check_rs_profile_traceability.py --self-test` | Exit 0 |
+| `python3 scripts/check_read_model_source_map.py` | Exit 0 |
+| `python3 scripts/check_read_model_source_map.py --self-test` | Exit 0 |
+| `python3 scripts/check_i12_proof_ids.py` | Exit 0 |
+| `python3 scripts/check_i12_proof_ids.py --self-test` | Exit 0 |
+| `python3 scripts/check_delegation_layer_matrix.py` | Exit 0 |
+| `python3 scripts/check_delegation_layer_matrix.py --self-test` | Exit 0 |
+| `python3 scripts/check_rs_predicate_evidence_map.py` | Exit 0 |
+| `python3 scripts/check_rs_predicate_evidence_map.py --self-test` | Exit 0 |
+| `python3 scripts/check_rs_im_evidence_map.py` | Exit 0 |
+| `python3 scripts/check_rs_im_evidence_map.py --self-test` | Exit 0 |
+| `python3 scripts/check_tl_predicate_evidence_map.py` | Exit 0 |
+| `python3 scripts/check_tl_predicate_evidence_map.py --self-test` | Exit 0 |
+| `python3 scripts/check_contract_error_codes.py` | Exit 0 |
+| `python3 scripts/check_contract_error_codes.py --self-test` | Exit 0 |
+| `python3 scripts/check_adapter_identity_map.py` | Exit 0 |
+| `python3 scripts/check_adapter_identity_map.py --self-test` | Exit 0 |
+| `python3 scripts/check_v5_transition_evidence_map.py` | Exit 0 |
+| `python3 scripts/check_v5_transition_evidence_map.py --self-test` | Exit 0 |
+| `python3 scripts/check_stage5_host.py --self-test` | Exit 0; synthetic tests only, no host qualification |
+| Inline Python preservation/coverage/index/marker checks using `git ls-tree -rz --full-tree MERGE_HEAD`, `git show`, blob hashes and direct byte comparisons | Exit 0; 146 protected files match main; all 56 incoming paths outside node paths match main; checker matches main; tests match node HEAD; map rows and OPEN owners preserved; every main index link retained; no conflict markers in 942 tracked paths |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | Exit 0 before repair; both required blobs match; inline Git-blob verification after repair matches worktree and both parents |
+| `git diff --check` | Exit 0 |
+| `git diff --cached --check` | Exit 0 |
+| Inline Python evidence-append harness | Exit 1 before any write: its log-block assertion incorrectly required a trailing newline removed by splitting; record appended directly afterward; no product/test/checker failure |
+| `git add docs/README.md scripts/check_readiness_evidence_map.py docs/status/READINESS_RUNTIME_EVIDENCE_MAP.md validation/2026-10-23-readiness-receipt-audit-tests/README.md` | Exit 128: Git metadata is outside the writable sandbox; index.lock creation failed with Read-only file system. No index changes made. Supervisor must stage resolved files before committing |
+
+The 27 commands in the current protocol workflow's Stdlib offline document
+checks step were extracted verbatim and all passed, including the four required
+map/index invocations. No workflow was edited. Logs from this repair:
+`/tmp/kix-receipt-audit-merge-narrow.log`,
+`/tmp/kix-receipt-audit-merge-combined.log`, and
+`/tmp/kix-receipt-audit-merge-doc-checks.log`.
+
+The complete repair path list is `docs/README.md`,
+`scripts/check_readiness_evidence_map.py`,
+`docs/status/READINESS_RUNTIME_EVIDENCE_MAP.md`, and this validation record.
+The supervisor's already-staged incoming main changes are retained; all 56
+incoming paths outside the node's allowed paths match main exactly. The node's
+original `integration_gate/test_http_gate.py` additions remain unchanged.
+Both kernel locks match the required blobs before and after repair:
+`69564b166f0c27f9af5d8422f0a466b18d74c20f` and
+`b607996c83a119c349f1cc90469ac1ba82764e20` respectively.
+`reference/v0.3-rc1/**`, `.aiops/**`, task inputs, contracts and workflows match
+the merge target; the reference snapshot also has no diff against node HEAD.
+
+No new contract violation or undefined characterization was found (AGENTS §8).
+Existing recovery uncertainties, owners and blocked negative-controls
+disposition remain untouched. These local checks do not establish production
+durability, power-loss/fsync behavior, provider exactly-once, chain finality,
+operational readiness, or an independent review. No Rust source changed;
+Cargo, Move, ZK, SDK and backend verification were not rerun for this repair.
+Exact-head CI and non-author review remain supervisor follow-up after the
+supervisor commits/publishes; no merge-ready claim is made.

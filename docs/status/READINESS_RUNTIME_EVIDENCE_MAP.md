@@ -13,6 +13,10 @@
 
 Node `plan-readiness-receipt-audit-tests` adds four deterministic tests on supplied base `26f1b9535db24a6b2e9c28753f561d4d6a271815`. The historical basis above is preserved. [Execution record](../../validation/2026-10-23-readiness-receipt-audit-tests/README.md) maps prior coverage, the new assertions and actual local results. Only REC-CORE-COMMIT and OBS-AUDIT change from PARTIAL to EXERCISED; all nine OPEN rows and owners are preserved. The checker self-test now constructs a valid synthetic PARTIAL control independently of live gap statuses.
 
+### 2026-10-23 merge resolution basis
+
+The supervisor-requested merge combines node head `c4287ed94a0bd0295f0452fc4374a45dd661159d` with cached `origin/main` / MERGE_HEAD `f4df0d8ce0253e7b9755f7eb77e857b2d49057e0`. Main's merged synthetic-PARTIAL checker correction is retained: a valid owned control and an isolated ownerless diagnostic run on both supplied and zero-PARTIAL maps. Main also supplies `readiness/test_conformance_sensitivity.py`; its absence above describes the historical map base. This node adds no sensitivity citations or coverage claim and changes no negative-controls disposition. All nine OPEN rows/owners and the counts below remain unchanged. Fresh local results are appended to the [execution record](../../validation/2026-10-23-readiness-receipt-audit-tests/README.md#merge-conflict-resolution--2026-10-23).
+
 ## 1. Vocabulary
 
 | Status | Rule used here |
@@ -72,7 +76,7 @@ Counts: EXERCISED=27 PARTIAL=0 NOT_EXERCISED=0 OPEN=9
 - `EXERCISED` (27): the original 25 rows plus REC-CORE-COMMIT and OBS-AUDIT. The new tests assert complete receipt replay with unchanged journal bytes/count, checksum-valid receipt-digest mismatch startup refusal without journal mutation, append-failure divergence with persistent command refusal, and actual replayed/inactive/diverged audit decisions with four false labels and body/entry omission. The execution record distinguishes local test results from this checker, which only validates citations and table structure.
 - `PARTIAL` (0): the two previously named local fixture gaps are now exercised; this does not resolve recovery decisions or establish production durability.
 - `OPEN` (9): the three class-B characterizations (`OPEN-LENPREFIX-MIDFRAME`, `OPEN-ZERO-BYTE-REINIT`, `OPEN-FRAME-BOUNDARY-CUT`) wait on the pending Astra ruling on the contract's recovery clause — owner `Astra`, and the map does not classify them. The six `보류` items stay held under the §5 program locks — owners `사용자 승인`, `사용자 명시 승인` and `DECISION_REQUIRED · Astra` as each lock names.
-- `readiness/test_conformance_sensitivity.py` does not exist at this base; its column is `none` in every row.
+- At the historical map base, `readiness/test_conformance_sensitivity.py` did not exist. It is present after the merge above; its column remains `none` in every row, with no new sensitivity claim.
 
 ## 4. Non-claims
 

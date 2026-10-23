@@ -33,7 +33,9 @@ Checks, each reported on failure:
    ``reference/v0.3-rc1/``. A symbol is a defined ``fun``/``struct``/``const``
    (Move), ``def``/``class``/module constant (Python) or ``fn``/``const``
    (Rust) in the cited file; for ``.mjs``, ``.json``, ``.md`` and ``.yml`` it
-   must appear as text.
+   must appear as text. For a ``.test.mjs`` file the symbol is a node:test
+   name and must appear as ``test('name'`` or ``test("name"`` (a nested
+   ``t.test(`` also matches; a template-literal name is not citable).
 5. Counts. The ``Counts:`` line equals the statuses recomputed from the table.
 
 Standard library only. Convenience check, not a contract gate. It reads the
@@ -62,7 +64,7 @@ COLUMNS = {
     3: ('move', (r'reference/rights_scale/sui/tests/[a-z_]+\.move',)),
     4: ('python', (r'reference/(?:rights_scale|booking_resale_admission)/test_[a-z_]+\.py',)),
     5: ('rust', (r'runtime/crates/(?:kix-delegated-exec|kix-kernel-v5)/tests/[a-z0-9_]+\.rs',)),
-    6: ('local', (r'reference/rights_scale/client/[a-z0-9-]+\.mjs',
+    6: ('local', (r'reference/rights_scale/client/[a-z0-9-]+(?:\.test)?\.mjs',
                   r'reference/rights_scale/vectors/[a-z_]+\.json',
                   r'scripts/run_[a-z0-9_]*rights_scale[a-z0-9_]*\.py',
                   r'validation/2026-10-1[0-9]-[a-z0-9-]+/[A-Za-z0-9._-]+')),
@@ -75,6 +77,7 @@ COLUMNS = {
 }
 FORBIDDEN_PREFIX = 'reference/v0.3-rc1/'
 TEXT_SUFFIXES = ('.mjs', '.json', '.md', '.yml')
+TEST_SUFFIX = '.test.mjs'  # symbol is a node:test name, not a text string
 
 ID_CELL = re.compile(r'^\|\s*(IM-\d\d)\s*\|')
 CITATION = re.compile(r'`([^`]+)`')
@@ -120,7 +123,18 @@ def parse_cell(cell):
     return out
 
 
+def suffix_of(path):
+    return TEST_SUFFIX if path.endswith(TEST_SUFFIX) else Path(path).suffix
+
+
+def test_named(text, name):
+    """True when ``test('name'`` or ``test("name"`` appears; a template literal name is not citable."""
+    return "test('%s'" % name in text or 'test("%s"' % name in text
+
+
 def symbol_defined(text, suffix, symbol):
+    if suffix == TEST_SUFFIX:
+        return test_named(text, symbol)
     if suffix in TEXT_SUFFIXES:
         return symbol in text
     pattern = DEF_PATTERNS.get(suffix)
@@ -212,7 +226,7 @@ def find_problems(map_text, profile_text, root=ROOT, files=None):
                     continue
                 if symbol is None:
                     problems.append('%s needs a ::symbol' % where)
-                elif not symbol_defined(text, Path(path).suffix, symbol):
+                elif not symbol_defined(text, suffix_of(path), symbol):
                     problems.append('%s::%s is not defined in the file' % (where, symbol))
 
         if status == 'NOT_COVERED' and total:
@@ -294,12 +308,21 @@ def self_test(map_text, profile_text):
         print('self-test: Python symbol pattern failed its positive control', file=sys.stderr)
         return 1
 
-    rows = {i: _row_line(map_text, i) for i in ('IM-01', 'IM-03', 'IM-25')}
+    node_probe = ("test('alpha_probe', () => {});\nt.test(\"beta_probe\", async () => {});\n"
+                  "test(`gamma_${x}`, () => {});\n// delta_probe\n")
+    node_controls = [symbol_defined(node_probe, TEST_SUFFIX, n) for n in ('alpha_probe', 'beta_probe')]
+    node_misses = [symbol_defined(node_probe, TEST_SUFFIX, n) for n in ('alpha_prob', 'delta_probe', 'gamma_')]
+    if not all(node_controls) or any(node_misses):
+        print('self-test: node:test name pattern failed its positive control', file=sys.stderr)
+        return 1
+
+    rows = {i: _row_line(map_text, i) for i in ('IM-01', 'IM-03', 'IM-19', 'IM-25')}
     if None in rows.values():
         print('self-test: could not find the rows to mutate', file=sys.stderr)
         return 1
     move01 = split_row(rows['IM-01'])[3]
     py01 = split_row(rows['IM-01'])[4]
+    local19 = split_row(rows['IM-19'])[6]
     counts_line = next(l for l in map_text.splitlines() if l.startswith(COUNTS_LINE))
     partial = [(STATUS_CELL, 'PARTIAL'), (MISSING_CELL, 'a sentence'), (OWNER_CELL, NO_OWNER)]
     cases = [
@@ -333,6 +356,10 @@ def self_test(map_text, profile_text):
          'UNCHANGED_BY_DESIGN is only for'),
         ('COVERED status on an untouched row',
          _with_cell(map_text, 'IM-25', STATUS_CELL, 'COVERED_MODEL_OR_MEMORY'), 'is never COVERED_MODEL_OR_MEMORY'),
+        ('misspelled node:test name',
+         _with_cell(map_text, 'IM-19', 6,
+                    local19 + ' `reference/rights_scale/client/witness-reconstruction.test.mjs::populated_tre`'),
+         'is not defined in the file'),
         ('wrong cell count', map_text.replace(rows['IM-01'], rows['IM-01'] + ' extra |', 1),
          'expected 11 cells'),
         ('wrong counts line', map_text.replace(counts_line, counts_line.replace('PARTIAL=', 'PARTIAL=9', 1), 1),
