@@ -173,6 +173,7 @@
 
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
+- [booking-resale-admission-seeded-property](../validation/2026-10-17-booking-resale-admission-seeded-property/README.md) — Builder-authored seeded suite and owner-authorized legacy atomicity characterization (MOCK only; resumed 2026-10-23). No grade change or independent review.
 - [credit-f04-seeded-property-suite](../validation/2026-10-17-credit-f04-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F04 credit mock and FSM; MOCK only, no mock or contract change, no grade change, no real funds, not a regulated credit product.
 - [feature-semantics-v1-edge-fixtures](../validation/2026-10-17-feature-semantics-v1-edge-fixtures/README.md) — Builder-authored scalar edge tests for kix-feature-semantics with a section-to-test map; in-memory helpers only, no src change, no grade change, no tolerance policy chosen.
 - [readiness-journal-byte-sweep](../validation/2026-10-17-readiness-journal-byte-sweep/README.md) — Builder-authored byte-level tear and flip sweep of the local readiness journal; tests only, no store or contract change, no grade change, no durability or production claim.
