@@ -134,6 +134,168 @@ class StoreTests(unittest.TestCase):
                 store.close()
 
 
+class MigrationEdgeTests(unittest.TestCase):
+    @staticmethod
+    def _record(schema, item_id='fixture-1'):
+        record = {
+            'schema': schema,
+            'kind': 'fsm_commit',
+            'machine': 'settlement',
+            'protocolTruth': False,
+            'productionConformance': False,
+            'entry': {'op': 'initiate', 'details': {'items': [{'id': item_id}]}},
+            'fixtureNote': {'nested': [{'values': [None, False, 7, 'kept']}]},
+        }
+        if schema == 2:
+            record['productionReadiness'] = False
+            record['productionEndpoint'] = False
+        return record
+
+    def _assert_unsupported_without_mutation(self, source_version, records):
+        original = json_copy(records)
+        with self.assertRaises(MigrationError) as raised:
+            migrate_explicit(source_version, 2, records)
+        self.assertEqual(raised.exception.code, 'UNSUPPORTED_SCHEMA')
+        self.assertEqual(records, original)
+
+    def test_missing_identity_fields_are_not_invented(self):
+        """READINESS_RUNTIME.md / 버전 이전: missing kind/machine is unsupported.
+
+        Gap: the existing fixture removes both together; neither individual
+        omission nor the independent 2-to-2 input was exercised.
+        """
+        for version in (1, 2):
+            for field in ('kind', 'machine'):
+                with self.subTest(route=(version, 2), field=field, value='missing'):
+                    record = self._record(version)
+                    del record[field]
+                    self._assert_unsupported_without_mutation(version, [record])
+
+    def test_required_false_labels_are_not_invented_or_coerced(self):
+        """READINESS_RUNTIME.md / 버전 이전: required false labels are not filled.
+
+        Gap: protocolTruth/productionConformance were always present and false;
+        missing schema-2 production labels and coercion were not tested.
+        """
+        for version in (1, 2):
+            for field in ('protocolTruth', 'productionConformance'):
+                with self.subTest(route=(version, 2), field=field, value='missing'):
+                    record = self._record(version)
+                    del record[field]
+                    self._assert_unsupported_without_mutation(version, [record])
+                for value in (True, None, 0, 'false'):
+                    with self.subTest(route=(version, 2), field=field, value=value):
+                        record = self._record(version)
+                        record[field] = value
+                        self._assert_unsupported_without_mutation(version, [record])
+        for field in ('productionReadiness', 'productionEndpoint'):
+            with self.subTest(route=(2, 2), field=field, value='missing'):
+                record = self._record(2)
+                del record[field]
+                self._assert_unsupported_without_mutation(2, [record])
+
+    def test_production_labels_reject_contradictions(self):
+        """READINESS_RUNTIME.md / 버전 이전: stamp only absent keys; never coerce.
+
+        Gap: only productionReadiness=True on 1-to-2 was rejected; endpoint,
+        other non-false values, 2-to-2 and pre-existing false labels were absent.
+        """
+        fields = ('productionReadiness', 'productionEndpoint')
+        for present in ((), fields[:1], fields[1:], fields):
+            with self.subTest(route=(1, 2), present=present):
+                records = [self._record(1)]
+                for field in present:
+                    records[0][field] = False
+                original = json_copy(records)
+                result = migrate_explicit(1, 2, records)
+                self.assertEqual(records, original)
+                for field in fields:
+                    self.assertIs(result[0][field], False)
+        for version in (1, 2):
+            for field in fields:
+                for value in (True, None, 0, 'false'):
+                    with self.subTest(route=(version, 2), field=field, value=value):
+                        record = self._record(version)
+                        record[field] = value
+                        self._assert_unsupported_without_mutation(version, [record])
+
+    def test_invalid_batch_suffix_preserves_all_inputs(self):
+        """READINESS_RUNTIME.md / 버전 이전: copy records; unsupported stays closed.
+
+        Gap: malformed suffixes after valid records were untested, including
+        whether a failed 1-to-2 or 2-to-2 batch mutates any source record.
+        """
+        for version in (1, 2):
+            for position in (1, 2):
+                for malformed in ('non-record', 'wrong-schema', 'missing-field',
+                                  'contradictory-label'):
+                    with self.subTest(route=(version, 2), position=position,
+                                      malformed=malformed):
+                        records = [self._record(version, 'valid-%d' % i)
+                                   for i in range(position)]
+                        bad = self._record(version, 'invalid')
+                        if malformed == 'non-record':
+                            bad = None
+                        elif malformed == 'wrong-schema':
+                            bad['schema'] = 2 if version == 1 else 1
+                        elif malformed == 'missing-field':
+                            del bad['machine']
+                        else:
+                            bad['productionEndpoint'] = True
+                        records.append(bad)
+                        self._assert_unsupported_without_mutation(version, records)
+
+    def test_nested_unknown_fields_survive_explicit_migration(self):
+        """READINESS_RUNTIME.md / 버전 이전: whole-record copy, unknown keys kept.
+
+        Gap: one shallow fixtureNote and an upgrade-derived 2-to-2 input did
+        not assert complete nested values, record count/order or both sources.
+        """
+        for version in (1, 2):
+            with self.subTest(route=(version, 2)):
+                records = [self._record(version, 'fixture-%d' % i) for i in range(3)]
+                records[1]['productionReadiness'] = False
+                records[2]['productionEndpoint'] = False
+                original = json_copy(records)
+                expected = json_copy(records)
+                if version == 1:
+                    for record in expected:
+                        record['schema'] = 2
+                        record['productionReadiness'] = False
+                        record['productionEndpoint'] = False
+                result = migrate_explicit(version, 2, records)
+                self.assertEqual(result, expected)
+                self.assertEqual(records, original)
+                for record in result:
+                    for field in ('protocolTruth', 'productionConformance',
+                                  'productionReadiness', 'productionEndpoint'):
+                        self.assertIs(record[field], False)
+
+    def test_returned_nested_copies_are_isolated(self):
+        """READINESS_RUNTIME.md / 버전 이전: both explicit routes return copies.
+
+        Gap: equality checks never mutated a returned nested dictionary/list,
+        so shared entry or unknown-field containers could go undetected.
+        """
+        for version in (1, 2):
+            with self.subTest(route=(version, 2)):
+                records = [self._record(version, 'fixture-%d' % i) for i in range(2)]
+                original = json_copy(records)
+                result = migrate_explicit(version, 2, records)
+                self.assertEqual(records, original)
+                self.assertIsNot(result, records)
+                for source, copied in zip(records, result):
+                    self.assertIsNot(copied, source)
+                    copied['entry']['details']['items'][0]['id'] = 'changed'
+                    copied['entry']['details']['items'].append({'id': 'new'})
+                    copied['entry']['details']['added'] = {'nested': []}
+                    copied['fixtureNote']['nested'][0]['values'].append('new')
+                    copied['fixtureNote']['nested'][0]['added'] = True
+                    copied['fixtureNote']['nested'].append({'new': []})
+                result.append(self._record(2, 'returned-only'))
+                self.assertEqual(records, original)
+
+
 class ExtensionTests(unittest.TestCase):
     def test_explicit_v2_migration_does_not_run_on_open_or_guess_fields(self):
         source = {
