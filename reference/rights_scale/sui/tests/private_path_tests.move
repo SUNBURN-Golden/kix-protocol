@@ -71,6 +71,28 @@ fun shield_appends_in_insertion_order_and_the_page_is_not_written() {
     sc.end();
 }
 
+/// RS-C09: public consumption closes the ticket before the real shield's proof step.
+#[test, expected_failure(abort_code = 1, location = kix_rights_scale::rights_scale)]
+fun a_publicly_consumed_ticket_cannot_be_shielded() {
+    let (mut sc, show, verifier) = fixture();
+    let t = z::issued(&mut sc, show, 0, s::b());
+    let (free0, reserved0, issued0, retired0) = s::totals(&mut sc, show);
+    s::authorize(&mut sc, s::b(), show, t, 1);
+    s::consume(&mut sc, show, t, 1);
+    let (state, version) = z::state_of(&mut sc, t);
+    assert!(state == 1 && version == 2);
+    let (free1, reserved1, issued1, retired1) = s::totals(&mut sc, show);
+    assert!(free0 == free1 && reserved0 == reserved1 && issued0 == issued1 && retired0 == retired1);
+    sc.next_tx(s::a());
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let tree = sc.take_shared_by_id<NoteTree>(z::tree_id(&c));
+    assert!(rs::tree_leaf_count(&tree) == 0 && rs::tree_root(&tree) == vectors::empty_root());
+    ts::return_shared(tree); ts::return_shared(c);
+    // Use the current version, pinned verifier and nonzero commitment: EClosed wins.
+    z::shield_proved(&mut sc, s::b(), show, t, 2, 100, verifier);
+    sc.end();
+}
+
 #[test, expected_failure(abort_code = 1, location = kix_rights_scale::rights_scale)]
 fun a_shielded_ticket_cannot_be_shielded_again() {
     let (mut sc, show, verifier) = fixture();
@@ -227,6 +249,34 @@ fun consume_private_binds_roots_domain_and_gate_context_and_records_both_values(
     sc.end();
 }
 
+/// IM-18: a later show pins manifest B while show A keeps its original domain/verifier.
+/// The unproven helper checks Move state and bindings, not Groth16 acceptance.
+#[test]
+fun a_show_keeps_consuming_with_its_pinned_verifier_after_a_new_manifest_is_claimed() {
+    let (mut sc, show, verifier, root_one, root_two) = two_notes();
+    let before = z::consume(&mut sc, show, root_two, 7001, 8001, verifier);
+    let domain = before[4];
+    assert!(domain == rs::domain_of(show, rs::profile_version(), z::manifest_hash()));
+    let other_verifier = z::verifier(&mut sc, z::other_manifest_hash());
+    let other = z::ready(&mut sc, 4, 0, 4, 1, other_verifier);
+    sc.next_tx(s::a());
+    let ca = sc.take_shared_by_id<ShowControl>(show);
+    let cb = sc.take_shared_by_id<ShowControl>(other);
+    assert!(rs::control_domain(&cb) == rs::domain_of(other, rs::profile_version(), z::other_manifest_hash()));
+    assert!(rs::control_domain(&cb) != domain && rs::control_domain(&ca) == domain);
+    ts::return_shared(cb); ts::return_shared(ca);
+    let after = z::consume(&mut sc, show, root_one, 7002, 8002, verifier);
+    assert!(after[4] == domain);
+    assert!(event::events_by_type<PrivateAdmission>().length() == 1);
+    sc.next_tx(s::a());
+    let c = sc.take_shared_by_id<ShowControl>(show);
+    let ns = sc.take_shared_by_id<NullifierShard>(z::nullifier_shard_id(&c, rs::nullifier_shard_index(&c, 7002)));
+    let cs = sc.take_shared_by_id<ChallengeShard>(z::challenge_shard_id(&c, rs::challenge_shard_index(&c, 8002)));
+    assert!(rs::nullifier_spent(&ns, 7002) && rs::challenge_used(&cs, 8002));
+    ts::return_shared(cs); ts::return_shared(ns); ts::return_shared(c);
+    sc.end();
+}
+
 #[test]
 fun consume_private_changes_no_ticket_and_no_page() {
     let (mut sc, show, verifier, _root_one, root_two) = two_notes();
@@ -358,7 +408,9 @@ fun another_shows_revocation_state_is_rejected() {
 #[test, expected_failure(abort_code = 4, location = kix_rights_scale::rights_scale)]
 fun a_verifier_other_than_the_pinned_one_is_rejected() {
     let (mut sc, show, verifier, _r, root_two) = two_notes();
+    z::consume(&mut sc, show, root_two, 7000, 8000, verifier);
     let other = z::verifier(&mut sc, z::other_manifest_hash());
+    let _other_show = z::ready(&mut sc, 4, 0, 4, 1, other);
     let choice = z::own(&mut sc, show, 7001, 8001, verifier);
     z::consume_with(&mut sc, s::gate(), z::with_verifier(choice, other), root_two, 7001, 8001, 90000);
     sc.end();

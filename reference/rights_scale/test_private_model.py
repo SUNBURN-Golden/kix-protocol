@@ -71,6 +71,21 @@ class MoveParity(unittest.TestCase):
         self.assertEqual(self.constant('SHIELDED'), model.SHIELDED)
         self.assertEqual(model.LOCALNET_ROOT_HISTORY_K, 4)  # vectors/private_path.json is written for K = 4
 
+    def test_consume_private_signature_has_no_secret_or_witness_path(self):
+        """Source-informed characterization of the declared gate call, not proof/transport privacy."""
+        # Remove comments before selecting the real declaration (not its test-only helper).
+        source = re.sub(r'/\*.*?\*/|//[^\n]*', '', MOVE, flags=re.S)
+        declarations = re.findall(r'\bpublic\s+fun\s+consume_private\s*\(([^)]*)\)', source)
+        self.assertEqual(len(declarations), 1)
+        parameters = [re.sub(r'\s+', '', item) for item in declarations[0].split(',')]
+        expected = (
+            'c: &ShowControl, tree: &NoteTree, rev: &RevocationState, '
+            'ns: &mut NullifierShard, cs: &mut ChallengeShard, v: &Verifier, '
+            'note_root: u256, nullifier: u256, challenge: u256, expires_ms: u64, '
+            'proof: vector<u8>, clk: &Clock, ctx: &TxContext'
+        )
+        self.assertEqual(parameters, [re.sub(r'\s+', '', item) for item in expected.split(',')])
+
     def test_the_client_constants_equal_the_move_constants(self):
         js = {name: int(value) for name, value in re.findall(r'^export const (\w+)=(\d+);', CONSTANTS, re.M)}
         self.assertEqual(js['DEPTH'], model.ZK_DEPTH)

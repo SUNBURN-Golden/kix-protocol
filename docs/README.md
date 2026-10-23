@@ -277,6 +277,8 @@
 
 - [audit14-loop-node-crosswalk-refresh](../validation/2026-10-23-audit14-loop-node-crosswalk-refresh/README.md) — [Loop-node crosswalk](status/LOOP_NODE_CROSSWALK.md) refreshed through #269 using its existing selection rule: 30 added rows and individual range accounting; canonical counting remains `DECISION_REQUIRED · Astra`, no node status change.
 
+- [rs-map-gap-closure-batch-2](../validation/2026-10-23-rs-map-gap-closure-batch-2/README.md) — RS-C09 public-then-shield and IM-18 verifier continuity Move regressions; IM-19 source-informed gate-signature characterization. IM-18 becomes COVERED_MODEL_OR_MEMORY; no register grade or operational-value change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
