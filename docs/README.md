@@ -155,7 +155,7 @@
 | [AI 위임 계층 매트릭스](status/AI_DELEGATION_LAYER_MATRIX.md) | AI 위임 계약 §6의 DLG-01..DLG-36 각각에 대해 목 시험, 체인 grant, executor map, readiness wrap이 담은 것 | Builder-authored map, not a review or acceptance. 어느 계층도 충분하다고 평가하지 않으며 인용된 소스 밖의 실행·한도·회수 보장을 주장하지 않는다. |
 | [RS 술어 증거 지도](status/RS_PREDICATE_EVIDENCE_MAP.md) ([검증 기록](../validation/2026-10-16-rs-predicate-evidence-map/README.md)) | 권리 확장 프로파일 §8의 RS-C01..RS-C17과 §9의 RR-1..RR-6 각각에 대해 지금 있는 Move 시험, Python 모델 시험, Rust 메모리 시험, localnet 기록 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 어떤 간극도 닫지 않는다. |
 | [RS 영향표 증거 지도](status/RS_IM_EVIDENCE_MAP.md) ([검증 기록](../validation/2026-10-17-rs-im-evidence-map/README.md)) | 권리 확장 프로파일 §12의 영향표 IM-01..IM-30 각각에 대해 처리 단어(유지·변경·새 프로파일·손대지 않음)와 지금 있는 Move 시험, Python 모델 시험, Rust 시험, localnet 기록, 손대지 않은 파일의 증거 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 어떤 간극도 닫지 않는다. |
-| [계약 오류 코드 커버리지](status/CONTRACT_ERROR_CODE_COVERAGE.md) ([검증 기록](../validation/2026-10-18-contract-error-code-coverage/README.md), [FSM 확장 기록](../validation/2026-10-19-bra-fsm-error-code-coverage/README.md)) | 정산·예매/리셀/입장·F04·AI 위임 계약의 오류 코드 표 일곱 개(세 FSM 추가 표 포함)의 코드 각각에 대해 목·FSM이 던지는 자리와 그 코드를 이름으로 대는 시험 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 이름이 시험 본문에 있다는 것만 보이고 시험이 무엇을 단언하는지는 보이지 않는다. |
+| [계약 오류 코드 커버리지](status/CONTRACT_ERROR_CODE_COVERAGE.md) ([검증 기록](../validation/2026-10-18-contract-error-code-coverage/README.md), [FSM 확장 기록](../validation/2026-10-19-bra-fsm-error-code-coverage/README.md), [예약 §9 기록](../validation/2026-10-23-bra-section9-error-code-coverage/README.md)) | 정산·예매/리셀/입장·F04·AI 위임 계약의 오류 코드 표 일곱 개(세 FSM 추가 표 포함)와 예약 §9 인라인 표의 승인된 10개 코드 각각에 대해 목·FSM이 던지는 자리와 그 코드를 이름으로 대는 시험 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 이름이 시험 본문에 있다는 것만 보이고 시험이 무엇을 단언하는지는 보이지 않는다. |
 
 같은 날짜의 검증 기록:
 
@@ -255,6 +255,8 @@
 - [settlement-credit-rejection-atomicity](../validation/2026-10-23-settlement-credit-rejection-atomicity/README.md) — Builder-authored rejection-atomicity audit for the settlement and credit machines repeating the #219/#228 pattern; two test modules and a record only, no FSM/mock/contract/command change, deterministic rejections leave no trace against a control machine, late-fault seams recorded as class B characterizations, no grade change.
 
 - [plan-register-index-sync-20261023](../validation/2026-10-23-plan-register-index-sync-20261023/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+
+- [bra-section9-error-code-coverage](../validation/2026-10-23-bra-section9-error-code-coverage/README.md) — Builder-authored BRA-RES9 coverage for ten reservation §9 inline codes under owner-approved Option (c); fixed exclusions for six pass-through codes already mapped under BRA/SET, existing tests cited, no contract/mock/FSM or checker taxonomy change, no grade change.
 
 ## 역사 문서와 증거
 
