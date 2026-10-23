@@ -1,8 +1,8 @@
 # Contract error-code coverage
 
-Builder-authored map, not a review or acceptance. 이 문서는 계약 오류 코드 표 일곱 개의 모든 코드에 대해 목·FSM이 그 코드를 던지는 자리와 그 코드를 이름으로 대는 시험을 적는다. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다.
+Builder-authored map, not a review or acceptance. 이 문서는 계약 오류 코드 표 일곱 개와 예약 §9 인라인 표의 승인된 10개 코드에 대해 목·FSM이 그 코드를 던지는 자리와 그 코드를 이름으로 대는 시험을 적는다. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다.
 
-Nodes: `plan-contract-error-code-coverage` (first four tables), `plan-bra-fsm-error-code-coverage` (the three FSM-added tables). Checker: `scripts/check_contract_error_codes.py` (stdlib only, `--self-test`). Records: [coverage](../../validation/2026-10-18-contract-error-code-coverage/README.md), [FSM extension](../../validation/2026-10-19-bra-fsm-error-code-coverage/README.md).
+Nodes: `plan-contract-error-code-coverage` (first four tables), `plan-bra-fsm-error-code-coverage` (the three FSM-added tables), `plan-plan-bra-section9-inline-error-code-cove` (ten reservation inline codes, owner-approved Option (c)). Checker: `scripts/check_contract_error_codes.py` (stdlib only, `--self-test`). Records: [coverage](../../validation/2026-10-18-contract-error-code-coverage/README.md), [FSM extension](../../validation/2026-10-19-bra-fsm-error-code-coverage/README.md), [reservation §9 extension](../../validation/2026-10-23-bra-section9-error-code-coverage/README.md).
 
 ## Tables read
 
@@ -10,17 +10,28 @@ Nodes: `plan-contract-error-code-coverage` (first four tables), `plan-bra-fsm-er
 |---|---|---|
 | SET | `SETTLEMENT_DISTRIBUTION_F01_F03.md` section 6 | `reference/settlement_f01_f03` |
 | BRA | `BOOKING_RESALE_ADMISSION_GATES.md` section 6 | `reference/booking_resale_admission` |
+| BRA-RES9 | `BOOKING_RESALE_ADMISSION_GATES.md` section 9.2 effect column and section 9.5 code column (ten codes after the fixed exclusions below) | `reference/booking_resale_admission` |
+| BRA-RES9 | `ALREADY_CONSUMED` | `reference/booking_resale_admission/reservation_fsm.py::_SPECIFIC` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_cancel_after_issue_and_duplicate_consume` | COVERED | existing reservation test |
+| BRA-RES9 | `COMPENSATION_UNDEFINED` | `reference/booking_resale_admission/reservation_fsm.py::_SPECIFIC` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_cancel_before_payment_frees_and_payment_blocks_compensation` | COVERED | existing reservation test |
+| BRA-RES9 | `CANCEL_AFTER_ISSUE` | `reference/booking_resale_admission/reservation_fsm.py::_SPECIFIC` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_cancel_after_issue_and_duplicate_consume` | COVERED | existing reservation test |
+| BRA-RES9 | `TERMINAL_IMMUTABLE` | `reference/booking_resale_admission/reservation_fsm.py::ReservationMachine._enter`; `reference/booking_resale_admission/reservation_fsm.py::ReservationMachine.hold.execute` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_cancel_before_payment_frees_and_payment_blocks_compensation` | COVERED | existing reservation test |
+| BRA-RES9 | `EXTERNAL_UNSUPPORTED` | `reference/booking_resale_admission/reservation_fsm.py::ReservationMachine.reject_external` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_external_attempts_do_not_journal_and_resale_is_absent` | COVERED | existing reservation test |
+| BRA-RES9 | `SETTLEMENT_SOURCE_REQUIRED` | `reference/booking_resale_admission/reservation_fsm.py::ReservationMachine._settlement_allows_issue` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_bound_issue_checks_gross_and_replays_only_with_the_commit_view` | COVERED | existing reservation test |
+| BRA-RES9 | `SETTLEMENT_NOT_COMMITTED` | `reference/booking_resale_admission/reservation_fsm.py::ReservationMachine._settlement_allows_issue` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_settlement_gate_refuses_uncommitted_finality` | COVERED | existing reservation test |
+| BRA-RES9 | `SETTLEMENT_AMOUNT_MISMATCH` | `reference/booking_resale_admission/reservation_fsm.py::ReservationMachine._settlement_allows_issue` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_bound_issue_checks_gross_and_replays_only_with_the_commit_view` | COVERED | existing reservation test |
+| BRA-RES9 | `SETTLEMENT_VIEW_REJECTED` | `reference/booking_resale_admission/reservation_fsm.py::ReservationMachine._settlement_allows_issue` | `reference/booking_resale_admission/test_reservation_fsm.py::ReservationFsmTests.test_bound_issue_checks_gross_and_replays_only_with_the_commit_view` | COVERED | existing reservation test |
+| BRA-RES9 | `SETTLEMENT_BINDING_CONFLICT` | `reference/booking_resale_admission/reservation_fsm.py::ReservationMachine.bind_settlement.execute` | `reference/booking_resale_admission/test_reservation_rejection_atomicity.py::ReservationRejectionAtomicityTests.test_bind_settlement_conflict_leaves_no_trace` | COVERED | existing reservation test |
 | BRA-RES | `BOOKING_RESALE_ADMISSION_GATES.md` section 10.8 | `reference/booking_resale_admission` |
 | BRA-ADM | `BOOKING_RESALE_ADMISSION_GATES.md` section 11.6 | `reference/booking_resale_admission` |
 | F04 | `CREDIT_ADVANCE_F04.md` section 4 | `reference/credit_advance_f04` |
 | F04-FSM | `CREDIT_ADVANCE_F04.md` section 7.8 | `reference/credit_advance_f04` |
 | AID | `AI_DELEGATION_AUTHORITY.md` section 8 | `reference/ai_delegation` |
 
-Rows are keyed by table and code, so `INVALID_ID`, `INVALID_AMOUNT`, `CURRENCY_UNSUPPORTED` and `UNKNOWN_CLAIM` appear once per table that lists them, and FSM-added codes such as `ILLEGAL_TRANSITION`, `TICKET_NOT_ISSUED` or `SETTLEMENT_VIEW_REJECTED` appear once per FSM table that lists them. `MOCK_INVARIANT` is excluded, as the contracts define it (an implementation error no caller input can reach).
+Rows are keyed by table and code, so `INVALID_ID`, `INVALID_AMOUNT`, `CURRENCY_UNSUPPORTED` and `UNKNOWN_CLAIM` appear once per table that lists them, and FSM-added codes such as `ILLEGAL_TRANSITION`, `TICKET_NOT_ISSUED` or `SETTLEMENT_VIEW_REJECTED` appear once per FSM table that lists them. BRA-RES9 collects backticked upper-case tokens in its two columns in document order, de-duplicates repeats, and excludes the phase/slot labels `HELD`, `RELEASED`, `CONFIRMED`, `CANCELLED`, `PAYMENT_NOTED`, `ISSUED`, `ADMISSION_AUTHORIZED`, `CONSUMED`, `FREE`, `RESERVED`, the decision label `CONSUMED_ONCE`, and the six pass-through codes under Non-claims. This is a fixed exclusion list, not a filter based on the current source. `MOCK_INVARIANT` is excluded, as the contracts define it (an implementation error no caller input can reach).
 
 ## Definitions
 
-- **RAISED**: a non-docstring string constant equal to the code in the key's raise sources — SET: `mock_settlement.py`, `settlement_fsm.py`; BRA: `mock_gates.py`, `reservation_fsm.py`, `resale_fsm.py`, `admission_fsm.py`; BRA-RES: `resale_fsm.py` only; BRA-ADM: `admission_fsm.py` only; F04: `mock_credit.py`, `credit_fsm.py`; F04-FSM: `credit_fsm.py` only; AID: `ai_delegation_mock.py` — that is inside a `def` or `lambda` (parameter defaults included) or a value of a module-level dict, and not inside a comparison. Found by `ast`; nothing is executed. Documentation tuples such as those of `open_items.py`, `open_terms.py` and `*_property_support.py` are not sources.
+- **RAISED**: a non-docstring string constant equal to the code in the key's raise sources — SET: `mock_settlement.py`, `settlement_fsm.py`; BRA: `mock_gates.py`, `reservation_fsm.py`, `resale_fsm.py`, `admission_fsm.py`; BRA-RES9: `reservation_fsm.py` only; BRA-RES: `resale_fsm.py` only; BRA-ADM: `admission_fsm.py` only; F04: `mock_credit.py`, `credit_fsm.py`; F04-FSM: `credit_fsm.py` only; AID: `ai_delegation_mock.py` — that is inside a `def` or `lambda` (parameter defaults included) or a value of a module-level dict, and not inside a comparison. Found by `ast`; nothing is executed. Documentation tuples such as those of `open_items.py`, `open_terms.py` and `*_property_support.py` are not sources.
 - **ASSERTED**: a non-docstring string constant equal to the code in the body of a `test*` function or method of a `test_*.py` file in the suite directory. Class attributes and non-test helpers do not count.
 - **Status**: `COVERED` (RAISED and ASSERTED), `CLASS_B` (documented, no input reaches it; characterization only) or `CLASS_C` (raised, not asserted, and closing it needs a mock change; row stopped).
 
@@ -30,10 +41,12 @@ The columns hold up to two `path::symbol` citations; the checker derives the ful
 
 All rows are `COVERED`. There is no `CLASS_B` and no `CLASS_C` row. For the first four tables 24 codes were raised but named by no test; `plan-contract-error-code-coverage` closed them with `test_contract_error_codes.py` in the three suites that had gaps (settlement, booking, ai_delegation). The FSM-added extension (`plan-bra-fsm-error-code-coverage`) adds 50 rows: 43 codes were already named by a test and 7 — `TICKET_SOURCE_REQUIRED` (resale and admission machines), `UNKNOWN_HOLD`, `HOLD_BINDING_CONFLICT`, `TICKET_SOURCE_UNAVAILABLE`, `CREDENTIAL_STALE`, `SETTLEMENT_SOURCE_UNAVAILABLE` — are closed by new tests in `test_resale_fsm.py` and `test_admission_fsm.py`; the rows marked `added by this node` name them. The F04 FSM-added table needed none.
 
+The reservation §9 extension adds ten BRA-RES9 rows, all already RAISED in `reservation_fsm.py` and ASSERTED by existing reservation tests. No reference test was added; no ASSERTED gap remains in the owner-approved scope.
+
 ## Non-claims
 
 - ASSERTED proves a code name appears in a test body, not what the test asserts or that the path is reachable from every caller. Some rows are named only by a seeded property test or a coverage guard; the note says so for `SETTLEMENT_FACE_FIELDS`.
-- Tables outside the seven named ones are not read. The booking reservation machine's rejections are still documented only inline in section 9 transition and prose tables (for example `CANCEL_AFTER_ISSUE`, `UNKNOWN_SETTLEMENT` and the section 9.5 settlement rows) — section 9 has no "codes this machine adds" table, so this map does not enumerate it. `MOCK_INVARIANT` stays excluded.
+- Tables outside the named ones are not read. BRA-RES9 reads only the §9.2 effect and §9.5 code columns, not all §9 prose. Under owner-approved Option (c), six pass-through codes are excluded from this key: `CLOCK_REGRESSION`, `SLOT_OCCUPIED`, `RESERVATION_EXPIRED`, `ADMISSION_LOCKED`, `RIGHT_NOT_ACTIVE` (lifted from `mock_gates.py`, already COVERED under BRA) and `UNKNOWN_SETTLEMENT` (re-raised from the injected settlement source, already COVERED under SET). They have no literal raise site in `reservation_fsm.py`; this key does not claim their pass-through behavior is independently covered. `MOCK_INVARIANT` stays excluded.
 - No contract, mock, FSM or `reference/v0.3-rc1` byte changed. No production, durability or independent-review claim.
 
 ## Rows
@@ -230,4 +243,4 @@ All rows are `COVERED`. There is no `CLASS_B` and no `CLASS_C` row. For the firs
 | AID | `GRANT_BINDING_CONFLICT` | `reference/ai_delegation/ai_delegation_mock.py::AiDelegationMock.issue_grant` | `reference/ai_delegation/test_ai_delegation_mock.py::AiDelegationMockTests.test_grant_idempotency`; `reference/ai_delegation/test_ai_delegation_properties.py::IdempotencyTests.test_grant_replay_and_conflicts` | COVERED | none |
 | AID | `PROPOSAL_BINDING_CONFLICT` | `reference/ai_delegation/ai_delegation_mock.py::AiDelegationMock._propose_action`; `reference/ai_delegation/ai_delegation_mock.py::AiDelegationMock._propose_change` | `reference/ai_delegation/test_ai_delegation_mock.py::AiDelegationMockTests.test_decide_rechecks_grant_and_approval_does_not_execute`; `reference/ai_delegation/test_ai_delegation_mock.py::AiDelegationMockTests.test_proposal_idempotency` | COVERED | none |
 
-Counts: SET=34 BRA=64 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=189 RAISED=189 ASSERTED=189 COVERED=189 CLASS_B=0 CLASS_C=0
+Counts: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0

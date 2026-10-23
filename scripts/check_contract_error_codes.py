@@ -10,7 +10,9 @@ Compares three inputs:
   ``BOOKING_RESALE_ADMISSION_GATES.md`` section 6 (BRA), section 10.8
   (BRA-RES) and section 11.6 (BRA-ADM),
   ``CREDIT_ADVANCE_F04.md`` section 4 (F04) and section 7.8 (F04-FSM), and
-  ``AI_DELEGATION_AUTHORITY.md`` section 8 (AID);
+  ``AI_DELEGATION_AUTHORITY.md`` section 8 (AID), plus the inline rejection
+  tables in booking sections 9.2 (effect column) and 9.5 (code column), key
+  BRA-RES9, excluding state/decision labels and six owner-scoped pass-throughs;
 - the mock and FSM sources of each suite (an explicit allow-list), parsed with
   ``ast`` and never executed;
 - the ``test_*.py`` files of the same suite directory.
@@ -65,6 +67,8 @@ TABLES = {
     'BRA': ('docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md', '## 6. 오류 코드',
             'reference/booking_resale_admission',
             ('mock_gates.py', 'reservation_fsm.py', 'resale_fsm.py', 'admission_fsm.py')),
+    'BRA-RES9': ('docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md', '### 9.2 전이',
+                 'reference/booking_resale_admission', ('reservation_fsm.py',)),
     'BRA-RES': ('docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md', '### 10.8 거절',
                 'reference/booking_resale_admission', ('resale_fsm.py',)),
     'BRA-ADM': ('docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md', '### 11.6 거절',
@@ -86,13 +90,26 @@ ROW_START = re.compile(
     + r')\s*\|\s*`[A-Z][A-Z0-9_]+`\s*\|')
 MAX_CITES = 2
 
+# Owner-approved scope: pass-through codes keep their existing BRA/SET rows.
+# Do not filter by derived raise sites: a newly documented code must be checked
+# even when no source or assertion exists for it yet.
+SECTION9_PASS_THROUGH = frozenset({
+    'CLOCK_REGRESSION', 'SLOT_OCCUPIED', 'RESERVATION_EXPIRED',
+    'ADMISSION_LOCKED', 'RIGHT_NOT_ACTIVE', 'UNKNOWN_SETTLEMENT',
+})
+SECTION9_NON_CODES = frozenset({
+    'HELD', 'RELEASED', 'CONFIRMED', 'CANCELLED', 'PAYMENT_NOTED',
+    'ISSUED', 'ADMISSION_AUTHORIZED', 'CONSUMED', 'FREE', 'RESERVED',
+    'CONSUMED_ONCE',
+})
+
 
 def split_row(line):
     return [c.strip() for c in line.strip().strip('|').split('|')]
 
 
-def contract_codes(text, heading):
-    """Return (codes in order, problems) for the first table after ``heading``."""
+def contract_table(text, heading):
+    """Return (data rows, problems) for the first table after ``heading``."""
     lines = text.splitlines()
     start = next((i for i, l in enumerate(lines) if l.strip() == heading), None)
     if start is None:
@@ -105,9 +122,38 @@ def contract_codes(text, heading):
             table.append(line)
         elif table:
             break
+    if len(table) < 3:
+        return [], ['heading %r: table has no data rows' % heading]
+    return [split_row(line) for line in table[2:]], []
+
+
+def section9_codes(text):
+    """Read §9.2 effects and §9.5 codes, de-duplicated in document order."""
+    codes, problems = [], []
+    excluded = SECTION9_NON_CODES | SECTION9_PASS_THROUGH | {EXCLUDED}
+    for heading, column, width in (('### 9.2 전이', 3, 4), ('### 9.5 정산 게이트', 1, 2)):
+        rows, errs = contract_table(text, heading)
+        problems.extend(errs)
+        for row in rows:
+            if len(row) != width:
+                problems.append('heading %r: expected %d cells, found %d' % (heading, width, len(row)))
+                continue
+            codes.extend(code for code in CODE_TOKEN.findall(row[column]) if code not in excluded)
+    if not codes:
+        problems.append('section 9 tables yield no codes')
+    return list(dict.fromkeys(codes)), problems
+
+
+def contract_codes(text, heading, key=None):
+    """Return (codes in order, problems), with inline-table parsing for BRA-RES9."""
+    if key == 'BRA-RES9':
+        return section9_codes(text)
+    rows, problems = contract_table(text, heading)
+    if problems:
+        return [], problems
     codes = []
-    for line in table[2:]:
-        for code in CODE_TOKEN.findall(split_row(line)[0]):
+    for row in rows:
+        for code in CODE_TOKEN.findall(row[0]):
             if code != EXCLUDED:
                 codes.append(code)
     if not codes:
@@ -257,7 +303,7 @@ def find_problems(doc_text, contract_texts, sources):
     derived, symbols = derive(sources)
     expected = {}
     for key, (_, heading, _, _) in TABLES.items():
-        codes, errs = contract_codes(contract_texts[key], heading)
+        codes, errs = contract_codes(contract_texts[key], heading, key)
         problems += ['%s: %s' % (key, e) for e in errs]
         for code in sorted({c for c in codes if codes.count(c) > 1}):
             problems.append('%s: %s listed twice in the contract table' % (key, code))
@@ -382,7 +428,7 @@ def read_inputs():
 def emit(contracts, sources):
     derived, _ = derive(sources)
     for key, (_, heading, _, _) in TABLES.items():
-        codes, _ = contract_codes(contracts[key], heading)
+        codes, _ = contract_codes(contracts[key], heading, key)
         raised, asserted = derived[key]
         for code in dict.fromkeys(codes):
             r, a = sorted(raised.get(code, ())), sorted(asserted.get(code, ()))
@@ -408,7 +454,23 @@ def _with_cell(text, key, code, col, new):
 
 
 def _probe_controls():
-    """Positive controls for the two extractors on inline probe sources."""
+    """Positive controls for source and inline-table extractors."""
+    inline = (
+        '### 9.2 전이\n\n'
+        '| phase | command | next | effect |\n|---|---|---|---|\n'
+        '| `HELD` | `not_a_code` | `IGNORED_PHASE` | `FREE`, `CONSUMED_ONCE`, '
+        '`FIRST_PROBE`, `CLOCK_REGRESSION`, `SLOT_OCCUPIED`, `RESERVATION_EXPIRED`, '
+        '`ADMISSION_LOCKED`, `RIGHT_NOT_ACTIVE`, `MOCK_INVARIANT` |\n'
+        '| x | x | x | `FIRST_PROBE`, `SECOND_PROBE` |\n'
+        '\n`OUTSIDE_TABLE`\n### 9.4 ignored\n`OUTSIDE_SECTION`\n'
+        '### 9.5 정산 게이트\n\n'
+        '| view | code |\n|---|---|\n'
+        '| `COMMITTED` | `UNKNOWN_SETTLEMENT`, `THIRD_PROBE`, `FIRST_PROBE` |\n'
+        '\n### 9.6 ignored\n`OUTSIDE_SECTION`\n'
+    )
+    codes, problems = section9_codes(inline)
+    if codes != ['FIRST_PROBE', 'SECOND_PROBE', 'THIRD_PROBE'] or problems:
+        return 'section 9 extractor: got %s, %s' % (codes, problems)
     src = (
         'RAISE_PROBE = "NOT_A_SITE_NAME"\n'
         'FROZEN = frozenset({"IN_SET"})\n'
@@ -552,6 +614,35 @@ def self_test(doc_text, contracts, sources):
          corrupt_row('BRA-RES', res_probe, 2,
                      split_row(res_line)[2] + ' `%s::ResaleMachine._listing`' % res_src),
          contracts, sources, 'is not a derived site'),
+    ]
+    res9_probe = next(
+        (c[1].strip('`') for c in doc_rows(doc_text) if c[0] == 'BRA-RES9' and c[4] == 'COVERED'),
+        None)
+    if res9_probe is None:
+        print('self-test: no COVERED BRA-RES9 row to mutate', file=sys.stderr)
+        return 1
+    cases += [
+        ('missing section 9 raise citation', corrupt_row('BRA-RES9', res9_probe, 2, 'no'),
+         contracts, sources, 'BRA-RES9 %s: Raised is no but the sources have' % res9_probe),
+        ('missing section 9 assertion citation', corrupt_row('BRA-RES9', res9_probe, 3, 'no'),
+         contracts, sources, 'BRA-RES9 %s: Asserted is no but the sources have' % res9_probe),
+        ('added code in the section 9.2 effect column',
+         doc_text, dict(contracts, **{'BRA-RES9': contracts['BRA-RES9'].replace(
+             '| 없음 | `set_clock` | 시계 | 감소는 `CLOCK_REGRESSION` |',
+             '| 없음 | `set_clock` | 시계 | 감소는 `CLOCK_REGRESSION`, `ADDED_PROBE_CODE` |', 1)}),
+         sources, 'BRA-RES9: ADDED_PROBE_CODE missing in doc'),
+        ('added code in the section 9.5 code column',
+         doc_text, dict(contracts, **{'BRA-RES9': contracts['BRA-RES9'].replace(
+             '| `SETTLEMENT_SOURCE_REQUIRED` |', '| `SETTLEMENT_SOURCE_REQUIRED`, `ADDED_PROBE_CODE` |', 1)}),
+         sources, 'BRA-RES9: ADDED_PROBE_CODE missing in doc'),
+        ('removed section 9.5 heading',
+         doc_text, dict(contracts, **{'BRA-RES9': contracts['BRA-RES9'].replace(
+             '### 9.5 정산 게이트', '### 9.5 x', 1)}),
+         sources, "BRA-RES9: heading '### 9.5 정산 게이트' not found"),
+        ('malformed section 9.5 row',
+         doc_text, dict(contracts, **{'BRA-RES9': contracts['BRA-RES9'].replace(
+             '| `SETTLEMENT_SOURCE_REQUIRED` |', '| extra | `SETTLEMENT_SOURCE_REQUIRED` |', 1)}),
+         sources, 'expected 2 cells, found 3'),
     ]
     cases.append(('CLASS_B status on an asserted code with a none note',
                   _with_cell(corrupt_row('SET', probe, 4, 'CLASS_B'), 'SET', probe, 5, 'none'),
