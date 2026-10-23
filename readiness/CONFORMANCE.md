@@ -80,3 +80,60 @@ review, required Fable audits, draft publication, and successful exact-head KTX
 and KIX hosted checks before delivery readiness. User-only merge and post-merge
 verification remain required. Local Python checks do not supply those gates or
 prove production durability, chain finality, or external exactly-once behavior.
+
+## Negative controls (fault sensitivity)
+
+`readiness/test_conformance_sensitivity.py` binds `BackendConformance` to
+deliberately faulty `LocalReadinessAdapter` subclasses. Each adapter breaks
+one property, is run through its mapped case programmatically, and must fail;
+the same case on the unmodified adapter must pass. Before this addition,
+positive coverage for these properties was sufficient in the cases below,
+but sensitivity to deliberately wrong adapters was not covered. The new tests
+fill that gap without duplicating or changing the conformance scenarios.
+Semantic mutants must produce one assertion failure, with no runner errors;
+the handle leak must produce precisely `JOURNAL_LOCKED`. A separate control
+runs every existing common-suite case on the unmodified adapter.
+
+| Injected fault | Adapter | Catching case | What the case detects |
+|---|---|---|---|
+| Reopen drops the last acknowledged record | `DropOnReopenAdapter` | `test_budget_rejection_preserves_records_and_replay_identity` | recovered `records` no longer equals the accepted set |
+| Replayed distribution is dispatched again under a fresh identity and appends a second application | `ReplayTwiceAdapter` | `test_settlement_cash_survives_restart_and_a_torn_commit` | replay incorrectly reports `duplicate=False` |
+| A torn/`partial` attempt consumes a record slot | `PartialSlotAdapter` | `test_partial_attempt_does_not_consume_a_record_slot` | live record count includes the torn attempt; actual torn-file recovery is unchanged |
+| A `crash_before_durable` attempt survives recovery | `CrashDurableAdapter` | `test_crash_before_durable_leaves_the_attempt_out_of_the_record_budget` | live accounting excludes the attempt, but recovery finds `op-crashed` |
+| Ignore record budget or byte budget (separate subtests) | `BudgetBlindAdapter` | `test_budget_rejection_preserves_records_and_replay_identity` | `can_accept` returns True at the ignored cap; the other cap still works |
+| Two concurrent holds on one slot both report success | `DoubleHoldAdapter` | `test_concurrent_reservation_holds_occupy_the_slot_once` | losing hold returns a false success, so no worker reports `SLOT_OCCUPIED` |
+| Handle left open after an injected fault | `LeakyHandleAdapter` | `test_settlement_cash_survives_restart_and_a_torn_commit` | next `open_boundary` raises `JOURNAL_LOCKED`; outer test cleanup then releases the handle |
+
+Run it directly:
+
+```text
+python3 -m unittest readiness.test_conformance_sensitivity
+```
+
+The owner-approved single import of `ConformanceSensitivityTests` in
+`readiness.test_faults` makes the unchanged CI command above run the negative
+controls too. The concurrency case uses its existing barrier and joins;
+the new tests use no sleeps or scheduling-dependent winner assertions.
+
+Documented gaps — properties this document describes with no
+`BackendConformance` case that would catch a faulty adapter:
+
+- Journal file format, schema version/migration, checksum mismatch,
+  exclusion of a second simultaneous writer, refusal of `core_commit` in an FSM journal, and the
+  `protocolTruth`/`productionConformance` label refusal are checked only by
+  the current-wrapper tests in `readiness.test_faults`. The common suite is
+  backend-neutral and contains no case for them.
+- The `ai_delegation` machine is wrapped by `FsmBoundary` but no
+  `BackendConformance` case exercises it; a delegation-specific fault is not
+  covered.
+- `boundary.last_observation` fields are asserted only in
+  `readiness.test_faults`, not in the common suite.
+- Named budget-limit diagnostics and overload admission are wrapper/gate
+  coverage only; the common suite tests the store's boolean budget predicate.
+- `assert_budget_rejection` runs through the loopback HTTP gate, not inside
+  `BackendConformance`; the store-level predicate is covered, but command-level
+  rejection over a non-HTTP adapter has no common-suite case.
+
+The faulty adapters are test doubles, not candidate backends. Their failures
+show the suite notices the injected faults; this is not a power-loss proof,
+not a PostgreSQL or other candidate-backend test, and not a backend adoption.

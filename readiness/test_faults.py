@@ -20,6 +20,7 @@ from readiness.store import JOURNAL_NAME, ReadinessFault, ReadinessStore, StoreE
 
 from readiness.conformance import BackendConformance
 from readiness.local_adapter import LocalReadinessAdapter
+from readiness.test_conformance_sensitivity import ConformanceSensitivityTests
 
 
 class StoreTests(unittest.TestCase):
