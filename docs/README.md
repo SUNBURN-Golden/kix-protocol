@@ -165,6 +165,7 @@
 - [audit7-docs-index-allowlist-prune](../validation/2026-10-16-audit7-docs-index-allowlist-prune/README.md) — This record removes four allowlist entries and adds one checker rule; it retroactively indexes nothing, raises no evidence grade, and marks nothing reviewed or operational.
 - [ci-wire-i12-proof-ids-check](../validation/2026-10-16-ci-wire-i12-proof-ids-check/README.md) — This record raises no evidence grade, marks nothing reviewed or operational, and does not close I12.
 - [delegation-layer-gap-matrix](../validation/2026-10-16-delegation-layer-gap-matrix/README.md) — Builder-authored map and stdlib checker; no binding designed, no command, flag, limit or value added, no layer graded sufficient, nothing enabled.
+- [booking-resale-admission-seeded-property](../validation/2026-10-17-booking-resale-admission-seeded-property/README.md) — Builder-authored seeded suite and owner-authorized legacy atomicity characterization (MOCK only; resumed 2026-10-23). No grade change or independent review.
 
 ## 역사 문서와 증거
 
