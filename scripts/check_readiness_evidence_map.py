@@ -567,7 +567,10 @@ def _self_test_map(map_text, contract_text, owner_text):
          'banner phrase'),
     ]
     for name, mutated, marker in cases:
-        found = find_problems(mutated, contract_text, owner_text)
+        # Model a missing file explicitly; the sensitivity module may exist.
+        files = ({'readiness/test_conformance_sensitivity.py': None}
+                 if name == 'dangling path' else None)
+        found = find_problems(mutated, contract_text, owner_text, files=files)
         hit = [item for item in found if marker in item]
         if not hit:
             print('self-test: %s was accepted' % name, file=sys.stderr)

@@ -10,7 +10,7 @@
 1. [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) — 현재 계획·승인 범위.
 2. [기준 commit·태그 표](status/BASELINES.md) — 현재 main, 고정 R1 태그, PR 검토 SHA, #11 실험을 구분. [main 상태 정합 기록](status/MAIN_STATE_20260928.md) — 2026-09-25~27 병합 범위, hosted CI 공백, D-1~D-3 결정 전 사실. [프로그램 결정 D-1~D-3](decisions/PROGRAM_DECISIONS_20260928.md) — 2026-09-28 #73 병합으로 승인. Track K/P, Wave 게이트, readiness 저널 한도, 유지되는 잠금과 해제 조건.
 3. [모델 1 결정](decisions/AUTHORITY_MODEL_1.md) — 체인 권위 / 오프체인 위임 실행. R2·(a) 착수 승인이 아님.
-4. [수명 계약 초안](contracts/STATE_LIFECYCLE.md), [열린 입력·답할 주체](contracts/FIRST_BATCH_OPEN_INPUTS.md), [담당자 질문서](status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md)(위치만. 회신·정책 결정이 아니다), [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md)(위치만. 결정·채택·회신이 아니다), [두 번째 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md)(위치만. 결정·채택·회신이 아니다), [열린 사용자 결정 원장(2026-10-22)](status/OPEN_USER_DECISIONS_20261022.md)(위치만. 결정·채택·회신이 아니다).
+4. [수명 계약 초안](contracts/STATE_LIFECYCLE.md), [열린 입력·답할 주체](contracts/FIRST_BATCH_OPEN_INPUTS.md), [담당자 질문서](status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md)(위치만. 회신·정책 결정이 아니다), [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md)(위치만. 결정·채택·회신이 아니다), [두 번째 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md)(위치만. 결정·채택·회신이 아니다), [열린 사용자 결정 원장(2026-10-22)](status/OPEN_USER_DECISIONS_20261022.md)(위치만. 결정·채택·회신이 아니다), [10월 23일 소유자 정지 보충 기록](status/OPEN_USER_DECISIONS_20261023_ADDENDUM.md)(네 정지의 출처·질문·인계 근거만. 선택·처분·재개 결정이 아니다).
 5. [계약 불변식·비교 모델의 한계](contracts/CONTRACT_INVARIANTS.md), [첫 묶음 실행 근거](../validation/2026-09-16-first-batch/README.md).
 6. [측정 계약](contracts/PERFORMANCE_MEASUREMENT.md), [고정 smoke 조건](contracts/PERFORMANCE_BASELINE_V4.md)(역사적 debug 논리 서명, 제품 p99 아님), [Task 004 장치 메모](../validation/2026-09-25-task-004-perf-measurement/README.md).
 7. [잠금의 실제 CI 경로](status/LOCK_ENFORCEMENT.md), [위생 목록 — 실행 금지](CODE_HYGIENE_BACKLOG.md).
@@ -173,6 +173,7 @@
 
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
+- [booking-resale-admission-seeded-property](../validation/2026-10-17-booking-resale-admission-seeded-property/README.md) — Builder-authored seeded suite and owner-authorized legacy atomicity characterization (MOCK only; resumed 2026-10-23). No grade change or independent review.
 - [credit-f04-seeded-property-suite](../validation/2026-10-17-credit-f04-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F04 credit mock and FSM; MOCK only, no mock or contract change, no grade change, no real funds, not a regulated credit product.
 - [feature-semantics-v1-edge-fixtures](../validation/2026-10-17-feature-semantics-v1-edge-fixtures/README.md) — Builder-authored scalar edge tests for kix-feature-semantics with a section-to-test map; in-memory helpers only, no src change, no grade change, no tolerance policy chosen.
 - [readiness-journal-byte-sweep](../validation/2026-10-17-readiness-journal-byte-sweep/README.md) — Builder-authored byte-level tear and flip sweep of the local readiness journal; tests only, no store or contract change, no grade change, no durability or production claim.
@@ -227,7 +228,7 @@
 - [plan-register-index-sync-20261021](../validation/2026-10-21-plan-register-index-sync-20261021/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
 - [reward-wrap-conformance](../validation/2026-10-21-reward-wrap-conformance/README.md) — Builder-authored adapter conformance scenarios and twelve reward crash-point cells; tests and record only, no wrap, journal or contract change, `durable` and the truth/production labels stay false, no grade change.
 - [readiness-runtime-evidence-map](../validation/2026-10-21-readiness-runtime-evidence-map/README.md) — Builder-authored clause-to-fixture evidence map for [준비 런타임 경계](contracts/READINESS_RUNTIME.md) ([지도](status/READINESS_RUNTIME_EVIDENCE_MAP.md)); map, checker and record only, no readiness/gate/contract change, the three class-B items and six `보류` stay OPEN with their owners, no grade change, operational count stays 0.
-- [readiness-checker-partial-fixture](../validation/2026-10-21-readiness-checker-partial-fixture/README.md) — Builder-authored checker regression correction: validated synthetic PARTIAL ownership fixture and complete self-tests on a zero-PARTIAL in-memory map; real map and all nine OPEN rows unchanged, receipt/audit node still requires owner-approved input revision, no grade change.
+- [readiness-checker-partial-fixture](../validation/2026-10-21-readiness-checker-partial-fixture/README.md) — Builder-authored checker regression correction: validated synthetic PARTIAL ownership fixture and complete self-tests on a zero-PARTIAL in-memory map; real map and all nine OPEN rows unchanged, at that record's base the receipt/audit node required owner-approved input revision, no grade change.
 - [kix-types-boundary-fixtures](../validation/2026-10-21-kix-types-boundary-fixtures/README.md) — Builder-authored boundary fixtures for the kix-types constructors and edges; tests and record only, no src or contract change, no grade change, source-informed and not independent, no completeness claim.
 - [astra-decision-sheets-rs-stage5](../validation/2026-10-21-astra-decision-sheets-rs-stage5/README.md) — Builder-authored second decision sheet ([시트](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md)) collecting the RS profile's named-but-unsheeted open items (IssuerCap choice, test-only fixture operational values, RS-C02 sentence 2, the stage-5 record's Astra items); document and record only, no value chosen, no contract, decision, program or source change, every cited value stays UNDETERMINED/DECISION_REQUIRED with its named owner, no grade change.
 - [plan-rs-witness-offline-regressions](../validation/2026-10-21-plan-rs-witness-offline-regressions/README.md) — Synthetic public-event reconstruction regressions with injected object reads for RR-4 / IM-19; passes locally under Node 24 and, at that record's head, no workflow ran it (wired since; see the next entry), no new localnet/ZK result, no grade or operational-value change.
@@ -252,9 +253,19 @@
 
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
+- [readiness-receipt-audit-tests](../validation/2026-10-23-readiness-receipt-audit-tests/README.md) — Deterministic loopback receipt replay, checksum-valid receipt mismatch, append-failure fencing and actual replayed/inactive/diverged audit tests; [readiness map](status/READINESS_RUNTIME_EVIDENCE_MAP.md) updates only REC-CORE-COMMIT and OBS-AUDIT, nine OPEN rows/owners preserved. Retains main's merged synthetic-PARTIAL checker self-test correction; no production-durability claim.
+
 - [settlement-credit-rejection-atomicity](../validation/2026-10-23-settlement-credit-rejection-atomicity/README.md) — Builder-authored rejection-atomicity audit for the settlement and credit machines repeating the #219/#228 pattern; two test modules and a record only, no FSM/mock/contract/command change, deterministic rejections leave no trace against a control machine, late-fault seams recorded as class B characterizations, no grade change.
 
 - [plan-register-index-sync-20261023](../validation/2026-10-23-plan-register-index-sync-20261023/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+
+- [plan-rs-summary-arithmetic-tests](../validation/2026-10-23-plan-rs-summary-arithmetic-tests/README.md) — Synthetic offline RS-4 summary arithmetic and CSV regressions with fixed expected values; source-informed characterization only, no measurement, L2/L3 execution, performance claim or policy value change.
+
+- [plan-readiness-migration-edge-tests](../validation/2026-10-23-plan-readiness-migration-edge-tests/README.md) — Offline explicit-migration predicate regressions: individual missing fields, strict false labels, invalid batch suffixes, nested preservation and copy isolation; tests and record only, no migration/contract/map/CI change, no grade or operational-readiness claim.
+
+- [owner-stop-handoff-addendum](../validation/2026-10-23-owner-stop-handoff-addendum/README.md) — Document-only supplement for exactly four October 23 owner stops; attributed source reports and citation/preservation checks, no option selection, node disposition, provisioning or status change.
+
+- [fsm-returned-data-isolation](../validation/2026-10-23-fsm-returned-data-isolation/README.md) — Builder-authored deterministic offline settlement/credit first-result replay regressions and source-informed view/journal copy-isolation characterizations; MOCK-only tests and record, no implementation or contract change, no grade increase.
 
 - [bra-section9-error-code-coverage](../validation/2026-10-23-bra-section9-error-code-coverage/README.md) — Builder-authored BRA-RES9 coverage for ten reservation §9 inline codes under owner-approved Option (c); fixed exclusions for six pass-through codes already mapped under BRA/SET, existing tests cited, no contract/mock/FSM or checker taxonomy change, no grade change.
 
