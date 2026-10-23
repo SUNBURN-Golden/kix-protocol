@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from readiness.ai_delegation_wrap import AiDelegationWrap
+from readiness.reward_wrap import RewardWrap
 from readiness.store import FSM_MACHINES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +30,8 @@ from reservation_fsm import ReservationMachine  # noqa: E402
 from resale_fsm import ResaleMachine  # noqa: E402
 from settlement_fsm import SettlementMachine  # noqa: E402
 
-MACHINES = ('settlement', 'reservation', 'resale', 'credit', 'admission', 'ai_delegation')
+MACHINES = ('settlement', 'reservation', 'resale', 'credit', 'admission', 'ai_delegation',
+            'reward')
 RESTORE = {
     'settlement': SettlementMachine.restore,
     'reservation': ReservationMachine.restore,
@@ -37,6 +39,7 @@ RESTORE = {
     'credit': CreditMachine.restore,
     'admission': AdmissionMachine.restore,
     'ai_delegation': AiDelegationWrap.restore,
+    'reward': RewardWrap.restore,
 }
 
 if set(MACHINES) != FSM_MACHINES or set(RESTORE) != FSM_MACHINES:

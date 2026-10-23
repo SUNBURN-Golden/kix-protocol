@@ -2,7 +2,7 @@
 /// RS-3a delegation: page-level grants, `GrantControl` currentness, the revocation
 /// cut and the direct-path refusal of a delegated page (profile section 10).
 module kix_rights_scale::delegation_tests;
-use kix_rights_scale::rights_scale::{Self as rs, Ticket};
+use kix_rights_scale::rights_scale::{Self as rs, Ticket, IssuancePayment};
 use kix_rights_scale::support as s;
 use sui::test_scenario::{Self as ts, Scenario};
 
@@ -369,5 +369,117 @@ fun a_cancelled_show_blocks_delegated_issue() {
     let g = delegated(&mut sc, show, 0);
     s::cancel(&mut sc, show);
     s::issue_delegated(&mut sc, show, 0, 0, g, s::b());
+    sc.end();
+}
+
+// ---------------------------------------------------------------- cut ordering
+
+// The grant cut ordered against a delegated paid issue and a delegated-page
+// admission consume, in both serial orders (RS-C06/RS-C07, profile section
+// 10.4-10.5). Pre-cut committed facts stand; the five grant-checked paths take
+// no new use of the old grant.
+
+#[test]
+fun a_paid_issue_committed_before_the_cut_stands() {
+    let (mut sc, show) = fixture();
+    let g = delegated(&mut sc, show, 0);
+    s::reserve_delegated(&mut sc, show, 1, 0, g, s::b(), 50000, s::ref_bytes(9));
+    s::pay_delegated(&mut sc, show, g);
+    let t = s::latest_ticket(&mut sc);
+    s::revoke_grant(&mut sc, g);
+    let (_, _, _, generation, open) = s::grant_fields(&mut sc, g);
+    assert!(generation == 2 && !open);
+    sc.next_tx(s::a());
+    let t = sc.take_shared_by_id<Ticket>(t);
+    assert!(rs::holder(&t) == s::b() && rs::state(&t) == 0 && rs::version(&t) == 1);
+    assert!(rs::last_amount(&t) == 50000 && rs::last_payment(&t) == s::ref_bytes(9));
+    ts::return_shared(t);
+    let (_, _, issued, _) = s::totals(&mut sc, show);
+    assert!(issued == 1);
+    // The page binding survives the cut; only the grant closes.
+    assert!(s::page_grant(&mut sc, show, 0) == option::some(g));
+    sc.end();
+}
+
+#[test, expected_failure(abort_code = EGrantClosed, location = kix_rights_scale::rights_scale)]
+fun the_cut_refuses_the_second_leg_of_a_paid_issue() {
+    let (mut sc, show) = fixture();
+    let g = delegated(&mut sc, show, 0);
+    s::reserve_delegated(&mut sc, show, 1, 0, g, s::b(), 50000, s::ref_bytes(9));
+    s::revoke_grant(&mut sc, g);
+    s::pay_delegated(&mut sc, show, g);
+    sc.end();
+}
+
+#[test]
+fun an_unissued_commitment_stays_observable_after_the_cut() {
+    let (mut sc, show) = fixture();
+    let g = delegated(&mut sc, show, 0);
+    s::reserve_delegated(&mut sc, show, 2, 0, g, s::b(), 50000, s::ref_bytes(9));
+    s::revoke_grant(&mut sc, g);
+    // The reservation and the delegate-owned payment are untouched by the cut.
+    let (_, reserved, issued, _) = s::totals(&mut sc, show);
+    assert!(reserved == 1 && issued == 0);
+    sc.next_tx(s::dele());
+    let payment = sc.take_from_sender<IssuancePayment>();
+    assert!(rs::payment_slot(&payment) == 2 && rs::payment_ref(&payment) == s::ref_bytes(9));
+    assert!(rs::payment_expected_generation(&payment) == 0);
+    sc.return_to_sender(payment);
+    // The page stays bound to the closed grant; the stranded reservation blocks
+    // reclaim (a_page_with_a_stranded_reservation_cannot_be_reclaimed).
+    assert!(s::page_grant(&mut sc, show, 0) == option::some(g));
+    sc.end();
+}
+
+#[test]
+fun a_consume_committed_before_the_cut_stands() {
+    let (mut sc, show) = fixture();
+    let g = delegated(&mut sc, show, 0);
+    s::issue_delegated(&mut sc, show, 0, 0, g, s::b());
+    let t = s::latest_ticket(&mut sc);
+    s::authorize(&mut sc, s::b(), show, t, 1);
+    s::consume(&mut sc, show, t, 1);
+    s::revoke_grant(&mut sc, g);
+    sc.next_tx(s::a());
+    let t = sc.take_shared_by_id<Ticket>(t);
+    assert!(rs::state(&t) == 1 && rs::version(&t) == 2);
+    ts::return_shared(t);
+    let (_, _, _, generation, open) = s::grant_fields(&mut sc, g);
+    assert!(generation == 2 && !open);
+    sc.end();
+}
+
+#[test]
+fun an_admission_committed_before_the_cut_completes_after_it() {
+    let (mut sc, show) = fixture();
+    let g = delegated(&mut sc, show, 0);
+    s::issue_delegated(&mut sc, show, 0, 0, g, s::b());
+    let t = s::latest_ticket(&mut sc);
+    s::authorize(&mut sc, s::b(), show, t, 1);
+    s::revoke_grant(&mut sc, g);
+    // `consume` is a ticket-path write, not one of the five grant-checked
+    // delegated paths (profile section 10.3): the cut does not strand a live
+    // ticket's committed admission.
+    s::consume(&mut sc, show, t, 1);
+    sc.next_tx(s::a());
+    let t = sc.take_shared_by_id<Ticket>(t);
+    assert!(rs::state(&t) == 1 && rs::version(&t) == 2);
+    ts::return_shared(t);
+    sc.end();
+}
+
+#[test, expected_failure(abort_code = EGrantClosed, location = kix_rights_scale::rights_scale)]
+fun a_consumed_ticket_cannot_use_the_cut_grant() {
+    let (mut sc, show) = fixture();
+    let g = delegated(&mut sc, show, 0);
+    s::issue_delegated(&mut sc, show, 0, 0, g, s::b());
+    let t = s::latest_ticket(&mut sc);
+    s::authorize(&mut sc, s::b(), show, t, 1);
+    s::consume(&mut sc, show, t, 1);
+    s::revoke_grant(&mut sc, g);
+    // `check_grant` precedes the liveness check in `refund_delegated`, so the
+    // post-cut delegated call fails with the closed-grant error even on a
+    // consumed ticket.
+    s::refund_delegated(&mut sc, show, t, 2, g, s::b());
     sc.end();
 }

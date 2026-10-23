@@ -150,6 +150,19 @@ class ClaimZk(unittest.TestCase):
         show.seal('issuer')
         self.assertTrue(aborts(model.ESealed, show.claim_zk, 'issuer', 'v1', 'm1'))
 
+    def test_the_slot_bit_bound_is_the_log_ceiling_at_several_sizes(self):
+        # IM-14: the model exposes the slot-bit rule only through the claim_zk
+        # capacity bound `capacity <= 2 ** ZK_DEPTH`; (n - 1).bit_length() is
+        # the log ceiling of n slots.
+        for capacity in (1, 15, 16, 17, 255, 256, 257, 1023, 1024, 1025, 2000):
+            show = zk_show(seated=capacity, page_size=64, seal=False, claim_zk=False)
+            if (capacity - 1).bit_length() <= model.ZK_DEPTH:
+                show.claim_zk('issuer', 'v1', 'm1')
+                self.assertIsNotNone(show.domain, capacity)
+            else:
+                self.assertTrue(aborts(model.ERange, show.claim_zk, 'issuer', 'v1', 'm1'),
+                                capacity)
+
     def test_a_show_larger_than_the_tree_cannot_enable_the_private_path(self):
         show = zk_show(seated=1025, page_size=64, seal=False, claim_zk=False)
         self.assertTrue(aborts(model.ERange, show.claim_zk, 'issuer', 'v1', 'm1'))
@@ -204,6 +217,26 @@ class Shield(unittest.TestCase):
         t = show.issue('issuer', 0, 0, 'a')
         show.cancel_show('issuer')
         self.assertTrue(aborts(model.EClosed, show.shield, 'a', t.id, 1, 'n0'))
+
+    def test_a_publicly_consumed_ticket_cannot_be_shielded(self):  # RS-C09
+        # The other half of "once in total": a ticket consumed publicly first
+        # cannot move into the private path. The model cannot construct a
+        # private spend for it at all — a spend needs a note, and the only
+        # note-creating step refuses the consumed ticket.
+        show = zk_show()
+        t = show.issue('issuer', 0, 0, 'a')
+        show.authorize_admission('a', t.id, 1, 'gate', b'\x07' * 32, 60000)
+        show.consume('gate', t.id, 1, b'\x07' * 32)
+        self.assertEqual((t.state, t.version), (model.CONSUMED, 2))
+        self.assertTrue(aborts(model.EClosed, show.shield, 'a', t.id, 2, 'n0'))
+        self.assertEqual(show.leaves, [])
+        self.assertEqual(show.private_snapshot()['nullifiers'], 0)
+        # The consumed slot stays occupied: nothing reissues it into the tree.
+        self.assertTrue(aborts(model.EInventory, show.issue, 'issuer', 0, 1, 'b'))
+        self.assertTrue(aborts(model.EClosed, show.offer, 'a', t.id, 2, 'b', 0, 600000))
+        self.assertTrue(aborts(model.EClosed, show.authorize_admission, 'a', t.id, 2,
+                               'gate', b'\x01' * 32, 60000))
+        show.check_invariants()
 
     def test_notes_never_exceed_the_slots(self):  # RS-C10: the next shield after "slots" is refused
         show = zk_show(seated=4, page_size=4)

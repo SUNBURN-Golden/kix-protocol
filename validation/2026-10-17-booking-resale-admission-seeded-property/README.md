@@ -137,3 +137,69 @@ Also run: the four script families directly with an inline stdlib Python coverag
 - MOCK only (`MOCK_GATE_ONLY`). No chain currentness, no durable reservation, no real payment or provider fact, no bank, PG, KYC, Sui or public endpoint.
 - No new command, flag, limit, policy value or protocol surface. Fixture values (capacities, `PRICE = 10_001`, `RESALE_CAP = 20_000`, bps pairs, windows) are synthetic and not policy.
 - No grade change and no performance claim beyond the local under-30-second acceptance check. This is a local supervisor handoff under the owner's exception, not independent review or merge authorization.
+
+## 2026-10-23 paused-merge resolution and integrated-tree validation
+
+This addendum records the supervisor-requested resolution of the already-paused
+merge. It supersedes the earlier checkout/base limitations for the integrated
+working tree; the preceding results and findings remain historical evidence.
+The task input is the supervisor's conflict-resolution request in this session,
+with no node-specific task document or issue. This is not ASTRA program mode.
+
+Task/implementation HEAD remains `047d08e34659a5c392a0a0b08883846253c2aef8`.
+Cached `origin/main` and `MERGE_HEAD` are both
+`fc28ad4eda7e49f34324d46253dfd950533740db` (129 main-side commits beyond HEAD).
+No fetch was performed because the supervisor expressly prohibited network
+operations. The merge was already in progress at session start; it was not
+restarted, aborted, rebased or committed. Final task/merge SHA does not yet exist.
+
+The sole conflict was `docs/README.md`. Its resolved content is byte-for-byte
+main's index plus this node's existing pointer, placed under the October 17
+heading to match the validation directory. All newer main sections, lists,
+links and wording remain intact. Session-edited paths are exactly
+`docs/README.md` and this validation record. The other staged changes were
+already supplied by the supervisor's merge; no production, package, workflow,
+contract, task-document or policy source was edited in this resolution.
+
+The original AGENTS.md section 7 property mapping above remains the pre-addition
+coverage map; no new tests were needed for this conflict resolution. Main now
+also contributes `test_adopt_issued_atomicity.py`: its inherited order-binding,
+payment-binding, retry and rollback regressions all pass in full discovery.
+The earlier legacy class C/B finding concerns the old branch base; main's atomic
+implementation is now present and tested. No new contract violation or undefined
+semantic choice was found. The existing class B uncertainties and all MOCK
+non-claims remain. The compatibility characterization is still not a substitute
+for main's strict atomicity regressions.
+
+Commands below ran on the resolved integrated working tree, using Python 3.13.5.
+All required local suites and documentation checks exited 0. CI's Python 3.12 was not tested here.
+
+| Command | Result |
+|---|---|
+| `git status --short`; `git rev-parse HEAD origin/main MERGE_HEAD`; `git branch --show-current`; `git rev-list --count HEAD..MERGE_HEAD` | Correct task branch; hashes and main-side delta recorded above; one initial unmerged path, `docs/README.md` |
+| Inline stdlib resolver comparing the result with `git show MERGE_HEAD:docs/README.md` | Exact main content plus one node pointer; moved into the matching October 17 section |
+| `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_gate_properties.py -v` | 17 tests OK in 4.765 s, including the double-holder and double-consume negative controls; no skips or expected failures |
+| `time PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission` | 179 tests OK in 5.668 s; 5.832 s wall, below 30 s |
+| `for suite in settlement_f01_f03 credit_advance_f04 ai_delegation token_reward; do PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "reference/$suite" -t "reference/$suite" \|\| exit "$?"; done` | All OK: settlement 184, credit 146, AI delegation 70, token reward 156 tests |
+| `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest integration_gate.test_http_gate readiness.test_faults` (output redirected to `/tmp/bra-merge-integration-tests.log`) | 96 tests OK in 5.534 s; local loopback fixtures only |
+| `for checker in check_status_register check_docs_index check_openapi_contract check_integration_gate_openapi; do PYTHONDONTWRITEBYTECODE=1 python3 "scripts/$checker.py" \|\| exit "$?"; PYTHONDONTWRITEBYTECODE=1 python3 "scripts/$checker.py" --self-test \|\| exit "$?"; done` | All four plain checks and all four self-tests pass. Register: paths=331, ev_ids=15, original32=32. Index: scanned=213, indexed=178, allowlisted=35. API: commands=84; productionEndpoint=false, publicHost=false |
+| `git diff --check`; `git diff --cached --check` | No whitespace errors |
+| Inline stdlib byte-preservation and marker scan using `git ls-tree -rz`, `git show HEAD:<path>` and `git ls-files -z` | All 121 protected tracked files match HEAD bytes, no protected untracked additions, no conflict markers in tracked working files, and main index preserved plus exactly one node pointer. Initial non-NUL path listing failed on Git-quoted Korean filename (exit 1); corrected NUL-delimited scan passed (exit 0) |
+| `git add docs/README.md validation/2026-10-17-booking-resale-admission-seeded-property/README.md` | Could not stage: Git metadata is mounted read-only; creation of `index.lock` was refused (exit 128). Resolved working files remain in place; supervisor must stage them before committing |
+
+Locked kernel blobs were verified before and after resolution against the two
+required hashes in the Locks section above. All tracked `reference/v0.3-rc1/`
+files, both locked kernel files, `.aiops/` and `docs/tasks/` remain byte-identical
+to task HEAD; no untracked files were added in those paths. Final preservation
+and conflict-marker checks are reported in the supervisor handoff. The index still
+contains the three original conflict stages for `docs/README.md` because the
+read-only Git metadata prevents staging; this is a mechanical supervisor step,
+not an unresolved content or product decision.
+
+No commit, push, GitHub action, external post, merge abort, or reset was performed.
+KTX and KIX exact-head CI run IDs/status/conclusions, non-author review and
+post-merge checks are unavailable in this no-network uncommitted session and
+remain supervisor gates. READY here means the conflict resolution and required
+local checks are ready for supervisor handoff; it is not merge authorization.
+Builder-authored, not independent; MOCK only; no chain currentness, durable
+reservation, real payment/provider fact, new command or policy value claimed.
