@@ -272,6 +272,11 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [예매·리셀·검표 seeded property 기록](../validation/2026-10-17-booking-resale-admission-seeded-property/README.md) | #267 | `f4df0d8ce0253e7b9755f7eb77e857b2d49057e0` | soulbound_jt | Builder-authored, not independent. | 위치 포인터. 새 승인 아님. |
 | [readiness receipt·audit 시험 기록](../validation/2026-10-23-readiness-receipt-audit-tests/README.md) | #268 | `a3f0fea3160fdea2f59fa8658573be173e242074` | soulbound_jt | This is builder evidence, not independent review or merge authorization. | 위치 포인터. 새 승인 아님. |
 | [BRA §9 error-code coverage 기록](../validation/2026-10-23-bra-section9-error-code-coverage/README.md) | #269 | `c7b470fc39ad6f6aa6ad59c18b5595cde41a7200` | soulbound_jt | source-informed convenience check, not a protocol or production-readiness proof. | 위치 포인터. 새 승인 아님. |
+| [audit14 plan·register·index 동기화 기록](../validation/2026-10-23-audit14-plan-register-index-sync/README.md) | #270 | `2d2e93eb14fe41bafaf2dbaa91f02d861c8be8b5` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [audit14 열린 결정 마감 보충 기록](../validation/2026-10-23-audit14-open-decisions-closure/README.md) | #271 | `08ced25441171b2423e6399f04dae14ca0a0a3f8` | soulbound_jt | not independent review, an owner answer or merge authorization. | 위치 포인터. 새 승인 아님. |
+| [audit14 loop-node crosswalk 갱신 기록](../validation/2026-10-23-audit14-loop-node-crosswalk-refresh/README.md) | #272 | `f50047a902f9e4f2e6a25e904f6f89ad758eb8c0` | soulbound_jt | Builder-authored documentary evidence, not non-author review. | 위치 포인터. 새 승인 아님. |
+| [RS 지도 gap closure batch 2 기록](../validation/2026-10-23-rs-map-gap-closure-batch-2/README.md) | #274 | `a7e6febded343fe0fd43df2059874525194efecf` | soulbound_jt | This is builder-authored evidence, not non-author review, Astra acceptance, merge readiness or a capability-grade change. | 위치 포인터. 새 승인 아님. |
+| [reward 중첩 snapshot 격리 기록](../validation/2026-10-24-reward-snapshot-isolation/README.md) | #275 | `7327a00a68ef6efa81a795173af5e4572ccd90ef` | soulbound_jt | A2 review, acceptance, a capability grade increase, or merge readiness. | 위치 포인터. 새 승인 아님. |
 
 ## 6. E-4와 상태 수명
 
