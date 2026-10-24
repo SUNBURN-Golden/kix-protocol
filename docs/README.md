@@ -279,6 +279,12 @@
 
 - [rs-map-gap-closure-batch-2](../validation/2026-10-23-rs-map-gap-closure-batch-2/README.md) — RS-C09 public-then-shield and IM-18 verifier continuity Move regressions; IM-19 source-informed gate-signature characterization. IM-18 becomes COVERED_MODEL_OR_MEMORY; no register grade or operational-value change.
 
+## 2026-10-24 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [reward-snapshot-isolation](../validation/2026-10-24-reward-snapshot-isolation/README.md) — Builder-authored deterministic offline reward nested snapshot isolation and historical replay evidence; MOCK-only tests and record, no FSM/contract/register change, no grade increase.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
