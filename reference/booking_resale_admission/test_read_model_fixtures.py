@@ -32,7 +32,7 @@ for _rel in (
     _DIR.parent / "read_model",
 ):
     if str(_rel) not in sys.path:
-        sys.path.insert(0, str(_rel))
+        sys.path.insert(1, str(_rel))  # Keep this suite first for default discovery.
 
 import generate_fixtures as fx  # noqa: E402
 from mock_gates import NON_CLAIMS  # noqa: E402
