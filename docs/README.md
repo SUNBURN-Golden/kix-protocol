@@ -283,6 +283,8 @@
 
 이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
 
+- [resale-admission-rejection-atomicity](../validation/2026-10-24-resale-admission-rejection-atomicity/README.md) — Builder-authored offline per-code rejection/control/source comparisons and labeled fault/clock-skew characterizations; no FSM, contract, policy or grade change.
+
 - [reward-snapshot-isolation](../validation/2026-10-24-reward-snapshot-isolation/README.md) — Builder-authored deterministic offline reward nested snapshot isolation and historical replay evidence; MOCK-only tests and record, no FSM/contract/register change, no grade increase.
 
 - [plan-register-index-sync-20261024](../validation/2026-10-24-plan-register-index-sync/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
