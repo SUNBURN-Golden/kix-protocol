@@ -224,3 +224,145 @@ supervisor gates. No stop-condition resource or owner policy decision is needed
 for this test-only node; `DECISION_REQUIRED.md` is not created. Further mutation
 surfaces or the normalized/raw fingerprint question require separately scoped
 owner work; this record does not authorize a semantics change.
+
+
+## Merge-conflict recovery — 2026-10-24
+
+Author: Codex merge-recovery builder, under the supervisor's one-shot local-only
+instructions. The preceding sections preserve the original implementation
+attempt's evidence; this appendix records the subsequent merge recovery.
+The executing input is the supplied node specification and conflict-resolution
+request; no issue or `docs/tasks/` document exists for this node.
+
+Observed task/implementation HEAD (unchanged by this session):
+`378f1e817f22401c65007e7de3313901ca0ea724`.
+Local `origin/main` and pending `MERGE_HEAD` both:
+`a7e6febded343fe0fd43df2059874525194efecf`.
+Merge base: `afe7ded7abc1b6e6cc65c8b179c2d6dac009c891`.
+`git rev-list --left-right --count HEAD...origin/main`: `1 22`.
+The merge was already in progress on entry; no merge, rebase, fetch, commit,
+push, reset, abort, GitHub action or external publication was performed here.
+Fetch was omitted under the explicit supervisor network ban; remote freshness
+is unverified. The final merge head and merge commit do not yet exist.
+
+The sole content conflict was `docs/README.md`. All main entries are retained
+verbatim and in order, including BRA §9 coverage, plan/register index sync,
+readiness negative controls, open-decision closure, loop crosswalk refresh and
+RS gap closure. The node's reward snapshot link is re-applied after them in a
+new October 24 validation-index section, preserving the October 23 and history
+anchors and all cross-references. No test or implementation change was needed.
+The existing coverage mapping and seven gap-specific tests above are unchanged.
+No new tests, contract findings or policy decisions were introduced here;
+copying and full-envelope replay remain source-informed characterizations.
+
+Only `docs/README.md` and this validation record were edited during recovery.
+All other tracked files were compared byte-for-byte with the entering worktree
+snapshot and preserved, including the automatically merged main changes.
+A separate comparison confirmed every other main path equals `MERGE_HEAD`,
+excluding the node's existing test and validation record. The main docs index
+is an unchanged subsequence of the resolved index. No tracked conflict markers
+remain in file contents.
+
+`git add docs/README.md` was attempted once and failed with exit 128:
+`Unable to create .../index.lock: Read-only file system` (the shared worktree
+Git metadata is outside the writable worktree). The real index therefore still
+reports `UU docs/README.md`; the supervisor must stage the resolved docs index
+and updated validation record before committing the merge. No sandbox
+workaround was attempted. READY below means local content/check handoff only.
+Non-author exact-HEAD review and both successful exact-head KTX/KIX CI gates
+remain required before merge readiness; no CI run ID, status or conclusion is
+available from this local-only session. No main merge/post-merge checks apply.
+
+### Commands and actual results in this recovery
+
+All Python commands used `PYTHONDONTWRITEBYTECODE=1`; Python 3.13.5 locally.
+Narrow checks ran before broader checks. The workflow's unchanged default
+unittest discovery collected all seven snapshot tests in the 163-test suite.
+No document or test check failed and no implementation fix was needed.
+
+| Command | Actual result |
+|---|---|
+| `python3 scripts/check_docs_index.py` (narrow first check) | PASS: scanned=221 indexed=186 allowlisted=35. |
+| `python3 -m unittest discover -s reference/token_reward -t reference/token_reward -p test_snapshot_isolation.py -v` | PASS: 7 tests, 0.634s. |
+| `python3 -m unittest discover -s reference/token_reward -t reference/token_reward` | PASS: 163 tests, 1.912s. |
+| `python3 scripts/check_status_register.py` | PASS (exit 0): capability register ok: paths=348 ev_ids=15 original32=32. |
+| `python3 scripts/check_status_register.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_rs_profile_traceability.py` | PASS (exit 0): rs profile traceability ok: blueprint=47 profile=47 expected=47. |
+| `python3 scripts/check_rs_profile_traceability.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_read_model_source_map.py` | PASS (exit 0): read model source map ok: queries=13 anchors=128 catalogues=2 citations=145. |
+| `python3 scripts/check_read_model_source_map.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_docs_index.py` | PASS (exit 0): docs index ok: scanned=221 indexed=186 allowlisted=35. |
+| `python3 scripts/check_docs_index.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_i12_proof_ids.py` | PASS (exit 0): i12 proof ids ok: proof_headings=4 proof_keys=10 pack_keys=14 expected=14. |
+| `python3 scripts/check_i12_proof_ids.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_delegation_layer_matrix.py` | PASS (exit 0): delegation layer matrix ok: rows=36 expected=36 citations=79 MOCK_ONLY=15 ANALOGUE_NOT_BOUND=7 NO_LAYER=8 NOT_APPLICABLE_BY_DESIGN=6. |
+| `python3 scripts/check_delegation_layer_matrix.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_rs_predicate_evidence_map.py` | PASS (exit 0): rs predicate evidence map ok: rows=23 expected=23 citations=174 COVERED_LOCALNET=13 COVERED_MODEL_OR_MEMORY=2 PARTIAL=6 NOT_COVERED=0 MEASUREMENT_ONLY=2. |
+| `python3 scripts/check_rs_predicate_evidence_map.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_rs_im_evidence_map.py` | PASS (exit 0): rs im evidence map ok: rows=30 expected=30 citations=200 COVERED_LOCALNET=11 COVERED_MODEL_OR_MEMORY=5 PARTIAL=12 NOT_COVERED=0 MEASUREMENT_ONLY=0 UNCHANGED_BY_DESIGN=2. |
+| `python3 scripts/check_rs_im_evidence_map.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_tl_predicate_evidence_map.py` | PASS (exit 0): tl predicate evidence map ok: rows=49 expected=49 citations=58 HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=24 PARTIAL=7. |
+| `python3 scripts/check_tl_predicate_evidence_map.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_contract_error_codes.py` | PASS (exit 0): contract error code coverage ok: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0. |
+| `python3 scripts/check_contract_error_codes.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_adapter_identity_map.py` | PASS (exit 0): adapter identity evidence map ok: rows=17 expected=17 citations=56 CARRIED=2 PARTIAL=7 NO_SURFACE=0 UNDETERMINED=8. |
+| `python3 scripts/check_adapter_identity_map.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_v5_transition_evidence_map.py` | PASS (exit 0): v5 transition evidence map ok: rows=10 expected=10 citations=77 TESTED=6 STOPPED=4 OPEN=0. |
+| `python3 scripts/check_v5_transition_evidence_map.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_readiness_evidence_map.py` | PASS (exit 0): readiness runtime evidence map ok: rows=36 expected=36 citations=183 EXERCISED=27 PARTIAL=0 NOT_EXERCISED=0 OPEN=9. |
+| `python3 scripts/check_readiness_evidence_map.py --self-test` | PASS: self-test: pass (exit 0). |
+| `python3 scripts/check_stage5_host.py --self-test` | PASS: self-test: pass (exit 0). |
+| `for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation; do PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "reference/$suite" -t "reference/$suite" || exit; done` | PASS (exit 0): Ran 184 tests in 1.700s; Ran 179 tests in 6.364s; Ran 146 tests in 6.660s; Ran 70 tests in 2.472s. |
+| `python3 -m unittest integration_gate.test_http_gate readiness.test_faults readiness.test_conformance_sensitivity` | PASS (exit 0): Ran 108 tests in 6.152s. |
+| `python3 -m unittest discover -s reference/rights_scale -t reference/rights_scale` | PASS (exit 0): Ran 173 tests in 3.676s. |
+| `python3 scripts/check_openapi_contract.py` | PASS (exit 0): openapi contract pin ok: commands=84 core=40 fsm=44 sha256=ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e gitBlob=619ae21c82ca3df5661bd3831613f15fa65225ff. |
+| `python3 scripts/check_openapi_contract.py --self-test` | PASS (exit 0): self-test: pass. |
+| `python3 scripts/check_integration_gate_openapi.py` | PASS (exit 0): integration-gate openapi ok: commands=84 productionEndpoint=false publicHost=false. |
+| `python3 scripts/check_integration_gate_openapi.py --self-test` | PASS (exit 0): self-test: pass. |
+| `git diff --check` and `git diff --cached --check` | PASS (exit 0); the latter does not mark the unmerged index entry resolved. |
+| `git add docs/README.md` | Exit 128: Git metadata is read-only; supervisor staging required. |
+| Inline stdlib preservation verifier | PASS: all main index lines retained in order; no tracked content conflict markers; non-edited paths unchanged. |
+| Historical-reference verifier using `git ls-tree -r --name-only -z HEAD reference/v0.3-rc1` and `git show HEAD:<path>` | PASS: all 108 files byte-identical and exact path set matches. Initial newline-delimited verifier attempts failed because Git quotes the Korean filename; corrected to NUL-delimited paths. No historical file changed. |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | Before: required blobs match (`69564b166f0c27f9af5d8422f0a466b18d74c20f`, `b607996c83a119c349f1cc90469ac1ba82764e20`). After: both identical to the required blobs. |
+
+The 108-test integration/readiness run passed with a Python `ResourceWarning`
+for an unclosed file handle. This did not fail the tests; no unrelated cleanup
+was performed. Tests exercised synthetic loopback only. Move/Rust/SDK/ZK and
+hosted workflows were not run; the conflict changed documentation only. No
+production runtime, storage engine, public endpoint, funds or external chain
+execution was used, and no activation, policy value or capability grade was
+changed. The pre-existing raw/normalized approval-fingerprint uncertainty
+above is unchanged and was not investigated in this recovery.
+
+### Complete pending merge changed-path list (relative to entering HEAD)
+
+The following includes main's incoming changes, rather than attributing them
+to this node. Recovery edits are limited to the docs index and this record.
+
+- `docs/DEVELOPMENT_PLAN.md`
+- `docs/README.md`
+- `docs/status/CONTRACT_ERROR_CODE_COVERAGE.md`
+- `docs/status/CURRENT_CAPABILITY_REGISTER.md`
+- `docs/status/LOOP_NODE_CROSSWALK.md`
+- `docs/status/OPEN_USER_DECISIONS_20261023_CLOSURE.md`
+- `docs/status/READINESS_RUNTIME_EVIDENCE_MAP.md`
+- `docs/status/RS_IM_EVIDENCE_MAP.md`
+- `docs/status/RS_PREDICATE_EVIDENCE_MAP.md`
+- `integration_gate/test_http_gate.py`
+- `readiness/CONFORMANCE.md`
+- `readiness/test_conformance_sensitivity.py`
+- `readiness/test_faults.py`
+- `reference/booking_resale_admission/bra_property_support.py`
+- `reference/booking_resale_admission/test_gate_properties.py`
+- `reference/rights_scale/sui/tests/private_path_tests.move`
+- `reference/rights_scale/test_private_model.py`
+- `scripts/check_contract_error_codes.py`
+- `scripts/check_readiness_evidence_map.py`
+- `validation/2026-10-17-booking-resale-admission-seeded-property/README.md`
+- `validation/2026-10-23-audit14-loop-node-crosswalk-refresh/README.md`
+- `validation/2026-10-23-audit14-open-decisions-closure/README.md`
+- `validation/2026-10-23-audit14-plan-register-index-sync/README.md`
+- `validation/2026-10-23-bra-section9-error-code-coverage/README.md`
+- `validation/2026-10-23-readiness-receipt-audit-tests/README.md`
+- `validation/2026-10-23-rs-map-gap-closure-batch-2/README.md`
+- `validation/2026-10-24-reward-snapshot-isolation/README.md`

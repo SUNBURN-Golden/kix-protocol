@@ -35,6 +35,7 @@ from readiness.conformance import (
     reward_rid as _reward_rid,
 )
 from readiness.local_adapter import LocalReadinessAdapter
+from readiness.test_conformance_sensitivity import ConformanceSensitivityTests
 
 
 class StoreTests(unittest.TestCase):
