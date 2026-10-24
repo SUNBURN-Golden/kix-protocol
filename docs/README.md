@@ -297,6 +297,8 @@
 
 - [restore-fingerprint-equivalence](../validation/2026-10-25-restore-fingerprint-equivalence/README.md) — Builder-authored offline omitted/default replay comparisons across journal restore in five reference suites; class A predicates and class B reward fingerprint characterization, no FSM/contract/policy change or grade increase.
 
+- [plan-section5-quote-completeness](../validation/2026-10-25-plan-section5-quote-completeness/README.md) — Builder-authored re-quote of negation-stripped §5 adoption-quote cells as complete one-line clauses plus one preamble rule sentence; no status/effect column, register, crosswalk or record change, no grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
