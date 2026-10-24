@@ -931,7 +931,7 @@ class RewardFsmTests(unittest.TestCase):
 
 def committed_settlement_view():
     suite = str(Path(__file__).resolve().parents[1] / "settlement_f01_f03")
-    sys.path.insert(0, suite)
+    sys.path.insert(1, suite)  # Keep this suite first for default discovery.
     try:
         from settlement_fsm import SettlementMachine
     finally:
@@ -966,6 +966,18 @@ def committed_settlement_view():
         adjustment=0,
     )
     return machine.view("claim-1")
+
+
+class SiblingImportPathTests(unittest.TestCase):
+    """Import-origin guard (audit #15): settlement view from its own suite."""
+
+    def test_settlement_view_imports_from_settlement_suite(self):
+        here = Path(__file__).resolve().parent
+        suite = here.parent / "settlement_f01_f03"
+        committed_settlement_view()
+        self.assertEqual(Path(sys.modules["settlement_fsm"].__file__).resolve().parent, suite)
+        self.assertEqual(Path(sys.modules[RewardMachine.__module__].__file__).resolve().parent, here)
+        self.assertNotIn(str(suite), sys.path)
 
 
 if __name__ == "__main__":

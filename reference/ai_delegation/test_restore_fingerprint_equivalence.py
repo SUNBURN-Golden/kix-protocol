@@ -14,7 +14,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+    sys.path.insert(1, str(ROOT))  # Keep this suite first for default discovery.
 
 from readiness.ai_delegation_wrap import AiDelegationWrap, WrapError
 from ai_delegation_mock import AiDelegationError
@@ -152,6 +152,17 @@ class AiDelegationRestoreFingerprintCharacterizationTests(unittest.TestCase):
             retries = [(retry, INVALID if n == 2 else ("error", "PROPOSAL_BINDING_CONFLICT"))
                        for n, retry in enumerate(commands) if n != index]
             probe(self, fixture, first, retries)
+
+
+class SiblingImportPathTests(unittest.TestCase):
+    """Import-origin guard (audit #15): this suite's mock, ROOT's readiness wrap."""
+
+    def test_imports_resolve_from_intended_directories(self):
+        here = Path(__file__).resolve().parent
+        mock_file = Path(sys.modules[AiDelegationError.__module__].__file__).resolve()
+        wrap_file = Path(sys.modules[AiDelegationWrap.__module__].__file__).resolve()
+        self.assertEqual(mock_file.parent, here)
+        self.assertEqual(wrap_file.parent, ROOT / "readiness")
 
 
 if __name__ == "__main__":
