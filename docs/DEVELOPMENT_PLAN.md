@@ -277,6 +277,11 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [audit14 loop-node crosswalk 갱신 기록](../validation/2026-10-23-audit14-loop-node-crosswalk-refresh/README.md) | #272 | `f50047a902f9e4f2e6a25e904f6f89ad758eb8c0` | soulbound_jt | Builder-authored documentary evidence, not non-author review. | 위치 포인터. 새 승인 아님. |
 | [RS 지도 gap closure batch 2 기록](../validation/2026-10-23-rs-map-gap-closure-batch-2/README.md) | #274 | `a7e6febded343fe0fd43df2059874525194efecf` | soulbound_jt | This is builder-authored evidence, not non-author review, Astra acceptance, merge readiness or a capability-grade change. | 위치 포인터. 새 승인 아님. |
 | [reward 중첩 snapshot 격리 기록](../validation/2026-10-24-reward-snapshot-isolation/README.md) | #275 | `7327a00a68ef6efa81a795173af5e4572ccd90ef` | soulbound_jt | A2 review, acceptance, a capability grade increase, or merge readiness. | 위치 포인터. 새 승인 아님. |
+| [plan·register·index 동기화 기록](../validation/2026-10-24-plan-register-index-sync/README.md) | #276 | `5a09a325e2f6415b7fe638d0dbcd826b4d45fb86` | soulbound_jt | Location pointers only: no new approval, no decision text, no grade raise. | 위치 포인터. 새 승인 아님. |
+| [BRA·AI 위임 반환 데이터 격리 기록](../validation/2026-10-24-bra-aid-returned-data-isolation/README.md) | #277 | `99f30c2d641646d653b62383b213452fd0a0498b` | soulbound_jt | Git/GitHub publication belongs to the supervisor. | 위치 포인터. 새 승인 아님. |
+| [리셀·검표 거절 원자성 기록](../validation/2026-10-24-resale-admission-rejection-atomicity/README.md) | #278 | `41a799987fe3a6a207abcce75045265c5796e1e4` | soulbound_jt | No grade change. | 위치 포인터. 새 승인 아님. |
+| [AI 위임 거절 원자성 기록](../validation/2026-10-25-aid-rejection-atomicity/README.md) | #279 | `4480c9db7be539abd5a99e640b5a25c7eef8cafe` | soulbound_jt | No older SHA's CI is transferred to this patch. | 위치 포인터. 새 승인 아님. |
+| [restore fingerprint 동등성 기록](../validation/2026-10-25-restore-fingerprint-equivalence/README.md) | #280 | `d6a6a10f3f5fbaf31f54ad676a9b5e36c0e3d313` | soulbound_jt | not independent A2 review, acceptance, a capability grade increase or merge readiness. | 위치 포인터. 새 승인 아님. |
 
 ## 6. E-4와 상태 수명
 
