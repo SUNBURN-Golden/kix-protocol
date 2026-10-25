@@ -311,6 +311,8 @@
 
 - [plan-primary-fee-split-offline-differential](../validation/2026-10-25-plan-primary-fee-split-offline-differential/README.md) — Builder-authored PF-C01 price boundaries and PF-C02 golden/seeded offline split tests; frozen core comparison NOT_MADE, on-chain enforcement NOT_COVERED, policy values and enforcement location remain DECISION_REQUIRED · Astra, no grade change.
 
+- [ci-wire-product-contract-evidence-checkers](../validation/2026-10-25-ci-wire-product-contract-evidence-checkers/README.md) — CI wiring of the settlement, BRA and credit F04 evidence-map checkers (plain and --self-test) into the unguarded stdlib step; workflow lines, register sentence and record only, no checker/map/contract change, no grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
