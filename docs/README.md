@@ -305,6 +305,8 @@
 
 - [settlement-contract-clause-evidence-map](../validation/2026-10-25-settlement-contract-clause-evidence-map/README.md) — Builder-authored clause-to-test map ([지도](status/SETTLEMENT_CONTRACT_EVIDENCE_MAP.md)) and stdlib citation checker; open policy values and owners preserved, no contract/mock/FSM or grade change.
 
+- [bra-contract-clause-evidence-map](../validation/2026-10-25-bra-contract-clause-evidence-map/README.md) — Builder-authored clause-to-test map ([지도](status/BRA_CONTRACT_EVIDENCE_MAP.md)) and local stdlib citation checker; nine adopted open items keep UNDETERMINED values and named owners, currentness/routing gaps stay NOT_COVERED, no grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
