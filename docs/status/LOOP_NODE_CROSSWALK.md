@@ -28,6 +28,14 @@
 - #272 qualifies by quoting the selection phrase, like #210. Canonical counting remains `DECISION_REQUIRED · Astra`.
 - Record paths, selection quotations, dependency checks and preservation assertions are in the [refresh validation record](../../validation/2026-10-25-plan-register-index-sync-20261025/README.md).
 
+### Refresh recorded 2026-10-25 — evidence through #289
+
+- Refresh cutoff: `22df2e96d1a7de4d0de371a1f64776e80af9d999` (PR #289).
+- `git rev-parse 22df2e96d1a7de4d0de371a1f64776e80af9d999:.aiops/program.json`: `ff0f39a8129ca8b8d30818cce35c3d4e588872fc`, identical to the historical #209, #269 and #280 program blobs. Added spec phrases and dependency observations use #289; earlier observations retain their original bases.
+- Builder starting HEAD/base and cached `origin/main`: `22df2e96d1a7de4d0de371a1f64776e80af9d999`. Fetch was NOT_RUN under the supervisor's no-network instruction; remote freshness is unverified. No base change was made.
+- The unchanged normalized literal selection rule selects #281 and #289 in #281–#289. #281 qualifies by quoting the phrase, following #210/#272. Two rows are added (55 total); seven other merges are accounted for in §2. All nine PR numbers have first-parent merges; none is absent. The cutoff tree contains 53 literal-match records plus the two previously recorded equivalent statements (#264 and #274).
+- Canonical counting remains `DECISION_REQUIRED · Astra`. Selection quotations, exact record paths, dependency/spec checks and preservation evidence are in the [refresh validation record](../../validation/2026-10-25-plan-register-index-crosswalk-sync/README.md).
+
 ## 1. Crosswalk
 
 | PR | Merge commit | plan-* id | Canonical node(s) and overlapping spec phrase | Declared depends_on and merged? | Effect on canonical node |
@@ -85,6 +93,8 @@
 | #275 | `7327a00a68ef6efa81a795173af5e4572ccd90ef` | `plan-plan-reward-snapshot-isolation` | `tl-3-offchain`: "reference model for reward-transaction coupling"; `k-adversarial-corpus`: "재생 시 첫 결과·지급/권리/재고 의미가 보존된다" | `tl-3-offchain` depends_on `tl-1` (merged: branch `agent/kix-tl-1` at #147 `841408e77065c841ea73e2cf04fe8c03fbd35f5d`); `k-adversarial-corpus` depends_on `k-current-capability-map` (not determinable from this tree: no first-parent merge of branch `agent/kix-k-current-capability-map`); `k1-e4-residual-review` (not determinable from this tree: no first-parent merge of branch `agent/kix-k1-e4-residual-review`); `k-stage3-schema-sdk-conformance` (not determinable from this tree: no first-parent merge of branch `agent/kix-k-stage3-schema-sdk-conformance`) | does not complete or start the canonical node |
 | #276 | `5a09a325e2f6415b7fe638d0dbcd826b4d45fb86` | `plan-plan-register-index-sync-20261024` | `roadmap-sync`: "docs/DEVELOPMENT_PLAN.md header, §1, §5, §17 and §18"; `k-current-capability-map`: "현재 capability/coverage register" | `roadmap-sync` depends_on none; `k-current-capability-map` depends_on `roadmap-sync` (not determinable from this tree: no first-parent merge of branch `agent/kix-roadmap-sync`) | does not complete or start the canonical node |
 | #280 | `d6a6a10f3f5fbaf31f54ad676a9b5e36c0e3d313` | `plan-plan-restore-fingerprint-equivalence` | `settlement-policy-deepening`: "Update reference/settlement_f01_f03 and its tests only for items that get decided."; `f04-mock-deepening`: "update reference/credit_advance_f04 and its tests."; `booking-resale-admission-deepening`: "Update reference/booking_resale_admission and its tests for decided items."; `ai-delegation-contract-mock`: "an in-memory mock under reference/"; `tl-3-offchain`: "reference model for reward-transaction coupling"; `k-adversarial-corpus`: "재생 시 첫 결과·지급/권리/재고 의미가 보존된다" | `settlement-policy-deepening` depends_on `p-sdk-0` (merged: branch `agent/kix-p-sdk-0` at #123 `a74e7c459d3be6754ac3cf24503e43c7bc312358`); `f04-mock-deepening` depends_on `p-sdk-0` (merged: branch `agent/kix-p-sdk-0` at #123 `a74e7c459d3be6754ac3cf24503e43c7bc312358`); `booking-resale-admission-deepening` depends_on `p-sdk-0` (merged: branch `agent/kix-p-sdk-0` at #123 `a74e7c459d3be6754ac3cf24503e43c7bc312358`); `ai-delegation-contract-mock` depends_on none; `tl-3-offchain` depends_on `tl-1` (merged: branch `agent/kix-tl-1` at #147 `841408e77065c841ea73e2cf04fe8c03fbd35f5d`); `k-adversarial-corpus` depends_on `k-current-capability-map` (not determinable from this tree: no first-parent merge of branch `agent/kix-k-current-capability-map`); `k1-e4-residual-review` (not determinable from this tree: no first-parent merge of branch `agent/kix-k1-e4-residual-review`); `k-stage3-schema-sdk-conformance` (not determinable from this tree: no first-parent merge of branch `agent/kix-k-stage3-schema-sdk-conformance`) | does not complete or start the canonical node |
+| #281 | `0db660a1085ca179c341c89129eeda763977b1fb` | `audit15-plan-register-index-crosswalk-sync-20261` | `roadmap-sync`: "docs/DEVELOPMENT_PLAN.md header, §1, §5, §17 and §18"; `k-current-capability-map`: "현재 capability/coverage register" | `roadmap-sync` depends_on none; `k-current-capability-map` depends_on `roadmap-sync` (not determinable from this tree: no first-parent merge of branch `agent/kix-roadmap-sync`) | does not complete or start the canonical node |
+| #289 | `22df2e96d1a7de4d0de371a1f64776e80af9d999` | `plan-ci-wire-product-contract-evidence-checke` | none identified by the builder | n/a | does not complete or start the canonical node |
 
 ## 2. Range accounting
 
@@ -155,6 +165,20 @@ Of 11 PR numbers, 10 have first-parent merges: five have §1 rows and five do no
 | #273 | No first-parent merge in the #269..#280 history. | Absent PR number in this bounded history; not classified as a merged node without a record. |
 
 Audit #15 describes all eleven records as “not in” the program. The unchanged selection rule and its existing equivalent-statement allowance do not select the five records above; #273 has no first-parent merge in the bounded history. This is a textual observation, not a reinterpretation of their task status.
+
+### Refresh accounting — #281–#289 at #289 (2026-10-25)
+
+Of nine PR numbers, nine have first-parent merges: two have §1 rows and seven do not. No number is absent. Branch naming and planner attribution do not replace the explicit record statement.
+
+| PR | Seen in this tree | Why no row |
+|---|---|---|
+| #282 | `ff88c441f36cde5b581ba29ce4c46ac47f22b218`, record `validation/2026-10-25-plan-section5-quote-completeness/README.md` | Record contains neither the literal selection phrase nor an equivalent explicit statement of absence from the canonical program. |
+| #283 | `fe08e4134b2f2e58f48b636bdae7440d8cdb70dc`, record `validation/2026-10-25-audit15-open-decisions-closure/README.md` | Record contains neither the literal selection phrase nor an equivalent explicit statement of absence from the canonical program. |
+| #284 | `590e544b3d097ba3de2fc573deae43b15bc39773`, record `validation/2026-10-25-audit15-reference-test-sibling-path-guard/README.md` | Record contains neither the literal selection phrase nor an equivalent explicit statement of absence from the canonical program. |
+| #285 | `c0fc5b4aed4da32284d9879ad21ef6b584db01d2`, record `validation/2026-10-25-settlement-contract-clause-evidence-map/README.md` | Record contains neither the literal selection phrase nor an equivalent explicit statement of absence from the canonical program. |
+| #286 | `a329ec07ac52ec15bff6c48079115d81ace5ab67`, record `validation/2026-10-25-bra-contract-clause-evidence-map/README.md` | Record contains neither the literal selection phrase nor an equivalent explicit statement of absence from the canonical program. |
+| #287 | `53c16b226346f2df824f93a5756a080acd489ec1`, record `validation/2026-10-25-credit-f04-contract-clause-evidence-map/README.md` | Record contains neither the literal selection phrase nor an equivalent explicit statement of absence from the canonical program. |
+| #288 | `c7762c2724d5d28fd2e5e4f00cc5aae4f1f7908f`, record `validation/2026-10-25-plan-primary-fee-split-offline-differential/README.md` | Record contains neither the literal selection phrase nor an equivalent explicit statement of absence from the canonical program. |
 
 ## 3. Open decision
 

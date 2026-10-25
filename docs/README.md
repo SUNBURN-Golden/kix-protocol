@@ -313,6 +313,24 @@
 
 - [ci-wire-product-contract-evidence-checkers](../validation/2026-10-25-ci-wire-product-contract-evidence-checkers/README.md) — CI wiring of the settlement, BRA and credit F04 evidence-map checkers (plain and --self-test) into the unguarded stdlib step; workflow lines, register sentence and record only, no checker/map/contract change, no grade change.
 
+## 2026-10-25 병합 위치 — #281–#289 (위치 안내만)
+
+이 표는 병합 커밋과 기록의 위치만 안내한다. 승인·등급 변경이 아니다.
+
+| PR | 병합 커밋 | 기록 |
+|---|---|---|
+| #281 | `0db660a1085ca179c341c89129eeda763977b1fb` | [plan-register-index-sync-20261025](../validation/2026-10-25-plan-register-index-sync-20261025/README.md) |
+| #282 | `ff88c441f36cde5b581ba29ce4c46ac47f22b218` | [plan-section5-quote-completeness](../validation/2026-10-25-plan-section5-quote-completeness/README.md) |
+| #283 | `fe08e4134b2f2e58f48b636bdae7440d8cdb70dc` | [audit15-open-decisions-closure](../validation/2026-10-25-audit15-open-decisions-closure/README.md) · [마감 후속](status/OPEN_USER_DECISIONS_20261025_CLOSURE.md) |
+| #284 | `590e544b3d097ba3de2fc573deae43b15bc39773` | [audit15-reference-test-sibling-path-guard](../validation/2026-10-25-audit15-reference-test-sibling-path-guard/README.md) |
+| #285 | `c0fc5b4aed4da32284d9879ad21ef6b584db01d2` | [settlement-contract-clause-evidence-map](../validation/2026-10-25-settlement-contract-clause-evidence-map/README.md) · [지도](status/SETTLEMENT_CONTRACT_EVIDENCE_MAP.md) · `scripts/check_settlement_evidence_map.py` |
+| #286 | `a329ec07ac52ec15bff6c48079115d81ace5ab67` | [bra-contract-clause-evidence-map](../validation/2026-10-25-bra-contract-clause-evidence-map/README.md) · [지도](status/BRA_CONTRACT_EVIDENCE_MAP.md) · `scripts/check_bra_evidence_map.py` |
+| #287 | `53c16b226346f2df824f93a5756a080acd489ec1` | [credit-f04-contract-clause-evidence-map](../validation/2026-10-25-credit-f04-contract-clause-evidence-map/README.md) · [지도](status/CREDIT_F04_CONTRACT_EVIDENCE_MAP.md) · `scripts/check_credit_evidence_map.py` |
+| #288 | `c7762c2724d5d28fd2e5e4f00cc5aae4f1f7908f` | [plan-primary-fee-split-offline-differential](../validation/2026-10-25-plan-primary-fee-split-offline-differential/README.md) · `reference/settlement_f01_f03/test_primary_fee_split.py` · `reference/booking_resale_admission/test_primary_price_binding.py` |
+| #289 | `22df2e96d1a7de4d0de371a1f64776e80af9d999` | [ci-wire-product-contract-evidence-checkers](../validation/2026-10-25-ci-wire-product-contract-evidence-checkers/README.md) · [protocol.yml](../.github/workflows/protocol.yml) |
+
+- [plan-register-index-crosswalk-sync](../validation/2026-10-25-plan-register-index-crosswalk-sync/README.md) — Location pointers only: no new approval, no decision text, no grade raise; crosswalk refreshed through #289, canonical counting remains `DECISION_REQUIRED · Astra`.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
