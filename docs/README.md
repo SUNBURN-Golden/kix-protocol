@@ -313,6 +313,8 @@
 
 - [ci-wire-product-contract-evidence-checkers](../validation/2026-10-25-ci-wire-product-contract-evidence-checkers/README.md) — CI wiring of the settlement, BRA and credit F04 evidence-map checkers (plain and --self-test) into the unguarded stdlib step; workflow lines, register sentence and record only, no checker/map/contract change, no grade change.
 
+- [plan-primary-price-fee-contract-clause-eviden](../validation/2026-10-25-plan-primary-price-fee-contract-clause-eviden/README.md) — Builder-authored clause-to-test map ([지도](status/PRIMARY_PRICE_FEE_CONTRACT_EVIDENCE_MAP.md)) with a CI-wired stdlib citation checker; on-chain gaps and all nine open items retain their owners, no policy or grade change.
+
 ## 2026-10-25 병합 위치 — #281–#289 (위치 안내만)
 
 이 표는 병합 커밋과 기록의 위치만 안내한다. 승인·등급 변경이 아니다.
