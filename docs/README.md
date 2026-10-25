@@ -333,6 +333,8 @@
 
 - [plan-register-index-crosswalk-sync](../validation/2026-10-25-plan-register-index-crosswalk-sync/README.md) — Location pointers only: no new approval, no decision text, no grade raise; crosswalk refreshed through #289, canonical counting remains `DECISION_REQUIRED · Astra`.
 
+- [plan-product-contract-map-partial-closure](../validation/2026-10-25-product-contract-map-partial-closure/README.md) — Offline test-only gap closure in the settlement, BRA and F04 evidence maps; no policy or grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
