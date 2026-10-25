@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 MAP = 'docs/status/SETTLEMENT_CONTRACT_EVIDENCE_MAP.md'
 CONTRACT = 'docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md'
 TEST_GLOB = 'reference/settlement_f01_f03/test_*.py'
+CROSS_SUITE_CITATIONS = {'9.6': frozenset({
+    'reference/credit_advance_f04/test_mock_credit.py',
+})}
 STATUSES = ('COVERED', 'PARTIAL', 'NOT_COVERED', 'OPEN')
 REQUIRED_SUBSET = ({'0.1', '0.2', '0.3'} | {str(n) for n in range(1, 6)}
                    | {'7.%d' % n for n in range(1, 9)}
@@ -135,9 +138,10 @@ def find_problems(map_text, contract_text, files=None):
                     or path != target.as_posix() or '\\' in path):
                 problems.append(ident + ': path must be repo-relative: ' + path)
                 continue
-            if (path.startswith('reference/v0.3-rc1/')
-                    or target.parent.as_posix() != 'reference/settlement_f01_f03'
-                    or not target.match(TEST_GLOB)):
+            cross_suite = path in CROSS_SUITE_CITATIONS.get(ident, ())
+            local_test = (target.parent.as_posix() == 'reference/settlement_f01_f03'
+                          and target.match(TEST_GLOB))
+            if not (local_test or cross_suite):
                 problems.append(ident + ': not an allowed test path: ' + path)
                 continue
             if path not in symbols_by_path:
@@ -146,7 +150,8 @@ def find_problems(map_text, contract_text, files=None):
                 else:
                     full = ROOT / path
                     # Do not follow a test symlink outside the permitted subtree.
-                    allowed = ROOT / 'reference/settlement_f01_f03'
+                    allowed = ROOT / ('reference/credit_advance_f04' if cross_suite
+                                      else 'reference/settlement_f01_f03')
                     source = (full.read_text(encoding='utf-8')
                               if full.is_file() and full.resolve().is_relative_to(allowed)
                               else None)
@@ -201,6 +206,8 @@ def self_test(map_text, contract_text):
         ('dangling symbol', with_cell(map_text, '9.3', 3, '`' + fsm + '::SettlementFsmTests.test_no_such_9f3a`'), contract_text, {}, 'symbol is missing or not a test'),
         ('helper symbol', with_cell(map_text, '9.3', 3, '`' + fingerprint + '::SettlementRestoreFingerprintClassATests.check_variants`'), contract_text, {}, 'symbol is missing or not a test'),
         ('protected reference path', with_cell(map_text, '9.3', 3, '`reference/v0.3-rc1/test_x.py::A.test_x`'), contract_text, {}, 'not an allowed test path'),
+        ('cross-suite on other row', with_cell(map_text, '9.3', 3, '`reference/credit_advance_f04/test_mock_credit.py::CreditAdvanceMockTests.test_note_reserves_unpaid_face_without_funds_or_license`'), contract_text, {}, 'not an allowed test path'),
+        ('unlisted credit file', with_cell(map_text, '9.6', 3, '`reference/credit_advance_f04/test_credit_fsm.py::CreditFsmTests.test_direct_mock_credit_note_still_reserves_without_the_machine`'), contract_text, {}, 'not an allowed test path'),
         ('absolute path', with_cell(map_text, '9.3', 3, '`/tmp/test_x.py::A.test_x`'), contract_text, {}, 'path must be repo-relative'),
         ('parent path', with_cell(map_text, '9.3', 3, '`reference/settlement_f01_f03/../test_x.py::A.test_x`'), contract_text, {}, 'path must be repo-relative'),
         ('closed policy', with_cell(map_text, '7.3', 4, 'COVERED'), contract_text, {}, 'must remain OPEN'),
