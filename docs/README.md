@@ -345,6 +345,8 @@
 
 - [plan-ai-delegation-contract-clause-evidence-m](../validation/2026-10-26-plan-ai-delegation-contract-clause-evidence-m/README.md) — Builder-authored clause-to-test map ([지도](status/AI_DELEGATION_CONTRACT_EVIDENCE_MAP.md)) with `scripts/check_ai_delegation_evidence_map.py` wired into the stdlib CI step; DLG evidence stays in the layer matrix, all eight open items retain their owners, execution stays disabled, no policy or grade change.
 
+- [plan-plan-toss-card-profile-evidence-map](../validation/2026-10-26-plan-toss-card-profile-evidence-map/README.md) — Builder-authored Toss card profile §§1–9 clause-to-test map ([지도](status/PG_TOSS_CARD_PROFILE_EVIDENCE_MAP.md)) and stdlib checker; provider evidence remains open, no sandbox calls, contract or grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
