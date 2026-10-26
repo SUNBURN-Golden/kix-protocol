@@ -9,8 +9,8 @@ use std::process::Command;
 
 use kix_kernel::{
     AppliedReservation, CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel,
-    KernelError, Limits, ObservationOutcome, Order, ProviderOperation, Reserve, ReserveOutcome,
-    Selection,
+    KernelError, Limits, ObservationOutcome, Order, ProviderOperation, Rejection, Reserve,
+    ReserveOutcome, Selection,
 };
 use kix_types::{AssetAmount, AssetId, Hash32, KixId, RegistryVersion};
 
@@ -123,7 +123,7 @@ struct Observer {
     action_counts: [usize; 6],
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 struct View {
     orders: Vec<Order>,
     remaining: u32,
@@ -132,6 +132,35 @@ struct View {
     conflicts: usize,
     reserved: usize,
     quarantined: usize,
+}
+
+/// One observed read-only replay of a recorded first result (INV-3).
+#[derive(Clone, Debug)]
+struct ReplayProbe {
+    recorded: ReserveOutcome,
+    reply: Result<AppliedReservation, KernelError>,
+    before: View,
+    after: View,
+    kernel_unchanged: bool,
+}
+
+// INV-3 predicate over an OBSERVED probe; never predicts guard order.
+fn check_replay(probe: &ReplayProbe) -> Result<(), String> {
+    if probe.reply
+        != Ok(AppliedReservation {
+            original: probe.recorded,
+            replayed: true,
+        })
+    {
+        return Err("INV-3 replay reply differs from recorded first result".into());
+    }
+    if probe.before != probe.after {
+        return Err("INV-3 replay changed public state".into());
+    }
+    if !probe.kernel_unchanged {
+        return Err("INV-3 replay mutated kernel or advanced admitted time".into());
+    }
+    Ok(())
 }
 
 impl Observer {
@@ -148,6 +177,23 @@ impl Observer {
             conflicts: k.conflicts().len(),
             reserved: k.reserved_observation_count(),
             quarantined: k.quarantined_operation_count(),
+        }
+    }
+
+    fn probe_replay(
+        &self,
+        k: &mut Kernel,
+        entry: &(Context, Reserve, ReserveOutcome),
+    ) -> ReplayProbe {
+        let before = self.view(k);
+        let unchanged = k.clone(); // Read-only sentinel, NOT recovery evidence.
+        let reply = k.reserve(entry.0, entry.1.clone());
+        ReplayProbe {
+            recorded: entry.2,
+            reply,
+            before,
+            after: self.view(k),
+            kernel_unchanged: *k == unchanged,
         }
     }
 
@@ -341,20 +387,11 @@ impl Observer {
         }
         // INV-3: a contract probe, not reference-model prediction. This covers original
         // rejections as well as success and uses the ORIGINAL (possibly stale) context.
-        for (old_context, request, original) in &self.originals {
-            let unchanged = k.clone(); // Read-only sentinel, NOT recovery evidence.
-            let observed = k.reserve(*old_context, request.clone());
-            assert_eq!(
-                observed,
-                Ok(AppliedReservation {
-                    original: *original,
-                    replayed: true
-                }),
-                "INV-3 original result"
-            );
-            assert_eq!(*k, unchanged, "INV-3 read-only replay mutated kernel state");
-            self.replay_probes += 1;
+        for entry in &self.originals {
+            let probe = self.probe_replay(k, entry);
+            check_replay(&probe).unwrap_or_else(|e| panic!("{e}; call={}", self.primary_calls));
         }
+        self.replay_probes += self.originals.len();
         self.check(&self.view(k), f).unwrap();
         self.primary_calls += 1;
     }
@@ -552,6 +589,99 @@ fn contract_predicates_reject_corrupted_observations_not_kernel_mutations() {
     assert!(observer.check(&view, f).unwrap_err().starts_with("INV-4"));
     fs::write(output().join("contract-predicate-sensitivity.txt"),
         "Synthetic observer views rejected: seat overlap, budget overflow, capture disappearance, double capture count. Neither kernel nor reference-model source was mutated. No claim of production fault injection.\n").unwrap();
+}
+
+/// Source-informed sensitivity fixture: author knew kernel source; corrupts observer
+/// copies only; not independent proof or fault injection.
+#[test]
+fn inv3_replay_predicate_rejects_corrupted_observer_views_not_kernel_mutations() {
+    let f = Fixture {
+        ga: false,
+        limits: Limits {
+            commands: 8,
+            orders: 8,
+            observations: 2,
+        },
+    };
+    let mut k = f.kernel();
+    let mut observer = Observer::default();
+    let a = f.request(1, 0, 1, 100);
+    let b = f.request(2, 0, 1, 100);
+    observer.run(&mut k, f, ctx(1, 1), Input::Reserve(a.clone()));
+    observer.run(&mut k, f, ctx(2, 1), Input::Reserve(b));
+    assert_eq!(observer.originals.len(), 2);
+    assert_eq!(observer.originals[0].2, ReserveOutcome::Held(a.order_id));
+    assert!(matches!(
+        observer.originals[1].2,
+        ReserveOutcome::Rejected(_)
+    ));
+    observer.run(&mut k, f, ctx(3, 1), Input::Send(a.order_id));
+    observer.run(&mut k, f, ctx(4, 1), Input::Capture(capture(&a, 500)));
+    assert_eq!(k.order(a.order_id).unwrap().captured, Some(a.amount));
+    let snapshot = k.clone();
+
+    for (index, entry) in observer.originals.iter().enumerate() {
+        let probe = observer.probe_replay(&mut k, entry);
+        assert_eq!(check_replay(&probe), Ok(()));
+        assert_eq!(observer.check(&observer.view(&k), f), Ok(()));
+
+        // (a) Alter only the observed reply, including its replay flag/error shape.
+        for reply in [
+            Ok(AppliedReservation {
+                original: observer.originals[1 - index].2,
+                replayed: true,
+            }),
+            Ok(AppliedReservation {
+                original: entry.2,
+                replayed: false,
+            }),
+            Err(KernelError::CommandConflict),
+        ] {
+            let mut altered = probe.clone();
+            altered.reply = reply;
+            assert!(
+                check_replay(&altered)
+                    .unwrap_err()
+                    .starts_with("INV-3 replay reply differs from recorded first result")
+            );
+        }
+
+        // (b) Corrupt the public-state copy and the read-only sentinel separately.
+        let mut changed_state = probe.clone();
+        changed_state.after.remaining -= 1;
+        assert!(
+            check_replay(&changed_state)
+                .unwrap_err()
+                .starts_with("INV-3 replay changed public state")
+        );
+        // The whole-kernel Eq sentinel is the only observable for private now_ms;
+        // flipping this observer boolean does not inject an actual clock mutation.
+        let mut advanced_time = probe.clone();
+        advanced_time.kernel_unchanged = false;
+        assert!(
+            check_replay(&advanced_time)
+                .unwrap_err()
+                .starts_with("INV-3 replay mutated kernel or advanced admitted time")
+        );
+    }
+
+    // (c) Rewrite only saved first-result copies after Send and Capture changed state.
+    let mut rewritten = observer.originals.clone();
+    for entry in &mut rewritten {
+        entry.2 = match entry.2 {
+            ReserveOutcome::Held(_) => ReserveOutcome::Rejected(Rejection::Unavailable),
+            ReserveOutcome::Rejected(_) => ReserveOutcome::Held(a.order_id),
+        };
+        let probe = observer.probe_replay(&mut k, entry);
+        assert!(
+            check_replay(&probe)
+                .unwrap_err()
+                .starts_with("INV-3 replay reply differs from recorded first result")
+        );
+    }
+    assert_eq!(k, snapshot, "fixture mutated the kernel");
+    fs::write(output().join("contract-inv3-sensitivity.txt"),
+        "Synthetic INV-3 observer copies rejected: altered replay reply, public-state change, Eq-sentinel/admitted-time change, rewritten first result. Kernel unchanged. Source-informed; no production fault injection.\n").unwrap();
 }
 
 #[test]
