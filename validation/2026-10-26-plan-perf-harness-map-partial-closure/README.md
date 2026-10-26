@@ -205,3 +205,169 @@ No commit, push, reset, GitHub action, comment, branch/tag mutation or merge was
 performed. There is no merge SHA or post-merge CI for this session.
 
 STATUS: READY
+
+
+## PR fix round 2 — 2026-10-26
+
+This section supersedes earlier observability gaps and round-specific state;
+prior sections retain their historical results. Node:
+`plan-plan-perf-harness-map-partial-closure`. The current task is the user-supplied
+node and blocking review findings in this session; there is no task issue or
+current task document under `docs/tasks/`. Historical Task 004 was read as context.
+This is not ASTRA program mode.
+
+Cached `origin/main` and implementation base:
+`a8bc9e853f3b0d82c5c4ee2d0bb4620ac36662e4`.
+Starting implementation head and unchanged final local HEAD:
+`8d310e76e6a0e8999be427e95599b62f1f8b13a5`.
+Branch: `agent/kix-plan-plan-perf-harness-map-partial-closure`.
+`git rev-list --left-right --count origin/main...HEAD` returned `0 2`.
+No task-base drift from cached main; branch is two commits ahead. Live main and
+its delta are unverified because the supervisor forbids network actions, including
+fetch. No rebase or base change occurred. Final committed task head, exact-head
+CI and non-author review belong to supervisor publication; this delivery is an
+uncommitted working-tree patch.
+
+Both blocking findings were accepted and fixed. Existing coverage was mapped
+before editing: L-UNIFORM was partially covered by
+`uniform_order_budget_saturates_before_seat_wrap` (saturation, no observable
+selection), and B-INVENTORY-4096 was partially covered by
+`inventory_is_4096_seats_all_reservable_by_uniform` (total, no observable shape).
+The other requested targets retain their existing coverage and limitations:
+M-CAPACITY, M-FIRST-CAPACITY-INDEX and B-CONFLICT-AT-OBSERVATION-LIMIT were
+sufficiently covered; M-OTHER and C-SMOKE-V4-COUNTS were partially covered for the
+previously documented conditional-input and historical-disclaimer reasons.
+No duplicate tests were added.
+
+| Blocking row | Updated test in `runtime/crates/kix-kernel/tests/performance_harness.rs` | New evidence | Status |
+|---|---|---|---|
+| L-UNIFORM | `uniform_selections_wrap_past_4096_despite_order_saturation` | All first 4096 prepared selections are seats 0–4095 with count 1; actual boundary is 4095 → 0 → 1 over 4098 calls. Existing order-budget Capacity and remaining assertions retained. | PARTIAL → COVERED |
+| B-INVENTORY-4096 | `inventory_is_4096_seats_all_reservable_by_uniform` | Actual constructed inventory has exactly the half-open segment [(0, 4096)]; prior inventory_seats JSON and full-capacity assertions retained. | PARTIAL → COVERED |
+
+`perf_probe.rs` changes are strictly for observability: `Report.reserve_selections`
+copies selections from the actual prepared `Input::Reserve` values subsequently
+consumed by the existing call loop; `Report.inventory_segments` copies public
+segment ranges from the actual `Inventory` value moved into `Kernel::new`.
+Both snapshots occur before the timing origin. No new workload shape or kernel
+semantics is introduced. The shared example does not serialize these diagnostic
+fields; their field-level dead-code allowances match its shared-helper usage.
+The JSON/CSV format and contract are unchanged. No locked kernel code was edited
+or transiently mutated.
+
+Regression sensitivity was checked with two sequential, temporary edits only to
+the allowed probe file. Each targeted test failed as expected (exit 101), then
+the fixed probe was restored byte-for-byte in a `finally` block. Final acceptance
+checks below ran on the restored version.
+
+| Negative control | Exact targeted test command (from `runtime/`, with `CARGO_NET_OFFLINE=true`) | Actual assertion failure |
+|---|---|---|
+| Remove generator modulo (`i % INVENTORY_SEATS` → `i`) | `cargo test -p kix-kernel --test performance_harness --locked uniform_selections_wrap_past_4096_despite_order_saturation -- --exact` | left selections 4095, 4096, 4097; right selections 4095, 0, 1 (all count 1). 0 passed, 1 failed, 10 filtered out. |
+| Split actual construction into `[2048, 2048]` | `cargo test -p kix-kernel --test performance_harness --locked inventory_is_4096_seats_all_reservable_by_uniform -- --exact` | left [(0, 2048), (2048, 4096)]; right [(0, 4096)]. 0 passed, 1 failed, 10 filtered out. |
+
+Commands below ran sequentially after restoration. Cargo commands ran in
+`runtime/` with `CARGO_NET_OFFLINE=true` and cached locked dependencies; Python
+commands ran at the repository root with `PYTHONDONTWRITEBYTECODE=1`. Logs are
+ignored local files under `.local/verification/perf-harness-fix-round-2/` and are
+not delivery artifacts. `.github/workflows/ktx-kernel.yml` and the relevant
+Rust/stdlib blocks in `.github/workflows/protocol.yml` were inspected for local
+equivalents. Rustfmt wrote only the two allowed Rust files, using
+`rustfmt --edition 2024 --config skip_children=true` with their paths.
+
+| Command | Actual result |
+|---|---|
+| `cargo test -p kix-kernel --test performance_harness --locked` | Exit 0; 11 passed, 0 failed, 0 ignored, 0 measured, 0 filtered out. |
+| `cargo test --workspace --locked` | Exit 0; 264 passed, 0 failed across 42 result groups. |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | Exit 0; Finished dev profile, no warnings. |
+| `cargo fmt --check` | Exit 0; no output. |
+| `python3 scripts/check_performance_measurement_evidence_map.py` | Exit 0; performance evidence map ok: Counts: rows=42 COVERED=22 PARTIAL=15 NOT_COVERED=2 NOT_RUN=3 |
+| `python3 scripts/check_performance_measurement_evidence_map.py --self-test` | Exit 0; self-test: pass (2 positive controls, 66 negative fixtures; memory only) |
+| `python3 scripts/check_ci_checker_wiring.py` | Exit 0; ci checker wiring ok: scripts=30 plain=29 self_test=30 self_test_only=1 docs=21 citations=64 |
+| `python3 scripts/check_ci_checker_wiring.py --self-test` | Exit 0; self-test: pass (13 negative controls) |
+| `python3 scripts/check_docs_index.py` | Exit 0; docs index ok: scanned=271 indexed=236 allowlisted=35 |
+| `python3 scripts/check_docs_index.py --self-test` | Exit 0; self-test: pass, all seven negative fixtures detected. |
+| `python3 scripts/verify_runtime_architecture.py` | Exit 0; architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified |
+| `python3 scripts/test_runtime_architecture.py` | Exit 0; Ran 7 tests; OK. |
+
+Actual restored harness output:
+
+```text
+running 11 tests
+test evidence_binding_records_budgets_toolchain_and_non_claims ... ok
+test conflict_saturation_ignores_command_limit ... ok
+test low_load_uniform_is_distinct_from_hot_seat_retry_and_saturation ... ok
+test outcome_summaries_do_not_label_mixed_p99_as_success ... ok
+test first_capacity_index_json_is_zero_based_or_null ... ok
+test capacity_json_is_top_level_and_separate_from_business_reject ... ok
+test memory_probe_reports_saturation_without_recreating_kernel ... ok
+test smoke_final_remaining_matches_v4_smoke_signature ... ok
+test inventory_is_4096_seats_all_reservable_by_uniform ... ok
+test uniform_selections_wrap_past_4096_despite_order_saturation ... ok
+test other_stays_zero_for_every_reachable_probe_input ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+```
+
+Complete task changed paths relative to cached main:
+
+- `docs/README.md` (retained fix-round-1 index pointer; untouched this round).
+- `docs/status/PERFORMANCE_MEASUREMENT_EVIDENCE_MAP.md` (two COVERED promotions,
+  updated test citation/counts and current observability evidence).
+- `runtime/crates/kix-kernel/tests/performance_harness.rs` (two strengthened tests).
+- `runtime/crates/kix-kernel/tests/support/perf_probe.rs` (minimal observability).
+- `validation/2026-10-26-plan-perf-harness-map-partial-closure/README.md` (this record).
+
+Round-2 changes are the last four paths only. No contract, task, `.aiops/`, CI,
+checker, reference or kernel source edits. The four pinned rows remain
+byte-identical to cached main: X-RELEASE-REPRO, X-OUTPUT-FILES and BD-RUN-VALUES
+remain NOT_RUN; BD-FAIL-CLOSED remains NOT_COVERED. Map counts are now
+42 rows: 22 COVERED, 15 PARTIAL, 2 NOT_COVERED, 3 NOT_RUN.
+
+Locked blob checks before and after implementation/tests:
+
+| Path | Before | After |
+|---|---|---|
+| `runtime/crates/kix-kernel/src/lib.rs` | `69564b166f0c27f9af5d8422f0a466b18d74c20f` | `69564b166f0c27f9af5d8422f0a466b18d74c20f` |
+| `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `b607996c83a119c349f1cc90469ac1ba82764e20` | `b607996c83a119c349f1cc90469ac1ba82764e20` |
+
+Class A: actual generated selections and inventory shape match
+PERFORMANCE_MEASUREMENT. No class C contract violation was observed; intentional
+negative controls are test-sensitivity checks, not observed contract violations.
+No new class B behavior was introduced. Capacity still prevents validating seats
+inside the kernel after order exhaustion; the test now verifies generated inputs
+directly. Existing non-zero-other reachability uncertainty and historical smoke
+limitations remain as documented. No approved semantics or policy was invented.
+
+No TPS, p99, goodput or benchmark values are reported; no release probe or
+release-mode measurement was run. This is debug memory-only apparatus evidence,
+not production readiness, durability, distributed fencing, chain finality,
+provider/bank exactly-once, full-system measurement or independent clean-room
+verification. No hardware, paid service, secrets, public endpoint, Sui execution,
+new storage engine, protocol command, policy value or production runtime was
+needed. No STOP condition was encountered; DECISION_REQUIRED.md was not needed.
+
+The supplied CI tail contains no failure log or run identifier. Exact-head KTX CI
+run ID/status/conclusion: unavailable. Exact-head KIX protocol CI run
+ID/status/conclusion: unavailable. Neither workflow was queried or triggered.
+Final committed-head CI and non-author A2 review remain unverified. Local READY
+is a builder handoff status, not merge readiness. No commit, push, reset, network
+or GitHub action, comment, branch/tag mutation or merge was performed. There is
+no merge SHA or post-merge main CI for this delivery.
+
+Final read-only verification: `git diff --exit-code origin/main --` over
+`reference/v0.3-rc1`, `.aiops`, `docs/tasks`, `docs/contracts`, `.github`, `scripts`,
+kernel sources and the locked quarantine test returned exit 0; no untracked
+non-ignored files exist in those paths. `git hash-object` confirmed both lock
+values above. Python compared every tracked reference file blob against
+`git ls-tree -rz HEAD -- reference/v0.3-rc1`; all match. HEAD and cached main
+reference tree IDs both equal `a6ecb124dc2b2267ca6be19e39fbe2aef143074b`.
+The four pinned map rows were compared to `git show origin/main:` and are
+byte-identical. The initial read-only per-file verification command exited 1
+because it parsed Git's quoted non-ASCII path output as a literal path; using
+NUL-delimited `ls-tree -rz` corrected that verifier and returned exit 0. No
+repository file was changed by either verification command.
+
+After the map and validation edits, the map, wiring and documentation-index
+plain checks were repeated; all returned exit 0 with the same counts above.
+`git diff --check` returned exit 0 with no whitespace errors.
+
+STATUS: READY

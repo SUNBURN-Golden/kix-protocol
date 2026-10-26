@@ -317,12 +317,33 @@ fn other_stays_zero_for_every_reachable_probe_input() {
 }
 
 #[test]
-fn uniform_order_budget_saturates_before_seat_wrap() {
-    let report = probe::run(probe::Workload::Uniform, 4097, 8192, 0);
+fn uniform_selections_wrap_past_4096_despite_order_saturation() {
+    let report = probe::run(probe::Workload::Uniform, 4098, 8192, 0);
+    assert_eq!(report.reserve_selections.len(), 4098);
+    for (selection, expected) in report.reserve_selections[..4096].iter().zip(0..4096) {
+        assert_eq!(
+            *selection,
+            kix_kernel::Selection::Seats {
+                first: expected,
+                count: 1
+            }
+        );
+    }
+    assert_eq!(
+        &report.reserve_selections[4095..],
+        &[
+            kix_kernel::Selection::Seats {
+                first: 4095,
+                count: 1
+            },
+            kix_kernel::Selection::Seats { first: 0, count: 1 },
+            kix_kernel::Selection::Seats { first: 1, count: 1 },
+        ]
+    );
     assert_eq!(probe::ORDER_LIMIT, 4096);
     assert_eq!(
         (report.held, report.rejected, report.capacity),
-        (4096, 0, 1)
+        (4096, 0, 2)
     );
     assert_eq!(report.first_capacity, Some(4096));
     assert_eq!(report.remaining, 0);
@@ -334,8 +355,8 @@ fn uniform_order_budget_saturates_before_seat_wrap() {
     assert_eq!(top_level(&json, "commands_budget"), "8192");
     assert_eq!(top_level(&json, "orders_limit"), "4096");
     assert_separated(&report, 0, 8192);
-    // Capacity precedes inventory validation at the order limit. These outcomes
-    // prove saturation, but cannot distinguish a wrapped seat from an invalid one.
+    // Capacity precedes inventory validation at the order limit; the recorded
+    // requests above verify wrapping even when the kernel returns Capacity.
 }
 
 #[test]
@@ -346,6 +367,7 @@ fn inventory_is_4096_seats_all_reservable_by_uniform() {
         4095
     );
     let report = probe::run(probe::Workload::Uniform, 4096, 4096, 0);
+    assert_eq!(report.inventory_segments, vec![(0, 4096)]);
     assert_eq!(
         (report.held, report.rejected, report.capacity),
         (4096, 0, 0)
@@ -354,7 +376,6 @@ fn inventory_is_4096_seats_all_reservable_by_uniform() {
     let json = report.json(0, 4096);
     assert_eq!(top_level(&json, "inventory_seats"), "4096");
     assert_eq!(top_level(&json, "remaining"), "0");
-    // Single-seat selections cannot establish the segment boundary shape.
 }
 
 #[test]
