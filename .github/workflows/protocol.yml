@@ -254,6 +254,8 @@ jobs:
           python3 scripts/check_bcs1_evidence_map.py --self-test
           python3 scripts/check_performance_measurement_evidence_map.py
           python3 scripts/check_performance_measurement_evidence_map.py --self-test
+          python3 scripts/check_feature_semantics_evidence_map.py
+          python3 scripts/check_feature_semantics_evidence_map.py --self-test
           python3 scripts/check_ci_checker_wiring.py
           python3 scripts/check_ci_checker_wiring.py --self-test
           python3 scripts/check_stage5_host.py --self-test
