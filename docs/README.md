@@ -357,6 +357,8 @@
 
 - [plan-plan-performance-measurement-clause-evid](../validation/2026-10-26-plan-performance-measurement-clause-evid/README.md) — Builder-authored v4 performance clause-to-test map ([지도](status/PERFORMANCE_MEASUREMENT_EVIDENCE_MAP.md)) and stdlib checker; historical smoke counts remain historical, release probe NOT_RUN, product TPS/p99/failure-rate values UNDETERMINED (owner: User), no benchmark or grade change.
 
+- [plan-plan-perf-harness-map-partial-closure](../validation/2026-10-26-plan-perf-harness-map-partial-closure/README.md) — Builder-authored public-API perf harness assertions and evidence-map updates; remaining observability gaps stay PARTIAL, release probe NOT_RUN, no benchmark or production claim.
+
 - [plan-plan-open-decisions-addendum-20261026-ai](../validation/2026-10-26-plan-open-decisions-addendum-20261026-ai/README.md) — [AI 위임 검사 순서 정지 보충 기록](status/OPEN_USER_DECISIONS_20261026_ADDENDUM.md): 출처·소유자·선택지별 기계 수집 영향 목록만. 선택·수정·노드 상태 변경이 아니다.
 
 - [plan-plan-ci-checker-wiring-guard](../validation/2026-10-26-plan-ci-checker-wiring-guard/README.md) — Stdlib guard that every checker is wired plain and `--self-test` (stage-5 self-test-only allowlisted) and every map-cited checker exists and runs; seven dated wiring amendments, no grade change.

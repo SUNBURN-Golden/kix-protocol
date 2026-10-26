@@ -130,3 +130,78 @@ Exact-head KTX CI run ID/status/conclusion: unavailable; not requested or querie
 Remaining uncertainty/follow-up candidates: the map's 17 PARTIAL gaps, 2 NOT_COVERED rows and 3 NOT_RUN release rows remain explicit; non-zero other, segment boundaries and seat-wrap observability require separate authorized scope. Live-main freshness, final committed-head CI and non-author A2 review remain unverified. No hardware purchase, money/paid service, credentials, live funds/provider/KYC call, endpoint, Sui execution, storage engine, coin/TIX module, policy value, protocol command or production runtime was needed.
 
 Local builder delivery: READY. Merge-ready is not claimed.
+
+## PR fix round 1 — 2026-10-26
+
+The sections above preserve the initial builder's evidence. This section records
+the subsequent fix session and supersedes the initial session's uncommitted-head
+description for this round only. Task input remains the supervisor-provided node;
+there is no current task document under `docs/tasks/` or task issue for this node.
+
+Cached `origin/main` and implementation base:
+`a8bc9e853f3b0d82c5c4ee2d0bb4620ac36662e4`.
+Starting implementation head and unchanged final local HEAD:
+`0672452e35a8582ee824dd29fd0dddd94320b453`.
+Branch: `agent/kix-plan-plan-perf-harness-map-partial-closure`.
+`git rev-list --left-right --count origin/main...HEAD` returned `0 1`;
+the branch is one commit ahead of cached main. Live-main freshness is unverified:
+the supervisor prohibited all network actions, including fetch. No rebase or
+base change occurred. The fix is uncommitted for the supervisor to publish.
+
+The supplied review contained no blocking findings. The supplied CI tail failed
+the stdlib document step because this validation README was not indexed. Before
+editing, `python3 scripts/check_docs_index.py` reproduced exit 1 with:
+
+```text
+docs index coverage check failed:
+- not indexed: validation/2026-10-26-plan-perf-harness-map-partial-closure/README.md
+```
+
+Added one record pointer in `docs/README.md`. No checker or CI change was needed.
+Round-specific changed paths are `docs/README.md` and this validation README.
+The complete task changed-path list relative to cached main is those two files,
+`runtime/crates/kix-kernel/tests/performance_harness.rs` and
+`docs/status/PERFORMANCE_MEASUREMENT_EVIDENCE_MAP.md`.
+No new tests were added this round: the seven existing additions and their
+coverage mapping above remain applicable, including the four PARTIAL targets.
+
+Commands below ran after the index fix. Cargo ran from `runtime/` with
+`CARGO_NET_OFFLINE=true`; Python ran from the repository root with
+`PYTHONDONTWRITEBYTECODE=1`. Commands used foreground subprocesses and cached
+dependencies. Complete captured broad-check output is local only under
+`/tmp/kix-perf-harness-fix-round-1/`.
+
+| Command | Actual result |
+|---|---|
+| `cargo test -p kix-kernel --test performance_harness --locked` | Exit 0; `test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s` |
+| `cargo test --workspace --locked` | Exit 0; 264 passed, 0 failed across 42 result groups. |
+| `cargo clippy --workspace --all-targets --locked -- -D warnings` | Exit 0; `Finished` dev profile `[unoptimized + debuginfo] target(s) in 0.09s`. |
+| `cargo fmt --check` | Exit 0; no output. |
+| `python3 scripts/check_performance_measurement_evidence_map.py` | Exit 0; `performance evidence map ok: Counts: rows=42 COVERED=20 PARTIAL=17 NOT_COVERED=2 NOT_RUN=3` |
+| `python3 scripts/check_performance_measurement_evidence_map.py --self-test` | Exit 0; `self-test: pass (2 positive controls, 66 negative fixtures; memory only)` |
+| `python3 scripts/check_ci_checker_wiring.py` | Exit 0; `ci checker wiring ok: scripts=30 plain=29 self_test=30 self_test_only=1 docs=21 citations=64` |
+| `python3 scripts/check_ci_checker_wiring.py --self-test` | Exit 0; `self-test: pass (13 negative controls)` |
+| `python3 scripts/check_docs_index.py` | Exit 0; `docs index ok: scanned=271 indexed=236 allowlisted=35` |
+| `python3 scripts/check_docs_index.py --self-test` | Exit 0; `self-test: pass` after detecting all seven negative fixtures. |
+
+Both locked blobs matched before editing and after the checks:
+`src/lib.rs` = `69564b166f0c27f9af5d8422f0a466b18d74c20f`;
+`tests/quarantine_capacity.rs` = `b607996c83a119c349f1cc90469ac1ba82764e20`.
+Read-only Git/Python comparison confirmed the four pinned map rows remain
+byte-identical to cached main. `git diff --exit-code origin/main --` over
+`reference/v0.3-rc1`, `.aiops`, `docs/tasks`, `docs/contracts`, `.github`, `scripts`,
+kernel sources, the locked quarantine test and `tests/support/perf_probe.rs`
+returned exit 0. The unchanged `reference/v0.3-rc1` tree is
+`a6ecb124dc2b2267ca6be19e39fbe2aef143074b`.
+
+No class C violation or new class B characterization was found; the existing
+observability limitations and non-claims above remain. No release probe,
+performance measurement, production runtime or external service was used.
+The supplied KIX protocol CI tail has a failure, with no run ID supplied;
+exact-head KTX CI run ID/status/conclusion was not supplied. Neither workflow
+was queried or triggered. Final committed-head CI and non-author review remain
+the supervisor's responsibility; local READY does not claim merge readiness.
+No commit, push, reset, GitHub action, comment, branch/tag mutation or merge was
+performed. There is no merge SHA or post-merge CI for this session.
+
+STATUS: READY
