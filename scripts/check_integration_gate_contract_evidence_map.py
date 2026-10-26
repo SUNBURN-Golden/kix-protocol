@@ -17,6 +17,7 @@ WORKFLOW = '.github/workflows/protocol.yml'
 SELF = 'scripts/check_integration_gate_contract_evidence_map.py'
 WRAPPER = 'scripts/check_integration_gate_openapi.py'
 TEST_PATH = 'integration_gate/test_http_gate.py'
+OFFLINE_TEST_PATH = 'integration_gate/test_offline_limits.py'
 CHECKER_PATHS = ('scripts/check_openapi_contract.py', 'integration_gate/openapi_doc.py')
 HOST_OWNER = 'Supervisor / repository owner controlling the execution host'
 HEADINGS = {
@@ -261,7 +262,7 @@ def find_problems(map_text, contract, root=ROOT, files=None):
             if path.startswith('reference/v0.3-rc1/'):
                 problems.append(where + ' is forbidden reference')
                 continue
-            allowed = (TEST_PATH,) if column == TESTS else CHECKER_PATHS
+            allowed = (TEST_PATH, OFFLINE_TEST_PATH) if column == TESTS else CHECKER_PATHS
             if path not in allowed:
                 problems.append(where + ' is outside allowed citation paths')
                 continue
@@ -391,6 +392,8 @@ def self_test(map_text, contract):
         case(label, changed, reason=reason)
     for label, value, reason in (
         ('fabricated method', '`' + TEST_PATH + '::TransportTests.test_fabricated`', 'is not a test method'),
+        ('fabricated offline method', '`' + OFFLINE_TEST_PATH + '::OfflineLimitsTests.test_fabricated`',
+         'is not a test method'),
         ('module helper', '`' + TEST_PATH + '::assert_gate_headers`', 'needs a nonempty qualified'),
         ('wrong class', '`' + TEST_PATH + '::BrowserAccessTests.test_health_is_not_readiness`', 'is not a test method'),
         ('bare path', '`' + TEST_PATH + '`', 'needs a nonempty qualified'),
