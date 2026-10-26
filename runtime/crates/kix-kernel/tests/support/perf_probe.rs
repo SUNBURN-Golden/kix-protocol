@@ -189,6 +189,14 @@ pub struct OutcomeSummary {
 
 pub struct Report {
     pub workload: &'static str,
+    /// Public segment ranges from the inventory moved into Kernel::new.
+    /// Read by the harness; the shared example does not export this diagnostic.
+    #[allow(dead_code)]
+    pub inventory_segments: Vec<(u16, u16)>,
+    /// Actual prepared reserve selections, in call order, copied before timing.
+    /// Read by the harness; the shared example does not export this diagnostic.
+    #[allow(dead_code)]
+    pub reserve_selections: Vec<Selection>,
     pub total: usize,
     pub held: usize,
     pub replay: usize,
@@ -242,12 +250,18 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
     assert!(count > 0 && count <= 100_000);
     assert!(command_limit > 0);
     let commands_budget = command_limit.max(2);
+    let inventory =
+        Inventory::seats(&[u16::try_from(INVENTORY_SEATS).expect("seat segment fits u16")])
+            .unwrap();
+    let inventory_segments = match &inventory {
+        Inventory::Seats { segments, .. } => segments.clone(),
+        Inventory::GeneralAdmission { .. } => Vec::new(),
+    };
     let mut kernel = Kernel::new(
         id(80),
         context(0).fence,
         1,
-        Inventory::seats(&[u16::try_from(INVENTORY_SEATS).expect("seat segment fits u16")])
-            .unwrap(),
+        inventory,
         Limits {
             commands: commands_budget,
             orders: ORDER_LIMIT,
@@ -290,6 +304,14 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
     }
     let mut report = Report {
         workload: workload.name(),
+        inventory_segments,
+        reserve_selections: inputs
+            .iter()
+            .filter_map(|input| match input {
+                Input::Reserve(value) => Some(value.selection),
+                Input::Capture(_) => None,
+            })
+            .collect(),
         total: count,
         held: 0,
         replay: 0,
