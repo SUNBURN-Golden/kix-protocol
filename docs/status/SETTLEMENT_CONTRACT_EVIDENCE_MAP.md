@@ -119,3 +119,5 @@ external integrations, kernel scan verification and the
 §9.2 interpretation remain follow-up boundaries; no policy values are chosen here.
 See the [execution record](../../validation/2026-10-25-settlement-contract-clause-evidence-map/README.md)
 for commands and preservation checks.
+
+Amendment 2026-10-26: `scripts/check_settlement_evidence_map.py` is now wired, plain and `--self-test`, into the `Stdlib offline document checks` step of `.github/workflows/protocol.yml` by #289; the statement above records the state when this map was written.
