@@ -278,6 +278,7 @@ jobs:
           python3 scripts/check_openapi_contract.py --self-test
           python3 scripts/check_integration_gate_openapi.py
           python3 scripts/check_integration_gate_openapi.py --self-test
+          python3 -m unittest integration_gate.test_offline_limits
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5
         if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         with:
