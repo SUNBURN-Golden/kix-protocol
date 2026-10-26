@@ -541,3 +541,152 @@ fn fast64_rejects_wrong_asset_version_or_hash_at_export() {
         Err(FeatureIrError::Fast64AmountOutOfRange)
     );
 }
+
+#[test]
+fn fast64_identity_mismatch_precedes_amount_range_for_each_identity_field() {
+    let asset = AssetId::from_bytes([1; 32]);
+    let version = RegistryVersion::new(2).unwrap();
+    let hash = Hash32::from_bytes([3; 32]);
+    let profile = Fast64MoneyProfile::checked(
+        MoneyProfileKey {
+            asset_id: asset,
+            registry_version: version,
+        },
+        hash,
+        100,
+    )
+    .unwrap();
+
+    for atoms in [101, i64::MAX as u128, i64::MAX as u128 + 1, u128::MAX] {
+        let matching = AssetAmount::checked(asset, atoms, u128::MAX, version, hash).unwrap();
+        assert_eq!(
+            profile.export_amount(matching),
+            Err(FeatureIrError::Fast64AmountOutOfRange),
+            "matching identity must expose the range failure at {atoms} atoms"
+        );
+        for (a, v, h) in [
+            (AssetId::from_bytes([9; 32]), version, hash),
+            (asset, RegistryVersion::new(3).unwrap(), hash),
+            (asset, version, Hash32::from_bytes([9; 32])),
+            (
+                AssetId::from_bytes([9; 32]),
+                RegistryVersion::new(3).unwrap(),
+                Hash32::from_bytes([9; 32]),
+            ),
+        ] {
+            let amount = AssetAmount::checked(a, atoms, u128::MAX, v, h).unwrap();
+            // Identity and range errors are distinct. Which identity field failed
+            // is not reported; this is a class-B characterization, not a new rule.
+            assert_eq!(
+                profile.export_amount(amount),
+                Err(FeatureIrError::Fast64IdentityMismatch),
+                "identity must precede range at {atoms} atoms for ({a:?}, {v:?}, {h:?})"
+            );
+        }
+    }
+}
+
+#[test]
+fn fast64_checked_range_is_inclusive_at_claim_and_capped_at_i64_max() {
+    let asset = AssetId::from_bytes([1; 32]);
+    let version = RegistryVersion::new(2).unwrap();
+    let hash = Hash32::from_bytes([3; 32]);
+    let key = MoneyProfileKey {
+        asset_id: asset,
+        registry_version: version,
+    };
+    let make_amount = |atoms| AssetAmount::checked(asset, atoms, u128::MAX, version, hash).unwrap();
+
+    // The existing export test covers 100/101 and i64::MAX/MAX+1.
+    // Add the empty range, smallest positive range and ceiling-adjacent range.
+    for max in [0, 1, i64::MAX as u128 - 1] {
+        let profile = Fast64MoneyProfile::checked(key, hash, max).unwrap();
+        assert_eq!(profile.execution_max_atoms(), max as i64);
+        assert_eq!(profile.export_amount(make_amount(max)), Ok(max as i64));
+        assert_eq!(
+            profile.export_amount(make_amount(max + 1)),
+            Err(FeatureIrError::Fast64AmountOutOfRange)
+        );
+    }
+    assert_eq!(
+        Fast64MoneyProfile::checked(key, hash, u128::MAX),
+        Err(FeatureIrError::Fast64ProfileOutOfRange)
+    );
+    let ceiling = Fast64MoneyProfile::checked(key, hash, i64::MAX as u128).unwrap();
+    let other_version = AssetAmount::checked(
+        asset,
+        i64::MAX as u128,
+        u128::MAX,
+        RegistryVersion::new(3).unwrap(),
+        hash,
+    )
+    .unwrap();
+    assert_eq!(
+        ceiling.export_amount(other_version),
+        Err(FeatureIrError::Fast64IdentityMismatch)
+    );
+}
+
+#[test]
+fn fast64_checked_claim_is_not_inherited_across_registry_versions() {
+    let asset = AssetId::from_bytes([1; 32]);
+    let v2 = RegistryVersion::new(2).unwrap();
+    let v3 = RegistryVersion::new(3).unwrap();
+    let hash = Hash32::from_bytes([3; 32]);
+    let key2 = MoneyProfileKey {
+        asset_id: asset,
+        registry_version: v2,
+    };
+    let key3 = MoneyProfileKey {
+        asset_id: asset,
+        registry_version: v3,
+    };
+    let make_amount = |atoms, version, registry_hash| {
+        AssetAmount::checked(asset, atoms, u128::MAX, version, registry_hash).unwrap()
+    };
+
+    let p2 = Fast64MoneyProfile::checked(key2, hash, i64::MAX as u128).unwrap();
+    let p3 = Fast64MoneyProfile::checked(key3, hash, 10).unwrap();
+    assert_eq!(p3.export_amount(make_amount(10, v3, hash)), Ok(10));
+    assert_eq!(
+        p3.export_amount(make_amount(11, v3, hash)),
+        Err(FeatureIrError::Fast64AmountOutOfRange)
+    );
+    for atoms in [10, 11] {
+        assert_eq!(
+            p2.export_amount(make_amount(atoms, v3, hash)),
+            Err(FeatureIrError::Fast64IdentityMismatch)
+        );
+    }
+
+    // A larger claim in a later version cannot admit an earlier-version amount.
+    let q2 = Fast64MoneyProfile::checked(key2, hash, 10).unwrap();
+    let q3 = Fast64MoneyProfile::checked(key3, hash, 100).unwrap();
+    assert_eq!(
+        q2.export_amount(make_amount(11, v2, hash)),
+        Err(FeatureIrError::Fast64AmountOutOfRange)
+    );
+    assert_eq!(
+        q3.export_amount(make_amount(11, v2, hash)),
+        Err(FeatureIrError::Fast64IdentityMismatch)
+    );
+
+    // checked validates a claimed range, not registry authenticity. Authentication
+    // remains owned by k-stage7-authenticated-export.
+    let other_hash = Hash32::from_bytes([9; 32]);
+    let other_claim = Fast64MoneyProfile::checked(key2, other_hash, 10).unwrap();
+    assert_ne!(q2, other_claim);
+    assert_eq!(
+        other_claim.export_amount(make_amount(10, v2, other_hash)),
+        Ok(10)
+    );
+    assert_eq!(q2.export_amount(make_amount(10, v2, hash)), Ok(10));
+    assert_eq!(
+        q2.export_amount(make_amount(10, v2, other_hash)),
+        Err(FeatureIrError::Fast64IdentityMismatch)
+    );
+    assert_eq!(
+        other_claim.export_amount(make_amount(10, v2, hash)),
+        Err(FeatureIrError::Fast64IdentityMismatch)
+    );
+}
