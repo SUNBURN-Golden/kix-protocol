@@ -20,6 +20,7 @@ TEST_FILES = (
     'runtime/crates/kix-feature-ir/tests/audit_regressions.rs',
     'runtime/crates/kix-feature-ir/tests/plan_limits.rs',
     'runtime/crates/kix-feature-ir/tests/schema_bound.rs',
+    'runtime/crates/kix-feature-ir/tests/validator_matrix.rs',
 )
 EXPECTED = {
     'S1-AUTHORITY': (1, 'backend adapter는 upstream default를 사용하지 않고 KIX policy를 명시적으로 전달한다.'),
