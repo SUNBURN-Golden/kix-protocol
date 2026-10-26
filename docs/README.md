@@ -339,6 +339,8 @@
 
 ## 2026-10-26 검증 기록 색인 — 위치 안내만
 
+- [plan-plan-integration-gate-contract-clause-ev](../validation/2026-10-26-plan-integration-gate-contract-clause-ev/README.md) — Builder-authored integration-gate contract clause-to-test map ([지도](status/INTEGRATION_GATE_CONTRACT_EVIDENCE_MAP.md)) and CI-wired static stdlib checker; seeded journey differential stays an owned open gap, no HTTP tests, gate behavior, contract or grade change.
+
 - [plan-plan-feature-semantics-v1-evidence-map](../validation/2026-10-26-plan-feature-semantics-v1-evidence-map/README.md) — Builder-authored Feature Semantics v1 §§1–10 clause-to-test map ([지도](status/FEATURE_SEMANTICS_V1_EVIDENCE_MAP.md)) and stdlib citation checker; execution/backend conformance stays NOT_COVERED, class-B characterizations retained, no runtime, contract or grade change.
 
 - [plan-plan-rs4-l2-option-impact-inventory](../validation/2026-10-26-plan-rs4-l2-option-impact-inventory/README.md) — [RS-4 L2 결정 선택지별 영향 목록](status/RS4_L2_DECISION_IMPACT_INVENTORY.md): 트리 내 수락 문구·지도 행·L1 분모와 L2 미정 입력·후속 의존성만. 선택·값·측정·노드 상태 변경이 아니다.
