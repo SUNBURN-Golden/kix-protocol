@@ -377,6 +377,8 @@
 
 - [plan-plan-integration-gate-map-offline-closur](../validation/2026-10-26-plan-integration-gate-map-offline-closur/README.md) — Offline default limits/port and pinned-source envelope/identifier assertions; two map gaps closed, limits/bind remain PARTIAL, no listener or gate behavior change.
 
+- [plan-plan-evidence-map-rollup-check](../validation/2026-10-26-plan-evidence-map-rollup-check/README.md) — [증거 지도 롤업](status/EVIDENCE_MAP_ROLLUP.md) and stdlib consistency checker; index only, not a review, acceptance or grade; no map status, owner or grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
