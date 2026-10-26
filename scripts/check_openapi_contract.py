@@ -13,8 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from integration_gate.fsm_contract import drift_problems, load_fsm
+from integration_gate.openapi_doc import validate as validate_gate
 SOURCE_PATH = ROOT / 'reference/v0.3-rc1/protocol_contract.json'
 OPENAPI_PATH = ROOT / 'docs/contracts/openapi/kix-protocol.contract-only.openapi.json'
+GATE_OPENAPI_PATH = ROOT / 'docs/contracts/openapi/kix-protocol.integration-gate.openapi.json'
+README_PATH = ROOT / 'docs/contracts/openapi/README.md'
+README_PIN_HEADING = '## 핀'
 SPEC_ENVELOPE = 'reference/v0.1/KIX_프로토콜_통합명세_v0.1.md §9.1'
 LOCAL_CALL = 'reference/v0.3-rc1/core.py Core.execute'
 PLACEHOLDER_PATH = '/x-kix-contract-only/local-call'
@@ -311,7 +315,69 @@ def _walk(value):
             yield from _walk(child)
 
 
-def validate(contract, source_bytes, document, fsm, fsm_bytes):
+def readme_pin_problems(readme_text, document, gate_document):
+    """Compare the human-readable pin table with both machine-readable sources."""
+    lines = readme_text.splitlines()
+    if lines.count(README_PIN_HEADING) != 1:
+        return ['README pin table expected one heading: ' + README_PIN_HEADING]
+    start = lines.index(README_PIN_HEADING) + 1
+    end = next((i for i in range(start, len(lines)) if lines[i].startswith('## ')), len(lines))
+    rows = {}
+    for line in lines[start:end]:
+        if not line.startswith('|'):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+        if cells == ['항목', '값'] or all(cell and not cell.strip('-:') for cell in cells):
+            continue
+        rows.setdefault(cells[0], []).append(cells[1:])
+
+    cs = document.get('x-kix-source') or {}
+    gs = gate_document.get('x-kix-source') or {}
+    expected = {
+        '원본 경로': [('contract-only', 'path', cs.get('path')),
+                    ('integration-gate', 'protocolContract', gs.get('protocolContract'))],
+    }
+    for label in ('git blob', 'sha256', 'domain'):
+        field = 'gitBlob' if label == 'git blob' else label
+        expected[label] = [('contract-only', field, cs.get(field)),
+                           ('integration-gate', field, gs.get(field))]
+    for label, field in (('원본 경로', 'path'), ('git blob', 'gitBlob'),
+                         ('sha256', 'sha256'), ('domain', 'domain')):
+        expected['FSM ' + label] = [
+            (kind, 'fsmSource.' + field, (source.get('fsmSource') or {}).get(field))
+            for kind, source in (('contract-only', cs), ('integration-gate', gs))
+        ]
+    expected['`x-kix-contract-status`'] = [
+        ('contract-only', 'x-kix-contract-status', document.get('x-kix-contract-status')),
+    ]
+    errors = []
+    for label in rows.keys() - expected.keys():
+        errors.append('README pin table unexpected row: ' + label)
+    for label, sources in expected.items():
+        if label not in rows:
+            errors.append('README pin table missing row: ' + label)
+            continue
+        if len(rows[label]) != 1:
+            errors.append('README pin table duplicated row: ' + label)
+        for kind, field, value in sources:
+            if not isinstance(value, str) or rows[label] != [['`' + value + '`']]:
+                errors.append('README pin table mismatch: %s != %s %s' % (label, kind, field))
+    return errors
+
+
+def gate_marker_problems(gate_document):
+    """Keep the published gate's public/production markers explicitly false."""
+    errors = []
+    if gate_document.get('x-kix-public-host') is not False:
+        errors.append('integration-gate publicHost must be false')
+    if (gate_document.get('x-kix-live-http-server') or {}).get('publicHost') is not False:
+        errors.append('integration-gate liveHttpServer.publicHost must be false')
+    if gate_document.get('x-kix-production-endpoint') is not False:
+        errors.append('integration-gate productionEndpoint must be false')
+    return errors
+
+
+def validate(contract, source_bytes, document, fsm, fsm_bytes, gate_document=None):
     """Independent checks against both pinned sources. Returns error strings."""
     errors = []
     core_commands = contract['commands']
@@ -326,6 +392,16 @@ def validate(contract, source_bytes, document, fsm, fsm_bytes):
     def need(condition, message):
         if not condition:
             errors.append(message)
+
+    documents = [('contract-only', document)]
+    if gate_document is not None:
+        documents.append(('integration-gate', gate_document))
+        errors.extend(gate_marker_problems(gate_document))
+    for label, item in documents:
+        for path, path_item in (item.get('paths') or {}).items():
+            for key in path_item:
+                if key.lower() == 'options':
+                    errors.append('OPTIONS operation forbidden: %s %s' % (label, path))
 
     need(document.get('openapi') == '3.1.0', 'openapi version must be 3.1.0')
     info = document.get('info') or {}
@@ -435,9 +511,10 @@ def validate(contract, source_bytes, document, fsm, fsm_bytes):
     return errors
 
 
-def self_test(contract, source_bytes, fsm, fsm_bytes):
+def self_test(contract, source_bytes, fsm, fsm_bytes, gate_document, readme_text):
     document = build_document(contract, source_bytes, fsm, fsm_bytes)
-    if validate(contract, source_bytes, document, fsm, fsm_bytes):
+    if (validate(contract, source_bytes, document, fsm, fsm_bytes, gate_document=gate_document)
+            or readme_pin_problems(readme_text, document, gate_document)):
         print('self-test: canonical document failed validation', file=sys.stderr)
         return 1
     broken = copy.deepcopy(document)
@@ -472,6 +549,68 @@ def self_test(contract, source_bytes, fsm, fsm_bytes):
     if not validate(contract, source_bytes, broken, fsm, fsm_bytes):
         print('self-test: live status was accepted', file=sys.stderr)
         return 1
+
+    cases = []
+    broken = copy.deepcopy(document)
+    broken['components']['schemas']['kyc_verify'] = {'type': 'object', 'additionalProperties': False}
+    operation = copy.deepcopy(broken['x-kix-local-call-operations'][0])
+    operation.update(operationId='kyc_verify', action='kyc_verify',
+                     requestBodySchema='#/components/schemas/kyc_verify')
+    broken['x-kix-local-call-operations'].append(operation)
+    broken['x-kix-action-body-map']['kyc_verify'] = '#/components/schemas/kyc_verify'
+    cases.append(('added command', validate(contract, source_bytes, broken, fsm, fsm_bytes),
+                  'schema names drifted'))
+    broken = copy.deepcopy(document)
+    broken['components']['securitySchemes'] = {'fixture': {'type': 'http', 'scheme': 'bearer'}}
+    cases.append(('security scheme', validate(contract, source_bytes, broken, fsm, fsm_bytes),
+                  'forbidden transport or auth field: securitySchemes'))
+    for label in ('contract-only', 'gate'):
+        broken = copy.deepcopy(document)
+        broken_gate = copy.deepcopy(gate_document)
+        target = broken if label == 'contract-only' else broken_gate
+        target['paths'][PLACEHOLDER_PATH]['options'] = {'operationId': 'preflight'}
+        cases.append((label + ' OPTIONS',
+                      validate(contract, source_bytes, broken, fsm, fsm_bytes,
+                               gate_document=broken_gate),
+                      'OPTIONS operation forbidden: ' + ('integration-gate' if label == 'gate' else label)))
+    for label, field, nested, diagnostic in (
+        ('gate publicHost', 'x-kix-public-host', None, 'publicHost must be false'),
+        ('gate liveHttpServer.publicHost', 'x-kix-live-http-server', 'publicHost',
+         'liveHttpServer.publicHost must be false'),
+        ('gate productionEndpoint', 'x-kix-production-endpoint', None,
+         'productionEndpoint must be false'),
+    ):
+        broken_gate = copy.deepcopy(gate_document)
+        if nested is None:
+            broken_gate[field] = True
+        else:
+            broken_gate[field][nested] = True
+        if not validate_gate(ROOT, broken_gate):
+            print('self-test: gate validator accepted ' + label, file=sys.stderr)
+            return 1
+        cases.append((label, validate(contract, source_bytes, document, fsm, fsm_bytes,
+                                      gate_document=broken_gate), diagnostic))
+    broken_readme = readme_text.replace(document['x-kix-source']['sha256'], '0' * 64)
+    cases.append(('README sha256', readme_pin_problems(broken_readme, document, gate_document),
+                  'README pin table mismatch: sha256'))
+    broken_readme = '\n'.join(line for line in readme_text.splitlines()
+                              if not line.startswith('| FSM domain |'))
+    cases.append(('README row removed', readme_pin_problems(broken_readme, document, gate_document),
+                  'missing row: FSM domain'))
+    row = next(line for line in readme_text.splitlines() if line.startswith('| git blob |'))
+    broken_readme = readme_text.replace(row, row + '\n' + row, 1)
+    cases.append(('README row duplicated', readme_pin_problems(broken_readme, document, gate_document),
+                  'duplicated row: git blob'))
+    broken_gate = copy.deepcopy(gate_document)
+    broken_gate['x-kix-source']['sha256'] = '0' * 64
+    cases.append(('gate pin drift', readme_pin_problems(readme_text, document, broken_gate),
+                  '!= integration-gate'))
+    for label, errors, expected in cases:
+        matching = next((error for error in errors if expected in error), None)
+        if matching is None:
+            print('self-test: missing diagnostic for ' + label, file=sys.stderr)
+            return 1
+        print('self-test: detected %s: %s' % (label, matching))
     print('self-test: pass')
     return 0
 
@@ -482,7 +621,9 @@ def main(argv):
     fsm, fsm_bytes = load_fsm(ROOT)
     document = build_document(contract, source_bytes, fsm, fsm_bytes)
     if '--self-test' in argv:
-        return self_test(contract, source_bytes, fsm, fsm_bytes)
+        gate = json.loads(GATE_OPENAPI_PATH.read_text(encoding='utf-8'))
+        readme = README_PATH.read_text(encoding='utf-8')
+        return self_test(contract, source_bytes, fsm, fsm_bytes, gate, readme)
     if '--write' in argv:
         OPENAPI_PATH.parent.mkdir(parents=True, exist_ok=True)
         OPENAPI_PATH.write_text(render(document), encoding='utf-8')
@@ -492,7 +633,10 @@ def main(argv):
         print('missing ' + str(OPENAPI_PATH), file=sys.stderr)
         return 1
     actual = json.loads(OPENAPI_PATH.read_text(encoding='utf-8'))
-    errors = validate(contract, source_bytes, actual, fsm, fsm_bytes)
+    gate = json.loads(GATE_OPENAPI_PATH.read_text(encoding='utf-8'))
+    readme = README_PATH.read_text(encoding='utf-8')
+    errors = validate(contract, source_bytes, actual, fsm, fsm_bytes, gate_document=gate)
+    errors.extend(readme_pin_problems(readme, actual, gate))
     if actual != document:
         errors.append('committed OpenAPI document != canonical derivation')
     if errors:
