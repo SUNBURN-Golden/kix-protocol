@@ -230,6 +230,194 @@ fn evidence_binding_records_budgets_toolchain_and_non_claims() {
     assert!(json.contains("\"kernel_resets_during_workload\":0"));
 }
 
+#[test]
+fn capacity_json_is_top_level_and_separate_from_business_reject() {
+    for (workload, count, rate, expected) in [
+        (probe::Workload::Uniform, 512, 0, 384),
+        (probe::Workload::HotSeat, 512, 0, 384),
+        (probe::Workload::Retry, 512, 0, 0),
+        (probe::Workload::Conflict, 512, 0, 385),
+        (probe::Workload::Uniform, 32, 0, 0),
+        (probe::Workload::HotSeat, 16, 10_000, 0),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        assert_eq!(report.capacity, expected);
+        let json = report.json(rate, 128);
+        assert_eq!(top_level(&json, "capacity"), expected.to_string());
+        assert_eq!(json.matches("\"capacity\":").count(), 1);
+        if matches!(workload, probe::Workload::HotSeat) && count == 512 {
+            assert_eq!(top_level(&json, "business_rejected"), "127");
+        }
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn first_capacity_index_json_is_zero_based_or_null() {
+    for (workload, index, previous) in [
+        (probe::Workload::Uniform, 128, ",held"),
+        (probe::Workload::Conflict, 127, ",conflict_retained"),
+    ] {
+        let report = probe::run(workload, 512, 128, 0);
+        assert_eq!(report.first_capacity, Some(index));
+        assert_eq!(
+            top_level(&report.json(0, 128), "first_capacity_index"),
+            index.to_string()
+        );
+        let rows: Vec<_> = report.raw_csv.lines().skip(1).collect();
+        assert!(rows[index - 1].ends_with(previous));
+        assert!(rows[index].starts_with(&format!("{index},")));
+        assert!(rows[index].ends_with(",capacity"));
+    }
+    for (workload, count, rate) in [
+        (probe::Workload::Retry, 512, 0),
+        (probe::Workload::Uniform, 32, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        assert!(report.first_capacity.is_none());
+        assert_eq!(
+            top_level(&report.json(rate, 128), "first_capacity_index"),
+            "null"
+        );
+    }
+}
+
+#[test]
+fn other_stays_zero_for_every_reachable_probe_input() {
+    // Exercise all four input shapes and representative budget/rate boundaries.
+    // This finite matrix does not exhaust every accepted numeric argument.
+    for (workload, count, command_limit, rate) in [
+        (probe::Workload::Uniform, 512, 128, 0),
+        (probe::Workload::HotSeat, 512, 128, 0),
+        (probe::Workload::Retry, 512, 128, 0),
+        (probe::Workload::Conflict, 512, 128, 0),
+        (probe::Workload::Uniform, 32, 128, 0),
+        (probe::Workload::HotSeat, 16, 128, 10_000),
+        (probe::Workload::Conflict, 512, 4096, 0),
+        (probe::Workload::Uniform, 4097, 8192, 0),
+    ] {
+        let report = probe::run(workload, count, command_limit, rate);
+        assert_eq!(
+            (report.other, report.other_error, report.other_observation),
+            (0, 0, 0)
+        );
+        let json = report.json(rate, command_limit);
+        for key in ["other", "other_error", "other_observation"] {
+            assert_eq!(top_level(&json, key), "0");
+        }
+        assert!(
+            report
+                .outcome("other_error")
+                .unwrap()
+                .service_p99_ns
+                .is_none()
+        );
+    }
+}
+
+#[test]
+fn uniform_order_budget_saturates_before_seat_wrap() {
+    let report = probe::run(probe::Workload::Uniform, 4097, 8192, 0);
+    assert_eq!(probe::ORDER_LIMIT, 4096);
+    assert_eq!(
+        (report.held, report.rejected, report.capacity),
+        (4096, 0, 1)
+    );
+    assert_eq!(report.first_capacity, Some(4096));
+    assert_eq!(report.remaining, 0);
+    assert_eq!(
+        report.budget_phase(),
+        "includes-samples-after-first-capacity"
+    );
+    let json = report.json(0, 8192);
+    assert_eq!(top_level(&json, "commands_budget"), "8192");
+    assert_eq!(top_level(&json, "orders_limit"), "4096");
+    assert_separated(&report, 0, 8192);
+    // Capacity precedes inventory validation at the order limit. These outcomes
+    // prove saturation, but cannot distinguish a wrapped seat from an invalid one.
+}
+
+#[test]
+fn inventory_is_4096_seats_all_reservable_by_uniform() {
+    assert_eq!(probe::INVENTORY_SEATS, 4096);
+    assert_eq!(
+        probe::run(probe::Workload::Uniform, 1, 128, 0).remaining,
+        4095
+    );
+    let report = probe::run(probe::Workload::Uniform, 4096, 4096, 0);
+    assert_eq!(
+        (report.held, report.rejected, report.capacity),
+        (4096, 0, 0)
+    );
+    assert_eq!(report.remaining, 0);
+    let json = report.json(0, 4096);
+    assert_eq!(top_level(&json, "inventory_seats"), "4096");
+    assert_eq!(top_level(&json, "remaining"), "0");
+    // Single-seat selections cannot establish the segment boundary shape.
+}
+
+#[test]
+fn conflict_saturation_ignores_command_limit() {
+    for command_limit in [1, 128, 512, 4096] {
+        let report = probe::run(probe::Workload::Conflict, 256, command_limit, 0);
+        assert_eq!(report.conflict_retained, 127);
+        assert_eq!(report.capacity, 129);
+        assert_eq!(report.first_capacity, Some(127));
+        assert_eq!(report.samples_after_first_capacity, 128);
+        let json = report.json(0, command_limit);
+        assert_eq!(top_level(&json, "observations_limit"), "128");
+        assert_eq!(top_level(&json, "command_limit"), command_limit.to_string());
+        assert_separated(&report, 0, command_limit);
+    }
+}
+
+#[test]
+fn smoke_final_remaining_matches_v4_smoke_signature() {
+    // PERFORMANCE_BASELINE_V4.md §3 logical signature only; no latency targets.
+    for (workload, count, rate, outcomes, remaining) in [
+        (probe::Workload::Uniform, 512, 0, (128, 0, 0, 0, 384), 3968),
+        (probe::Workload::HotSeat, 512, 0, (1, 127, 0, 0, 384), 4095),
+        (probe::Workload::Retry, 512, 0, (1, 0, 511, 0, 0), 4095),
+        (probe::Workload::Conflict, 512, 0, (0, 0, 0, 127, 385), 4095),
+        (probe::Workload::HotSeat, 16, 10_000, (1, 15, 0, 0, 0), 4095),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        assert_eq!(
+            (
+                report.held,
+                report.rejected,
+                report.replay,
+                report.conflict_retained,
+                report.capacity
+            ),
+            outcomes
+        );
+        assert_eq!(report.remaining, remaining);
+        assert_eq!(
+            top_level(&report.json(rate, 128), "remaining"),
+            remaining.to_string()
+        );
+        assert_separated(&report, rate, 128);
+    }
+}
+
+// Report JSON has a flat scalar prefix followed by the nested outcomes array.
+// Restrict lookup to that prefix so a nested outcome cannot satisfy an assertion.
+fn top_level(json: &str, key: &str) -> String {
+    let prefix = json.split_once(",\"outcomes\":").unwrap().0;
+    let marker = format!(",\"{key}\":");
+    assert_eq!(prefix.matches(&marker).count(), 1);
+    prefix
+        .split_once(&marker)
+        .unwrap()
+        .1
+        .split([',', '}'])
+        .next()
+        .unwrap()
+        .to_string()
+}
+
 fn assert_separated(report: &probe::Report, rate: u64, command_limit: usize) {
     assert_eq!(
         report.held
