@@ -349,6 +349,8 @@
 
 - [plan-plan-toss-card-profile-evidence-map](../validation/2026-10-26-plan-toss-card-profile-evidence-map/README.md) — Builder-authored Toss card profile §§1–9 clause-to-test map ([지도](status/PG_TOSS_CARD_PROFILE_EVIDENCE_MAP.md)) and stdlib checker; provider evidence remains open, no sandbox calls, contract or grade change.
 
+- [plan-plan-performance-measurement-clause-evid](../validation/2026-10-26-plan-performance-measurement-clause-evid/README.md) — Builder-authored v4 performance clause-to-test map ([지도](status/PERFORMANCE_MEASUREMENT_EVIDENCE_MAP.md)) and stdlib checker; historical smoke counts remain historical, release probe NOT_RUN, product TPS/p99/failure-rate values UNDETERMINED (owner: User), no benchmark or grade change.
+
 - [plan-plan-open-decisions-addendum-20261026-ai](../validation/2026-10-26-plan-open-decisions-addendum-20261026-ai/README.md) — [AI 위임 검사 순서 정지 보충 기록](status/OPEN_USER_DECISIONS_20261026_ADDENDUM.md): 출처·소유자·선택지별 기계 수집 영향 목록만. 선택·수정·노드 상태 변경이 아니다.
 
 ## 역사 문서와 증거
