@@ -339,6 +339,8 @@
 
 ## 2026-10-26 검증 기록 색인 — 위치 안내만
 
+- [plan-plan-lifecycle-adr-clause-evidence-map](../validation/2026-10-26-plan-lifecycle-adr-clause-evidence-map/README.md) — Builder-authored lifecycle/ADR clause-to-test map ([지도](status/LIFECYCLE_ADR_CLAUSE_EVIDENCE_MAP.md)) and stdlib checker; source-informed and contract-path evidence separated, I09–I13 stay open, no new Rust tests or grade change.
+
 - [plan-ai-delegation-contract-clause-evidence-m](../validation/2026-10-26-plan-ai-delegation-contract-clause-evidence-m/README.md) — Builder-authored clause-to-test map ([지도](status/AI_DELEGATION_CONTRACT_EVIDENCE_MAP.md)) with `scripts/check_ai_delegation_evidence_map.py` wired into the stdlib CI step; DLG evidence stays in the layer matrix, all eight open items retain their owners, execution stays disabled, no policy or grade change.
 
 ## 역사 문서와 증거

@@ -244,6 +244,8 @@ jobs:
           python3 scripts/check_primary_price_fee_evidence_map.py --self-test
           python3 scripts/check_ai_delegation_evidence_map.py
           python3 scripts/check_ai_delegation_evidence_map.py --self-test
+          python3 scripts/check_lifecycle_adr_evidence_map.py
+          python3 scripts/check_lifecycle_adr_evidence_map.py --self-test
           python3 scripts/check_stage5_host.py --self-test
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
