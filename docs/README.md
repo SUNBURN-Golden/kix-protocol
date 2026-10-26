@@ -339,6 +339,8 @@
 
 ## 2026-10-26 검증 기록 색인 — 위치 안내만
 
+- [plan-plan-bcs1-contract-clause-evidence-map](../validation/2026-10-26-plan-bcs1-contract-clause-evidence-map/README.md) — Builder-authored KIX-BCS1 clause-to-test map ([지도](status/BCS1_CONTRACT_EVIDENCE_MAP.md)) and stdlib citation/golden checker; existing tests only, S08 equality and boundary-corpus remain deferred, no contract or grade change.
+
 - [plan-plan-contract-invariants-evidence-map](../validation/2026-10-26-plan-contract-invariants-evidence-map/README.md) — Builder-authored CONTRACT_INVARIANTS §§1–5 clause-to-test map ([지도](status/CONTRACT_INVARIANTS_EVIDENCE_MAP.md)), corpus/sensitivity boundaries and stdlib checker; source-informed and contract-path evidence separated, no new Rust tests, contract or grade change.
 
 - [plan-plan-lifecycle-adr-clause-evidence-map](../validation/2026-10-26-plan-lifecycle-adr-clause-evidence-map/README.md) — Builder-authored lifecycle/ADR clause-to-test map ([지도](status/LIFECYCLE_ADR_CLAUSE_EVIDENCE_MAP.md)) and stdlib checker; source-informed and contract-path evidence separated, I09–I13 stay open, no new Rust tests or grade change.
