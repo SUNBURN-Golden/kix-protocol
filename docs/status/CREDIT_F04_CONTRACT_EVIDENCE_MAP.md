@@ -132,3 +132,5 @@ of SDK/manifest and historical-byte evidence; catalogue-name agreement is now
 covered locally, while unresolved policy values require their owners.
 See the [actual validation record](../../validation/2026-10-25-credit-f04-contract-clause-evidence-map/README.md)
 for commands, outcomes, preservation checks and limitations.
+
+Amendment 2026-10-26: `scripts/check_credit_evidence_map.py` is now wired, plain and `--self-test`, into the `Stdlib offline document checks` step of `.github/workflows/protocol.yml` by #289; the statement above records the state when this map was written.
