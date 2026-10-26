@@ -363,6 +363,8 @@
 
 - [plan-plan-open-decisions-addendum-bcs1-checke](../validation/2026-10-26-plan-open-decisions-addendum-bcs1-checke/README.md) — [BCS1 checker-scope stop addendum](status/OPEN_USER_DECISIONS_20261026_BCS1_ADDENDUM.md): attributed conflict facts and A/B/C impact inventory; no option selected, checker/map/test/source or node-state change.
 
+- [plan-plan-open-decisions-addendum-20261026-sd](../validation/2026-10-26-plan-open-decisions-addendum-20261026-sd/README.md) — [SDK compatibility-manifest check-order stop addendum](status/OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md): attributed class C finding, User owner and per-option artifact inventory; no option selected, SDK/contract/checker/test or node-state change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
