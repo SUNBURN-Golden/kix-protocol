@@ -1,0 +1,87 @@
+# Contract invariants clause evidence map
+
+**Builder-authored map, not A2 review, acceptance or a capability grade change.**
+
+## 0. Basis
+
+- Node: `plan-plan-contract-invariants-evidence-map`. The user-supplied node specification and read-only design plan are the immutable task input; no issue and no current task document under `docs/tasks/` exist for this node.
+- Locally observed `origin/main` and initial branch HEAD: `54a785b864d629d623afc36ed807d9daebaf9285`; branch `agent/kix-plan-plan-contract-invariants-evidence-map`. No local base delta. No fetch: the supervisor prohibits network actions; remote freshness is unverified.
+- Source: [CONTRACT_INVARIANTS §§1–5](../contracts/CONTRACT_INVARIANTS.md), Git blob `9c59e0a81f1675fa919ba9327642269bef9e70af`; [open inputs](../contracts/FIRST_BATCH_OPEN_INPUTS.md). The historical first-batch anchor is preserved.
+- Locked blobs: `runtime/crates/kix-kernel/src/lib.rs` = `69564b166f0c27f9af5d8422f0a466b18d74c20f`; `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` = `b607996c83a119c349f1cc90469ac1ba82764e20`. Checked before work; the checker rehashes raw bytes read-only. The [validation record](../../validation/2026-10-26-plan-contract-invariants-evidence-map/README.md) records commands and after checks.
+- Related map: [lifecycle/ADR clauses](LIFECYCLE_ADR_CLAUSE_EVIDENCE_MAP.md). This map adds traceability to existing tests without adding Rust tests, altering contracts or changing grades.
+
+## 1. Vocabulary
+
+Statuses describe only each stated finite, in-memory predicate/example slice. COVERED means sufficiently covered for that slice; PARTIAL means partially covered. NOT_COVERED and OPEN mean no cited test for that requirement.
+
+| Status | Cell rule |
+|---|---|
+| COVERED | Contract-path tests present; Gap and Owner both none. |
+| PARTIAL | Tests in either column; named non-none gap and owner. |
+| NOT_COVERED | Both test columns none; named non-none gap and owner. |
+| OPEN | Both test columns none; named owner and an input/UNDETERMINED/DECISION_REQUIRED gap. |
+
+Test cells are literal none or comma-separated backticked repo-relative path::symbol citations to existing #[test] fns. Contract-path permits the v4 contract_invariants, contract_edge_cases, transitions and observation_slots test files, and v5 test files except lifecycle_model and v4_differential. Source-informed permits only v4 e4_state_model and v5 lifecycle_model/v4_differential. As contract §1 says, this is an “independent oracle PATH”; the split describes the oracle path, not authorship. The author knew the kernel source. This map makes no clean-room or independence claim. Historical symbols containing independent are literal identifiers only.
+
+Gap/Owner cells are nonempty text without backticks. Every I-number must exist in FIRST_BATCH_OPEN_INPUTS. INV-2 remains PARTIAL at the private allocation boundary; COVERED inventory/capture rows describe only public-state predicates. Source identity/format diagnostics support traceability, not semantic validation. Sensitivity rows exercise corrupted observer copies, never kernel mutation or production fault injection.
+
+## 2. Map
+
+| ID | Section | Contract-path tests | Source-informed tests | Status | Gap | Owner |
+|---|---|---|---|---|---|---|
+| S1-MODEL-PROVENANCE | §1 source-informed provenance boundary | none | `runtime/crates/kix-kernel/tests/e4_state_model.rs::locked_v4_matches_independent_state_model` | PARTIAL | Finite-trace agreement only; shared misunderstanding can survive (F-B4) | Kernel contract owner; non-author A2 reviewer |
+| S1-ORACLE-PATH | §1 kernel-only oracle path | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories`, `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_test_source_identity_and_format_diagnostic` | none | PARTIAL | Author knew kernel source; source identity/format diagnostic establishes neither authorship separation nor semantic coverage | Kernel contract owner; non-author A2 reviewer |
+| S2-ANCHORS | §2 historical source anchors | none | none | NOT_COVERED | Pinned historical blobs differ from current sources (F-B1); document provenance has no Rust assertion | Contract owner |
+| INV-1 | §3 inventory ownership/conservation predicate slice | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories`, `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_predicates_reject_corrupted_observations_not_kernel_mutations`, `runtime/crates/kix-kernel/tests/transitions.rs::sixty_four_bit_word_boundary_is_not_an_aisle`, `runtime/crates/kix-kernel/tests/transitions.rs::actual_segment_boundary_is_an_aisle`, `runtime/crates/kix-kernel/tests/transitions.rs::general_admission_never_overdraws_and_expiry_is_single_release` | none | COVERED | none | none |
+| INV-2 | §3 public bounded-record predicate slice | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories`, `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_predicates_reject_corrupted_observations_not_kernel_mutations`, `runtime/crates/kix-kernel/tests/observation_slots.rs::unrelated_event_flood_cannot_starve_promised_capture`, `runtime/crates/kix-kernel/tests/transitions.rs::bounded_records_backpressure_without_evicting_old_results` | none | PARTIAL | Private command-map allocation unmeasured; completed commands are observed through public replies only | Kernel contract owner; non-author A2 reviewer |
+| INV-3 | §3 immutable first result and read-only replay | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories`, `runtime/crates/kix-kernel/tests/transitions.rs::response_loss_retry_returns_original_before_availability_check`, `runtime/crates/kix-kernel/tests/contract_edge_cases.rs::rejection_replay_stays_immutable_after_the_blocking_hold_is_released` | none | PARTIAL | Direct replay assertions cover success/rejection; no corrupted-view INV-3 sensitivity fixture (F-B2) | Kernel contract owner; non-author A2 reviewer |
+| INV-4 | §3 one local operation binding and capture transition | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories`, `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_predicates_reject_corrupted_observations_not_kernel_mutations`, `runtime/crates/kix-kernel/tests/transitions.rs::duplicate_external_operation_cannot_fund_two_orders`, `runtime/crates/kix-kernel/tests/transitions.rs::event_deduplication_and_economic_effect_deduplication_are_separate` | none | COVERED | none | none |
+| INV-5 | §3 retained capture preservation predicate slice | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories`, `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_predicates_reject_corrupted_observations_not_kernel_mutations`, `runtime/crates/kix-kernel/tests/transitions.rs::historical_capture_after_owner_change_is_not_discarded` | none | COVERED | none | none |
+| S3-OBS-BOUNDARY | §3 observed orders and public counts | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories` | none | PARTIAL | Physical private-map/bitmap allocation unmeasured; observed-command limit is only a public boundary | Kernel contract owner; non-author A2 reviewer |
+| S3-CAPTURE-SCOPE | §3 trusted-input local capture boundary | none | none | NOT_COVERED | No external bank ledger, settlement verification or bank exactly-once assertion | User: separate PG/bank authorization; I13 operations/security |
+| S4-CORPUS | §4 finite corpus size | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories` | none | COVERED | none | none |
+| S4-FIXTURES | §4 two seat/two GA fixtures with saturating small budgets | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories` | none | COVERED | none | none |
+| S4-INIT | §4 six initialization actions then 90 seeded stimuli | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories` | none | COVERED | none | none |
+| S4-PROBES | §4 separate probes; predicates after every reply including errors | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories` | none | PARTIAL | Non-reserve reply values are only read through is_ok(); full expected business replies are not asserted (F-B3) | Kernel contract owner; non-author A2 reviewer |
+| S4-SENS-OVERLAP | §4 checker sensitivity: overlapping observed seats | `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_predicates_reject_corrupted_observations_not_kernel_mutations` | none | COVERED | none | none |
+| S4-SENS-BUDGET | §4 checker sensitivity: exceeded observed budget | `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_predicates_reject_corrupted_observations_not_kernel_mutations` | none | COVERED | none | none |
+| S4-SENS-CAPTURE | §4 checker sensitivity: missing retained capture | `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_predicates_reject_corrupted_observations_not_kernel_mutations` | none | COVERED | none | none |
+| S4-SENS-DOUBLE | §4 checker sensitivity: double capture transition count | `runtime/crates/kix-kernel/tests/contract_invariants.rs::contract_predicates_reject_corrupted_observations_not_kernel_mutations` | none | COVERED | none | none |
+| S4-CI-HEAD | §4 exact-head execution evidence | none | none | NOT_COVERED | Local working-tree checks do not establish final-head hosted CI; no committed delivery head yet | Supervisor: exact-head KTX and KIX protocol CI; non-author A2 reviewer |
+| S5-SAFE-REJECT | §5 can still miss safe but incorrect rejection | `runtime/crates/kix-kernel/tests/transitions.rs::reservation_has_inventory_order_and_stable_external_intent` | `runtime/crates/kix-kernel/tests/e4_state_model.rs::locked_v4_matches_independent_state_model` | PARTIAL | One successful-reservation example and finite model agreement do not establish availability over all valid inputs | Kernel contract owner; non-author A2 reviewer |
+| S5-PRECEDENCE | §5 can still miss wrong error precedence | `runtime/crates/kix-kernel/tests/contract_edge_cases.rs::altered_payload_conflicts_before_fence_and_clock_guards`, `runtime/crates/kix-kernel/tests/contract_edge_cases.rs::replay_lookup_is_guarded_by_scope_and_semantics_only`, `runtime/crates/kix-kernel-v5/tests/termination.rs::automatic_approval_is_rejected_before_order_checks`, `runtime/crates/kix-kernel-v5/tests/termination.rs::a_false_condition_wins_over_a_stale_snapshot` | `runtime/crates/kix-kernel/tests/e4_state_model.rs::locked_v4_matches_independent_state_model` | PARTIAL | Explicit examples cover selected guard pairs; shared source interpretation and untested combinations remain | Kernel contract owner; non-author A2 reviewer |
+| S5-STICKY-HOLD | §5 can still miss an unnecessarily sticky hold | `runtime/crates/kix-kernel/tests/transitions.rs::expired_hold_retry_keeps_original_result_and_separate_current_state`, `runtime/crates/kix-kernel-v5/tests/holds.rs::clear_hold_is_explicit_and_releases_nothing_else` | none | PARTIAL | Selected expiry/explicit hold examples only; authorized review and lifecycle release remain stopped | I11 issuer/User; lifecycle contract owner |
+| S5-PHASE-REVIEW | §5 can still miss exact phase/review semantics | `runtime/crates/kix-kernel/tests/transitions.rs::reviewed_order_preserves_matching_capture_without_normal_confirmation`, `runtime/crates/kix-kernel-v5/tests/stopped_transitions.rs::redelivery_never_clears_review_required` | `runtime/crates/kix-kernel-v5/tests/lifecycle_model.rs::seeded_lifecycle_histories_match_oracle` | PARTIAL | Selected sticky review examples and finite source-informed lifecycle agreement; review resolution not covered | I11 issuer/User; lifecycle contract owner |
+| S5-SHARED-ERROR | §5 shared-error boundary | none | none | OPEN | UNDETERMINED: no independently derived specification oracle | Contract owner; non-author A2 reviewer |
+| S5-FINITE | §5 finite evidence and vacuity boundary | `runtime/crates/kix-kernel/tests/contract_invariants.rs::five_contract_invariants_on_kernel_only_generated_histories` | none | PARTIAL | Captured-fact initialization prevents some vacuity; general availability and all input histories remain unverified | Kernel contract owner; non-author A2 reviewer |
+| S5-PERSISTENCE | §5 persistence, independent fencing and chain authority | none | none | OPEN | UNDETERMINED: R2 locked; I12 chain authority/cut proof remains open | User: separate R2 authorization; I12 proof reviewer/User trust-policy approval |
+| S5-E4-RETAINED | §5 original E-4 retained as complementary regression evidence | none | `runtime/crates/kix-kernel/tests/e4_state_model.rs::locked_v4_matches_independent_state_model` | PARTIAL | Complementary finite regression agreement only; source-informed provenance and shared-error boundary remain (F-B4) | Kernel contract owner; non-author A2 reviewer |
+
+Counts: rows=27 COVERED=10 PARTIAL=12 NOT_COVERED=3 OPEN=2
+
+## 3. Corpus check
+
+The checker extracts these facts from current Rust source without executing Rust. MATCH describes source/count agreement only. Each mismatch must have FINDING-B or FINDING-C plus its key in §4; neither source nor contract is edited to hide a mismatch. Source-fact cells are also checked to prevent stale table numbers. Replay probes do not enter the primary-call product.
+
+| Key | Contract statement | Source fact | Result |
+|---|---|---|---|
+| C-FIXTURES | 4 fixtures; seats=2; GA=2 | 4 fixtures; seats=2; GA=2 | MATCH |
+| C-SEEDS | 64 seeds | 64 seeds | MATCH |
+| C-MAIN-CALLS | 6 + 90 = 96 calls | 6 + 90 = 96 calls | MATCH |
+| C-PRODUCT | 24576 main calls | 24576 main calls | MATCH |
+| C-SEAT-SEGMENTS | [65, 5] | [65, 5] | MATCH |
+| C-GA-CAPACITY | 6 capacity | 6 capacity | MATCH |
+| P-E4-COMPARISONS | 131072 comparisons | 4 * 256 * 128 = 131072 comparisons | MATCH |
+
+## 4. Findings
+
+- **F-B1 — class B, historical anchor drift.** Contract §2 explicitly pins commit 0394a36a655b86bacb568b055d377d4c4fd91185. Its STATE_LIFECYCLE blob e953c4870aaeee24b13c75a8647c50609720ae01, ADR blob 07c36869e7b68fff10b02e6c59d7119df56d0785 and kernel README blob 900866ee99a71254fb7da1ad2aa4640477ac550c differ from current 8682b6ecd3de2f10dc8bb73ff8a03e3b8f9ace9d, 054bc714b3c475fb8536df8d2d788b42e8c74b6c and 788896ed3e00bae3d06d26b7e2ce999a00ff1029 respectively. Historical pins are preserved; no old CI transfers to these current sources. Owner: contract owner.
+- **F-B2 — class B, INV-3 sensitivity boundary.** Observer::run has direct immutable-result/replayed/read-only assertions. The corruption test checks INV-1/2/4/5 only; no INV-3 corrupted-view fixture exists. Contract §4 names only those four corruptions, so this is an uncovered sensitivity dimension, not a violation. Owner: kernel contract owner/non-author A2 reviewer.
+- **F-B3 — class B, reply observation boundary.** “Every reply” in §4 means public post-state predicates run after every reply. Non-reserve reply values are only read via is_ok(); expected business replies are not predicted. Reserve replay has stronger typed-result assertions. Owner: kernel contract owner/non-author A2 reviewer.
+- **F-B4 — class B, historical model naming.** The e4 module description and locked_v4_matches_independent_state_model identifier use independent language, while contract §1 corrects the provenance. E4 is source-informed in this map. Representation separation and finite agreement do not establish specification independence. Owner: contract owner/non-author A2 reviewer.
+
+No class C violation identified. All seven corpus checks MATCH. B findings are characterizations and remaining uncertainty, not new contract semantics.
+
+## 5. Non-claims
+
+No new Rust test, kernel, contract, ADR or kernel README change, capability grade, clean-room authorship, formal proof, completeness or independent specification oracle is claimed. Finite predicates and source-informed agreement can share errors and miss availability/guard/phase semantics. No production durability, distributed fencing, bank exactly-once, chain finality, legal compliance or production readiness follows. There are no live funds/provider calls, public endpoints, Sui testnet/mainnet, new commands/policy values or R2/storage-engine work. I11/I12/I13 and the R2 locks remain with their existing owners. Final-head CI and non-author A2 review remain supervisor follow-up; local delivery READY is not merge-ready.
