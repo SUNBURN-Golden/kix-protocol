@@ -404,6 +404,8 @@
 
 - [plan-plan-loopback-host-preflight](../validation/2026-10-27-plan-loopback-host-preflight/README.md) — Stdlib read-only [loopback host preflight](../scripts/check_loopback_host.py) (127.0.0.1 port 0, in-process and `-I -c` child) wired plain and `--self-test`; host-context evidence for the gate seeded-journey stop and CHK-HTTP-SUITE only — no host chosen, permission granted, gate test run or map status change.
 
+- [plan-plan-class-b-characterization-index](../validation/2026-10-27-plan-class-b-characterization-index/README.md) — Builder-authored [class B characterization index](status/CLASS_B_CHARACTERIZATION_INDEX.md): one row per contract-undefined (AGENTS §8 B) characterization recorded in validation records and evidence maps, with verbatim quote, cited test, contract, owner and status, checked by a stdlib citation checker; not a review, decision, classification or recommendation.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.

@@ -262,6 +262,8 @@ jobs:
           python3 scripts/check_integration_gate_contract_evidence_map.py --self-test
           python3 scripts/check_evidence_map_rollup.py
           python3 scripts/check_evidence_map_rollup.py --self-test
+          python3 scripts/check_class_b_index.py
+          python3 scripts/check_class_b_index.py --self-test
           python3 scripts/check_ci_checker_wiring.py
           python3 scripts/check_ci_checker_wiring.py --self-test
           python3 scripts/check_ci_test_discovery.py
