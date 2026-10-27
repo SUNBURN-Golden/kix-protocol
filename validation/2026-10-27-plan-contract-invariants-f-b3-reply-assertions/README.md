@@ -219,3 +219,63 @@ Move, TypeScript, local-chain, ZK and storage jobs were not run for this test/ma
   production runtime, public endpoint, secret or Sui network was used.
 - Follow-up candidates are contract-owner clarification of exact class B replies
   and review of the historical F-B3 prose, not implementation work in this session.
+
+## PR fix round 1 — 2026-10-27
+
+Input: the supervisor's fix-round request for the same node. No blocking review
+finding was supplied. The supplied KIX protocol CI tail reports a missing index
+link to this validation README, then exit 1 in `Stdlib offline document checks`.
+No run ID or complete hosted CI result was supplied.
+
+- Observed local `origin/main` and task base:
+  `035d5705c93b318a49941ce5f7410f843360c427`.
+- Initial implementation HEAD and unchanged final branch HEAD:
+  `62bb47f63408264b2d4dda50da94bb4d77c015c9`.
+  The merge base is the observed local main; the only intervening task commit is
+  the original implementation. No rebase or base change occurred.
+- The supervisor prohibits network actions, commits and publication. No fetch
+  was performed; remote freshness is unverified. The fix is uncommitted, so a
+  final committed fix SHA and exact-head KTX/KIX run IDs/status/conclusions are
+  unavailable. No merge or post-merge CI applies. READY means local handoff only.
+
+Fix: added the exact validation-record Markdown link to `docs/README.md` beside
+the related contract-invariant records. Existing coverage was sufficient:
+`scripts/check_docs_index.py` already checks validation README links, and its
+`--self-test` already detects an unindexed validation record. No new test was
+needed. The Rust coverage mapping and class B characterizations above still
+apply; no new contract discrepancy was found.
+
+Changed paths in this round (complete): `docs/README.md` and this validation
+README. Cumulative task paths relative to the base are those two plus
+`docs/status/CONTRACT_INVARIANTS_EVIDENCE_MAP.md` and
+`runtime/crates/kix-kernel/tests/contract_invariants.rs`.
+
+| Commands actually rerun from the repository root | Actual result |
+|---|---|
+| `python3 scripts/check_docs_index.py` and `python3 scripts/check_docs_index.py --self-test` | Both exit 0; scanned=280, indexed=245, allowlisted=35; all 7 negative controls detected |
+| `python3 scripts/check_contract_invariants_evidence_map.py` and `python3 scripts/check_contract_invariants_evidence_map.py --self-test` | Both exit 0; 27 rows; 2 positive controls and 66 negative fixtures |
+| `python3 scripts/check_evidence_map_rollup.py` and `python3 scripts/check_evidence_map_rollup.py --self-test` | Both exit 0; 25 contracts; verbatim Counts copy matches; 16 negative controls |
+| All 55 Python commands extracted in order from the `Stdlib offline document checks` run block in `.github/workflows/protocol.yml` | All exit 0, including the commands after the original failure; command-by-command log at `.local/verification/fb3-fix-round-1/stdlib-document-checks.log` |
+| `cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline --test contract_invariants` | Exit 0; 5 passed, including the generated corpus and deliberate wrong expected replies |
+| `cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline` | Exit 0; 87 passed, 0 failed, aggregated from result groups |
+| `cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline` | Exit 0; 276 passed, 0 failed, aggregated from result groups |
+| `cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings` | Exit 0 |
+| `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | Exit 0 |
+| `python3 scripts/verify_runtime_architecture.py` and `python3 scripts/test_runtime_architecture.py` | Both exit 0; architecture gate OK; 7 tests passed |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` (before and after work) | Both required blobs match the full values recorded above |
+| `git diff --exit-code origin/main -- reference/v0.3-rc1 runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs docs/tasks .aiops .github scripts` | Exit 0; empty protected-path diff; same check against HEAD also exit 0 |
+| `git ls-files --others --exclude-standard -- reference/v0.3-rc1` | Exit 0; empty output |
+| `git diff --check` | Exit 0 |
+
+The Rust verification logs are in `.local/verification/fb3-fix-round-1/` and are
+ignored local artifacts. Fresh summary JSON agrees with the original record:
+24,576 primary calls, 156,312 replay probes, 434 retained captures and 14,080 exact
+non-reserve reply checks (`[0, 2304, 1792, 7936, 1792, 256]`). The in-memory
+negative control rejects wrong expectations without mutating the kernel.
+
+S4-PROBES remains PARTIAL; both MUST_BE_OPEN rows remain OPEN. The map and rollup
+Counts remain `Counts: rows=27 COVERED=10 PARTIAL=12 NOT_COVERED=3 OPEN=2`.
+No Rust, contract, evidence-map, checker or workflow change was needed in this
+round. No new class C violation or class B characterization was identified.
+Hosted CI and non-author A2 exact-head review remain supervisor follow-up;
+unrelated Move, TypeScript, local-chain, ZK and storage checks were not run.
