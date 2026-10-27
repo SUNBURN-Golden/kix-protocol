@@ -386,6 +386,8 @@
 
 ## 2026-10-27 검증 기록 색인 — 위치 안내만
 
+- [plan-plan-open-decisions-addendum-perf-probe-](../validation/2026-10-27-plan-open-decisions-addendum-perf-probe-pin/README.md) — [Perf-probe pin addendum](status/OPEN_USER_DECISIONS_20261027_PERF_PROBE_ADDENDUM.md): attributed LOCKED_EDGE stop/options, read-only blob inventory and #314–#321 facts; no option selected or node state changed.
+
 - [plan-plan-open-decisions-closure-20261027](../validation/2026-10-27-plan-open-decisions-closure-20261027/README.md) — [열린 결정 마감 후속 기록](status/OPEN_USER_DECISIONS_20261027_CLOSURE.md): #290–#313의 저장소 사실과 열린 일곱 정지의 출처·소유자·선택지만. 선택·값·노드 상태 변경이 아니다.
 
 - [plan-plan-perf-harness-map-json-csv-closure-2](../validation/2026-10-27-plan-perf-harness-map-json-csv-closure-2/README.md) — Builder-authored public-API perf harness assertions for top-level outcome JSON, CSV latency arithmetic, fixed-origin schedule, workload-report parameters and binding fields; six rows COVERED, M-REPLAYED/M-SERVICE-NS/M-ELAPSED/BD-FIELDS PARTIAL, release probe NOT_RUN, no benchmark or timing claim.
