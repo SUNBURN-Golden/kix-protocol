@@ -21,6 +21,7 @@ TEST_FILES = (
     'runtime/crates/kix-feature-ir/tests/plan_limits.rs',
     'runtime/crates/kix-feature-ir/tests/schema_bound.rs',
     'runtime/crates/kix-feature-ir/tests/validator_matrix.rs',
+    'runtime/crates/kix-feature-ir/tests/api_boundaries.rs',
 )
 EXPECTED = {
     'S1-AUTHORITY': (1, 'backend adapter는 upstream default를 사용하지 않고 KIX policy를 명시적으로 전달한다.'),
@@ -295,6 +296,24 @@ def self_test(map_text, contract):
 
     def cell(label, row, col, value, reason, injected=None):
         case(label, _with_cell(map_text, row, col, value), injected=injected, reason=reason)
+
+    boundary_row = 'S6-EXPORT-BOUNDARY'
+    harness = TEST_FILES[-1]
+    harness_symbol = 'fast64_external_consumer_api_boundaries'
+    harness_cite = harness + '::' + harness_symbol
+    if find_problems(_with_cell(map_text, boundary_row, TESTS, '`' + harness_cite + '`'), contract):
+        print('self-test: valid external-consumer harness citation rejected', file=sys.stderr)
+        return 1
+    cell('boundary missing harness', boundary_row, TESTS, '`' + harness_cite + '`',
+         boundary_row + ': ' + harness_cite + ' file missing', {harness: None})
+    for label, symbol in (('fabricated symbol', 'fabricated_test'),
+                          ('non-test helper', 'compile_consumer')):
+        cite = harness + '::' + symbol
+        cell('boundary ' + label, boundary_row, TESTS, '`' + cite + '`',
+             boundary_row + ': ' + cite + ' is not a test function')
+    fixture_cite = 'runtime/crates/kix-feature-ir/tests/fixtures/api_boundaries/checked_export.rs::main'
+    cell('boundary fixture outside allowlist', boundary_row, TESTS, '`' + fixture_cite + '`',
+         boundary_row + ': ' + fixture_cite + ' is outside test paths')
 
     line = _row_line(map_text, ident)
     for label, changed, reason in (
