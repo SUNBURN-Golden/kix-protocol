@@ -394,6 +394,8 @@
 
 - [plan-v5-kernel-only-contract-invariant-histor](../validation/2026-10-27-v5-kernel-only-contract-invariant-histories/README.md) — Source-informed seeded INV-1..INV-5 histories over kix-kernel-v5 public APIs, including terminate, hold and reclaim report, with no model or oracle and with per-predicate corrupted-view sensitivity; class B characterization, no class C found, no v5 source, contract, map status or grade change.
 
+- [plan-ci-test-suite-discovery-guard](../validation/2026-10-27-plan-ci-test-suite-discovery-guard/README.md) — Stdlib guard that every offline reference suite, rights-scale node test and readiness/integration_gate test module is reached by a protocol.yml step directly, through a unittest discover suite list or through a TestCase import chain; v0.1, v0.2 and v0.3-rc1 excluded by name with written reasons; no workflow step, suite or test changed.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
