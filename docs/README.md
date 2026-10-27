@@ -386,6 +386,8 @@
 
 ## 2026-10-27 검증 기록 색인 — 위치 안내만
 
+- [plan-plan-cargo-offline-cache-preflight](../validation/2026-10-27-plan-cargo-offline-cache-preflight/README.md) — Stdlib read-only [Cargo archive cache report](../scripts/check_cargo_offline_cache.py), plain and synthetic self-test CI wiring; no provisioning, Cargo invocation, network access or offline-build guarantee.
+
 - [plan-plan-loop-node-crosswalk-refresh-2026102](../validation/2026-10-27-plan-loop-node-crosswalk-refresh/README.md) — Append-only crosswalk through #323: nine selected records, 25 accounted merges, no absent PR numbers; canonical counting remains DECISION_REQUIRED · Astra.
 
 - [plan-plan-plan-register-sync-20261027](../validation/2026-10-27-plan-register-sync-20261027/README.md) — DEVELOPMENT_PLAN §5의 #290–#322 first-parent 병합 위치와 register 열한 행·checker 목록 동기화; 완결 인용·전후 보존 대조, 등급·상태·소유자·열린 정지 변경 없음.
