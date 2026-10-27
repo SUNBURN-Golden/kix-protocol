@@ -392,6 +392,8 @@
 
 - [plan-plan-perf-harness-kernel-construction-co](../validation/2026-10-27-plan-perf-harness-kernel-construction-co/README.md) — Builder-authored perf probe kernel-construction counter; report JSON resets derived from the count with schema unchanged; B-ZERO-KERNEL-REBUILD COVERED, release probe NOT_RUN, no benchmark or timing claim.
 
+- [plan-v5-kernel-only-contract-invariant-histor](../validation/2026-10-27-v5-kernel-only-contract-invariant-histories/README.md) — Source-informed seeded INV-1..INV-5 histories over kix-kernel-v5 public APIs, including terminate, hold and reclaim report, with no model or oracle and with per-predicate corrupted-view sensitivity; class B characterization, no class C found, no v5 source, contract, map status or grade change.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
