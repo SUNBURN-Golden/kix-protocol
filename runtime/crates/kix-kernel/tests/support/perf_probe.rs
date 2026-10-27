@@ -210,6 +210,8 @@ pub struct Report {
     pub first_capacity: Option<usize>,
     pub samples_after_first_capacity: usize,
     pub command_limit_requested: usize,
+    /// Calls of construct_kernel in this run; exactly 1 when no reset occurred.
+    pub kernel_constructions: usize,
     pub remaining: u32,
     pub elapsed_ns: u128,
     pub mixed_p99_service_ns: u128,
@@ -243,13 +245,12 @@ fn classify(kernel: &mut Kernel, index: usize, input: Input) -> OutcomeKind {
     }
 }
 
-/// rate=0 explicitly means a service-time microbenchmark, not an open-loop test.
-/// rate>0 uses deadlines relative to a fixed origin. A late driver never shifts
-/// the original deadline forward to hide queue delay (coordinated omission).
-pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) -> Report {
-    assert!(count > 0 && count <= 100_000);
-    assert!(command_limit > 0);
-    let commands_budget = command_limit.max(2);
+/// Sole kernel construction site in this probe. Each call is counted so a
+/// reset cannot hide exhaustion; a correct run constructs exactly one kernel.
+fn construct_kernel(
+    commands_budget: usize,
+    constructions: &mut usize,
+) -> (Kernel, Vec<(u16, u16)>) {
     let inventory =
         Inventory::seats(&[u16::try_from(INVENTORY_SEATS).expect("seat segment fits u16")])
             .unwrap();
@@ -257,7 +258,8 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
         Inventory::Seats { segments, .. } => segments.clone(),
         Inventory::GeneralAdmission { .. } => Vec::new(),
     };
-    let mut kernel = Kernel::new(
+    *constructions += 1;
+    let kernel = Kernel::new(
         id(80),
         context(0).fence,
         1,
@@ -269,6 +271,42 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
         },
     )
     .unwrap();
+    (kernel, inventory_segments)
+}
+
+/// rate=0 explicitly means a service-time microbenchmark, not an open-loop test.
+/// rate>0 uses deadlines relative to a fixed origin. A late driver never shifts
+/// the original deadline forward to hide queue delay (coordinated omission).
+pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) -> Report {
+    run_probe(workload, count, command_limit, rate, None)
+}
+
+/// Harness sensitivity fixture: constructs a second kernel before call index
+/// `reconstruct_at`, outside the service and call windows. The report must count it.
+#[allow(dead_code)] // The example never calls it.
+pub fn run_with_injected_reconstruction(
+    workload: Workload,
+    count: usize,
+    command_limit: usize,
+    rate: u64,
+    reconstruct_at: usize,
+) -> Report {
+    run_probe(workload, count, command_limit, rate, Some(reconstruct_at))
+}
+
+fn run_probe(
+    workload: Workload,
+    count: usize,
+    command_limit: usize,
+    rate: u64,
+    reconstruct_at: Option<usize>,
+) -> Report {
+    assert!(count > 0 && count <= 100_000);
+    assert!(command_limit > 0);
+    let commands_budget = command_limit.max(2);
+    let mut kernel_constructions = 0;
+    let (mut kernel, inventory_segments) =
+        construct_kernel(commands_budget, &mut kernel_constructions);
     let mut inputs = Vec::with_capacity(count);
     if matches!(workload, Workload::Conflict) {
         let a = request(1, 0);
@@ -324,6 +362,7 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
         first_capacity: None,
         samples_after_first_capacity: 0,
         command_limit_requested: command_limit,
+        kernel_constructions: 0,
         remaining: 0,
         elapsed_ns: 0,
         mixed_p99_service_ns: 0,
@@ -350,6 +389,9 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
                     (scheduled - elapsed).min(u128::from(u64::MAX)) as u64,
                 ));
             }
+        }
+        if reconstruct_at == Some(index) {
+            kernel = construct_kernel(commands_budget, &mut kernel_constructions).0;
         }
         let start = origin.elapsed().as_nanos();
         let begin = Instant::now();
@@ -388,6 +430,7 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
         latency_by[kind.index()].push(measured_latency);
     }
     report.elapsed_ns = origin.elapsed().as_nanos();
+    report.kernel_constructions = kernel_constructions;
     report.remaining = kernel.remaining();
     report.other = report.other_error + report.other_observation;
     report.samples_after_first_capacity = report
@@ -489,6 +532,13 @@ impl Report {
             .checked_div(self.elapsed_ns)
     }
 
+    /// Derived from the construction count, so a reset during the workload is reported.
+    pub fn kernel_resets_during_workload(&self) -> usize {
+        self.kernel_constructions
+            .checked_sub(1)
+            .expect("probe constructs a kernel before the workload")
+    }
+
     pub fn json(&self, rate: u64, command_limit: usize) -> String {
         assert_eq!(command_limit, self.command_limit_requested);
         let mut outcomes = String::from("[");
@@ -509,7 +559,7 @@ impl Report {
         }
         outcomes.push(']');
         format!(
-            "{{\"workload\":\"{workload}\",\"workload_shape\":\"{workload}\",\"budget_phase\":\"{phase}\",\"low_load\":{low_load},\"hot_seat\":{hot_seat},\"same_command_retry\":{retry},\"history_growth\":{history},\"saturation\":{saturation},\"scope\":\"{scope}\",\"non_claims\":\"{non_claims}\",\"debug_assertions\":{debug},\"build_mode\":\"{build_mode}\",\"target_os\":\"{os}\",\"target_arch\":\"{arch}\",\"rate\":{rate},\"rate_meaning\":\"{rate_meaning}\",\"command_limit\":{command_limit},\"commands_budget\":{commands_budget},\"orders_limit\":{orders},\"observations_limit\":{observations},\"inventory_seats\":{seats},\"samples\":{samples},\"new_held\":{held},\"new_success_count\":{held},\"replayed\":{replay},\"business_rejected\":{rejected},\"capacity\":{capacity},\"conflict_retained\":{conflict},\"other_error\":{other_error},\"other_observation\":{other_observation},\"other\":{other},\"first_capacity_index\":{first_capacity},\"samples_after_first_capacity\":{after},\"remaining\":{remaining},\"elapsed_ns\":{elapsed},\"mixed_result_p99_service_ns\":{mixed_service},\"mixed_result_p99_scheduled_latency_ns\":{mixed_latency},\"p99_interpretation\":\"{p99}\",\"service_ns_meaning\":\"{service_meaning}\",\"scheduled_latency_ns_meaning\":\"{latency_meaning}\",\"memory_only_new_held_per_elapsed_s\":{goodput},\"goodput_interpretation\":\"{goodput_meaning}\",\"kernel_resets_during_workload\":0,\"outcomes\":{outcomes}}}\n",
+            "{{\"workload\":\"{workload}\",\"workload_shape\":\"{workload}\",\"budget_phase\":\"{phase}\",\"low_load\":{low_load},\"hot_seat\":{hot_seat},\"same_command_retry\":{retry},\"history_growth\":{history},\"saturation\":{saturation},\"scope\":\"{scope}\",\"non_claims\":\"{non_claims}\",\"debug_assertions\":{debug},\"build_mode\":\"{build_mode}\",\"target_os\":\"{os}\",\"target_arch\":\"{arch}\",\"rate\":{rate},\"rate_meaning\":\"{rate_meaning}\",\"command_limit\":{command_limit},\"commands_budget\":{commands_budget},\"orders_limit\":{orders},\"observations_limit\":{observations},\"inventory_seats\":{seats},\"samples\":{samples},\"new_held\":{held},\"new_success_count\":{held},\"replayed\":{replay},\"business_rejected\":{rejected},\"capacity\":{capacity},\"conflict_retained\":{conflict},\"other_error\":{other_error},\"other_observation\":{other_observation},\"other\":{other},\"first_capacity_index\":{first_capacity},\"samples_after_first_capacity\":{after},\"remaining\":{remaining},\"elapsed_ns\":{elapsed},\"mixed_result_p99_service_ns\":{mixed_service},\"mixed_result_p99_scheduled_latency_ns\":{mixed_latency},\"p99_interpretation\":\"{p99}\",\"service_ns_meaning\":\"{service_meaning}\",\"scheduled_latency_ns_meaning\":\"{latency_meaning}\",\"memory_only_new_held_per_elapsed_s\":{goodput},\"goodput_interpretation\":\"{goodput_meaning}\",\"kernel_resets_during_workload\":{resets},\"outcomes\":{outcomes}}}\n",
             workload = self.workload,
             phase = self.budget_phase(),
             low_load = json_bool(self.low_load()),
@@ -552,6 +602,7 @@ impl Report {
             latency_meaning = SCHEDULED_LATENCY_NS_MEANING,
             goodput = json_u128(self.memory_only_new_held_per_elapsed_s()),
             goodput_meaning = GOODPUT_INTERPRETATION,
+            resets = self.kernel_resets_during_workload(),
             outcomes = outcomes,
         )
     }
