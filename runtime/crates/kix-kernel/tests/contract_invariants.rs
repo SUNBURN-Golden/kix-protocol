@@ -9,8 +9,8 @@ use std::process::Command;
 
 use kix_kernel::{
     AppliedReservation, CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel,
-    KernelError, Limits, ObservationOutcome, Order, ProviderOperation, Rejection, Reserve,
-    ReserveOutcome, Selection,
+    KernelError, Limits, ObservationOutcome, Order, OrderState, ProviderOperation, Rejection,
+    Reserve, ReserveOutcome, Selection,
 };
 use kix_types::{AssetAmount, AssetId, Hash32, KixId, RegistryVersion};
 
@@ -112,7 +112,39 @@ enum Reply {
     Capture(Result<ObservationOutcome, KernelError>),
 }
 
-#[derive(Default)]
+/// Source-informed reply oracle; author knew kernel source. Not clean-room.
+/// Contract anchors and class B exact-value/precedence characterizations are
+/// distinguished in validation/2026-10-27-plan-contract-invariants-f-b3-reply-assertions/README.md.
+/// Uses public observations and our input/reply history, never the E-4 model.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Expected {
+    Unit(Result<(), KernelError>),
+    Expire(Result<bool, KernelError>),
+    Capture(Result<ObservationOutcome, KernelError>),
+}
+
+fn check_reply(expected: &Expected, reply: &Reply) -> Result<(), String> {
+    let equal = match (expected, reply) {
+        (Expected::Unit(expected), Reply::Unit(actual)) => expected == actual,
+        (Expected::Expire(expected), Reply::Expire(actual)) => expected == actual,
+        (Expected::Capture(expected), Reply::Capture(actual)) => expected == actual,
+        _ => return Err("S4-REPLY kind differs".into()),
+    };
+    if !equal {
+        return Err("S4-REPLY value differs".into());
+    }
+    Ok(())
+}
+
+fn hit(hits: &mut Vec<(&'static str, usize)>, branch: &'static str, count: usize) {
+    if let Some((_, total)) = hits.iter_mut().find(|(label, _)| *label == branch) {
+        *total += count;
+    } else {
+        hits.push((branch, count));
+    }
+}
+
+#[derive(Clone, Default)]
 struct Observer {
     known_orders: Vec<KixId>,
     originals: Vec<(Context, Reserve, ReserveOutcome)>,
@@ -121,6 +153,14 @@ struct Observer {
     primary_calls: usize,
     replay_probes: usize,
     action_counts: [usize; 6],
+    fence: Option<ExecutionFence>,
+    epoch: Option<u64>,
+    cancelled: bool,
+    max_now: u64,
+    reserved_ops: Vec<ProviderOperation>,
+    retained_events: Vec<(CaptureObservation, ObservationOutcome)>,
+    reply_checks: [usize; 6],
+    branch_hits: Vec<(&'static str, usize)>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -164,6 +204,238 @@ fn check_replay(probe: &ReplayProbe) -> Result<(), String> {
 }
 
 impl Observer {
+    fn expected_reply(
+        &self,
+        k: &Kernel,
+        f: Fixture,
+        context: Context,
+        input: &Input,
+    ) -> Option<(Expected, &'static str)> {
+        if matches!(input, Input::Reserve(_)) {
+            return None;
+        }
+        // max_now is the largest emitted time, a conservative upper bound on
+        // admitted time. This corpus needs no prediction of failed-call clock updates.
+        assert!(
+            context.semantics_version == 4
+                && context.fence == self.fence.unwrap_or(ctx(0, 1).fence)
+                && context.now_ms >= self.max_now,
+            "S4-REPLY undetermined context"
+        );
+        let full = k.observation_count() + k.conflicts().len() + k.reserved_observation_count()
+            >= f.limits.observations;
+        Some(match input {
+            // README: UNKNOWN retry reuses its promised slot; quarantine blocks
+            // sending. Exact InvalidTransition/UnknownOrder and overlapping-guard
+            // precedence are class B characterizations, not invented contract rules.
+            Input::Send(key) => match k.order(*key) {
+                None => (
+                    Expected::Unit(Err(KernelError::UnknownOrder)),
+                    "send.unknown-order",
+                ),
+                Some(order)
+                    if order.review_required
+                        || !matches!(
+                            order.state,
+                            OrderState::Held | OrderState::PaymentUnknown
+                        ) =>
+                {
+                    (
+                        Expected::Unit(Err(KernelError::InvalidTransition)),
+                        "send.invalid-state",
+                    )
+                }
+                Some(order) if self.cancelled || context.now_ms >= order.request.expires_at_ms => (
+                    Expected::Unit(Err(KernelError::InvalidTransition)),
+                    "send.closed",
+                ),
+                Some(order) if !self.reserved_ops.contains(&order.request.payment) && full => {
+                    (Expected::Unit(Err(KernelError::Capacity)), "send.capacity")
+                }
+                Some(_) => (Expected::Unit(Ok(())), "send.ok"),
+            },
+            // Lifecycle §5.7: only Held releases, UNKNOWN does not. The bool
+            // encoding and UnknownOrder reply are class B characterizations.
+            Input::Expire(key) => match k.order(*key) {
+                None => (
+                    Expected::Expire(Err(KernelError::UnknownOrder)),
+                    "expire.unknown-order",
+                ),
+                Some(order) if context.now_ms < order.request.expires_at_ms => {
+                    (Expected::Expire(Ok(false)), "expire.early")
+                }
+                Some(order) if order.state == OrderState::Held && order.inventory_owned => {
+                    (Expected::Expire(Ok(true)), "expire.released")
+                }
+                Some(_) => (Expected::Expire(Ok(false)), "expire.noop"),
+            },
+            Input::Capture(value) => {
+                // ADR §6 / review addendum A: event identity is provider/account/event;
+                // preserve the first payload/result, retain conflicting evidence.
+                if let Some((original, outcome)) = self.retained_events.iter().find(|(old, _)| {
+                    old.operation.provider == value.operation.provider
+                        && old.operation.account == value.operation.account
+                        && old.event_id == value.event_id
+                }) {
+                    if original == value {
+                        (Expected::Capture(Ok(*outcome)), "capture.dup-event")
+                    } else if k.conflicts().contains(value) {
+                        (
+                            Expected::Capture(Ok(ObservationOutcome::Conflict)),
+                            "capture.conflict",
+                        )
+                    } else if full {
+                        (
+                            Expected::Capture(Err(KernelError::Capacity)),
+                            "capture.conflict-capacity",
+                        )
+                    } else {
+                        (
+                            Expected::Capture(Ok(ObservationOutcome::Conflict)),
+                            "capture.conflict",
+                        )
+                    }
+                } else if !self.reserved_ops.contains(&value.operation) && full {
+                    // README Observation reservation: a fresh capture spends only
+                    // its own promised slot, including after expiry/cancellation.
+                    (
+                        Expected::Capture(Err(KernelError::Capacity)),
+                        "capture.capacity",
+                    )
+                } else if let Some(order) = self
+                    .known_orders
+                    .iter()
+                    .filter_map(|id| k.order(*id))
+                    .find(|order| order.request.payment == value.operation)
+                {
+                    if let Some(amount) = order.captured {
+                        if amount == value.amount {
+                            (
+                                Expected::Capture(Ok(ObservationOutcome::DuplicateEffect)),
+                                "capture.duplicate-effect",
+                            )
+                        } else {
+                            (
+                                Expected::Capture(Ok(ObservationOutcome::Review)),
+                                "capture.review-mismatch",
+                            )
+                        }
+                    } else if value.amount != order.request.amount {
+                        (
+                            Expected::Capture(Ok(ObservationOutcome::Review)),
+                            "capture.review-mismatch",
+                        )
+                    } else if self.cancelled
+                        || context.now_ms >= order.request.expires_at_ms
+                        || order.state == OrderState::Expired
+                    {
+                        // ADR §6 / Lifecycle §5.7: matching late facts require return;
+                        // review is orthogonal (Lifecycle §5.7.1), never auto-cleared.
+                        (
+                            Expected::Capture(Ok(ObservationOutcome::ReturnRequired)),
+                            "capture.return-required",
+                        )
+                    } else if order.review_required {
+                        (
+                            Expected::Capture(Ok(ObservationOutcome::Review)),
+                            "capture.review-sticky",
+                        )
+                    } else {
+                        (
+                            Expected::Capture(Ok(ObservationOutcome::PaymentConfirmed)),
+                            "capture.confirmed",
+                        )
+                    }
+                } else {
+                    (
+                        Expected::Capture(Err(KernelError::UnknownOperation)),
+                        "capture.unknown-operation",
+                    )
+                }
+            }
+            // ADR §7 supplies local fences, not exact generation/epoch admission
+            // replies: these exact comparisons are class B characterizations.
+            Input::Owner(next)
+                if next.generation > self.fence.unwrap_or(ctx(0, 1).fence).generation =>
+            {
+                (Expected::Unit(Ok(())), "owner.ok")
+            }
+            Input::Owner(_) => (
+                Expected::Unit(Err(KernelError::InvalidTransition)),
+                "owner.invalid",
+            ),
+            Input::Cancel(epoch) if *epoch > self.epoch.unwrap_or(1) => {
+                (Expected::Unit(Ok(())), "cancel.ok")
+            }
+            Input::Cancel(_) => (
+                Expected::Unit(Err(KernelError::InvalidTransition)),
+                "cancel.invalid",
+            ),
+            Input::Reserve(_) => unreachable!(),
+        })
+    }
+
+    fn remember_reply(
+        &mut self,
+        context: Context,
+        input: &Input,
+        reply: &Reply,
+        before: &View,
+        after: &View,
+    ) {
+        let mut reserved = before.reserved;
+        let mut events = before.events;
+        match (input, reply) {
+            (Input::Owner(next), Reply::Unit(Ok(()))) => self.fence = Some(*next),
+            (Input::Cancel(epoch), Reply::Unit(Ok(()))) => {
+                self.epoch = Some(*epoch);
+                self.cancelled = true;
+            }
+            (Input::Send(key), Reply::Unit(Ok(()))) if after.reserved == before.reserved + 1 => {
+                let operation = before
+                    .orders
+                    .iter()
+                    .find(|o| o.request.order_id == *key)
+                    .expect("S4-REPLY history missing send order")
+                    .request
+                    .payment;
+                assert!(
+                    !self.reserved_ops.contains(&operation),
+                    "S4-REPLY history duplicate slot"
+                );
+                self.reserved_ops.push(operation);
+                reserved += 1;
+            }
+            (Input::Capture(value), Reply::Capture(Ok(outcome)))
+                if after.events == before.events + 1 =>
+            {
+                self.retained_events.push((value.clone(), *outcome));
+                if self.reserved_ops.contains(&value.operation) {
+                    self.reserved_ops.retain(|op| *op != value.operation);
+                    reserved -= 1;
+                }
+                events += 1;
+            }
+            _ => {}
+        }
+        assert_eq!(
+            (after.reserved, after.events),
+            (reserved, events),
+            "S4-REPLY history public deltas"
+        );
+        assert_eq!(
+            self.reserved_ops.len(),
+            after.reserved,
+            "S4-REPLY history slots"
+        );
+        assert_eq!(
+            self.retained_events.len(),
+            after.events,
+            "S4-REPLY history events"
+        );
+        self.max_now = self.max_now.max(context.now_ms);
+    }
+
     fn view(&self, k: &Kernel) -> View {
         View {
             orders: self
@@ -272,7 +544,7 @@ impl Observer {
         Ok(())
     }
 
-    fn run(&mut self, k: &mut Kernel, f: Fixture, context: Context, input: Input) {
+    fn run(&mut self, k: &mut Kernel, f: Fixture, context: Context, input: Input) -> Reply {
         if let Input::Reserve(request) = &input
             && !self.known_orders.contains(&request.order_id)
         {
@@ -288,6 +560,7 @@ impl Observer {
             Input::Cancel(_) => 5,
         };
         self.action_counts[family] += 1;
+        let expected = self.expected_reply(k, f, context, &input);
         let reply = match &input {
             Input::Reserve(value) => Reply::Reserve(k.reserve(context, value.clone())),
             Input::Send(key) => Reply::Unit(k.mark_payment_unknown(context, *key)),
@@ -315,22 +588,17 @@ impl Observer {
                     .push((context, request.clone(), applied.original));
             }
         }
-        // Read every result, including failures, to exercise state-changing Capacity paths.
-        match &reply {
-            Reply::Reserve(value) => {
-                let _ = value.is_ok();
-            }
-            Reply::Unit(value) => {
-                let _ = value.is_ok();
-            }
-            Reply::Expire(value) => {
-                let _ = value.is_ok();
-            }
-            Reply::Capture(value) => {
-                let _ = value.is_ok();
-            }
+        if let Some((expected, branch)) = expected {
+            check_reply(&expected, &reply).unwrap_or_else(|e| {
+                panic!("{e}; branch={branch}; call={}; input={input:?}; expected={expected:?}; reply={reply:?}", self.primary_calls)
+            });
+            self.reply_checks[family] += 1;
+            hit(&mut self.branch_hits, branch, 1);
+        } else if let Reply::Reserve(value) = &reply {
+            let _ = value.is_ok();
         }
         let after = self.view(k);
+        self.remember_reply(context, &input, &reply, &before, &after);
         for order in &after.orders {
             let old = before
                 .orders
@@ -394,6 +662,7 @@ impl Observer {
         self.replay_probes += self.originals.len();
         self.check(&self.view(k), f).unwrap();
         self.primary_calls += 1;
+        reply
     }
 }
 
@@ -429,6 +698,8 @@ fn five_contract_invariants_on_kernel_only_generated_histories() {
     let mut probes = 0;
     let mut captures = 0;
     let mut totals = [0_usize; 6];
+    let mut reply_checks = [0_usize; 6];
+    let mut branch_hits = Vec::new();
     for (fixture_id, f) in [
         Fixture {
             ga: false,
@@ -539,6 +810,12 @@ fn five_contract_invariants_on_kernel_only_generated_histories() {
             primary += observer.primary_calls;
             probes += observer.replay_probes;
             captures += observer.captured.len();
+            for (sum, count) in reply_checks.iter_mut().zip(observer.reply_checks) {
+                *sum += count;
+            }
+            for (branch, count) in observer.branch_hits {
+                hit(&mut branch_hits, branch, count);
+            }
             for (sum, count) in totals.iter_mut().zip(observer.action_counts) {
                 *sum += count;
             }
@@ -546,6 +823,25 @@ fn five_contract_invariants_on_kernel_only_generated_histories() {
     }
     assert_eq!(primary, 4 * 64 * 96);
     assert!(totals.iter().all(|n| *n > 0));
+    for family in 1..=5 {
+        assert_eq!(
+            reply_checks[family], totals[family],
+            "S4-REPLY unchecked family={family}"
+        );
+    }
+    assert_eq!(
+        branch_hits.iter().map(|(_, n)| n).sum::<usize>(),
+        reply_checks.iter().sum()
+    );
+    branch_hits.sort_by_key(|(branch, _)| *branch);
+    let branches = branch_hits
+        .iter()
+        .map(|(branch, n)| format!("\"{branch}\":{n}"))
+        .collect::<Vec<_>>()
+        .join(",");
+    fs::write(output().join("contract-reply-oracle-summary.json"), format!(
+        "{{\"source_informed\":true,\"clean_room\":false,\"reply_checks\":{reply_checks:?},\"branch_hits\":{{{branches}}}}}\n"
+    )).unwrap();
     fs::write(output().join("contract-invariants-summary.json"), format!(
         "{{\"kernel_blob\":\"{LOCKED}\",\"reference_model_used\":false,\"sequences\":256,\"primary_steps\":{primary},\"readonly_replay_probes\":{probes},\"capture_facts_observed\":{captures},\"action_counts\":{totals:?},\"properties\":[\"INV-1\",\"INV-2\",\"INV-3\",\"INV-4\",\"INV-5\"],\"failures\":0,\"scope\":\"finite kernel-only public-state/history predicates; not external ledger or proof of completeness\"}}\n"
     )).unwrap();
@@ -682,6 +978,107 @@ fn inv3_replay_predicate_rejects_corrupted_observer_views_not_kernel_mutations()
     assert_eq!(k, snapshot, "fixture mutated the kernel");
     fs::write(output().join("contract-inv3-sensitivity.txt"),
         "Synthetic INV-3 observer copies rejected: altered replay reply, public-state change, Eq-sentinel/admitted-time change, rewritten first result. Kernel unchanged. Source-informed; no production fault injection.\n").unwrap();
+}
+
+/// In-memory negative controls; source-informed, no kernel mutation.
+#[test]
+fn reply_oracle_rejects_deliberately_wrong_expected_replies() {
+    let f = Fixture {
+        ga: false,
+        limits: Limits {
+            commands: 8,
+            orders: 8,
+            observations: 1,
+        },
+    };
+    let mut k = f.kernel();
+    let mut observer = Observer::default();
+    let a = f.request(1, 0, 1, 100);
+    observer.run(&mut k, f, ctx(1, 1), Input::Reserve(a.clone()));
+    let send = observer.run(&mut k, f, ctx(2, 1), Input::Send(a.order_id));
+    let before_capture = k.clone();
+    let capture_history = observer.clone();
+    let fact = capture(&a, 500);
+    let captured = observer.run(&mut k, f, ctx(3, 1), Input::Capture(fact.clone()));
+    let expired = observer.run(&mut k, f, ctx(4, 1), Input::Expire(id(99_999)));
+    let next = ctx(0, 2).fence;
+    let owner = observer.run(&mut k, f, ctx(5, 1), Input::Owner(next));
+    let cancel = observer.run(&mut k, f, ctx(6, 2), Input::Cancel(2));
+    let snapshot = k.clone();
+
+    // Positive controls cover each issued non-reserve family and all reply kinds.
+    for (expected, reply) in [
+        (Expected::Unit(Ok(())), &send),
+        (
+            Expected::Capture(Ok(ObservationOutcome::PaymentConfirmed)),
+            &captured,
+        ),
+        (Expected::Expire(Err(KernelError::UnknownOrder)), &expired),
+        (Expected::Unit(Ok(())), &owner),
+        (Expected::Unit(Ok(())), &cancel),
+    ] {
+        assert_eq!(check_reply(&expected, reply), Ok(()));
+    }
+    // Wrong Ok payload, Ok-vs-Err, wrong error, and wrong kind. Every reply
+    // kind has a value mismatch and a kind mismatch; no SUT mutation is needed.
+    for (wrong, reply) in [
+        (Expected::Unit(Err(KernelError::Capacity)), &send),
+        (
+            Expected::Capture(Ok(ObservationOutcome::DuplicateEffect)),
+            &captured,
+        ),
+        (Expected::Capture(Err(KernelError::Capacity)), &captured),
+        (Expected::Expire(Ok(false)), &expired),
+        (Expected::Expire(Err(KernelError::Capacity)), &expired),
+        (Expected::Expire(Ok(true)), &send),
+        (Expected::Unit(Ok(())), &expired),
+        (Expected::Unit(Ok(())), &captured),
+    ] {
+        assert!(
+            check_reply(&wrong, reply)
+                .unwrap_err()
+                .starts_with("S4-REPLY")
+        );
+    }
+    assert!(
+        check_reply(&Expected::Expire(Ok(true)), &Reply::Expire(Ok(false)))
+            .unwrap_err()
+            .starts_with("S4-REPLY value")
+    );
+
+    // Clear only copies of tracked history. Without the promised slot the
+    // same pre-call public full budget predicts Capacity instead of confirmation.
+    let mut lost_slot = capture_history.clone();
+    lost_slot.reserved_ops.clear();
+    let input = Input::Capture(fact.clone());
+    let (correct, _) = capture_history
+        .expected_reply(&before_capture, f, ctx(3, 1), &input)
+        .unwrap();
+    let (wrong, _) = lost_slot
+        .expected_reply(&before_capture, f, ctx(3, 1), &input)
+        .unwrap();
+    assert_eq!(check_reply(&correct, &captured), Ok(()));
+    assert!(
+        check_reply(&wrong, &captured)
+            .unwrap_err()
+            .starts_with("S4-REPLY")
+    );
+
+    // Without retained event history an exact replay looks like a fresh event
+    // at capacity. The real observer still expects the original confirmed reply.
+    let mut lost_event = observer.clone();
+    lost_event.retained_events.clear();
+    let (correct, _) = observer.expected_reply(&k, f, ctx(7, 2), &input).unwrap();
+    let (wrong, _) = lost_event.expected_reply(&k, f, ctx(7, 2), &input).unwrap();
+    assert_eq!(check_reply(&correct, &captured), Ok(()));
+    assert!(
+        check_reply(&wrong, &captured)
+            .unwrap_err()
+            .starts_with("S4-REPLY")
+    );
+    assert_eq!(k, snapshot, "negative controls mutated the kernel");
+    fs::write(output().join("contract-reply-oracle-sensitivity.txt"),
+        "Wrong expected values/kinds and lost slot/event history rejected; observer copies only; no kernel mutation; source-informed, not clean-room.\n").unwrap();
 }
 
 #[test]
