@@ -390,6 +390,8 @@
 
 - [plan-plan-perf-harness-map-json-csv-closure-2](../validation/2026-10-27-plan-perf-harness-map-json-csv-closure-2/README.md) — Builder-authored public-API perf harness assertions for top-level outcome JSON, CSV latency arithmetic, fixed-origin schedule, workload-report parameters and binding fields; six rows COVERED, M-REPLAYED/M-SERVICE-NS/M-ELAPSED/BD-FIELDS PARTIAL, release probe NOT_RUN, no benchmark or timing claim.
 
+- [plan-plan-perf-harness-kernel-construction-co](../validation/2026-10-27-plan-perf-harness-kernel-construction-co/README.md) — Builder-authored perf probe kernel-construction counter; report JSON resets derived from the count with schema unchanged; B-ZERO-KERNEL-REBUILD COVERED, release probe NOT_RUN, no benchmark or timing claim.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.

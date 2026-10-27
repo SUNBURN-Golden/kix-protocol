@@ -603,6 +603,70 @@ fn elapsed_ns_covers_every_row_and_scheduled_wait() {
     }
 }
 
+#[test]
+fn each_workload_and_low_load_run_constructs_exactly_one_kernel() {
+    // Four smoke workloads, the low-load control and the scheduled control.
+    let low_count = probe::low_load_sample_count(128);
+    let position = format!(
+        "\"goodput_interpretation\":\"{}\",\"kernel_resets_during_workload\":0,\"outcomes\":[",
+        probe::GOODPUT_INTERPRETATION
+    );
+    for (workload, count, rate) in [
+        (probe::Workload::Uniform, 512, 0),
+        (probe::Workload::HotSeat, 512, 0),
+        (probe::Workload::Retry, 512, 0),
+        (probe::Workload::Conflict, 512, 0),
+        (probe::Workload::Uniform, low_count, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        if count == low_count {
+            assert!(report.low_load());
+        }
+        assert_single_kernel(&report, rate, 128);
+        let json = report.json(rate, 128);
+        assert_eq!(json.matches(&position).count(), 1);
+        assert!(report.raw_csv.starts_with(
+            "index,scheduled_ns,start_ns,end_ns,service_ns,scheduled_latency_ns,outcome\n"
+        ));
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn injected_kernel_reconstruction_is_counted_and_reported() {
+    // Negative sensitivity: a second construction at the correct run's first
+    // Capacity index must be counted, reported and rejected by the guard.
+    let correct = probe::run(probe::Workload::Uniform, 512, 128, 0);
+    assert_eq!(
+        (correct.held, correct.capacity, correct.first_capacity),
+        (128, 384, Some(128))
+    );
+    let report =
+        probe::run_with_injected_reconstruction(probe::Workload::Uniform, 512, 128, 0, 128);
+    assert_eq!(report.kernel_constructions, 2);
+    assert_eq!(report.kernel_resets_during_workload(), 1);
+    let json = report.json(0, 128);
+    assert_eq!(top_level(&json, "kernel_resets_during_workload"), "1");
+    assert!(!json.contains("\"kernel_resets_during_workload\":0"));
+    // The reset hides exhaustion: a fresh command budget admits 128 more Held.
+    assert_eq!(
+        (report.held, report.capacity, report.first_capacity),
+        (256, 256, Some(256))
+    );
+    assert!(std::panic::catch_unwind(|| assert_single_kernel(&report, 0, 128)).is_err());
+}
+
+#[test]
+fn perf_probe_routes_kernel_new_through_one_helper() {
+    // Source characterization: the probe has one construction site, inside the
+    // counting helper, and never clones a kernel. Textual, not a semantic proof.
+    let src = include_str!("support/perf_probe.rs");
+    assert_eq!(src.matches("Kernel::new(").count(), 1);
+    assert_eq!(src.matches("fn construct_kernel(").count(), 1);
+    assert!(!src.contains("kernel.clone()"));
+}
+
 // CSV columns: index, scheduled_ns, start_ns, end_ns, service_ns,
 // scheduled_latency_ns as integers, then the outcome name.
 fn csv_rows(report: &probe::Report) -> Vec<([u128; 6], String)> {
@@ -635,6 +699,18 @@ fn top_level(json: &str, key: &str) -> String {
         .next()
         .unwrap()
         .to_string()
+}
+
+fn assert_single_kernel(report: &probe::Report, rate: u64, command_limit: usize) {
+    assert_eq!(report.kernel_constructions, 1);
+    assert_eq!(report.kernel_resets_during_workload(), 0);
+    assert_eq!(
+        top_level(
+            &report.json(rate, command_limit),
+            "kernel_resets_during_workload"
+        ),
+        "0"
+    );
 }
 
 fn assert_separated(report: &probe::Report, rate: u64, command_limit: usize) {
@@ -689,6 +765,7 @@ fn assert_separated(report: &probe::Report, rate: u64, command_limit: usize) {
     assert!(json.contains(probe::MIXED_P99_INTERPRETATION));
     assert!(json.contains(probe::NON_CLAIMS));
     assert!(json.contains("\"kernel_resets_during_workload\":0"));
+    assert_single_kernel(report, rate, command_limit);
     assert!(!json.contains("\"p99_service_ns\""));
     assert!(!json.contains("success_p99"));
     assert!(!json.contains("purchase_p99"));
