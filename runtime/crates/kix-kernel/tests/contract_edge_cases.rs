@@ -18,6 +18,14 @@
 //! availability proof. Values the contracts leave open (the bundle maximum,
 //! inclusive record limits, exact rejection/error variants, cross-kind
 //! selections) are labelled AGENTS §8 class B characterizations.
+//!
+//! The error-precedence pairs after them answer the §5 "wrong error precedence"
+//! question (S5-PRECEDENCE). Each arms two public rejection guards on one call,
+//! but only where ADR §3/§5/§6 or STATE_LIFECYCLE §2–§4 decide which one wins,
+//! asserts that outcome with a whole-kernel `Eq` check and shows the losing
+//! guard is live on a clone, a twin or a later valid call. Pairs no contract
+//! orders are class B characterizations in the S5-PRECEDENCE validation
+//! record and are deliberately not asserted here.
 
 use kix_kernel::{
     CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel, KernelError, Limits,
@@ -859,4 +867,579 @@ fn smallest_positive_price_and_one_millisecond_ttl_are_held() {
         assert_eq!(k.order(r.order_id).unwrap().state, OrderState::Expired);
         assert_eq!(k.remaining(), total);
     }
+}
+
+// ---------------------------------------------------------------------------
+// CONTRACT_INVARIANTS §5 error-precedence pairs (S5-PRECEDENCE).
+// ---------------------------------------------------------------------------
+
+/// A context under a semantics version other than v4.
+fn old_semantics(now_ms: u64) -> Context {
+    Context {
+        semantics_version: SEMANTICS_VERSION - 1,
+        ..ctx(now_ms)
+    }
+}
+
+/// The owner installed by `replace_owner` in these examples.
+fn next_fence() -> ExecutionFence {
+    ExecutionFence {
+        owner: id(8),
+        generation: 2,
+    }
+}
+
+fn ctx_under(fence: ExecutionFence, now_ms: u64) -> Context {
+    Context {
+        fence,
+        ..ctx(now_ms)
+    }
+}
+
+fn seat_limits(limits: Limits) -> Kernel {
+    kernel_with(Inventory::seats(&[10]).unwrap(), limits)
+}
+
+/// The call fails with `want` and leaves the whole kernel unchanged.
+fn refused<T: PartialEq + std::fmt::Debug>(
+    k: &mut Kernel,
+    want: KernelError,
+    call: impl FnOnce(&mut Kernel) -> Result<T, KernelError>,
+) {
+    let before = k.clone();
+    assert_eq!(call(&mut *k), Err(want));
+    assert_eq!(*k, before);
+}
+
+/// A new command is recorded with `want` as its first result.
+fn recorded(k: &mut Kernel, context: Context, r: Reserve, want: ReserveOutcome) {
+    let reply = k.reserve(context, r).unwrap();
+    assert_eq!(reply.original, want);
+    assert!(!reply.replayed);
+}
+
+/// ADR §6 / addendum A: event 1 first names `a`, then `b`, quarantining both.
+fn quarantine_pair(k: &mut Kernel, a: &Reserve, b: &Reserve, now_ms: u64) {
+    k.observe_capture(ctx(now_ms), capture(a, 1)).unwrap();
+    assert_eq!(
+        k.observe_capture(ctx(now_ms + 1), capture(b, 1)).unwrap(),
+        ObservationOutcome::Conflict
+    );
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, payload conflict × local cancellation.
+/// ADR §3: the same identity with a different payload is a conflict, not a new
+/// command, so ADR §7's fence on new work does not record a BusinessFenced
+/// result for it. A fresh identity is fenced; the original still replays.
+#[test]
+fn altered_payload_conflicts_after_local_cancellation() {
+    let mut k = kernel();
+    let original = request(3, 0);
+    k.reserve(ctx(1), original.clone()).unwrap();
+    k.cancel_scope(ctx(2), 2).unwrap();
+    let altered = Reserve {
+        expected_business_epoch: 2,
+        ..original.clone()
+    };
+    refused(&mut k, KernelError::CommandConflict, |k| {
+        k.reserve(ctx(3), altered)
+    });
+
+    let fenced = ReserveOutcome::Rejected(Rejection::BusinessFenced);
+    recorded(&mut k.clone(), ctx(3), request(4, 1), fenced);
+    let before = k.clone();
+    let replay = k.reserve(ctx(3), original).unwrap();
+    assert!(replay.replayed);
+    assert_eq!(replay.original, ReserveOutcome::Held(id(3)));
+    assert_eq!(k, before);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, payload conflict × full command
+/// records. ADR §3: an altered payload is a conflict on an existing identity,
+/// which needs no new record; capacity backpressure applies to new commands.
+#[test]
+fn altered_payload_conflicts_at_full_command_capacity() {
+    let mut k = seat_limits(Limits {
+        commands: 1,
+        ..ROOMY
+    });
+    let original = request(3, 0);
+    k.reserve(ctx(1), original.clone()).unwrap();
+    let altered = Reserve {
+        selection: Selection::Seats { first: 1, count: 1 },
+        ..original.clone()
+    };
+    refused(&mut k, KernelError::CommandConflict, |k| {
+        k.reserve(ctx(2), altered)
+    });
+
+    refused(&mut k.clone(), KernelError::Capacity, |k| {
+        k.reserve(ctx(2), request(4, 1))
+    });
+    assert!(k.reserve(ctx(2), original).unwrap().replayed);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, payload conflict × unavailable
+/// inventory. ADR §3 conflict, and README "Immutable original outcome replay
+/// before new-attempt availability checks": moving a held command onto taken
+/// seats is a conflict, not a recorded Unavailable result.
+#[test]
+fn altered_payload_conflicts_when_its_selection_is_unavailable() {
+    let mut k = kernel();
+    let holder = request(3, 0);
+    let mover = request(4, 1);
+    k.reserve(ctx(1), holder).unwrap();
+    k.reserve(ctx(2), mover.clone()).unwrap();
+    let onto_holder = Reserve {
+        selection: Selection::Seats { first: 0, count: 1 },
+        ..mover.clone()
+    };
+    refused(&mut k, KernelError::CommandConflict, |k| {
+        k.reserve(ctx(3), onto_holder)
+    });
+
+    let unavailable = ReserveOutcome::Rejected(Rejection::Unavailable);
+    recorded(&mut k.clone(), ctx(3), request(5, 0), unavailable);
+    assert!(k.reserve(ctx(3), mover).unwrap().replayed);
+    assert!(k.order(id(4)).unwrap().inventory_owned);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, payload conflict × quarantine. ADR §3
+/// conflict; ADR §6 a quarantined operation "cannot later gain a fresh
+/// reservation binding". Re-pointing an existing command at a quarantined
+/// operation is a conflict, records no OperationQuarantined result and leaves
+/// the existing order unreviewed.
+#[test]
+fn altered_payload_conflicts_when_its_operation_is_quarantined() {
+    let mut k = kernel();
+    let (a, b, x) = (request(3, 0), request(4, 1), request(5, 2));
+    for (t, r) in [(1, &a), (2, &b), (3, &x)] {
+        k.reserve(ctx(t), r.clone()).unwrap();
+    }
+    quarantine_pair(&mut k, &a, &b, 4);
+    let onto_quarantined = Reserve {
+        payment: b.payment,
+        ..x.clone()
+    };
+    refused(&mut k, KernelError::CommandConflict, |k| {
+        k.reserve(ctx(6), onto_quarantined)
+    });
+
+    let fresh = Reserve {
+        payment: b.payment,
+        ..request(6, 3)
+    };
+    let quarantined = ReserveOutcome::Rejected(Rejection::OperationQuarantined);
+    recorded(&mut k.clone(), ctx(6), fresh, quarantined);
+    assert!(k.reserve(ctx(6), x.clone()).unwrap().replayed);
+    assert!(!k.order(x.order_id).unwrap().review_required);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, payload conflict × UNKNOWN. ADR §3
+/// conflict; ADR §6 and STATE_LIFECYCLE §2 an UNKNOWN operation and its slot
+/// survive the TTL. An altered retry after the deadline is a conflict and does
+/// not record an OperationAlreadyBound result or touch the UNKNOWN order.
+#[test]
+fn altered_payload_conflicts_without_touching_an_unknown_payment() {
+    let mut k = kernel();
+    let unknown = request(3, 0);
+    k.reserve(ctx(1), unknown.clone()).unwrap();
+    k.mark_payment_unknown(ctx(2), unknown.order_id).unwrap();
+    let altered = Reserve {
+        order_id: id(4),
+        selection: Selection::Seats { first: 1, count: 1 },
+        expires_at_ms: 500,
+        ..unknown.clone()
+    };
+    refused(&mut k, KernelError::CommandConflict, |k| {
+        k.reserve(ctx(EXPIRY + 1), altered.clone())
+    });
+    let order = k.order(unknown.order_id).unwrap();
+    assert_eq!(order.state, OrderState::PaymentUnknown);
+    assert!(order.inventory_owned);
+    assert_eq!(k.reserved_observation_count(), 1);
+
+    let fresh = Reserve {
+        id: request(5, 1).id,
+        ..altered
+    };
+    let bound = ReserveOutcome::Rejected(Rejection::OperationAlreadyBound);
+    recorded(&mut k.clone(), ctx(EXPIRY + 1), fresh, bound);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, semantics version × local
+/// cancellation. ADR §5: v4 "rejects other versions", so neither a
+/// BusinessFenced command result nor a ReturnRequired capture is applied under
+/// another version. The same inputs under v4 then meet the cancellation.
+#[test]
+fn unsupported_semantics_records_nothing_after_local_cancellation() {
+    let mut k = kernel();
+    let unknown = request(3, 0);
+    k.reserve(ctx(1), unknown.clone()).unwrap();
+    k.mark_payment_unknown(ctx(2), unknown.order_id).unwrap();
+    k.cancel_scope(ctx(3), 2).unwrap();
+    let fresh = request(4, 1);
+    refused(&mut k, KernelError::UnsupportedSemantics, |k| {
+        k.reserve(old_semantics(4), fresh.clone())
+    });
+    refused(&mut k, KernelError::UnsupportedSemantics, |k| {
+        k.observe_capture(old_semantics(4), capture(&unknown, 1))
+    });
+
+    let fenced = ReserveOutcome::Rejected(Rejection::BusinessFenced);
+    recorded(&mut k, ctx(4), fresh, fenced);
+    assert_eq!(
+        k.observe_capture(ctx(5), capture(&unknown, 1)).unwrap(),
+        ObservationOutcome::ReturnRequired
+    );
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, semantics version × unavailable
+/// inventory. ADR §5: another version is rejected, so no Unavailable result is
+/// recorded; the same identity under v4 is still a new command.
+#[test]
+fn unsupported_semantics_records_no_unavailable_rejection() {
+    let mut k = kernel();
+    k.reserve(ctx(1), request(3, 0)).unwrap();
+    let blocked = request(4, 0);
+    refused(&mut k, KernelError::UnsupportedSemantics, |k| {
+        k.reserve(old_semantics(2), blocked.clone())
+    });
+
+    let unavailable = ReserveOutcome::Rejected(Rejection::Unavailable);
+    recorded(&mut k, ctx(2), blocked, unavailable);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, semantics version × quarantine.
+/// ADR §5 rejects other versions; ADR §6 and addendum A define the v4
+/// quarantine. A conflicting event under another version quarantines nothing,
+/// and a reservation naming a quarantined operation records nothing.
+#[test]
+fn unsupported_semantics_applies_no_quarantine() {
+    let mut k = kernel();
+    let (a, b) = (request(3, 0), request(4, 1));
+    k.reserve(ctx(1), a.clone()).unwrap();
+    k.reserve(ctx(2), b.clone()).unwrap();
+    k.observe_capture(ctx(3), capture(&a, 1)).unwrap();
+    refused(&mut k, KernelError::UnsupportedSemantics, |k| {
+        k.observe_capture(old_semantics(4), capture(&b, 1))
+    });
+    assert_eq!(k.quarantined_operation_count(), 0);
+
+    assert_eq!(
+        k.observe_capture(ctx(4), capture(&b, 1)).unwrap(),
+        ObservationOutcome::Conflict
+    );
+    assert_eq!(k.quarantined_operation_count(), 2);
+    let reused = Reserve {
+        payment: b.payment,
+        ..request(5, 2)
+    };
+    refused(&mut k, KernelError::UnsupportedSemantics, |k| {
+        k.reserve(old_semantics(5), reused.clone())
+    });
+    let quarantined = ReserveOutcome::Rejected(Rejection::OperationQuarantined);
+    recorded(&mut k, ctx(5), reused, quarantined);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, semantics version × UNKNOWN. ADR §5
+/// rejects other versions, so another version neither commits the UNKNOWN
+/// send transition and its slot nor applies the first capture that would
+/// spend that slot.
+#[test]
+fn unsupported_semantics_neither_sends_nor_captures_an_unknown_payment() {
+    let mut k = kernel();
+    let order = request(3, 0);
+    k.reserve(ctx(1), order.clone()).unwrap();
+    refused(&mut k, KernelError::UnsupportedSemantics, |k| {
+        k.mark_payment_unknown(old_semantics(2), order.order_id)
+    });
+    assert_eq!(k.order(order.order_id).unwrap().state, OrderState::Held);
+    assert_eq!(k.reserved_observation_count(), 0);
+
+    k.mark_payment_unknown(ctx(2), order.order_id).unwrap();
+    assert_eq!(k.reserved_observation_count(), 1);
+    refused(&mut k, KernelError::UnsupportedSemantics, |k| {
+        k.observe_capture(old_semantics(3), capture(&order, 1))
+    });
+    assert_eq!(k.order(order.order_id).unwrap().captured, None);
+
+    assert_eq!(
+        k.observe_capture(ctx(3), capture(&order, 1)).unwrap(),
+        ObservationOutcome::PaymentConfirmed
+    );
+    assert_eq!(k.reserved_observation_count(), 0);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, regressed time × local cancellation.
+/// ADR §5: supplied time and monotonicity are validated at the ordered
+/// boundary, so a regressed input is not admitted: no BusinessFenced result is
+/// recorded and no ReturnRequired capture is applied. Valid times then meet the
+/// cancellation.
+#[test]
+fn regressed_time_records_nothing_after_local_cancellation() {
+    let mut k = kernel();
+    let unknown = request(3, 0);
+    k.reserve(ctx(1), unknown.clone()).unwrap();
+    k.mark_payment_unknown(ctx(2), unknown.order_id).unwrap();
+    k.cancel_scope(ctx(10), 2).unwrap();
+    let fresh = request(4, 1);
+    refused(&mut k, KernelError::ClockRegression, |k| {
+        k.reserve(ctx(5), fresh.clone())
+    });
+    refused(&mut k, KernelError::ClockRegression, |k| {
+        k.observe_capture(ctx(5), capture(&unknown, 1))
+    });
+
+    let fenced = ReserveOutcome::Rejected(Rejection::BusinessFenced);
+    recorded(&mut k, ctx(11), fresh, fenced);
+    assert_eq!(
+        k.observe_capture(ctx(12), capture(&unknown, 1)).unwrap(),
+        ObservationOutcome::ReturnRequired
+    );
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, full command records × local
+/// cancellation. STATE_LIFECYCLE §2: business rejections are recorded first
+/// results; ADR §3: bounded records backpressure instead of forgetting. With no
+/// command slot, no BusinessFenced result can be recorded, so the call is
+/// refused unchanged; a twin with free slots records BusinessFenced.
+#[test]
+fn full_command_capacity_backpressures_after_local_cancellation() {
+    let history = |limits| {
+        let mut k = seat_limits(limits);
+        k.reserve(ctx(1), request(3, 0)).unwrap();
+        k.cancel_scope(ctx(2), 2).unwrap();
+        k
+    };
+    let mut full = history(Limits {
+        commands: 1,
+        ..ROOMY
+    });
+    refused(&mut full, KernelError::Capacity, |k| {
+        k.reserve(ctx(3), request(4, 1))
+    });
+
+    let fenced = ReserveOutcome::Rejected(Rejection::BusinessFenced);
+    recorded(&mut history(ROOMY), ctx(3), request(4, 1), fenced);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, stale execution fence × unavailable
+/// inventory. ADR §3/§6: internal fencing stops new internal writes by an old
+/// owner, so the old owner records no Unavailable result; the current owner
+/// does.
+#[test]
+fn stale_execution_fence_records_no_unavailable_rejection() {
+    let mut k = kernel();
+    k.reserve(ctx(1), request(3, 0)).unwrap();
+    k.replace_owner(ctx(2), next_fence()).unwrap();
+    let blocked = request(4, 0);
+    refused(&mut k, KernelError::ExecutionFenced, |k| {
+        k.reserve(ctx(3), blocked.clone())
+    });
+
+    let unavailable = ReserveOutcome::Rejected(Rejection::Unavailable);
+    recorded(&mut k, ctx_under(next_fence(), 3), blocked, unavailable);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, stale execution fence × quarantine.
+/// ADR §3/§6: the old owner's writes are stopped and "the current owner applies
+/// those facts under its current execution fence". An old-fence conflicting
+/// event quarantines nothing, and an old-fence reservation naming the
+/// quarantined operation records nothing; the current owner applies both.
+#[test]
+fn stale_execution_fence_applies_no_quarantine() {
+    let mut k = kernel();
+    let (a, b) = (request(3, 0), request(4, 1));
+    k.reserve(ctx(1), a.clone()).unwrap();
+    k.reserve(ctx(2), b.clone()).unwrap();
+    k.observe_capture(ctx(3), capture(&a, 1)).unwrap();
+    k.replace_owner(ctx(4), next_fence()).unwrap();
+    refused(&mut k, KernelError::ExecutionFenced, |k| {
+        k.observe_capture(ctx(5), capture(&b, 1))
+    });
+    assert_eq!(k.quarantined_operation_count(), 0);
+
+    assert_eq!(
+        k.observe_capture(ctx_under(next_fence(), 5), capture(&b, 1))
+            .unwrap(),
+        ObservationOutcome::Conflict
+    );
+    assert_eq!(k.quarantined_operation_count(), 2);
+    let reused = Reserve {
+        payment: b.payment,
+        ..request(5, 2)
+    };
+    refused(&mut k, KernelError::ExecutionFenced, |k| {
+        k.reserve(ctx(6), reused.clone())
+    });
+    let quarantined = ReserveOutcome::Rejected(Rejection::OperationQuarantined);
+    recorded(&mut k, ctx_under(next_fence(), 6), reused, quarantined);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, stale execution fence × UNKNOWN.
+/// ADR §3/§6: the old owner can neither authorize a send retry nor apply the
+/// late fact; STATE_LIFECYCLE §2: owner change never releases the UNKNOWN
+/// operation or its slot. The current owner may retry and applies the capture.
+#[test]
+fn stale_execution_fence_neither_sends_nor_captures_an_unknown_payment() {
+    let mut k = kernel();
+    let order = request(3, 0);
+    k.reserve(ctx(1), order.clone()).unwrap();
+    k.mark_payment_unknown(ctx(2), order.order_id).unwrap();
+    k.replace_owner(ctx(3), next_fence()).unwrap();
+    refused(&mut k, KernelError::ExecutionFenced, |k| {
+        k.mark_payment_unknown(ctx(4), order.order_id)
+    });
+    refused(&mut k, KernelError::ExecutionFenced, |k| {
+        k.observe_capture(ctx(4), capture(&order, 1))
+    });
+    assert_eq!(k.reserved_observation_count(), 1);
+    assert_eq!(
+        k.order(order.order_id).unwrap().state,
+        OrderState::PaymentUnknown
+    );
+
+    k.mark_payment_unknown(ctx_under(next_fence(), 4), order.order_id)
+        .unwrap();
+    assert_eq!(k.reserved_observation_count(), 1);
+    assert_eq!(
+        k.observe_capture(ctx_under(next_fence(), 5), capture(&order, 1))
+            .unwrap(),
+        ObservationOutcome::PaymentConfirmed
+    );
+    assert_eq!(k.reserved_observation_count(), 0);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, regressed time × unavailable
+/// inventory. ADR §5: a regressed input is not admitted, so no Unavailable
+/// result is recorded; the same identity at a valid time is a new command.
+#[test]
+fn regressed_time_records_no_unavailable_rejection() {
+    let mut k = kernel();
+    k.reserve(ctx(10), request(3, 0)).unwrap();
+    let blocked = request(4, 0);
+    refused(&mut k, KernelError::ClockRegression, |k| {
+        k.reserve(ctx(5), blocked.clone())
+    });
+
+    let unavailable = ReserveOutcome::Rejected(Rejection::Unavailable);
+    recorded(&mut k, ctx(11), blocked, unavailable);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, regressed time × quarantine. ADR §5:
+/// a regressed input is not admitted; ADR addendum A: an admitted conflict
+/// quarantines bound operations even when it returns Capacity. A regressed
+/// conflicting event therefore quarantines nothing, with or without evidence
+/// budget, and a regressed reservation naming the quarantined operation
+/// records nothing.
+#[test]
+fn regressed_time_applies_no_quarantine() {
+    for observations in [ROOMY.observations, 1] {
+        let mut k = seat_limits(Limits {
+            observations,
+            ..ROOMY
+        });
+        let (a, b) = (request(3, 0), request(4, 1));
+        k.reserve(ctx(1), a.clone()).unwrap();
+        k.reserve(ctx(2), b.clone()).unwrap();
+        k.observe_capture(ctx(10), capture(&a, 1)).unwrap();
+        refused(&mut k, KernelError::ClockRegression, |k| {
+            k.observe_capture(ctx(5), capture(&b, 1))
+        });
+        assert_eq!(k.quarantined_operation_count(), 0);
+
+        let admitted = k.observe_capture(ctx(11), capture(&b, 1));
+        if observations == 1 {
+            assert_eq!(admitted, Err(KernelError::Capacity));
+        } else {
+            assert_eq!(admitted, Ok(ObservationOutcome::Conflict));
+        }
+        assert_eq!(k.quarantined_operation_count(), 2);
+        let reused = Reserve {
+            payment: b.payment,
+            ..request(5, 2)
+        };
+        refused(&mut k, KernelError::ClockRegression, |k| {
+            k.reserve(ctx(5), reused.clone())
+        });
+        let quarantined = ReserveOutcome::Rejected(Rejection::OperationQuarantined);
+        recorded(&mut k, ctx(12), reused, quarantined);
+    }
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, regressed time × UNKNOWN. ADR §5: a
+/// regressed capture is not admitted, so it neither records the capture nor
+/// spends the reserved slot; STATE_LIFECYCLE §2 keeps the slot for the later
+/// valid capture.
+#[test]
+fn regressed_time_applies_no_capture_to_an_unknown_payment() {
+    let mut k = kernel();
+    let order = request(3, 0);
+    k.reserve(ctx(1), order.clone()).unwrap();
+    k.mark_payment_unknown(ctx(10), order.order_id).unwrap();
+    refused(&mut k, KernelError::ClockRegression, |k| {
+        k.observe_capture(ctx(5), capture(&order, 1))
+    });
+    assert_eq!(k.reserved_observation_count(), 1);
+    assert_eq!(k.order(order.order_id).unwrap().captured, None);
+
+    assert_eq!(
+        k.observe_capture(ctx(11), capture(&order, 1)).unwrap(),
+        ObservationOutcome::PaymentConfirmed
+    );
+    assert_eq!(k.reserved_observation_count(), 0);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, full command records × unavailable
+/// inventory. STATE_LIFECYCLE §2 records business rejections; ADR §3 bounded
+/// records backpressure instead of forgetting. With no command slot, no
+/// Unavailable result is recorded; a twin with free slots records it.
+#[test]
+fn full_command_capacity_backpressures_before_an_unavailable_rejection() {
+    let history = |limits| {
+        let mut k = seat_limits(limits);
+        k.reserve(ctx(1), request(3, 0)).unwrap();
+        k
+    };
+    let mut full = history(Limits {
+        commands: 1,
+        ..ROOMY
+    });
+    refused(&mut full, KernelError::Capacity, |k| {
+        k.reserve(ctx(2), request(4, 0))
+    });
+
+    let unavailable = ReserveOutcome::Rejected(Rejection::Unavailable);
+    recorded(&mut history(ROOMY), ctx(2), request(4, 0), unavailable);
+}
+
+/// CONTRACT_INVARIANTS §5 / S5-PRECEDENCE, full command records × quarantine on
+/// reserve. STATE_LIFECYCLE §2 and ADR §3 as above; ADR §6 bars the quarantined
+/// operation from a fresh binding. With no command slot, no
+/// OperationQuarantined result is recorded; a twin with free slots records it.
+#[test]
+fn full_command_capacity_backpressures_before_a_quarantine_rejection() {
+    let (a, b) = (request(3, 0), request(4, 1));
+    let history = |limits| {
+        let mut k = seat_limits(limits);
+        k.reserve(ctx(1), a.clone()).unwrap();
+        k.reserve(ctx(2), b.clone()).unwrap();
+        quarantine_pair(&mut k, &a, &b, 3);
+        k
+    };
+    let reused = Reserve {
+        payment: b.payment,
+        ..request(5, 2)
+    };
+    let mut full = history(Limits {
+        commands: 2,
+        ..ROOMY
+    });
+    refused(&mut full, KernelError::Capacity, |k| {
+        k.reserve(ctx(5), reused.clone())
+    });
+
+    let quarantined = ReserveOutcome::Rejected(Rejection::OperationQuarantined);
+    recorded(&mut history(ROOMY), ctx(5), reused, quarantined);
 }
