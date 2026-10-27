@@ -358,6 +358,7 @@
 - [plan-plan-contract-invariants-f-b3-reply-asse](../validation/2026-10-27-plan-contract-invariants-f-b3-reply-assertions/README.md) — Source-informed expected replies for every non-reserve call in the unchanged kernel-only corpus and an in-memory negative control; S4-PROBES stays PARTIAL, no kernel, contract or grade change.
 
 - [plan-plan-contract-invariants-s5-availability](../validation/2026-10-27-plan-contract-invariants-s5-availability/README.md) — Seven deterministic public-API availability examples for CONTRACT_INVARIANTS §5 safe-but-incorrect rejection; S5-SAFE-REJECT and S5-FINITE stay PARTIAL, class B boundary F-B5 recorded, no kernel, contract or grade change.
+- [plan-plan-contract-invariants-s5-precedence-m](../validation/2026-10-27-plan-contract-invariants-s5-precedence/README.md) — Guard-pair error-precedence matrix and nineteen deterministic public-API pair tests for CONTRACT_INVARIANTS §5 wrong error precedence; S5-PRECEDENCE stays PARTIAL, class B pairs recorded as F-B6, no kernel, contract or grade change.
 
 - [plan-plan-lifecycle-adr-clause-evidence-map](../validation/2026-10-26-plan-lifecycle-adr-clause-evidence-map/README.md) — Builder-authored lifecycle/ADR clause-to-test map ([지도](status/LIFECYCLE_ADR_CLAUSE_EVIDENCE_MAP.md)) and stdlib checker; source-informed and contract-path evidence separated, I09–I13 stay open, no new Rust tests or grade change.
 
