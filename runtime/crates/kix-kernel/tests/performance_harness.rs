@@ -423,6 +423,204 @@ fn smoke_final_remaining_matches_v4_smoke_signature() {
     }
 }
 
+#[test]
+fn outcome_count_json_keys_are_top_level_per_workload() {
+    // Contract JSON keys; counts from the V4-SMOKE-001 logical signature and controls.
+    for (workload, count, rate, (held, replayed, rejected, conflict)) in [
+        (probe::Workload::Uniform, 512, 0, (128, 0, 0, 0)),
+        (probe::Workload::HotSeat, 512, 0, (1, 0, 127, 0)),
+        (probe::Workload::Retry, 512, 0, (1, 511, 0, 0)),
+        (probe::Workload::Conflict, 512, 0, (0, 0, 0, 127)),
+        (probe::Workload::HotSeat, 16, 10_000, (1, 0, 15, 0)),
+        (probe::Workload::Uniform, 32, 0, (32, 0, 0, 0)),
+        (probe::Workload::Conflict, 8, 0, (0, 0, 0, 8)),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        let json = report.json(rate, 128);
+        let rows = csv_rows(&report);
+        for (key, outcome, expected) in [
+            ("new_held", "held", held),
+            ("new_success_count", "held", held),
+            ("replayed", "replayed", replayed),
+            ("business_rejected", "business_rejected", rejected),
+            ("conflict_retained", "conflict_retained", conflict),
+        ] {
+            assert_eq!(top_level(&json, key), expected.to_string());
+            assert_eq!(report.outcome(outcome).unwrap().count, expected);
+            let csv_count = rows.iter().filter(|(_, name)| name == outcome).count();
+            assert_eq!(csv_count, expected);
+        }
+        assert_eq!(top_level(&json, "other"), "0");
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn csv_rows_keep_service_inside_call_window_and_latency_arithmetic() {
+    // Ordering and exact arithmetic only; no duration is compared with a constant.
+    for (workload, count, rate) in [
+        (probe::Workload::Uniform, 512, 0),
+        (probe::Workload::HotSeat, 512, 0),
+        (probe::Workload::Retry, 512, 0),
+        (probe::Workload::Conflict, 512, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+        (probe::Workload::Uniform, 32, 250_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        let rows = csv_rows(&report);
+        assert_eq!(rows.len(), count);
+        let mut previous_end = 0;
+        for ([_, scheduled, start, end, service, latency], _) in rows {
+            assert!(start <= end);
+            assert!(service <= end - start);
+            assert!(start >= previous_end);
+            if rate == 0 {
+                assert_eq!(scheduled, 0);
+                assert_eq!(latency, end - start);
+            } else {
+                assert!(scheduled <= start);
+                assert_eq!(latency, end - scheduled);
+            }
+            previous_end = end;
+        }
+    }
+}
+
+#[test]
+fn scheduled_csv_uses_fixed_origin_i_over_rate() {
+    // Rates divide 1e9 exactly, so no rounding rule is assumed.
+    for (workload, count, rate) in [
+        (probe::Workload::HotSeat, 16, 10_000),
+        (probe::Workload::Uniform, 32, 250_000),
+        (probe::Workload::Retry, 8, 1_000_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        for (i, ([index, scheduled, ..], _)) in csv_rows(&report).into_iter().enumerate() {
+            assert_eq!(index, i as u128);
+            assert_eq!(scheduled, i as u128 * 1_000_000_000 / u128::from(rate));
+        }
+        let json = report.json(rate, 128);
+        assert_eq!(top_level(&json, "rate"), rate.to_string());
+        assert!(json.contains(probe::rate_meaning(rate)));
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn workload_report_json_names_budgets_samples_and_rate() {
+    for (workload, count, command_limit, rate) in [
+        (probe::Workload::Uniform, 32, 128, 0),
+        (probe::Workload::HotSeat, 16, 128, 10_000),
+        (probe::Workload::Retry, 64, 512, 0),
+        (probe::Workload::Conflict, 8, 4096, 0),
+    ] {
+        let report = probe::run(workload, count, command_limit, rate);
+        let json = report.json(rate, command_limit);
+        for (key, expected) in [
+            ("command_limit", command_limit.to_string()),
+            ("commands_budget", command_limit.to_string()),
+            ("orders_limit", "4096".to_string()),
+            ("observations_limit", "128".to_string()),
+            ("inventory_seats", "4096".to_string()),
+            ("samples", count.to_string()),
+            ("rate", rate.to_string()),
+        ] {
+            assert_eq!(top_level(&json, key), expected);
+        }
+        assert_separated(&report, rate, command_limit);
+    }
+}
+
+#[test]
+fn evidence_binding_serializes_tree_probe_toolchain_host_and_files() {
+    let files = ["uniform.csv", "uniform.json", "binding.json"];
+    let mut binding = probe::EvidenceBinding {
+        commit: Some("commit-sha"),
+        tree: Some("tree-sha"),
+        kernel_blob: "kernel-sha",
+        quarantine_blob: "quarantine-sha",
+        contract_edge_blob: "edge-sha",
+        model_v4_blob: "model-sha",
+        probe_blob: Some("probe-sha"),
+        harness_blob: Some("harness-sha"),
+        example_blob: Some("example-sha"),
+        toolchain: "rustc 1.0.0 (test)",
+        host_uname: Some("Linux t 1 x86_64"),
+        os: "linux",
+        arch: "x86_64",
+        build_mode: "release",
+        debug_assertions: false,
+        samples: 512,
+        low_load_samples: 32,
+        command_limit: 128,
+        rate: 1_000,
+        output_files: &files,
+    };
+    let json = probe::evidence_binding_json(&binding);
+    for fragment in [
+        "\"commit\":\"commit-sha\"",
+        "\"tree\":\"tree-sha\"",
+        "\"locked_blobs\":{\"kernel\":\"kernel-sha\",\"quarantine_capacity\":\"quarantine-sha\",\"contract_edge_cases\":\"edge-sha\",\"model_v4\":\"model-sha\"}",
+        "\"probe_blob\":\"probe-sha\"",
+        "\"harness_blob\":\"harness-sha\"",
+        "\"example_blob\":\"example-sha\"",
+        "\"toolchain\":\"rustc 1.0.0 (test)\"",
+        "\"host_uname\":\"Linux t 1 x86_64\"",
+        "\"target_os\":\"linux\"",
+        "\"target_arch\":\"x86_64\"",
+        "\"build_mode\":\"release\"",
+        "\"samples\":512",
+        "\"command_limit\":128",
+        "\"inventory_seats\":4096",
+        "\"rate\":1000",
+        "\"output_files\":[\"uniform.csv\",\"uniform.json\",\"binding.json\"]",
+    ] {
+        assert_eq!(json.matches(fragment).count(), 1, "{fragment}");
+    }
+    assert!(json.contains(probe::rate_meaning(1_000)));
+    binding.tree = None;
+    binding.host_uname = None;
+    let json = probe::evidence_binding_json(&binding);
+    assert!(json.contains("\"tree\":null"));
+    assert!(json.contains("\"host_uname\":null"));
+}
+
+#[test]
+fn elapsed_ns_covers_every_row_and_scheduled_wait() {
+    // Ordering only: elapsed_ns is not compared with any constant duration.
+    for (workload, count, rate) in [
+        (probe::Workload::Uniform, 512, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        let ([_, scheduled, _, end, ..], _) = csv_rows(&report).pop().unwrap();
+        assert!(report.elapsed_ns >= end);
+        assert!(report.elapsed_ns >= scheduled);
+        assert_eq!(
+            top_level(&report.json(rate, 128), "elapsed_ns"),
+            report.elapsed_ns.to_string()
+        );
+    }
+}
+
+// CSV columns: index, scheduled_ns, start_ns, end_ns, service_ns,
+// scheduled_latency_ns as integers, then the outcome name.
+fn csv_rows(report: &probe::Report) -> Vec<([u128; 6], String)> {
+    report
+        .raw_csv
+        .lines()
+        .skip(1)
+        .enumerate()
+        .map(|(position, line)| {
+            let fields: Vec<&str> = line.split(',').collect();
+            assert_eq!(fields.len(), 7);
+            let values: [u128; 6] = std::array::from_fn(|n| fields[n].parse().unwrap());
+            assert_eq!(values[0], position as u128);
+            (values, fields[6].to_string())
+        })
+        .collect()
+}
+
 // Report JSON has a flat scalar prefix followed by the nested outcomes array.
 // Restrict lookup to that prefix so a nested outcome cannot satisfy an assertion.
 fn top_level(json: &str, key: &str) -> String {
