@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 
-use kix_feature_ir::{Fast64MoneyProfile, MoneyProfileKey};
-use kix_types::{AssetAmount, AssetId, Hash32, RegistryVersion};
+use kix_feature_ir::{
+    ColumnId, ColumnSchema, DatasetRef, DatasetSchema, Fast64MoneyProfile, FeaturePlanV1,
+    MoneyProfileKey, OutputKind, Stage,
+};
+use kix_types::{AssetAmount, AssetId, Hash32, KixId, RegistryVersion};
 
 pub fn key() -> MoneyProfileKey {
     MoneyProfileKey {
@@ -28,4 +31,26 @@ pub fn amount() -> AssetAmount {
         registry_hash(),
     )
     .unwrap()
+}
+
+// Synthetic schema claims only; validation does not authenticate their source.
+pub fn validated_inputs() -> (FeaturePlanV1, Vec<DatasetSchema>) {
+    let dataset = DatasetRef {
+        dataset_id: KixId::from_bytes([2; 16]),
+        schema_version: 1,
+    };
+    (
+        FeaturePlanV1 {
+            plan_id: KixId::from_bytes([1; 16]),
+            source: dataset,
+            stages: vec![Stage::Limit(1)],
+        },
+        vec![DatasetSchema {
+            dataset,
+            columns: vec![ColumnSchema {
+                column: ColumnId(1),
+                kind: OutputKind::I64,
+            }],
+        }],
+    )
 }

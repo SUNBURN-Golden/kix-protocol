@@ -1,4 +1,5 @@
-//! External consumer checks for Feature Semantics v1 §6. No cached rlibs,
+//! Source-informed external consumer checks for Feature Semantics v1 §§6 and 10.
+//! No cached rlibs,
 //! implementation modules inside consumers, third-party harness or passing skips.
 
 use std::env;
@@ -115,15 +116,8 @@ fn require_rejection(output: Output, source: &Path, code: &str, fragments: &[&st
     }
 }
 
-#[test]
-fn fast64_external_consumer_api_boundaries() {
-    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let crates = manifest.parent().unwrap();
-    let fixtures = manifest.join("tests/fixtures/api_boundaries");
-    let scratch = Scratch::new();
-    let out = &scratch.0;
-    let rustc = env::var_os("RUSTC").unwrap_or_else(|| "rustc".into());
-
+fn build_libraries(rustc: &OsString, out: &Path) {
+    let crates = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     // Build fresh, unchanged local libraries in dependency order, separately
     // from the consumer crates. Any compiler/toolchain failure fails this test.
     for (directory, name) in [
@@ -131,7 +125,7 @@ fn fast64_external_consumer_api_boundaries() {
         ("kix-feature-semantics", "kix_feature_semantics"),
         ("kix-feature-ir", "kix_feature_ir"),
     ] {
-        let mut command = compiler(&rustc, out);
+        let mut command = compiler(rustc, out);
         command.args(["--crate-type=rlib", "--crate-name", name]);
         command.arg(crates.join(directory).join("src/lib.rs"));
         if name == "kix_feature_ir" {
@@ -140,6 +134,15 @@ fn fast64_external_consumer_api_boundaries() {
         }
         require_success(run(&mut command), name);
     }
+}
+
+#[test]
+fn fast64_external_consumer_api_boundaries() {
+    let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/api_boundaries");
+    let scratch = Scratch::new();
+    let out = &scratch.0;
+    let rustc = env::var_os("RUSTC").unwrap_or_else(|| "rustc".into());
+    build_libraries(&rustc, out);
 
     // Same compiler and dependency setup for the valid and invalid consumers.
     require_success(
@@ -182,6 +185,71 @@ fn fast64_external_consumer_api_boundaries() {
             "raw_u128_export.rs",
             "E0308",
             &["expected `AssetAmount`", "found `u128`"],
+        ),
+    ] {
+        let source = fixtures.join(fixture);
+        require_rejection(
+            compile_consumer(&rustc, out, &source),
+            &source,
+            code,
+            fragments,
+        );
+    }
+}
+
+#[test]
+fn validated_plan_external_consumer_api_boundaries() {
+    let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/api_boundaries");
+    let scratch = Scratch::new();
+    let out = &scratch.0;
+    let rustc = env::var_os("RUSTC").unwrap_or_else(|| "rustc".into());
+    build_libraries(&rustc, out);
+
+    for fixture in [
+        "validated_accessors.rs",
+        "validated_mutation_after_last_use.rs",
+    ] {
+        require_success(
+            compile_consumer(&rustc, out, &fixtures.join(fixture)),
+            fixture,
+        );
+    }
+    for (fixture, code, fragments) in [
+        (
+            "validated_private_construction.rs",
+            "E0451",
+            &[
+                "plan",
+                "catalog",
+                "output",
+                "ValidatedFeaturePlan",
+                "private",
+            ][..],
+        ),
+        (
+            "validated_plan_borrow.rs",
+            "E0502",
+            &["`candidate.stages`", "mutable", "immutable"],
+        ),
+        (
+            "validated_catalog_borrow.rs",
+            "E0502",
+            &["`schemas`", "mutable", "immutable"],
+        ),
+        (
+            "validated_plan_accessor_mutation.rs",
+            "E0596",
+            &["borrow", "mutable", "`&` reference"],
+        ),
+        (
+            "validated_catalog_accessor_mutation.rs",
+            "E0596",
+            &["borrow", "mutable", "`&` reference"],
+        ),
+        (
+            "validated_output_mutation.rs",
+            "E0594",
+            &["assign", "`&` reference"],
         ),
     ] {
         let source = fixtures.join(fixture);
