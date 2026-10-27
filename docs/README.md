@@ -386,6 +386,8 @@
 
 ## 2026-10-27 검증 기록 색인 — 위치 안내만
 
+- [plan-plan-loop-node-crosswalk-refresh-2026102](../validation/2026-10-27-plan-loop-node-crosswalk-refresh/README.md) — Append-only crosswalk through #323: nine selected records, 25 accounted merges, no absent PR numbers; canonical counting remains DECISION_REQUIRED · Astra.
+
 - [plan-plan-plan-register-sync-20261027](../validation/2026-10-27-plan-register-sync-20261027/README.md) — DEVELOPMENT_PLAN §5의 #290–#322 first-parent 병합 위치와 register 열한 행·checker 목록 동기화; 완결 인용·전후 보존 대조, 등급·상태·소유자·열린 정지 변경 없음.
 
 - [plan-plan-open-decisions-addendum-perf-probe-](../validation/2026-10-27-plan-open-decisions-addendum-perf-probe-pin/README.md) — [Perf-probe pin addendum](status/OPEN_USER_DECISIONS_20261027_PERF_PROBE_ADDENDUM.md): attributed LOCKED_EDGE stop/options, read-only blob inventory and #314–#321 facts; no option selected or node state changed.
