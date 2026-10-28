@@ -434,6 +434,8 @@
 
 - [plan-provider-evidence-summary-sync](../validation/2026-10-28-plan-provider-evidence-summary-sync/README.md) — Adapter §§3–4 summary and E01 pointer correction for the existing synthetic/offline provider harness (Analog, NOT Toss); no map-cell, count, owner, open-decision or capability-grade change.
 
+- [plan-provider-cancel-boundary-tests](../validation/2026-10-28-plan-provider-cancel-boundary-tests/README.md) — Synthetic offline cancellation amount/status boundaries through document and JSON-text entry points, mixed-history rejection and retained valid facts/hashes; technical representation checks only (Analog, NOT Toss), no implementation, policy or evidence-grade change.
+
 - [plan-plan-contract-invariants-s5-residual-cha](../validation/2026-10-28-plan-contract-invariants-s5-residual-cha/README.md) — Five public-API class B residual characterizations for F-B5/F-B6 and a raw-byte F-B1 provenance pin; PARTIAL statuses/owners retained, LOCKED_EDGE owner decision unresolved, no availability or precedence-completeness claim.
 
 - [plan-plan-perf-probe-other-outcome-tests](../validation/2026-10-28-plan-plan-perf-probe-other-outcome-tests/README.md) — Builder-authored nonzero other_error/other_observation probe fixtures, CSV/JSON reconciliation and M-OTHER coverage; ordinary workloads unchanged, release probe NOT_RUN, no timing, product SLO or A2 review claim.
