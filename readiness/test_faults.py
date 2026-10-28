@@ -14,7 +14,7 @@ import zlib
 from collections import Counter
 from pathlib import Path
 
-from readiness.boundary import FsmBoundary, ReadinessError
+from readiness.boundary import FsmBoundary, ReadinessClosed, ReadinessError
 from readiness.ai_delegation_wrap import WrapError as AiDelegationWrapError
 from ai_delegation_mock import AiDelegationError
 from token_reward_model import PROVENANCE, TokenRewardError
@@ -609,6 +609,184 @@ def _issue(machine):
 def json_copy(value):
     import json
     return json.loads(json.dumps(value))
+
+
+class _MutationGuardMachine:
+    """Test-local journal/digest double; never used by recovery."""
+
+    def __init__(self, journal, digest):
+        self.journal = json_copy(journal)
+        self.digest = digest
+
+    def export_journal(self):
+        return json_copy(self.journal)
+
+    def state_digest(self):
+        return self.digest
+
+
+class BoundaryMutationGuardTests(unittest.TestCase):
+    """Injected local-wrapper characterizations, source-informed by call().
+
+    No rollback or production-durability proof. The double only replaces one
+    local boundary's reservation machine; committed-prefix recovery is real.
+    """
+
+    def _fixture(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        boundary = FsmBoundary(tmp.name)
+        self.addCleanup(boundary.close)
+        helper = BackendConformance()
+        helper._reservation_show(boundary)
+        machine = boundary.machine('reservation')
+        snapshot = {
+            'bytes': (Path(tmp.name) / JOURNAL_NAME).read_bytes(),
+            'records': json_copy(boundary.store.records),
+            'count': len(boundary.store.records),
+            'committed_bytes': boundary.store.committed_bytes,
+            'journal': json_copy(machine.export_journal()),
+            'digest': machine.state_digest(),
+        }
+        self.assertGreater(snapshot['count'], 0)
+        self.assertTrue(snapshot['journal'])
+        self.assertEqual(snapshot['committed_bytes'], len(snapshot['bytes']))
+        return tmp.name, boundary, helper, snapshot
+
+    def _assert_persisted_prefix(self, directory, boundary, snapshot):
+        self.assertEqual((Path(directory) / JOURNAL_NAME).read_bytes(), snapshot['bytes'])
+        self.assertEqual(boundary.store.records, snapshot['records'])
+        self.assertEqual(len(boundary.store.records), snapshot['count'])
+        self.assertEqual(boundary.store.committed_bytes, snapshot['committed_bytes'])
+        for record in boundary.store.records:
+            self.assertEqual(record['schema'], SCHEMA_VERSION)
+            self.assertEqual(record['kind'], 'fsm_commit')
+            self.assertEqual(record['machine'], 'reservation')
+            self.assertIn('entry', record)
+            self.assertIs(record['protocolTruth'], False)
+            self.assertIs(record['productionConformance'], False)
+
+    def _assert_observation(self, boundary, decision, fault_code=None):
+        observed = boundary.last_observation
+        self.assertEqual(observed['machine'], 'reservation')
+        self.assertEqual(observed['journalDecision'], decision)
+        self.assertEqual(observed['schemaVersion'], SCHEMA_VERSION)
+        for flag in ('fsmDurable', 'protocolTruth', 'productionConformance',
+                     'productionReadiness', 'productionEndpoint'):
+            self.assertIs(observed[flag], False, flag)
+        if fault_code is None:
+            self.assertNotIn('faultCode', observed)
+            self.assertEqual(observed['appendedEntries'], 0)
+        else:
+            self.assertEqual(observed['faultCode'], fault_code)
+
+    def _inject(self, boundary, snapshot, mutation):
+        double = _MutationGuardMachine(snapshot['journal'], snapshot['digest'])
+        boundary.machines['reservation'] = double
+
+        def mutate(machine):
+            self.assertIs(machine, double)
+            if mutation == 'rewrite':
+                machine.journal[0]['idempotency_key'] = 'injected-rewrite'
+                self.assertNotEqual(machine.export_journal(), snapshot['journal'])
+                self.assertEqual(machine.state_digest(), snapshot['digest'])
+            else:
+                self.assertEqual(mutation, 'digest')
+                machine.digest = 'injected-state-digest'
+                self.assertNotEqual(machine.state_digest(), snapshot['digest'])
+                self.assertEqual(machine.export_journal(), snapshot['journal'])
+
+        return mutate
+
+    def _assert_fenced_and_recovered(self, directory, boundary, snapshot):
+        self._assert_persisted_prefix(directory, boundary, snapshot)
+        invoked = Counter()
+
+        def forbidden(machine):
+            invoked['calls'] += 1
+
+        for name in ('reservation', 'settlement'):
+            with self.subTest(blocked_machine=name):
+                with self.assertRaises(ReadinessClosed) as raised:
+                    boundary.call(name, forbidden)
+                self.assertEqual(raised.exception.code, 'READINESS_CLOSED')
+        self.assertEqual(invoked['calls'], 0)
+        self._assert_persisted_prefix(directory, boundary, snapshot)
+        boundary.close()
+        recovered = FsmBoundary(directory)
+        try:
+            self.assertNotIsInstance(recovered.machine('reservation'), _MutationGuardMachine)
+            self.assertEqual(recovered.machine('reservation').export_journal(), snapshot['journal'])
+            self.assertEqual(recovered.machine('reservation').state_digest(), snapshot['digest'])
+            self._assert_persisted_prefix(directory, recovered, snapshot)
+        finally:
+            recovered.close()
+
+    def test_journal_rewrite_fences_without_persisting(self):
+        directory, boundary, _, snapshot = self._fixture()
+        with self.assertRaises(ReadinessError) as raised:
+            boundary.call('reservation', self._inject(boundary, snapshot, 'rewrite'))
+        self.assertEqual(raised.exception.code, 'JOURNAL_REWRITE')
+        self._assert_observation(boundary, 'fault', 'JOURNAL_REWRITE')
+        self._assert_fenced_and_recovered(directory, boundary, snapshot)
+
+    def test_unjournaled_mutation_fences_without_persisting(self):
+        directory, boundary, _, snapshot = self._fixture()
+        with self.assertRaises(ReadinessError) as raised:
+            boundary.call('reservation', self._inject(boundary, snapshot, 'digest'))
+        self.assertEqual(raised.exception.code, 'UNJOURNALED_MUTATION')
+        self._assert_observation(boundary, 'fault', 'UNJOURNALED_MUTATION')
+        self._assert_fenced_and_recovered(directory, boundary, snapshot)
+
+    def test_mutation_then_exception_preserves_original_and_fences(self):
+        for mutation in ('rewrite', 'digest'):
+            with self.subTest(mutation=mutation):
+                directory, boundary, _, snapshot = self._fixture()
+                mutate = self._inject(boundary, snapshot, mutation)
+                original = RuntimeError('injected callback failure')
+
+                def fail(machine):
+                    mutate(machine)
+                    raise original
+
+                with self.assertRaises(RuntimeError) as raised:
+                    boundary.call('reservation', fail)
+                self.assertIs(raised.exception, original)
+                # Characterization: callback failures use this observation code
+                # for both journal rewrites and digest-only mutation.
+                self._assert_observation(boundary, 'fault', 'UNJOURNALED_MUTATION')
+                self._assert_fenced_and_recovered(directory, boundary, snapshot)
+
+    def _assert_usable(self, directory, boundary, helper, snapshot):
+        self._assert_observation(boundary, 'unchanged')
+        self._assert_persisted_prefix(directory, boundary, snapshot)
+        self.assertEqual(boundary.machine('reservation').export_journal(), snapshot['journal'])
+        self.assertEqual(boundary.machine('reservation').state_digest(), snapshot['digest'])
+        result = boundary.call('reservation', lambda m: helper._hold(m, 'reserve-1', 'hold-1'))
+        self.assertIs(result['duplicate'], False)
+        self.assertEqual(len(boundary.store.records), snapshot['count'] + 1)
+        self.assertEqual(boundary.store.records[:-1], snapshot['records'])
+        self.assertEqual(boundary.store.records[-1]['entry']['op'], 'hold')
+        self.assertEqual(boundary.last_observation['journalDecision'], 'appended')
+        self.assertEqual(boundary.last_observation['appendedEntries'], 1)
+
+    def test_nonmutating_success_keeps_boundary_usable(self):
+        directory, boundary, helper, snapshot = self._fixture()
+        sentinel = object()
+        self.assertIs(boundary.call('reservation', lambda m: sentinel), sentinel)
+        self._assert_usable(directory, boundary, helper, snapshot)
+
+    def test_nonmutating_exception_keeps_boundary_usable(self):
+        directory, boundary, helper, snapshot = self._fixture()
+        original = RuntimeError('nonmutating callback failure')
+
+        def fail(machine):
+            raise original
+
+        with self.assertRaises(RuntimeError) as raised:
+            boundary.call('reservation', fail)
+        self.assertIs(raised.exception, original)
+        self._assert_usable(directory, boundary, helper, snapshot)
 
 
 class FaultTests(BackendConformance, unittest.TestCase):
