@@ -1047,6 +1047,274 @@ fn perf_probe_routes_kernel_new_through_one_helper() {
     assert!(!src.contains("kernel.clone()"));
 }
 
+// Synthetic costs are independent fixture inputs, never host measurements or
+// performance targets. Reading the clock does not advance it; waits never sleep.
+struct VirtualClock {
+    now_ns: u128,
+    preparation_ns: u128,
+    invocation_ns: u128,
+    classification_ns: u128,
+    bookkeeping_ns: u128,
+    formatting_ns: u128,
+    phases: Vec<probe::ProbePhase>,
+    waits: Vec<u128>,
+}
+
+impl VirtualClock {
+    fn new(invocation_ns: u128, classification_ns: u128) -> Self {
+        Self {
+            now_ns: 0,
+            preparation_ns: 1000,
+            invocation_ns,
+            classification_ns,
+            bookkeeping_ns: 13,
+            formatting_ns: 2000,
+            phases: Vec::new(),
+            waits: Vec::new(),
+        }
+    }
+}
+
+impl probe::ProbeClock for VirtualClock {
+    type Mark = u128;
+
+    fn mark(&self) -> u128 {
+        self.now_ns
+    }
+
+    fn elapsed_ns(&self, mark: u128) -> u128 {
+        self.now_ns - mark
+    }
+
+    fn wait(&mut self, duration: std::time::Duration) {
+        let ns = duration.as_nanos();
+        assert!(ns > 0);
+        self.waits.push(ns);
+        self.now_ns += ns;
+    }
+
+    fn phase(&mut self, phase: probe::ProbePhase) {
+        use probe::ProbePhase;
+        self.phases.push(phase);
+        self.now_ns += match phase {
+            ProbePhase::InputPreparation => self.preparation_ns,
+            ProbePhase::KernelInvocation => self.invocation_ns,
+            ProbePhase::Classification => self.classification_ns,
+            ProbePhase::LoopBookkeeping => self.bookkeeping_ns,
+            ProbePhase::ReportFormatting => self.formatting_ns,
+        };
+    }
+}
+
+struct TimingExpectation {
+    rate: u64,
+    invocation_ns: u128,
+    classification_ns: u128,
+    csv: &'static str,
+    elapsed: u128,
+    service_p99: u128,
+    latency_p99: u128,
+    waits: &'static [u128],
+}
+
+// Literal expected rows and totals, specified independently of probe arithmetic.
+const RATE_ZERO_TIMING: TimingExpectation = TimingExpectation {
+    rate: 0,
+    invocation_ns: 7,
+    classification_ns: 11,
+    csv: "index,scheduled_ns,start_ns,end_ns,service_ns,scheduled_latency_ns,outcome\n\
+0,0,0,18,18,18,held\n\
+1,0,31,49,18,18,held\n\
+2,0,62,80,18,18,held\n",
+    elapsed: 93,
+    service_p99: 18,
+    latency_p99: 18,
+    waits: &[],
+};
+
+const SCHEDULED_TIMING: TimingExpectation = TimingExpectation {
+    rate: 10_000_000,
+    invocation_ns: 7,
+    classification_ns: 11,
+    csv: "index,scheduled_ns,start_ns,end_ns,service_ns,scheduled_latency_ns,outcome\n\
+0,0,0,18,18,18,held\n\
+1,100,100,118,18,18,held\n\
+2,200,200,218,18,18,held\n",
+    elapsed: 231,
+    service_p99: 18,
+    latency_p99: 18,
+    waits: &[69, 69],
+};
+
+const LATE_DRIVER_TIMING: TimingExpectation = TimingExpectation {
+    rate: 10_000_000,
+    invocation_ns: 70,
+    classification_ns: 50,
+    csv: "index,scheduled_ns,start_ns,end_ns,service_ns,scheduled_latency_ns,outcome\n\
+0,0,0,120,120,120,held\n\
+1,100,133,253,120,153,held\n\
+2,200,266,386,120,186,held\n",
+    elapsed: 399,
+    service_p99: 120,
+    latency_p99: 186,
+    waits: &[],
+};
+
+fn run_timing(clock: &mut VirtualClock, expected: &TimingExpectation) -> probe::Report {
+    probe::run_with_clock_for_test(
+        probe::Workload::Uniform,
+        3,
+        128,
+        expected.rate,
+        clock,
+        probe::TimingFault::None,
+    )
+}
+
+fn assert_timing_report(report: &probe::Report, expected: &TimingExpectation) {
+    assert_eq!(report.elapsed_ns, expected.elapsed);
+    assert_eq!(report.raw_csv, expected.csv);
+    let rows = csv_rows(report);
+    assert_eq!(rows.len(), 3);
+    assert!(rows.iter().all(|(_, kind)| kind == "held"));
+    assert_eq!(report.held, 3);
+    assert_eq!(report.remaining, 4093);
+    assert_eq!(report.mixed_p99_service_ns, expected.service_p99);
+    assert_eq!(report.mixed_p99_scheduled_latency_ns, expected.latency_p99);
+    let json = report.json(expected.rate, 128);
+    for (key, value) in [
+        ("elapsed_ns", expected.elapsed),
+        ("mixed_result_p99_service_ns", expected.service_p99),
+        (
+            "mixed_result_p99_scheduled_latency_ns",
+            expected.latency_p99,
+        ),
+    ] {
+        assert_eq!(top_level(&json, key), value.to_string());
+    }
+    let objects = json_outcome_objects(&json);
+    assert_eq!(objects.len(), 7);
+    for object in objects {
+        let held = object["\"outcome\""] == "\"held\"";
+        assert_eq!(object["\"count\""], if held { "3" } else { "0" });
+        for (key, value) in [
+            ("\"service_p99_ns\"", expected.service_p99),
+            ("\"scheduled_latency_p99_ns\"", expected.latency_p99),
+        ] {
+            assert_eq!(
+                object[key],
+                if held {
+                    value.to_string()
+                } else {
+                    "null".into()
+                }
+            );
+        }
+    }
+    assert_single_kernel(report, expected.rate, 128);
+    assert_separated(report, expected.rate, 128);
+}
+
+fn assert_timing_clock(clock: &VirtualClock, expected: &TimingExpectation) {
+    use probe::ProbePhase::*;
+    assert_eq!(clock.waits, expected.waits);
+    assert_eq!(
+        clock.phases,
+        [
+            InputPreparation,
+            KernelInvocation,
+            Classification,
+            LoopBookkeeping,
+            KernelInvocation,
+            Classification,
+            LoopBookkeeping,
+            KernelInvocation,
+            Classification,
+            LoopBookkeeping,
+            ReportFormatting,
+        ]
+    );
+    assert_eq!(
+        clock.now_ns,
+        clock.preparation_ns + expected.elapsed + clock.formatting_ns
+    );
+}
+
+#[test]
+fn timing_boundaries_rate_zero() {
+    let mut clock = VirtualClock::new(7, 11);
+    let report = run_timing(&mut clock, &RATE_ZERO_TIMING);
+    assert_timing_report(&report, &RATE_ZERO_TIMING);
+    assert_timing_clock(&clock, &RATE_ZERO_TIMING);
+    assert_eq!(clock.now_ns, 3093);
+}
+
+#[test]
+fn timing_boundaries_scheduled() {
+    let mut clock = VirtualClock::new(7, 11);
+    let report = run_timing(&mut clock, &SCHEDULED_TIMING);
+    assert_timing_report(&report, &SCHEDULED_TIMING);
+    assert_timing_clock(&clock, &SCHEDULED_TIMING);
+    assert_eq!(clock.now_ns, 3231);
+}
+
+#[test]
+fn timing_boundaries_late_driver() {
+    let mut clock = VirtualClock::new(70, 50);
+    let report = run_timing(&mut clock, &LATE_DRIVER_TIMING);
+    assert_timing_report(&report, &LATE_DRIVER_TIMING);
+    assert_timing_clock(&clock, &LATE_DRIVER_TIMING);
+    assert_eq!(clock.now_ns, 3399);
+}
+
+#[test]
+fn timing_boundaries_exclude_setup_and_formatting() {
+    for expected in [&RATE_ZERO_TIMING, &SCHEDULED_TIMING, &LATE_DRIVER_TIMING] {
+        let mut baseline_clock =
+            VirtualClock::new(expected.invocation_ns, expected.classification_ns);
+        let baseline = run_timing(&mut baseline_clock, expected);
+        assert_timing_report(&baseline, expected);
+        assert_timing_clock(&baseline_clock, expected);
+        for (preparation_ns, formatting_ns) in [(0, 2000), (9000, 2000), (1000, 0), (1000, 8000)] {
+            let mut clock = VirtualClock::new(expected.invocation_ns, expected.classification_ns);
+            clock.preparation_ns = preparation_ns;
+            clock.formatting_ns = formatting_ns;
+            let report = run_timing(&mut clock, expected);
+            assert_timing_report(&report, expected);
+            assert_timing_clock(&clock, expected);
+            assert_eq!(report.raw_csv, baseline.raw_csv);
+            let final_time = clock.now_ns;
+            let json = report.json(expected.rate, 128);
+            assert_eq!(json, baseline.json(expected.rate, 128));
+            assert_eq!(report.json(expected.rate, 128), json);
+            assert_eq!(clock.now_ns, final_time);
+            assert_timing_report(&report, expected);
+        }
+    }
+}
+
+#[test]
+fn timing_boundaries_reject_included_preparation() {
+    let mut correct_clock = VirtualClock::new(7, 11);
+    let correct = run_timing(&mut correct_clock, &RATE_ZERO_TIMING);
+    assert_timing_report(&correct, &RATE_ZERO_TIMING);
+    let mut clock = VirtualClock::new(7, 11);
+    let faulty = probe::run_with_clock_for_test(
+        probe::Workload::Uniform,
+        3,
+        128,
+        0,
+        &mut clock,
+        probe::TimingFault::IncludePreparation,
+    );
+    assert_eq!(faulty.elapsed_ns, 1093);
+    assert_eq!(top_level(&faulty.json(0, 128), "elapsed_ns"), "1093");
+    assert_eq!(clock.now_ns, 3093);
+    assert_eq!(faulty.held, correct.held);
+    assert_eq!(faulty.remaining, correct.remaining);
+    assert!(std::panic::catch_unwind(|| assert_timing_report(&faulty, &RATE_ZERO_TIMING)).is_err());
+}
+
 // CSV columns: index, scheduled_ns, start_ns, end_ns, service_ns,
 // scheduled_latency_ns as integers, then the outcome name.
 fn csv_rows(report: &probe::Report) -> Vec<([u128; 6], String)> {

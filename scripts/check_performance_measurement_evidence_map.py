@@ -341,6 +341,23 @@ def self_test(map_text, sources):
         cases.append(('M-OTHER missing ' + symbol, map_text, sources,
                       {path: data.replace(token, b'fn removed_symbol(', 1)},
                       'M-OTHER: %s::%s is not a %s' % (path, symbol, kind)))
+    # Timing citations retain the same missing-symbol guard, in memory only.
+    for row in ('M-SERVICE-NS', 'M-ELAPSED'):
+        for path, symbol, kind in (
+            *((TEST_FILE, name, 'test function') for name in (
+                'timing_boundaries_rate_zero',
+                'timing_boundaries_scheduled',
+                'timing_boundaries_late_driver',
+                'timing_boundaries_exclude_setup_and_formatting',
+                'timing_boundaries_reject_included_preparation')),
+            (SOURCE_FILES[0], 'run_with_clock_for_test', 'source symbol'),
+        ):
+            data = (ROOT / path).read_bytes()
+            token = ('fn ' + symbol + '(').encode()
+            assert data.count(token) == 1
+            cases.append((row + ' missing ' + symbol, map_text, sources,
+                          {path: data.replace(token, b'fn removed_symbol(', 1)},
+                          '%s: %s::%s is not a %s' % (row, path, symbol, kind)))
     line = _row_line(map_text, ident)
     for label, changed, reason in (
         ('removed row', map_text.replace(line + '\n', ''), 'missing row'),

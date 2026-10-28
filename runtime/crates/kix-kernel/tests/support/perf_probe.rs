@@ -12,6 +12,45 @@ use kix_kernel::{
 };
 use kix_types::{AssetAmount, AssetId, Hash32, KixId, RegistryVersion};
 
+/// Phase completion hooks model work alongside the real operations. Ordinary
+/// runs use no-op hooks; virtual fixtures advance only at these hooks and waits.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProbePhase {
+    InputPreparation,
+    KernelInvocation,
+    Classification,
+    LoopBookkeeping,
+    ReportFormatting,
+}
+
+pub trait ProbeClock {
+    type Mark: Copy;
+    fn mark(&self) -> Self::Mark;
+    fn elapsed_ns(&self, mark: Self::Mark) -> u128;
+    fn wait(&mut self, duration: Duration);
+    fn phase(&mut self, phase: ProbePhase);
+}
+
+struct InstantClock;
+
+impl ProbeClock for InstantClock {
+    type Mark = Instant;
+
+    fn mark(&self) -> Instant {
+        Instant::now()
+    }
+
+    fn elapsed_ns(&self, mark: Instant) -> u128 {
+        mark.elapsed().as_nanos()
+    }
+
+    fn wait(&mut self, duration: Duration) {
+        std::thread::sleep(duration);
+    }
+
+    fn phase(&mut self, _: ProbePhase) {}
+}
+
 pub const INVENTORY_SEATS: usize = 4096;
 pub const ORDER_LIMIT: usize = 4096;
 pub const OBSERVATION_LIMIT: usize = 128;
@@ -239,32 +278,41 @@ fn classify(
     kernel: &mut Kernel,
     index: usize,
     input: Input,
+    clock: &mut impl ProbeClock,
 ) -> (OutcomeKind, Option<AppliedReservation>) {
     match input {
-        Input::Reserve(value) => match kernel.reserve(context(index as u64 + 10), value) {
-            Ok(applied) => {
-                let kind = if applied.replayed {
-                    OutcomeKind::Replayed
-                } else {
-                    match applied.original {
-                        ReserveOutcome::Held(_) => OutcomeKind::Held,
-                        ReserveOutcome::Rejected(_) => OutcomeKind::BusinessRejected,
-                    }
-                };
-                (kind, Some(applied))
+        Input::Reserve(value) => {
+            let result = kernel.reserve(context(index as u64 + 10), value);
+            clock.phase(ProbePhase::KernelInvocation);
+            match result {
+                Ok(applied) => {
+                    let kind = if applied.replayed {
+                        OutcomeKind::Replayed
+                    } else {
+                        match applied.original {
+                            ReserveOutcome::Held(_) => OutcomeKind::Held,
+                            ReserveOutcome::Rejected(_) => OutcomeKind::BusinessRejected,
+                        }
+                    };
+                    (kind, Some(applied))
+                }
+                Err(kix_kernel::KernelError::Capacity) => (OutcomeKind::Capacity, None),
+                Err(_) => (OutcomeKind::OtherError, None),
             }
-            Err(kix_kernel::KernelError::Capacity) => (OutcomeKind::Capacity, None),
-            Err(_) => (OutcomeKind::OtherError, None),
-        },
-        Input::Capture(value) => (
-            match kernel.observe_capture(context(index as u64 + 10), value) {
-                Ok(ObservationOutcome::Conflict) => OutcomeKind::ConflictRetained,
-                Ok(_) => OutcomeKind::OtherObservation,
-                Err(kix_kernel::KernelError::Capacity) => OutcomeKind::Capacity,
-                Err(_) => OutcomeKind::OtherError,
-            },
-            None,
-        ),
+        }
+        Input::Capture(value) => {
+            let result = kernel.observe_capture(context(index as u64 + 10), value);
+            clock.phase(ProbePhase::KernelInvocation);
+            (
+                match result {
+                    Ok(ObservationOutcome::Conflict) => OutcomeKind::ConflictRetained,
+                    Ok(_) => OutcomeKind::OtherObservation,
+                    Err(kix_kernel::KernelError::Capacity) => OutcomeKind::Capacity,
+                    Err(_) => OutcomeKind::OtherError,
+                },
+                None,
+            )
+        }
     }
 }
 
@@ -301,7 +349,14 @@ fn construct_kernel(
 /// rate>0 uses deadlines relative to a fixed origin. A late driver never shifts
 /// the original deadline forward to hide queue delay (coordinated omission).
 pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) -> Report {
-    run_probe(workload, count, command_limit, rate, ProbeFixture::Ordinary)
+    run_probe(
+        workload,
+        count,
+        command_limit,
+        rate,
+        ProbeFixture::Ordinary,
+        &mut InstantClock,
+    )
 }
 
 enum ProbeFixture {
@@ -309,6 +364,37 @@ enum ProbeFixture {
     ReconstructAt(usize),
     #[cfg(test)]
     OtherOutcomes,
+    #[cfg(test)]
+    Timing(TimingFault),
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy)]
+#[allow(dead_code)] // Shared example test target does not call this seam.
+pub enum TimingFault {
+    None,
+    IncludePreparation,
+}
+
+/// Uses the ordinary inputs, classifier and measurement loop; only time changes.
+#[cfg(test)]
+#[allow(dead_code)] // Shared example test target does not call this seam.
+pub fn run_with_clock_for_test(
+    workload: Workload,
+    count: usize,
+    command_limit: usize,
+    rate: u64,
+    clock: &mut impl ProbeClock,
+    fault: TimingFault,
+) -> Report {
+    run_probe(
+        workload,
+        count,
+        command_limit,
+        rate,
+        ProbeFixture::Timing(fault),
+        clock,
+    )
 }
 
 /// Drive a regressed-time reserve and an applied capture through the same
@@ -316,7 +402,14 @@ enum ProbeFixture {
 #[cfg(test)]
 #[allow(dead_code)] // The shared example's test target does not call this seam.
 pub fn run_with_injected_other_outcomes() -> Report {
-    run_probe(Workload::Uniform, 2, 128, 0, ProbeFixture::OtherOutcomes)
+    run_probe(
+        Workload::Uniform,
+        2,
+        128,
+        0,
+        ProbeFixture::OtherOutcomes,
+        &mut InstantClock,
+    )
 }
 
 /// Harness sensitivity fixture: constructs a second kernel before call index
@@ -335,6 +428,7 @@ pub fn run_with_injected_reconstruction(
         command_limit,
         rate,
         ProbeFixture::ReconstructAt(reconstruct_at),
+        &mut InstantClock,
     )
 }
 
@@ -344,7 +438,10 @@ fn run_probe(
     command_limit: usize,
     rate: u64,
     fixture: ProbeFixture,
+    clock: &mut impl ProbeClock,
 ) -> Report {
+    #[cfg(test)]
+    let preparation_origin = clock.mark();
     assert!(count > 0 && count <= 100_000);
     assert!(command_limit > 0);
     let commands_budget = command_limit.max(2);
@@ -445,7 +542,17 @@ fn run_probe(
     let mut latency = Vec::with_capacity(count);
     let mut service_by: [Vec<u128>; 7] = std::array::from_fn(|_| Vec::new());
     let mut latency_by: [Vec<u128>; 7] = std::array::from_fn(|_| Vec::new());
-    let origin = Instant::now();
+    clock.phase(ProbePhase::InputPreparation);
+    let origin = clock.mark();
+    #[cfg(test)]
+    let origin = if matches!(
+        fixture,
+        ProbeFixture::Timing(TimingFault::IncludePreparation)
+    ) {
+        preparation_origin
+    } else {
+        origin
+    };
     for (index, input) in inputs.into_iter().enumerate() {
         let scheduled = if rate == 0 {
             0
@@ -453,9 +560,9 @@ fn run_probe(
             (index as u128 * 1_000_000_000) / u128::from(rate)
         };
         if rate > 0 {
-            let elapsed = origin.elapsed().as_nanos();
+            let elapsed = clock.elapsed_ns(origin);
             if scheduled > elapsed {
-                std::thread::sleep(Duration::from_nanos(
+                clock.wait(Duration::from_nanos(
                     (scheduled - elapsed).min(u128::from(u64::MAX)) as u64,
                 ));
             }
@@ -463,9 +570,9 @@ fn run_probe(
         if matches!(fixture, ProbeFixture::ReconstructAt(at) if at == index) {
             kernel = construct_kernel(commands_budget, &mut kernel_constructions).0;
         }
-        let start = origin.elapsed().as_nanos();
-        let begin = Instant::now();
-        let (kind, applied) = classify(&mut kernel, index, input);
+        let start = clock.elapsed_ns(origin);
+        let begin = clock.mark();
+        let (kind, applied) = classify(&mut kernel, index, input, clock);
         match kind {
             OutcomeKind::Held => report.held += 1,
             OutcomeKind::Replayed => report.replay += 1,
@@ -475,8 +582,9 @@ fn run_probe(
             OutcomeKind::OtherError => report.other_error += 1,
             OutcomeKind::OtherObservation => report.other_observation += 1,
         }
-        let duration = begin.elapsed().as_nanos();
-        let end = origin.elapsed().as_nanos();
+        clock.phase(ProbePhase::Classification);
+        let duration = clock.elapsed_ns(begin);
+        let end = clock.elapsed_ns(origin);
         // Retain the same invocation's reply outside service and call windows.
         // This diagnostic append still contributes to workload-loop elapsed_ns.
         report.applied_reservations.push(applied);
@@ -501,8 +609,9 @@ fn run_probe(
         latency.push(measured_latency);
         service_by[kind.index()].push(duration);
         latency_by[kind.index()].push(measured_latency);
+        clock.phase(ProbePhase::LoopBookkeeping);
     }
-    report.elapsed_ns = origin.elapsed().as_nanos();
+    report.elapsed_ns = clock.elapsed_ns(origin);
     #[cfg(test)]
     if matches!(fixture, ProbeFixture::OtherOutcomes) {
         assert_eq!(
@@ -554,6 +663,7 @@ fn run_probe(
             + report.other,
         count
     );
+    clock.phase(ProbePhase::ReportFormatting);
     report
 }
 
