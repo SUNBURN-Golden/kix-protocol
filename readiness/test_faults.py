@@ -141,6 +141,123 @@ class StoreTests(unittest.TestCase):
                 store.close()
 
 
+class RecordSizeBoundaryTests(unittest.TestCase):
+    """Class B: source-informed local size-limit characterization, not policy."""
+
+    def _expected_payload(self, body):
+        # Explicit stamp and stdlib oracle: do not derive expected bytes from
+        # the store's stamping, parsing or canonical_json helpers.
+        expected = {
+            'schema': SCHEMA_VERSION,
+            'protocolTruth': False,
+            'productionConformance': False,
+            **body,
+        }
+        payload = json.dumps(
+            expected, ensure_ascii=False, sort_keys=True,
+            separators=(',', ':'), allow_nan=False,
+        ).encode('utf-8')
+        return expected, payload
+
+    def _body_for_payload_bytes(self, target, token):
+        body = {
+            'kind': 'fsm_commit',
+            'machine': 'settlement',
+            'entry': {'text': ''},
+        }
+        _, empty_payload = self._expected_payload(body)
+        remaining = target - len(empty_payload)
+        self.assertGreaterEqual(remaining, 0)
+        repeats, remainder = divmod(remaining, len(token.encode('utf-8')))
+        body['entry']['text'] = token * repeats + 'a' * remainder
+        _, payload = self._expected_payload(body)
+        self.assertEqual(len(payload), target)
+        if token == '가🙂':
+            self.assertEqual((len(token), len(token.encode('utf-8'))), (2, 7))
+            self.assertLess(len(payload.decode('utf-8')), len(payload))
+        return body
+
+    def test_ascii_and_utf8_record_size_boundaries_roundtrip(self):
+        for token in ('a', '가🙂'):
+            for size in (MAX_RECORD_BYTES - 1, MAX_RECORD_BYTES):
+                with self.subTest(token=token, payload_bytes=size), tempfile.TemporaryDirectory() as tmp:
+                    body = self._body_for_payload_bytes(size, token)
+                    expected, payload = self._expected_payload(body)
+                    store = ReadinessStore.open(tmp)
+                    path = Path(tmp) / JOURNAL_NAME
+                    committed = HEADER_LEN + 4 + size + 4
+                    try:
+                        self.assertEqual(store.append(body), expected)
+                        self.assertEqual(store.records, [expected])
+                        self.assertEqual(store.committed_bytes, committed)
+                        data = path.read_bytes()
+                        self.assertEqual(len(data), committed)
+                        self.assertEqual(struct.unpack_from('>I', data, HEADER_LEN)[0], size)
+                        self.assertEqual(data[HEADER_LEN + 4:-4], payload)
+                        self.assertEqual(
+                            struct.unpack_from('>I', data, len(data) - 4)[0],
+                            zlib.crc32(payload) & 0xFFFFFFFF,
+                        )
+                    finally:
+                        store.close()
+                    again = ReadinessStore.open(tmp)
+                    try:
+                        self.assertEqual(again.records, [expected])
+                        self.assertEqual(again.committed_bytes, committed)
+                        self.assertEqual(path.read_bytes(), data)
+                    finally:
+                        again.close()
+
+    def test_oversized_record_rejection_is_atomic_and_store_reusable(self):
+        for token in ('a', '가🙂'):
+            with self.subTest(token=token), tempfile.TemporaryDirectory() as tmp:
+                prefix_body = {
+                    'kind': 'fsm_commit', 'machine': 'settlement',
+                    'entry': {'text': 'accepted prefix'},
+                }
+                prefix, prefix_payload = self._expected_payload(prefix_body)
+                oversized = self._body_for_payload_bytes(MAX_RECORD_BYTES + 1, token)
+                _, oversized_payload = self._expected_payload(oversized)
+                if token == '가🙂':
+                    # A character-count admission check would accept this body.
+                    self.assertLess(len(oversized_payload.decode('utf-8')), MAX_RECORD_BYTES)
+                valid = self._body_for_payload_bytes(MAX_RECORD_BYTES, token)
+                expected, payload = self._expected_payload(valid)
+                store = ReadinessStore.open(tmp)
+                path = Path(tmp) / JOURNAL_NAME
+                committed = HEADER_LEN + 4 + len(prefix_payload) + 4 + 4 + len(payload) + 4
+                try:
+                    self.assertEqual(store.append(prefix_body), prefix)
+                    before_bytes = path.read_bytes()
+                    before_records = json_copy(store.records)
+                    before_committed = store.committed_bytes
+                    with self.assertRaises(StoreError) as raised:
+                        store.append(oversized)
+                    self.assertEqual(raised.exception.code, 'RECORD_TOO_LARGE')
+                    self.assertEqual(path.read_bytes(), before_bytes)
+                    self.assertEqual(store.records, before_records)
+                    self.assertEqual(store.committed_bytes, before_committed)
+
+                    # Reuse this handle before reopening: rejection must not fence it.
+                    self.assertEqual(store.append(valid), expected)
+                    self.assertEqual(store.records, [prefix, expected])
+                    self.assertEqual(store.committed_bytes, committed)
+                    data = path.read_bytes()
+                    self.assertEqual(len(data), committed)
+                    frame = struct.pack('>I', len(payload)) + payload
+                    frame += struct.pack('>I', zlib.crc32(payload) & 0xFFFFFFFF)
+                    self.assertEqual(data, before_bytes + frame)
+                finally:
+                    store.close()
+                again = ReadinessStore.open(tmp)
+                try:
+                    self.assertEqual(again.records, [prefix, expected])
+                    self.assertEqual(again.committed_bytes, committed)
+                    self.assertEqual(path.read_bytes(), data)
+                finally:
+                    again.close()
+
+
 # The competing opener has no append path. Fresh interpreters and close_fds
 # ensure a child cannot inherit its parent's journal ownership.
 _WRITER_LOCK_PROBE = r'''
