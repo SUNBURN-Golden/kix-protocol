@@ -450,3 +450,5 @@
 - [plan-plan-readiness-mutation-guard-tests](../validation/2026-10-29-plan-plan-readiness-mutation-guard-tests/README.md) — Source-informed injected local-wrapper journal-rewrite and unjournaled-mutation guard characterizations, exception identity, fencing and committed-prefix recovery; no rollback, production-durability or backend-conformance proof, no grade change.
 
 - [plan-readiness-writer-lock-lifecycle](../validation/2026-10-29-plan-readiness-writer-lock-lifecycle/README.md) — Offline cross-process writer refusal and explicit-close/failed-initialization lock cleanup regressions; supplemental JRN-SINGLE-WRITER citations only, statuses and open decisions unchanged.
+
+- [plan-readiness-record-byte-boundaries](../validation/2026-10-29-plan-readiness-record-byte-boundaries/README.md) — Source-informed characterization of stamped JSON UTF-8 byte boundaries and oversized rejection atomicity/same-handle reuse; no implementation, product policy, evidence grade or recovery-decision change.
