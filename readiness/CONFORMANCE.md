@@ -232,6 +232,41 @@ uncertainties and product-policy values remain UNDETERMINED; no evidence-map
 grade or open decision changes. Record:
 `validation/2026-10-29-plan-plan-readiness-mutation-guard-tests/README.md`.
 
+## Observation payload and false-label guards
+
+Before this addition, normal-output examples were sufficiently covered by
+`readiness/test_faults.py::ExtensionTests.test_ai_delegation_torn_revoke_replays_once_and_execution_stays_off`,
+`ExtensionTests.test_ai_delegation_crash_before_issue_does_not_create_the_grant`
+and `RewardWrapTests.test_reward_torn_write_replays_once`.
+`BoundaryMutationGuardTests._assert_observation` also checks all five false
+labels for unchanged/fault calls. Complete positive metadata coverage across
+appended, unchanged and fault decisions was partial. Direct helper rejection
+of prohibited payload fields, non-False labels and invalid machines was not
+covered; inspecting a normal observation cannot exercise those guards.
+
+`ObservationGuardTests` now calls the public
+`readiness.observe.boundary_observation` helper directly. It independently
+enumerates `body`, `entry`, `args`, `limits`, `scope`, `period` and `authority`:
+each top-level key raises `OBSERVATION_BODY` for `None`, `{}`, `[]` and `''`.
+For each of `protocolTruth`, `productionConformance`, `productionReadiness`,
+`productionEndpoint` and `fsmDurable`, `True`, integer `0`, `None`, `''` and
+`'false'` raise `OBSERVATION_LABEL`. Literal `False` is accepted individually
+and together; identity assertions distinguish it from zero. Empty/non-string
+machine inputs raise `OBSERVATION`. Positive appended, unchanged and fault
+cases preserve component, machine, decision, schema version and the supplied
+entry count or fault code, omit all seven prohibited keys and retain all five
+labels exactly `False`.
+
+These are source-informed current-wrapper guards supporting EV-READY and
+PROGRAM_DECISIONS_20260928 §4, outside `BackendConformance` requirements.
+Each negative call violates one guard only. They define no error precedence,
+recursive sanitization, machine registration or new decision vocabulary.
+No implementation, contract, evidence-map grade or OPEN owner changes; existing
+recovery uncertainties and product-policy values remain unchanged. No backend
+conformance, audit-evidence, durability or production-readiness claim follows.
+Record:
+`validation/2026-10-29-plan-plan-readiness-observation-guard-tests/README.md`.
+
 ## Token reward wrap
 
 `readiness/reward_wrap.py` wraps `reference/token_reward/reward_fsm.py`'s

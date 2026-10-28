@@ -19,6 +19,7 @@ from readiness.ai_delegation_wrap import WrapError as AiDelegationWrapError
 from ai_delegation_mock import AiDelegationError
 from token_reward_model import PROVENANCE, TokenRewardError
 from readiness.migrate import SCHEMA_VERSION, MigrationError, migrate, migrate_explicit
+from readiness.observe import ObservationError, boundary_observation
 from readiness.policy import AdmitGate
 from readiness.reward_wrap import RewardWrap, WrapError as RewardWrapError
 from readiness.store import (
@@ -36,6 +37,74 @@ from readiness.conformance import (
 )
 from readiness.local_adapter import LocalReadinessAdapter
 from readiness.test_conformance_sensitivity import ConformanceSensitivityTests
+
+
+class ObservationGuardTests(unittest.TestCase):
+    """Source-informed public-helper guards; no recursive sanitization claim."""
+
+    PROHIBITED_FIELDS = ('body', 'entry', 'args', 'limits', 'scope', 'period', 'authority')
+    FALSE_LABELS = (
+        'protocolTruth', 'productionConformance', 'productionReadiness',
+        'productionEndpoint', 'fsmDurable',
+    )
+
+    def _assert_false_labels(self, observed):
+        for label in self.FALSE_LABELS:
+            self.assertIs(observed[label], False, label)
+
+    def test_prohibited_top_level_fields_are_rejected(self):
+        for field in self.PROHIBITED_FIELDS:
+            for value in (None, {}, [], ''):
+                with self.subTest(field=field, value=value, value_type=type(value).__name__):
+                    with self.assertRaises(ObservationError) as raised:
+                        boundary_observation('reservation', 'unchanged', **{field: value})
+                    self.assertEqual(raised.exception.code, 'OBSERVATION_BODY')
+
+    def test_non_false_labels_are_rejected(self):
+        for label in self.FALSE_LABELS:
+            for value in (True, 0, None, '', 'false'):
+                with self.subTest(label=label, value=value, value_type=type(value).__name__):
+                    with self.assertRaises(ObservationError) as raised:
+                        boundary_observation('reservation', 'unchanged', **{label: value})
+                    self.assertEqual(raised.exception.code, 'OBSERVATION_LABEL')
+
+    def test_literal_false_labels_are_accepted(self):
+        for label in self.FALSE_LABELS:
+            with self.subTest(label=label):
+                observed = boundary_observation('reservation', 'unchanged', **{label: False})
+                self._assert_false_labels(observed)
+        with self.subTest(labels='all'):
+            observed = boundary_observation(
+                'reservation', 'unchanged', **dict.fromkeys(self.FALSE_LABELS, False),
+            )
+            self._assert_false_labels(observed)
+
+    def test_invalid_machine_inputs_are_rejected(self):
+        for machine in ('', None, False, 0, [], {}, b'reservation'):
+            with self.subTest(machine=machine, machine_type=type(machine).__name__):
+                with self.assertRaises(ObservationError) as raised:
+                    boundary_observation(machine, 'unchanged')
+                self.assertEqual(raised.exception.code, 'OBSERVATION')
+
+    def test_positive_observations_preserve_metadata(self):
+        cases = (
+            ('appended', {'schemaVersion': SCHEMA_VERSION, 'appendedEntries': 1}),
+            ('unchanged', {'schemaVersion': SCHEMA_VERSION, 'appendedEntries': 0}),
+            ('fault', {'schemaVersion': SCHEMA_VERSION, 'faultCode': 'PARTIAL_WRITE'}),
+        )
+        for decision, metadata in cases:
+            with self.subTest(decision=decision):
+                observed = boundary_observation('reservation', decision, **metadata)
+                self.assertEqual(observed, {
+                    'component': 'readiness-boundary',
+                    'machine': 'reservation',
+                    'journalDecision': decision,
+                    **metadata,
+                    **dict.fromkeys(self.FALSE_LABELS, False),
+                })
+                for field in self.PROHIBITED_FIELDS:
+                    self.assertNotIn(field, observed)
+                self._assert_false_labels(observed)
 
 
 class StoreTests(unittest.TestCase):
