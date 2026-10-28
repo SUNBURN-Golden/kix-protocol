@@ -19,6 +19,12 @@ LOCKED_BLOBS = {
     'runtime/crates/kix-kernel/tests/quarantine_capacity.rs':
         'b607996c83a119c349f1cc90469ac1ba82764e20',
 }
+ANCHOR_PATHS = {
+    'L': 'docs/contracts/STATE_LIFECYCLE.md',
+    'A': 'docs/adr/0001-ktx-authority-commit-recovery.md',
+    'R': 'runtime/crates/kix-kernel/README.md',
+}
+ANCHOR_HEADER = ['ID', 'Path', 'Historical blob', 'Current blob']
 STATUSES = ('COVERED', 'PARTIAL', 'NOT_COVERED', 'OPEN')
 MUST_BE_OPEN = {'S5-SHARED-ERROR', 'S5-PERSISTENCE'}
 HEADER = ['ID', 'Section', 'Contract-path tests', 'Source-informed tests',
@@ -244,6 +250,7 @@ def find_problems(map_text, sources, root=ROOT, files=None):
         '%s=%d' % (s, by_status[s]) for s in STATUSES)
     if lines != [want]:
         problems.append('counts mismatch: expected ' + want)
+    anchor_blob_problems(map_text, contract, read, problems)
     corpus_problems(map_text, contract, read, problems)
     return problems
 
@@ -277,6 +284,42 @@ def function_slice(text, name):
 def capture(pattern, text):
     match = re.search(pattern, text, re.S)
     return match.groups() if match else ()
+
+
+def anchor_blob_problems(map_text, contract, read, problems):
+    """F-B1 provenance pin, independent of the map's Rust-test vocabulary."""
+    findings = section_text(map_text, '## 4. Findings') or ''
+    lines = [split_row(line) for line in findings.splitlines() if line.startswith('|')]
+    if lines.count(ANCHOR_HEADER) != 1:
+        problems.append('F-B1: expected one anchor blob header')
+    rows = [r for r in lines if r != ANCHOR_HEADER and
+            not all(re.fullmatch(r'[-:]+', c) for c in r)]
+    if sorted(r[0] for r in rows) != sorted(ANCHOR_PATHS):
+        problems.append('F-B1: anchor row set mismatch')
+    historical_section = section_text(contract, '## 2. Exact existing contract anchors') or ''
+    historical_rows = [split_row(line) for line in historical_section.splitlines()
+                       if line.startswith('|')]
+    for row in rows:
+        if len(row) != 4 or row[0] not in ANCHOR_PATHS:
+            problems.append('F-B1: malformed anchor row')
+            continue
+        ident, path, historical, current = row
+        if path != ANCHOR_PATHS[ident]:
+            problems.append('F-B1: anchor path mismatch: ' + ident)
+            continue
+        expected = [r for r in historical_rows if r[0] == ident]
+        if (len(expected) != 1 or len(expected[0]) != 4 or
+                expected[0][1:3] != [path, historical]):
+            problems.append('F-B1: historical anchor mismatch: ' + ident)
+        if not all(re.fullmatch(r'[0-9a-f]{40}', value) for value in (historical, current)):
+            problems.append('F-B1: malformed blob: ' + ident)
+        data = read(path)
+        if data is None:
+            problems.append('F-B1: current document missing: ' + ident)
+        elif git_blob_sha(data) != current:
+            problems.append('F-B1: current blob mismatch: ' + ident)
+        if current == historical:
+            problems.append('F-B1: current equals historical: ' + ident)
 
 
 def corpus_problems(map_text, contract, read, problems):
@@ -506,6 +549,35 @@ def self_test(map_text, sources):
                   {INVARIANTS: b'mod reference;\n' + inv}, 'oracle path imports'))
     cases.append(('new numbered section', map_text,
         dict(sources, contract=sources['contract'] + '\n## 6. Added\n'), None, 'unmapped contract section: 6'))
+    for ident, path in ANCHOR_PATHS.items():
+        line = _row_line(map_text, ident)
+        row = split_row(line)
+        def anchor_case(label, cells, reason):
+            changed = map_text.replace(line, '| ' + ' | '.join(cells) + ' |', 1)
+            cases.append((label + ' ' + ident, changed, sources, None, 'F-B1: ' + reason))
+        cases.append(('document drift ' + ident, map_text, sources,
+                      {path: (ROOT / path).read_bytes() + b'\n'},
+                      'F-B1: current blob mismatch: ' + ident))
+        cases.append(('document missing ' + ident, map_text, sources,
+                      {path: None}, 'F-B1: current document missing: ' + ident))
+        anchor_case('recorded current', row[:3] + ['0' * 40], 'current blob mismatch: ' + ident)
+        anchor_case('historical hash', row[:2] + ['0' * 40, row[3]], 'historical anchor mismatch: ' + ident)
+        anchor_case('same blobs', row[:3] + [row[2]], 'current equals historical: ' + ident)
+        anchor_case('wrong path', [ident, 'wrong.md'] + row[2:], 'anchor path mismatch: ' + ident)
+        anchor_case('malformed hash', row[:3] + ['xyz'], 'malformed blob: ' + ident)
+        for label, changed in (
+            ('missing anchor', map_text.replace(line + '\n', '')),
+            ('duplicate anchor', map_text.replace(line, line + '\n' + line)),
+        ):
+            cases.append((label + ' ' + ident, changed, sources, None,
+                          'F-B1: anchor row set mismatch'))
+        cases.append(('contract anchor drift ' + ident, map_text,
+                      dict(sources, contract=sources['contract'].replace(row[2], '0' * 40)),
+                      None, 'F-B1: historical anchor mismatch: ' + ident))
+    cases.append(('bad anchor header', map_text.replace(
+        '| ID | Path | Historical blob | Current blob |',
+        '| ID | Path | Historical blob | Wrong |'), sources, None,
+        'F-B1: expected one anchor blob header'))
     failed = []
     for label, changed, src, injected, reason in cases:
         found = find_problems(changed, src, files=injected)
@@ -534,7 +606,7 @@ def main():
         return 1
     if '--self-test' in sys.argv:
         return self_test(map_text, sources)
-    print('contract invariants map: %d rows, corpus, anchors, test symbols, counts and locked blobs OK' % len(EXPECTED))
+    print('contract invariants map: %d rows, corpus, anchors, test symbols, counts, locked blobs and F-B1 document pins OK' % len(EXPECTED))
     return 0
 
 

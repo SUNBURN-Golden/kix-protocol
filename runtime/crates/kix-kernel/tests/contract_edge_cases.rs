@@ -1,16 +1,16 @@
-//! Contract-driven edge cases not already covered by the existing v4 suite.
+//! Contract-driven edge cases and explicit class-B residual characterizations.
 //!
 //! Uses only the public `kix-kernel` API and observable state. It imports
-//! neither `model_v4` nor any generator: each case is a deterministic example
-//! of a documented predicate, checked against a whole-kernel `Eq` clone where
-//! the contract says a call must leave state unchanged.
+//! neither `model_v4` nor any generator. Deterministic examples distinguish
+//! contract predicates from observed-only residual characterizations. Whole-kernel
+//! `Eq` clones check calls that must leave state unchanged.
 //!
 //! Derivations: `docs/adr/0001-ktx-authority-commit-recovery.md` §3/§5/§6,
 //! `docs/contracts/STATE_LIFECYCLE.md` §2/§3/§5,
 //! `runtime/crates/kix-kernel/README.md` "Implemented meaning" and
 //! "Observation reservation and remaining gaps".
 //!
-//! The availability examples at the end answer `docs/contracts/CONTRACT_INVARIANTS.md`
+//! The availability examples below answer `docs/contracts/CONTRACT_INVARIANTS.md`
 //! §5 ("incorrect but safe rejections"; "No finite test proves all inputs"). Each
 //! builds a state in which ADR §3/§4/§6/§8, STATE_LIFECYCLE §2/§5.7 and the README
 //! require a reservation to be held, and asserts that it is. They are finite,
@@ -24,8 +24,9 @@
 //! but only where ADR §3/§5/§6 or STATE_LIFECYCLE §2–§4 decide which one wins,
 //! asserts that outcome with a whole-kernel `Eq` check and shows the losing
 //! guard is live on a clone, a twin or a later valid call. Pairs no contract
-//! orders are class B characterizations in the S5-PRECEDENCE validation
-//! record and are deliberately not asserted here.
+//! orders remain class B characterizations. The final section pins selected
+//! F-B5/F-B6 residuals as observed behavior only, not contract requirements or
+//! availability guarantees.
 
 use kix_kernel::{
     CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel, KernelError, Limits,
@@ -1442,4 +1443,328 @@ fn full_command_capacity_backpressures_before_a_quarantine_rejection() {
 
     let quarantined = ReserveOutcome::Rejected(Rejection::OperationQuarantined);
     recorded(&mut history(ROOMY), ctx(5), reused, quarantined);
+}
+
+// ---------------------------------------------------------------------------
+// AGENTS §8 class B: observed locked-v4 behavior, not required semantics or
+// availability guarantees. F-B5/F-B6 residual characterizations only.
+// ---------------------------------------------------------------------------
+
+/// AGENTS §8 class B: observed locked-v4 behavior, not required semantics or
+/// availability guarantees. Epoch 2 does not reopen a cancelled scope, even
+/// for fresh command identities reusing the old order or operation.
+#[test]
+fn class_b_cancelled_identity_reuse_remains_fenced() {
+    for (mut k, original, fresh) in [
+        (seat_kernel(), seats(30, 0, 2), seats(31, 5, 2)),
+        (ga_kernel(), ga(30, 2), ga(31, 2)),
+    ] {
+        assert_held(&mut k, 1, &original);
+        k.cancel_scope(ctx(2), 2).unwrap();
+        let remaining = k.remaining();
+        let before = k.clone();
+        let replay = k.reserve(ctx(3), original.clone()).unwrap();
+        assert!(replay.replayed);
+        assert_eq!(replay.original, ReserveOutcome::Held(original.order_id));
+        assert_eq!(k, before);
+        refused(&mut k, KernelError::CommandConflict, |k| {
+            k.reserve(
+                ctx(3),
+                Reserve {
+                    expected_business_epoch: 2,
+                    ..original.clone()
+                },
+            )
+        });
+        let old_order = Reserve {
+            order_id: original.order_id,
+            expected_business_epoch: 2,
+            ..fresh.clone()
+        };
+        let old_operation = Reserve {
+            payment: original.payment,
+            expected_business_epoch: 2,
+            ..request(32, 5)
+        };
+        let old_operation = Reserve {
+            selection: fresh.selection,
+            ..old_operation
+        };
+        for (now, r) in [(3, old_order), (4, old_operation)] {
+            assert_rejected(&mut k, now, &r, Rejection::BusinessFenced);
+            let before = k.clone();
+            let replay = k.reserve(ctx(now), r).unwrap();
+            assert!(replay.replayed);
+            assert_eq!(
+                replay.original,
+                ReserveOutcome::Rejected(Rejection::BusinessFenced)
+            );
+            assert_eq!(k, before);
+        }
+        assert_eq!(k.remaining(), remaining);
+        assert_eq!(k.order_count(), 1);
+        assert!(k.order(fresh.order_id).is_none());
+        let before = k.clone();
+        let replay = k.reserve(ctx(5), original.clone()).unwrap();
+        assert!(replay.replayed);
+        assert_eq!(replay.original, ReserveOutcome::Held(original.order_id));
+        assert_eq!(k, before);
+    }
+}
+
+/// AGENTS §8 class B: observed locked-v4 behavior, not required semantics or
+/// availability guarantees. Late capture itself releases Held/UNKNOWN inventory
+/// (no expire call); new identities take it while the old capture stays retained.
+#[test]
+fn class_b_return_required_inventory_is_reusable() {
+    for (fixture, original, fresh) in [
+        (seat_kernel(), seats(30, 0, 2), seats(31, 0, 2)),
+        (ga_kernel(), ga(30, GA_CAPACITY), ga(31, GA_CAPACITY)),
+    ] {
+        for unknown in [false, true] {
+            let mut k = fixture.clone();
+            let total = k.remaining();
+            assert_held(&mut k, 1, &original);
+            if unknown {
+                k.mark_payment_unknown(ctx(2), original.order_id).unwrap();
+            }
+            assert_eq!(
+                k.order(original.order_id).unwrap().state,
+                if unknown {
+                    OrderState::PaymentUnknown
+                } else {
+                    OrderState::Held
+                }
+            );
+            assert_eq!(k.reserved_observation_count(), usize::from(unknown));
+            assert_eq!(k.observation_count(), 0);
+            assert_eq!(
+                k.observe_capture(ctx(EXPIRY), capture(&original, 80))
+                    .unwrap(),
+                ObservationOutcome::ReturnRequired
+            );
+            let returned = k.order(original.order_id).unwrap().clone();
+            assert_eq!(returned.state, OrderState::ReturnRequired);
+            assert_eq!(returned.captured, Some(original.amount));
+            assert!(!returned.inventory_owned);
+            assert_eq!(k.remaining(), total);
+            assert_eq!(k.reserved_observation_count(), 0);
+            assert_eq!(k.observation_count(), 1);
+
+            // Keep the identities separate so each retained binding is observed.
+            let old_order = Reserve {
+                order_id: original.order_id,
+                expires_at_ms: 500,
+                ..fresh.clone()
+            };
+            assert_rejected(&mut k, EXPIRY + 1, &old_order, Rejection::OrderExists);
+            let old_operation = Reserve {
+                payment: original.payment,
+                expires_at_ms: 500,
+                selection: fresh.selection,
+                ..request(32, 0)
+            };
+            assert_rejected(
+                &mut k,
+                EXPIRY + 2,
+                &old_operation,
+                Rejection::OperationAlreadyBound,
+            );
+            let fresh = Reserve {
+                expires_at_ms: 500,
+                selection: fresh.selection,
+                ..request(33, 0)
+            };
+            assert_held(&mut k, EXPIRY + 3, &fresh);
+            let new_owner = k.order(fresh.order_id).unwrap().clone();
+            let remaining = k.remaining();
+            assert_eq!(
+                k.observe_capture(ctx(EXPIRY + 4), capture(&original, 81))
+                    .unwrap(),
+                ObservationOutcome::DuplicateEffect
+            );
+            assert_eq!(k.order(original.order_id), Some(&returned));
+            assert_eq!(k.order(fresh.order_id), Some(&new_owner));
+            assert_eq!(k.remaining(), remaining);
+            let before = k.clone();
+            let replay = k.reserve(ctx(EXPIRY + 5), original.clone()).unwrap();
+            assert!(replay.replayed);
+            assert_eq!(replay.original, ReserveOutcome::Held(original.order_id));
+            assert_eq!(k, before);
+        }
+    }
+}
+
+/// AGENTS §8 class B: observed locked-v4 behavior, not required semantics or
+/// availability guarantees. MAX_BUNDLE's literal value limits seats; GA admits
+/// more than 64. Existing seat boundary tests cover MAX_BUNDLE and MAX_BUNDLE+1.
+#[test]
+fn class_b_bundle_limit_value_and_ga_scope() {
+    assert_eq!(MAX_BUNDLE, 64);
+    let count = u32::from(MAX_BUNDLE) + 1;
+    let mut k = kernel_with(Inventory::general_admission(count).unwrap(), ROOMY);
+    assert_held(&mut k, 1, &ga(30, count));
+    assert_eq!(k.remaining(), 0);
+}
+
+/// AGENTS §8 class B: observed locked-v4 behavior, not required semantics or
+/// availability guarantees. Independent command/order counts admit exactly the
+/// configured count. Full orders outrank unavailable inventory and cancellation.
+/// Command occupancy is inferred from accepted histories and immutable replays.
+#[test]
+fn class_b_command_and_order_limits_are_independent() {
+    for is_ga in [false, true] {
+        for limit in [1, 2] {
+            for command_limit in [false, true] {
+                let limits = if command_limit {
+                    Limits {
+                        commands: limit,
+                        ..ROOMY
+                    }
+                } else {
+                    Limits {
+                        orders: limit,
+                        ..ROOMY
+                    }
+                };
+                let inventory = if is_ga {
+                    Inventory::general_admission(GA_CAPACITY).unwrap()
+                } else {
+                    Inventory::seats(&SEGMENTS).unwrap()
+                };
+                let at = |n: u8, first: u16| if is_ga { ga(n, 1) } else { seats(n, first, 1) };
+                let mut k = kernel_with(inventory.clone(), limits);
+                let mut control = kernel_with(inventory, ROOMY);
+                let mut admitted = Vec::new();
+                for index in 0..limit {
+                    let r = at(30 + index as u8, index as u16);
+                    assert_held(&mut k, 1 + index as u64, &r);
+                    assert_held(&mut control, 1 + index as u64, &r);
+                    admitted.push(r);
+                }
+                assert_eq!(k.order_count(), limit);
+                assert!(k.remaining() > 0);
+                let free = at(40, 10);
+                let unavailable = if is_ga {
+                    ga(41, k.remaining() + 1)
+                } else {
+                    seats(41, 0, 1)
+                };
+                assert_held(&mut control.clone(), 4, &free);
+                assert_rejected(&mut control, 4, &unavailable, Rejection::Unavailable);
+                for r in [free.clone(), unavailable] {
+                    refused(&mut k, KernelError::Capacity, |k| k.reserve(ctx(4), r));
+                }
+                k.cancel_scope(ctx(5), 2).unwrap();
+                let current_epoch = Reserve {
+                    expected_business_epoch: 2,
+                    ..free
+                };
+                refused(&mut k, KernelError::Capacity, |k| {
+                    k.reserve(ctx(6), current_epoch)
+                });
+                for r in admitted {
+                    let before = k.clone();
+                    let replay = k.reserve(ctx(6), r.clone()).unwrap();
+                    assert!(replay.replayed);
+                    assert_eq!(replay.original, ReserveOutcome::Held(r.order_id));
+                    assert_eq!(k, before);
+                }
+            }
+        }
+    }
+}
+
+/// AGENTS §8 class B: observed locked-v4 behavior, not required semantics or
+/// availability guarantees. Unavailable selections lose to quarantined and
+/// UNKNOWN-bound operations. Twin calls establish both guards independently.
+#[test]
+fn class_b_unavailable_selection_preserves_observed_rejection_precedence() {
+    for (fixture, a, b, free) in [
+        (
+            seat_kernel(),
+            seats(30, 0, 1),
+            seats(31, 1, 1),
+            seats(40, 5, 1),
+        ),
+        (
+            kernel_with(Inventory::general_admission(7).unwrap(), ROOMY),
+            ga(30, 1),
+            ga(31, 5),
+            ga(40, 1),
+        ),
+    ] {
+        let mut k = fixture.clone();
+        assert_held(&mut k, 1, &a);
+        assert_held(&mut k, 2, &b);
+        quarantine_pair(&mut k, &a, &b, 3);
+        let unavailable = Reserve {
+            selection: b.selection,
+            ..free.clone()
+        };
+        let quarantined = Reserve {
+            payment: b.payment,
+            ..unavailable.clone()
+        };
+        assert_rejected(&mut k.clone(), 5, &unavailable, Rejection::Unavailable);
+        assert_rejected(
+            &mut k.clone(),
+            5,
+            &Reserve {
+                payment: b.payment,
+                ..free.clone()
+            },
+            Rejection::OperationQuarantined,
+        );
+        let (old_a, old_b) = (
+            k.order(a.order_id).unwrap().clone(),
+            k.order(b.order_id).unwrap().clone(),
+        );
+        let counts = (
+            k.observation_count(),
+            k.reserved_observation_count(),
+            k.quarantined_operation_count(),
+        );
+        assert_rejected(&mut k, 5, &quarantined, Rejection::OperationQuarantined);
+        assert_eq!(k.order(a.order_id), Some(&old_a));
+        assert_eq!(k.order(b.order_id), Some(&old_b));
+        assert_eq!(
+            (
+                k.observation_count(),
+                k.reserved_observation_count(),
+                k.quarantined_operation_count()
+            ),
+            counts
+        );
+
+        let mut k = fixture;
+        assert_held(&mut k, 1, &b);
+        k.mark_payment_unknown(ctx(2), b.order_id).unwrap();
+        // GA b holds five, so asking for five more is unavailable too.
+        let unavailable = Reserve {
+            selection: b.selection,
+            ..free.clone()
+        };
+        let bound = Reserve {
+            payment: b.payment,
+            ..unavailable.clone()
+        };
+        assert_rejected(&mut k.clone(), 3, &unavailable, Rejection::Unavailable);
+        assert_rejected(
+            &mut k.clone(),
+            3,
+            &Reserve {
+                payment: b.payment,
+                ..free
+            },
+            Rejection::OperationAlreadyBound,
+        );
+        let unknown = k.order(b.order_id).unwrap().clone();
+        assert_rejected(&mut k, 3, &bound, Rejection::OperationAlreadyBound);
+        assert_eq!(k.order(b.order_id), Some(&unknown));
+        assert_eq!(unknown.state, OrderState::PaymentUnknown);
+        assert_eq!(unknown.captured, None);
+        assert_eq!(k.reserved_observation_count(), 1);
+        assert_eq!(k.observation_count(), 0);
+    }
 }
