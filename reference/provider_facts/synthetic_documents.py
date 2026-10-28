@@ -99,6 +99,22 @@ CANCELED_AFTER_DONE = recorded_document(
     )
 )
 
+MULTIPLE_CANCELS = recorded_document(
+    _payment(
+        status="PARTIAL_CANCELED",
+        cancels=[
+            dict(PARTIAL_CANCEL["payment"]["cancels"][0]),
+            {
+                "cancelAmount": 3000,
+                "cancelReason": "synthetic second partial cancel",
+                "cancelStatus": "DONE",
+                "canceledAt": "2026-10-03T09:00:00+09:00",
+                "transactionKey": "txkey_synthetic_cancel_003",
+            },
+        ],
+    )
+)
+
 OFFSET_LESS_CREATED_AT = recorded_document(
     _payment(createdAt="2026-10-01T12:00:01")
 )

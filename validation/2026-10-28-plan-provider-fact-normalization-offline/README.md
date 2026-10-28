@@ -179,3 +179,98 @@ needed.
 Local builder delivery: READY. Supervisor commit/exact-head CI, non-author
 A2 review and authorized merge remain separate. No merge-ready claim is
 made.
+
+## PR fix round 1 — 2026-10-28
+
+This section records the supplied blocking review of implementation head
+`6541a362bdbbd91846f91fd5d74b722b3cc58138` and supersedes the earlier
+"no class C contract violation was found" assessment for that implementation.
+The preceding build record is historical evidence, not the result of this round.
+Task input remains the supplied node prompt and review; there is no issue or
+task document under `docs/tasks/`. Branch:
+`agent/kix-plan-plan-provider-fact-normalization-offline`.
+
+Local `origin/main` and original task base:
+`f13b2f8da720bb081195507bcc6936d39b94a640`. Current implementation/task HEAD:
+`6541a362bdbbd91846f91fd5d74b722b3cc58138`, exactly one commit ahead of that
+local main with zero commits behind. The supervisor prohibits network actions,
+so no fetch was attempted and remote main freshness remains unverified. No
+rebase or base change was made. Fixes are uncommitted worktree changes; the
+supervisor will establish the final delivery SHA. KTX and KIX exact-head CI run
+IDs/status/conclusions are unavailable; no failing CI log was supplied. No
+commit, push, comment, PR update, merge or post-merge check was performed.
+
+All three findings were accepted as implementation violations of the stated
+contracts and fixed within the offline module. They do not require a locked
+file change, contract amendment, product policy value or new protocol command.
+The merge path remains subject to supervisor delivery, non-author review and
+exact-head CI; this record claims only local readiness for that handoff.
+
+Existing coverage was mapped before adding regressions:
+
+| Finding / existing coverage | Before | New regression and repair |
+|---|---|---|
+| Five-field binding: `test_payment_ref_is_the_five_field_tuple` checks fields; `test_same_operation_different_payment_key_is_review_conflict_without_new_capture` checks only the different-key conflict. | Partial; same-key scope/order changes and initial operation/payment scope mismatch were not covered. | `test_operation_binding.py::test_reacceptance_requires_the_entire_payment_ref` independently changes all five fields, verifies review, preservation of the original binding and captures, and refusal to capture the conflicting reference. `::test_initial_binding_rejects_operation_payment_scope_mismatch` checks provider and account mismatch before mutation. Initial mismatch raises `BINDING_MISMATCH`; full PaymentRef equality is required for reacceptance. |
+| S4-NORMALIZE: `test_timeout_not_found_and_unsupported_stay_unresolved` checks method/currency and lookup failures. | Partial; payment/cancel statuses were not covered. | `test_normalize_verified_only.py::test_missing_or_unsupported_payment_and_cancel_statuses_stay_unresolved` checks absent, null, empty, unknown, unsupported READY and non-string states for both objects. A generic `status` cannot replace `cancelStatus`. These cases return stable `Unresolved(STATUS_UNSUPPORTED)`. |
+| S4-EVIDENCE-HASH: `test_evidence_hash_is_sha256_of_canonical_normalized_fact` checks canonical hashing, identical-document replay and changed payment amounts. | Partial; cancellation permutation was not covered. | `test_evidence_hash.py::test_cancel_hashes_ignore_snapshot_order_and_receipt_metadata` uses `MULTIPLE_CANCELS`, reverses entries and changes receipt time. Each unchanged item's fact/hash stays identical despite a different index; a changed cancel amount changes only its own hash. `index` stays available as snapshot metadata outside the hashed fact. |
+
+The existing S6-ONE-PAYMENT test additionally checks `MULTIPLE_CANCELS` as three
+items belonging to one payment. Existing integer-KRW and timestamp assertions
+were sufficiently covered for this fix round and were rerun without duplication.
+
+The status support boundary is deliberately limited to states already modeled
+by the synthetic corpus: payment `DONE`, `PARTIAL_CANCELED`, `CANCELED`; cancel
+`DONE`. It is not an exhaustive provider enum or a termination classification.
+Other states stay unresolved. No absence, failure finality, successful refund,
+release permission or real capture is inferred from these strings.
+
+Both maps add the new regression citations, retaining every status and owner.
+Only adapter rows operation → 결제, RULE-OP-BIND-CONFLICT and S4-EVIDENCE-HASH,
+and PG row S4-NORMALIZE have changed citation cells. All UNDETERMINED/OPEN rows
+and owners remain verbatim; the existing checkers need no code change to validate
+these symbols. TransmissionId/TM04, EventItemId source/alias/Astra and durable
+binding/inbox/stage5 decisions remain open with their original owners.
+
+Changed paths in this fix round (complete, relative to `6541a36`):
+
+- `reference/provider_facts/provider_facts.py`
+- `reference/provider_facts/synthetic_documents.py`
+- `reference/provider_facts/test_evidence_hash.py`
+- `reference/provider_facts/test_normalize_verified_only.py`
+- `reference/provider_facts/test_one_payment_history.py`
+- `reference/provider_facts/test_operation_binding.py`
+- `docs/status/ADAPTER_IDENTITY_EVIDENCE_MAP.md`
+- `docs/status/PG_TOSS_CARD_PROFILE_EVIDENCE_MAP.md`
+- `validation/2026-10-28-plan-provider-fact-normalization-offline/README.md`
+
+Commands actually run this round (Python used `PYTHONDONTWRITEBYTECODE=1`):
+
+| Command / check | Actual result |
+|---|---|
+| `python3 -m unittest discover -s reference/provider_facts -t reference/provider_facts -v` before implementation fixes | Reproduced all three findings: 12 tests, 23 failed assertions/subtests, exit 1; the original 8 tests passed. |
+| Same provider-facts discovery after fixes, also rerun in the workflow suite block | PASS: 12 tests, exit 0. |
+| `python3 -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03` | PASS: 196 tests. |
+| `python3 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission` | PASS: 418 tests; disposable loopback fixtures only. |
+| `python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | PASS: 148 tests. |
+| `python3 -m unittest discover -s reference/ai_delegation -t reference/ai_delegation` | PASS: 85 tests. |
+| `python3 -m unittest discover -s reference/token_reward -t reference/token_reward` | PASS: 168 tests. |
+| `python3 scripts/check_openapi_contract.py` and `--self-test` | PASS, both exit 0. |
+| `python3 scripts/check_integration_gate_openapi.py` and `--self-test` | PASS, both exit 0. |
+| `python3 -m unittest integration_gate.test_offline_limits` | PASS: 9 tests. |
+| Workflow stdlib-check block extracted from `protocol.yml`, from `check_status_register.py` through `check_stage5_host.py --self-test`, executed once via `subprocess.run` | PASS: all 63 commands, each exit 0. Includes both evidence-map checkers plain/`--self-test`, discovery, wiring and roll-up. Host/cache preflights report context only, not node acceptance. |
+| `python3 scripts/check_adapter_identity_map.py` and `--self-test` (within that block) | PASS: 17 rows, 71 citations, PARTIAL=7, UNDETERMINED=8; self-test passed. |
+| `python3 scripts/check_toss_card_profile_evidence_map.py` and `--self-test` (within that block) | PASS: map and self-test, both exit 0. |
+| `python3 scripts/check_ci_test_discovery.py` and `--self-test` (within that block) | PASS: reference_suites=7, node_tests=8, modules=4, excluded=3; self-test passed (18 negative controls). |
+| Scripted comparison of map rows/cells against HEAD | PASS: only the four specified citation cells changed; statuses, owners and all UNDETERMINED/OPEN rows unchanged. |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` plus scripted Git-blob checks | Both before and after: `69564b166f0c27f9af5d8422f0a466b18d74c20f` and `b607996c83a119c349f1cc90469ac1ba82764e20`; match the locks. |
+| Scripted Git-blob comparison of every tracked `reference/v0.3-rc1/**` file against HEAD | PASS: all 108 tracked files byte-identical. Protected tree remains `a6ecb124dc2b2267ca6be19e39fbe2aef143074b`. |
+| `git diff HEAD -- .aiops docs/tasks docs/contracts runtime .github/workflows` | Empty; no protected input, contract, runtime or CI change. |
+| `git diff --check` | PASS, exit 0. |
+
+No new contract-undefined behavior was assigned semantics. Synthetic source
+labels remain fixture preconditions, not authenticated-provider verification.
+This round makes no claim about real Toss behavior, provider enum completeness,
+ID invariance, signature, durability, exactly-once, finality or production
+readiness. Rust, Move, Sui, hosted CI and live provider behavior were not tested.
+Remaining external evidence and owner decisions are unchanged. No stop-condition
+resource or consequential decision is required for these fixes.

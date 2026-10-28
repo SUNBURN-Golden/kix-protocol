@@ -6,6 +6,7 @@ to review — no new operation, no new order and no new capture is recorded.
 """
 
 import unittest
+from dataclasses import replace
 
 from provider_facts import (
     BOUND,
@@ -40,7 +41,7 @@ class OperationBindingTests(unittest.TestCase):
         self.assertEqual(store.recorded_captures[0]["evidence_hash"], digest)
         captures_before = len(store.recorded_captures)
 
-        # Same operation, same paymentKey: idempotent re-accept, no growth.
+        # Same operation, same five-field PaymentRef: re-accept, no growth.
         again = store.bind(OPERATION_REF, PAYMENT_REF_A)
         self.assertEqual(again.outcome, REACCEPTED)
         self.assertEqual(store.binding_count(), 1)
@@ -64,6 +65,41 @@ class OperationBindingTests(unittest.TestCase):
             store.record_capture(OPERATION_REF, PAYMENT_REF_B, history.items[0])
         self.assertEqual(caught.exception.code, "BINDING_REQUIRED")
         self.assertEqual(len(store.recorded_captures), captures_before)
+
+    def test_reacceptance_requires_the_entire_payment_ref(self):
+        for name in ("provider", "account", "environment", "payment_key", "order_id"):
+            with self.subTest(field=name):
+                store = OperationBindingStore()
+                store.bind(OPERATION_REF, PAYMENT_REF_A)
+                item = normalize_recorded_document(PAYMENT_REF_A, PAID).items[0]
+                store.record_capture(OPERATION_REF, PAYMENT_REF_A, item)
+                captures_before = list(store.recorded_captures)
+                incoming = replace(PAYMENT_REF_A, **{name: getattr(PAYMENT_REF_A, name) + "_other"})
+                result = store.bind(OPERATION_REF, incoming)
+                self.assertEqual(result.outcome, CONFLICT)
+                self.assertEqual(result.conflict.incoming_payment_ref, incoming)
+                self.assertEqual(result.conflict.bound_payment_ref, PAYMENT_REF_A)
+                self.assertEqual(store.review, [result.conflict])
+                self.assertEqual(store.lookup(OPERATION_REF), PAYMENT_REF_A)
+                self.assertEqual(store.binding_count(), 1)
+                with self.assertRaises(ProviderFactsError) as caught:
+                    store.record_capture(OPERATION_REF, incoming, item)
+                self.assertEqual(caught.exception.code, "BINDING_REQUIRED")
+                self.assertEqual(store.recorded_captures, captures_before)
+                self.assertEqual(store.bind(OPERATION_REF, replace(PAYMENT_REF_A)).outcome, REACCEPTED)
+
+    def test_initial_binding_rejects_operation_payment_scope_mismatch(self):
+        for name in ("provider", "account"):
+            with self.subTest(field=name):
+                store = OperationBindingStore()
+                incoming = replace(PAYMENT_REF_A, **{name: getattr(PAYMENT_REF_A, name) + "_other"})
+                with self.assertRaises(ProviderFactsError) as caught:
+                    store.bind(OPERATION_REF, incoming)
+                self.assertEqual(caught.exception.code, "BINDING_MISMATCH")
+                self.assertIsNone(store.lookup(OPERATION_REF))
+                self.assertEqual(store.binding_count(), 0)
+                self.assertEqual(store.recorded_captures, [])
+                self.assertEqual(store.bind(OPERATION_REF, PAYMENT_REF_A).outcome, BOUND)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ from provider_facts import (
 )
 from synthetic_documents import (
     CANCELED_AFTER_DONE,
+    MULTIPLE_CANCELS,
     PAID,
     PARTIAL_CANCEL,
     PAYMENT_REF_A,
@@ -27,6 +28,7 @@ class OnePaymentHistoryTests(unittest.TestCase):
             (PAID, 1, 0),
             (PARTIAL_CANCEL, 2, 1),
             (CANCELED_AFTER_DONE, 2, 1),
+            (MULTIPLE_CANCELS, 3, 2),
         ):
             history = normalize_recorded_document(PAYMENT_REF_A, document)
             self.assertIsInstance(history, NormalizedPaymentHistory)

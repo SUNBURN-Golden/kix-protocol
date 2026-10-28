@@ -6,6 +6,7 @@ erases the original payment item. Nothing unresolved infers absence.
 """
 
 import unittest
+from copy import deepcopy
 
 from provider_facts import (
     BINDING_MISMATCH,
@@ -24,6 +25,7 @@ from synthetic_documents import (
     CANCELED_AFTER_DONE,
     DIFFERENT_PAYMENT,
     NON_KRW,
+    PARTIAL_CANCEL,
     NOT_FOUND,
     PAID,
     PAYMENT_REF_A,
@@ -34,6 +36,28 @@ from synthetic_documents import (
 
 
 class NormalizeVerifiedOnlyTests(unittest.TestCase):
+    def test_missing_or_unsupported_payment_and_cancel_statuses_stay_unresolved(self):
+        missing = object()
+        for target in ("payment", "cancel"):
+            for status in (missing, None, "", "UNKNOWN_SYNTHETIC_STATUS", "READY", 1, [], {}):
+                with self.subTest(target=target, status=status):
+                    document = deepcopy(PARTIAL_CANCEL if target == "cancel" else PAID)
+                    item = document["payment"]
+                    field = "status"
+                    if target == "cancel":
+                        item = item["cancels"][0]
+                        field = "cancelStatus"
+                        # A generic status cannot stand in for the required
+                        # cancelStatus field of a supported cancel fixture.
+                        item["status"] = "DONE"
+                    if status is missing:
+                        del item[field]
+                    else:
+                        item[field] = status
+                    result = normalize_recorded_document(PAYMENT_REF_A, document)
+                    self.assertEqual(result, Unresolved("STATUS_UNSUPPORTED"))
+                    self.assertEqual(normalize_recorded_document(PAYMENT_REF_A, document), result)
+
     def test_timeout_not_found_and_unsupported_stay_unresolved(self):
         cases = (
             (TIMEOUT, LOOKUP_TIMEOUT),

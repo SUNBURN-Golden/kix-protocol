@@ -49,6 +49,7 @@ LOOKUP_TIMEOUT = "LOOKUP_TIMEOUT"
 LOOKUP_NOT_FOUND = "LOOKUP_NOT_FOUND"
 METHOD_UNSUPPORTED = "METHOD_UNSUPPORTED"
 CURRENCY_UNSUPPORTED = "CURRENCY_UNSUPPORTED"
+STATUS_UNSUPPORTED = "STATUS_UNSUPPORTED"
 UNVERIFIED_SOURCE = "UNVERIFIED_SOURCE"
 FLOAT_TOKEN = "FLOAT_TOKEN"
 AMOUNT_SCALE = "AMOUNT_SCALE"
@@ -68,6 +69,12 @@ CONFLICT = "conflict"
 
 ITEM_PAYMENT = "payment"
 ITEM_CANCEL = "cancel"
+
+# Only these recorded states are exercised by the synthetic corpus. This
+# support boundary assigns no finality, absence, refund or release meaning
+# to any provider status; all other states remain unresolved.
+_SUPPORTED_PAYMENT_STATUSES = ("DONE", "PARTIAL_CANCELED", "CANCELED")
+_SUPPORTED_CANCEL_STATUSES = ("DONE",)
 
 _OFFSET = re.compile(r"(Z|[+-]\d{2}:\d{2})$")
 
@@ -163,7 +170,8 @@ class NormalizedItem:
     """One item of a payment's history: the payment item or one cancels[] entry.
 
     Status strings and provider key fields are recorded evidence, never an
-    item identity and never a termination verdict.
+    item identity and never a termination verdict. index is snapshot-local
+    positional metadata, excluded from the normalized fact and its hash.
     """
 
     payment_ref: PaymentRef
@@ -180,7 +188,6 @@ class NormalizedItem:
             "provenance": PROVENANCE,
             "payment_ref": self.payment_ref.as_dict(),
             "item": {
-                "index": self.index,
                 "kind": self.kind,
                 "amount": self.amount,
                 "currency": self.currency,
@@ -255,14 +262,6 @@ def _text_field(document: dict, name: str) -> str:
     return value if type(value) is str else ""
 
 
-def _item_status(item: dict, *names: str) -> str:
-    for name in names:
-        value = item.get(name)
-        if type(value) is str and value:
-            return value
-    return ""
-
-
 def normalize_recorded_document(payment_ref: PaymentRef, recorded: dict) -> object:
     """Normalize a synthetic authenticated-lookup recording.
 
@@ -289,6 +288,9 @@ def normalize_recorded_document(payment_ref: PaymentRef, recorded: dict) -> obje
         return Unresolved(METHOD_UNSUPPORTED)
     if payment.get("currency") != "KRW":
         return Unresolved(CURRENCY_UNSUPPORTED)
+    payment_status = payment.get("status")
+    if payment_status not in _SUPPORTED_PAYMENT_STATUSES:
+        return Unresolved(STATUS_UNSUPPORTED)
     ok, total = _amount_or_unresolved(payment.get("totalAmount"))
     if not ok:
         return total
@@ -306,7 +308,7 @@ def normalize_recorded_document(payment_ref: PaymentRef, recorded: dict) -> obje
         kind=ITEM_PAYMENT,
         amount=total,
         currency="KRW",
-        status_text=_item_status(payment, "status"),
+        status_text=payment_status,
         occurred=occurred,
         detail={
             "method_text": _text_field(payment, "method"),
@@ -323,6 +325,9 @@ def normalize_recorded_document(payment_ref: PaymentRef, recorded: dict) -> obje
     _require(cancels is None or type(cancels) is list, "CANCELS_TYPE")
     for entry in cancels or []:
         _require(type(entry) is dict, "CANCEL_ITEM_TYPE")
+        cancel_status = entry.get("cancelStatus")
+        if cancel_status not in _SUPPORTED_CANCEL_STATUSES:
+            return Unresolved(STATUS_UNSUPPORTED)
         ok, cancel_amount = _amount_or_unresolved(entry.get("cancelAmount"))
         if not ok:
             return cancel_amount
@@ -333,7 +338,7 @@ def normalize_recorded_document(payment_ref: PaymentRef, recorded: dict) -> obje
                 kind=ITEM_CANCEL,
                 amount=cancel_amount,
                 currency="KRW",
-                status_text=_item_status(entry, "cancelStatus", "status"),
+                status_text=cancel_status,
                 occurred=raw_timestamp(entry.get("canceledAt")),
                 detail={
                     "reason_text": _text_field(entry, "cancelReason"),
@@ -361,7 +366,7 @@ def normalize_recorded_text(payment_ref: PaymentRef, text: object) -> object:
 
 @dataclass(frozen=True)
 class BindingConflict:
-    """Same operation carrying a different paymentKey: routed to review.
+    """Same operation carrying a different PaymentRef: routed to review.
 
     No new operation, no new order and no new capture is created for it.
     """
@@ -397,9 +402,14 @@ class OperationBindingStore:
         key = (operation_ref.provider, operation_ref.account, operation_ref.operation)
         existing = self._bindings.get(key)
         if existing is None:
+            _require(
+                operation_ref.provider == payment_ref.provider
+                and operation_ref.account == payment_ref.account,
+                BINDING_MISMATCH,
+            )
             self._bindings[key] = payment_ref
             return BindingOutcome(BOUND, payment_ref, None)
-        if existing.payment_key == payment_ref.payment_key:
+        if existing == payment_ref:
             return BindingOutcome(REACCEPTED, existing, None)
         conflict = BindingConflict(operation_ref, existing, payment_ref)
         self.review.append(conflict)
