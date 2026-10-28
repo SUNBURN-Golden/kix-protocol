@@ -436,6 +436,8 @@
 
 - [plan-provider-cancel-boundary-tests](../validation/2026-10-28-plan-provider-cancel-boundary-tests/README.md) — Synthetic offline cancellation amount/status boundaries through document and JSON-text entry points, mixed-history rejection and retained valid facts/hashes; technical representation checks only (Analog, NOT Toss), no implementation, policy or evidence-grade change.
 
+- [plan-provider-normalization-golden-vectors](../validation/2026-10-28-plan-provider-normalization-golden-vectors/README.md) — Source-informed literal synthetic facts, canonical UTF-8 bytes and SHA-256 vectors for payment/cancel, Korean text, raw timestamps and u128; formatting invariance and included-field sensitivity (Analog, NOT Toss), no operational encoding, contract or grade change.
+
 - [plan-provider-structural-rejection-tests](../validation/2026-10-28-plan-provider-structural-rejection-tests/README.md) — Offline synthetic provider structural rejection regressions through public parsing/normalization entry points, unchanged inputs and retained valid histories/facts/hashes; source-informed characterizations (Analog, NOT Toss), no implementation, contract, policy or evidence-grade change.
 
 - [plan-plan-contract-invariants-s5-residual-cha](../validation/2026-10-28-plan-contract-invariants-s5-residual-cha/README.md) — Five public-API class B residual characterizations for F-B5/F-B6 and a raw-byte F-B1 provenance pin; PARTIAL statuses/owners retained, LOCKED_EDGE owner decision unresolved, no availability or precedence-completeness claim.
