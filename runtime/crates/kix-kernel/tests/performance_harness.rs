@@ -138,6 +138,87 @@ fn low_load_uniform_is_distinct_from_hot_seat_retry_and_saturation() {
 }
 
 #[test]
+fn retry_replays_complete_first_result() {
+    let report = probe::run(probe::Workload::Retry, 512, 128, 0);
+    assert_eq!(report.applied_reservations.len(), 512);
+    assert_eq!(
+        check_retry_original_results(&report.applied_reservations),
+        Ok(())
+    );
+    assert_eq!(
+        (report.held, report.replay, report.remaining),
+        (1, 511, 4095)
+    );
+    assert_eq!(
+        (
+            report.rejected,
+            report.capacity,
+            report.conflict_retained,
+            report.other
+        ),
+        (0, 0, 0, 0)
+    );
+    assert_separated(&report, 0, 128);
+    let json = report.json(0, 128);
+    for (key, expected) in [
+        ("new_success_count", "1"),
+        ("new_held", "1"),
+        ("replayed", "511"),
+        ("remaining", "4095"),
+    ] {
+        assert_eq!(top_level(&json, key), expected);
+    }
+}
+
+#[test]
+fn retry_comparison_rejects_corrupted_captured_original() {
+    let report = probe::run(probe::Workload::Retry, 512, 128, 0);
+    assert_eq!(
+        check_retry_original_results(&report.applied_reservations),
+        Ok(())
+    );
+    let mut corrupted = report.applied_reservations.clone();
+    let replay = corrupted[1].as_mut().unwrap();
+    assert!(replay.replayed);
+    let replacement = kix_kernel::ReserveOutcome::Held(kix_types::KixId::from_bytes([0xff; 16]));
+    assert_ne!(replay.original, replacement);
+    replay.original = replacement;
+    assert!(replay.replayed);
+    assert_eq!(
+        check_retry_original_results(&corrupted),
+        Err("replay original differs from first result")
+    );
+    // Only a captured copy was corrupted; the report and kernel are untouched.
+    assert_eq!(
+        check_retry_original_results(&report.applied_reservations),
+        Ok(())
+    );
+}
+
+fn check_retry_original_results(
+    replies: &[Option<kix_kernel::AppliedReservation>],
+) -> Result<(), &'static str> {
+    let first = replies
+        .first()
+        .ok_or("missing first reply")?
+        .as_ref()
+        .ok_or("first reserve failed")?;
+    if first.replayed || !matches!(first.original, kix_kernel::ReserveOutcome::Held(_)) {
+        return Err("first reply must be a new Held result");
+    }
+    for reply in &replies[1..] {
+        let replay = reply.as_ref().ok_or("replay reserve failed")?;
+        if !replay.replayed {
+            return Err("subsequent reply must be replayed");
+        }
+        if replay.original != first.original {
+            return Err("replay original differs from first result");
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn outcome_summaries_do_not_label_mixed_p99_as_success() {
     let hot = probe::run(probe::Workload::HotSeat, 512, 128, 0);
     assert_eq!(hot.outcome("held").unwrap().role, "new-success");

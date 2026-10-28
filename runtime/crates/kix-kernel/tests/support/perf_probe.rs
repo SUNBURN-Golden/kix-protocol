@@ -7,8 +7,8 @@ use std::fmt::Write as _;
 use std::time::{Duration, Instant};
 
 use kix_kernel::{
-    CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel, Limits,
-    ObservationOutcome, ProviderOperation, Reserve, ReserveOutcome, Selection,
+    AppliedReservation, CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel,
+    Limits, ObservationOutcome, ProviderOperation, Reserve, ReserveOutcome, Selection,
 };
 use kix_types::{AssetAmount, AssetId, Hash32, KixId, RegistryVersion};
 
@@ -197,6 +197,10 @@ pub struct Report {
     /// Read by the harness; the shared example does not export this diagnostic.
     #[allow(dead_code)]
     pub reserve_selections: Vec<Selection>,
+    /// Actual classified reserve replies, one entry per measured call; None for
+    /// reserve errors or capture calls. Excludes conflict prefill, not serialized.
+    #[allow(dead_code)] // Read by the harness; the shared example does not export it.
+    pub applied_reservations: Vec<Option<AppliedReservation>>,
     pub total: usize,
     pub held: usize,
     pub replay: usize,
@@ -225,23 +229,36 @@ fn percentile(values: &mut [u128], numerator: usize) -> u128 {
     values[(values.len() * numerator).div_ceil(100).saturating_sub(1)]
 }
 
-fn classify(kernel: &mut Kernel, index: usize, input: Input) -> OutcomeKind {
+fn classify(
+    kernel: &mut Kernel,
+    index: usize,
+    input: Input,
+) -> (OutcomeKind, Option<AppliedReservation>) {
     match input {
         Input::Reserve(value) => match kernel.reserve(context(index as u64 + 10), value) {
-            Ok(applied) if applied.replayed => OutcomeKind::Replayed,
-            Ok(applied) => match applied.original {
-                ReserveOutcome::Held(_) => OutcomeKind::Held,
-                ReserveOutcome::Rejected(_) => OutcomeKind::BusinessRejected,
+            Ok(applied) => {
+                let kind = if applied.replayed {
+                    OutcomeKind::Replayed
+                } else {
+                    match applied.original {
+                        ReserveOutcome::Held(_) => OutcomeKind::Held,
+                        ReserveOutcome::Rejected(_) => OutcomeKind::BusinessRejected,
+                    }
+                };
+                (kind, Some(applied))
+            }
+            Err(kix_kernel::KernelError::Capacity) => (OutcomeKind::Capacity, None),
+            Err(_) => (OutcomeKind::OtherError, None),
+        },
+        Input::Capture(value) => (
+            match kernel.observe_capture(context(index as u64 + 10), value) {
+                Ok(ObservationOutcome::Conflict) => OutcomeKind::ConflictRetained,
+                Ok(_) => OutcomeKind::OtherObservation,
+                Err(kix_kernel::KernelError::Capacity) => OutcomeKind::Capacity,
+                Err(_) => OutcomeKind::OtherError,
             },
-            Err(kix_kernel::KernelError::Capacity) => OutcomeKind::Capacity,
-            Err(_) => OutcomeKind::OtherError,
-        },
-        Input::Capture(value) => match kernel.observe_capture(context(index as u64 + 10), value) {
-            Ok(ObservationOutcome::Conflict) => OutcomeKind::ConflictRetained,
-            Ok(_) => OutcomeKind::OtherObservation,
-            Err(kix_kernel::KernelError::Capacity) => OutcomeKind::Capacity,
-            Err(_) => OutcomeKind::OtherError,
-        },
+            None,
+        ),
     }
 }
 
@@ -350,6 +367,7 @@ fn run_probe(
                 Input::Capture(_) => None,
             })
             .collect(),
+        applied_reservations: Vec::with_capacity(count),
         total: count,
         held: 0,
         replay: 0,
@@ -395,7 +413,7 @@ fn run_probe(
         }
         let start = origin.elapsed().as_nanos();
         let begin = Instant::now();
-        let kind = classify(&mut kernel, index, input);
+        let (kind, applied) = classify(&mut kernel, index, input);
         match kind {
             OutcomeKind::Held => report.held += 1,
             OutcomeKind::Replayed => report.replay += 1,
@@ -407,6 +425,9 @@ fn run_probe(
         }
         let duration = begin.elapsed().as_nanos();
         let end = origin.elapsed().as_nanos();
+        // Retain the same invocation's reply outside service and call windows.
+        // This diagnostic append still contributes to workload-loop elapsed_ns.
+        report.applied_reservations.push(applied);
         if kind.as_str() == "capacity" && report.first_capacity.is_none() {
             report.first_capacity = Some(index);
         }
