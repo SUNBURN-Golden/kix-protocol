@@ -1,18 +1,24 @@
 """Fault checks for the local readiness journal.
 
-These tests restart an in-process boundary and a file. They do not claim a
+These tests restart a boundary and probe local locks with offline processes.
+They do not claim a
 public endpoint, production conformance, bank exactly-once, or chain finality.
 Protocol FSM `durable` flags stay false: the journal is not protocol truth.
 """
 
 from __future__ import annotations
 
+import json
 import struct
+import subprocess
+import sys
 import tempfile
+import threading
 import unittest
 import zlib
 from collections import Counter
 from pathlib import Path
+from queue import Empty, Queue
 
 from readiness.boundary import FsmBoundary, ReadinessClosed, ReadinessError
 from readiness.ai_delegation_wrap import WrapError as AiDelegationWrapError
@@ -133,6 +139,216 @@ class StoreTests(unittest.TestCase):
                 self.assertEqual(raised.exception.code, 'JOURNAL_RECORD')
             finally:
                 store.close()
+
+
+# The competing opener has no append path. Fresh interpreters and close_fds
+# ensure a child cannot inherit its parent's journal ownership.
+_WRITER_LOCK_PROBE = r'''
+import json
+import sys
+from readiness.boundary import FsmBoundary
+from readiness.store import ReadinessStore
+
+directory, mode = sys.argv[1:]
+
+def emit(phase, **fields):
+    print(json.dumps(dict(phase=phase, **fields)), flush=True)
+
+def receive(phase):
+    message = json.loads(sys.stdin.readline())
+    assert message == {'phase': phase}, message
+
+def identity(exc):
+    return dict(error_type=type(exc).__name__, code=getattr(exc, 'code', None))
+
+retained = None
+try:
+    handle = FsmBoundary(directory) if mode == 'boundary' else ReadinessStore.open(directory)
+except Exception as exc:
+    # Retain both: neither traceback disposal nor process exit may release a
+    # leaked initialization handle before the parent's independent probe.
+    retained = (exc, exc.__traceback__)
+    emit('failed', **identity(exc))
+else:
+    handle.close()
+    emit('unexpected_success')
+
+if mode == 'owned':
+    receive('reopen')
+    store = ReadinessStore.open(directory)
+    try:
+        records, committed_bytes = store.records, store.committed_bytes
+    finally:
+        store.close()
+    emit('reopened', records=records, committed_bytes=committed_bytes)
+else:
+    receive('finish')
+    assert retained is not None
+    exc, traceback = retained
+    emit('retained', **identity(exc),
+         traceback_retained=traceback is not None and exc.__traceback__ is traceback)
+'''
+
+
+class _WriterLockProcess:
+    """Bounded blocking pipe/wait handshakes; no sleeps, polling or retries."""
+
+    TIMEOUT = 30  # Harness deadlock guard, not a product timeout or SLO.
+
+    def __init__(self, test, directory, mode):
+        self.test = test
+        self.messages = Queue()
+        self.exits = Queue()
+        self.threads = []
+        self.process = subprocess.Popen(
+            [sys.executable, '-u', '-c', _WRITER_LOCK_PROBE, str(directory), mode],
+            cwd=Path(__file__).resolve().parents[1], close_fds=True,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, text=True,
+        )
+        test.addCleanup(self.close)
+        for target in (self._read, self._wait):
+            thread = threading.Thread(target=target)
+            self.threads.append(thread)
+            thread.start()
+
+    def _read(self):
+        try:
+            for line in self.process.stdout:
+                self.messages.put(line)
+        finally:
+            self.messages.put(None)
+
+    def _wait(self):
+        self.exits.put(self.process.wait())
+
+    def expect(self, message):
+        line = self.messages.get(timeout=self.TIMEOUT)
+        self.test.assertIsNotNone(line, 'probe closed stdout before handshake')
+        self.test.assertEqual(json.loads(line), message)
+
+    def send(self, phase):
+        self.process.stdin.write(json.dumps({'phase': phase}) + '\n')
+        self.process.stdin.flush()
+
+    def finish(self):
+        self.test.assertEqual(self.exits.get(timeout=self.TIMEOUT), 0)
+        self.test.assertIsNone(self.messages.get(timeout=self.TIMEOUT),
+                               'unexpected trailing probe output')
+
+    def close(self):
+        try:
+            if self.process.returncode is None:
+                self.process.terminate()
+                try:
+                    self.exits.get(timeout=self.TIMEOUT)
+                except Empty:
+                    self.process.kill()
+                    self.exits.get(timeout=self.TIMEOUT)
+                    raise
+        finally:
+            for thread in self.threads:
+                thread.join(timeout=self.TIMEOUT)
+            self.process.stdin.close()
+            self.process.stdout.close()
+        for thread in self.threads:
+            self.test.assertFalse(thread.is_alive(), 'probe helper thread did not stop')
+
+
+class WriterLockLifecycleTests(unittest.TestCase):
+    """Local exclusion (class A); cleanup is a source-informed regression (B).
+
+    Explicit-close and failed-init cleanup do not add contract semantics or
+    backend-neutral requirements. Only the parent fixture writer appends.
+    """
+
+    def setUp(self):
+        root = tempfile.TemporaryDirectory()
+        self.addCleanup(root.cleanup)
+        self.directory = Path(root.name)
+        self.path = self.directory / JOURNAL_NAME
+
+    def _open(self):
+        store = ReadinessStore.open(self.directory)
+        self.addCleanup(store.close)
+        return store
+
+    def _assert_failure(self, child, error_type, code, phase='failed'):
+        message = dict(phase=phase, error_type=error_type, code=code)
+        if phase == 'retained':
+            message['traceback_retained'] = True
+        child.expect(message)
+
+    def test_competing_process_refused_then_reopens_after_close(self):
+        store = self._open()
+        store.append({
+            'kind': 'fsm_commit', 'machine': 'settlement',
+            'entry': {'op': 'initiate', 'idempotency_key': 'init-1'},
+        })
+        original = self.path.read_bytes()
+        records, committed_bytes = json_copy(store.records), store.committed_bytes
+        child = _WriterLockProcess(self, self.directory, 'owned')
+        self._assert_failure(child, 'StoreError', 'JOURNAL_LOCKED')
+        self.assertEqual(self.path.read_bytes(), original)
+        self.assertEqual(store.records, records)
+        self.assertEqual(store.committed_bytes, committed_bytes)
+        # Implementation regression: explicit close permits the next opener.
+        store.close()
+        child.send('reopen')  # Ordered lifecycle transition, not a failure retry.
+        child.expect(dict(phase='reopened', records=records, committed_bytes=committed_bytes))
+        child.finish()
+        self.assertEqual(self.path.read_bytes(), original)
+
+    def test_store_open_failure_releases_lock_while_process_alive(self):
+        store = self._open()
+        # Same complete-frame corruption as StoreTests' checksum fixture.
+        store.append({
+            'kind': 'fsm_commit', 'machine': 'reservation',
+            'entry': {'op': 'hold', 'idempotency_key': 'hold-1'},
+        })
+        store.close()
+        damaged = bytearray(self.path.read_bytes())
+        damaged[20] ^= 0xFF
+        self.path.write_bytes(damaged)
+        original = self.path.read_bytes()
+        child = _WriterLockProcess(self, self.directory, 'store')
+        self._assert_failure(child, 'StoreError', 'CHECKSUM_MISMATCH')
+        # Implementation regression: lock acquisition precedes checksum parsing.
+        # Use _open so even unexpected success registers immediate cleanup.
+        with self.assertRaises(StoreError) as raised:
+            self._open()
+        self.assertIs(type(raised.exception), StoreError)
+        self.assertEqual(raised.exception.code, 'CHECKSUM_MISMATCH')
+        self.assertEqual(self.path.read_bytes(), original)
+        child.send('finish')
+        self._assert_failure(child, 'StoreError', 'CHECKSUM_MISMATCH', 'retained')
+        child.finish()
+        self.assertEqual(self.path.read_bytes(), original)
+
+    def test_boundary_init_failure_releases_lock_while_process_alive(self):
+        store = self._open()
+        # Same valid core_commit as FaultTests' invalid-for-FSM fixture.
+        store.append({
+            'kind': 'core_commit', 'machine': 'integration_core',
+            'operationId': 'op-1', 'actor': 'operator', 'action': 'advance_clock',
+            'body': {'domain': 'kix:fixture:lifecycle:0.3', 'now': 1},
+            'receiptDigest': 'cd' * 32,
+        })
+        records, committed_bytes = json_copy(store.records), store.committed_bytes
+        store.close()
+        original = self.path.read_bytes()
+        child = _WriterLockProcess(self, self.directory, 'boundary')
+        self._assert_failure(child, 'ReadinessError', 'UNEXPECTED_RECORD')
+        # Implementation regression: a store can open while failed init lives.
+        reopened = self._open()
+        self.assertEqual(reopened.records, records)
+        self.assertEqual(reopened.committed_bytes, committed_bytes)
+        self.assertEqual(self.path.read_bytes(), original)
+        reopened.close()
+        child.send('finish')
+        self._assert_failure(child, 'ReadinessError', 'UNEXPECTED_RECORD', 'retained')
+        child.finish()
+        self.assertEqual(self.path.read_bytes(), original)
 
 
 class MigrationEdgeTests(unittest.TestCase):
