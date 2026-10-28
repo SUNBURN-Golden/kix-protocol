@@ -429,3 +429,5 @@
 모델 1·첫 묶음 승인은 backend 채택·커널 전환 완료·실금전 운영 승인과 다릅니다. 미정 항목, 두 잠금 blob, R2 금지, (a) 보류, 위생 일괄 금지는 유지합니다.
 
 - [plan-plan-integration-gate-offline-gap-closur](../validation/2026-10-28-plan-integration-gate-offline-gap-closur/README.md) — Socket-guarded current OpenAPI byte pin/browser isolation, actor/action replay conflicts in Core and excluded wire-name dispatch regressions; three rows remain PARTIAL with HTTP/historical gaps, no gate behavior or grade change.
+
+- [plan-plan-provider-fact-normalization-offlin](../validation/2026-10-28-plan-provider-fact-normalization-offline/README.md) — Dependency-free offline `reference/provider_facts/` normalization harness over synthetic Toss-shaped recorded documents: five-field PaymentRef, integer-KRW no-f64 parsing, ambiguous-timezone preservation, verified-only normalization, per-item SHA-256 evidence hash, one-payment cancels[] history and operation→payment conflict binding; MOCK/synthetic evidence only, four Toss-map and five adapter-map rows updated, all UNDETERMINED cells/owners unchanged.
