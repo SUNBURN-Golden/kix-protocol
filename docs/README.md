@@ -452,3 +452,5 @@
 - [plan-readiness-writer-lock-lifecycle](../validation/2026-10-29-plan-readiness-writer-lock-lifecycle/README.md) — Offline cross-process writer refusal and explicit-close/failed-initialization lock cleanup regressions; supplemental JRN-SINGLE-WRITER citations only, statuses and open decisions unchanged.
 
 - [plan-readiness-record-byte-boundaries](../validation/2026-10-29-plan-readiness-record-byte-boundaries/README.md) — Source-informed characterization of stamped JSON UTF-8 byte boundaries and oversized rejection atomicity/same-handle reuse; no implementation, product policy, evidence grade or recovery-decision change.
+
+- [plan-plan-readiness-json-codec-regressions](../validation/2026-10-29-plan-plan-readiness-json-codec-regressions/README.md) — Source-informed complete-frame JSON rejection, serialization-error atomicity and literal canonical Unicode receipt-digest regressions; no implementation, contract, evidence grade or open-decision change.

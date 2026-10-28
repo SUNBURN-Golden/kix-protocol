@@ -312,3 +312,53 @@ Documented gaps — properties this document describes with no
 The faulty adapters are test doubles, not candidate backends. Their failures
 show the suite notices the injected faults; this is not a power-loss proof,
 not a PostgreSQL or other candidate-backend test, and not a backend adoption.
+
+## JSON codec regressions
+
+`readiness/test_faults.py::JsonCodecRegressionTests` characterizes the current
+`readiness/codec.py` through its public helpers and `ReadinessStore` with
+synthetic entries and temporary local files. These are source-informed local
+wrapper expectations, outside `BackendConformance`, not protocol encoding or
+new contract requirements. Entries here never pass through FSM replay.
+
+Coverage mapped before adding the regressions (all symbols below are in
+`readiness/test_faults.py`):
+
+| Requirement | Existing evidence | Prior coverage / addition |
+|---|---|---|
+| Small schema-1 store round trip | `StoreTests.test_version_one_roundtrip_and_explicit_migration_only` | Sufficient; reused unchanged. |
+| Checksum and torn-tail behavior | `StoreTests.test_torn_tail_is_discarded_and_a_bad_checksum_fails_closed`, `JournalByteSweepTests` | Sufficient; reused unchanged. |
+| Invalid UTF-8 and top-level duplicate keys with valid CRC | `JournalByteSweepTests.test_crc_consistent_damage_is_rejected_not_repaired` | Sufficient; reused unchanged. |
+| ASCII/multibyte byte ceilings and oversized rejection atomicity | Both `RecordSizeBoundaryTests` methods | Sufficient; reused unchanged, no duplicate size matrix. |
+| BOM, nested duplicate keys, bare NaN/Infinity/-Infinity, malformed JSON | No dedicated cases | Not covered; `test_complete_frames_reject_invalid_json_without_rewriting`. |
+| Paired valid Unicode, finite-number, distinct-key and quoted-constant controls | Store and size round trips | Partially covered; `test_valid_json_controls_roundtrip`. |
+| Serialization error type/code and append rejection atomicity/reuse | Other store rejection paths only | Not covered for this codec path; `test_serialization_failures_report_journal_record`. |
+| Literal canonical Unicode bytes and independent digest expectations | Size tests use stdlib serialization; gate receipt checks reuse `receipt_digest` | Partially covered; `test_canonical_unicode_bytes_and_receipt_digests`. |
+| Nested dictionary insertion-order invariance and content sensitivity | No explicit paired fixtures | Not covered; same canonical-byte/digest test. |
+
+The rejection matrix constructs ten payloads directly: BOM, duplicate keys in
+a nested object and in an array element, all three bare nonstandard constants,
+missing value, trailing comma, unterminated string, and trailing text. Each
+has an in-range length and recomputed CRC in a complete frame, following an
+accepted prefix, both at EOF and before a valid suffix. `strict_loads` raises
+`CodecError('JOURNAL_CORRUPT')`; `ReadinessStore.open` raises
+`StoreError('JOURNAL_CORRUPT')` and preserves the entire file byte-for-byte.
+Valid controls parse, append and reopen with the expected records/accounting.
+
+Nested nonfinite floats, a set and a circular container give
+`CodecError('JOURNAL_RECORD')` from `canonical_json`, `receipt_digest`, and
+the current `append` path (which propagates `CodecError`, not `StoreError`).
+Failed appends preserve bytes, deep-copied records and committed accounting;
+a valid append on the same handle and subsequent reopen succeed.
+Literal UTF-8 expectations include accented Latin, Korean and emoji; SHA-256
+is calculated from those literal bytes, independently of codec output.
+Reversing insertion order at both dictionary levels preserves bytes/digest;
+changing receipt content matches separate expected bytes and changes digest.
+
+This is source-informed characterization of contract-undefined codec details
+(AGENTS §8 B), not a Unicode normalization policy or a backend encoding rule.
+All evidence grades, false production/truth/durable labels, nine readiness-map
+OPEN rows, owners and recovery uncertainties remain unchanged. No production
+durability, stage-5 acceptance, clean-room independence, power-loss, OS-crash,
+physical-media/fsync, external exactly-once or chain-finality claim. Record:
+`validation/2026-10-29-plan-plan-readiness-json-codec-regressions/README.md`.
