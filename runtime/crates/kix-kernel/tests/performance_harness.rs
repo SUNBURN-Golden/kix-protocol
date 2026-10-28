@@ -265,6 +265,209 @@ fn outcome_summaries_do_not_label_mixed_p99_as_success() {
 }
 
 #[test]
+fn nearest_rank_p99_matches_fixed_expectations() {
+    // Literal expectations; no percentile helper computes the expected rank.
+    for (mut values, expected) in [
+        (vec![42], 42),
+        (vec![30, 10, 40, 20], 40),
+        (vec![7; 101], 7),
+        (vec![u128::MAX, u128::MAX - 2, u128::MAX - 1], u128::MAX),
+        ((1..=99).rev().collect(), 99),
+        ((1..=100).rev().collect(), 99),
+        ((1..=101).rev().collect(), 100),
+        ((1..=199).rev().collect(), 198),
+        ((1..=200).rev().collect(), 198),
+        ((1..=201).rev().collect(), 199),
+        ((0..100).map(|n| u128::MAX - n).collect(), u128::MAX - 1),
+    ] {
+        assert_eq!(probe::percentile_for_test(&mut values), expected);
+    }
+}
+
+// Independently select the first sorted value with at least 99% of samples at
+// or below its position. This does not use the probe's rounded index expression.
+fn csv_p99(samples: &[u128]) -> Option<u128> {
+    let mut sorted = samples.to_vec();
+    sorted.sort_unstable();
+    sorted
+        .iter()
+        .enumerate()
+        .find(|(position, _)| 100 * (position + 1) >= 99 * samples.len())
+        .map(|(_, value)| *value)
+}
+
+// Parse only the existing flat outcome objects. Scope each field lookup to its
+// object, and reject duplicate fields rather than matching a different outcome.
+fn json_outcome_objects(json: &str) -> Vec<std::collections::BTreeMap<&str, &str>> {
+    let (_, array) = json.split_once(",\"outcomes\":[").unwrap();
+    let objects = array
+        .strip_suffix("]}\n")
+        .unwrap()
+        .strip_prefix('{')
+        .unwrap()
+        .strip_suffix('}')
+        .unwrap();
+    objects
+        .split("},{")
+        .map(|object| {
+            let mut fields = std::collections::BTreeMap::new();
+            for field in object.split(',') {
+                let (key, value) = field.split_once(':').unwrap();
+                assert!(fields.insert(key, value).is_none(), "duplicate {key}");
+            }
+            assert_eq!(fields.len(), 5);
+            fields
+        })
+        .collect()
+}
+
+#[test]
+fn summary_p99_matches_raw_csv_by_outcome() {
+    for (workload, count, rate) in [
+        (probe::Workload::Uniform, 512, 0),
+        (probe::Workload::HotSeat, 512, 0),
+        (probe::Workload::Retry, 512, 0),
+        (probe::Workload::Conflict, 512, 0),
+        (probe::Workload::Uniform, 32, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+        (probe::Workload::Conflict, 8, 0),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        let rows = csv_rows(&report);
+        assert_separated(&report, rate, 128);
+        let json = report.json(rate, 128);
+        for (column, actual, key) in [
+            (
+                4,
+                report.mixed_p99_service_ns,
+                "mixed_result_p99_service_ns",
+            ),
+            (
+                5,
+                report.mixed_p99_scheduled_latency_ns,
+                "mixed_result_p99_scheduled_latency_ns",
+            ),
+        ] {
+            let samples: Vec<_> = rows.iter().map(|(values, _)| values[column]).collect();
+            let expected = csv_p99(&samples).unwrap();
+            assert_eq!(actual, expected);
+            assert_eq!(top_level(&json, key), expected.to_string());
+        }
+
+        let objects = json_outcome_objects(&json);
+        assert_eq!(objects.len(), 7);
+        assert_eq!(report.outcomes.len(), 7);
+        for name in [
+            "held",
+            "replayed",
+            "business_rejected",
+            "capacity",
+            "conflict_retained",
+            "other_error",
+            "other_observation",
+        ] {
+            let partition: Vec<_> = rows.iter().filter(|(_, kind)| kind == name).collect();
+            let summary = report.outcome(name).unwrap();
+            assert_eq!(summary.count, partition.len());
+            assert_eq!(
+                report.outcomes.iter().filter(|s| s.outcome == name).count(),
+                1
+            );
+            let matches: Vec<_> = objects
+                .iter()
+                .filter(|object| object["\"outcome\""] == format!("\"{name}\""))
+                .collect();
+            assert_eq!(matches.len(), 1, "{name}");
+            let object = matches[0];
+            assert_eq!(object["\"count\""], partition.len().to_string());
+            assert_eq!(object["\"role\""], format!("\"{}\"", summary.role));
+            for (column, actual, key) in [
+                (4, summary.service_p99_ns, "\"service_p99_ns\""),
+                (
+                    5,
+                    summary.scheduled_latency_p99_ns,
+                    "\"scheduled_latency_p99_ns\"",
+                ),
+            ] {
+                let samples: Vec<_> = partition.iter().map(|(v, _)| v[column]).collect();
+                let expected = csv_p99(&samples);
+                assert_eq!(actual, expected, "{name} {key}");
+                let expected_json = expected.map_or_else(|| "null".to_string(), |v| v.to_string());
+                assert_eq!(object[key], expected_json, "{name} {key}");
+            }
+        }
+    }
+}
+
+#[test]
+fn goodput_matches_fixed_integer_expectations() {
+    // Synthetic arithmetic inputs, with positive elapsed time. Replay, rejection
+    // and Capacity stay nonzero to catch using total calls as the numerator.
+    for (held, elapsed_ns, expected) in [
+        (0, 7, 0),
+        (1, 1_000_000_000, 1),
+        (3, 2_000_000_000, 1),
+        (1, 3, 333_333_333),
+        (1, 2_000_000_000, 0),
+    ] {
+        let report = probe::Report {
+            workload: "synthetic-goodput-arithmetic",
+            inventory_segments: Vec::new(),
+            reserve_selections: Vec::new(),
+            applied_reservations: Vec::new(),
+            total: held + 9,
+            held,
+            replay: 3,
+            rejected: 2,
+            capacity: 4,
+            conflict_retained: 0,
+            other_error: 0,
+            other_observation: 0,
+            other: 0,
+            first_capacity: Some(held + 5),
+            samples_after_first_capacity: 3,
+            command_limit_requested: 128,
+            kernel_constructions: 1,
+            remaining: 0,
+            elapsed_ns,
+            mixed_p99_service_ns: 1,
+            mixed_p99_scheduled_latency_ns: 1,
+            outcomes: [
+                ("held", "new-success", held),
+                ("replayed", "same-command-retry", 3),
+                ("business_rejected", "business-reject", 2),
+                ("capacity", "capacity", 4),
+                ("conflict_retained", "retained-conflict", 0),
+                ("other_error", "unclassified", 0),
+                ("other_observation", "unclassified", 0),
+            ]
+            .into_iter()
+            .map(|(outcome, role, count)| probe::OutcomeSummary {
+                outcome,
+                role,
+                count,
+                service_p99_ns: (count > 0).then_some(1),
+                scheduled_latency_p99_ns: (count > 0).then_some(1),
+            })
+            .collect(),
+            raw_csv: String::new(),
+        };
+        assert_eq!(
+            report.outcomes.iter().map(|s| s.count).sum::<usize>(),
+            report.total
+        );
+        assert_eq!(report.memory_only_new_held_per_elapsed_s(), Some(expected));
+        let json = report.json(0, 128);
+        assert_eq!(
+            top_level(&json, "memory_only_new_held_per_elapsed_s"),
+            expected.to_string()
+        );
+        assert_eq!(top_level(&json, "new_held"), held.to_string());
+        assert_eq!(top_level(&json, "new_success_count"), held.to_string());
+    }
+}
+
+#[test]
 fn evidence_binding_records_budgets_toolchain_and_non_claims() {
     let files = ["uniform.csv", "binding.json"];
     let json = probe::evidence_binding_json(&probe::EvidenceBinding {
