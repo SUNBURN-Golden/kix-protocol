@@ -8,6 +8,7 @@ Protocol FSM `durable` flags stay false: the journal is not protocol truth.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import struct
 import subprocess
@@ -24,6 +25,7 @@ from readiness.boundary import FsmBoundary, ReadinessClosed, ReadinessError
 from readiness.ai_delegation_wrap import WrapError as AiDelegationWrapError
 from ai_delegation_mock import AiDelegationError
 from token_reward_model import PROVENANCE, TokenRewardError
+from readiness.codec import CodecError, canonical_json, receipt_digest, strict_loads
 from readiness.migrate import SCHEMA_VERSION, MigrationError, migrate, migrate_explicit
 from readiness.policy import AdmitGate
 from readiness.reward_wrap import RewardWrap, WrapError as RewardWrapError
@@ -256,6 +258,179 @@ class RecordSizeBoundaryTests(unittest.TestCase):
                     self.assertEqual(path.read_bytes(), data)
                 finally:
                     again.close()
+
+
+class JsonCodecRegressionTests(unittest.TestCase):
+    """Source-informed local codec characterization, not protocol encoding."""
+
+    def _payload(self, entry):
+        # Construct bytes directly so malformed JSON and duplicate keys survive.
+        return (
+            b'{"schema":1,"protocolTruth":false,"productionConformance":false,'
+            b'"kind":"fsm_commit","machine":"settlement","entry":' + entry + b'}'
+        )
+
+    def _frame(self, payload):
+        self.assertGreaterEqual(len(payload), 2)
+        self.assertLessEqual(len(payload), MAX_RECORD_BYTES)
+        frame = struct.pack('>I', len(payload)) + payload
+        frame += struct.pack('>I', zlib.crc32(payload) & 0xFFFFFFFF)
+        self.assertEqual(len(frame), len(payload) + 8)
+        return frame
+
+    def test_complete_frames_reject_invalid_json_without_rewriting(self):
+        valid = self._payload(b'{"value":1}')
+        cases = {
+            'bom': b'\xef\xbb\xbf' + valid,
+            'nested-duplicate': self._payload(b'{"nested":{"key":1,"key":2}}'),
+            'array-object-duplicate': self._payload(b'{"items":[{"key":1,"key":2}]}'),
+            'nan': self._payload(b'{"value":NaN}'),
+            'infinity': self._payload(b'{"value":Infinity}'),
+            'negative-infinity': self._payload(b'{"value":-Infinity}'),
+            'missing-value': self._payload(b'{"value":}'),
+            'trailing-comma': self._payload(b'{"value":1,}'),
+            'unterminated-string': self._payload(b'{"value":"unfinished'),
+            'trailing-text': valid + b' unexpected',
+        }
+        with tempfile.TemporaryDirectory() as seed:
+            store = ReadinessStore.open(seed)
+            try:
+                store.append({'kind': 'fsm_commit', 'machine': 'settlement',
+                              'entry': {'text': 'accepted prefix'}})
+                prefix_end = store.committed_bytes
+                store.append({'kind': 'fsm_commit', 'machine': 'settlement',
+                              'entry': {'text': 'accepted suffix'}})
+            finally:
+                store.close()
+            original = (Path(seed) / JOURNAL_NAME).read_bytes()
+        self.assertGreater(prefix_end, HEADER_LEN)
+        prefix, suffix = original[:prefix_end], original[prefix_end:]
+        self.assertTrue(suffix)
+        for name, payload in cases.items():
+            with self.subTest(case=name, entry_point='strict_loads'):
+                with self.assertRaises(CodecError) as raised:
+                    strict_loads(payload)
+                self.assertEqual(raised.exception.code, 'JOURNAL_CORRUPT')
+            frame = self._frame(payload)
+            for later in (b'', suffix):
+                with self.subTest(case=name, before_suffix=bool(later)), tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp) / JOURNAL_NAME
+                    before = prefix + frame + later
+                    path.write_bytes(before)
+                    with self.assertRaises(StoreError) as raised:
+                        # Close an unexpected handle before assertRaises fails.
+                        ReadinessStore.open(tmp).close()
+                    self.assertEqual(raised.exception.code, 'JOURNAL_CORRUPT')
+                    self.assertEqual(path.read_bytes(), before)
+
+    def test_valid_json_controls_roundtrip(self):
+        cases = [
+            (b'{"text":"\xc3\xa9\xea\xb0\x80\xf0\x9f\x99\x82"}', {'text': 'é가🙂'}),
+            (b'{"values":[0,7,-3,1.25,1e2]}', {'values': [0, 7, -3, 1.25, 100.0]}),
+            (b'{"nested":{"a":1,"b":2},"items":[{"a":3},{"a":4}]}',
+             {'nested': {'a': 1, 'b': 2}, 'items': [{'a': 3}, {'a': 4}]}),
+            (b'{"names":["NaN","Infinity","-Infinity"]}',
+             {'names': ['NaN', 'Infinity', '-Infinity']}),
+        ]
+        for entry_bytes, entry in cases:
+            with self.subTest(entry=entry), tempfile.TemporaryDirectory() as tmp:
+                expected = {
+                    'schema': SCHEMA_VERSION, 'protocolTruth': False,
+                    'productionConformance': False, 'kind': 'fsm_commit',
+                    'machine': 'settlement', 'entry': entry,
+                }
+                payload = self._payload(entry_bytes)
+                self.assertEqual(strict_loads(payload), expected)
+                store = ReadinessStore.open(tmp)
+                store.close()
+                path = Path(tmp) / JOURNAL_NAME
+                data = path.read_bytes() + self._frame(payload)
+                path.write_bytes(data)
+                store = ReadinessStore.open(tmp)
+                try:
+                    self.assertEqual(store.records, [expected])
+                    self.assertEqual(store.committed_bytes, len(data))
+                    self.assertEqual(path.read_bytes(), data)
+                    self.assertEqual(store.append({
+                        'kind': 'fsm_commit', 'machine': 'settlement', 'entry': entry,
+                    }), expected)
+                    committed = store.committed_bytes
+                    appended = path.read_bytes()
+                finally:
+                    store.close()
+                again = ReadinessStore.open(tmp)
+                try:
+                    self.assertEqual(again.records, [expected, expected])
+                    self.assertEqual(again.committed_bytes, committed)
+                    self.assertEqual(path.read_bytes(), appended)
+                finally:
+                    again.close()
+
+    def test_serialization_failures_report_journal_record(self):
+        circular = []
+        circular.append(circular)
+        cases = {
+            'nan': float('nan'), 'infinity': float('inf'),
+            'negative-infinity': -float('inf'), 'set': {1}, 'circular': circular,
+        }
+        for name, value in cases.items():
+            entry = {'nested': [{'value': value}]}
+            for encode in (canonical_json, receipt_digest):
+                with self.subTest(case=name, encoder=encode.__name__):
+                    with self.assertRaises(CodecError) as raised:
+                        encode(entry)
+                    self.assertEqual(raised.exception.code, 'JOURNAL_RECORD')
+            with self.subTest(case=name, entry_point='append'), tempfile.TemporaryDirectory() as tmp:
+                body = {'kind': 'fsm_commit', 'machine': 'settlement',
+                        'entry': {'text': 'accepted'}}
+                store = ReadinessStore.open(tmp)
+                path = Path(tmp) / JOURNAL_NAME
+                try:
+                    expected = json_copy(store.append(body))
+                    before = path.read_bytes()
+                    records = json_copy(store.records)
+                    committed = store.committed_bytes
+                    # append currently propagates CodecError, not StoreError.
+                    with self.assertRaises(CodecError) as raised:
+                        store.append({**body, 'entry': entry})
+                    self.assertEqual(raised.exception.code, 'JOURNAL_RECORD')
+                    self.assertEqual(path.read_bytes(), before)
+                    self.assertEqual(store.records, records)
+                    self.assertEqual(store.committed_bytes, committed)
+                    self.assertEqual(store.append(body), expected)
+                    after = path.read_bytes()
+                    self.assertEqual(store.records, [expected, expected])
+                    self.assertEqual(store.committed_bytes, len(after))
+                finally:
+                    store.close()
+                again = ReadinessStore.open(tmp)
+                try:
+                    self.assertEqual(again.records, [expected, expected])
+                    self.assertEqual(again.committed_bytes, len(after))
+                    self.assertEqual(path.read_bytes(), after)
+                finally:
+                    again.close()
+
+    def test_canonical_unicode_bytes_and_receipt_digests(self):
+        receipt = {'z': [True, None, 7], 'a': {'text': '가🙂', 'accent': 'é'}}
+        expected = b'{"a":{"accent":"\xc3\xa9","text":"\xea\xb0\x80\xf0\x9f\x99\x82"},"z":[true,null,7]}'
+        # Hash literal UTF-8 bytes independently, never the encoder's output.
+        digest = hashlib.sha256(expected).hexdigest()
+        self.assertEqual(canonical_json(receipt).encode('utf-8'), expected)
+        self.assertEqual(strict_loads(expected), receipt)
+        self.assertEqual(receipt_digest(receipt), digest)
+        reordered = {'a': {'accent': 'é', 'text': '가🙂'}, 'z': [True, None, 7]}
+        self.assertNotEqual(list(receipt), list(reordered))
+        self.assertNotEqual(list(receipt['a']), list(reordered['a']))
+        self.assertEqual(canonical_json(reordered).encode('utf-8'), expected)
+        self.assertEqual(receipt_digest(reordered), digest)
+        changed = {'a': {'accent': 'é', 'text': '가🙂'}, 'z': [True, None, 8]}
+        changed_bytes = b'{"a":{"accent":"\xc3\xa9","text":"\xea\xb0\x80\xf0\x9f\x99\x82"},"z":[true,null,8]}'
+        changed_digest = hashlib.sha256(changed_bytes).hexdigest()
+        self.assertEqual(canonical_json(changed).encode('utf-8'), changed_bytes)
+        self.assertEqual(strict_loads(changed_bytes), changed)
+        self.assertEqual(receipt_digest(changed), changed_digest)
+        self.assertNotEqual(changed_digest, digest)
 
 
 # The competing opener has no append path. Fresh interpreters and close_fds
