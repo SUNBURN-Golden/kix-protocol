@@ -199,6 +199,39 @@ dedicated `RewardWrapTests` cases are kept: they additionally pin the
 | Torn mark_eligible recovers HELD; resend applies once | `test_reward_torn_mark_eligible_recovers_and_replays_once` | `mark_eligible` with `partial` and `crash_before_durable` |
 | Crash before observe leaves no reward; resend observes once | `test_reward_crash_before_durable_observe_leaves_no_reward` | `observe` with `partial` and `crash_before_durable` |
 
+## Injected local-wrapper mutation guards
+
+`readiness/test_faults.py::BoundaryMutationGuardTests` is source-informed
+characterization of `FsmBoundary.call`, outside `BackendConformance`
+requirements. Prior coverage was sufficient for append faults
+(`CrashPointSweepTests._sweep_case`) and faulty-adapter sensitivity
+(`ConformanceSensitivityTests`), partial for fencing/recovery and nonmutating
+calls, and absent for callback journal rewriting or digest-only mutation.
+
+| Injected behavior | Test | Expected observation / raised error |
+|---|---|---|
+| Successful callback rewrites an existing prefix entry, unchanged digest | `test_journal_rewrite_fences_without_persisting` | `fault`, `JOURNAL_REWRITE` / `ReadinessError('JOURNAL_REWRITE')` |
+| Successful callback changes digest without a new journal entry | `test_unjournaled_mutation_fences_without_persisting` | `fault`, `UNJOURNALED_MUTATION` / `ReadinessError('UNJOURNALED_MUTATION')` |
+| Either mutation followed by a callback exception | `test_mutation_then_exception_preserves_original_and_fences` | `fault`, `UNJOURNALED_MUTATION` for both subtests / the identical original callback exception |
+| Nonmutating success or exception | `test_nonmutating_success_keeps_boundary_usable`, `test_nonmutating_exception_keeps_boundary_usable` | `unchanged`, `appendedEntries=0`; original return/exception identity retained, then a valid hold commits |
+
+Each mutation starts from a real nonempty committed reservation prefix. A
+test-local journal/digest double replaces only that boundary's reservation
+machine. Persisted bytes, full records/count and committed-byte accounting
+stay unchanged. Later calls on reservation and settlement raise
+`READINESS_CLOSED` without invoking their callbacks. After close, an ordinary
+boundary restores the original committed journal/digest and records/bytes.
+Observation schema and false durable/production/truth labels are checked.
+
+The callback-exception observation code, including its use for a rewritten
+journal, is current local-wrapper characterization, not a new contract.
+These injected tests do not assert rollback of the failed in-memory object,
+power-loss/OS-crash recovery, physical-media/fsync behavior, production
+durability, distributed fencing or backend conformance. Existing recovery
+uncertainties and product-policy values remain UNDETERMINED; no evidence-map
+grade or open decision changes. Record:
+`validation/2026-10-29-plan-plan-readiness-mutation-guard-tests/README.md`.
+
 ## Token reward wrap
 
 `readiness/reward_wrap.py` wraps `reference/token_reward/reward_fsm.py`'s
