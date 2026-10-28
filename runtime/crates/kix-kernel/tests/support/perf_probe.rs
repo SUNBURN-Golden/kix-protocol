@@ -229,6 +229,12 @@ fn percentile(values: &mut [u128], numerator: usize) -> u128 {
     values[(values.len() * numerator).div_ceil(100).saturating_sub(1)]
 }
 
+#[cfg(test)]
+#[allow(dead_code)] // The shared example's test target does not call this seam.
+pub fn percentile_for_test(values: &mut [u128]) -> u128 {
+    percentile(values, 99)
+}
+
 fn classify(
     kernel: &mut Kernel,
     index: usize,
