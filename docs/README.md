@@ -414,6 +414,8 @@
 
 - [plan-feature-ir-empty-stage-tests](../validation/2026-10-28-plan-feature-ir-empty-stage-tests/README.md) — Public-API empty Project, GroupBy and Sort rejection characterizations with nonempty controls; source-informed class B evidence only, no validator, contract, backend or grade change.
 
+- [plan-rs-profile-arithmetic-regressions](../validation/2026-10-28-plan-rs-profile-arithmetic-regressions/README.md) — Stdlib model creation-bps boundaries and recorded event-budget arithmetic; IM-01/IM-29 statuses and owners unchanged, operational MAX_BUNDLE_CHAIN UNDETERMINED, no PTB feasibility or policy selection.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
