@@ -301,7 +301,22 @@ fn construct_kernel(
 /// rate>0 uses deadlines relative to a fixed origin. A late driver never shifts
 /// the original deadline forward to hide queue delay (coordinated omission).
 pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) -> Report {
-    run_probe(workload, count, command_limit, rate, None)
+    run_probe(workload, count, command_limit, rate, ProbeFixture::Ordinary)
+}
+
+enum ProbeFixture {
+    Ordinary,
+    ReconstructAt(usize),
+    #[cfg(test)]
+    OtherOutcomes,
+}
+
+/// Drive a regressed-time reserve and an applied capture through the same
+/// classifier and reporting loop as ordinary workloads. Setup is not sampled.
+#[cfg(test)]
+#[allow(dead_code)] // The shared example's test target does not call this seam.
+pub fn run_with_injected_other_outcomes() -> Report {
+    run_probe(Workload::Uniform, 2, 128, 0, ProbeFixture::OtherOutcomes)
 }
 
 /// Harness sensitivity fixture: constructs a second kernel before call index
@@ -314,7 +329,13 @@ pub fn run_with_injected_reconstruction(
     rate: u64,
     reconstruct_at: usize,
 ) -> Report {
-    run_probe(workload, count, command_limit, rate, Some(reconstruct_at))
+    run_probe(
+        workload,
+        count,
+        command_limit,
+        rate,
+        ProbeFixture::ReconstructAt(reconstruct_at),
+    )
 }
 
 fn run_probe(
@@ -322,7 +343,7 @@ fn run_probe(
     count: usize,
     command_limit: usize,
     rate: u64,
-    reconstruct_at: Option<usize>,
+    fixture: ProbeFixture,
 ) -> Report {
     assert!(count > 0 && count <= 100_000);
     assert!(command_limit > 0);
@@ -331,40 +352,65 @@ fn run_probe(
     let (mut kernel, inventory_segments) =
         construct_kernel(commands_budget, &mut kernel_constructions);
     let mut inputs = Vec::with_capacity(count);
-    if matches!(workload, Workload::Conflict) {
-        let a = request(1, 0);
-        kernel.reserve(context(1), a.clone()).unwrap();
-        let original = CaptureObservation {
-            event_id: id(500),
-            operation: a.payment,
-            amount: a.amount,
-            evidence_hash: Hash32::from_bytes([60; 32]),
-        };
-        kernel
-            .observe_capture(context(2), original.clone())
-            .unwrap();
-        for i in 0..count {
-            let mut value = original.clone();
-            value.operation.operation = id(20_000 + i as u64);
-            inputs.push(Input::Capture(value));
+    let workload_name = match fixture {
+        #[cfg(test)]
+        ProbeFixture::OtherOutcomes => "injected-other-outcomes",
+        _ => workload.name(),
+    };
+    match fixture {
+        #[cfg(test)]
+        ProbeFixture::OtherOutcomes => {
+            let held = request(1, 0);
+            let applied = kernel.reserve(context(11), held.clone()).unwrap();
+            assert_eq!(applied.original, ReserveOutcome::Held(held.order_id));
+            assert!(!applied.replayed);
+            // Fresh identity avoids replay; index 0 uses time 10, below 11,
+            // and therefore reaches KernelError::ClockRegression.
+            inputs.push(Input::Reserve(request(2, 1)));
+            inputs.push(Input::Capture(CaptureObservation {
+                event_id: id(500),
+                operation: held.payment,
+                amount: held.amount,
+                evidence_hash: Hash32::from_bytes([60; 32]),
+            }));
         }
-    } else {
-        for i in 0..count {
-            let number = if matches!(workload, Workload::Retry) {
-                1
+        _ => {
+            if matches!(workload, Workload::Conflict) {
+                let a = request(1, 0);
+                kernel.reserve(context(1), a.clone()).unwrap();
+                let original = CaptureObservation {
+                    event_id: id(500),
+                    operation: a.payment,
+                    amount: a.amount,
+                    evidence_hash: Hash32::from_bytes([60; 32]),
+                };
+                kernel
+                    .observe_capture(context(2), original.clone())
+                    .unwrap();
+                for i in 0..count {
+                    let mut value = original.clone();
+                    value.operation.operation = id(20_000 + i as u64);
+                    inputs.push(Input::Capture(value));
+                }
             } else {
-                i as u64 + 1
-            };
-            let seat = if matches!(workload, Workload::Uniform) {
-                u16::try_from(i % INVENTORY_SEATS).expect("seat index fits u16")
-            } else {
-                0
-            };
-            inputs.push(Input::Reserve(request(number, seat)));
+                for i in 0..count {
+                    let number = if matches!(workload, Workload::Retry) {
+                        1
+                    } else {
+                        i as u64 + 1
+                    };
+                    let seat = if matches!(workload, Workload::Uniform) {
+                        u16::try_from(i % INVENTORY_SEATS).expect("seat index fits u16")
+                    } else {
+                        0
+                    };
+                    inputs.push(Input::Reserve(request(number, seat)));
+                }
+            }
         }
     }
     let mut report = Report {
-        workload: workload.name(),
+        workload: workload_name,
         inventory_segments,
         reserve_selections: inputs
             .iter()
@@ -414,7 +460,7 @@ fn run_probe(
                 ));
             }
         }
-        if reconstruct_at == Some(index) {
+        if matches!(fixture, ProbeFixture::ReconstructAt(at) if at == index) {
             kernel = construct_kernel(commands_budget, &mut kernel_constructions).0;
         }
         let start = origin.elapsed().as_nanos();
@@ -457,6 +503,14 @@ fn run_probe(
         latency_by[kind.index()].push(measured_latency);
     }
     report.elapsed_ns = origin.elapsed().as_nanos();
+    #[cfg(test)]
+    if matches!(fixture, ProbeFixture::OtherOutcomes) {
+        assert_eq!(
+            kernel.order(request(1, 0).order_id).unwrap().state,
+            kix_kernel::OrderState::PaymentConfirmed
+        );
+        assert!(kernel.order(request(2, 1).order_id).is_none());
+    }
     report.kernel_constructions = kernel_constructions;
     report.remaining = kernel.remaining();
     report.other = report.other_error + report.other_observation;
