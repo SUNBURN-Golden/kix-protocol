@@ -73,7 +73,7 @@ STATUS_CELL, MISSING_CELL, OWNER_CELL = 7, 8, 9
 COLUMNS = {
     2: ('kernel', (r'runtime/crates/kix-kernel/(?:src/lib|tests/[a-z0-9_]+)\.rs',)),
     3: ('mock', (r'reference/(?:booking_resale_admission|settlement_f01_f03|'
-                 r'credit_advance_f04|ai_delegation)/[a-z_]+\.py',)),
+                 r'credit_advance_f04|ai_delegation|provider_facts)/[a-z_]+\.py',)),
     4: ('gate', (r'integration_gate/[a-z_]+\.py',)),
     5: ('readiness', (r'readiness/[a-z_]+\.py',)),
     6: ('profile', (r'docs/contracts/PG_TOSS_CARD_PROFILE\.md',)),
