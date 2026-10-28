@@ -569,7 +569,7 @@ fn first_capacity_index_json_is_zero_based_or_null() {
 
 #[test]
 fn other_stays_zero_for_every_reachable_probe_input() {
-    // Exercise all four input shapes and representative budget/rate boundaries.
+    // Exercise all four ordinary generated workloads and budget/rate boundaries.
     // This finite matrix does not exhaust every accepted numeric argument.
     for (workload, count, command_limit, rate) in [
         (probe::Workload::Uniform, 512, 128, 0),
@@ -598,6 +598,102 @@ fn other_stays_zero_for_every_reachable_probe_input() {
                 .is_none()
         );
     }
+}
+
+#[test]
+fn other_outcomes_count_real_reserve_error_and_applied_capture() {
+    let report = probe::run_with_injected_other_outcomes();
+    assert_eq!(report.workload, "injected-other-outcomes");
+    assert_eq!(report.total, 2);
+    assert_eq!(
+        (report.other_error, report.other_observation, report.other),
+        (1, 1, 2)
+    );
+    assert_eq!(report.other, report.other_error + report.other_observation);
+    assert_eq!(
+        (
+            report.held,
+            report.replay,
+            report.rejected,
+            report.capacity,
+            report.conflict_retained
+        ),
+        (0, 0, 0, 0, 0)
+    );
+    assert_eq!(report.applied_reservations, vec![None, None]);
+    assert_eq!(report.remaining, 4095); // Only the untimed prefill holds a seat.
+    assert_eq!(report.first_capacity, None);
+    assert_eq!(report.samples_after_first_capacity, 0);
+    let rows = csv_rows(&report);
+    assert_eq!(
+        rows.iter()
+            .map(|(_, kind)| kind.as_str())
+            .collect::<Vec<_>>(),
+        ["other_error", "other_observation"]
+    );
+    assert_separated(&report, 0, 128);
+}
+
+#[test]
+fn other_outcomes_json_matches_measured_calls() {
+    let report = probe::run_with_injected_other_outcomes();
+    let json = report.json(0, 128);
+    for (key, expected) in [
+        ("samples", "2"),
+        ("other_error", "1"),
+        ("other_observation", "1"),
+        ("other", "2"),
+        ("new_held", "0"),
+        ("new_success_count", "0"),
+        ("capacity", "0"),
+        ("conflict_retained", "0"),
+    ] {
+        assert_eq!(top_level(&json, key), expected);
+    }
+    let objects = json_outcome_objects(&json);
+    assert_eq!(objects.len(), 7);
+    let rows = csv_rows(&report);
+    for name in ["other_error", "other_observation", "held"] {
+        let matches: Vec<_> = objects
+            .iter()
+            .filter(|object| object["\"outcome\""] == format!("\"{name}\""))
+            .collect();
+        assert_eq!(matches.len(), 1);
+        let object = matches[0];
+        let summary = report.outcome(name).unwrap();
+        let count = usize::from(name != "held");
+        assert_eq!(summary.count, count);
+        assert_eq!(object["\"count\""], count.to_string());
+        assert_eq!(
+            object["\"role\""],
+            if name == "held" {
+                "\"new-success\""
+            } else {
+                "\"unclassified\""
+            }
+        );
+        for (column, actual, key) in [
+            (4, summary.service_p99_ns, "\"service_p99_ns\""),
+            (
+                5,
+                summary.scheduled_latency_p99_ns,
+                "\"scheduled_latency_p99_ns\"",
+            ),
+        ] {
+            let samples: Vec<_> = rows
+                .iter()
+                .filter(|(_, kind)| kind == name)
+                .map(|(values, _)| values[column])
+                .collect();
+            let expected = csv_p99(&samples);
+            assert_eq!(actual, expected);
+            assert_eq!(
+                object[key],
+                expected.map_or_else(|| "null".to_string(), |v| v.to_string())
+            );
+        }
+    }
+    assert_separated(&report, 0, 128);
 }
 
 #[test]
