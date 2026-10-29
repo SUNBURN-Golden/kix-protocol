@@ -20,11 +20,12 @@ import zlib
 from collections import Counter
 from pathlib import Path
 from queue import Empty, Queue
+from unittest.mock import patch
 
 from readiness.boundary import FsmBoundary, ReadinessClosed, ReadinessError
 from readiness.ai_delegation_wrap import AiDelegationWrap, WrapError as AiDelegationWrapError
-from ai_delegation_mock import AiDelegationError
-from token_reward_model import PROVENANCE, TokenRewardError
+from ai_delegation_mock import AiDelegationError, FALSE_FLAGS as AI_FALSE_FLAGS
+from token_reward_model import ALWAYS_FALSE_FLAGS as REWARD_FALSE_FLAGS, PROVENANCE, TokenRewardError
 from readiness.codec import CodecError, canonical_json, receipt_digest, strict_loads
 from readiness.migrate import SCHEMA_VERSION, MigrationError, migrate, migrate_explicit
 from readiness.policy import AdmitGate
@@ -2132,3 +2133,223 @@ class CrashPointSweepTests(unittest.TestCase):
                 self.assertIn(fault, self.FAULT_CODES)
                 ops = [entry['op'] for entry in self.reference[machine_name]['journal']]
                 self.assertEqual(ops.count(op), 1)
+
+
+class _PostAppendAckLost(StoreError):
+    """Test-only signal after real append completion; not a protocol error."""
+
+    def __init__(self):
+        super().__init__('TEST_POST_APPEND_ACK_LOST')
+
+
+class PostAppendAckLossTests(unittest.TestCase):
+    """Controlled in-process acknowledgement loss, not OS/power-loss recovery."""
+
+    GATE_FALSE_FLAGS = (
+        'durable', 'funds_executed', 'economic_finality_claimed',
+        'role_authenticated', 'organizer_authenticated', 'chain_grant_current',
+        'quote_policy_approved', 'discount_applied', 'provider_fact_live',
+        'buyer_evidence_available', 'chain_owner_current', 'cross_channel_exclusive',
+        'admission_routing_production', 'private_proof_verified', 'compensation_defined',
+    )
+    VIEW_FALSE_FLAGS = {
+        'settlement': (
+            'durable', 'funds_executed', 'provider_authorization_executed',
+            'legal_debtor_bound', 'admission_granted', 'right_cancelled',
+            'bank_debit_observed', 'external_return_closed',
+        ),
+        'reservation': (*GATE_FALSE_FLAGS, 'chain_issued', 'mock_settlement_commit_observed'),
+        'resale': (*GATE_FALSE_FLAGS, 'venue_credential_reissued', 'mock_settlement_commit_observed'),
+        'admission': (*GATE_FALSE_FLAGS, 'venue_credential_reissued', 'offline_admission'),
+        'credit': (
+            'durable', 'funds_executed', 'economic_finality_claimed', 'bank_debit_observed',
+            'mock_settlement_commit_observed', 'underwriting_executed', 'kyc_executed',
+            'ownership_mutated', 'ticket_ownership_authoritative', 'license_granted',
+            'regulated_product', 'collateral_perfected', 'priority_bound',
+            'disposal_controlled', 'revenue_assigned', 'admission_granted',
+            'legal_debtor_bound', 'external_pledge_complete', 'repayment_observed',
+            'interest_defined',
+        ),
+        'ai_delegation': AI_FALSE_FLAGS,
+        'reward': REWARD_FALSE_FLAGS,
+    }
+    RESULT_VIEW = {
+        'settlement': 'settlement', 'reservation': 'reservation', 'resale': 'listing',
+        'credit': 'credit', 'admission': 'credential', 'ai_delegation': 'grant',
+        'reward': 'reward',
+    }
+
+    def _assert_false_flags(self, value, flags):
+        # Indexing requires the flag to exist, even when the control also lost it.
+        for flag in flags:
+            self.assertIs(value[flag], False, flag)
+
+    def _assert_labels(self, name, result, view):
+        flags = self.VIEW_FALSE_FLAGS[name]
+        self._assert_false_flags(view, flags)
+        self._assert_false_flags(result[self.RESULT_VIEW[name]], flags)
+        root_flags = {
+            'settlement': ('funds_executed',),
+            'credit': ('funds_executed', 'economic_finality_claimed', 'bank_debit_observed',
+                       'underwriting_executed', 'kyc_executed', 'repayment_observed', 'interest_defined'),
+            'ai_delegation': (),
+            'reward': REWARD_FALSE_FLAGS,
+        }.get(name, self.GATE_FALSE_FLAGS)
+        self._assert_false_flags(result, root_flags)
+        if name == 'reward':
+            for surface in (result, result['reward'], view):
+                self.assertEqual(surface['provenance'], 'MOCK_TOKEN_REWARD_ONLY')
+
+    def _assert_observation(self, boundary, name, decision):
+        observed = boundary.last_observation
+        self.assertEqual(observed['machine'], name)
+        self.assertEqual(observed['journalDecision'], decision)
+        self.assertEqual(observed['schemaVersion'], 1)
+        self._assert_false_flags(observed, (
+            'protocolTruth', 'productionConformance', 'productionReadiness',
+            'productionEndpoint', 'fsmDurable',
+        ))
+
+    def _snapshot(self, boundary, directory, name):
+        machine = boundary.machine(name)
+        view = getattr(machine, CrashPointSweepTests.VIEW_METHODS.get(name, 'view'))(
+            CrashPointSweepTests.VIEW_IDS[name])
+        snapshot = json_copy({
+            'state': machine.canonical_state(), 'digest': machine.state_digest(),
+            'view': view, 'journal': machine.export_journal(),
+            'records': boundary.store.records, 'committed_bytes': boundary.store.committed_bytes,
+            'pool': machine.pool_view() if name == 'reward' else None,
+        })
+        snapshot['bytes'] = (Path(directory) / JOURNAL_NAME).read_bytes()
+        self.assertEqual(snapshot['committed_bytes'], len(snapshot['bytes']))
+        self.assertEqual(snapshot['records'], [
+            {'schema': 1, 'kind': 'fsm_commit', 'machine': name, 'entry': entry,
+             'protocolTruth': False, 'productionConformance': False}
+            for entry in snapshot['journal']
+        ])
+        return snapshot
+
+    def _assert_ack_loss(self, machine_name, target_index):
+        # Reuse valid command fixtures without inheriting/rerunning the sweep.
+        steps = CrashPointSweepTests._build_sequences()[machine_name][:target_index + 1]
+        name, target = steps[-1]
+        self.assertEqual(name, machine_name)
+        with tempfile.TemporaryDirectory() as control_dir, tempfile.TemporaryDirectory() as fault_dir:
+            control = FsmBoundary(control_dir)
+            try:
+                results = [json_copy(control.call(*step)) for step in steps[:-1]]
+                before_journal = json_copy(control.machine(name).export_journal())
+                before_count = len(control.store.records)
+                expected_result = json_copy(control.call(name, target))
+                expected = self._snapshot(control, control_dir, name)
+                self.assertEqual(len(expected['journal']), len(before_journal) + 1)
+                self.assertEqual(len(expected['records']), before_count + 1)
+                self.assertEqual(expected['journal'][:-1], before_journal)
+                self.assertEqual(expected['journal'].count(expected['journal'][-1]), 1)
+                self.assertIs(expected_result['duplicate'], False)
+                self._assert_labels(name, expected_result, expected['view'])
+                # Pin the business transition too, so changing a fixture cannot
+                # silently turn this into acknowledgement loss of a no-op.
+                view = expected['view']
+                if name == 'settlement':
+                    self.assertEqual(expected_result['effect'], {'organizer': 92000, 'platform': 5000})
+                    self.assertEqual(view['claim']['confirmed_cash'], 97000)
+                    self.assertEqual(view['claim']['distributed_cash'], 97000)
+                    self.assertEqual([row['outstanding'] for row in view['claim']['obligations']], [3000, 0])
+                elif name == 'reservation':
+                    self.assertEqual((view['phase'], view['slot_state']), ('HELD', 'RESERVED'))
+                elif name == 'resale':
+                    self.assertEqual((view['holder_role'], view['current_version']), ('buyer-2', 2))
+                elif name == 'credit':
+                    self.assertEqual(view['outstanding_exposure'], 80000)
+                elif name == 'admission':
+                    self.assertEqual((view['phase'], view['version']), ('CONSUMED', 2))
+                elif name == 'ai_delegation':
+                    self.assertEqual((view['phase'], view['generation']), ('ACTIVE', 1))
+                elif name == 'reward':
+                    self.assertEqual(view['payout_effect_count'], 1)
+                    self.assertEqual(expected['pool']['balances']['TOKEN_TREASURY_REWARD'], 46)
+            finally:
+                control.close()
+
+            boundary = FsmBoundary(fault_dir)
+            lost_ack = _PostAppendAckLost()
+            completed = []
+            try:
+                for step, result in zip(steps[:-1], results):
+                    self.assertEqual(boundary.call(*step), result)
+                real_append = boundary.store.append
+
+                def append_then_lose_ack(body, fault=None):
+                    self.assertIsNone(fault)
+                    completed.append(json_copy(real_append(body, fault=fault)))
+                    raise lost_ack
+
+                # Only this store instance is patched; real bytes/accounting and
+                # ordinary boundary fencing/recovery are used without fault=.
+                with patch.object(boundary.store, 'append', side_effect=append_then_lose_ack) as append:
+                    with self.assertRaises(_PostAppendAckLost) as raised:
+                        boundary.call(name, target)
+                    self.assertIs(raised.exception, lost_ack)
+                    self.assertEqual(raised.exception.code, 'TEST_POST_APPEND_ACK_LOST')
+                    self.assertEqual(append.call_count, 1)
+                    self.assertEqual(completed, [expected['records'][-1]])
+                self._assert_observation(boundary, name, 'fault')
+                self.assertEqual(boundary.last_observation['faultCode'], lost_ack.code)
+                invoked = []
+                with self.assertRaises(ReadinessClosed) as closed:
+                    boundary.call(name, lambda machine: invoked.append(machine))
+                self.assertEqual(closed.exception.code, 'READINESS_CLOSED')
+                self.assertEqual(invoked, [])
+                with self.assertRaises(ReadinessClosed) as closed:
+                    boundary.machine(name)
+                self.assertEqual(closed.exception.code, 'READINESS_CLOSED')
+            finally:
+                boundary.close()
+
+            boundary = FsmBoundary(fault_dir)
+            try:
+                # Check retention before any deliberate replay can repair a loss.
+                self.assertEqual(self._snapshot(boundary, fault_dir, name), expected)
+                replay_result = json_copy(expected_result)
+                replay_result['duplicate'] = True
+                if name == 'ai_delegation':
+                    self.assertNotIn('applied', replay_result)
+                else:
+                    replay_result['applied'] = None
+                with patch.object(boundary.store, 'append', wraps=boundary.store.append) as append:
+                    replay = boundary.call(name, target)
+                    append.assert_not_called()
+                self.assertEqual(replay, replay_result)
+                self._assert_labels(name, replay, expected['view'])
+                self._assert_observation(boundary, name, 'unchanged')
+                self.assertEqual(boundary.last_observation['appendedEntries'], 0)
+                self.assertEqual(self._snapshot(boundary, fault_dir, name), expected)
+            finally:
+                boundary.close()
+            boundary = FsmBoundary(fault_dir)
+            try:
+                self.assertEqual(self._snapshot(boundary, fault_dir, name), expected)
+            finally:
+                boundary.close()
+
+    def test_post_append_ack_loss_settlement(self):
+        self._assert_ack_loss('settlement', 4)
+
+    def test_post_append_ack_loss_reservation(self):
+        self._assert_ack_loss('reservation', 2)
+
+    def test_post_append_ack_loss_resale(self):
+        self._assert_ack_loss('resale', 4)
+
+    def test_post_append_ack_loss_credit(self):
+        self._assert_ack_loss('credit', 2)
+
+    def test_post_append_ack_loss_admission(self):
+        self._assert_ack_loss('admission', 3)
+
+    def test_post_append_ack_loss_ai_delegation(self):
+        self._assert_ack_loss('ai_delegation', 1)
+
+    def test_post_append_ack_loss_reward(self):
+        self._assert_ack_loss('reward', 5)

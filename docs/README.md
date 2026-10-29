@@ -460,3 +460,5 @@
 - [plan-readiness-wrap-restore-rejections](../validation/2026-10-29-plan-readiness-wrap-restore-rejections/README.md) — Public-API malformed AI-delegation/reward wrapper journal rejection characterizations with exact errors, unchanged caller input and paired valid controls; class B only, no implementation, contract, grade or open-decision change.
 
 - [plan-readiness-record-envelope-tests](../validation/2026-10-29-plan-readiness-record-envelope-tests/README.md) — Offline store envelope rejection with append preservation/reuse and complete checksum-valid frame refusal without rewriting; source-informed class B characterizations, no runtime, contract, grade or open-decision change.
+
+- [plan-readiness-post-append-ack-loss](../validation/2026-10-29-plan-readiness-post-append-ack-loss/README.md) — Seven controlled in-process completed-append acknowledgement-loss regressions with retained-result replay and no extra append; no OS-crash, power-loss, external exactly-once, production durability or grade claim.
