@@ -22,7 +22,7 @@ from pathlib import Path
 from queue import Empty, Queue
 
 from readiness.boundary import FsmBoundary, ReadinessClosed, ReadinessError
-from readiness.ai_delegation_wrap import WrapError as AiDelegationWrapError
+from readiness.ai_delegation_wrap import AiDelegationWrap, WrapError as AiDelegationWrapError
 from ai_delegation_mock import AiDelegationError
 from token_reward_model import PROVENANCE, TokenRewardError
 from readiness.codec import CodecError, canonical_json, receipt_digest, strict_loads
@@ -1117,6 +1117,159 @@ def _issue(machine):
 def json_copy(value):
     import json
     return json.loads(json.dumps(value))
+
+
+class WrapperRestoreRejectionTests(unittest.TestCase):
+    """Source-informed class-B errors, not standardized recovery contracts."""
+
+    def setUp(self):
+        ai = AiDelegationWrap()
+        ai.open_registry(['human-issuer'], ['agent-1'])
+        ai_delegation_issue(ai)
+        reward = RewardWrap()
+        reward.open(_reward_opening())
+        _observe_reward(reward)
+        self.cases = (
+            (ai, AiDelegationWrapError, ai_delegation_issue),
+            (reward, RewardWrapError, _observe_reward),
+        )
+
+    def _assert_restore_rejected(self, wrapper, journal, error_type, *, key=None):
+        before = json_copy(journal)
+        try:
+            with self.assertRaises(error_type) as raised:
+                wrapper.restore(journal)
+            self.assertIs(type(raised.exception), error_type)
+            if error_type is KeyError:
+                self.assertEqual(raised.exception.args, (key,))
+            else:
+                self.assertEqual(raised.exception.code, 'RECOVERY_DIVERGENCE')
+        finally:
+            # Check the complete nested input even on an unexpected return/error.
+            self.assertEqual(journal, before)
+
+    def test_non_list_journals(self):
+        for machine, error_type, _ in self.cases:
+            for value in (None, {}, '', 0):
+                with self.subTest(wrapper=type(machine).__name__, journal=value):
+                    self._assert_restore_rejected(type(machine), json_copy(value), error_type)
+
+    def test_malformed_entries_and_ops(self):
+        for machine, error_type, _ in self.cases:
+            opening = machine.export_journal()[:1]
+            for entry in (None, [], '', 0, {}, {'op': None}, {'op': 0},
+                          {'op': []}, {'op': {}}):
+                for prefix in ([], opening):
+                    with self.subTest(wrapper=type(machine).__name__, entry=entry,
+                                      after_open=bool(prefix)):
+                        journal = json_copy(prefix + [entry])
+                        self._assert_restore_rejected(type(machine), journal, error_type)
+
+    def test_unknown_operations(self):
+        for machine, error_type, _ in self.cases:
+            for op in ('unknown_operation', 'state_digest'):
+                for prefix in ([], machine.export_journal()[:1]):
+                    with self.subTest(wrapper=type(machine).__name__, op=op,
+                                      after_open=bool(prefix)):
+                        journal = json_copy(prefix + [{'op': op}])
+                        self._assert_restore_rejected(type(machine), journal, error_type)
+
+    def test_missing_open_fields(self):
+        for machine, error_type, _ in self.cases:
+            fields = ('humans', 'agents') if isinstance(machine, AiDelegationWrap) else (
+                'opening_balances',
+            )
+            for field in fields:
+                with self.subTest(wrapper=type(machine).__name__, field=field):
+                    journal = machine.export_journal()
+                    del journal[0][field]
+                    # AI omits KeyError from its catch list; reward wraps it.
+                    expected = KeyError if isinstance(machine, AiDelegationWrap) else error_type
+                    self._assert_restore_rejected(type(machine), journal, expected, key=field)
+
+    def test_commands_before_open(self):
+        for machine, error_type, _ in self.cases:
+            with self.subTest(wrapper=type(machine).__name__):
+                self._assert_restore_rejected(
+                    type(machine), machine.export_journal()[1:], error_type,
+                )
+
+    def test_repeated_open(self):
+        for machine, error_type, _ in self.cases:
+            with self.subTest(wrapper=type(machine).__name__):
+                opening = machine.export_journal()[:1]
+                self._assert_restore_rejected(type(machine), json_copy(opening * 2), error_type)
+
+    def test_invalid_arguments(self):
+        for machine, error_type, _ in self.cases:
+            is_ai = isinstance(machine, AiDelegationWrap)
+            fixtures = {}
+            journal = machine.export_journal()
+            del journal[1]['actor' if is_ai else 'idempotency_key']
+            fixtures['missing_command_argument'] = journal
+            journal = machine.export_journal()
+            journal[1]['unexpected_argument'] = True
+            fixtures['unexpected_command_keyword'] = journal
+            journal = machine.export_journal()
+            journal[0]['humans' if is_ai else 'opening_balances'] = None
+            fixtures['invalid_opening_value'] = journal
+            journal = machine.export_journal()
+            if is_ai:
+                journal[1]['limits']['per_action_max'] = 0
+            else:
+                journal[1]['amount'] = 0
+            fixtures['invalid_command_value'] = journal
+            for name, journal in fixtures.items():
+                with self.subTest(wrapper=type(machine).__name__, fixture=name):
+                    self._assert_restore_rejected(type(machine), journal, error_type)
+
+    def test_redundant_entries(self):
+        for machine, error_type, duplicate_command in self.cases:
+            with self.subTest(wrapper=type(machine).__name__):
+                journal = machine.export_journal()
+                digest = machine.state_digest()
+                # Public duplicate replay succeeds but emits no new journal entry.
+                self.assertIs(duplicate_command(machine)['duplicate'], True)
+                self.assertEqual(machine.export_journal(), journal)
+                self.assertEqual(machine.state_digest(), digest)
+                self._assert_restore_rejected(
+                    type(machine), json_copy(journal + [journal[1]]), error_type,
+                )
+                # Opening ignores extra fields; the exported-journal guard rejects them.
+                extended = json_copy(journal)
+                extended[0]['extra'] = {'nested': ['retained caller data']}
+                self._assert_restore_rejected(type(machine), extended, error_type)
+
+    def test_valid_controls(self):
+        for machine, _, _ in self.cases:
+            with self.subTest(wrapper=type(machine).__name__):
+                journal = machine.export_journal()
+                before = json_copy(journal)
+                try:
+                    restored = type(machine).restore(journal)
+                    self.assertEqual(restored.export_journal(), journal)
+                    self.assertEqual(restored.canonical_state(), machine.canonical_state())
+                    self.assertEqual(restored.state_digest(), machine.state_digest())
+                    for target in (machine, restored):
+                        if isinstance(target, AiDelegationWrap):
+                            view = target.view_grant('g1')
+                            flags = ('durable', 'execution_enabled', 'funds_executed')
+                        else:
+                            view = target.view(_reward_rid())
+                            flags = ('durable', 'token_issued', 'onchain_recorded',
+                                     'funds_executed', 'krw_paid', 'chain_finality')
+                            self.assertEqual(view['provenance'], 'MOCK_TOKEN_REWARD_ONLY')
+                        for flag in flags:
+                            self.assertIs(view[flag], False, flag)
+                finally:
+                    self.assertEqual(journal, before)
+                empty = []
+                try:
+                    unopened = type(machine).restore(empty)
+                    self.assertEqual(unopened.export_journal(), [])
+                    self.assertEqual(unopened.state_digest(), type(machine)().state_digest())
+                finally:
+                    self.assertEqual(empty, [])
 
 
 class _MutationGuardMachine:
