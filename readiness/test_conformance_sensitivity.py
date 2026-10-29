@@ -32,7 +32,64 @@ FAULT_CASE_MAP = {
     'budget_ignored': 'test_budget_rejection_preserves_records_and_replay_identity',
     'double_hold': 'test_concurrent_reservation_holds_occupy_the_slot_once',
     'leaky_handle': 'test_settlement_cash_survives_restart_and_a_torn_commit',
+    'ai_drop_acknowledged': 'test_ai_delegation_registry_opens_once_and_issue_replays_across_restart',
+    'ai_partial_retained': 'test_ai_delegation_torn_revoke_recovers_and_replays_once',
+    'ai_crash_attempt_durable': 'test_ai_delegation_crash_before_durable_issue_leaves_no_grant',
+    'reward_drop_acknowledged': 'test_reward_open_observe_and_hold_replay_across_restart',
+    'reward_partial_retained': 'test_reward_torn_mark_eligible_recovers_and_replays_once',
+    'reward_crash_attempt_durable': 'test_reward_crash_before_durable_observe_leaves_no_reward',
 }
+
+
+class DropAcknowledgedBoundaryAdapter(LocalReadinessAdapter):
+    """Lose one selected machine's acknowledged entry before normal recovery."""
+
+    def __init__(self, machine_name):
+        self.machine_name = machine_name
+
+    def open_boundary(self, directory):
+        machine_name = self.machine_name
+
+        class DropAcknowledgedBoundary(FsmBoundary):
+            def _recover(self):
+                for index in range(len(self.store.records) - 1, -1, -1):
+                    record = self.store.records[index]
+                    if record.get('kind') == 'fsm_commit' and record.get('machine') == machine_name:
+                        self.store.records.pop(index)
+                        break
+                super()._recover()
+
+        return DropAcknowledgedBoundary(directory)
+
+
+class PersistFaultAttemptAdapter(LocalReadinessAdapter):
+    """Commit an attempt requested as torn or crashed, then report its fault.
+
+    The partial mutant incorrectly commits the whole attempt; it does not
+    simulate physical media tearing. Only this handle's append is wrapped.
+    """
+
+    def __init__(self, machine_name, fault_kind):
+        self.machine_name = machine_name
+        self.fault_kind = fault_kind
+
+    def open_boundary(self, directory):
+        boundary = FsmBoundary(directory)
+        append = boundary.store.append
+
+        def persist_attempt(body, fault=None):
+            if (body.get('kind') == 'fsm_commit'
+                    and body.get('machine') == self.machine_name
+                    and fault == self.fault_kind):
+                append(body)
+                raise ReadinessFault({
+                    'partial': 'PARTIAL_WRITE',
+                    'crash_before_durable': 'CRASH_BEFORE_DURABLE',
+                }[fault])
+            return append(body, fault=fault)
+
+        boundary.store.append = persist_attempt
+        return boundary
 
 
 class DropOnReopenAdapter(LocalReadinessAdapter):
@@ -240,24 +297,33 @@ def _run_case(adapter, case_name):
 
 
 class ConformanceSensitivityTests(unittest.TestCase):
-    def _assert_fault_is_caught(self, adapter, case_name, *, error_code=None):
+    def _assert_no_nonexecutions(self, result):
+        self.assertEqual(result.skipped, [])
+        self.assertEqual(result.expectedFailures, [])
+        self.assertEqual(result.unexpectedSuccesses, [])
+
+    def _assert_fault_is_caught(self, adapter, case_name, *, error_code=None, recovery_assertion=None):
         caught = _run_case(adapter, case_name)
         self.assertEqual(caught.testsRun, 1)
+        self._assert_no_nonexecutions(caught)
         self.assertFalse(
             caught.wasSuccessful(),
             f'{case_name} unexpectedly passed for {type(adapter).__name__}',
         )
         offenders = [test.id() for test, _traceback in caught.failures + caught.errors]
         self.assertEqual(len(offenders), 1)
-        self.assertIn(case_name, offenders[0])
+        self.assertEqual(offenders[0].rsplit('.', 1)[-1], case_name)
         if error_code is None:
             self.assertEqual(caught.errors, [], caught.errors)
             self.assertEqual(len(caught.failures), 1)
+            if recovery_assertion is not None:
+                self.assertIn(recovery_assertion, caught.failures[0][1])
         else:
             self.assertEqual(caught.failures, [])
             self.assertEqual(caught.error_codes, [error_code], caught.errors)
         control = _run_case(LocalReadinessAdapter(), case_name)
         self.assertEqual(control.testsRun, 1)
+        self._assert_no_nonexecutions(control)
         self.assertTrue(
             control.wasSuccessful(),
             f'control run of {case_name}: {control.failures + control.errors}',
@@ -301,6 +367,48 @@ class ConformanceSensitivityTests(unittest.TestCase):
             error_code='JOURNAL_LOCKED',
         )
 
+    def test_ai_drop_acknowledged_is_caught(self):
+        self._assert_fault_is_caught(
+            DropAcknowledgedBoundaryAdapter('ai_delegation'),
+            FAULT_CASE_MAP['ai_drop_acknowledged'],
+            recovery_assertion='self.assertEqual(machine.state_digest(), digest)',
+        )
+
+    def test_ai_partial_retained_is_caught(self):
+        self._assert_fault_is_caught(
+            PersistFaultAttemptAdapter('ai_delegation', 'partial'),
+            FAULT_CASE_MAP['ai_partial_retained'],
+            recovery_assertion="self.assertEqual(machine.view_grant(AI_GRANT)['phase'], 'ACTIVE')",
+        )
+
+    def test_ai_crash_attempt_durable_is_caught(self):
+        self._assert_fault_is_caught(
+            PersistFaultAttemptAdapter('ai_delegation', 'crash_before_durable'),
+            FAULT_CASE_MAP['ai_crash_attempt_durable'],
+            recovery_assertion='AssertionError: expected AiDelegationError',
+        )
+
+    def test_reward_drop_acknowledged_is_caught(self):
+        self._assert_fault_is_caught(
+            DropAcknowledgedBoundaryAdapter('reward'),
+            FAULT_CASE_MAP['reward_drop_acknowledged'],
+            recovery_assertion='self.assertEqual(machine.state_digest(), digest)',
+        )
+
+    def test_reward_partial_retained_is_caught(self):
+        self._assert_fault_is_caught(
+            PersistFaultAttemptAdapter('reward', 'partial'),
+            FAULT_CASE_MAP['reward_partial_retained'],
+            recovery_assertion="self.assertEqual(machine.view(reward_rid())['phase'], 'HELD')",
+        )
+
+    def test_reward_crash_attempt_durable_is_caught(self):
+        self._assert_fault_is_caught(
+            PersistFaultAttemptAdapter('reward', 'crash_before_durable'),
+            FAULT_CASE_MAP['reward_crash_attempt_durable'],
+            recovery_assertion='AssertionError: expected TokenRewardError',
+        )
+
     def test_unmodified_adapter_passes_every_case(self):
         names = sorted(
             name for name in dir(BackendConformance)
@@ -310,6 +418,7 @@ class ConformanceSensitivityTests(unittest.TestCase):
             with self.subTest(case=name):
                 result = _run_case(LocalReadinessAdapter(), name)
                 self.assertEqual(result.testsRun, 1)
+                self._assert_no_nonexecutions(result)
                 self.assertTrue(result.wasSuccessful(), result.failures + result.errors)
 
 

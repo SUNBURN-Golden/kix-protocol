@@ -264,9 +264,11 @@ the same case on the unmodified adapter must pass. Before this addition,
 positive coverage for these properties was sufficient in the cases below,
 but sensitivity to deliberately wrong adapters was not covered. The new tests
 fill that gap without duplicating or changing the conformance scenarios.
-Semantic mutants must produce one assertion failure, with no runner errors;
+Semantic mutants must produce one assertion failure in the mapped case, with
+no runner errors, skips, expected failures or unexpected successes;
 the handle leak must produce precisely `JOURNAL_LOCKED`. A separate control
-runs every existing common-suite case on the unmodified adapter.
+runs every existing common-suite case on the unmodified adapter, also without
+skips, expected failures or unexpected successes. Each paired case runs once.
 
 | Injected fault | Adapter | Catching case | What the case detects |
 |---|---|---|---|
@@ -277,6 +279,23 @@ runs every existing common-suite case on the unmodified adapter.
 | Ignore record budget or byte budget (separate subtests) | `BudgetBlindAdapter` | `test_budget_rejection_preserves_records_and_replay_identity` | `can_accept` returns True at the ignored cap; the other cap still works |
 | Two concurrent holds on one slot both report success | `DoubleHoldAdapter` | `test_concurrent_reservation_holds_occupy_the_slot_once` | losing hold returns a false success, so no worker reports `SLOT_OCCUPIED` |
 | Handle left open after an injected fault | `LeakyHandleAdapter` | `test_settlement_cash_survives_restart_and_a_torn_commit` | next `open_boundary` raises `JOURNAL_LOCKED`; outer test cleanup then releases the handle |
+| `ai_drop_acknowledged`: recovery loses acknowledged `issue_grant` | `DropAcknowledgedBoundaryAdapter('ai_delegation')` | `test_ai_delegation_registry_opens_once_and_issue_replays_across_restart` | recovered digest differs from acknowledged digest |
+| `ai_partial_retained`: recovery retains the revoke requested as torn | `PersistFaultAttemptAdapter('ai_delegation', 'partial')` | `test_ai_delegation_torn_revoke_recovers_and_replays_once` | recovered phase is `REVOKED`, violating `ACTIVE` |
+| `ai_crash_attempt_durable`: recovery retains crashed issue | `PersistFaultAttemptAdapter('ai_delegation', 'crash_before_durable')` | `test_ai_delegation_crash_before_durable_issue_leaves_no_grant` | grant exists; recovery's `code(...)` assertion reports `expected AiDelegationError` instead of observing `UNKNOWN_GRANT` |
+| `reward_drop_acknowledged`: recovery loses acknowledged `hold` | `DropAcknowledgedBoundaryAdapter('reward')` | `test_reward_open_observe_and_hold_replay_across_restart` | recovered digest differs from acknowledged digest |
+| `reward_partial_retained`: recovery retains eligibility requested as torn | `PersistFaultAttemptAdapter('reward', 'partial')` | `test_reward_torn_mark_eligible_recovers_and_replays_once` | recovered phase is `ELIGIBLE`, violating `HELD` |
+| `reward_crash_attempt_durable`: recovery retains crashed observation | `PersistFaultAttemptAdapter('reward', 'crash_before_durable')` | `test_reward_crash_before_durable_observe_leaves_no_reward` | reward exists; recovery's `code(...)` assertion reports `expected TokenRewardError` instead of observing `UNKNOWN_REWARD` |
+
+The six wrapper rows supplement the earlier negative controls using unchanged
+`BackendConformance` assertions and fixtures. The drop adapter removes only
+the selected machine's last `fsm_commit` from that handle's recovered records
+before ordinary `_recover()`. The persist adapter wraps only that handle's
+store append: it appends normally, then raises the requested fault so ordinary
+boundary fencing and restart replay run. Its `partial` mutant incorrectly
+commits the whole attempt requested as torn; it does not simulate physical
+media tearing. Other machines and fault kinds follow normal append behavior.
+The six outer tests pin the intended recovery assertion in the captured
+traceback; an omitted injection or setup error cannot satisfy them.
 
 Run it directly:
 
@@ -297,10 +316,6 @@ Documented gaps — properties this document describes with no
   `protocolTruth`/`productionConformance` label refusal are checked only by
   the current-wrapper tests in `readiness.test_faults`. The common suite is
   backend-neutral and contains no case for them.
-- The `ai_delegation` and `reward` wrap cases of `BackendConformance` (six
-  cases, sections above) are run by the unmodified-adapter control only. No
-  faulty adapter here is mapped to them, so their sensitivity to a wrong
-  backend is not shown.
 - `boundary.last_observation` fields are asserted only in
   `readiness.test_faults`, not in the common suite.
 - Named budget-limit diagnostics and overload admission are wrapper/gate
@@ -312,6 +327,12 @@ Documented gaps — properties this document describes with no
 The faulty adapters are test doubles, not candidate backends. Their failures
 show the suite notices the injected faults; this is not a power-loss proof,
 not a PostgreSQL or other candidate-backend test, and not a backend adoption.
+The six wrapper mappings demonstrate sensitivity only to the listed recovery
+mutants, not independent verification or backend acceptance. All false
+durability, execution and production/truth labels and `MOCK_TOKEN_REWARD_ONLY`
+provenance remain unchanged. Existing recovery uncertainties and policy values
+remain UNDETERMINED. Record:
+`validation/2026-10-29-plan-readiness-wrap-fault-sensitivity/README.md`.
 
 ## JSON codec regressions
 

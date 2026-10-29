@@ -454,3 +454,5 @@
 - [plan-readiness-record-byte-boundaries](../validation/2026-10-29-plan-readiness-record-byte-boundaries/README.md) — Source-informed characterization of stamped JSON UTF-8 byte boundaries and oversized rejection atomicity/same-handle reuse; no implementation, product policy, evidence grade or recovery-decision change.
 
 - [plan-plan-readiness-json-codec-regressions](../validation/2026-10-29-plan-plan-readiness-json-codec-regressions/README.md) — Source-informed complete-frame JSON rejection, serialization-error atomicity and literal canonical Unicode receipt-digest regressions; no implementation, contract, evidence grade or open-decision change.
+
+- [plan-readiness-wrap-fault-sensitivity](../validation/2026-10-29-plan-readiness-wrap-fault-sensitivity/README.md) — Six persistent AI-delegation/reward recovery negative controls through unchanged conformance cases; intentional inner assertion failures with passing controls, no backend acceptance, independent verification or durability claim, no grade change.
