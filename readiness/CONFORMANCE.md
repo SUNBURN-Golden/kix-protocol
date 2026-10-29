@@ -473,3 +473,75 @@ recovery uncertainty changes. In particular, mid-frame length damage, zero-byte
 reinitialization and frame-boundary cuts remain open. No production durability,
 power-loss, OS-crash, physical-media/fsync proof, independent verification,
 external exactly-once, chain-finality or backend-adoption claim follows.
+
+
+## 2026-10-29 — Completed append with acknowledgement loss
+
+`readiness/test_faults.py::PostAppendAckLossTests` adds seven positive local-wrapper
+regressions for a completed append whose acknowledgement does not reach the
+boundary caller. The historical sweep's lost-acknowledgement exclusion above
+remains a statement about that sweep. This addition covers only controlled
+in-process acknowledgement loss: an instance-scoped test wrapper calls the real
+`store.append` normally, records its successful completion, then raises the same
+preconstructed `_PostAppendAckLost(StoreError)` with code
+`TEST_POST_APPEND_ACK_LOST`. It is a test-only signal, not a protocol error,
+production fault hook or new `fault=` option.
+
+Existing coverage mapped before this addition:
+
+| Requirement | Prior evidence | Prior coverage |
+|---|---|---|
+| Recover only the accepted prefix after an incomplete/absent attempt | `CrashPointSweepTests`, `BackendConformance` fault cases | Sufficient for their boundary: `partial` leaves an incomplete frame; `crash_before_durable` writes no target frame. Neither completes the real append before raising. |
+| Failed-boundary fencing, restart and idempotent replay | `CrashPointSweepTests`, `BoundaryMutationGuardTests`, `BackendConformance` | Partially covered for this task; no positive retained-command acknowledgement-loss case. |
+| Recovery tests detect attempts incorrectly retained under absent-attempt expectations | `readiness/test_conformance_sensitivity.py::PersistFaultAttemptAdapter`, six AI/reward mappings | Sufficient negative controls. This adapter already appends then raises, but mapped tests intentionally fail because they expect absence; it does not establish positive retained-result replay for seven machines. |
+| Completed append, caller receives exception, recovery retains target exactly once and deliberate replay appends nothing | No positive seven-machine regression | Not covered; seven `PostAppendAckLossTests.test_post_append_ack_loss_<machine>` cases below. |
+
+| Machine | Existing target (zero-based sequence index) | Retained business state |
+|---|---|---|
+| settlement | 4: `distribute`, `dist-1` | Confirmed/distributed cash 97,000; distribution effect organizer 92,000/platform 5,000; obligations preserved. |
+| reservation | 2: `hold`, `hold-1` | HELD reservation, RESERVED slot. |
+| resale | 4: `accept_resale`, `transfer-1` | Holder `buyer-2`, current version 2. |
+| credit | 2: `draw`, `draw-1` | Outstanding exposure 80,000. |
+| admission | 3: `consume`, `consume-1` | CONSUMED, version 2. |
+| ai_delegation | 1: `issue_grant`, grant `g1` with identical binding | ACTIVE, generation 1; no invented idempotency key. |
+| reward | 5: `observe_transfer_effects`, `fx-1` | One payout effect and identical pool state (reward treasury fixture balance 46). |
+
+Each test directly reuses `CrashPointSweepTests._build_sequences()` without
+inheriting its tests. An uninterrupted separate-directory control supplies the
+complete result, canonical state, digest, public view, exported journal, stamped
+records, committed-byte count and file bytes. The target must add exactly one
+entry. The injection must invoke/complete exactly one real append, propagate the
+exact exception object/code, and emit the expected fault observation. Subsequent
+`call` and `machine` access must give `ReadinessClosed('READINESS_CLOSED')`;
+a sentinel proves no callback runs. Recovery is compared with the complete
+control before any replay. One deliberate identical replay changes only
+`duplicate=True` and (except AI) `applied=None`, preserves every remaining result
+field, and invokes append zero times. All state/accounting/bytes remain equal,
+including after another close/reopen. AI replay precedes any revocation; no
+historical ACTIVE-result claim after revocation follows. Keyless opening calls
+are not injection targets.
+
+Schema-1 `fsm_commit` envelopes and false record labels are pinned explicitly.
+Required public-view/result flags are indexed so missing fields fail, including
+FSM `durable`, the applicable sweep flags, AI `FALSE_FLAGS` and reward
+`ALWAYS_FALSE_FLAGS`. Fault/replay observations require all four truth/production
+flags plus `fsmDurable` exactly false. Reward provenance stays
+`MOCK_TOKEN_REWARD_ONLY`.
+
+Contract-defined matching behavior (AGENTS §8 A): local boundary refusal after
+store failure, replay idempotence, retained economic state and false labels.
+Source-informed class-B characterizations: exact cross-instance result/state/
+digest/byte equality, selected fixtures' one-entry transitions and duplicate
+response shapes. No explicit contract violation was found. No contract, evidence
+grade, backend requirement, owner decision or policy value changes. Existing
+recovery uncertainties remain UNDETERMINED.
+
+This is single-process, single-writer, local-file evidence; reopening and replay
+are deliberate test actions, with no automatic retry. It proves no OS crash,
+power loss, physical-media/fsync durability, external exactly-once execution,
+bank/PG/chain acceptance, production readiness or backend adoption. The boundary
+caller received an exception despite a completed local append; that fact supplies
+no new external execution authority. Non-author exact-HEAD review at A2 and
+successful exact-head KTX/KIX workflows remain delivery gates. Actual commands
+and protected-path verification:
+[validation record](../validation/2026-10-29-plan-readiness-post-append-ack-loss/README.md).
