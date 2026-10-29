@@ -440,3 +440,36 @@ OPEN rows, owners and recovery uncertainties remain unchanged. No production
 durability, stage-5 acceptance, clean-room independence, power-loss, OS-crash,
 physical-media/fsync, external exactly-once or chain-finality claim. Record:
 `validation/2026-10-29-plan-plan-readiness-json-codec-regressions/README.md`.
+
+## Record-envelope rejection and preservation
+
+`readiness/test_faults.py::RecordEnvelopeTests` exercises public
+`ReadinessStore.append/open` with synthetic entries and temporary local files.
+Valid controls cover all seven accepted FSM machines and a core envelope,
+checking complete stamped records, false truth/production labels, frame-byte
+accounting and unchanged bytes across reopen. These controls accept envelopes;
+they do not replay entries or authenticate receipt digests.
+
+The shared rejection matrix covers each missing caller/persisted field, extra
+and cross-kind fields, unknown kind/machine, mismatched machine/kind,
+non-object entry/body, empty/non-string core identifiers, digest length and
+lowercase hexadecimal alphabet. Append also refuses each caller-supplied
+reserved stamp even with its otherwise correct value. Every append rejection
+checks exact `StoreError('JOURNAL_RECORD')`, unchanged bytes, deep-copied records
+and committed accounting, then a valid append on the same handle and reopen.
+Every invalid persisted envelope is valid JSON in a complete, in-range,
+checksum-valid frame after an accepted prefix, both at EOF and before a valid
+suffix. Open gives exact `StoreError('JOURNAL_CORRUPT')` and preserves the entire
+file byte-for-byte.
+
+These source-defined details are AGENTS §8 class B characterizations, not new
+contract semantics or `BackendConformance` requirements. Prior coverage and
+actual commands are in the
+[validation record](../validation/2026-10-29-plan-readiness-record-envelope-tests/README.md).
+`JsonCodecRegressionTests` retains JSON syntax/serialization coverage;
+`WrapperRestoreRejectionTests` retains wrapper entry semantics. Neither is
+changed. No runtime source, contract, evidence-map grade, open decision or
+recovery uncertainty changes. In particular, mid-frame length damage, zero-byte
+reinitialization and frame-boundary cuts remain open. No production durability,
+power-loss, OS-crash, physical-media/fsync proof, independent verification,
+external exactly-once, chain-finality or backend-adoption claim follows.

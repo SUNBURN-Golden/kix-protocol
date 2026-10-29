@@ -260,6 +260,185 @@ class RecordSizeBoundaryTests(unittest.TestCase):
                     again.close()
 
 
+class RecordEnvelopeTests(unittest.TestCase):
+    """Source-informed class B envelope checks, separate from entry semantics."""
+
+    MACHINES = (
+        'settlement', 'reservation', 'resale', 'credit', 'admission',
+        'ai_delegation', 'reward',
+    )
+
+    def _fsm(self, machine='settlement'):
+        return {'kind': 'fsm_commit', 'machine': machine,
+                'entry': {'op': 'synthetic', 'text': 'envelope control'}}
+
+    def _core(self):
+        return {
+            'kind': 'core_commit', 'machine': 'integration_core',
+            'operationId': 'envelope-1', 'actor': 'operator',
+            'action': 'advance_clock',
+            'body': {'domain': 'kix:fixture:lifecycle:0.3', 'now': 1},
+            'receiptDigest': '0123456789abcdef' * 4,
+        }
+
+    def _expected(self, body):
+        # Explicit test expectation, independent of the store's stamp/validator.
+        return {'schema': 1, 'protocolTruth': False,
+                'productionConformance': False, **json_copy(body)}
+
+    def _frame(self, record):
+        payload = json.dumps(record, ensure_ascii=False, sort_keys=True,
+                             separators=(',', ':'), allow_nan=False).encode('utf-8')
+        self.assertEqual(json.loads(payload), record)
+        self.assertGreaterEqual(len(payload), 2)
+        self.assertLessEqual(len(payload), MAX_RECORD_BYTES)
+        frame = struct.pack('>I', len(payload)) + payload
+        frame += struct.pack('>I', zlib.crc32(payload) & 0xFFFFFFFF)
+        self.assertEqual(len(frame), len(payload) + 8)
+        self.assertEqual(struct.unpack('>I', frame[:4])[0], len(payload))
+        self.assertEqual(struct.unpack('>I', frame[-4:])[0],
+                         zlib.crc32(frame[4:-4]) & 0xFFFFFFFF)
+        return frame
+
+    def _invalid_envelopes(self, persisted):
+        for label, body in (('fsm', self._fsm()), ('core', self._core())):
+            base = self._expected(body) if persisted else body
+            # Every persisted field, including stamps, is independently missing.
+            for field in base:
+                candidate = json_copy(base)
+                del candidate[field]
+                yield f'{label}-missing-{field}', candidate
+            changes = [('extra-field', 'unknownField', True),
+                       ('unknown-kind', 'kind', 'unknown_commit'),
+                       ('unknown-machine', 'machine', 'unknown_machine'),
+                       ('mismatched-machine', 'machine',
+                        'integration_core' if label == 'fsm' else 'settlement')]
+            cross_fields = self._core() if label == 'fsm' else self._fsm()
+            for field in sorted(cross_fields.keys() - body.keys()):
+                changes.append((f'cross-kind-{field}', field, cross_fields[field]))
+            container = 'entry' if label == 'fsm' else 'body'
+            non_objects = (('null', None), ('array', []), ('string', 'text'),
+                           ('integer', 7), ('boolean', False))
+            for name, value in non_objects:
+                changes.append((f'{container}-{name}', container, value))
+            if label == 'core':
+                for field in ('operationId', 'actor', 'action', 'receiptDigest'):
+                    for name, value in (('empty', ''), *non_objects,
+                                        ('object', {})):
+                        # A nonempty string is valid for the three identifiers.
+                        if name != 'string':
+                            changes.append((f'{field}-{name}', field, value))
+                for name, value in (
+                    ('short', 'a' * 63), ('long', 'a' * 65),
+                    ('uppercase', 'A' + 'a' * 63),
+                    ('nonhex', 'g' + 'a' * 63),
+                    ('whitespace', ' ' + 'a' * 63),
+                    ('nonascii', '\u00e9' + 'a' * 63),
+                ):
+                    changes.append((f'digest-{name}', 'receiptDigest', value))
+            if not persisted:
+                for field, value in (('schema', 1), ('protocolTruth', False),
+                                     ('productionConformance', False)):
+                    changes.append((f'reserved-{field}', field, value))
+            for name, field, value in changes:
+                candidate = json_copy(base)
+                candidate[field] = json_copy(value)
+                yield f'{label}-{name}', candidate
+
+    def test_valid_fsm_and_core_envelopes_roundtrip(self):
+        bodies = [self._fsm(machine) for machine in self.MACHINES] + [self._core()]
+        expected = [self._expected(body) for body in bodies]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / JOURNAL_NAME
+            store = ReadinessStore.open(tmp)
+            try:
+                self.assertEqual(store.committed_bytes, HEADER_LEN)
+                byte_count = HEADER_LEN
+                for body, record in zip(bodies, expected):
+                    with self.subTest(machine=body['machine']):
+                        stored = store.append(json_copy(body))
+                        self.assertEqual(stored, record)
+                        self.assertIs(stored['protocolTruth'], False)
+                        self.assertIs(stored['productionConformance'], False)
+                        byte_count += len(self._frame(record))
+                        self.assertEqual(store.committed_bytes, byte_count)
+                self.assertEqual(store.records, expected)
+                before = path.read_bytes()
+                self.assertEqual(len(before), byte_count)
+            finally:
+                store.close()
+            again = ReadinessStore.open(tmp)
+            try:
+                self.assertEqual(again.records, expected)
+                self.assertEqual(again.committed_bytes, byte_count)
+                self.assertEqual(path.read_bytes(), before)
+            finally:
+                again.close()
+
+    def test_invalid_append_preserves_journal_and_allows_next_append(self):
+        for name, invalid in self._invalid_envelopes(persisted=False):
+            with self.subTest(case=name), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / JOURNAL_NAME
+                store = ReadinessStore.open(tmp)
+                prefix, following = self._fsm(), self._core()
+                expected = [self._expected(prefix), self._expected(following)]
+                try:
+                    self.assertEqual(store.append(prefix), expected[0])
+                    before = path.read_bytes()
+                    records = json_copy(store.records)
+                    committed = store.committed_bytes
+                    with self.assertRaises(StoreError) as raised:
+                        store.append(json_copy(invalid))
+                    self.assertIs(type(raised.exception), StoreError)
+                    self.assertEqual(raised.exception.code, 'JOURNAL_RECORD')
+                    self.assertEqual(path.read_bytes(), before)
+                    self.assertEqual(store.records, records)
+                    self.assertEqual(store.committed_bytes, committed)
+                    self.assertEqual(store.append(following), expected[1])
+                    after = path.read_bytes()
+                    self.assertEqual(after, before + self._frame(expected[1]))
+                    self.assertEqual(store.records, expected)
+                    self.assertEqual(store.committed_bytes,
+                                     committed + len(self._frame(expected[1])))
+                    self.assertEqual(store.committed_bytes, len(after))
+                finally:
+                    store.close()
+                again = ReadinessStore.open(tmp)
+                try:
+                    self.assertEqual(again.records, expected)
+                    self.assertEqual(again.committed_bytes, len(after))
+                    self.assertEqual(path.read_bytes(), after)
+                finally:
+                    again.close()
+
+    def test_invalid_complete_frames_fail_without_rewriting(self):
+        with tempfile.TemporaryDirectory() as seed:
+            store = ReadinessStore.open(seed)
+            try:
+                store.append(self._fsm())
+                prefix_end = store.committed_bytes
+                store.append(self._core())
+            finally:
+                store.close()
+            original = (Path(seed) / JOURNAL_NAME).read_bytes()
+        prefix, suffix = original[:prefix_end], original[prefix_end:]
+        self.assertGreater(prefix_end, HEADER_LEN)
+        self.assertTrue(suffix)
+        for name, invalid in self._invalid_envelopes(persisted=True):
+            frame = self._frame(invalid)
+            for later in (b'', suffix):
+                with self.subTest(case=name, before_suffix=bool(later)), tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp) / JOURNAL_NAME
+                    before = prefix + frame + later
+                    path.write_bytes(before)
+                    with self.assertRaises(StoreError) as raised:
+                        # Release any unexpectedly accepted handle before failing.
+                        ReadinessStore.open(tmp).close()
+                    self.assertIs(type(raised.exception), StoreError)
+                    self.assertEqual(raised.exception.code, 'JOURNAL_CORRUPT')
+                    self.assertEqual(path.read_bytes(), before)
+
+
 class JsonCodecRegressionTests(unittest.TestCase):
     """Source-informed local codec characterization, not protocol encoding."""
 
