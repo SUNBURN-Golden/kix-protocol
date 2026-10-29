@@ -255,6 +255,63 @@ verification of TK-4, TK-7, TK-8, TK-12 or V6. Records:
 `validation/2026-10-20-token-reward-readiness-wrap/README.md`,
 `validation/2026-10-21-reward-wrap-conformance/README.md`.
 
+## Malformed wrapper journal restoration
+
+`readiness/test_faults.py::WrapperRestoreRejectionTests` exercises only the
+public `AiDelegationWrap.restore` and `RewardWrap.restore` APIs and public
+construction/command/view/export methods. These are source-informed class-B
+characterizations (AGENTS §8): exact malformed-input errors are undefined by
+the contracts, and these tests introduce no standardized error requirement.
+No implementation or common `BackendConformance` predicate changes.
+
+Coverage mapped before adding this class:
+
+| Path / requirement | Existing evidence and prior classification | New test / observed exception |
+|---|---|---|
+| Valid reward state/digest/journal recovery | Sufficient: `RewardWrapTests.test_reward_restore_round_trips_canonical_state_and_digest` | Reused unchanged; `test_valid_controls` pairs the minimal malformed-history baselines |
+| Valid AI recovery and disabled execution | Sufficient: `ExtensionTests.test_ai_delegation_torn_revoke_replays_once_and_execution_stays_off`, `test_ai_delegation_crash_before_issue_does_not_create_the_grant` | Reused unchanged |
+| Crash-prefix replay in both wrappers | Sufficient: `CrashPointSweepTests.test_crash_point_sweep_ai_delegation`, `test_crash_point_sweep_reward` | Reused unchanged |
+| Open once and restart/replay | Sufficient for live behavior: `readiness/conformance.py::BackendConformance.test_ai_delegation_registry_opens_once_and_issue_replays_across_restart`, `test_reward_open_observe_and_hold_replay_across_restart`; partial for malformed restore | `test_repeated_open`: each wrapper's `WrapError('RECOVERY_DIVERGENCE')`, rather than live `ALREADY_OPEN` |
+| Valid fingerprint equivalence | Sufficient: `reference/ai_delegation/test_restore_fingerprint_equivalence.py` (wrapper), `reference/token_reward/test_restore_fingerprint_equivalence.py` (inner reward FSM) | Reused; reward FSM journals/errors do not cover the readiness wrapper |
+| Non-list journals | Not covered directly | `test_non_list_journals`: `None`, `{}`, `''`, `0` → wrapper-specific `WrapError('RECOVERY_DIVERGENCE')` |
+| Malformed entries / missing or non-string `op` | Not covered directly | `test_malformed_entries_and_ops`: `None`, `[]`, `''`, `0`, `{}`, and `op` of `None`, `0`, `[]`, `{}`, alone and after valid opening → wrapper-specific `RECOVERY_DIVERGENCE` |
+| Unknown or public non-replay operations | Not covered directly | `test_unknown_operations`: `unknown_operation`, `state_digest`, alone and after opening → wrapper-specific `RECOVERY_DIVERGENCE` |
+| Missing opening fields | Not covered directly | `test_missing_open_fields`: AI raises exact `KeyError`, `.args == ('humans',)` or `('agents',)`; reward raises `RewardWrapError('RECOVERY_DIVERGENCE')` for absent `opening_balances` |
+| Commands before opening | Not covered directly for restore | `test_commands_before_open`: valid grant/observation without opening → wrapper-specific `RECOVERY_DIVERGENCE`, rather than live `NOT_OPEN` |
+| Invalid arguments | Live domain rejection covered in reference tests; partial for restore wrapping | `test_invalid_arguments`: missing command `actor` / `idempotency_key`, unexpected command keyword, opening `humans` / `opening_balances` set to `None`, AI `limits.per_action_max=0` / reward `amount=0` → wrapper-specific `RECOVERY_DIVERGENCE` |
+| Restored export-journal equality guard | Not covered directly | `test_redundant_entries`: duplicate accepted command or extra nested opening field → wrapper-specific `RECOVERY_DIVERGENCE` |
+| Caller input unchanged on every selected malformed fixture | Not covered directly | Shared `_assert_restore_rejected`: full nested JSON snapshot equality in `finally`, exact exception class and `.code` / `KeyError.args`, no successful restore accepted |
+| Paired minimal histories, empty input, false labels | Broad positives sufficient above; minimal pairing partial | `test_valid_controls`: unchanged input/export/digest, canonical state for opened wrappers, false view flags and reward provenance |
+
+`AiDelegationWrapError` and `RewardWrapError` are aliases for distinct classes
+defined by the two wrappers. All selected errors other than the AI missing-field
+`KeyError`s have code `RECOVERY_DIVERGENCE`; no broad exception or alternative
+error tuple is accepted. Missing AI opening fields escape because that restore
+does not catch `KeyError`, whereas reward restore catches it. This difference
+is an observed class-B detail, not an explicit contract violation or a proposal
+to standardize errors.
+
+Each fixture starts from a fresh JSON-compatible copy. Accepted histories are
+`open_registry(['human-issuer'], ['agent-1'])` plus `ai_delegation_issue`, and
+`open(reward_opening())` plus `reward_observe`, using the existing synthetic
+conformance helpers. These are flat wrapper command entries, not store frames
+or inner reward FSM journal records. Before artificially appending a duplicate,
+the same public command returns `duplicate=True` and preserves journal/digest.
+Opening ignores the extra field during replay; export equality still rejects
+the extended input. No private state or monkeypatch is used.
+
+Paired controls preserve AI grant `durable`, `execution_enabled`,
+`funds_executed`, and reward view `durable`, `token_issued`, `onchain_recorded`,
+`funds_executed`, `krw_paid`, `chain_finality` as exactly `False`. Reward
+provenance stays `MOCK_TOKEN_REWARD_ONLY`. Empty journals are valid unopened
+controls with equal exports/digests; no unopened canonical-state claim is made.
+
+No contract, workflow, evidence grade, product-policy value, owner decision or
+recovery uncertainty changes. The blocked AI tool-check-order question remains
+excluded. This is no independent A2 review, backend acceptance, durability,
+external execution, payout or finality proof. Record:
+[wrapper restore rejections](../validation/2026-10-29-plan-readiness-wrap-restore-rejections/README.md).
+
 ## Negative controls (fault sensitivity)
 
 `readiness/test_conformance_sensitivity.py` binds `BackendConformance` to

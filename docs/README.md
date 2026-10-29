@@ -456,3 +456,5 @@
 - [plan-plan-readiness-json-codec-regressions](../validation/2026-10-29-plan-plan-readiness-json-codec-regressions/README.md) — Source-informed complete-frame JSON rejection, serialization-error atomicity and literal canonical Unicode receipt-digest regressions; no implementation, contract, evidence grade or open-decision change.
 
 - [plan-readiness-wrap-fault-sensitivity](../validation/2026-10-29-plan-readiness-wrap-fault-sensitivity/README.md) — Six persistent AI-delegation/reward recovery negative controls through unchanged conformance cases; intentional inner assertion failures with passing controls, no backend acceptance, independent verification or durability claim, no grade change.
+
+- [plan-readiness-wrap-restore-rejections](../validation/2026-10-29-plan-readiness-wrap-restore-rejections/README.md) — Public-API malformed AI-delegation/reward wrapper journal rejection characterizations with exact errors, unchanged caller input and paired valid controls; class B only, no implementation, contract, grade or open-decision change.
