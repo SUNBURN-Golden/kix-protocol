@@ -458,3 +458,5 @@
 - [plan-readiness-wrap-fault-sensitivity](../validation/2026-10-29-plan-readiness-wrap-fault-sensitivity/README.md) — Six persistent AI-delegation/reward recovery negative controls through unchanged conformance cases; intentional inner assertion failures with passing controls, no backend acceptance, independent verification or durability claim, no grade change.
 
 - [plan-readiness-wrap-restore-rejections](../validation/2026-10-29-plan-readiness-wrap-restore-rejections/README.md) — Public-API malformed AI-delegation/reward wrapper journal rejection characterizations with exact errors, unchanged caller input and paired valid controls; class B only, no implementation, contract, grade or open-decision change.
+
+- [plan-readiness-record-envelope-tests](../validation/2026-10-29-plan-readiness-record-envelope-tests/README.md) — Offline store envelope rejection with append preservation/reuse and complete checksum-valid frame refusal without rewriting; source-informed class B characterizations, no runtime, contract, grade or open-decision change.
