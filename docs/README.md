@@ -464,3 +464,5 @@
 - [plan-readiness-post-append-ack-loss](../validation/2026-10-29-plan-readiness-post-append-ack-loss/README.md) — Seven controlled in-process completed-append acknowledgement-loss regressions with retained-result replay and no extra append; no OS-crash, power-loss, external exactly-once, production durability or grade claim.
 
 - [plan-local-payment-lookup-adapter](../validation/2026-10-30-plan-local-payment-lookup-adapter/README.md) — Internal operation-bound synthetic lookup service and deterministic fake; one-call normalization, zero-call scope rejection and unresolved failures with preserved evidence (Analog, NOT Toss); no authentication, provider conformance, durability, finality, payment-completion or grade change.
+
+- [plan-local-payment-scope-router](../validation/2026-10-30-plan-local-payment-scope-router/README.md) — Internal immutable synthetic scope routing through existing operation/payment bindings; exact provider/account/environment selection, no fallback, retained normalized outputs and capture/review state (Analog, NOT Toss); no authentication, merchant authorization, persistence or runtime activation.
