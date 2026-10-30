@@ -464,3 +464,5 @@
 - [plan-readiness-post-append-ack-loss](../validation/2026-10-29-plan-readiness-post-append-ack-loss/README.md) — Seven controlled in-process completed-append acknowledgement-loss regressions with retained-result replay and no extra append; no OS-crash, power-loss, external exactly-once, production durability or grade claim.
 
 - [plan-local-payment-lookup-adapter](../validation/2026-10-30-plan-local-payment-lookup-adapter/README.md) — Internal operation-bound synthetic lookup service and deterministic fake; one-call normalization, zero-call scope rejection and unresolved failures with preserved evidence (Analog, NOT Toss); no authentication, provider conformance, durability, finality, payment-completion or grade change.
+
+- [plan-local-settlement-reward-adapter](../validation/2026-10-30-plan-local-settlement-reward-adapter/README.md) — Internal synthetic fixture bindings connect live local settlement views to F4 reward observation only; no eligibility, payout, policy choice, finality or evidence-grade change.
