@@ -8,6 +8,7 @@ Run from the repository root, with standard-library Python:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 reference/provider_facts/example_payment_lookup.py
+PYTHONDONTWRITEBYTECODE=1 python3 reference/provider_facts/example_payment_lookup_router.py
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/provider_facts -t reference/provider_facts
 ```
 
@@ -91,3 +92,60 @@ waiting-policy decisions. The existing contract and evidence maps remain the
 owner authority; the fake resolves none of these inputs.
 
 See the [coverage, executed commands and delivery gates](../../validation/2026-10-30-plan-local-payment-lookup-adapter/README.md).
+
+## Routing to the original bound synthetic scope
+
+`payment_lookup_router.py::PaymentLookupRouter(bindings, *, routes)` composes
+the same service and fake for multiple explicitly registered scopes.
+`routes` maps `SyntheticLookupScope` to `FakePaymentLookup`; construction copies
+the mapping, requires those exact types, and rejects any key that differs from
+its fake's scope with existing `ProviderFactsError("BINDING_MISMATCH")` before
+lookups. It retains a read-only mapping of one service per scope, sharing the
+binding store. There is no registration/replacement method or default route;
+an empty registry is allowed. Scope registration is local immutable fixture
+configuration, never provider authentication or merchant authorization.
+
+Using the preceding setup, the internal interface is:
+
+```python
+from payment_lookup_router import PaymentLookupRouter
+
+router = PaymentLookupRouter(bindings, routes={scope: fake})
+synthetic_result = router.lookup(OPERATION_REF)
+```
+
+`lookup(operation_ref)` first reads the existing binding. It selects exactly
+the bound payment's `(provider, account, environment)` and returns that service's
+result unchanged. All five PaymentRef fields, all three OperationRef fields,
+normalized facts/timestamps and fixed synthetic provenance are preserved.
+OperationRef has no environment field; environment comes from PaymentRef.
+Reused operation strings across provider/account scopes remain distinct.
+Requests cannot select account, provider, environment or payment reference.
+Changing the caller's registration dictionary cannot alter routing.
+
+Router diagnostic precedence is local synthetic characterization (class B),
+not protocol errors or product policy:
+
+| Condition | Result | Calls to any fake |
+|---|---|---|
+| Invalid operation | Existing `INVALID_OPERATION_REF` error propagates | 0 |
+| Missing binding | Existing `Unresolved("BINDING_REQUIRED")`, no PaymentRef | 0 |
+| No exact registered provider/account/environment scope | Local `Unresolved("LOOKUP_ROUTE_MISSING")`, complete bound PaymentRef retained | 0 |
+| Registered scope | Existing service result unchanged | Exactly 1 to selected fake; 0 to all others |
+
+Timeout, error and not-found stay unresolved in the original scope even when
+another fake has a successful recording with identical payment/order strings.
+They cause no retry, fallback, rebinding, capture/review mutation or UNKNOWN
+release. This synchronous in-memory composition assumes the existing local
+binding-store model; it adds no persistence or concurrent/distributed fencing.
+
+The router example prints seven deterministic JSON lines: paid A, paid B,
+timeout A, error A, not-found A, missing route and missing binding. Every line
+includes full references, per-invocation fake call counts, synthetic provenance
+and limitations. It needs no network, credentials or provider SDK.
+
+Provider authentication and merchant scope remain **UNDETERMINED — Toss/User**;
+event identity, aliases, domain/schema and policy decisions remain with Astra.
+There are no provider mappings, economic application, HTTP endpoints, protocol
+commands, SDK changes, real service calls or runtime activation here.
+See the [router coverage and actual validation](../../validation/2026-10-30-plan-local-payment-scope-router/README.md).
