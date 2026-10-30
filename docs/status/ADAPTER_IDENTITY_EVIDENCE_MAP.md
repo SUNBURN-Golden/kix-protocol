@@ -57,6 +57,26 @@ Summary provenance — **2026-10-28**, node `plan-provider-evidence-summary-sync
 - `UNDETERMINED` (8): cells gated on open inputs stay open — `TM04` (provider key/transmission stability), `DECISION_REQUIRED · Astra` (EventItemId source, alias rule, domain/schema ids), `k-stage5-durable-tx` (durable alias/binding table). `I04` is an open input of the contract but no §2–§4 row's surface content depends on it at this base.
 - The contract's §3 table lists four relations; the task text names three — all four are mapped.
 
+### 2026-10-30 supplemental local lookup evidence
+
+Node `plan-local-payment-lookup-adapter` adds the internal callable
+[payment_lookup.py::PaymentLookupService](../../reference/provider_facts/payment_lookup.py)
+and [deterministic fake](../../reference/provider_facts/fake_payment_lookup.py).
+It resolves the existing OperationRef through OperationBindingStore, checks
+configured synthetic provider/account/environment and normalizes a single
+recorded-text response. [Service tests](../../reference/provider_facts/test_payment_lookup.py)
+cover zero calls for missing/mismatched bindings, exactly one accepted call,
+no retry/fallback after timeout/error, unchanged populated captures/reviews and
+unchanged literal normalization vectors. [Fake/example tests](../../reference/provider_facts/test_fake_payment_lookup.py)
+cover deterministic recordings, immutable call snapshots and synthetic labels.
+See the [validation record](../../validation/2026-10-30-plan-local-payment-lookup-adapter/README.md).
+This is synthetic fake coverage, **Analog, NOT Toss**, without authentication,
+durability, finality or payment-completion claims. The historical map basis and
+counts remain unchanged. No EventItemId/ProviderFactKey/alias is derived; TM04,
+Astra source/alias/domain/schema decisions and Track K durable binding/custody
+remain open with the existing owners. There is no live provider adapter,
+authenticated lookup, economic application or kernel integration.
+
 ## 4. Non-claims
 
 - No adapter, inbox, outbox, lookup client, durable binding store, schema/domain id, wire format or Rust trait is built or chosen by this synchronization. The existing synthetic in-memory `OperationBindingStore` is an evidence fixture, not the durable §6.2 binding ([provider module scope and store](../../reference/provider_facts/provider_facts.py), [identity contract §6.2](../contracts/ADAPTER_EVENT_IDENTITY.md)).

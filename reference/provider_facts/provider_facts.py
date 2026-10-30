@@ -26,7 +26,9 @@ docs/contracts/PG_TOSS_CARD_PROFILE.md:
 
 It does not mint EventItemId values or aliases, does not choose a
 ProviderFactKey, does not assign domain/schema ids, and does not implement
-an adapter, inbox, lookup client or durable store. KRW_U128_MAX is the
+an inbox, lookup client or durable store. The sibling payment_lookup.py
+composes these helpers with an operation-bound local synthetic fake; it
+does not authenticate or contact a provider. KRW_U128_MAX is the
 locked kernel's u128 amount bound, not a product policy value.
 """
 
