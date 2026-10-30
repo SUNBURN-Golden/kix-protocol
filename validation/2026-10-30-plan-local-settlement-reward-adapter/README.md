@@ -189,3 +189,79 @@ in this uncommitted, unmerged builder session.
   push, PR, issue, comment, tag/branch mutation or merge was performed.
 
 Builder handoff: implementation complete and locally verified; **not merge-ready**.
+
+## PR fix round 1 — local revalidation (2026-10-30)
+
+The supervisor supplied no concrete blocking finding and no failed-job log.
+The review input says “review passed or unavailable”; this is not evidence that
+independent review passed. A possible billing/runner refusal is unverified.
+No code defect or local check failure was reproduced, so no implementation or
+test change was made. This appendix is the only changed path in this round.
+The coverage mapping and source-informed integration evidence above still apply;
+no duplicate tests were added. No contract violation was found. Trusted fixture
+bindings and cross-machine concurrency remain the characterized limits above.
+
+Observed cached `origin/main` and task base:
+`fae08dca658774568358c55d9db879626f6bcea4`.
+Implementation and fix-round initial/final HEAD:
+`9c90324ce21cabbbb68dcd9aed095a62b5ac3091`.
+`git merge-base origin/main HEAD` returns the base above; the branch contains
+one implementation commit beyond it. No base movement was made. These local
+refs do not verify remote freshness. The supervisor prohibits fetch, all other
+network/GitHub actions, commits, pushes and posts. The report remains uncommitted;
+the supervisor will establish the next final task head.
+
+All Python commands below ran with `PYTHONDONTWRITEBYTECODE=1` on Python 3.13.5.
+Hosted Python 3.12 and the complete repository workflows were not run in this
+round. Rust files were unchanged; the earlier Rust results above are historical
+evidence, not reruns in this round. The offline example's output and command
+logs are local temporary artifacts under
+`/tmp/kix-settlement-reward-fix-round-1/`; they are not committed evidence.
+
+| Exact command | Actual fix-round result |
+|---|---|
+| `python3 -m unittest discover -s reference/token_reward -t reference/token_reward -p test_settlement_reward_adapter.py -v` | Exit 0; 12 tests passed. |
+| `python3 -m unittest discover -s reference/token_reward -t reference/token_reward` | Exit 0; 180 tests passed, including the live-settlement field-name regression and 12 adapter tests. |
+| `python3 -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03` | Exit 0; 196 tests passed. |
+| `python3 reference/token_reward/example_settlement_reward.py` | Exit 0; synthetic bound settlement COMMITTED, reward OBSERVED, execution/finality flags false. The adapter test also verifies output and unchanged pools. |
+| `python3 scripts/check_docs_index.py` | Exit 0; scanned=320, indexed=285, allowlisted=35. |
+| `python3 scripts/check_docs_index.py --self-test` | Exit 0; pass. |
+| `python3 scripts/check_status_register.py` | Exit 0; paths=457, ev_ids=15, original32=32. |
+| `python3 scripts/check_status_register.py --self-test` | Exit 0; pass. |
+| `python3 scripts/check_tl_predicate_evidence_map.py` | Exit 0; 49 rows, 58 citations. |
+| `python3 scripts/check_tl_predicate_evidence_map.py --self-test` | Exit 0; pass. |
+| `python3 scripts/check_settlement_evidence_map.py` | Exit 0; 27 rows/headings, 110 citations. |
+| `python3 scripts/check_settlement_evidence_map.py --self-test` | Exit 0; 33 negative controls passed. |
+| `python3 scripts/check_evidence_map_rollup.py` | Exit 0; 25 contracts, textual index only. |
+| `python3 scripts/check_evidence_map_rollup.py --self-test` | Exit 0; 16 negative controls passed. |
+| `python3 scripts/check_ci_checker_wiring.py` | Exit 0; scripts=35, plain=34, self_test=35, self_test_only=1. |
+| `python3 scripts/check_ci_checker_wiring.py --self-test` | Exit 0; 13 negative controls passed. |
+| `python3 scripts/check_ci_test_discovery.py` | Exit 0; reference_suites=7, node_tests=8, modules=4, excluded=3; adapter tests reached. |
+| `python3 scripts/check_ci_test_discovery.py --self-test` | Exit 0; 18 negative controls passed. |
+| `python3 scripts/check_openapi_contract.py` | Exit 0; 84 commands, pinned bytes unchanged. |
+| `python3 scripts/check_openapi_contract.py --self-test` | Exit 0; pass. |
+
+Preservation: both locked files were hashed before and after this round with
+`git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs`:
+`69564b166f0c27f9af5d8422f0a466b18d74c20f` and
+`b607996c83a119c349f1cc90469ac1ba82764e20`.
+`git diff --exit-code origin/main HEAD -- reference/v0.3-rc1 runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs .aiops docs/tasks`
+passed. A Python SHA-256 manifest comparison against the pre-edit tracked-file
+snapshot also passed for every tracked path except this report, including all
+108 historical reference files. Final `git diff --check` and
+`PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs_index.py` passed.
+
+| External gate | Run ID / status / conclusion |
+|---|---|
+| Exact-head KTX kernel verification | Unavailable / not queried / unknown. |
+| Exact-head KIX protocol verification | Unavailable / not queried / unknown. |
+| Independent non-author exact-head review | Not established by supplied input. |
+| Merge SHA / post-merge main CI / merged locked blobs | Not applicable; no merge performed. |
+
+No stop-condition dependency or product-policy decision was needed; no
+`DECISION_REQUIRED.md` is warranted. **STATUS: READY** means the local builder
+handoff is ready for the supervisor. It is **not merge-ready**: both workflows
+must succeed on the supervisor's exact final head and the required independent
+review must be established. No commit, push, post, workflow change or network
+action was performed. Production, durability, finality and legal non-claims above
+remain in force.
