@@ -1,0 +1,170 @@
+{
+  "fixture_version": 1,
+  "provenance": "MOCK_SYNTHETIC_PROVIDER_FACTS_ONLY",
+  "bindings": [
+    {
+      "operation_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "operation": "op_synthetic_0001"
+      },
+      "payment_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "environment": "test-synthetic",
+        "payment_key": "pay_synthetic_001",
+        "order_id": "order_synthetic_001"
+      }
+    },
+    {
+      "operation_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "operation": "op_synthetic_partial"
+      },
+      "payment_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "environment": "test-synthetic",
+        "payment_key": "pay_synthetic_partial",
+        "order_id": "order_synthetic_001"
+      }
+    },
+    {
+      "operation_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "operation": "op_synthetic_full"
+      },
+      "payment_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "environment": "test-synthetic",
+        "payment_key": "pay_synthetic_full",
+        "order_id": "order_synthetic_001"
+      }
+    },
+    {
+      "operation_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "operation": "op_synthetic_timeout"
+      },
+      "payment_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "environment": "test-synthetic",
+        "payment_key": "pay_synthetic_timeout",
+        "order_id": "order_synthetic_001"
+      }
+    },
+    {
+      "operation_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "operation": "op_synthetic_error"
+      },
+      "payment_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "environment": "test-synthetic",
+        "payment_key": "pay_synthetic_error",
+        "order_id": "order_synthetic_001"
+      }
+    },
+    {
+      "operation_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_002",
+        "operation": "op_synthetic_0001"
+      },
+      "payment_ref": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_002",
+        "environment": "test-synthetic",
+        "payment_key": "pay_synthetic_001",
+        "order_id": "order_synthetic_001"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "scope": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_001",
+        "environment": "test-synthetic"
+      },
+      "recordings": [
+        {
+          "payment_ref": {
+            "provider": "toss-synthetic",
+            "account": "mid_synthetic_001",
+            "environment": "test-synthetic",
+            "payment_key": "pay_synthetic_001",
+            "order_id": "order_synthetic_001"
+          },
+          "recorded_text": "{\n  \"source\": \"synthetic_authenticated_lookup_fixture\",\n  \"outcome\": \"document\",\n  \"recorded_at\": \"2026-10-01T12:00:05+09:00\",\n  \"payment\": {\n    \"paymentKey\": \"pay_synthetic_001\",\n    \"orderId\": \"order_synthetic_001\",\n    \"method\": \"카드\",\n    \"currency\": \"KRW\",\n    \"totalAmount\": 15000,\n    \"status\": \"DONE\",\n    \"requestedAt\": \"2026-10-01T11:59:00+09:00\",\n    \"approvedAt\": \"2026-10-01T12:00:00+09:00\",\n    \"lastTransactionKey\": \"txkey_synthetic_001\",\n    \"cancels\": []\n  }\n}\n"
+        },
+        {
+          "payment_ref": {
+            "provider": "toss-synthetic",
+            "account": "mid_synthetic_001",
+            "environment": "test-synthetic",
+            "payment_key": "pay_synthetic_partial",
+            "order_id": "order_synthetic_001"
+          },
+          "recorded_text": "{\n  \"source\": \"synthetic_authenticated_lookup_fixture\",\n  \"outcome\": \"document\",\n  \"recorded_at\": \"2026-10-01T12:00:05+09:00\",\n  \"payment\": {\n    \"paymentKey\": \"pay_synthetic_partial\",\n    \"orderId\": \"order_synthetic_001\",\n    \"method\": \"카드\",\n    \"currency\": \"KRW\",\n    \"totalAmount\": 15000,\n    \"status\": \"PARTIAL_CANCELED\",\n    \"requestedAt\": \"2026-10-01T11:59:00+09:00\",\n    \"approvedAt\": \"2026-10-01T12:00:00+09:00\",\n    \"lastTransactionKey\": \"txkey_synthetic_001\",\n    \"cancels\": [\n      {\n        \"cancelAmount\": 5000,\n        \"cancelReason\": \"synthetic partial cancel\",\n        \"cancelStatus\": \"DONE\",\n        \"canceledAt\": \"2026-10-02T09:00:00+09:00\",\n        \"transactionKey\": \"txkey_synthetic_cancel_001\"\n      }\n    ]\n  }\n}\n"
+        },
+        {
+          "payment_ref": {
+            "provider": "toss-synthetic",
+            "account": "mid_synthetic_001",
+            "environment": "test-synthetic",
+            "payment_key": "pay_synthetic_full",
+            "order_id": "order_synthetic_001"
+          },
+          "recorded_text": "{\n  \"source\": \"synthetic_authenticated_lookup_fixture\",\n  \"outcome\": \"document\",\n  \"recorded_at\": \"2026-10-01T12:00:05+09:00\",\n  \"payment\": {\n    \"paymentKey\": \"pay_synthetic_full\",\n    \"orderId\": \"order_synthetic_001\",\n    \"method\": \"카드\",\n    \"currency\": \"KRW\",\n    \"totalAmount\": 15000,\n    \"status\": \"CANCELED\",\n    \"requestedAt\": \"2026-10-01T11:59:00+09:00\",\n    \"approvedAt\": \"2026-10-01T12:00:00+09:00\",\n    \"lastTransactionKey\": \"txkey_synthetic_001\",\n    \"cancels\": [\n      {\n        \"cancelAmount\": 15000,\n        \"cancelReason\": \"synthetic full cancel\",\n        \"cancelStatus\": \"DONE\",\n        \"canceledAt\": \"2026-10-03T09:00:00+09:00\",\n        \"transactionKey\": \"txkey_synthetic_cancel_002\"\n      }\n    ]\n  }\n}\n"
+        },
+        {
+          "payment_ref": {
+            "provider": "toss-synthetic",
+            "account": "mid_synthetic_001",
+            "environment": "test-synthetic",
+            "payment_key": "pay_synthetic_timeout",
+            "order_id": "order_synthetic_001"
+          },
+          "fault": "synthetic_timeout"
+        },
+        {
+          "payment_ref": {
+            "provider": "toss-synthetic",
+            "account": "mid_synthetic_001",
+            "environment": "test-synthetic",
+            "payment_key": "pay_synthetic_error",
+            "order_id": "order_synthetic_001"
+          },
+          "fault": "synthetic_lookup_error"
+        }
+      ]
+    },
+    {
+      "scope": {
+        "provider": "toss-synthetic",
+        "account": "mid_synthetic_002",
+        "environment": "test-synthetic"
+      },
+      "recordings": [
+        {
+          "payment_ref": {
+            "provider": "toss-synthetic",
+            "account": "mid_synthetic_002",
+            "environment": "test-synthetic",
+            "payment_key": "pay_synthetic_001",
+            "order_id": "order_synthetic_001"
+          },
+          "recorded_text": "{\"source\": \"synthetic_authenticated_lookup_fixture\", \"outcome\": \"document\", \"recorded_at\": \"2026-10-01T12:00:05+09:00\", \"payment\": {\"paymentKey\": \"pay_synthetic_001\", \"orderId\": \"order_synthetic_001\", \"method\": \"카드\", \"currency\": \"KRW\", \"totalAmount\": 15000, \"status\": \"DONE\", \"requestedAt\": \"2026-10-01T11:59:00+09:00\", \"approvedAt\": \"2026-10-01T12:00:00+09:00\", \"lastTransactionKey\": \"txkey_synthetic_001\", \"cancels\": []}}"
+        }
+      ]
+    }
+  ]
+}
