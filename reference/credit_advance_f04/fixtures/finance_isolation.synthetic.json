@@ -1,0 +1,257 @@
+{
+  "fixture_version": 1,
+  "synthetic": true,
+  "statements": [
+    {
+      "settlement_id": "isolation-a",
+      "movement_id": "same-movement",
+      "record": {
+        "settlement_id": "isolation-a",
+        "movement_id": "same-movement",
+        "gross": 100000,
+        "amount": 97000,
+        "fee": 3000,
+        "tax": 0,
+        "held": 0,
+        "adjustment": 0,
+        "adjustment_reason": null
+      }
+    },
+    {
+      "settlement_id": "isolation-b",
+      "movement_id": "same-movement",
+      "record": {
+        "settlement_id": "isolation-b",
+        "movement_id": "same-movement",
+        "gross": 100000,
+        "amount": 70000,
+        "fee": 30000,
+        "tax": 0,
+        "held": 0,
+        "adjustment": 0,
+        "adjustment_reason": null
+      }
+    }
+  ],
+  "steps": [
+    {
+      "target": "settlement",
+      "operation": "initiate",
+      "settlement_id": "isolation-a",
+      "idempotency_key": "isolation-a-init",
+      "body": {
+        "trade_id": "isolation-a-trade",
+        "gross": 100000,
+        "debtor_role": "synthetic-merchant",
+        "policy": {
+          "kind": "PRIMARY_FEE_BPS",
+          "fee_bps": 500,
+          "residual_payee": "synthetic-organizer",
+          "fee_payee": "synthetic-platform"
+        }
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "authorize",
+      "settlement_id": "isolation-a",
+      "idempotency_key": "isolation-a-auth",
+      "body": {}
+    },
+    {
+      "target": "settlement",
+      "operation": "capture",
+      "settlement_id": "isolation-a",
+      "idempotency_key": "isolation-a-capture",
+      "body": {}
+    },
+    {
+      "target": "settlement",
+      "operation": "initiate",
+      "settlement_id": "isolation-b",
+      "idempotency_key": "isolation-b-init",
+      "body": {
+        "trade_id": "isolation-b-trade",
+        "gross": 100000,
+        "debtor_role": "synthetic-merchant",
+        "policy": {
+          "kind": "PRIMARY_FEE_BPS",
+          "fee_bps": 500,
+          "residual_payee": "synthetic-organizer",
+          "fee_payee": "synthetic-platform"
+        }
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "authorize",
+      "settlement_id": "isolation-b",
+      "idempotency_key": "isolation-b-auth",
+      "body": {}
+    },
+    {
+      "target": "settlement",
+      "operation": "capture",
+      "settlement_id": "isolation-b",
+      "idempotency_key": "isolation-b-capture",
+      "body": {}
+    },
+    {
+      "target": "settlement",
+      "operation": "view",
+      "settlement_id": "isolation-a",
+      "save_claim_as": "isolation-a-face"
+    },
+    {
+      "target": "credit",
+      "operation": "offer",
+      "advance_id": "credit-a",
+      "idempotency_key": "credit-a-offer",
+      "body": {
+        "amount": 40000,
+        "beneficiary_role": "synthetic-beneficiary"
+      },
+      "face_ref": "isolation-a-face"
+    },
+    {
+      "target": "credit",
+      "operation": "bind_settlement",
+      "advance_id": "credit-a",
+      "idempotency_key": "credit-a-bind",
+      "body": {
+        "settlement_id": "isolation-a"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "approve",
+      "advance_id": "credit-a",
+      "idempotency_key": "credit-a-approve",
+      "body": {}
+    },
+    {
+      "target": "settlement",
+      "operation": "view",
+      "settlement_id": "isolation-b",
+      "save_claim_as": "isolation-b-face"
+    },
+    {
+      "target": "credit",
+      "operation": "offer",
+      "advance_id": "credit-b",
+      "idempotency_key": "credit-b-offer",
+      "body": {
+        "amount": 40000,
+        "beneficiary_role": "synthetic-beneficiary"
+      },
+      "face_ref": "isolation-b-face"
+    },
+    {
+      "target": "credit",
+      "operation": "bind_settlement",
+      "advance_id": "credit-b",
+      "idempotency_key": "credit-b-bind",
+      "body": {
+        "settlement_id": "isolation-b"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "approve",
+      "advance_id": "credit-b",
+      "idempotency_key": "credit-b-approve",
+      "body": {}
+    },
+    {
+      "target": "settlement",
+      "operation": "commit",
+      "settlement_id": "isolation-a",
+      "idempotency_key": "commit-a",
+      "body": {
+        "movement_id": "same-movement"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "draw",
+      "advance_id": "credit-a",
+      "idempotency_key": "draw-a",
+      "body": {
+        "draw_id": "draw-a"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "draw",
+      "advance_id": "credit-b",
+      "idempotency_key": "rejected-b",
+      "body": {
+        "draw_id": "credit-b-draw"
+      },
+      "expect_error": {
+        "type": "CreditError",
+        "code": "SETTLEMENT_NOT_COMMITTED"
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "view",
+      "settlement_id": "isolation-a"
+    },
+    {
+      "target": "settlement",
+      "operation": "view",
+      "settlement_id": "isolation-b"
+    },
+    {
+      "target": "settlement",
+      "operation": "commit",
+      "settlement_id": "isolation-b",
+      "idempotency_key": "commit-b",
+      "body": {
+        "movement_id": "same-movement"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "draw",
+      "advance_id": "credit-b",
+      "idempotency_key": "explicit-new-b",
+      "body": {
+        "draw_id": "credit-b-draw"
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "distribute",
+      "settlement_id": "isolation-a",
+      "idempotency_key": "distribute-a",
+      "body": {
+        "order": [
+          "synthetic-platform",
+          "synthetic-organizer"
+        ]
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "view",
+      "settlement_id": "isolation-a"
+    },
+    {
+      "target": "settlement",
+      "operation": "view",
+      "settlement_id": "isolation-b"
+    },
+    {
+      "target": "credit",
+      "operation": "view",
+      "advance_id": "credit-a"
+    },
+    {
+      "target": "credit",
+      "operation": "view",
+      "advance_id": "credit-b"
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "fixture_version": 1,
+  "synthetic": true,
+  "statements": [
+    {
+      "settlement_id": "journey-settlement",
+      "movement_id": "first",
+      "record": {
+        "settlement_id": "journey-settlement",
+        "movement_id": "first",
+        "gross": 60000,
+        "amount": 55000,
+        "fee": 2000,
+        "tax": 1000,
+        "held": 1000,
+        "adjustment": 1000,
+        "adjustment_reason": "synthetic-adjustment"
+      }
+    },
+    {
+      "settlement_id": "journey-settlement",
+      "movement_id": "later",
+      "record": {
+        "settlement_id": "journey-settlement",
+        "movement_id": "later",
+        "gross": 40000,
+        "amount": 38000,
+        "fee": 2000,
+        "tax": 0,
+        "held": 0,
+        "adjustment": 0,
+        "adjustment_reason": null
+      }
+    }
+  ],
+  "steps": [
+    {
+      "target": "settlement",
+      "operation": "initiate",
+      "settlement_id": "journey-settlement",
+      "idempotency_key": "journey-settlement-init",
+      "body": {
+        "trade_id": "journey-settlement-trade",
+        "gross": 100000,
+        "debtor_role": "synthetic-merchant",
+        "policy": {
+          "kind": "PRIMARY_FEE_BPS",
+          "fee_bps": 500,
+          "residual_payee": "synthetic-organizer",
+          "fee_payee": "synthetic-platform"
+        }
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "authorize",
+      "settlement_id": "journey-settlement",
+      "idempotency_key": "journey-settlement-auth",
+      "body": {}
+    },
+    {
+      "target": "settlement",
+      "operation": "capture",
+      "settlement_id": "journey-settlement",
+      "idempotency_key": "journey-settlement-capture",
+      "body": {}
+    },
+    {
+      "target": "settlement",
+      "operation": "view",
+      "settlement_id": "journey-settlement",
+      "save_claim_as": "journey-settlement-face"
+    },
+    {
+      "target": "credit",
+      "operation": "offer",
+      "advance_id": "journey-credit",
+      "idempotency_key": "journey-credit-offer",
+      "body": {
+        "amount": 40000,
+        "beneficiary_role": "synthetic-beneficiary"
+      },
+      "face_ref": "journey-settlement-face"
+    },
+    {
+      "target": "credit",
+      "operation": "bind_settlement",
+      "advance_id": "journey-credit",
+      "idempotency_key": "journey-credit-bind",
+      "body": {
+        "settlement_id": "journey-settlement"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "approve",
+      "advance_id": "journey-credit",
+      "idempotency_key": "journey-credit-approve",
+      "body": {}
+    },
+    {
+      "target": "credit",
+      "operation": "draw",
+      "advance_id": "journey-credit",
+      "idempotency_key": "rejected-key",
+      "body": {
+        "draw_id": "journey-credit-draw"
+      },
+      "expect_error": {
+        "type": "CreditError",
+        "code": "SETTLEMENT_NOT_COMMITTED"
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "commit",
+      "settlement_id": "journey-settlement",
+      "idempotency_key": "commit-key",
+      "body": {
+        "movement_id": "first"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "draw",
+      "advance_id": "journey-credit",
+      "idempotency_key": "rejected-key",
+      "body": {
+        "draw_id": "journey-credit-draw"
+      },
+      "expect_error": {
+        "type": "CreditError",
+        "code": "SETTLEMENT_NOT_COMMITTED"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "draw",
+      "advance_id": "journey-credit",
+      "idempotency_key": "caller-new-key",
+      "body": {
+        "draw_id": "journey-credit-draw"
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "observe_statement",
+      "settlement_id": "journey-settlement",
+      "idempotency_key": "later-key",
+      "body": {
+        "movement_id": "later"
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "repay",
+      "advance_id": "journey-credit",
+      "idempotency_key": "repay-part",
+      "body": {
+        "repay_id": "part",
+        "sequence": 1,
+        "amount": 15000
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "view",
+      "advance_id": "journey-credit"
+    },
+    {
+      "target": "credit",
+      "operation": "repay",
+      "advance_id": "journey-credit",
+      "idempotency_key": "repay-rest",
+      "body": {
+        "repay_id": "rest",
+        "sequence": 2,
+        "amount": 25000
+      }
+    },
+    {
+      "target": "credit",
+      "operation": "close",
+      "advance_id": "journey-credit",
+      "idempotency_key": "close-key",
+      "body": {}
+    },
+    {
+      "target": "credit",
+      "operation": "draw",
+      "advance_id": "journey-credit",
+      "idempotency_key": "caller-new-key",
+      "body": {
+        "draw_id": "journey-credit-draw"
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "commit",
+      "settlement_id": "journey-settlement",
+      "idempotency_key": "commit-key",
+      "body": {
+        "movement_id": "first"
+      }
+    },
+    {
+      "target": "settlement",
+      "operation": "view",
+      "settlement_id": "journey-settlement"
+    },
+    {
+      "target": "credit",
+      "operation": "view_claim",
+      "claim_id": "journey-settlement"
+    },
+    {
+      "target": "credit",
+      "operation": "view",
+      "advance_id": "journey-credit"
+    }
+  ]
+}

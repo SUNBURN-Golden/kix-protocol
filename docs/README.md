@@ -420,6 +420,11 @@
 
 - [plan-perf-summary-arithmetic](../validation/2026-10-28-plan-perf-summary-arithmetic/README.md) — Builder-authored fixed p99 vectors, raw-CSV mixed/outcome summary reconciliation and synthetic integer goodput expectations; only M-MIXED-P99/M-OUTCOMES/M-GOODPUT become COVERED, apparatus scope only, release probe NOT_RUN, no benchmark, SLO or production claim.
 
+## 2026-10-31 로컬 금융 도구 — 위치 안내만
+
+- [Local finance session and CLI](../reference/credit_advance_f04/README.md) — Synthetic in-memory tooling; policy remains UNDETERMINED, no new protocol command or production runtime.
+- [Local finance workbench validation](../validation/2026-10-31-plan-local-finance-workbench/README.md) — Builder evidence only; non-author exact-head review and hosted KTX/KIX gates remain required.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
