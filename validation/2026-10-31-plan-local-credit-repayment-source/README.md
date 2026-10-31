@@ -156,3 +156,96 @@ are preserved. APR, fees, schedules, priority and limit policy remain
 reconciliation projection remain outside this node. No catalogue, runtime,
 persistence, FSM or protocol-command change. No remaining implementation blocker
 was found; review/publication/exact-head verification remain with the supervisor.
+
+## PR fix round 1 — 2026-11-01
+
+Input: supervisor's fix-round request for the same node in the conversation.
+No blocking finding was supplied (`review passed or unavailable`), and no failed
+job log was available. No finding was rebutted and no implementation defect or
+local check failure was found. A possible Actions billing/runner refusal is
+unverified; it is not a diagnosed cause. No CI definition was changed.
+
+Observed branch: `agent/kix-plan-local-credit-repayment-source`.
+Implementation head and unchanged round-end Git HEAD:
+`b1772cc4b777b5d79a8bb916c8dd8189d3a16896`.
+Cached `origin/main` and merge base:
+`fd3333580c0c2ed9186bb3b6917f0077a75a94f3`.
+The implementation is one commit ahead of that cached base with no divergence.
+Fetch was omitted under the explicit network prohibition; remote main freshness
+is unknown. This round made no commit, push, network action, GitHub action or
+post. There was no merge. The supervisor must establish the final committed SHA
+after this evidence-only worktree change.
+
+Complete changed-path list for this round:
+`validation/2026-10-31-plan-local-credit-repayment-source/README.md` only.
+The original nine implementation paths remain listed above; code, existing
+tests, task documents and policy inputs were not changed in this round.
+
+### Coverage and checks repeated
+
+The existing coverage inventory above and in the credit README was inspected
+before deciding whether any additional test was needed. Every node acceptance
+requirement has sufficient local coverage in the existing direct-FSM and adapter
+tests: selection/fetch count, exact forwarding/result/error parity, pre-dispatch
+failure fencing and key availability, partial/duplicate/changed-binding/order/
+excess behavior, reservation versus exposure, explicit close, replay, isolation,
+mock provenance and the actual-machine example. No new test or semantic rule was
+needed. Non-author review and exact-final-head hosted CI remain external gates.
+
+All Python commands below used `PYTHONDONTWRITEBYTECODE=1`. Both Cargo test and
+Clippy commands used `CARGO_NET_OFFLINE=true`. Commands ran from the repository
+root. These are fresh round-1 results, separate from the initial builder results.
+
+| Command | Actual round-1 result |
+|---|---|
+| `python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p 'test_repayment*.py'` | PASS, 15 tests |
+| `python3 reference/credit_advance_f04/example_repayment_adapter.py > /tmp/kix-repayment-fix-round1-example.json` | PASS, exit 0 |
+| `python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | PASS, 163 tests |
+| `python3 -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03` | PASS, 224 tests |
+| `python3 scripts/check_docs_index.py` and `--self-test` | PASS / PASS; scanned 325, indexed 290, allowlisted 35 |
+| `python3 scripts/check_credit_evidence_map.py` and `--self-test` | PASS / PASS; 22 rows/headings, 128 citations, 55 negative controls |
+| `python3 scripts/check_settlement_evidence_map.py` and `--self-test` | PASS / PASS; 27 rows/headings, 110 citations, 33 negative controls |
+| `python3 scripts/check_contract_error_codes.py` and `--self-test` | PASS / PASS; 199 COVERED rows |
+| `python3 scripts/check_ci_checker_wiring.py` and `--self-test` | PASS / PASS; 35 scripts, 13 negative controls |
+| `python3 scripts/check_ci_test_discovery.py` and `--self-test` | PASS / PASS; all 10 credit and 15 settlement test files reached, 18 negative controls |
+| `python3 scripts/verify_runtime_architecture.py` | PASS; v5 + KTX-R1 dependency gate |
+| `python3 scripts/test_runtime_architecture.py` | PASS, 7 tests |
+| `cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked` | PASS, 139 passed, 0 failed/ignored; log `/tmp/kix-repayment-fix-round1-kernel-tests.log` |
+| `cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked -- -D warnings` | PASS |
+| `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | PASS |
+| `cargo test --manifest-path runtime/Cargo.toml --workspace --locked` | PASS, 339 passed, 0 failed/ignored; log `/tmp/kix-repayment-fix-round1-workspace-tests.log` |
+| `cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings` | PASS |
+| Example JSON inspection with Python `json.loads` | Exposure `[80000, 50000, 30000, 0]`; reservation `[80000, 80000, 80000, 80000]`; explicit close `CLOSED/RELEASED/0`; settlement state and journal unchanged |
+| `git diff --check` | PASS |
+
+The six documentation/discovery scripts ran plain then with `--self-test` in
+the table's order through a fail-fast Python subprocess loop. The architecture,
+kernel and workspace checks follow the applicable local commands in the two
+existing verification workflows. Rust totals are sums of each completed test
+log's result groups; kernel tests are included in the workspace total.
+
+### Preservation, limits and handoff
+
+Before and after the round, `git hash-object` confirmed the required kernel blobs
+`69564b166f0c27f9af5d8422f0a466b18d74c20f` and
+`b607996c83a119c349f1cc90469ac1ba82764e20`. A Python per-file Git-blob comparison
+confirmed all 108 `reference/v0.3-rc1` files, the one `.aiops` file and all 10
+`docs/tasks` files unchanged against both HEAD and cached `origin/main`, with no
+untracked files in those roots. Historical-reference tree remains
+`a6ecb124dc2b2267ca6be19e39fbe2aef143074b`. No protected file was edited.
+
+No contract violation or new contract-undefined characterization was found.
+The initial record's non-claims and open ownership remain in force. No new
+product policy, protocol command, service, credential, paid resource, funds,
+storage engine or runtime activation is needed for this node. Full hosted
+KIX verification, Move/localnet/ZK and production behavior were not tested.
+
+| Required external evidence | Run ID | Status / conclusion |
+|---|---|---|
+| KTX kernel verification on exact final committed head | Unavailable | Unknown / not verified |
+| KIX protocol verification on exact final committed head | Unavailable | Unknown / not verified |
+| Non-author A2 review on exact final committed head | Not supplied | Unknown / not verified |
+| Post-merge CI / merge SHA | Not applicable | No merge performed |
+
+Round disposition: READY for supervisor handoff on local evidence. This does
+not assert merge readiness, completed independent review or hosted CI success.
