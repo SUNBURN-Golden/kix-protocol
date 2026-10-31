@@ -55,3 +55,66 @@ characterization, not a new contract. Product policy remains **UNDETERMINED**
 with Astra/User and the existing I10 legal, tax and accounting owners. No
 network, persistence, real services, credentials, funds, chain execution,
 runtime activation, production durability or P04 closure is supplied.
+
+## Offline cancellation-acceptance source
+
+Existing coverage inventory for `plan-local-refund-acceptance-source`, recorded
+before adding its tests (test paths below are relative to this directory):
+
+| Requirement | Existing coverage | Gap / evidence |
+|---|---|---|
+| Partial acceptance, preserved cash and adjustment increase | Partially covered | `test_settlement_fsm.py::SettlementFsmTests.test_full_refund_acceptance_does_not_close_an_external_return`; `test_settlement_multi_payee_refund.py::RefundReplayTests.test_i_seeded_fsm_refund_command_sequences`. Adapter path absent. |
+| Duplicate replay and conflicting source binding | Partially covered | `test_settlement_properties.py::BindingPropertyTests.test_d_acceptance_binding`; seeded refund replay corpus above. Adapter fetch/replay parity absent. |
+| Missing obligation and excessive acceptance | Partially covered | `test_settlement_rejection_atomicity.py::SettlementRejectionAtomicityTests.test_acceptance_refund_obligation_required_leaves_no_trace` and `test_acceptance_exceeds_obligation_leaves_no_trace`. Source boundary and adapter rejection-key probes absent. |
+| Missing, malformed, mismatched and fault records | Not covered for cancellation source | Statement-source tests provide a pattern; new adapter tests must prove no FSM call, mutation or key binding. |
+| Immutable recordings, exactly one fetch, no retry/fallback | Not covered for cancellation source | New source isolation and adapter call-count tests. |
+| Partial-refund distribution blocking | Sufficiently covered at FSM level | `test_settlement_fsm.py::SettlementFsmTests.test_refund_block_survives_replay_and_is_not_a_clawback`. Retain regression; exercise blocking in the new example. |
+| Runnable journey and false flags | Not covered for this journey | New example tests verify arithmetic, explicit obligation/observation sequence and journal restoration. |
+| CI discovery | Sufficiently covered for wiring | Existing `protocol.yml` discovers this directory; new `test_cancel_acceptance*.py` files need no workflow change. |
+
+`CancelAcceptanceSource.fetch(settlement_id, source_id)` is an internal Python
+interface. Records contain exactly `settlement_id`, `source_id` and `amount`.
+`CancelAcceptanceAdapter.apply(settlement_id=..., source_id=...,
+idempotency_key=...)` fetches once on every explicit invocation, including
+replay. It rejects absence, invalid shape and non-string/mismatched identities
+before calling the FSM. It forwards the amount and caller's key unchanged to
+`SettlementMachine.observe_mock_cancel_acceptance`. Economic, identifier,
+phase, binding and idempotency validation stay in that FSM; its result and
+exceptions propagate unchanged. Source exceptions are local diagnostics,
+not new protocol error codes. There is no cache, retry or fallback.
+
+`FakeCancelAcceptanceSource(recordings=...)` copies an identity-pair mapping
+of immutable JSON text or `SyntheticCancelAcceptanceFault.ERROR/TIMEOUT`.
+Read-only recordings never get consumed; each fetch parses a fresh document,
+and `calls` returns a tuple snapshot. Faults raise `CancelAcceptanceSourceError`
+immediately with no clock/wait. Failures imply neither cancellation absence
+nor refund completion.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 reference/settlement_f01_f03/example_cancel_acceptance_adapter.py
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03 -p 'test_cancel_acceptance*.py'
+```
+
+The new example also requires `run_example(*, policy, order)` fixture inputs.
+It uses the statement adapter to commit synthetic gross 100,000, cash 97,000
+and fee 3,000. It explicitly binds a 40,000 refund obligation, then separately
+observes caller-selected synthetic acceptances of 10,000 and 5,000. Cash stays
+97,000; adjustment outstanding rises 0 → 10,000 → 15,000; refund outstanding
+ends at 25,000. A separate distribution attempt remains blocked. Receipts
+retain `MOCK_SETTLEMENT_ONLY`, `UNDEFINED` refund burden after binding, and
+false execution, bank debit, external-return closure and durability flags.
+No receipt fields are added. New source tests cover recording isolation;
+adapter tests compare direct receipts/errors/state/journal, probe rejection
+keys and source failures, and restore the example journal. New-key repeated
+source journaling is an existing implementation characterization, not a new
+contract rule.
+
+This follows contract §§5 and 9 without changing contracts, FSM semantics,
+arithmetic, catalogue, SDK or gate. It does not translate `provider_facts`
+cancellation histories, derive event identities, initiate cancellation, infer
+customer credit, choose refund burden or close external returns. Refund
+liability remains **UNDETERMINED — User/legal through I10**; provider
+authentication remains **UNDETERMINED — Toss/User**; event-identity policy
+remains with **Astra**. All recordings and fixture values are synthetic.
+No network, real service, real funds, persistence, production runtime or
+chain execution is supplied or verified.
