@@ -249,3 +249,100 @@ KIX verification, Move/localnet/ZK and production behavior were not tested.
 
 Round disposition: READY for supervisor handoff on local evidence. This does
 not assert merge readiness, completed independent review or hosted CI success.
+
+## PR fix round 2 — 2026-11-01
+
+Task input remains the supervisor's node specification in the conversation;
+there is no issue or task document for this node. The supplied review again
+contains no blocking finding (`review passed or unavailable`) and no failed-job
+log. There is consequently no finding to rebut or diagnosed CI failure to fix.
+The possible Actions billing/runner refusal remains unverified. Inspection and
+fresh local checks found no implementation defect, so this round changes only
+this validation record. No new test, source, FSM, policy or CI change was needed.
+
+Branch: `agent/kix-plan-local-credit-repayment-source`.
+Round-start and unchanged round-end Git HEAD:
+`05a3037d90d2b01f83aab91186c00ad92101616a`.
+Original implementation head: `b1772cc4b777b5d79a8bb916c8dd8189d3a16896`.
+Cached `origin/main` and merge base:
+`fd3333580c0c2ed9186bb3b6917f0077a75a94f3`.
+The branch is two commits ahead of the cached base, with no divergence. No
+stated-base delta was found. Fetch was omitted under the explicit no-network
+instruction; remote main freshness is unknown. This evidence amendment is
+uncommitted, so the supervisor must establish the exact final committed head.
+No commit, push, reset, gh, network action, post or merge was performed.
+
+Complete round-2 changed-path list:
+`validation/2026-10-31-plan-local-credit-repayment-source/README.md` only.
+The original nine implementation paths remain listed above.
+
+### Existing coverage and fresh evidence
+
+The direct-FSM tests, rejection-atomicity tests, result-isolation/replay tests,
+adapter/source tests and coverage inventory above were inspected. Local
+acceptance coverage is sufficient for one fetch per invocation, exact field/key
+forwarding and result/error parity, pre-dispatch rejection with available keys,
+partial/duplicate/changed-binding/order/excess behavior, reservation versus
+exposure, explicit close, immutable recordings, detached results and restore.
+No documented gap justified another test. This is source-informed builder
+evidence; no independent review is claimed.
+
+Python commands used `PYTHONDONTWRITEBYTECODE=1`; Cargo commands used
+`CARGO_NET_OFFLINE=true`. Commands ran from the repository root. Narrow tests
+preceded complete credit/settlement suites and broader verification. No check
+failed or required a retry. Logs named below are local `/tmp` artifacts.
+
+| Actual command / check | Round-2 result |
+|---|---|
+| `python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p 'test_repayment*.py'` | PASS, 15 tests |
+| `python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | PASS, 163 tests |
+| `python3 -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03` | PASS, 224 tests |
+| `python3 reference/credit_advance_f04/example_repayment_adapter.py`, captured by a Python subprocess to `/tmp/kix-repayment-fix-round2-example.json` | PASS, exit 0 |
+| Python JSON assertions over the example output | Exposure `[80000, 50000, 30000, 0]`; reservation `[80000, 80000, 80000, 80000]`; DRAWN until explicit close `CLOSED/RELEASED/0`; settlement state/journal unchanged; repayment/funds flags false |
+| `python3 scripts/check_docs_index.py` and `--self-test` | PASS / PASS; scanned 325, indexed 290, allowlisted 35 |
+| `python3 scripts/check_credit_evidence_map.py` and `--self-test` | PASS / PASS; 22 rows/headings, 128 citations, 55 negative controls |
+| `python3 scripts/check_settlement_evidence_map.py` and `--self-test` | PASS / PASS; 27 rows/headings, 110 citations, 33 negative controls |
+| `python3 scripts/check_contract_error_codes.py` and `--self-test` | PASS / PASS; 199 COVERED rows |
+| `python3 scripts/check_ci_checker_wiring.py` and `--self-test` | PASS / PASS; 35 scripts, 13 negative controls |
+| `python3 scripts/check_ci_test_discovery.py` and `--self-test` | PASS / PASS; all 10 credit and 15 settlement test files reached, 18 negative controls |
+| `python3 scripts/verify_runtime_architecture.py` | PASS; v5 + KTX-R1 dependency gate |
+| `python3 scripts/test_runtime_architecture.py` | PASS, 7 tests |
+| `cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked` | PASS, 139 passed, 0 failed/ignored |
+| `cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked -- -D warnings` | PASS |
+| `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | PASS, check mode only |
+| `cargo test --manifest-path runtime/Cargo.toml --workspace --locked` | PASS, 339 passed, 0 failed/ignored |
+| `cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings` | PASS |
+| `git diff --check` | PASS |
+
+Checker output is in `/tmp/kix-repayment-fix-round2-checkers.log`. Rust output
+is in `/tmp/kix-repayment-fix-round2-{kernel-tests,kernel-clippy,format,workspace-tests,workspace-clippy}.log`.
+Rust totals sum the completed result groups; the kernel total is included in
+the workspace total. These are the applicable local verification commands from
+the existing KTX/KIX workflows, not full hosted verification.
+
+### Preservation and remaining gates
+
+Before and after checks, the locked kernel blobs matched
+`69564b166f0c27f9af5d8422f0a466b18d74c20f` and
+`b607996c83a119c349f1cc90469ac1ba82764e20`. Per-file Git-blob comparisons
+confirmed all 108 `reference/v0.3-rc1` files, one `.aiops` file and 10
+`docs/tasks` files byte-identical to both HEAD and cached `origin/main`, with
+no untracked files in those roots. Historical-reference tree:
+`a6ecb124dc2b2267ca6be19e39fbe2aef143074b`. No protected file was edited.
+
+No contract violation, new contract-undefined characterization or stop condition
+was found. The original non-claims and open ownership remain unchanged. No
+bank receipt, live repayment, production durability, finality, lending authority
+or legal effectiveness is established. Full hosted KIX, Move/localnet/ZK and
+production behavior were not tested. No merge occurred; merge SHA and post-merge
+CI are not applicable.
+
+| Required external evidence | Run ID | Status / conclusion |
+|---|---|---|
+| Exact-final-head KTX kernel verification | Unavailable | Unknown / not verified |
+| Exact-final-head KIX protocol verification | Unavailable | Unknown / not verified |
+| Non-author A2 exact-final-head review | Not supplied | Unknown / not verified |
+
+Round-2 disposition: READY for local supervisor handoff. Independent review and
+both exact-final-head hosted checks remain with the supervisor. This does not
+assert merge readiness or transfer any older SHA's evidence to a new head.
