@@ -1,0 +1,4 @@
+{"arguments":{"idempotency_key":"unknown-explicit-resolution","resolution":"SUCCESS","reward_id_value":"reward-id-v1:a24622120a26364fe4f3a71fdc0d09bd3d2595d40f9ccf9721f902cc96997d4f","same_digest":"1111111111111111111111111111111111111111111111111111111111111111"},"operation":"reconcile_unknown"}
+{"arguments":{"idempotency_key":"unknown-explicit-resolution","resolution":"SUCCESS","reward_id_value":"reward-id-v1:a24622120a26364fe4f3a71fdc0d09bd3d2595d40f9ccf9721f902cc96997d4f","same_digest":"1111111111111111111111111111111111111111111111111111111111111111"},"operation":"reconcile_unknown"}
+{"arguments":{"reward_id_value":"reward-id-v1:a24622120a26364fe4f3a71fdc0d09bd3d2595d40f9ccf9721f902cc96997d4f"},"operation":"view"}
+{"arguments":{},"operation":"pool_view"}
