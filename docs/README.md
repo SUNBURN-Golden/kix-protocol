@@ -483,3 +483,8 @@
 - [Shared local ticket operations desk](../reference/booking_resale_admission/README.md#shared-local-ticket-operations-desk) · [plan-local-ticket-operations-desk evidence](../validation/2026-11-02-plan-local-ticket-operations-desk/README.md) — One in-memory graph for explicit resale/admission operations, strict combined fixtures and ordering/replay transcripts. Mock-only; timing, authentication and reissuance remain UNDETERMINED; no runtime activation.
 
 - [Local booking desk session and CLI](../reference/booking_resale_admission/README.md#local-booking-desk-session-and-jsonl-cli) · [plan-local-booking-desk-cli evidence](../validation/2026-11-02-plan-local-booking-desk-cli/README.md) — Explicit show registration and pre-payment holds/confirmation/cancellation through the unchanged reservation FSM; strict JSONL and synthetic transcripts, no payment/issuance handoff, policy decision or activation.
+
+## 2026-11-02 로컬 보상 데스크 — 위치 안내만
+
+- [F4 local reward desk usage](../reference/token_reward/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged reward FSM; no policy, approval or runtime activation.
+- [plan-local-reward-desk evidence](../validation/2026-11-02-plan-local-reward-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
