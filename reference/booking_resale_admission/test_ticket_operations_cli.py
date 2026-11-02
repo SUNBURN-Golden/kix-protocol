@@ -262,6 +262,11 @@ class TicketOperationsCliTests(unittest.TestCase):
                 run(load_fixture(FIXTURE), [requests("admission")[0]])
 
 
+    def test_reconcile_file_stdin_and_direct_fsm_parity(self):
+        from test_booking_cli import check_reconcile_cli
+        check_reconcile_cli(self, 'ticket_operations')
+
+
 class TicketRecordedPaymentCliTests(RecordedPaymentDeskChecks, unittest.TestCase):
     shared = True
     prefix = "ticket_operations"

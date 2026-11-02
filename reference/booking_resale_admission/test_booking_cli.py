@@ -101,8 +101,9 @@ class BookingCliTests(unittest.TestCase):
 
     def test_every_argument_required_extra_arguments_and_excluded_selectors_rejected_without_dispatch(self):
         examples = {r["operation"]: r for r in requests("booking_boundaries")}
+        examples["reconcile"] = requests("booking_reconcile")[4]
         self.assertEqual(set(examples), {"register_show", "set_clock", "hold", "release", "confirm",
-                                         "cancel", "view", "view_show"})
+                                         "cancel", "view", "view_show", "reconcile"})
         variants = [None, [], True, {}, {"operation": "view"},
                     {"operation": "view", "arguments": {}, "extra": 1},
                     {"operation": [], "arguments": {}}, {"operation": "view", "arguments": []}]
@@ -114,7 +115,7 @@ class BookingCliTests(unittest.TestCase):
             variants.append(request | {"arguments": request["arguments"] | {"extra": 1}})
             if request["operation"].startswith("view"):
                 variants.append(request | {"arguments": request["arguments"] | {"idempotency_key": "key"}})
-        excluded = (REPLAYABLE - set(examples)) | {"reconcile", "restore", "reject_external", "list_resale",
+        excluded = (REPLAYABLE - set(examples)) | {"restore", "reject_external", "list_resale",
                     "accept_resale", "lookup", "observe", "initiate", "reservation_hold", "__dict__", ""}
         variants += [{"operation": operation, "arguments": {}} for operation in excluded]
         for req in variants:
@@ -195,3 +196,92 @@ class BookingCliTests(unittest.TestCase):
         machine.view.side_effect = RuntimeError("programming fault")
         with self.assertRaisesRegex(RuntimeError, "programming fault"):
             run_rows(BookingSession(machine), [requests()[4]])
+
+    def test_reconcile_file_stdin_and_direct_fsm_parity(self):
+        check_reconcile_cli(self, 'booking')
+
+
+def check_reconcile_cli(test, kind):
+    """Exercise existing standalone/shared entry points with the same boundary checks."""
+    import importlib
+    from unittest.mock import patch
+    from test_ticket_operations_session import (
+        check_reconcile_history, direct_call, direct_graph, machines,
+    )
+    cli = importlib.import_module(kind + '_cli')
+    rows = requests(kind + '_reconcile')
+    path = HERE / 'fixtures' / (kind + '_reconcile.jsonl')
+    fixture = HERE / 'fixtures' / (kind + '_session.json')
+    shared = kind == 'ticket_operations'
+    if kind == 'booking':
+        session = BookingSession(ReservationMachine())
+        graph, control = (session._machine,), (ReservationMachine(),)
+        value = None
+    else:
+        value = json.loads(fixture.read_text())
+        loader = importlib.import_module(kind + '_fixture')
+        session = loader.load_fixture(fixture)
+        if shared:
+            graph = machines(session)
+        else:
+            machine = session._machine
+            graph = (machine._settlement, machine._tickets,
+                     *((machine._ownership,) if kind == 'admission' else ()), machine)
+        control = direct_graph(value['setup'])[:len(graph)]
+
+    def machine_for(row):
+        return graph[2 if row['surface'] == 'resale' else 3] if shared else graph[-1]
+
+    def sources():
+        if kind == 'booking':
+            return ()
+        desks = (session.resale, session.admission) if shared else (session,)
+        return tuple(desk._adapter._source.calls for desk in desks)
+
+    def routed(row):
+        before = sources()
+        if row['operation'] == 'reconcile':
+            machine = machine_for(row)
+            with patch.object(machine, 'reconcile', wraps=machine.reconcile) as delegated:
+                try:
+                    return cli.dispatch_request(session, row)
+                finally:
+                    identity = next(v for k, v in row['arguments'].items() if k != 'idempotency_key')
+                    delegated.assert_called_once_with(identity,
+                        idempotency_key=row['arguments']['idempotency_key'])
+                    test.assertEqual(sources(), before)
+        return cli.dispatch_request(session, row)
+
+    def expected(row):
+        if kind == 'booking':
+            key = 'view' if row['operation'].startswith('view') else 'receipt'
+            return {'operation': row['operation'], key: getattr(control[0], row['operation'])(
+                **row['arguments'])}
+        result = direct_call(control, row if shared else dict(row, surface=kind), value)
+        if not shared:
+            del result['surface']
+        return result
+
+    expected_rows = check_reconcile_history(
+        test, rows, graph, control, routed, expected, machine_for)
+    # run_requests adds the operation/surface envelope to domain errors.
+    expected_rows = [dict(result, operation=row['operation'],
+                         **({'surface': row['surface']} if shared else {}))
+                     for row, result in zip(rows, expected_rows)]
+    args = [] if kind == 'booking' else ['--fixture', str(fixture)]
+    for selector, stdin in ((str(path), None), ('-', path.read_text())):
+        result = subprocess.run([sys.executable, str(HERE / (kind + '_cli.py')),
+                                 *args, '--requests', selector], input=stdin,
+                                capture_output=True, text=True, check=False)
+        test.assertEqual((result.returncode, result.stderr), (1, ''))
+        test.assertEqual([json.loads(line) for line in result.stdout.splitlines()], expected_rows)
+    replays = [row['receipt'] for row in expected_rows if row.get('receipt', {}).get('duplicate')]
+    test.assertTrue(replays)
+    test.assertTrue(all(row['applied'] is None for row in replays))
+    if shared:
+        test.assertEqual([row['error']['code'] for row in expected_rows if 'error' in row],
+                         ['STALE_VERSION', 'STALE_VERSION'])
+    else:
+        codes = [row['error']['code'] for row in expected_rows if 'error' in row]
+        test.assertEqual(codes.count('IDEMPOTENCY_CONFLICT'), 3)
+        test.assertEqual(codes[-2:], ['INVALID_ID', 'INVALID_ID'])

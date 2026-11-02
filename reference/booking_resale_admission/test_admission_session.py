@@ -161,6 +161,7 @@ class AdmissionSessionTests(unittest.TestCase):
 
     def test_direct_delegation_preserves_return_and_exception_identity(self):
         for name, arguments in (
+            ("reconcile", dict(right_id="right", idempotency_key="key")),
             ("view", dict(right_id="right")),
             ("view_credential", dict(right_id="right", version=1, holder_role="holder")),
             ("set_clock", dict(subject_id="clock", idempotency_key="key", now_ms=42)),
@@ -183,3 +184,45 @@ class AdmissionSessionTests(unittest.TestCase):
                     getattr(session, name)(**arguments)
                 self.assertIs(caught.exception, error)
                 self.assertEqual(len(machine.mock_calls), 2)
+
+    def test_reconciliation_matches_direct_graph_and_preserves_business_state(self):
+        from admission_fixture import load_fixture
+        from test_ticket_operations_session import (
+            HERE, check_reconcile_history, direct_call, direct_graph,
+        )
+        path = HERE / 'fixtures' / 'admission_session.json'
+        value = json.loads(path.read_text())
+        session = load_fixture(path)
+        machine = session._machine
+        graph = (machine._settlement, machine._tickets, machine._ownership, machine)
+        control = direct_graph(value['setup'])
+        rows = [json.loads(line) for line in
+                (HERE / 'fixtures' / 'admission_reconcile.jsonl').read_text().splitlines()]
+        results = check_reconcile_history(
+            self, rows, graph, control,
+            lambda row: getattr(session, row['operation'])(**row['arguments']),
+            lambda row: direct_call(control, dict(row, surface='admission'), value)[
+                'view' if row['operation'].startswith('view') else 'receipt'])
+        self.assertEqual(results[3]['credential']['phase'], 'AUTHORIZED')
+        self.assertEqual(results[4]['phase'], 'CONSUMED')
+        self.assertNotEqual(results[3]['state_digest'], machine.state_digest())
+        self.assertEqual(session._adapter._source.calls,
+                         (('authorize_admission', 'ticket-1'), ('consume', 'ticket-1')))
+
+    def test_reconcile_forwards_opaque_identity_and_key_without_presentation_fetch(self):
+        machine, presentations = Mock(spec=AdmissionMachine), Mock()
+        session = AdmissionSession(machine, presentations)
+        subject, key, receipt = object(), object(), {'opaque': object()}
+        machine.reconcile.return_value = receipt
+        self.assertIs(session.reconcile(subject, idempotency_key=key), receipt)
+        machine.reconcile.assert_called_once_with(subject, idempotency_key=key)
+        self.assertEqual(len(machine.mock_calls), 1)
+        for error in (AdmissionError('SYNTHETIC'), RuntimeError('unexpected failure')):
+            machine.reset_mock()
+            machine.reconcile.side_effect = error
+            with self.assertRaises(type(error)) as caught:
+                session.reconcile(subject, idempotency_key=key)
+            self.assertIs(caught.exception, error)
+            machine.reconcile.assert_called_once_with(subject, idempotency_key=key)
+            self.assertEqual(len(machine.mock_calls), 1)
+        self.assertEqual(presentations.mock_calls, [])

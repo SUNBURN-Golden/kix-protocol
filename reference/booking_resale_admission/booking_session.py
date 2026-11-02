@@ -57,6 +57,9 @@ class BookingSession:
         self._require_clock()
         return self._machine.cancel(reservation_id, idempotency_key=idempotency_key)
 
+    def reconcile(self, reservation_id: object, *, idempotency_key: object) -> dict:
+        return self._machine.reconcile(reservation_id, idempotency_key=idempotency_key)
+
     def view(self, reservation_id: object) -> dict:
         return self._machine.view(reservation_id)
 

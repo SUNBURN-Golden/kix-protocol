@@ -34,6 +34,7 @@ _DISPATCH = {
                       {"transfer_id", "listing_id", "idempotency_key"}, "receipt"),
     "close": (ResaleSession.close, {"listing_id", "idempotency_key"}, "receipt"),
     "set_clock": (ResaleSession.set_clock, {"subject_id", "now_ms", "idempotency_key"}, "receipt"),
+    "reconcile": (ResaleSession.reconcile, {"listing_id", "idempotency_key"}, "receipt"),
     "view": (ResaleSession.view, {"listing_id"}, "view"),
     "view_right": (ResaleSession.view_right, {"right_id"}, "view"),
     "view_presentation": (ResaleSession.view_presentation,

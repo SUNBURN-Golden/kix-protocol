@@ -48,6 +48,7 @@ class BookingSessionTests(unittest.TestCase):
         rows = requests("booking_boundaries")
         examples = {row["operation"]: row for row in rows}
         examples["view"] = requests()[4]
+        examples["reconcile"] = requests("booking_reconcile")[4]
         for operation, row in examples.items():
             machine = Mock(spec=ReservationMachine)
             session = BookingSession(machine)
@@ -150,3 +151,40 @@ class BookingSessionTests(unittest.TestCase):
         for field in ("payment_ref", "issuance_id", "settlement_id", "right"):
             self.assertIsNone(session.view("reserve-1")[field])
         self.assertEqual(machine.export_journal()[-1]["op"], "confirm")
+
+    def test_reconciliation_matches_direct_fsm_and_preserves_business_state(self):
+        from test_ticket_operations_session import check_reconcile_history
+        machine, direct = ReservationMachine(), ReservationMachine()
+        session = BookingSession(machine)
+        results = check_reconcile_history(
+            self, requests('booking_reconcile'), (machine,), (direct,),
+            lambda row: getattr(session, row['operation'])(**row['arguments']),
+            lambda row: getattr(direct, row['operation'])(**row['arguments']))
+        self.assertEqual(results[6]['reservation']['phase'], 'CONFIRMED')
+        self.assertEqual(results[7]['phase'], 'CANCELLED')
+        self.assertNotEqual(results[6]['state_digest'], machine.state_digest())
+
+    def test_reconcile_requires_no_session_clock_and_forwards_opaque_values_once(self):
+        machine = ReservationMachine()
+        for row in requests()[:4]:
+            invoke(machine, row)
+        before = snapshot(machine)
+        session = BookingSession(machine)  # clock initialized outside this session
+        self.assertTrue(session.reconcile('reserve-1', idempotency_key='recon')['matched'])
+        self.assertEqual(snapshot(machine), before)
+        with self.assertRaises(BookingInputError):
+            session.cancel('reserve-1', idempotency_key='cancel')
+        spy = Mock(spec=ReservationMachine)
+        subject, key = object(), object()
+        receipt = {'opaque': object()}
+        spy.reconcile.return_value = receipt
+        self.assertIs(BookingSession(spy).reconcile(subject, idempotency_key=key), receipt)
+        spy.reconcile.assert_called_once_with(subject, idempotency_key=key)
+        self.assertEqual(len(spy.mock_calls), 1)
+        spy.reset_mock()
+        error = RuntimeError('unexpected failure')
+        spy.reconcile.side_effect = error
+        with self.assertRaises(RuntimeError) as caught:
+            BookingSession(spy).reconcile(subject, idempotency_key=key)
+        self.assertIs(caught.exception, error)
+        spy.reconcile.assert_called_once_with(subject, idempotency_key=key)

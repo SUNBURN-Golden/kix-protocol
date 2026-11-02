@@ -128,7 +128,7 @@ class TicketOperationsSessionTests(unittest.TestCase):
         self.assertEqual(json.loads(tickets.canonical_state())["logical_time_ms"], 1000002)
 
     def test_transcripts_session_and_cli_match_direct_graph_after_every_request(self):
-        for scenario in ("cancel", "admission", "transfer", "payment_listed", "payment_held"):
+        for scenario in ("cancel", "admission", "transfer", "payment_listed", "payment_held", "reconcile"):
             with self.subTest(scenario=scenario):
                 path = (HERE / "fixtures" / "ticket_operations_payment_session.json"
                         if scenario.startswith("payment_") else FIXTURE)
@@ -212,3 +212,71 @@ class TicketOperationsSessionTests(unittest.TestCase):
                 TicketOperationsSession(setup=setup, offer_source=Mock(), presentation_source=Mock())
             resale_publish.assert_not_called()
             admission_publish.assert_not_called()
+
+    def test_reconciliation_history_and_ownership_change_refusal_without_repair(self):
+        value = fixture()
+        session = load_fixture(FIXTURE)
+        graph = machines(session)
+        control = direct_graph(value['setup'])
+        rows = requests('reconcile')
+        results = check_reconcile_history(
+            self, rows, graph, control,
+            lambda row: dispatch_request(session, row),
+            lambda row: direct_call(control, row, value),
+            lambda row: graph[2 if row['surface'] == 'resale' else 3])
+        self.assertEqual(results[10]['receipt'], results[1]['receipt'] |
+                         {'duplicate': True, 'applied': None})
+        for result in results[11:13]:
+            self.assertEqual(result, {'error': {'code': 'STALE_VERSION'}})
+        self.assertEqual(results[13]['receipt'], results[4]['receipt'] |
+                         {'duplicate': True, 'applied': None})
+        self.assertEqual(results[13]['receipt']['listing']['phase'], 'LISTED')
+        self.assertEqual(results[14]['view']['phase'], 'CLOSED')
+        self.assertEqual(results[-1]['view']['presentation']['decision'], 'STALE_VERSION')
+        self.assertFalse(results[-1]['view']['venue_credential_reissued'])
+        self.assertEqual(session.resale._adapter._source.calls, ('offer-1',))
+        self.assertEqual(session.admission._adapter._source.calls, (('authorize_admission', 'ticket-1'),))
+
+
+def check_reconcile_history(test, rows, graph, control, wrapped_call, control_call,
+                            machine_for=None):
+    """Compare each explicit desk action to a separately constructed FSM graph.
+
+    Snapshots cover business state, digests and accepted journals, intentionally
+    excluding process-local receipt bookkeeping, which replay/conflicts exercise.
+    """
+    receipts = {}
+    results = []
+    for index, request in enumerate(rows):
+        with test.subTest(line=index + 1, request=request):
+            before = snapshot(graph)
+            expected = outcome(lambda: control_call(request))
+            result = outcome(lambda: wrapped_call(request))
+            test.assertEqual(result, expected)
+            test.assertEqual(snapshot(graph), snapshot(control))
+            results.append(result)
+            if request['operation'] != 'reconcile':
+                continue
+            test.assertEqual(snapshot(graph), before)
+            if 'error' in result:
+                continue
+            receipt = result.get('receipt', result)
+            test.assertTrue(receipt['matched'])
+            key = (request.get('surface'), request['arguments']['idempotency_key'])
+            if key in receipts:
+                test.assertEqual(receipt, receipts[key] | {'duplicate': True, 'applied': None})
+            else:
+                machine = graph[-1] if machine_for is None else machine_for(request)
+                test.assertFalse(receipt['duplicate'])
+                test.assertEqual(receipt['applied'], 'reconcile')
+                test.assertEqual(receipt['state_digest'], machine.state_digest())
+                test.assertEqual(receipt['entry_count'], len(machine.export_journal()))
+                receipts[key] = deepcopy(receipt)
+            if 'credential' in receipt:
+                assert_flags(test, receipt)
+            elif "reservation" in receipt:
+                from test_reservation_fsm import assert_not_final as assert_booking_flags
+                assert_booking_flags(test, receipt)
+            else:
+                assert_not_final(test, receipt)
+    return results

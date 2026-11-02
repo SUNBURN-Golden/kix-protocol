@@ -34,6 +34,7 @@ def snapshot(*machines):
 # Explicit examples for every direct forwarding method, including operations not
 # needed by the happy transcript. Selectors/arguments are public session inputs.
 FORWARD = (
+    ("reconcile", "listing_id", dict(listing_id="l", idempotency_key="k")),
     ("hold_buy", "hold_id", dict(hold_id="h", listing_id="l", buyer_role="buyer", idempotency_key="k")),
     ("release_hold", "hold_id", dict(hold_id="h", buyer_role="buyer", idempotency_key="k")),
     ("cancel_listing", "listing_id", dict(listing_id="l", seller_role="seller", idempotency_key="k")),
@@ -284,3 +285,39 @@ class ResaleSessionTests(unittest.TestCase):
         self.assertEqual(failing.fetch.call_count, 2)
         self.assertEqual(spy.mock_calls, [])
         self.assertEqual(snapshot(original._machine), before)
+
+    def test_reconciliation_matches_direct_graph_and_preserves_business_state(self):
+        from test_ticket_operations_session import check_reconcile_history, direct_call, direct_graph
+        value = json.loads(FIXTURE.read_text())
+        session = load_fixture(FIXTURE)
+        machine = session._machine
+        graph = (machine._settlement, machine._tickets, machine)
+        control = direct_graph(value['setup'])[:3]
+        rows = [json.loads(line) for line in
+                (HERE / 'fixtures' / 'resale_reconcile.jsonl').read_text().splitlines()]
+        results = check_reconcile_history(
+            self, rows, graph, control, lambda row: invoke(session, row),
+            lambda row: direct_call(control, dict(row, surface='resale'), value)[
+                'view' if row['operation'].startswith('view') else 'receipt'])
+        self.assertEqual(results[7]['listing']['phase'], 'LISTED')
+        self.assertEqual(results[8]['phase'], 'CLOSED')
+        self.assertNotEqual(results[7]['state_digest'], machine.state_digest())
+        self.assertEqual(session._adapter._source.calls, ('offer-1',))
+
+    def test_reconcile_forwards_opaque_identity_and_key_without_source_fetch(self):
+        machine, offers, payments = Mock(spec=ResaleMachine), Mock(), Mock()
+        session = ResaleSession(machine, offers, payment_source=payments)
+        subject, key, receipt = object(), object(), {'opaque': object()}
+        machine.reconcile.return_value = receipt
+        self.assertIs(session.reconcile(subject, idempotency_key=key), receipt)
+        machine.reconcile.assert_called_once_with(subject, idempotency_key=key)
+        self.assertEqual(len(machine.mock_calls), 1)
+        for error in (ResaleError('SYNTHETIC'), RuntimeError('unexpected failure')):
+            machine.reset_mock()
+            machine.reconcile.side_effect = error
+            with self.assertRaises(type(error)) as caught:
+                session.reconcile(subject, idempotency_key=key)
+            self.assertIs(caught.exception, error)
+            machine.reconcile.assert_called_once_with(subject, idempotency_key=key)
+            self.assertEqual(len(machine.mock_calls), 1)
+        self.assertEqual((offers.mock_calls, payments.mock_calls), ([], []))
