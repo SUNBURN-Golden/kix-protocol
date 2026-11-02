@@ -348,7 +348,7 @@ class ResaleCliTests(unittest.TestCase):
             self.assertIn("code", json.loads(result.stdout)["error"])
 
     def test_importable_without_cli_side_effects_and_unexpected_failures_surface(self):
-        env = dict(os.environ, PYTHONPATH=str(HERE), PYTHONDONTWRITEBYTECODE="1")
+        env = dict(os.environ, PYTHONPATH=str(HERE) + os.pathsep + os.environ.get("PYTHONPATH", ""), PYTHONDONTWRITEBYTECODE="1")
         result = subprocess.run([sys.executable, "-c", "import resale_session, resale_fixture, resale_cli"],
                                 env=env, cwd=tempfile.gettempdir(), capture_output=True, text=True, check=False)
         self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
@@ -356,3 +356,241 @@ class ResaleCliTests(unittest.TestCase):
         machine.view.side_effect = RuntimeError("programming fault")
         with self.assertRaisesRegex(RuntimeError, "programming fault"):
             run(ResaleSession(machine, Mock()), [requests()[8]])
+
+
+class RecordedPaymentDeskChecks:
+    """Shared acceptance checks for both local entry points, not another FSM model."""
+
+    def configured(self, value=None):
+        value = json.loads(self.payment_fixture.read_text()) if value is None else value
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fixture.json"
+            path.write_text(json.dumps(value))
+            return self.loader(path)
+
+    def payment_request(self, recording_id="payment-1", **arguments):
+        request = dict(operation="observe_recorded_payment", arguments=dict(
+            recording_id=recording_id, listing_id="list-1", idempotency_key="payment-key") | arguments)
+        return request | ({"surface": "resale"} if self.shared else {})
+
+    def desk(self, session):
+        return session.resale if self.shared else session
+
+    def graph(self, session):
+        desk = self.desk(session)
+        m = desk._machine
+        return (m._settlement, m._tickets, m) + ((session.admission._machine,) if self.shared else ())
+
+    def state(self, session):
+        return snapshot(*self.graph(session))
+
+    def scenario(self, phase):
+        path = HERE / "fixtures" / f"{self.prefix}_payment_{phase}.jsonl"
+        return path, [json.loads(line) for line in path.read_text().splitlines()]
+
+    def test_payment_fixture_strict_before_graph_and_optional_compatibility(self):
+        base = json.loads(self.payment_fixture.read_text())
+        entry = base["payments"][0]
+        bad = [None, {}, "text", [None], [{}], [entry, entry]]
+        for field in entry:
+            bad.append([{k: v for k, v in entry.items() if k != field}])
+        bad += [[entry | update] for update in (
+            {"recording_id": " bad "}, {"recording_id": None}, {"recording_id": True},
+            {"recorded_text": {}}, {"extra": 1}, {"fault": "synthetic_resale_payment_error"})]
+        bad += [[{"recording_id": "p", "fault": fault}] for fault in (None, {}, [], "bad")]
+        for payments in bad:
+            with self.subTest(payments=payments), patch(self.constructor) as construct:
+                with self.assertRaises(FixtureError):
+                    self.configured(base | {"payments": payments})
+                construct.assert_not_called()
+        session = self.configured(base | {"payments": []})
+        source = self.desk(session)._payment_adapter._source
+        self.assertEqual((dict(source.recordings), source.calls), ({}, ()))
+        without = dict(base)
+        del without["payments"]
+        session = self.configured(without)
+        before = self.state(session)
+        code, rows = self.run_rows(session, [self.payment_request()])
+        self.assertEqual(code, 1)
+        self.assertEqual(rows[0]["error"]["type"], "ResalePaymentSourceError")
+        self.assertEqual(self.state(session), before)
+        first, second = self.configured(), self.configured()
+        self.assertIsNot(self.desk(first)._payment_adapter._source,
+                         self.desk(second)._payment_adapter._source)
+        for a, b in zip(self.graph(first), self.graph(second)):
+            self.assertIsNot(a, b)
+        self.assertEqual(self.desk(first)._payment_adapter._source.calls, ())
+
+    def test_recorded_transcripts_file_stdin_match_and_pause_before_transfer(self):
+        for phase in ("listed", "held"):
+            path, requests = self.scenario(phase)
+            session = self.configured()
+            desk = self.desk(session)
+            self.assertIs(desk._payment_adapter._machine, desk._machine)
+            if self.shared:
+                self.assertIs(session.admission._machine._ownership, desk._payment_adapter._machine)
+            payment_index = next(i for i, r in enumerate(requests)
+                                 if r["operation"] == "observe_recorded_payment")
+            self.assertEqual(self.run_rows(session, requests[:payment_index])[0], 0)
+            others = snapshot(*(m for m in self.graph(session) if m is not desk._machine))
+            journal = desk._machine.export_journal()
+            self.assertEqual(desk.view("list-1")["phase"], "LISTED" if phase == "listed" else "BUY_HELD")
+            code, result = self.run_rows(session, [requests[payment_index]])
+            self.assertEqual(code, 0)
+            receipt = result[0]["receipt"]
+            self.assertEqual(receipt["listing"]["phase"], "PAYMENT_NOTED")
+            self.assertEqual((receipt["right"]["holder_role"], receipt["right"]["version"]), ("buyer-1", 1))
+            self.assertEqual(snapshot(*(m for m in self.graph(session) if m is not desk._machine)), others)
+            self.assertEqual([e["op"] for e in desk._machine.export_journal()[len(journal):]],
+                             ["observe_resale_payment"])
+            code, expected = self.run_rows(self.configured(), requests)
+            self.assertEqual(code, 1 if self.shared else 0)
+            observations = [r["receipt"] for r in expected if r["operation"] == "observe_recorded_payment"]
+            self.assertEqual(observations[1:], [observations[0] | {"duplicate": True, "applied": None}] * 2)
+            self.assertEqual(next(r["receipt"] for r in expected if r["operation"] == "accept_resale")["listing"]["phase"], "TRANSFERRED")
+            if self.shared:
+                self.assertEqual([r["error"] for r in expected if "error" in r],
+                                 [{"code": "STALE_VERSION"}] * 2)
+            for row in expected:
+                if "error" not in row:
+                    if row.get("surface") == "admission":
+                        from test_admission_session import assert_flags
+                        assert_flags(self, row.get("receipt", row.get("view")))
+                    else:
+                        assert_not_final(self, row.get("receipt", row.get("view")))
+            for selector, stdin in ((str(path), None), ("-", path.read_text())):
+                process = subprocess.run([sys.executable, str(HERE / f"{self.prefix}_cli.py"),
+                                          "--fixture", str(self.payment_fixture), "--requests", selector],
+                                         input=stdin, capture_output=True, text=True, check=False)
+                self.assertEqual((process.returncode, process.stderr), (code, ""))
+                self.assertEqual([json.loads(line) for line in process.stdout.splitlines()], expected)
+
+    def test_payment_boundary_errors_no_mutation_no_retry_and_key_remains_usable(self):
+        base = json.loads(self.payment_fixture.read_text())
+        good = base["payments"][0]
+        body = json.loads(good["recorded_text"])
+        cases = [([], "ResalePaymentNotFound"),
+                 ([good | {"recorded_text": "{"}], "InvalidResalePaymentRecord"),
+                 ([good | {"recorded_text": json.dumps(body | {"listing_id": "other"})}], "InvalidResalePaymentRecord")]
+        for fault in ("synthetic_resale_payment_error", "synthetic_resale_payment_timeout"):
+            cases.append(([{"recording_id": "payment-1", "fault": fault}], "ResalePaymentSourceError"))
+        for payments, kind in cases:
+            with self.subTest(kind=kind, payments=payments):
+                value = base | {"payments": payments + [good | {"recording_id": "good"}]}
+                session = self.configured(value)
+                self.run_rows(session, self.scenario("listed")[1][:1])
+                before = self.state(session)
+                desk = self.desk(session)
+                with patch.object(desk._machine, "observe_resale_payment",
+                                  wraps=desk._machine.observe_resale_payment) as observe:
+                    code, rows = self.run_rows(session, [self.payment_request()])
+                    self.assertEqual(code, 1)
+                    self.assertEqual(rows[0]["error"]["type"], kind)
+                    self.assertIsInstance(rows[0]["error"]["message"], str)
+                    observe.assert_not_called()
+                self.assertEqual(self.state(session), before)
+                self.assertEqual(desk._payment_adapter._source.calls, ("payment-1",))
+                self.assertEqual(self.run_rows(session, [self.payment_request("good")])[0], 0)
+                self.assertEqual(desk._payment_adapter._source.calls, ("payment-1", "good"))
+                # The executable loop also emits local errors and continues only
+                # for the next explicit line. Child inherits the socket guard.
+                with tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / "fixture.json"
+                    path.write_text(json.dumps(value))
+                    rows = self.scenario("listed")[1][:1] + [self.payment_request(), self.payment_request("good")]
+                    process = subprocess.run([sys.executable, str(HERE / f"{self.prefix}_cli.py"),
+                                              "--fixture", str(path), "--requests", "-"],
+                                             input="".join(json.dumps(r)+"\n" for r in rows),
+                                             capture_output=True, text=True, check=False)
+                    self.assertEqual((process.returncode, process.stderr), (1, ""))
+                    output = [json.loads(line) for line in process.stdout.splitlines()]
+                    self.assertEqual(output[1]["error"]["type"], kind)
+                    self.assertEqual(output[2]["receipt"]["listing"]["phase"], "PAYMENT_NOTED")
+
+    def test_replay_fetches_and_conflicts_preserve_first_result_without_cached_fallback(self):
+        from fake_resale_payment_source import FakeResalePaymentSource, SyntheticResalePaymentFault
+        session = self.configured()
+        desk = self.desk(session)
+        self.run_rows(session, self.scenario("listed")[1][:1])
+        code, rows = self.run_rows(session, [self.payment_request()])
+        first = rows[0]["receipt"]
+        body = json.loads(next(iter(desk._payment_adapter._source.recordings.values())))
+        source = FakeResalePaymentSource(recordings={
+            "alias": json.dumps(body), "changed": json.dumps(body | {"amount": body["amount"]-1}),
+            "fault": SyntheticResalePaymentFault.TIMEOUT})
+        desk._payment_adapter._source = source
+        before = self.state(session)
+        code, rows = self.run_rows(session, [self.payment_request("fault"), self.payment_request("alias"),
+                                              self.payment_request("changed")])
+        self.assertEqual(code, 1)
+        self.assertEqual(rows[0]["error"]["type"], "ResalePaymentSourceError")
+        self.assertEqual(rows[1]["receipt"], first | {"duplicate": True, "applied": None})
+        self.assertEqual(rows[2]["error"], {"code": "IDEMPOTENCY_CONFLICT"})
+        self.assertEqual(source.calls, ("fault", "alias", "changed"))
+        self.assertEqual(self.state(session), before)
+
+    def test_recorded_paths_and_semantic_refusals_match_direct_fsm_after_every_request(self):
+        from test_ticket_operations_session import direct_graph, direct_call, outcome
+        for phase in ("listed", "held"):
+            for refusal in (None, {"amount": 7999}, {"buyer_role": "other"}):
+                with self.subTest(phase=phase, refusal=refusal):
+                    value = json.loads(self.payment_fixture.read_text())
+                    rows = self.scenario(phase)[1]
+                    if refusal is not None:
+                        body = json.loads(value["payments"][0]["recorded_text"])
+                        value["payments"].append({"recording_id": "refusal",
+                                                  "recorded_text": json.dumps(body | refusal)})
+                        pay = self.payment_request("refusal")
+                        index = next(i for i, r in enumerate(rows)
+                                     if r["operation"] == "observe_recorded_payment")
+                        rows = rows[:index] + [pay, pay, self.payment_request(),
+                                              self.payment_request(idempotency_key="fresh")]
+                    session = self.configured(value)
+                    control = direct_graph(value["setup"])
+                    calls = []
+                    for request in rows:
+                        wrapped = request if self.shared else request | {"surface": "resale"}
+                        expected = outcome(lambda: direct_call(control, wrapped, value))
+                        code, results = self.run_rows(session, [request])
+                        actual = results[0]
+                        if "error" in expected:
+                            self.assertEqual(actual["error"], expected["error"])
+                            self.assertEqual(code, 1)
+                        else:
+                            if not self.shared:
+                                del expected["surface"]
+                            self.assertEqual(actual, expected)
+                            self.assertEqual(code, 0)
+                        self.assertEqual(self.state(session), snapshot(*(control if self.shared else control[:3])))
+                        if request["operation"] == "observe_recorded_payment":
+                            calls.append(request["arguments"]["recording_id"])
+                        self.assertEqual(self.desk(session)._payment_adapter._source.calls, tuple(calls))
+                    if refusal is not None:
+                        self.assertEqual(results[0]["receipt"]["listing"]["phase"], "PAYMENT_NOTED")
+                        # A changed valid payload bound to the refused key remains
+                        # a conflict; a fresh key is the separate accepted request.
+                        self.assertEqual(self.run_rows(session, [self.payment_request()])[1][0]["error"],
+                                         {"code": "IDEMPOTENCY_CONFLICT"})
+
+    def test_structural_payment_request_has_zero_fetch_and_stops(self):
+        valid = self.payment_request()
+        bad = [valid | {"arguments": []}, valid | {"arguments": valid["arguments"] | {"buyer_role": "buyer-2"}}]
+        for field in valid["arguments"]:
+            bad.append(valid | {"arguments": {k:v for k,v in valid["arguments"].items() if k != field}})
+        for request in bad:
+            session = self.configured()
+            before = self.state(session)
+            code, rows = self.run_rows(session, [request, valid])
+            self.assertEqual((code, len(rows)), (2, 1))
+            self.assertEqual(rows[0]["error"]["type"], "FixtureError")
+            self.assertEqual(self.desk(session)._payment_adapter._source.calls, ())
+            self.assertEqual(self.state(session), before)
+
+
+class ResaleRecordedPaymentCliTests(RecordedPaymentDeskChecks, unittest.TestCase):
+    shared = False
+    prefix = "resale"
+    payment_fixture = HERE / "fixtures" / "resale_payment_session.json"
+    constructor = "resale_fixture.SettlementMachine"
+    loader = staticmethod(load_fixture)
+    run_rows = staticmethod(run)

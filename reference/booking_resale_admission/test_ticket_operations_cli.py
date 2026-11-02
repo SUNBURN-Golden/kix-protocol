@@ -17,6 +17,7 @@ from admission_fixture import FixtureError
 from fake_presentation_source import SyntheticPresentationFault
 from fake_resale_offer_source import SyntheticResaleOfferFault
 from resale_cli import _DISPATCH as RESALE_DISPATCH
+from test_resale_cli import RecordedPaymentDeskChecks
 from ticket_operations_cli import dispatch_request, run_requests
 from ticket_operations_fixture import load_fixture
 from test_ticket_operations_session import FIXTURE, HERE, fixture, machines, requests, snapshot
@@ -251,7 +252,7 @@ class TicketOperationsCliTests(unittest.TestCase):
                 result = self.cli("--fixture", str(path), "--requests", "-", stdin="")
                 self.assertEqual(result.returncode, 2)
                 self.assertIsNone(json.loads(result.stdout)["surface"])
-        env = dict(os.environ, PYTHONPATH=str(HERE), PYTHONDONTWRITEBYTECODE="1")
+        env = dict(os.environ, PYTHONPATH=str(HERE) + os.pathsep + os.environ.get("PYTHONPATH", ""), PYTHONDONTWRITEBYTECODE="1")
         result = subprocess.run([sys.executable, "-c",
                                  "import ticket_operations_session, ticket_operations_fixture, ticket_operations_cli"],
                                 env=env, cwd=tempfile.gettempdir(), capture_output=True, text=True, check=False)
@@ -259,3 +260,12 @@ class TicketOperationsCliTests(unittest.TestCase):
         with patch("ticket_operations_cli._admission", side_effect=RuntimeError("programming fault")):
             with self.assertRaisesRegex(RuntimeError, "programming fault"):
                 run(load_fixture(FIXTURE), [requests("admission")[0]])
+
+
+class TicketRecordedPaymentCliTests(RecordedPaymentDeskChecks, unittest.TestCase):
+    shared = True
+    prefix = "ticket_operations"
+    payment_fixture = HERE / "fixtures" / "ticket_operations_payment_session.json"
+    constructor = "ticket_operations_session.SettlementMachine"
+    loader = staticmethod(load_fixture)
+    run_rows = staticmethod(run)

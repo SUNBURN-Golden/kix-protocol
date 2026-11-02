@@ -67,6 +67,12 @@ def direct_call(graph, request, value):
                                  if e["offer_id"] == identity))
         del record["offer_id"]
         args.update(record)
+    elif operation == "observe_recorded_payment":
+        identity = args.pop("recording_id")
+        args.update(json.loads(next(e["recorded_text"] for e in value["payments"]
+                                    if e["recording_id"] == identity)))
+        result = machine.observe_resale_payment(**args)
+        return {"surface": surface, "operation": operation, "receipt": result}
     elif operation in ("authorize_admission", "consume"):
         identity = args.pop("presentation_id")
         args.update(json.loads(next(e["recorded_text"] for e in value["presentations"]
@@ -122,13 +128,15 @@ class TicketOperationsSessionTests(unittest.TestCase):
         self.assertEqual(json.loads(tickets.canonical_state())["logical_time_ms"], 1000002)
 
     def test_transcripts_session_and_cli_match_direct_graph_after_every_request(self):
-        for scenario in ("cancel", "admission", "transfer"):
+        for scenario in ("cancel", "admission", "transfer", "payment_listed", "payment_held"):
             with self.subTest(scenario=scenario):
-                value = fixture()
-                session, cli = load_fixture(FIXTURE), load_fixture(FIXTURE)
+                path = (HERE / "fixtures" / "ticket_operations_payment_session.json"
+                        if scenario.startswith("payment_") else FIXTURE)
+                value = json.loads(path.read_text())
+                session, cli = load_fixture(path), load_fixture(path)
                 control = direct_graph(value["setup"])
                 self.assertEqual(snapshot(machines(session)), snapshot(control))
-                fetches = {"resale": [], "admission": []}
+                fetches = {"resale": [], "admission": [], "payments": []}
                 for request in requests(scenario):
                     surface, operation, args = (request[k] for k in ("surface", "operation", "arguments"))
                     expected = outcome(lambda: direct_call(control, request, value))
@@ -149,10 +157,15 @@ class TicketOperationsSessionTests(unittest.TestCase):
                     self.assertEqual(snapshot(machines(cli)), snapshot(control))
                     if operation == "list_resale":
                         fetches[surface].append(args["offer_id"])
+                    elif operation == "observe_recorded_payment":
+                        fetches["payments"].append(args["recording_id"])
                     elif operation in ("authorize_admission", "consume"):
                         fetches[surface].append((operation, args["presentation_id"]))
                     for desk in (session, cli):
                         self.assertEqual(desk.resale._adapter._source.calls, tuple(fetches["resale"]))
+                        if desk.resale._payment_adapter is not None:
+                            self.assertIs(desk.resale._payment_adapter._machine, desk.admission._machine._ownership)
+                            self.assertEqual(desk.resale._payment_adapter._source.calls, tuple(fetches["payments"]))
                         self.assertEqual(desk.admission._adapter._source.calls, tuple(fetches["admission"]))
 
     def test_replay_fetch_failure_and_key_conflicts_leave_shared_graph_unchanged(self):

@@ -11,6 +11,7 @@ from reservation_fsm import ReservationError
 from resale_fixture import load_fixture
 from resale_fsm import ResaleError
 from resale_offer_source import ResaleOfferSourceError
+from resale_payment_source import ResalePaymentSourceError
 from resale_session import ResaleSession
 from settlement_fsm import SettlementError
 
@@ -23,6 +24,8 @@ _DISPATCH = {
     "release_hold": (ResaleSession.release_hold, {"hold_id", "buyer_role", "idempotency_key"}, "receipt"),
     "cancel_listing": (ResaleSession.cancel_listing,
                        {"listing_id", "seller_role", "idempotency_key"}, "receipt"),
+    "observe_recorded_payment": (ResaleSession.observe_recorded_payment,
+                                 {"recording_id", "listing_id", "idempotency_key"}, "receipt"),
     "observe_resale_payment": (ResaleSession.observe_resale_payment,
                                {"listing_id", "payment_ref", "amount", "idempotency_key"}, "receipt"),
     "bind_settlement": (ResaleSession.bind_settlement,
@@ -73,7 +76,7 @@ def run_requests(session: ResaleSession, lines) -> int:
         except FixtureError as error:
             _emit(_error(operation, error))
             return 2
-        except (*_DOMAIN_ERRORS, ResaleOfferSourceError) as error:
+        except (*_DOMAIN_ERRORS, ResaleOfferSourceError, ResalePaymentSourceError) as error:
             # Only another explicitly supplied line can cause another operation.
             result = _error(operation, error)
             rejected = True
