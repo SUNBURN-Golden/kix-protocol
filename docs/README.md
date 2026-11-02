@@ -488,3 +488,5 @@
 
 - [F4 local reward desk usage](../reference/token_reward/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged reward FSM; no policy, approval or runtime activation.
 - [plan-local-reward-desk evidence](../validation/2026-11-02-plan-local-reward-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
+
+- [Synthetic local resale payment source](../reference/booking_resale_admission/README.md#synthetic-local-resale-payment-source) · [plan-local-resale-payment-source evidence](../validation/2026-11-02-plan-local-resale-payment-source/README.md) — Immutable synthetic recordings, one-fetch payment observation adapter and explicit session payment/transfer requests; unchanged FSM semantics and mock flags. No provider authority, product policy, reservation handoff or runtime activation.

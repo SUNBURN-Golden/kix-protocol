@@ -702,3 +702,93 @@ authority and compensation remain `UNDETERMINED` under the existing
 [§7.1 owners](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md).
 See the [builder validation record](../../validation/2026-11-02-plan-local-booking-desk-cli/README.md)
 for coverage, commands and outstanding review/CI gates.
+
+## Synthetic local resale payment source
+
+`ResalePaymentSource.fetch(recording_id)` returns one caller-selected synthetic
+record or `None`. `ResalePaymentRecord` requires exactly these four fields:
+
+| Field | Shape |
+|---|---|
+| `listing_id` | Existing identifier shape, equal to the caller's listing ID |
+| `payment_ref` | Existing opaque mock reference: 64 lowercase hexadecimal characters |
+| `amount` | Existing `_money` positive integer range; bool is invalid |
+| `buyer_role` | Explicit non-null role identifier; a label without authentication |
+
+`FakeResalePaymentSource(recordings=...)` copies JSON-text recordings into a
+read-only mapping keyed by local recording ID. Fetch parses a detached object
+anew; duplicate JSON keys, non-finite constants, malformed JSON and non-object
+roots are refused. `SyntheticResalePaymentFault.ERROR` and `.TIMEOUT` fail
+immediately without I/O or sleeping. `calls` exposes immutable tuple snapshots.
+The fake only decodes; the adapter checks the four-field observation schema.
+
+```python
+adapter = ResalePaymentAdapter(machine, payment_source)
+receipt = adapter.observe_resale_payment(
+    recording_id, listing_id=listing_id, idempotency_key=payment_key,
+)
+# Or inject the source into the existing session:
+session = ResaleSession(machine, offer_source, payment_source=payment_source)
+session.observe_recorded_payment(
+    recording_id, listing_id=listing_id, idempotency_key=payment_key,
+)
+# Separate caller request, if desired:
+session.accept_resale(transfer_id, listing_id=listing_id, idempotency_key=transfer_key)
+```
+
+Import from `resale_payment_source`, `fake_resale_payment_source`,
+`resale_payment_adapter` and `resale_session` using this directory on `PYTHONPATH`,
+following the existing sibling-module convention. Existing direct session
+`observe_resale_payment` is unchanged; the new helper is Python-only and adds
+no CLI selector, fixture field, catalogue entry, protocol command or `REPLAYABLE`
+operation. A session without a payment source raises `ResalePaymentSourceError`
+before FSM access when this helper is invoked.
+
+Each adapter request fetches exactly once, including replay and invalid caller
+inputs. Missing records raise `ResalePaymentNotFound`; malformed records/callers
+or mismatched listing bindings raise `InvalidResalePaymentRecord`; fetch faults
+raise `ResalePaymentSourceError`. These are local exceptions without protocol
+codes. Validation completes before FSM access or key binding. The adapter then
+forwards the recorded `payment_ref`, `amount`, explicit `buyer_role` and caller's
+listing ID/key unchanged to `ResaleMachine.observe_resale_payment`. The recording
+selector never enters FSM arguments, fingerprints or journals. FSM receipts and
+exceptions propagate unchanged; valid-shaped wrong buyers/amounts reach its
+existing refusal and retained-key semantics. There is no state precheck, retry,
+fallback, cached receipt, automatic hold, settlement, transfer, admission or payout.
+
+The [coverage and execution record](../../validation/2026-11-02-plan-local-resale-payment-source/README.md)
+maps existing coverage before the new tests: FSM payment/transfer/replay and
+false-flag coverage is sufficient; adapter parity and actual-session sequencing
+were partial overall; immutable payment recordings, one-fetch behavior and
+pre-delegation refusal were uncovered at this boundary. New
+`test_resale_payment_source.py`, `test_resale_payment_adapter.py` and source-backed
+cases in `test_resale_session.py` address those gaps. They are source-informed
+regression evidence, not independent verification.
+
+From repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="$PWD/reference/booking_resale_admission"
+python3 -m unittest test_resale_payment_source test_resale_payment_adapter
+python3 -m unittest test_resale_fsm test_resale_session test_resale_cli
+python3 reference/booking_resale_admission/example_resale_payment_adapter.py
+```
+
+The runnable example uses actual local machines and `ResaleSession`, lists
+through the existing offer source, optionally holds, and records payment. Its
+`paused` output shows `PAYMENT_NOTED`, unchanged holder/version and UNBOUND
+settlement before a separate explicit transfer request. `run_example(hold=False)`
+also demonstrates observation directly from LISTED. All amounts, labels, times,
+references and keys are synthetic fixture choices. MOCK provenance and false
+funds/authority/durability/finality flags remain unchanged.
+
+[BOOKING_RESALE_ADMISSION_GATES.md §§7 and 10](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#10-리셀-수락-상태-기계)
+remain authoritative. Product values remain **UNDETERMINED — Astra/User**;
+provider authority remains with User/Toss technical owners, resale merchant
+eligibility with User/Toss sales, and compensation/payout obligations with their
+existing legal/accounting/tax owners. This code derives no reference from
+provider tuples or evidence hashes, interprets no cancellation history, and
+implements no reservation handoff. It supplies no external authority, live
+payment, funds execution, persistence, admission or production readiness.
+Full exact-head KTX/KIX CI and non-author A2 review remain required before merge.
