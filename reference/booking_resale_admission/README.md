@@ -264,3 +264,94 @@ remain: P03 is **설계중**; production timing, identity, revocation and indepe
 currentness remain **UNDETERMINED**, owned by Astra/User and contract owners.
 No automatic consume, retry, polling, reissue, persistence, HTTP, frontend,
 protocol command, read catalogue, runtime activation or policy decision is added.
+
+## Synthetic local resale offers
+
+`ResaleOfferSource.fetch(offer_id)` supplies one dictionary or `None`.
+`ResaleOfferAdapter(machine, source)` accepts a caller-configured
+`ResaleMachine` and exposes only this explicit listing operation:
+
+```python
+adapter.list_resale(offer_id, listing_id="list-1", idempotency_key="list-key")
+```
+
+The exact `ResaleOfferRecord` schema is:
+
+| Field | Shape |
+|---|---|
+| `offer_id` | Required identifier equal to the requested selector |
+| `right_id`, `seller_role`, `recipient_role` | Required identifiers |
+| `version` | Required nonnegative integer, excluding bool |
+| `amount` | Required positive integer within existing `_money` bounds |
+| `expires_ms` | Required integer within existing `_ms` bounds |
+| `reservation_id` | Optional identifier or null; omission forwards `None` |
+
+Identifiers use the existing `_ident` bounds. Unknown fields are refused,
+including listing IDs, idempotency keys, payment fields and authority flags.
+Listing identity and key always come from the caller. The offer selector is
+local metadata and never enters FSM arguments or fingerprints.
+
+Each explicit invocation fetches exactly once, including replay and malformed
+caller arguments. Missing input raises `ResaleOfferNotFound`; malformed records,
+mismatched selectors and invalid caller shapes raise `InvalidResaleOfferRecord`;
+source faults raise `ResaleOfferSourceError`. These local exceptions carry no
+protocol codes. Validation finishes before accessing any FSM method or binding
+its key. Fetch exceptions are caught only around fetch; FSM receipts are returned
+directly and FSM exceptions propagate unchanged. There is no retry, polling,
+cache or fallback. A source failure on replay remains a source failure.
+
+The adapter checks scalar shape, not ownership, version currency, price cap,
+expiry against a clock, live listings or admission locks. Those decisions and
+retained first-result semantics belong to the existing FSM
+([contract §10](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#10-리셀-수락-상태-기계)).
+A valid record can therefore be refused by the FSM and retain a rejection key;
+a malformed record never reaches that boundary. Omitted and null reservation
+bindings both forward `None`, leaving authority resolution to the FSM.
+
+`FakeResaleOfferSource(recordings=...)` copies a mapping from offer IDs to
+immutable JSON strings or `SyntheticResaleOfferFault.ERROR/TIMEOUT` markers.
+The mapping is read-only; each fetch decodes a detached object; `calls` returns
+a tuple snapshot. Duplicate JSON keys, non-finite constants, malformed JSON and
+non-object roots are refused. Synthetic faults raise immediately without I/O.
+
+### Resale coverage and example
+
+Coverage was mapped before adding the new tests:
+
+| Requirement | Existing coverage | New gap evidence |
+|---|---|---|
+| Ownership/version/price/expiry and competing listing | Sufficient scoped FSM behavior: `test_resale_fsm.py::ResaleFsmTests.test_stale_listing_policy_and_expiry_do_not_transfer`, `test_buy_hold_is_optional_and_cancel_order_decides_the_race` | Partial overall: `test_resale_offer_adapter.py` compares direct and adapted receipts/errors, states, digests and journals |
+| Replay, rejection atomicity, admission locks and mock flags | Sufficient scoped FSM behavior: `test_restore_replays_one_transfer_and_omits_rejections`, `test_external_attempts_do_not_journal`, generated `ResaleRejectionAtomicityTests.test_list_resale_*_leaves_no_trace` | Partial overall: exact forwarding, exception identity, replay after expiry and retained rejections through the adapter |
+| Single fetch, immutable recordings, detached outputs | Not covered for resale source | `test_resale_offer_source.py` and adapter call-count/fault tests |
+| Missing/malformed/mismatched/fault inputs touch no FSM or key | Not covered for resale source | No-access guard, real-machine snapshots/journals, zero method calls and valid acceptance with the same key |
+| Runnable listing boundary | Not covered | `example_resale_offer_adapter.py` and its regression test |
+
+From repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/example_resale_offer_adapter.py
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$PWD/reference/booking_resale_admission" \
+  python3.12 -m unittest test_resale_offer_source test_resale_offer_adapter
+```
+
+The example constructs actual `ReservationMachine` and `ResaleMachine`
+instances, registers a synthetic show, issues and adopts a ticket, then explicitly
+lists and separately attempts a competing listing, displaying `RIGHT_SALE_LOCKED`.
+Setup injects an already-observed primary-payment fact; it initiates no payment.
+After setup the journey performs no hold, resale-payment or transfer command,
+and leaves holder/version unchanged. All amounts, expiry and role labels are
+synthetic fixture choices, not approved policy. Actual checks and limitations
+are in the [resale execution record](../../validation/2026-11-02-plan-local-resale-offer-source/README.md).
+
+R01/R05 remain partial and **설계중**. Product policy stays **UNDETERMINED** with
+Astra/User; legal/privacy inputs retain User and legal/privacy owners, tax and
+accounting retain User and tax/accounting owners, and Toss inputs retain User
+and the named Toss technical/sales owners in
+[§7.1](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#71-이-노드가-분류하는-항목).
+This source-informed single-process mock adds no payment lookup handoff,
+automatic hold/payment/transfer, seller payout, marketplace authentication,
+external calls or persistence. Existing Class B internal-fault and clock-skew
+characterizations remain; no general rollback guarantee is added. No real funds,
+provider/chain verification, independent currentness, cross-channel exclusion,
+legal compliance or production readiness is claimed. Non-author exact-final-head
+review and successful KTX/KIX CI remain required before merge.
