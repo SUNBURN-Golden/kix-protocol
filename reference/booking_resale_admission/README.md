@@ -106,3 +106,161 @@ This is in-memory, sequential mock evidence: no persistence, hardware, credentia
 external calls, production runtime, funds, chain finality, venue exactly-once or
 runtime activation. Non-author exact-head review and KTX/KIX checks are separate
 supervisor steps, not builder self-assessments.
+
+## Reusable admission session and JSONL CLI
+
+`AdmissionSession(machine, source)` is importable with this directory on
+`PYTHONPATH`. It delegates to the merged adapter and the caller's actual
+`AdmissionMachine`, preserving its configured sources, exceptions and receipts.
+It has no receipt cache or independent lifecycle. Each call performs only the
+requested operation. This is a sequential local session, not a delegated venue
+credential or a protocol session command.
+
+```python
+from admission_fixture import load_fixture
+
+session = load_fixture("reference/booking_resale_admission/fixtures/admission_session.json")
+receipt = session.authorize_admission(
+    "ticket-1", admission_id="entry-1", idempotency_key="entry-key-1",
+    gate_role="gate-a", expires_ms=1_060_000,
+)
+assert session.view("issue-1")["version"] == 1
+# A separate caller request is necessary to consume.
+consumed = session.consume(
+    "ticket-1", consume_id="consume-1", idempotency_key="consume-key-1", gate_role="gate-a",
+)
+```
+
+The five public methods and all required arguments are:
+
+| Local method selector | Arguments |
+|---|---|
+| `authorize_admission` | `presentation_id`, `admission_id`, `idempotency_key`, `gate_role`, `expires_ms` |
+| `consume` | `presentation_id`, `consume_id`, `idempotency_key`, `gate_role` |
+| `view` | `right_id` |
+| `view_credential` | `right_id`, `version`, `holder_role` |
+| `set_clock` | `subject_id`, `idempotency_key`, `now_ms` |
+
+Python authorization/consumption accept a positional presentation ID and the
+remaining arguments as keyword-only, matching the adapter. Views and clock
+changes delegate directly to the existing machine. `set_clock` retains the
+machine's reservation clock delegation and does not advance the resale clock.
+No wall clock is consulted. A duplicate first-result receipt may still say
+`AUTHORIZED` after a fresh `view` says `CONSUMED`; the session does not replace
+one with the other.
+
+### Fixture input
+
+`admission_fixture.load_fixture(path)` strictly decodes the caller's JSON and
+constructs fresh `SettlementMachine()`, `ReservationMachine(settlement_source=book)`,
+`ResaleMachine(ticket_source=tickets)` and
+`AdmissionMachine(ticket_source=tickets, ownership_source=resale, settlement_source=book)`.
+It returns the session only after every explicit setup operation succeeds.
+The fixture is synthetic setup input, not saved session state or persistence.
+
+The top-level object requires exactly `fixture_version: 1`,
+`provenance: "MOCK_GATE_ONLY"`, `setup` and `presentations`. Unknown fields,
+duplicate JSON keys, non-finite numbers, wrong shapes and unsupported versions
+are rejected with `FixtureError`, a local exception without a protocol code.
+The [complete fixture](fixtures/admission_session.json) supplies every value;
+none is an approved product default.
+
+`setup` is a nonempty ordered array of objects with exactly `machine`,
+`operation`, `subject_id`, `idempotency_key` and `body`. Each body must include
+exactly the existing method's keyword parameters other than `idempotency_key`,
+including normally optional `currency`, `adjustment_reason`, `reservation_id`
+and `quote_ref`. The subject ID is passed as the method's first argument.
+Only these explicit setup operations are accepted:
+
+| Machine | Setup operations |
+|---|---|
+| settlement | `initiate`, `authorize`, `capture`, `commit` |
+| reservation | `set_clock`, `register_show`, `hold`, `confirm`, `observe_payment`, `bind_settlement`, `issue` |
+| resale | `set_clock`, `adopt_issued` |
+| admission | `set_clock`, `adopt_issued` |
+
+Every timed machine requires its own explicit initial clock before its other
+setup operations. Every issued right requires both resale and admission
+adoption, a confirmed reservation and an explicit settlement binding.
+Adoption and confirmation require non-null reservation and quote identifiers
+for this fixture interface. The FSMs validate the actual setup order, bindings,
+amounts, clocks and policies; their rejections propagate unchanged. Invalid
+setup discards the local graph without exposing a partial session. This does
+not add cross-machine rollback semantics.
+
+`presentations` is an array of objects with `operation`, `presentation_id` and
+exactly one of `recorded_text` or `fault`. The first two fields form the unique
+recording identity. `operation` is `authorize_admission` or `consume`.
+`recorded_text` is JSON **text** using the adapter's record fields above; it is
+preserved for source validation at fetch time. `fault` is one of
+`synthetic_presentation_error` or `synthetic_presentation_timeout`, the existing
+immediate synthetic fault markers. Missing recordings remain missing. The
+loader never manufactures presentations, identifiers, keys, policy or clocks.
+
+### Runnable transcript
+
+From repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="$PWD/reference/booking_resale_admission"
+python3.12 reference/booking_resale_admission/admission_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/admission_session.json \
+  --requests reference/booking_resale_admission/fixtures/admission_requests.jsonl
+# Expected exit: 1, because the transcript contains three explicit rejections.
+```
+
+`--requests -` reads JSONL from stdin in the same process. Each line requires
+exactly `{"operation": METHOD, "arguments": {...}}`, with all arguments in the
+table above. These are local method selectors, not wire commands or a read
+catalogue. Blank lines, unknown fields/methods and missing arguments are
+malformed input. No request or key is generated implicitly.
+
+One JSON object is emitted per supplied request, containing `operation` and
+`receipt`, `view` or `error`. Domain errors retain `error.code`; local exceptions
+use `error.type` and `error.message`, without an invented protocol code.
+A domain or presentation rejection permits processing the next explicitly
+supplied line, with no retry or follow-up request. Malformed JSON/schema stops
+processing immediately; earlier explicit operations in that process may
+already have occurred. Setup failures produce one error and process no requests.
+Exit codes are 0 for all-success input, 1 for request rejections, and 2 for
+malformed input/setup or input-file errors. Unexpected programming failures
+remain visible as exceptions.
+
+The fixture transcript produces these observable results:
+
+| Line | Request | Expected result |
+|---|---|---|
+| 1 | view ticket 1 | `ELIGIBLE`, version 1 |
+| 2–4 | authorize; view; view credential | `AUTHORIZED`, version 1; fresh presentation, no consumption |
+| 5 | explicit consume | `CONSUMED_ONCE`, version 2 |
+| 6 | same consume and key | duplicate receipt, no new journal entry/effect |
+| 7–8 | same authorization; current view | first `AUTHORIZED` receipt versus current `CONSUMED` view |
+| 9 | authorization key with a different gate | `IDEMPOTENCY_CONFLICT` |
+| 10 | ticket 2 stale version | `STALE_VERSION` |
+| 11–12 | authorize ticket 2; explicitly advance admission clock | authorization then its expiry boundary |
+| 13–14 | consume ticket 2; view | `ADMISSION_EXPIRED`; version 1, still unconsumed |
+
+### Session coverage and validation
+
+The [execution record](../../validation/2026-11-02-plan-local-admission-session-cli/README.md)
+contains the requirement-by-requirement coverage mapping recorded before new
+tests, commands/results and the exact socket-free admission selection.
+`test_admission_session.py` fills session delegation, source-failure/no-follow-up,
+clock forwarding, first-receipt/current-view and retained flag gaps.
+`test_admission_cli.py` fills strict fixture/input validation, reusable loading,
+CLI subprocess/stdin, transcript/replay and exit-status gaps. These tests use
+actual configured local FSMs, plus boundary spies and immediate synthetic faults.
+
+```bash
+python3.12 -m unittest test_admission_session test_admission_cli
+python3.12 -m unittest test_presentation_source test_presentation_adapter
+```
+
+Normal non-author exact-final-head review/A2 and completed/success KTX and KIX
+workflows, including the unchanged HTTP suite, remain necessary before merge.
+Local results do not claim full booking-suite success. The limitations above
+remain: P03 is **설계중**; production timing, identity, revocation and independent
+currentness remain **UNDETERMINED**, owned by Astra/User and contract owners.
+No automatic consume, retry, polling, reissue, persistence, HTTP, frontend,
+protocol command, read catalogue, runtime activation or policy decision is added.
