@@ -220,8 +220,10 @@ class AdmissionCliTests(unittest.TestCase):
         variants = [[], {}, {"operation": "view"}, {"operation": "view", "arguments": {}, "extra": 1},
                     {"operation": "adopt_issued", "arguments": {}}, {"operation": [], "arguments": {}},
                     {"operation": "view", "arguments": []}]
-        # Includes all five explicit methods and their mandatory arguments.
+        # Includes all six explicit methods and their mandatory arguments.
         unique = {r["operation"]: r for r in requests()}
+        unique["reconcile"] = {"operation": "reconcile",
+                               "arguments": {"right_id": "issue-1", "idempotency_key": "recon"}}
         for req in unique.values():
             for field in req["arguments"]:
                 value = deepcopy(req)
@@ -265,3 +267,7 @@ class AdmissionCliTests(unittest.TestCase):
         session = AdmissionSession(machine, Mock())
         with self.assertRaisesRegex(RuntimeError, "programming fault"):
             run_requests(session, [json.dumps(requests()[0])])
+
+    def test_reconcile_file_stdin_and_direct_fsm_parity(self):
+        from test_booking_cli import check_reconcile_cli
+        check_reconcile_cli(self, 'admission')

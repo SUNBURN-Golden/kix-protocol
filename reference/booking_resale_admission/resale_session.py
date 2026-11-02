@@ -69,6 +69,9 @@ class ResaleSession:
         # This clock belongs only to resale; reservation time is independent.
         return self._machine.set_clock(subject_id, now_ms=now_ms, idempotency_key=idempotency_key)
 
+    def reconcile(self, listing_id: object, *, idempotency_key: object) -> dict:
+        return self._machine.reconcile(listing_id, idempotency_key=idempotency_key)
+
     def view(self, listing_id: str) -> dict:
         return self._machine.view(listing_id)
 

@@ -131,7 +131,7 @@ consumed = session.consume(
 )
 ```
 
-The five public methods and all required arguments are:
+The six public methods and all required arguments are:
 
 | Local method selector | Arguments |
 |---|---|
@@ -139,10 +139,11 @@ The five public methods and all required arguments are:
 | `consume` | `presentation_id`, `consume_id`, `idempotency_key`, `gate_role` |
 | `view` | `right_id` |
 | `view_credential` | `right_id`, `version`, `holder_role` |
+| `reconcile` | `right_id`, `idempotency_key` |
 | `set_clock` | `subject_id`, `idempotency_key`, `now_ms` |
 
 Python authorization/consumption accept a positional presentation ID and the
-remaining arguments as keyword-only, matching the adapter. Views and clock
+remaining arguments as keyword-only, matching the adapter. Views, reconciliation and clock
 changes delegate directly to the existing machine. `set_clock` retains the
 machine's reservation clock delegation and does not advance the resale clock.
 No wall clock is consulted. A duplicate first-result receipt may still say
@@ -377,6 +378,7 @@ are added. The caller explicitly chooses every mutation's idempotency key.
 | `bind_settlement` | `listing_id`, `settlement_id` |
 | `accept_resale` | `transfer_id`, `listing_id` |
 | `close` | `listing_id` |
+| `reconcile` | `listing_id`; mandatory caller key, process-local receipt bookkeeping |
 | `set_clock` | `subject_id` (`"clock"`), `now_ms`; advances resale only |
 | `view` | `listing_id`; no key |
 | `view_right` | `right_id`; no key |
@@ -570,7 +572,7 @@ The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
 {"surface":"admission","operation":"view","arguments":{"right_id":"issue-1"}}
 ```
 
-`surface` is exactly `resale` or `admission`. All thirteen resale selectors and five
+`surface` is exactly `resale` or `admission`. All fourteen resale selectors and six
 admission selectors documented above retain their exact arguments, including
 optional resale payment `buyer_role`. The existing dispatchers validate them;
 cross-surface selectors, setup and a settlement surface are refused. Output adds
@@ -661,13 +663,17 @@ All listed arguments are required; extra arguments are rejected.
 | `release` | `reservation_id`, `idempotency_key` |
 | `confirm` | `order_id`, `reservation_id`, `amount`, `quote_ref`, `idempotency_key` |
 | `cancel` | `reservation_id`, `idempotency_key` |
+| `reconcile` | `reservation_id`, `idempotency_key` |
 | `view` | `reservation_id` |
 | `view_show` | `show_id` |
 
 A successful explicit `set_clock` **through this session** is required before
-other mutations, even when the supplied machine already has a clock. A successful
+registration, hold, release, confirm and cancel, even when the supplied machine
+already has a clock. A successful
 replay counts as explicit initialization; it does not change current time.
-Views require no clock initialization and do not mutate state. The desk requires
+Views require no clock initialization and do not mutate state. Reconciliation
+also requires no session clock initialization, preserving direct FSM parity,
+but retains process-local receipt or rejection bookkeeping. The desk requires
 `quote_ref` to be a non-null valid existing identifier (opaque text, not a
 validated external quote). Missing clock or invalid quote raises local
 `BookingInputError` without calling the FSM or retaining the key. Other validation
@@ -675,7 +681,7 @@ is delegated unchanged: identifier length 1..100, capacity and gate-role limits
 16, reservation window at most the existing synthetic 900000 ms limit, integer
 money and bps checks. These fixture bounds are not approved product TTLs or policy.
 
-Success output contains `operation` and unchanged `receipt` (mutations) or `view`.
+Success output contains `operation` and unchanged `receipt` (business operations or reconciliation) or `view`.
 FSM rejection contains `error: {"code": "..."}`; local input/file errors contain
 `error.type` and `error.message`, introducing no protocol codes. Domain rejection
 continues only with subsequent supplied lines. Malformed JSON, duplicate keys at
@@ -878,3 +884,75 @@ execution, reservation-payment handoff, reissuance or runtime activation is adde
 Product values remain **UNDETERMINED — Astra/User**; provider authority remains
 with User/Toss technical owners, merchant eligibility with User/Toss sales,
 and payout obligations with the existing legal/accounting/tax owners.
+
+
+## Explicit reconciliation in local ticket desks
+
+Booking, resale and admission sessions now expose their existing FSM `reconcile`
+method directly, once per explicit request. The caller supplies the subject
+identity and idempotency key unchanged. There is no source recording fetch,
+pre-read, generated key, clock update or automatic follow-up. The shared ticket
+operations desk uses its existing resale/admission routing; booking remains its
+separate desk. These selectors add no protocol command, read catalogue or export.
+
+Standalone JSONL requests have exactly `operation` and `arguments`; shared
+requests add exactly `surface`:
+
+```json
+{"operation":"reconcile","arguments":{"reservation_id":"reserve-1","idempotency_key":"booking-recon"}}
+{"operation":"reconcile","arguments":{"listing_id":"list-1","idempotency_key":"resale-recon"}}
+{"operation":"reconcile","arguments":{"right_id":"issue-1","idempotency_key":"admission-recon"}}
+{"surface":"resale","operation":"reconcile","arguments":{"listing_id":"list-1","idempotency_key":"resale-recon"}}
+{"surface":"admission","operation":"reconcile","arguments":{"right_id":"issue-1","idempotency_key":"admission-recon"}}
+```
+
+Results contain `operation`, unchanged `receipt` and shared `surface` where
+applicable. `matched`, `state_digest`, `entry_count`, subject snapshots,
+provenance and false non-claim flags remain those of the FSM. Domain errors keep
+`{code}`; local input errors keep `{type,message}`. Existing exit codes 0/1/2
+and stream continuation/stopping rules still apply.
+
+Reconciliation compares replayed accepted journals with local business state.
+It preserves those journals and ticket/payment state, while retaining the FSM's
+process-local receipt or rejection under the supplied key. It is a stateful
+operation, not a read-only query. Same-key replay returns the original snapshot
+with `duplicate: true`, `applied: null`; the current `view` may differ. Changed
+subjects or cross-operation key reuse retain `IDEMPOTENCY_CONFLICT`. Reconcile
+receipts and rejected calls are absent from accepted journals and are not
+restored as durable evidence. A digest is not a signature or authenticated audit.
+`matched` does not establish independent currentness or grant permission to act.
+
+Bound-source checks retain their existing failure semantics. The shared journey
+explicitly authorizes admission, reconciles successfully, advances the admission
+clock to that authorization's synthetic expiry, and separately lists, pays,
+binds, transfers and closes through resale. Replaying the old reconciliation key
+still returns its historical success; a fresh admission reconciliation key
+returns `STALE_VERSION` when authorization replay encounters the moved ownership.
+The failed key repeats that refusal. No credential is repaired or reissued.
+All clock values, prices, roles and keys are synthetic caller inputs.
+
+Run each transcript from repository root (each intentionally exits **1** because
+it contains explicit domain refusals):
+
+```bash
+python3 reference/booking_resale_admission/booking_cli.py --requests reference/booking_resale_admission/fixtures/booking_reconcile.jsonl
+for desk in resale admission ticket_operations; do
+  python3 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${desk}_session.json" \
+    --requests "reference/booking_resale_admission/fixtures/${desk}_reconcile.jsonl"
+done
+```
+
+Use `--requests -` with the same transcript on stdin. Booking shows historical
+`CONFIRMED` versus current `CANCELLED`; resale shows historical `LISTED` versus
+current `CLOSED`; admission shows historical `AUTHORIZED` versus current
+`CONSUMED`. Existing transcripts remain compatible.
+
+P03, R01–R05 and P06 retain their existing status. Currentness, operational policy
+and retention values remain **UNDETERMINED** with existing Astra/User and contract
+owners. This is no durable recovery, authenticated audit, payment lookup, retry,
+automatic repair, transfer, consumption, funds execution or production activation.
+The [builder evidence](../../validation/2026-11-03-plan-local-ticket-desk-reconciliation/README.md)
+records coverage, actual commands and local limits. Normal CI still requires the
+unchanged HTTP suite; non-author exact-head A2 review and completed/success KTX
+and KIX workflows remain required before merge.

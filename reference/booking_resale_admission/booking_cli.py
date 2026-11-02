@@ -23,6 +23,7 @@ _DISPATCH = {
     "confirm": (BookingSession.confirm, {"order_id", "reservation_id", "amount", "quote_ref",
                                           "idempotency_key"}, "receipt"),
     "cancel": (BookingSession.cancel, {"reservation_id", "idempotency_key"}, "receipt"),
+    "reconcile": (BookingSession.reconcile, {"reservation_id", "idempotency_key"}, "receipt"),
     "view": (BookingSession.view, {"reservation_id"}, "view"),
     "view_show": (BookingSession.view_show, {"show_id"}, "view"),
 }

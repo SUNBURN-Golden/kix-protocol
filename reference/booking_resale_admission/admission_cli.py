@@ -22,6 +22,7 @@ _DISPATCH = {
                             "receipt"),
     "consume": (AdmissionSession.consume,
                 {"presentation_id", "consume_id", "idempotency_key", "gate_role"}, "receipt"),
+    "reconcile": (AdmissionSession.reconcile, {"right_id", "idempotency_key"}, "receipt"),
     "view": (AdmissionSession.view, {"right_id"}, "view"),
     "view_credential": (AdmissionSession.view_credential,
                         {"right_id", "version", "holder_role"}, "view"),

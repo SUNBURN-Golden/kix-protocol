@@ -28,6 +28,9 @@ class AdmissionSession:
             gate_role=gate_role,
         )
 
+    def reconcile(self, right_id: object, *, idempotency_key: object) -> dict:
+        return self._machine.reconcile(right_id, idempotency_key=idempotency_key)
+
     def view(self, right_id: str) -> dict:
         return self._machine.view(right_id)
 
