@@ -372,6 +372,7 @@ are added. The caller explicitly chooses every mutation's idempotency key.
 | `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
 | `release_hold` | `hold_id`, `buyer_role` |
 | `cancel_listing` | `listing_id`, `seller_role` |
+| `observe_recorded_payment` | `recording_id`, `listing_id` (optional configured synthetic payment source required) |
 | `observe_resale_payment` | `listing_id`, `payment_ref`, `amount`; optional `buyer_role` (default `None`) |
 | `bind_settlement` | `listing_id`, `settlement_id` |
 | `accept_resale` | `transfer_id`, `listing_id` |
@@ -397,7 +398,8 @@ current = session.view("list-1")
 ### Synthetic resale fixture schema
 
 `resale_fixture.load_fixture(path)` accepts exactly `fixture_version: 1`,
-`provenance: "MOCK_GATE_ONLY"`, `setup`, and `offers`. No policy values or clocks
+`provenance: "MOCK_GATE_ONLY"`, `setup`, and `offers`, plus optional `payments`
+(documented below). No policy values or clocks
 are defaulted. Setup entries have exactly `machine`, `operation`, `subject_id`,
 `idempotency_key`, `body`. The setup allowlist is:
 
@@ -537,7 +539,8 @@ desk.admission.authorize_admission("ticket-1", admission_id="entry-1",
 
 Alternatively `ticket_operations_fixture.load_fixture(path)` returns a configured
 desk. Its JSON object requires exactly `fixture_version` (integer `1`),
-`provenance` (`"MOCK_GATE_ONLY"`), `setup`, `offers` and `presentations`.
+`provenance` (`"MOCK_GATE_ONLY"`), `setup`, `offers` and `presentations`, plus
+optional `payments` (documented below).
 Every setup row requires exactly `machine`, `operation`, `subject_id`,
 `idempotency_key`, `body`, using the existing admission fixture's exact schemas:
 
@@ -567,7 +570,7 @@ The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
 {"surface":"admission","operation":"view","arguments":{"right_id":"issue-1"}}
 ```
 
-`surface` is exactly `resale` or `admission`. All twelve resale selectors and five
+`surface` is exactly `resale` or `admission`. All thirteen resale selectors and five
 admission selectors documented above retain their exact arguments, including
 optional resale payment `buyer_role`. The existing dispatchers validate them;
 cross-surface selectors, setup and a settlement surface are refused. Output adds
@@ -739,9 +742,9 @@ session.accept_resale(transfer_id, listing_id=listing_id, idempotency_key=transf
 Import from `resale_payment_source`, `fake_resale_payment_source`,
 `resale_payment_adapter` and `resale_session` using this directory on `PYTHONPATH`,
 following the existing sibling-module convention. Existing direct session
-`observe_resale_payment` is unchanged; the new helper is Python-only and adds
-no CLI selector, fixture field, catalogue entry, protocol command or `REPLAYABLE`
-operation. A session without a payment source raises `ResalePaymentSourceError`
+`observe_resale_payment` is unchanged. The helper is also exposed by the local
+CLI selector and optional fixture field documented below; it adds no catalogue
+entry, protocol command or `REPLAYABLE` operation. A session without a payment source raises `ResalePaymentSourceError`
 before FSM access when this helper is invoked.
 
 Each adapter request fetches exactly once, including replay and invalid caller
@@ -792,3 +795,86 @@ provider tuples or evidence hashes, interprets no cancellation history, and
 implements no reservation handoff. It supplies no external authority, live
 payment, funds execution, persistence, admission or production readiness.
 Full exact-head KTX/KIX CI and non-author A2 review remain required before merge.
+
+
+## Recorded payments in both local ticket desks
+
+The standalone resale CLI and the shared ticket operations CLI expose the existing
+`ResaleSession.observe_recorded_payment` helper as a local selector. It uses the
+same resale machine that the shared admission desk reads as its ownership source.
+No FSM, protocol, contract, OpenAPI, SDK or HTTP binding changes are involved.
+
+Both version-1 fixture formats accept one optional top-level `payments` array.
+All existing required fields remain required and all other extra fields are
+rejected. Omission leaves the source unconfigured; `[]` configures an empty fake
+source. Each entry contains exactly `recording_id` and one payload:
+
+```json
+{"recording_id":"payment-1","recorded_text":"{\"listing_id\":\"list-1\",\"payment_ref\":\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\",\"amount\":8000,\"buyer_role\":\"buyer-2\"}"}
+{"recording_id":"timeout-1","fault":"synthetic_resale_payment_timeout"}
+```
+
+Identities must pass the existing identifier validator and be unique. Text must
+be a string; its JSON and existing four-field observation schema are validated
+only on fetch. The other supported immediate fault is
+`synthetic_resale_payment_error`. Unknown faults, duplicate identities, absent or
+both payloads, extra fields and non-array payment lists fail before any machine
+is constructed. These are synthetic observations without provider authority.
+
+Standalone requests contain exactly `operation` and `arguments`; shared requests
+add `surface: "resale"`:
+
+```json
+{"operation":"observe_recorded_payment","arguments":{"recording_id":"payment-1","listing_id":"list-1","idempotency_key":"payment-key"}}
+{"surface":"resale","operation":"observe_recorded_payment","arguments":{"recording_id":"payment-1","listing_id":"list-1","idempotency_key":"payment-key"}}
+```
+
+Those three arguments are exact and required. The record supplies explicit
+`buyer_role`; direct `observe_resale_payment` still accepts its optional
+`buyer_role`. Each structurally valid dispatched observation fetches once,
+including replay, and invokes the existing adapter once. Structural request
+errors fetch zero times. There is no retry, automatic next step or cached fallback.
+The recording ID does not enter FSM operation identities or journals.
+
+The [standalone fixture](fixtures/resale_payment_session.json) and
+[shared fixture](fixtures/ticket_operations_payment_session.json) preserve explicit
+setup and clocks. Run both LISTED and BUY_HELD paths from repository root:
+
+```bash
+for phase in listed held; do
+  python3 reference/booking_resale_admission/resale_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/resale_payment_session.json \
+    --requests "reference/booking_resale_admission/fixtures/resale_payment_${phase}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_payment_${phase}.jsonl"
+done
+```
+
+Use `--requests -` for stdin. Standalone transcripts exit 0; shared transcripts
+exit 1 because both separately requested admission authorizations return
+`STALE_VERSION`: the former holder/version 1 and unreissued recipient/version 2.
+Observation ends at `PAYMENT_NOTED`, with holder/version unchanged and no
+settlement command or transfer. The next view exposes this pause. Alias replay
+and replay after separate transfer/close retain the first observation receipt;
+transfer itself is another explicit request. Admission remains separate and no
+credential is reissued.
+
+Output retains `operation`, `receipt` (or `error`) and shared `surface`. Missing
+configuration/recordings, malformed or mismatched recordings and synthetic faults
+produce local `{type,message}` errors, exit 1, with no FSM mutation or key binding.
+A subsequent explicit line can use the same key with a valid recording. Valid
+records that reach an FSM semantic refusal retain its existing `{code}` error and
+key behavior. Structural/setup errors exit 2; a malformed request stops input.
+Unexpected programming errors propagate as before.
+
+The [payment-desk validation record](../../validation/2026-11-02-plan-local-resale-payment-desk/README.md)
+maps existing coverage and records socket-denied source, adapter, session,
+fixture/CLI tests, file/stdin subprocess transcripts and local verification limits.
+All authority, funds, durability and finality flags remain false. This is local
+source-informed regression evidence, not provider authenticity, real funds,
+production durability or chain finality evidence. No compensation, settlement
+execution, reservation-payment handoff, reissuance or runtime activation is added.
+Product values remain **UNDETERMINED — Astra/User**; provider authority remains
+with User/Toss technical owners, merchant eligibility with User/Toss sales,
+and payout obligations with the existing legal/accounting/tax owners.

@@ -11,6 +11,7 @@ from admission_fixture import FixtureError, decode_json, exact_fields
 from presentation_source import PresentationSourceError
 from resale_cli import dispatch_request as _resale
 from resale_offer_source import ResaleOfferSourceError
+from resale_payment_source import ResalePaymentSourceError
 from ticket_operations_fixture import load_fixture
 from ticket_operations_session import TicketOperationsSession
 
@@ -51,7 +52,8 @@ def run_requests(session: TicketOperationsSession, lines) -> int:
         except FixtureError as error:
             _emit(_error(surface, operation, error))
             return 2
-        except (*_DOMAIN_ERRORS, ResaleOfferSourceError, PresentationSourceError) as error:
+        except (*_DOMAIN_ERRORS, ResaleOfferSourceError, PresentationSourceError,
+                ResalePaymentSourceError) as error:
             result = _error(surface, operation, error)
             rejected = True
         _emit(result)
