@@ -355,3 +355,150 @@ characterizations remain; no general rollback guarantee is added. No real funds,
 provider/chain verification, independent currentness, cross-channel exclusion,
 legal compliance or production readiness is claimed. Non-author exact-final-head
 review and successful KTX/KIX CI remain required before merge.
+
+## Reusable resale session and JSONL CLI
+
+`ResaleSession(machine, source)` is importable with this directory on
+`PYTHONPATH`. Supply an existing configured `ResaleMachine` and
+`ResaleOfferSource`. Only `list_resale` calls the existing offer adapter, once
+per explicit invocation, including replay. Every other method forwards to the
+configured machine and returns its receipts/views unchanged. No session receipt
+cache, generated identifiers, automatic retries or implicit lifecycle actions
+are added. The caller explicitly chooses every mutation's idempotency key.
+
+| Session method / local CLI selector | Arguments besides mandatory `idempotency_key` on mutations |
+|---|---|
+| `list_resale` | `offer_id`, `listing_id` |
+| `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
+| `release_hold` | `hold_id`, `buyer_role` |
+| `cancel_listing` | `listing_id`, `seller_role` |
+| `observe_resale_payment` | `listing_id`, `payment_ref`, `amount`; optional `buyer_role` (default `None`) |
+| `bind_settlement` | `listing_id`, `settlement_id` |
+| `accept_resale` | `transfer_id`, `listing_id` |
+| `close` | `listing_id` |
+| `set_clock` | `subject_id` (`"clock"`), `now_ms`; advances resale only |
+| `view` | `listing_id`; no key |
+| `view_right` | `right_id`; no key |
+| `view_presentation` | `right_id`, `version`, `holder_role`; no key |
+
+These are existing Python method selectors, not new protocol commands or a
+read catalogue. FSM scalar validation and existing errors remain authoritative.
+In Python the first identity may be positional, and the remaining arguments
+are keyword-only. For example:
+
+```python
+from resale_fixture import load_fixture
+
+session = load_fixture("reference/booking_resale_admission/fixtures/resale_session.json")
+receipt = session.list_resale("offer-1", listing_id="list-1", idempotency_key="list-key")
+current = session.view("list-1")
+```
+
+### Synthetic resale fixture schema
+
+`resale_fixture.load_fixture(path)` accepts exactly `fixture_version: 1`,
+`provenance: "MOCK_GATE_ONLY"`, `setup`, and `offers`. No policy values or clocks
+are defaulted. Setup entries have exactly `machine`, `operation`, `subject_id`,
+`idempotency_key`, `body`. The setup allowlist is:
+
+- `settlement`: `initiate`, `authorize`, `capture`, `commit`.
+- `reservation`: `set_clock`, `register_show`, `hold`, `confirm`,
+  `observe_payment`, `bind_settlement`, `issue`.
+- `resale`: `set_clock`, `adopt_issued`.
+
+Body fields exactly match the corresponding `admission_fixture._SETUP` schema
+for those three machines; no admission setup is accepted. The complete
+[synthetic fixture](fixtures/resale_session.json) shows every field. Both
+reservation and resale clocks must be explicitly set before their other setup
+operations. Each issued right needs matching prior confirmation/issuance and
+resale adoption with non-null reservation/quote identifiers; the actual FSM
+checks show, slot, price, payment and issuance equality. Settlement binding is
+optional for issuance and resale. No settlement setup is required for UNBOUND
+flows. `PRIMARY_FEE_BPS` (`kind`, `fee_bps`, `residual_payee`, `fee_payee`) is
+caller-supplied synthetic settlement policy, never derived from resale allocation.
+
+Each offer entry has `offer_id` plus exactly one of `recorded_text` or `fault`.
+Duplicate offer identities are refused. `recorded_text` is JSON text with the
+existing offer fields documented above; validation on fetch belongs to the
+existing source/adapter. Supported immediate fault values are
+`synthetic_resale_offer_error` and `synthetic_resale_offer_timeout`.
+
+Structure is validated before construction. The loader builds fresh actual
+`SettlementMachine`, `ReservationMachine(settlement_source=book)` and
+`ResaleMachine(ticket_source=tickets, settlement_source=book)` instances and
+executes setup sequentially through public APIs. It publishes a session only
+after setup succeeds. This private construction is not cross-machine rollback.
+It does not change existing rejection behavior or clock-skew characterizations.
+
+### Runnable resale transcript
+
+From repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="$PWD/reference/booking_resale_admission"
+python3 reference/booking_resale_admission/resale_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/resale_session.json \
+  --requests reference/booking_resale_admission/fixtures/resale_requests.jsonl
+python3 -m unittest test_resale_session test_resale_cli
+```
+
+Use `--requests -` for stdin. Each line has exactly this shape:
+
+```json
+{"operation":"hold_buy","arguments":{"hold_id":"buy-hold","listing_id":"list-1","buyer_role":"buyer-2","idempotency_key":"buy-key"}}
+```
+
+The included transcript emits twelve rows, exits 0 and explicitly lists, holds,
+records synthetic payment, binds the preconfigured committed mock settlement,
+transfers, repeats transfer, closes, repeats transfer again and reads all three
+views. Only one transfer is journaled; current version is 2, generation stays 1.
+Replay after closure still returns the first `TRANSFERRED` snapshot with
+`duplicate: true`, `applied: null`; current `view` says `CLOSED`. The old holder's
+presentation no longer matches; the new holder/version matches the local right.
+That match does not reissue a venue credential.
+
+Payment observation never binds or commits settlement and never transfers.
+Binding never observes payment, calls settlement commands or transfers. Transfer
+never closes. UNBOUND transfer remains supported with
+`mock_settlement_commit_observed: false`. Bound uncommitted settlement fails with
+`SETTLEMENT_NOT_COMMITTED`, leaving settlement and ownership unchanged. To
+exercise it, omit only the `settlement` `commit` setup entry in a separate caller
+fixture, then supply the transcript through its first transfer. Competing
+listings, stale holder/version, expiry and cancellation after payment retain
+`RIGHT_SALE_LOCKED`, `NOT_HOLDER`, `STALE_VERSION`, `LISTING_NOT_OPEN` and
+`COMPENSATION_UNDEFINED` respectively.
+
+Output is one JSON object per request: `{"operation": ..., "receipt": ...}`,
+`{"operation": ..., "view": ...}` or `{"operation": ..., "error": ...}`.
+Domain errors preserve `{"code": error.code}`; fixture/source failures use
+`{"type": ..., "message": ...}`. Exit 0 means all requests succeeded; exit 1
+means a domain/source rejection occurred, with later operations possible only
+from later explicit input lines. Structural/fixture/file/usage failure exits 2;
+a malformed request stops the stream immediately. Unknown selectors, extra or
+missing arguments, invalid roots, duplicate keys at every depth, malformed JSON,
+nonfinite constants and exponent overflow are refused. Optional payment
+`buyer_role` may be omitted or null; all other documented arguments are required.
+Unexpected programming exceptions surface as failures. Views neither fetch offers
+nor change any machine.
+
+### Resale session coverage and limits
+
+The [validation record](../../validation/2026-11-02-plan-local-resale-session-cli/README.md)
+maps existing coverage before the new suites, gives actual commands/results and
+records remaining exact-head gates. `test_resale_session.py` covers delegation,
+explicit effects, source faults, historical/current views and isolation.
+`test_resale_cli.py` covers strict fixtures and requests, fresh actual graphs,
+importability, stdin/file execution, error continuation and uncommitted settlement.
+Existing resale FSM/source/adapter and HTTP tests remain unchanged.
+
+All values are synthetic. R01–R04 remain **설계중** and retain their existing
+status. Product TTLs, authentication, compensation, seller payout, legal treatment
+and provider authority remain **UNDETERMINED**, owned by Astra/User and the
+User/legal/privacy/tax/accounting/Toss owners in contract §7.1. Provenance remains
+`MOCK_GATE_ONLY`; every existing mock/non-claim flag is preserved. No persistence,
+sockets, HTTP, SDK, external service, credential, real money, provider/chain call,
+runtime activation or new protocol command is added. No durability, economic
+finality, bank exactly-once, independent currentness, legal compliance or
+production readiness is claimed. Non-author A2 exact-final-head review and both
+required workflows, including unchanged HTTP coverage, remain gates before merge.

@@ -1,0 +1,358 @@
+"""Strict offline fixture/JSONL acceptance and executable transcript regressions."""
+
+from contextlib import redirect_stdout
+from copy import deepcopy
+import io
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest.mock import Mock, patch
+
+from admission_fixture import FixtureError
+from reservation_fsm import ReservationError, ReservationMachine
+from resale_cli import dispatch_request, run_requests
+from resale_fixture import load_fixture
+from resale_fsm import ResaleError, ResaleMachine
+from resale_session import ResaleSession
+from settlement_fsm import SettlementMachine
+from test_resale_fsm import assert_not_final
+from test_resale_session import FIXTURE, FORWARD, HERE, REQUESTS, requests, snapshot
+
+
+def fixture():
+    return json.loads(FIXTURE.read_text())
+
+
+def run(session, rows):
+    out = io.StringIO()
+    with redirect_stdout(out):
+        status = run_requests(session, [json.dumps(row) + "\n" for row in rows])
+    return status, [json.loads(line) for line in out.getvalue().splitlines()]
+
+
+class ResaleFixtureTests(unittest.TestCase):
+    def load(self, value):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fixture.json"
+            path.write_text(json.dumps(value), encoding="utf-8")
+            return load_fixture(path)
+
+    def test_fresh_actual_graph_uses_custom_caller_values_without_binding_defaults(self):
+        value = fixture()
+        def rename(item):
+            if type(item) is dict:
+                return {k: rename(v) for k, v in item.items()}
+            if type(item) is list:
+                return [rename(v) for v in item]
+            if type(item) is str and item in ("issue-1", "buyer-1", "buyer-2", "resale-claim"):
+                return "custom-" + item
+            return item
+        value["setup"] = rename(value["setup"])
+        value["offers"][0]["recorded_text"] = json.dumps(rename(json.loads(value["offers"][0]["recorded_text"])))
+        first, second = self.load(value), self.load(value)
+        self.assertIsInstance(first, ResaleSession)
+        self.assertIsInstance(first._machine, ResaleMachine)
+        self.assertIsInstance(first._machine._tickets, ReservationMachine)
+        self.assertIsInstance(first._machine._settlement, SettlementMachine)
+        self.assertIs(first._machine._tickets._settlement, first._machine._settlement)
+        self.assertIsNot(first._machine, second._machine)
+        first.list_resale("offer-1", listing_id="custom-list", idempotency_key="custom-key")
+        self.assertEqual(first.view("custom-list")["seller_role"], "custom-buyer-1")
+        self.assertIsNone(second.view_right("custom-issue-1")["ticket"]["active_listing_id"])
+        self.assertEqual(first._machine._tickets.view("reserve-1")["settlement_gate"], "UNBOUND")
+        # No settlement setup at all is required by the synthetic fixture format.
+        value["setup"] = [e for e in value["setup"] if e["machine"] != "settlement"]
+        self.load(value)
+
+    def test_all_envelope_setup_and_body_fields_required_before_construction(self):
+        base = fixture()
+        variants = []
+        for field in base:
+            value = deepcopy(base)
+            del value[field]
+            variants.append(value)
+        for field in base["offers"][0]:
+            value = deepcopy(base)
+            del value["offers"][0][field]
+            variants.append(value)
+        for index, entry in enumerate(base["setup"]):
+            for field in entry:
+                value = deepcopy(base)
+                del value["setup"][index][field]
+                variants.append(value)
+            for field in entry["body"]:
+                value = deepcopy(base)
+                del value["setup"][index]["body"][field]
+                variants.append(value)
+        for index, value in enumerate(variants):
+            with self.subTest(index=index), patch("resale_fixture.SettlementMachine") as construct:
+                with self.assertRaises(FixtureError):
+                    self.load(value)
+                construct.assert_not_called()
+
+    def test_invalid_shapes_unknown_setup_and_offer_identities_rejected_before_construction(self):
+        variants = [[], fixture() | {"extra": 1}, fixture() | {"fixture_version": True},
+                    fixture() | {"fixture_version": 2}, fixture() | {"provenance": "LIVE"},
+                    fixture() | {"setup": {}}, fixture() | {"setup": []},
+                    fixture() | {"offers": {}}, fixture() | {"offers": [None]}]
+        for extra in ({"fault": "synthetic_resale_offer_error"}, {"extra": 1}, {"recorded_text": {}},
+                      {"offer_id": " bad "}):
+            value = fixture()
+            value["offers"][0].update(extra)
+            variants.append(value)
+        for fault in ("bad", {}, None):
+            value = fixture()
+            value["offers"] = [{"offer_id": "offer-1", "fault": fault}]
+            variants.append(value)
+        value = fixture()
+        value["offers"].append(deepcopy(value["offers"][0]))
+        variants.append(value)
+        for extra in ({"machine": []}, {"machine": "admission"}, {"operation": []},
+                      {"operation": "accept_resale"}, {"subject_id": None}, {"idempotency_key": True},
+                      {"body": []}, {"body": {"now_ms": 1000000, "extra": 1}}):
+            value = fixture()
+            value["setup"][0].update(extra)
+            variants.append(value)
+        for index, value in enumerate(variants):
+            with self.subTest(index=index), patch("resale_fixture.SettlementMachine") as construct:
+                with self.assertRaises(FixtureError):
+                    self.load(value)
+                construct.assert_not_called()
+
+    def test_explicit_clocks_and_matching_issuance_adoption_are_mandatory(self):
+        for machine, operation in (("reservation", "set_clock"), ("resale", "set_clock"),
+                                   ("reservation", "confirm"), ("reservation", "issue"),
+                                   ("resale", "adopt_issued")):
+            with self.subTest(machine=machine, operation=operation):
+                value = fixture()
+                value["setup"] = [e for e in value["setup"]
+                                  if (e["machine"], e["operation"]) != (machine, operation)]
+                with self.assertRaises(FixtureError):
+                    self.load(value)
+        for field in ("reservation_id", "order_id", "quote_ref"):
+            for invalid in (None, [], "other"):
+                if field == "quote_ref" and invalid == "other":
+                    continue  # authoritative quote equality is checked by the FSM below
+                value = fixture()
+                next(e for e in value["setup"] if e["operation"] == "adopt_issued")["body"][field] = invalid
+                with self.subTest(field=field, invalid=invalid), self.assertRaises(FixtureError):
+                    self.load(value)
+
+    def test_setup_domain_failure_never_publishes_partial_session(self):
+        value = fixture()
+        next(e for e in value["setup"] if e["operation"] == "hold")["body"]["slot"] = 100
+        with patch("resale_fixture.ResaleSession") as publish:
+            with self.assertRaises(ReservationError):
+                self.load(value)
+            publish.assert_not_called()
+        value = fixture()
+        next(e for e in value["setup"] if e["operation"] == "adopt_issued")["body"]["quote_ref"] = "other"
+        with patch("resale_fixture.ResaleSession") as publish:
+            with self.assertRaisesRegex(ResaleError, "ORDER_BINDING_CONFLICT"):
+                self.load(value)
+            publish.assert_not_called()
+
+    def test_bound_uncommitted_refusal_does_not_commit_or_transfer(self):
+        value = fixture()
+        value["setup"] = [e for e in value["setup"]
+                          if not (e["machine"] == "settlement" and e["operation"] == "commit")]
+        session = self.load(value)
+        machine = session._machine
+        before = snapshot(machine._settlement, machine._tickets)
+        status, rows = run(session, requests()[:5])
+        self.assertEqual(status, 1)
+        self.assertEqual(rows[-1]["error"], {"code": "SETTLEMENT_NOT_COMMITTED"})
+        self.assertEqual(session.view("list-1")["phase"], "PAYMENT_NOTED")
+        self.assertEqual(session.view_right("issue-1")["right"]["version"], 1)
+        self.assertEqual(snapshot(machine._settlement, machine._tickets), before)
+        self.assertEqual(machine._settlement.view("resale-claim")["phase"], "CAPTURED")
+        # Retained first rejection remains an error; wrapper never retries with new keys.
+        before = snapshot(machine)
+        self.assertEqual(run(session, [requests()[4]])[1][0]["error"], rows[-1]["error"])
+        self.assertEqual(snapshot(machine), before)
+
+    def test_recordings_validated_on_fetch_and_synthetic_faults_do_no_followup(self):
+        for entry, error_type in (({"recorded_text": "{"}, "InvalidResaleOfferRecord"),
+                                  ({"fault": "synthetic_resale_offer_error"}, "ResaleOfferSourceError"),
+                                  ({"fault": "synthetic_resale_offer_timeout"}, "ResaleOfferSourceError")):
+            value = fixture()
+            value["offers"] = [{"offer_id": "offer-1"} | entry]
+            session = self.load(value)
+            machine = session._machine
+            before = snapshot(machine, machine._tickets, machine._settlement)
+            status, rows = run(session, [requests()[0], requests()[9]])
+            self.assertEqual(status, 1)
+            self.assertEqual(rows[0]["error"]["type"], error_type)
+            self.assertEqual(rows[1]["view"]["right"]["version"], 1)
+            self.assertEqual(snapshot(machine, machine._tickets, machine._settlement), before)
+            self.assertEqual(session._adapter._source.calls, ("offer-1",))
+
+    def test_fixture_text_is_strict_before_any_machine_construction(self):
+        for text in ('{"x":1,"x":2}', '{"setup":[{"body":{"x":1,"x":2}}]}',
+                     '{"x":NaN}', '{"x":Infinity}', '{"x":-Infinity}', '{"x":1e999}', '{'):
+            with self.subTest(text=text), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "bad.json"
+                path.write_text(text)
+                with patch("resale_fixture.SettlementMachine") as construct:
+                    with self.assertRaises(FixtureError):
+                        load_fixture(path)
+                    construct.assert_not_called()
+
+
+class ResaleCliTests(unittest.TestCase):
+    def cli(self, *args, stdin=None):
+        return subprocess.run([sys.executable, str(HERE / "resale_cli.py"), *args], input=stdin,
+                              capture_output=True, text=True, cwd=HERE.parent, check=False)
+
+    def test_transcript_file_and_stdin_success_with_historical_receipts_current_views(self):
+        for selector, stdin in ((str(REQUESTS), None), ("-", REQUESTS.read_text())):
+            result = self.cli("--fixture", str(FIXTURE), "--requests", selector, stdin=stdin)
+            self.assertEqual((result.returncode, result.stderr), (0, ""))
+            rows = [json.loads(line) for line in result.stdout.splitlines()]
+            self.assertEqual(len(rows), 12)
+            transfer = rows[4]["receipt"]
+            self.assertEqual(rows[5]["receipt"], transfer | {"duplicate": True, "applied": None})
+            self.assertEqual(rows[7]["receipt"], transfer | {"duplicate": True, "applied": None})
+            self.assertEqual(transfer["listing"]["phase"], "TRANSFERRED")
+            self.assertEqual(rows[8]["view"]["phase"], "CLOSED")
+            self.assertEqual(rows[9]["view"]["right"]["version"], 2)
+            self.assertFalse(rows[10]["view"]["presentation"]["matches_current_right"])
+            self.assertTrue(rows[11]["view"]["presentation"]["matches_current_right"])
+            for row in rows:
+                assert_not_final(self, row.get("receipt", row.get("view")))
+
+    def test_every_selector_dispatches_exactly_once_and_payment_buyer_is_optional(self):
+        for operation, subject, arguments in FORWARD:
+            with self.subTest(operation=operation):
+                machine = Mock(spec=ResaleMachine)
+                expected = {"unchanged": operation}
+                getattr(machine, operation).return_value = expected
+                session = ResaleSession(machine, Mock())
+                result = dispatch_request(session, dict(operation=operation, arguments=arguments))
+                self.assertEqual(result, {"operation": operation,
+                                          "view" if operation.startswith("view") else "receipt": expected})
+                self.assertEqual(len(machine.mock_calls), 1)
+        for buyer in ("omitted", None, "buyer-2"):
+            req = deepcopy(requests()[2])
+            if buyer == "omitted":
+                del req["arguments"]["buyer_role"]
+            else:
+                req["arguments"]["buyer_role"] = buyer
+            session = load_fixture(FIXTURE)
+            status, rows = run(session, [requests()[0], req])
+            self.assertEqual(status, 0)
+            self.assertEqual(rows[-1]["receipt"]["listing"]["phase"], "PAYMENT_NOTED")
+
+    def test_structural_failure_stops_before_dispatch_or_next_line(self):
+        variants = [[], None, {}, {"operation": "view"},
+                    {"operation": "view", "arguments": {}, "extra": 1},
+                    {"operation": "adopt_issued", "arguments": {}},
+                    {"operation": "reconcile", "arguments": {}},
+                    {"operation": "consume", "arguments": {}},
+                    {"operation": "resale_accept_resale", "arguments": {}},
+                    {"operation": [], "arguments": {}},
+                    {"operation": "view", "arguments": []}]
+        examples = [(op, args) for op, _, args in FORWARD]
+        examples.append(("list_resale", requests()[0]["arguments"]))
+        for operation, arguments in examples:
+            for field in arguments:
+                if operation == "observe_resale_payment" and field == "buyer_role":
+                    continue
+                changed = dict(arguments)
+                del changed[field]
+                variants.append(dict(operation=operation, arguments=changed))
+            variants.append(dict(operation=operation, arguments=arguments | {"extra": 1}))
+            if operation.startswith("view"):
+                variants.append(dict(operation=operation, arguments=arguments | {"idempotency_key": "k"}))
+        for req in variants:
+            with self.subTest(req=req):
+                session = Mock()
+                status, rows = run(session, [req, requests()[0]])
+                self.assertEqual(status, 2)
+                self.assertEqual(len(rows), 1)
+                self.assertEqual(rows[0]["error"]["type"], "FixtureError")
+                self.assertEqual(session.mock_calls, [])
+
+    def test_bad_json_duplicate_keys_nonfinite_and_overflow_stop_without_followup(self):
+        texts = ('{', '\n', '[]', 'true',
+                 '{"operation":"view","operation":"close","arguments":{}}',
+                 '{"operation":"view","arguments":{"listing_id":"x","listing_id":"y"}}')
+        texts += tuple('{"operation":"view","arguments":{"listing_id":' + x + '}}'
+                       for x in ('NaN', 'Infinity', '-Infinity', '1e999'))
+        for text in texts:
+            with self.subTest(text=text):
+                session = Mock()
+                out = io.StringIO()
+                with redirect_stdout(out):
+                    status = run_requests(session, [text, json.dumps(requests()[0])])
+                self.assertEqual(status, 2)
+                self.assertEqual(len(out.getvalue().splitlines()), 1)
+                self.assertEqual(session.mock_calls, [])
+        result = self.cli("--fixture", str(FIXTURE), "--requests", "-", stdin=text)
+        self.assertEqual(result.returncode, 2)
+
+    def test_domain_rejections_continue_only_with_explicit_lines_and_exit_one(self):
+        competitor = deepcopy(requests()[0])
+        competitor["arguments"].update(listing_id="competing", idempotency_key="compete")
+        cancel = dict(operation="cancel_listing", arguments=dict(
+            listing_id="list-1", seller_role="buyer-1", idempotency_key="cancel"))
+        rows = [requests()[0], competitor, requests()[2], cancel, requests()[8]]
+        result = self.cli("--fixture", str(FIXTURE), "--requests", "-",
+                          stdin="".join(json.dumps(row) + "\n" for row in rows))
+        self.assertEqual((result.returncode, result.stderr), (1, ""))
+        results = [json.loads(line) for line in result.stdout.splitlines()]
+        self.assertEqual([r["error"] for r in results if "error" in r],
+                         [{"code": "RIGHT_SALE_LOCKED"}, {"code": "COMPENSATION_UNDEFINED"}])
+        self.assertEqual(results[-1]["view"]["phase"], "PAYMENT_NOTED")
+        session = load_fixture(FIXTURE)
+        bad_scalar = dict(operation="set_clock", arguments=dict(
+            subject_id="clock", idempotency_key="bad", now_ms=True))
+        self.assertEqual(run(session, [bad_scalar])[1][0]["error"], {"code": "CLOCK"})
+        absent = deepcopy(requests()[0])
+        absent["arguments"]["offer_id"] = "absent"
+        status, results = run(session, [absent, requests()[0]])
+        self.assertEqual(status, 1)
+        self.assertEqual(results[0]["error"]["type"], "ResaleOfferNotFound")
+        self.assertEqual(results[1]["receipt"]["listing"]["phase"], "LISTED")
+        self.assertEqual(session._adapter._source.calls, ("absent", "offer-1"))
+
+    def test_views_via_cli_do_not_mutate_any_machine_or_fetch(self):
+        session = load_fixture(FIXTURE)
+        run(session, requests()[:7])
+        machine = session._machine
+        before = snapshot(machine, machine._tickets, machine._settlement)
+        calls = session._adapter._source.calls
+        self.assertEqual(run(session, requests()[8:])[0], 0)
+        self.assertEqual(snapshot(machine, machine._tickets, machine._settlement), before)
+        self.assertEqual(session._adapter._source.calls, calls)
+
+    def test_bad_paths_setup_and_usage_exit_two(self):
+        for args in (("--fixture", str(FIXTURE), "--requests", str(HERE / "absent")),
+                     ("--fixture", str(HERE / "absent"), "--requests", "-"), ()):
+            self.assertEqual(self.cli(*args, stdin="").returncode, 2)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "bad.json"
+            path.write_text('{}')
+            result = self.cli("--fixture", str(path), "--requests", "-", stdin="")
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(json.loads(result.stdout)["error"]["type"], "FixtureError")
+            value = fixture()
+            next(e for e in value["setup"] if e["operation"] == "hold")["body"]["slot"] = 100
+            path.write_text(json.dumps(value))
+            result = self.cli("--fixture", str(path), "--requests", "-", stdin="")
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("code", json.loads(result.stdout)["error"])
+
+    def test_importable_without_cli_side_effects_and_unexpected_failures_surface(self):
+        env = dict(os.environ, PYTHONPATH=str(HERE), PYTHONDONTWRITEBYTECODE="1")
+        result = subprocess.run([sys.executable, "-c", "import resale_session, resale_fixture, resale_cli"],
+                                env=env, cwd=tempfile.gettempdir(), capture_output=True, text=True, check=False)
+        self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
+        machine = Mock(spec=ResaleMachine)
+        machine.view.side_effect = RuntimeError("programming fault")
+        with self.assertRaisesRegex(RuntimeError, "programming fault"):
+            run(ResaleSession(machine, Mock()), [requests()[8]])
