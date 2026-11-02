@@ -503,6 +503,115 @@ finality, bank exactly-once, independent currentness, legal compliance or
 production readiness is claimed. Non-author A2 exact-final-head review and both
 required workflows, including unchanged HTTP coverage, remain gates before merge.
 
+## Shared local ticket operations desk
+
+`ticket_operations_session.TicketOperationsSession` constructs one settlement,
+reservation, resale and admission machine. Reservation, resale and admission
+share the settlement source; resale and admission share the reservation source;
+admission reads that same resale machine as its ownership source. Its `.resale`
+and `.admission` are the existing sessions, using the existing offer/presentation
+adapters. Each construction is a fresh sequential in-memory graph.
+
+With this directory on `PYTHONPATH`, callers can supply their own synthetic setup
+and sources:
+
+```python
+import json
+from pathlib import Path
+from fake_presentation_source import FakePresentationSource
+from fake_resale_offer_source import FakeResaleOfferSource
+from ticket_operations_session import TicketOperationsSession
+
+value = json.loads(Path("reference/booking_resale_admission/fixtures/ticket_operations_session.json").read_text())
+desk = TicketOperationsSession(
+    setup=value["setup"],
+    offer_source=FakeResaleOfferSource(recordings={e["offer_id"]: e["recorded_text"] for e in value["offers"]}),
+    presentation_source=FakePresentationSource(recordings={
+        (e["operation"], e["presentation_id"]): e["recorded_text"] for e in value["presentations"]}),
+)
+desk.resale.list_resale("offer-1", listing_id="list-1", idempotency_key="my-list")
+desk.resale.cancel_listing("list-1", seller_role="buyer-1", idempotency_key="my-cancel")
+desk.admission.authorize_admission("ticket-1", admission_id="entry-1",
+    idempotency_key="my-entry", gate_role="gate-a", expires_ms=1060000)
+```
+
+Alternatively `ticket_operations_fixture.load_fixture(path)` returns a configured
+desk. Its JSON object requires exactly `fixture_version` (integer `1`),
+`provenance` (`"MOCK_GATE_ONLY"`), `setup`, `offers` and `presentations`.
+Every setup row requires exactly `machine`, `operation`, `subject_id`,
+`idempotency_key`, `body`, using the existing admission fixture's exact schemas:
+
+| Machine | Setup selectors |
+| --- | --- |
+| `settlement` | `initiate`, `authorize`, `capture`, `commit` |
+| `reservation` | `set_clock`, `register_show`, `hold`, `confirm`, `observe_payment`, `bind_settlement`, `issue` |
+| `resale`, `admission` | `set_clock`, `adopt_issued` |
+
+Explicit initial clocks, confirmed/issued rights, primary settlement binding and
+adoption into both surfaces are required by this fixture format. All policy,
+time, identity, quote, payment and settlement values are caller-supplied synthetic
+inputs. Resale settlement binding remains optional and explicit. Setup runs
+sequentially through public methods; only successful construction exposes the
+sessions. Discarding failed construction provides no cross-machine rollback.
+
+Offer rows require `offer_id` and exactly one of `recorded_text` or `fault`.
+Presentation rows require `operation`, `presentation_id` and exactly one payload.
+Their schemas and synthetic faults are unchanged from the individual fixtures;
+duplicate identities are refused. Record text is validated on fetch, including
+on replay, rather than during construction.
+
+The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
+
+```json
+{"surface":"resale","operation":"view","arguments":{"listing_id":"list-1"}}
+{"surface":"admission","operation":"view","arguments":{"right_id":"issue-1"}}
+```
+
+`surface` is exactly `resale` or `admission`. All twelve resale selectors and five
+admission selectors documented above retain their exact arguments, including
+optional resale payment `buyer_role`. The existing dispatchers validate them;
+cross-surface selectors, setup and a settlement surface are refused. Output adds
+`surface` to the existing `operation` plus `receipt`, `view` or `error` envelope.
+Domain errors retain `{code}`; local errors retain `{type,message}`. Exit 0 means
+all supplied requests succeeded, exit 1 records domain/source refusals, and exit
+2 means structural/setup/file/usage failure. Structural request errors stop input;
+other refusals allow only the next explicitly supplied line. Duplicate JSON keys,
+nonfinite numbers and exponent overflow are refused. Unexpected programming errors
+propagate. Earlier accepted operations stay applied if a later request fails.
+
+From the repository root, run each scenario against a fresh fixture:
+
+```bash
+for scenario in cancel admission transfer; do
+  python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+done
+```
+
+Use `--requests -` for stdin. Each supplied scenario deliberately exits **1**:
+
+| Scenario | Expected rows and behavior |
+| --- | --- |
+| `cancel` | 6 rows: listing blocks entry with `LISTING_LOCKED`; explicit cancellation succeeds; same admission key retains `LISTING_LOCKED`; fresh key authorizes admission. |
+| `admission` | 7 rows: authorization blocks listing with `ADMISSION_LOCKED`; explicit consumption blocks a fresh listing with `ALREADY_CONSUMED`; replay returns first authorization/consume receipts while current view is `CONSUMED`. |
+| `transfer` | 16 rows: explicit listing, hold, synthetic payment, binding and transfer, then replay/close/current views; old and unreissued recipient authorization both return `STALE_VERSION`. Reservation remains version 1 while resale is version 2; venue credential reissuance stays false. |
+
+No request triggers an implicit follow-up, retry, key rewrite, clock synchronization
+or settlement orchestration. Admission `set_clock` keeps its existing reservation
+delegation; resale time remains independent. First-result semantics, current views,
+refusal codes, source failures and all mock-only flags belong to the existing FSMs
+and adapters. The existing Class B clock-skew partial effects remain unchanged.
+
+Product timing, authentication, independent currentness and credential reissuance
+remain **UNDETERMINED**, owned by Astra/User and the existing contract owners.
+This adds no payment lookup handoff, reissuance, HTTP, persistence, frontend,
+protocol commands, SDK/catalogue changes or runtime activation. No rollback,
+economic finality, bank exactly-once, legal compliance or production readiness is
+claimed. See the [validation record](../../validation/2026-11-02-plan-local-ticket-operations-desk/README.md)
+for coverage, actual commands/results and remaining non-author A2 review and
+exact-final-head CI gates. Existing HTTP coverage is preserved for normal CI.
+
 ## Local booking desk session and JSONL CLI
 
 `booking_session.BookingSession(machine)` exposes the existing §9 reservation
