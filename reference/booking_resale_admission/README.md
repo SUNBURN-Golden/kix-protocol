@@ -502,3 +502,94 @@ runtime activation or new protocol command is added. No durability, economic
 finality, bank exactly-once, independent currentness, legal compliance or
 production readiness is claimed. Non-author A2 exact-final-head review and both
 required workflows, including unchanged HTTP coverage, remain gates before merge.
+
+## Local booking desk session and JSONL CLI
+
+`booking_session.BookingSession(machine)` exposes the existing §9 reservation
+operations through the caller's actual `ReservationMachine`. Construction makes
+no calls. Import it with this directory on `PYTHONPATH`:
+
+```python
+from booking_session import BookingSession
+from reservation_fsm import ReservationMachine
+session = BookingSession(ReservationMachine())
+session.set_clock("clock", now_ms=1000000, idempotency_key="my-clock-1")
+```
+
+All numbers and identities here and in the transcripts are **synthetic caller
+inputs**, never product defaults. Supply every policy field, identity, key,
+expiry, amount and quote explicitly. For a complete runnable organizer and buyer
+journey, from the repository root:
+
+```bash
+python3 reference/booking_resale_admission/booking_cli.py --requests reference/booking_resale_admission/fixtures/booking_confirm.jsonl
+python3 reference/booking_resale_admission/booking_cli.py --requests reference/booking_resale_admission/fixtures/booking_cancel.jsonl
+python3 reference/booking_resale_admission/booking_cli.py --requests - < reference/booking_resale_admission/fixtures/booking_boundaries.jsonl
+```
+
+Each invocation creates a fresh sequential in-memory `ReservationMachine()` with
+no settlement source. All setup is ordinary explicit JSONL; the desk does not
+load admission/resale fixtures or initialize payment, issuance or other machines.
+For example:
+
+```json
+{"operation":"set_clock","arguments":{"subject_id":"clock","idempotency_key":"clock-1","now_ms":1000000}}
+```
+
+Every line must be an object with **exactly** `operation` and `arguments`.
+The following are the only local selectors. Python methods take the first
+identity argument positionally or by keyword and the rest by keyword only.
+All listed arguments are required; extra arguments are rejected.
+
+| Operation | Exact arguments |
+| --- | --- |
+| `register_show` | `show_id`, `organizer_role`, `capacity`, `gate_roles`, `primary_price`, `resale_cap`, `resale_allowed`, `organizer_bps`, `platform_bps`, `idempotency_key` |
+| `set_clock` | `subject_id`, `now_ms`, `idempotency_key` (subject must be `"clock"`) |
+| `hold` | `reservation_id`, `show_id`, `slot`, `buyer_role`, `expires_ms`, `idempotency_key` |
+| `release` | `reservation_id`, `idempotency_key` |
+| `confirm` | `order_id`, `reservation_id`, `amount`, `quote_ref`, `idempotency_key` |
+| `cancel` | `reservation_id`, `idempotency_key` |
+| `view` | `reservation_id` |
+| `view_show` | `show_id` |
+
+A successful explicit `set_clock` **through this session** is required before
+other mutations, even when the supplied machine already has a clock. A successful
+replay counts as explicit initialization; it does not change current time.
+Views require no clock initialization and do not mutate state. The desk requires
+`quote_ref` to be a non-null valid existing identifier (opaque text, not a
+validated external quote). Missing clock or invalid quote raises local
+`BookingInputError` without calling the FSM or retaining the key. Other validation
+is delegated unchanged: identifier length 1..100, capacity and gate-role limits
+16, reservation window at most the existing synthetic 900000 ms limit, integer
+money and bps checks. These fixture bounds are not approved product TTLs or policy.
+
+Success output contains `operation` and unchanged `receipt` (mutations) or `view`.
+FSM rejection contains `error: {"code": "..."}`; local input/file errors contain
+`error.type` and `error.message`, introducing no protocol codes. Domain rejection
+continues only with subsequent supplied lines. Malformed JSON, duplicate keys at
+any depth, nonfinite numbers, blank lines, invalid roots, unsupported selectors,
+missing/extra fields or local prerequisite failure stop input immediately.
+Earlier accepted calls remain applied in memory. Exit status is 0 if all supplied
+requests succeed (including empty input), 1 if any FSM rejection occurs, and 2
+for input/structural/file failure (which takes precedence). Argument-parser usage
+errors use stderr; request responses use JSONL stdout. No keys, IDs, clock changes,
+retries, releases or follow-up operations are generated.
+
+Expected transcript outcomes:
+
+| Transcript | Outcome |
+| --- | --- |
+| `booking_confirm.jsonl` | 6 successes, exit 0; organizer registration, buyer hold and `CONFIRMED`, then current views. Payment, issuance, settlement and right remain null. |
+| `booking_cancel.jsonl` | 8 successes, exit 0; explicit pre-payment cancellation frees the slot. Replaying the confirmation key returns the historical `CONFIRMED` receipt; current view is `CANCELLED`. |
+| `booking_boundaries.jsonl` | 23 responses, exit 1; errors in order: `SLOT_OCCUPIED`, `SLOT_OCCUPIED`, `IDEMPOTENCY_CONFLICT`, `PRIMARY_PRICE_MISMATCH`, `RESERVATION_EXPIRED`, `SLOT_OCCUPIED`. Explicit release permits buyer 2's fresh-key hold; rejected key stays rejected. At exact expiry, buyer 3 remains `HELD` with `expired: true` and slot `RESERVED` until caller-directed release; buyer 4 then succeeds with an explicit fresh key. |
+
+Confirmation is a reservation agreement, separate from payment and issuance.
+This desk is a local service, not an authenticated organizer interface. It exposes
+no payment lookup/observation, settlement binding, issuance, admission, persistence,
+external calls or runtime activation. The payment–reservation handoff remains
+blocked. `MOCK_GATE_ONLY`, `IN_MEMORY_FSM`, false non-claim flags and B01/B02/B04
+status remain unchanged. Authentication, approved product TTLs, discounts, provider
+authority and compensation remain `UNDETERMINED` under the existing
+[§7.1 owners](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md).
+See the [builder validation record](../../validation/2026-11-02-plan-local-booking-desk-cli/README.md)
+for coverage, commands and outstanding review/CI gates.
