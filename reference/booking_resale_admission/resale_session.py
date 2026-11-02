@@ -3,12 +3,26 @@
 from resale_fsm import ResaleMachine
 from resale_offer_adapter import ResaleOfferAdapter
 from resale_offer_source import ResaleOfferSource
+from resale_payment_adapter import ResalePaymentAdapter
+from resale_payment_source import ResalePaymentSource, ResalePaymentSourceError
 
 
 class ResaleSession:
-    def __init__(self, machine: ResaleMachine, source: ResaleOfferSource) -> None:
+    def __init__(self, machine: ResaleMachine, source: ResaleOfferSource, *,
+                 payment_source: ResalePaymentSource | None = None) -> None:
         self._machine = machine
         self._adapter = ResaleOfferAdapter(machine, source)
+        self._payment_adapter = (None if payment_source is None
+                                 else ResalePaymentAdapter(machine, payment_source))
+
+    def observe_recorded_payment(
+        self, recording_id: str, *, listing_id: str, idempotency_key: str,
+    ) -> dict:
+        if self._payment_adapter is None:
+            raise ResalePaymentSourceError("no resale payment source configured")
+        return self._payment_adapter.observe_resale_payment(
+            recording_id, listing_id=listing_id, idempotency_key=idempotency_key,
+        )
 
     def list_resale(self, offer_id: str, *, listing_id: str, idempotency_key: str) -> dict:
         return self._adapter.list_resale(

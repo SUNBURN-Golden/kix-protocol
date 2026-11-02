@@ -6,9 +6,11 @@ import unittest
 from unittest.mock import Mock, call
 
 from fake_resale_offer_source import FakeResaleOfferSource, SyntheticResaleOfferFault
+from fake_resale_payment_source import FakeResalePaymentSource, SyntheticResalePaymentFault
 from resale_fixture import load_fixture
 from resale_fsm import ResaleError, ResaleMachine
 from resale_offer_source import ResaleOfferSourceError
+from resale_payment_source import ResalePaymentSourceError
 from resale_session import ResaleSession
 from test_resale_fsm import assert_not_final
 
@@ -52,6 +54,77 @@ class ResaleSessionTests(unittest.TestCase):
         with self.assertRaises(ResaleError) as caught:
             fn()
         self.assertEqual(caught.exception.code, code)
+
+    def test_recorded_payment_requires_explicit_configuration_without_machine_access(self):
+        machine = Mock(spec=ResaleMachine)
+        offers = Mock()
+        with self.assertRaises(ResalePaymentSourceError):
+            ResaleSession(machine, offers).observe_recorded_payment(
+                "payment-1", listing_id="list-1", idempotency_key="pay")
+        self.assertEqual(machine.mock_calls, [])
+        offers.fetch.assert_not_called()
+
+    def test_recorded_payment_uses_actual_session_and_requires_separate_transfer(self):
+        for held in (False, True):
+            with self.subTest(held=held):
+                original = load_fixture(FIXTURE)
+                machine = original._machine
+                rows = requests()
+                payment = rows[2]["arguments"]
+                body = {k: v for k, v in payment.items() if k != "idempotency_key"}
+                payments = FakeResalePaymentSource(recordings={"payment-1": json.dumps(body)})
+                session = ResaleSession(machine, original._adapter._source, payment_source=payments)
+                invoke(session, rows[0])
+                if held:
+                    invoke(session, rows[1])
+                others = snapshot(machine._tickets, machine._settlement)
+                journal = machine.export_journal()
+                receipt = session.observe_recorded_payment(
+                    "payment-1", listing_id="list-1", idempotency_key=payment["idempotency_key"])
+                assert_not_final(self, receipt)
+                self.assertEqual(session.view("list-1")["phase"], "PAYMENT_NOTED")
+                self.assertEqual(receipt["right"]["holder_role"], "buyer-1")
+                self.assertEqual(receipt["right"]["version"], 1)
+                self.assertEqual(receipt["listing"]["settlement_gate"], "UNBOUND")
+                self.assertEqual([row["op"] for row in machine.export_journal()[len(journal):]],
+                                 ["observe_resale_payment"])
+                # Source selector does not enter the existing fingerprint.
+                self.assertEqual(session.observe_resale_payment(**payment),
+                                 receipt | {"duplicate": True, "applied": None})
+                transfer = invoke(session, rows[4])
+                assert_not_final(self, transfer)
+                self.assertEqual(transfer["listing"]["phase"], "TRANSFERRED")
+                self.assertEqual(transfer["right"]["version"], 2)
+                self.assertEqual(snapshot(machine._tickets, machine._settlement), others)
+                self.assertEqual(payments.calls, ("payment-1",))
+                self.assertEqual(original._adapter._source.calls, ("offer-1",))
+
+    def test_recorded_payment_faults_and_replay_failure_never_generate_followup(self):
+        for fault in SyntheticResalePaymentFault:
+            machine, offers = Mock(spec=ResaleMachine), Mock()
+            payments = FakeResalePaymentSource(recordings={"payment-1": fault})
+            with self.assertRaises(ResalePaymentSourceError):
+                ResaleSession(machine, offers, payment_source=payments).observe_recorded_payment(
+                    "payment-1", listing_id="list-1", idempotency_key="pay")
+            self.assertEqual(payments.calls, ("payment-1",))
+            self.assertEqual(machine.mock_calls, [])
+            offers.fetch.assert_not_called()
+        original = load_fixture(FIXTURE)
+        invoke(original, requests()[0])
+        body = {k: v for k, v in requests()[2]["arguments"].items() if k != "idempotency_key"}
+        payments = Mock()
+        payments.fetch.side_effect = [body, ResalePaymentSourceError("synthetic")]
+        spy = Mock(wraps=original._machine)
+        session = ResaleSession(spy, Mock(), payment_source=payments)
+        session.observe_recorded_payment("payment-1", listing_id="list-1", idempotency_key="pay")
+        before = snapshot(original._machine, original._machine._tickets, original._machine._settlement)
+        spy.reset_mock()
+        with self.assertRaises(ResalePaymentSourceError):
+            session.observe_recorded_payment("payment-1", listing_id="list-1", idempotency_key="pay")
+        self.assertEqual(payments.fetch.call_count, 2)
+        self.assertEqual(spy.mock_calls, [])
+        self.assertEqual(snapshot(original._machine, original._machine._tickets,
+                                  original._machine._settlement), before)
 
     def test_direct_forwarding_preserves_receipt_and_exception_identity(self):
         for name, subject, arguments in FORWARD:
