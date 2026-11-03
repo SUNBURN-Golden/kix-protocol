@@ -1,5 +1,6 @@
 """Source-informed composition evidence; direct controls bypass both adapters."""
 
+from contextlib import ExitStack
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -8,6 +9,7 @@ from unittest.mock import Mock, patch
 
 from admission_fixture import FixtureError
 from admission_fsm import AdmissionError, AdmissionMachine
+from booking_session import BookingInputError, BookingSession
 from fake_presentation_source import FakePresentationSource
 from fake_resale_offer_source import FakeResaleOfferSource
 from presentation_source import PresentationSourceError
@@ -17,6 +19,7 @@ from resale_offer_source import ResaleOfferSourceError
 from settlement_fsm import SettlementMachine
 from test_admission_session import assert_flags
 from test_resale_fsm import assert_not_final
+from test_reservation_fsm import assert_not_final as assert_booking_flags
 from ticket_operations_cli import dispatch_request
 from ticket_operations_fixture import load_fixture
 from ticket_operations_session import TicketOperationsSession
@@ -59,7 +62,7 @@ def direct_graph(setup):
 
 def direct_call(graph, request, value):
     surface, operation = request["surface"], request["operation"]
-    machine = graph[2 if surface == "resale" else 3]
+    machine = graph[{"booking": 1, "resale": 2, "admission": 3}[surface]]
     args = dict(request["arguments"])
     if operation == "list_resale":
         identity = args.pop("offer_id")
@@ -100,12 +103,16 @@ class TicketOperationsSessionTests(unittest.TestCase):
         with patch("ticket_operations_session.SettlementMachine", wraps=SettlementMachine) as book_ctor, \
                 patch("ticket_operations_session.ReservationMachine", wraps=ReservationMachine) as ticket_ctor, \
                 patch("ticket_operations_session.ResaleMachine", wraps=ResaleMachine) as resale_ctor, \
-                patch("ticket_operations_session.AdmissionMachine", wraps=AdmissionMachine) as admission_ctor:
+                patch("ticket_operations_session.AdmissionMachine", wraps=AdmissionMachine) as admission_ctor, \
+                patch("ticket_operations_session.BookingSession", wraps=BookingSession) as booking_ctor:
             session = TicketOperationsSession(setup=value["setup"], offer_source=offers,
                                               presentation_source=presentations)
             for ctor in (book_ctor, ticket_ctor, resale_ctor, admission_ctor):
                 self.assertEqual(ctor.call_count, 1)
         book, tickets, resale, admission = machines(session)
+        booking_ctor.assert_called_once_with(tickets)
+        self.assertIs(session.booking._machine, tickets)
+        self.assertEqual(snapshot(machines(session)), snapshot(direct_graph(value["setup"])))
         self.assertIs(tickets._settlement, book)
         self.assertIs(resale._tickets, tickets)
         self.assertIs(resale._settlement, book)
@@ -116,6 +123,8 @@ class TicketOperationsSessionTests(unittest.TestCase):
         self.assertIs(session.admission._adapter._source, presentations)
         self.assertEqual((offers.calls, presentations.calls), ((), ()))
         second = load_fixture(FIXTURE)
+        self.assertIsNot(session.booking, second.booking)
+        self.assertIs(second.booking._machine, machines(second)[1])
         for first, other in zip(machines(session), machines(second)):
             self.assertIsNot(first, other)
         before = snapshot(machines(second))
@@ -128,7 +137,8 @@ class TicketOperationsSessionTests(unittest.TestCase):
         self.assertEqual(json.loads(tickets.canonical_state())["logical_time_ms"], 1000002)
 
     def test_transcripts_session_and_cli_match_direct_graph_after_every_request(self):
-        for scenario in ("cancel", "admission", "transfer", "payment_listed", "payment_held", "reconcile"):
+        for scenario in ("cancel", "admission", "transfer", "payment_listed", "payment_held",
+                         "reconcile", "booking", "booking_admission"):
             with self.subTest(scenario=scenario):
                 path = (HERE / "fixtures" / "ticket_operations_payment_session.json"
                         if scenario.startswith("payment_") else FIXTURE)
@@ -149,7 +159,9 @@ class TicketOperationsSessionTests(unittest.TestCase):
                         key = "view" if operation.startswith("view") else "receipt"
                         self.assertEqual(result, expected[key])
                         self.assertEqual(routed, expected)
-                        if surface == "admission":
+                        if surface == "booking":
+                            assert_booking_flags(self, result)
+                        elif surface == "admission":
                             assert_flags(self, result)
                         else:
                             assert_not_final(self, result)
@@ -167,6 +179,60 @@ class TicketOperationsSessionTests(unittest.TestCase):
                             self.assertIs(desk.resale._payment_adapter._machine, desk.admission._machine._ownership)
                             self.assertEqual(desk.resale._payment_adapter._source.calls, tuple(fetches["payments"]))
                         self.assertEqual(desk.admission._adapter._source.calls, tuple(fetches["admission"]))
+
+    def test_booking_journeys_history_current_state_and_shared_keys(self):
+        for scenario in ("booking", "booking_admission"):
+            session = load_fixture(FIXTURE)
+            graph = machines(session)
+            control = direct_graph(fixture()["setup"])
+            results = check_reconcile_history(
+                self, requests(scenario), graph, control,
+                lambda row: dispatch_request(session, row),
+                lambda row: direct_call(control, row, fixture()),
+                lambda row: graph[{"booking": 1, "resale": 2, "admission": 3}[row["surface"]]])
+            assert_booking_journey(self, scenario, results)
+
+    def test_existing_booking_selector_journey_on_shared_graph(self):
+        from test_booking_session import requests as standalone_requests
+        session = load_fixture(FIXTURE)
+        control = direct_graph(fixture()["setup"])
+        for original in standalone_requests("booking_boundaries"):
+            row = deepcopy(original) | {"surface": "booking"}
+            # Isolate the extra synthetic show/keys while preserving clock subject.
+            for key in ("show_id", "reservation_id", "order_id", "idempotency_key"):
+                if key in row["arguments"]:
+                    row["arguments"][key] = "extra-" + row["arguments"][key]
+            before = snapshot(machines(session))
+            expected = outcome(lambda: direct_call(control, row, fixture()))
+            self.assertEqual(outcome(lambda: dispatch_request(session, row)), expected)
+            self.assertEqual(snapshot(machines(session)), snapshot(control))
+            # Booking operations must not mutate settlement/resale/admission.
+            after = snapshot(machines(session))
+            self.assertEqual((after[0], after[2:]), (before[0], before[2:]))
+            if "error" not in expected:
+                assert_booking_flags(self, expected.get("receipt", expected.get("view")))
+        self.assertEqual(session.resale._adapter._source.calls, ())
+        self.assertEqual(session.admission._adapter._source.calls, ())
+
+    def test_booking_publication_performs_no_fsm_or_source_call(self):
+        offers, presentations = Mock(), Mock()
+
+        def publish(machine):
+            # Guard only publication: fixture adoption must perform its queries.
+            with ExitStack() as guards:
+                for name in dir(ReservationMachine):
+                    if not name.startswith("_") and callable(getattr(machine, name)):
+                        guards.enter_context(patch.object(machine, name,
+                            side_effect=AssertionError("booking constructor called " + name)))
+                return BookingSession(machine)
+
+        with patch("ticket_operations_session.BookingSession", side_effect=publish):
+            session = TicketOperationsSession(setup=fixture()["setup"], offer_source=offers,
+                                              presentation_source=presentations)
+        self.assertEqual(snapshot(machines(session)), snapshot(direct_graph(fixture()["setup"])))
+        self.assertEqual((offers.mock_calls, presentations.mock_calls), ([], []))
+        with self.assertRaises(BookingInputError):
+            session.booking.cancel("reserve-1", idempotency_key="no-clock")
 
     def test_replay_fetch_failure_and_key_conflicts_leave_shared_graph_unchanged(self):
         for surface, request, error_type in (
@@ -207,9 +273,11 @@ class TicketOperationsSessionTests(unittest.TestCase):
         setup = fixture()["setup"]
         next(e for e in setup if e["operation"] == "hold")["body"]["slot"] = 100
         with patch("ticket_operations_session.ResaleSession") as resale_publish, \
-                patch("ticket_operations_session.AdmissionSession") as admission_publish:
+                patch("ticket_operations_session.AdmissionSession") as admission_publish, \
+                patch("ticket_operations_session.BookingSession") as booking_publish:
             with self.assertRaises(ReservationError):
                 TicketOperationsSession(setup=setup, offer_source=Mock(), presentation_source=Mock())
+            booking_publish.assert_not_called()
             resale_publish.assert_not_called()
             admission_publish.assert_not_called()
 
@@ -280,3 +348,41 @@ def check_reconcile_history(test, rows, graph, control, wrapped_call, control_ca
             else:
                 assert_not_final(test, receipt)
     return results
+
+
+def assert_booking_journey(test, scenario, results):
+    """Explicit product-boundary assertions in addition to direct-FSM parity."""
+    if scenario == "booking":
+        test.assertEqual([r["error"]["code"] for r in results if "error" in r],
+                         ["SLOT_OCCUPIED", "SLOT_OCCUPIED", "IDEMPOTENCY_CONFLICT",
+                          "IDEMPOTENCY_CONFLICT", "IDEMPOTENCY_CONFLICT", "IDEMPOTENCY_CONFLICT",
+                          "UNKNOWN_RESERVATION", "UNKNOWN_RESERVATION", "IDEMPOTENCY_CONFLICT"])
+        test.assertEqual(results[2]["receipt"]["duplicate"], True)  # fixture clock replay
+        test.assertEqual(results[6]["receipt"]["reservation"]["phase"], "HELD")
+        test.assertEqual(results[7]["receipt"]["reservation"]["phase"], "CONFIRMED")
+        test.assertEqual(results[10]["receipt"], results[7]["receipt"] |
+                         {"duplicate": True, "applied": None})
+        current = results[11]["view"]
+        test.assertEqual(current["phase"], "CANCELLED")
+        for name in ("payment_ref", "issuance_id", "settlement_id", "right"):
+            test.assertIsNone(current[name])
+        test.assertEqual(results[13]["receipt"], results[8]["receipt"] |
+                         {"duplicate": True, "applied": None})
+        test.assertEqual(results[13]["receipt"]["reservation"]["phase"], "CONFIRMED")
+        test.assertEqual(results[14]["receipt"]["reservation"]["phase"], "CANCELLED")
+        test.assertEqual([slot["state"] for slot in results[12]["view"]["show"]["slots"]],
+                         ["ISSUED", "FREE"])
+    else:
+        views = [results[i]["view"] for i in (0, 3, 7)]
+        test.assertEqual([v["phase"] for v in views],
+                         ["ISSUED", "ADMISSION_AUTHORIZED", "CONSUMED"])
+        test.assertEqual([v["right"]["version"] for v in views], [1, 1, 2])
+        test.assertEqual([slot["state"] for slot in results[8]["view"]["show"]["slots"]],
+                         ["ISSUED", "FREE"])
+        for index in (4, 9):
+            test.assertEqual(results[index]["receipt"], results[1]["receipt"] |
+                             {"duplicate": True, "applied": None})
+        test.assertEqual(results[5]["receipt"]["reservation"]["phase"], "ADMISSION_AUTHORIZED")
+        test.assertEqual(results[10]["receipt"]["reservation"]["phase"], "CONSUMED")
+        test.assertEqual([r["error"]["code"] for r in results if "error" in r],
+                         ["IDEMPOTENCY_CONFLICT", "IDEMPOTENCY_CONFLICT"])

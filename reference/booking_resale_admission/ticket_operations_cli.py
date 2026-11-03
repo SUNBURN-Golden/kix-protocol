@@ -1,4 +1,4 @@
-"""Strict JSONL requests selecting resale or admission on one shared local graph."""
+"""Strict JSONL booking, resale and admission requests on one shared local graph."""
 
 import argparse
 from contextlib import nullcontext
@@ -8,6 +8,8 @@ import sys
 
 from admission_cli import _DOMAIN_ERRORS, dispatch_request as _admission
 from admission_fixture import FixtureError, decode_json, exact_fields
+from booking_cli import dispatch_request as _booking
+from booking_session import BookingInputError
 from presentation_source import PresentationSourceError
 from resale_cli import dispatch_request as _resale
 from resale_offer_source import ResaleOfferSourceError
@@ -19,11 +21,15 @@ from ticket_operations_session import TicketOperationsSession
 def dispatch_request(session: TicketOperationsSession, request: dict) -> dict:
     exact_fields(request, {"surface", "operation", "arguments"}, "request")
     surface = request["surface"]
-    if type(surface) is not str or surface not in ("resale", "admission"):
-        raise FixtureError("surface must be resale or admission")
+    if type(surface) is not str or surface not in ("booking", "resale", "admission"):
+        raise FixtureError("surface must be booking, resale or admission")
     nested = {"operation": request["operation"], "arguments": request["arguments"]}
-    result = (_resale(session.resale, nested) if surface == "resale"
-              else _admission(session.admission, nested))
+    if surface == "booking":
+        result = _booking(session.booking, nested)
+    elif surface == "resale":
+        result = _resale(session.resale, nested)
+    else:
+        result = _admission(session.admission, nested)
     return {"surface": surface, **result}
 
 
@@ -49,7 +55,7 @@ def run_requests(session: TicketOperationsSession, lines) -> int:
                 if type(request.get("operation")) is str:
                     operation = request["operation"]
             result = dispatch_request(session, request)
-        except FixtureError as error:
+        except (FixtureError, BookingInputError) as error:
             _emit(_error(surface, operation, error))
             return 2
         except (*_DOMAIN_ERRORS, ResaleOfferSourceError, PresentationSourceError,

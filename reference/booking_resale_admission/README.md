@@ -512,9 +512,9 @@ required workflows, including unchanged HTTP coverage, remain gates before merge
 `ticket_operations_session.TicketOperationsSession` constructs one settlement,
 reservation, resale and admission machine. Reservation, resale and admission
 share the settlement source; resale and admission share the reservation source;
-admission reads that same resale machine as its ownership source. Its `.resale`
-and `.admission` are the existing sessions, using the existing offer/presentation
-adapters. Each construction is a fresh sequential in-memory graph.
+admission reads that same resale machine as its ownership source. Its `.booking`
+is the existing `BookingSession` over that exact reservation machine. Its `.resale`
+and `.admission` use the existing offer/presentation adapters. Each construction is a fresh sequential in-memory graph.
 
 With this directory on `PYTHONPATH`, callers can supply their own synthetic setup
 and sources:
@@ -572,15 +572,19 @@ The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
 {"surface":"admission","operation":"view","arguments":{"right_id":"issue-1"}}
 ```
 
-`surface` is exactly `resale` or `admission`. All fourteen resale selectors and six
-admission selectors documented above retain their exact arguments, including
+`surface` is exactly `booking`, `resale` or `admission`. The nine booking selectors
+and exact required arguments are listed in [the booking table](#local-booking-desk-session-and-jsonl-cli).
+All fourteen resale selectors and six admission selectors documented above retain
+their exact arguments, including
 optional resale payment `buyer_role`. The existing dispatchers validate them;
-cross-surface selectors, setup and a settlement surface are refused. Output adds
+Only each surface's existing selectors are accepted; fixture-only setup and a settlement surface
+are refused. Booking retains its existing `register_show` selector without adding
+organizer lifecycle operations. Output adds
 `surface` to the existing `operation` plus `receipt`, `view` or `error` envelope.
 Domain errors retain `{code}`; local errors retain `{type,message}`. Exit 0 means
 all supplied requests succeeded, exit 1 records domain/source refusals, and exit
-2 means structural/setup/file/usage failure. Structural request errors stop input;
-other refusals allow only the next explicitly supplied line. Duplicate JSON keys,
+2 means structural/setup/file/usage or booking prerequisite failure. Structural
+request errors and `BookingInputError` stop input; other refusals allow only the next explicitly supplied line. Duplicate JSON keys,
 nonfinite numbers and exponent overflow are refused. Unexpected programming errors
 propagate. Earlier accepted operations stay applied if a later request fails.
 
@@ -616,6 +620,59 @@ economic finality, bank exactly-once, legal compliance or production readiness i
 claimed. See the [validation record](../../validation/2026-11-02-plan-local-ticket-operations-desk/README.md)
 for coverage, actual commands/results and remaining non-author A2 review and
 exact-final-head CI gates. Existing HTTP coverage is preserved for normal CI.
+
+### Booking on the shared desk
+
+Fixture clocks do **not** initialize `.booking`. Call `.booking.set_clock`
+explicitly before registration, hold, release, confirm or cancel; a successful
+replay of a fixture clock counts. A failed initialization does not count. Views
+and reconciliation need no session clock. Confirm requires an explicit valid
+`quote_ref`. Missing clock or invalid quote emits local `BookingInputError`, stops
+at that line with exit 2 and binds no FSM key. Earlier accepted effects remain.
+Booking calls fetch no recordings and perform no payment observation, issuance,
+settlement orchestration or automatic admission operation.
+
+For example, after loading the existing fixture:
+
+```python
+desk.booking.view("reserve-1")  # ISSUED on the same reservation graph
+desk.booking.set_clock("clock", now_ms=1000000, idempotency_key="ticket-clock")
+desk.booking.hold("reserve-2", show_id="show-1", slot=1, buyer_role="buyer-2",
+                  expires_ms=1120000, idempotency_key="booking-hold")
+```
+
+Run both shared booking journeys through file input and stdin from repository root:
+
+```bash
+for scenario in booking booking_admission; do
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+done
+```
+
+Both journeys intentionally exit **1**. `booking` has 21 lines: an already-issued
+slot refuses a competing hold with `SLOT_OCCUPIED`; a second slot is explicitly
+held, confirmed and cancelled, returning to `FREE`. Replayed confirmation and
+reconciliation retain historical `CONFIRMED` snapshots while current views show
+`CANCELLED`. Changed arguments/subjects, cross-operation keys and fixture-key
+collisions conflict; a retained missing-reservation refusal replays unchanged.
+`booking_admission` has 13 lines: booking views observe the original reservation
+as `ISSUED` → `ADMISSION_AUTHORIZED` → `CONSUMED` only after explicit admission
+calls. Its right version advances to 2; the slot stays `ISSUED`. Historical
+booking reconciliation stays `ISSUED`; fresh reconciliation sees current state.
+Delegated admission keys collide in the shared reservation namespace.
+
+This advances local B02/B05/P03 composition evidence without changing capability
+grades. Product timing and authority remain **UNDETERMINED — Astra/User**; legal
+effects remain **UNDETERMINED — User/legal**. Shared keys and clocks are passed
+unchanged: no namespacing, clock synchronization, retries or rollback guarantee.
+See the [booking composition evidence](../../validation/2026-11-03-plan-plan-local-ticket-desk-booking-surface/README.md)
+for coverage and actual local results, the exact HTTP exclusion, preservation
+checks and pending non-author A2/exact-head KTX and KIX gates.
 
 ## Local booking desk session and JSONL CLI
 
