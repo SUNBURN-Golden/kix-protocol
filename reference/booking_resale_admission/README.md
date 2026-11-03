@@ -1582,3 +1582,97 @@ change ownership, refund money or close external returns. Legal termination
 and refund effects remain **UNDETERMINED — User/legal**. No real PG/bank/KYC,
 network, funds, chain execution, persistence or runtime activation is involved.
 See the [coverage and actual verification record](../../validation/2026-11-03-plan-local-ticket-settlement-exceptions/README.md).
+
+## Locally calculated booking quotes
+
+`--calculated-quotes PATH` opts either booking desk into a synthetic calculation
+source. It is mutually exclusive with the unchanged `--quotes PATH` recorded
+source. Both feed the existing `BookingQuoteAdapter` and
+`confirm_recorded_quote` selector; the shared selector keeps `surface="booking"`.
+No source is enabled by default.
+
+The source-only fixture has exactly these fields (the complete runnable requests
+are in [calculated_booking_quotes.json](fixtures/calculated_booking_quotes.json)):
+
+```json
+{
+  "fixture_version": 1,
+  "provenance": "CALCULATION_ONLY",
+  "calculations": [
+    {
+      "recording_id": "calc-1",
+      "reservation_id": "reserve-1",
+      "request_text": "<complete kix:commerce:2 request JSON text>"
+    }
+  ]
+}
+```
+
+Version is integer `1`; recording IDs must be unique and all booking identifiers
+must be explicit and valid. An empty `calculations` array provides no requests.
+Loading checks structure only: it does not calculate, fetch, initialize a clock,
+register a show or hold inventory. Embedded text is decoded afresh on fetch using
+unchanged bounded CE1 decoding, preserving number tokens (including rejection of
+fractions, exponents, negative zero, duplicate fields and nonfinite numbers).
+
+The complete commerce request requires `schemaVersion`, `orderId`, `orderVersion`,
+`scope`, `policyRef`, `expiresAt`, `lines`, `discounts`. Scope requires `issuerId`,
+`eventId`, `performanceId`. The single line requires `lineId`, `inventoryId`,
+`gross`; gross requires `asset`, `atoms`. The only accepted asset is the complete
+existing KRW specification: `namespace="fiat"`, `reference="KRW"`, integer
+`decimals=0`, `maxAtoms="340282366920938463463374607431768211455"`.
+Atoms are canonical unsigned decimal strings, with booking amount `1..10**12`.
+`discounts` must be `[]`, including rejection of zero-effect rules; zero or
+multiple lines and alternate asset metadata are refused. There is no asset
+conversion, rounding, line selection or price adjustment.
+
+`calculate_booking_quote(request_text)` returns the complete detached unchanged
+`commerce.build_quote` calculation with `evidenceClass="CALCULATION_ONLY"`.
+`CalculatedBookingQuoteSource(requests={recording_id: {"reservation_id": ...,
+"request_text": ...}})` copies entries into immutable storage and exposes detached
+fetch results and tuple call snapshots. Fetch returns exactly `reservation_id`,
+`amount=int(totals.payableAtoms)` and opaque `quote_ref=quoteHash`, or `None` for
+absence. The calculator loads lazily from the repository without adding a
+calculator import path. Only modules are retained, never calculation successes.
+
+Run from the repository root with supported Python 3.12 and no bytecode writes:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+python3.12 reference/booking_resale_admission/booking_cli.py \
+  --calculated-quotes reference/booking_resale_admission/fixtures/calculated_booking_quotes.json \
+  --requests reference/booking_resale_admission/fixtures/booking_calculated_confirm.jsonl
+python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --calculated-quotes reference/booking_resale_admission/fixtures/calculated_booking_quotes.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_calculated_confirm.jsonl
+```
+
+The [booking](fixtures/booking_calculated_confirm.jsonl) and
+[shared](fixtures/ticket_operations_calculated_confirm.jsonl) confirm journeys
+explicitly set the clock, register a show, hold a slot and confirm using the
+calculated amount/hash, then replay and view. The separate
+[booking boundaries](fixtures/booking_calculated_boundaries.jsonl) and
+[shared boundaries](fixtures/ticket_operations_calculated_boundaries.jsonl)
+exercise refusals, changed-input conflicts, cancellation/historical replay and
+reservation expiry. Expected exits are `0` for confirm and `1` for boundaries;
+structural/file/session-prerequisite failures exit `2`. Source refusals continue.
+The shared fixture already contains unrelated synthetic issued inventory; these
+journeys use a separate show/reservation and leave other surfaces unchanged.
+
+Every identifier-valid explicit selector fetches once, including replay. Invalid
+caller identifiers fetch zero times. No retry, polling, cached-success fallback
+or FSM/key mutation occurs on source rejection. Reservation primary-price
+equality, expiry and immutable first results remain FSM-owned. Calculation
+`orderId`, scope, policy reference and `expiresAt` are hash-bound caller metadata,
+not authenticated booking order/show/expiry authority. The sample intentionally
+uses calculation expiry `1` separately from the explicit reservation clock/expiry;
+this adapter is not the commerce payment-planning expiry gate.
+
+Calculation provenance does not replace booking receipts' unchanged
+`MOCK_GATE_ONLY` provenance or false `quote_policy_approved` / `discount_applied`
+flags. Pricing, discounts and quote authority remain **UNDETERMINED — Astra/User**;
+tax/accounting treatment remains **UNDETERMINED — User and designated advisers**.
+This supplies no authenticated quote authority, payment handoff, settlement,
+issuance, persistence, network call, protocol/catalogue/SDK change or runtime
+activation. See the [builder evidence and remaining delivery gates](../../validation/2026-11-03-plan-local-calculated-booking-quotes/README.md).

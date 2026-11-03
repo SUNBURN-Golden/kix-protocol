@@ -12,6 +12,7 @@ from booking_cli import dispatch_request as _booking
 from booking_quote_adapter import BookingQuoteAdapter
 from booking_quote_fixture import load_fixture as load_quote_fixture
 from booking_quote_source import BookingQuoteSourceError
+from calculated_booking_quote_fixture import load_fixture as load_calculated_fixture
 from booking_session import BookingInputError
 from presentation_source import PresentationSourceError
 from resale_cli import dispatch_request as _resale
@@ -115,13 +116,18 @@ def run_requests(session: TicketOperationsSession, lines, *, quote_adapter=None)
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", type=Path, required=True)
-    parser.add_argument("--quotes", type=Path, help="synthetic recorded-quote source fixture path")
+    sources = parser.add_mutually_exclusive_group()
+    sources.add_argument("--quotes", type=Path, help="synthetic recorded-quote source fixture path")
+    sources.add_argument("--calculated-quotes", type=Path,
+                         help="synthetic calculation source fixture path")
     parser.add_argument("--requests", required=True, help="JSONL path, or - for stdin")
     args = parser.parse_args(argv)
     try:
         session = load_fixture(args.fixture)
         adapter = (BookingQuoteAdapter(session.booking, load_quote_fixture(args.quotes))
                    if args.quotes is not None else None)
+        if args.calculated_quotes is not None:
+            adapter = BookingQuoteAdapter(session.booking, load_calculated_fixture(args.calculated_quotes))
         requests = (nullcontext(sys.stdin) if args.requests == "-"
                     else Path(args.requests).open(encoding="utf-8"))
         with requests as lines:

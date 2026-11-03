@@ -11,6 +11,7 @@ from booking_session import BookingInputError, BookingSession
 from booking_quote_adapter import BookingQuoteAdapter
 from booking_quote_fixture import load_fixture
 from booking_quote_source import BookingQuoteSourceError
+from calculated_booking_quote_fixture import load_fixture as load_calculated_fixture
 from reservation_fsm import ReservationError, ReservationMachine
 
 # Local selectors for existing FSM operations, not new protocol commands.
@@ -83,12 +84,16 @@ def run_requests(session: BookingSession, lines, *, quote_adapter=None) -> int:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--requests", required=True, help="JSONL path, or - for stdin")
-    parser.add_argument("--quotes", help="synthetic recorded-quote source fixture path")
+    sources = parser.add_mutually_exclusive_group()
+    sources.add_argument("--quotes", help="synthetic recorded-quote source fixture path")
+    sources.add_argument("--calculated-quotes", help="synthetic calculation source fixture path")
     args = parser.parse_args(argv)
     try:
         session = BookingSession(ReservationMachine())
         adapter = (BookingQuoteAdapter(session, load_fixture(args.quotes))
                    if args.quotes is not None else None)
+        if args.calculated_quotes is not None:
+            adapter = BookingQuoteAdapter(session, load_calculated_fixture(args.calculated_quotes))
         requests = (nullcontext(sys.stdin) if args.requests == "-"
                     else Path(args.requests).open(encoding="utf-8"))
         with requests as lines:
