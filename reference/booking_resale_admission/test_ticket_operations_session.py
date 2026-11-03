@@ -16,7 +16,7 @@ from presentation_source import PresentationSourceError
 from reservation_fsm import ReservationError, ReservationMachine
 from resale_fsm import ResaleError, ResaleMachine
 from resale_offer_source import ResaleOfferSourceError
-from settlement_fsm import SettlementMachine
+from settlement_fsm import SettlementError, SettlementMachine
 from test_admission_session import assert_flags
 from test_resale_fsm import assert_not_final
 from test_reservation_fsm import assert_not_final as assert_booking_flags
@@ -62,7 +62,7 @@ def direct_graph(setup):
 
 def direct_call(graph, request, value):
     surface, operation = request["surface"], request["operation"]
-    machine = graph[{"booking": 1, "resale": 2, "admission": 3}[surface]]
+    machine = graph[{"settlement": 0, "booking": 1, "resale": 2, "admission": 3}[surface]]
     args = dict(request["arguments"])
     if operation == "list_resale":
         identity = args.pop("offer_id")
@@ -87,7 +87,7 @@ def direct_call(graph, request, value):
 def outcome(fn):
     try:
         return fn()
-    except (AdmissionError, ResaleError, ReservationError) as error:
+    except (AdmissionError, ResaleError, ReservationError, SettlementError) as error:
         return {"error": {"code": error.code}}
 
 
@@ -112,6 +112,7 @@ class TicketOperationsSessionTests(unittest.TestCase):
         book, tickets, resale, admission = machines(session)
         booking_ctor.assert_called_once_with(tickets)
         self.assertIs(session.booking._machine, tickets)
+        self.assertIs(session.settlement._machine, book)
         self.assertEqual(snapshot(machines(session)), snapshot(direct_graph(value["setup"])))
         self.assertIs(tickets._settlement, book)
         self.assertIs(resale._tickets, tickets)

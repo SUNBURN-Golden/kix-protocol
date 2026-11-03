@@ -1,4 +1,4 @@
-"""Strict JSONL booking, resale and admission requests on one shared local graph."""
+"""Strict JSONL booking, resale, admission and settlement on one local graph."""
 
 import argparse
 from contextlib import nullcontext
@@ -18,21 +18,44 @@ from resale_cli import dispatch_request as _resale
 from resale_offer_source import ResaleOfferSourceError
 from resale_payment_source import ResalePaymentSourceError
 from ticket_operations_fixture import load_fixture
-from ticket_operations_session import TicketOperationsSession
+from ticket_operations_session import TicketOperationsSession, TicketSettlementSession
+
+
+# Local selectors for existing FSM operations; no policy or statement defaults.
+_SETTLEMENT_DISPATCH = {
+    "initiate": (TicketSettlementSession.initiate,
+                 {"settlement_id", "idempotency_key", "trade_id", "gross",
+                  "debtor_role", "policy", "currency"}, "receipt"),
+    "authorize": (TicketSettlementSession.authorize,
+                  {"settlement_id", "idempotency_key"}, "receipt"),
+    "capture": (TicketSettlementSession.capture,
+                {"settlement_id", "idempotency_key"}, "receipt"),
+    "commit": (TicketSettlementSession.commit,
+               {"settlement_id", "idempotency_key", "movement_id", "gross", "amount",
+                "fee", "tax", "held", "adjustment", "adjustment_reason"}, "receipt"),
+    "view": (TicketSettlementSession.view, {"settlement_id"}, "view"),
+}
 
 
 def dispatch_request(session: TicketOperationsSession, request: dict, *, quote_adapter=None) -> dict:
     exact_fields(request, {"surface", "operation", "arguments"}, "request")
     surface = request["surface"]
-    if type(surface) is not str or surface not in ("booking", "resale", "admission"):
-        raise FixtureError("surface must be booking, resale or admission")
+    if type(surface) is not str or surface not in ("booking", "resale", "admission", "settlement"):
+        raise FixtureError("surface must be booking, resale, admission or settlement")
     nested = {"operation": request["operation"], "arguments": request["arguments"]}
     if surface == "booking":
         result = _booking(session.booking, nested, quote_adapter=quote_adapter)
     elif surface == "resale":
         result = _resale(session.resale, nested)
-    else:
+    elif surface == "admission":
         result = _admission(session.admission, nested)
+    else:
+        operation = request["operation"]
+        if type(operation) is not str or operation not in _SETTLEMENT_DISPATCH:
+            raise FixtureError("unsupported settlement operation")
+        method, fields, key = _SETTLEMENT_DISPATCH[operation]
+        exact_fields(request["arguments"], fields, f"{operation} arguments")
+        result = {"operation": operation, key: method(session.settlement, **request["arguments"])}
     return {"surface": surface, **result}
 
 
