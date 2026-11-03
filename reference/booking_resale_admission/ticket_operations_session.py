@@ -1,8 +1,9 @@
-"""Sequential synthetic resale/admission sessions over one private local graph."""
+"""Sequential synthetic booking/resale/admission sessions over one local graph."""
 
 from admission_fixture import _validate_setup
 from admission_fsm import AdmissionMachine
 from admission_session import AdmissionSession
+from booking_session import BookingSession
 from presentation_source import PresentationSource
 from reservation_fsm import ReservationMachine
 from resale_fsm import ResaleMachine
@@ -36,5 +37,6 @@ class TicketOperationsSession:
             # _validate_setup enforces admission_fixture._SETUP's exact allowlist.
             method = getattr(machines[entry["machine"]], entry["operation"])
             method(entry["subject_id"], idempotency_key=entry["idempotency_key"], **entry["body"])
+        self.booking = BookingSession(tickets)
         self.resale = ResaleSession(resale, offer_source, payment_source=payment_source)
         self.admission = AdmissionSession(admission, presentation_source)

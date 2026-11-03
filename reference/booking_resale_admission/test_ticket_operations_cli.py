@@ -14,13 +14,15 @@ from unittest.mock import Mock, patch
 
 from admission_cli import _DISPATCH as ADMISSION_DISPATCH
 from admission_fixture import FixtureError
+from booking_cli import _DISPATCH as BOOKING_DISPATCH
 from fake_presentation_source import SyntheticPresentationFault
 from fake_resale_offer_source import SyntheticResaleOfferFault
 from resale_cli import _DISPATCH as RESALE_DISPATCH
 from test_resale_cli import RecordedPaymentDeskChecks
 from ticket_operations_cli import dispatch_request, run_requests
 from ticket_operations_fixture import load_fixture
-from test_ticket_operations_session import FIXTURE, HERE, fixture, machines, requests, snapshot
+from test_ticket_operations_session import (FIXTURE, HERE, assert_booking_journey, fixture,
+                                            machines, requests, snapshot)
 
 
 def run(session, rows):
@@ -170,8 +172,62 @@ class TicketOperationsCliTests(unittest.TestCase):
                 self.assertEqual(expected[-1]["view"]["presentation"]["decision"], "STALE_VERSION")
                 self.assertFalse(expected[-1]["view"]["venue_credential_reissued"])
 
+    def test_booking_transcripts_file_and_stdin(self):
+        for scenario in ("booking", "booking_admission"):
+            with self.subTest(scenario=scenario):
+                code, expected = run(load_fixture(FIXTURE), requests(scenario))
+                self.assertEqual(code, 1)
+                assert_booking_journey(self, scenario, expected)
+                path = HERE / "fixtures" / f"ticket_operations_{scenario}.jsonl"
+                for selector, stdin in ((str(path), None), ("-", path.read_text())):
+                    result = self.cli("--fixture", str(FIXTURE), "--requests", selector, stdin=stdin)
+                    self.assertEqual((result.returncode, result.stderr), (1, ""))
+                    self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], expected)
+
+    def test_booking_prerequisites_stop_without_binding_keys_or_undoing_prior_effects(self):
+        from test_booking_session import requests as standalone_requests
+        mutations = {r["operation"]: r for r in standalone_requests("booking_boundaries")}
+        for operation in ("register_show", "hold", "release", "confirm", "cancel"):
+            session = load_fixture(FIXTURE)
+            before = snapshot(machines(session))
+            request = {"surface": "booking", **mutations[operation]}
+            with patch.object(session.booking._machine, operation,
+                              side_effect=AssertionError("prerequisite must precede FSM")):
+                code, rows = run(session, [request, requests("booking")[2]])
+            self.assertEqual((code, len(rows)), (2, 1))
+            self.assertEqual(rows[0]["error"]["type"], "BookingInputError")
+            self.assertEqual(snapshot(machines(session)), before)
+        session = load_fixture(FIXTURE)
+        clock = requests("booking")[2]
+        bad_clock = deepcopy(clock)
+        bad_clock["arguments"]["subject_id"] = "wrong"
+        code, rows = run(session, [bad_clock, requests("booking")[6], clock])
+        self.assertEqual((code, len(rows)), (2, 2))
+        self.assertIn("code", rows[0]["error"])
+        self.assertEqual(rows[1]["error"]["type"], "BookingInputError")
+        # Views/reconciliation work before initialization; successful replay counts.
+        self.assertEqual(run(session, requests("booking_admission")[:2])[0], 0)
+        self.assertEqual(run(session, [clock, requests("booking")[6]])[0], 0)
+        confirm = requests("booking")[7]
+        before = snapshot(machines(session))
+        for quote in (None, "", " bad ", [], True, 1, "x" * 101):
+            bad = deepcopy(confirm)
+            bad["arguments"]["quote_ref"] = quote
+            code, rows = run(session, [requests("booking")[3], bad, confirm])
+            self.assertEqual((code, len(rows)), (2, 2))
+            self.assertEqual(rows[0]["error"], {"code": "SLOT_OCCUPIED"})
+            self.assertEqual(rows[1]["error"]["type"], "BookingInputError")
+            self.assertEqual(snapshot(machines(session)), before)
+        self.assertEqual(run(session, [confirm])[0], 0)  # same key unbound by local errors
+        self.assertEqual(session.resale._adapter._source.calls, ())
+        self.assertEqual(session.admission._adapter._source.calls, ())
+        with patch("ticket_operations_cli._booking", side_effect=RuntimeError("programming fault")):
+            with self.assertRaisesRegex(RuntimeError, "programming fault"):
+                run(session, [confirm])
+
     def test_all_selectors_delegate_to_existing_dispatch_with_original_arguments(self):
-        for surface, selectors in (("resale", RESALE_DISPATCH), ("admission", ADMISSION_DISPATCH)):
+        for surface, selectors in (("booking", BOOKING_DISPATCH), ("resale", RESALE_DISPATCH),
+                                   ("admission", ADMISSION_DISPATCH)):
             for operation in selectors:
                 with self.subTest(surface=surface, operation=operation):
                     session = Mock()
@@ -199,13 +255,17 @@ class TicketOperationsCliTests(unittest.TestCase):
                     valid | {"surface": "admission"}, valid | {"operation": "adopt_issued"},
                     valid | {"operation": []}, valid | {"arguments": []},
                     requests("admission")[0] | {"surface": "resale"}]
-        for surface, selectors in (("resale", RESALE_DISPATCH), ("admission", ADMISSION_DISPATCH)):
+        for surface, selectors in (("booking", BOOKING_DISPATCH), ("resale", RESALE_DISPATCH),
+                                   ("admission", ADMISSION_DISPATCH)):
             for operation, (_, fields, _) in selectors.items():
                 args = dict.fromkeys(fields, "x")
                 for field in fields:
                     variants.append(dict(surface=surface, operation=operation,
                                          arguments={k: v for k, v in args.items() if k != field}))
                 variants.append(dict(surface=surface, operation=operation, arguments=args | {"extra": 1}))
+        variants += [dict(surface="booking", operation=op, arguments={})
+                     for op in ("observe_payment", "issue", "bind_settlement", "authorize_admission",
+                                "consume", "cancel_show", "restore", "export_journal", "canonical_state")]
         for request in variants:
             with self.subTest(request=request):
                 session = load_fixture(FIXTURE)
@@ -222,7 +282,10 @@ class TicketOperationsCliTests(unittest.TestCase):
         texts = ['{', '\n', 'true', '[]',
                  '{"surface":"resale","surface":"admission","operation":"view","arguments":{}}',
                  '{"surface":"resale","operation":"view","arguments":{"listing_id":"a","listing_id":"b"}}']
-        texts += ['{"surface":"resale","operation":"view","arguments":{"listing_id":' + n + '}}'
+        texts += ['{"surface":"booking","operation":"view","arguments":{"reservation_id":"a","reservation_id":"b"}}',
+                  '{"surface":"booking","operation":"view","operation":"cancel","arguments":{}}']
+        texts += ['{"surface":"' + surface + '","operation":"view","arguments":{"' + identity + '":' + n + '}}'
+                  for surface, identity in (("resale", "listing_id"), ("booking", "reservation_id"))
                   for n in ('NaN', 'Infinity', '-Infinity', '1e999')]
         for text in texts:
             session = load_fixture(FIXTURE)
