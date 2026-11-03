@@ -144,9 +144,12 @@ class TicketSettlementControlsTests(unittest.TestCase):
                                '--fixture', str(FIXTURE), '--requests', selector],
                               input=stdin, text=True, capture_output=True, check=False)
 
-    def test_five_methods_forward_once_with_exact_objects_receipts_and_errors(self):
-        self.assertEqual(set(_SETTLEMENT_DISPATCH), {'initiate', 'authorize', 'capture', 'commit', 'view'})
+    def test_fsm_methods_forward_once_with_exact_objects_receipts_and_errors(self):
+        self.assertEqual(set(_SETTLEMENT_DISPATCH), {'initiate', 'authorize', 'capture', 'commit', 'view',
+                                                          'bind_refund', 'observe_recorded_cancel_acceptance'})
         for operation, (_, fields, key) in _SETTLEMENT_DISPATCH.items():
+            if operation == 'observe_recorded_cancel_acceptance':
+                continue  # Adapter forwarding is covered in test_ticket_refund_controls.
             signature = inspect.signature(getattr(TicketSettlementSession, operation))
             self.assertEqual(set(signature.parameters) - {'self'}, fields)
             for name, parameter in signature.parameters.items():
@@ -186,12 +189,12 @@ class TicketSettlementControlsTests(unittest.TestCase):
 
     def test_publication_calls_no_settlement_method(self):
         from ticket_operations_session import TicketOperationsSession
-        def publish(machine):
+        def publish(machine, **kwargs):
             with ExitStack() as stack:
                 for name in dir(SettlementMachine):
                     if not name.startswith('_') and callable(getattr(machine, name)):
                         stack.enter_context(patch.object(machine, name, side_effect=AssertionError(name)))
-                return TicketSettlementSession(machine)
+                return TicketSettlementSession(machine, **kwargs)
         with patch('ticket_operations_session.TicketSettlementSession', side_effect=publish):
             self.graph()
         value = self.value
@@ -255,7 +258,7 @@ class TicketSettlementControlsTests(unittest.TestCase):
                          for bad in [None, [], args | {'extra': None},
                                      *[{k:v for k,v in args.items() if k != field} for field in fields]]]
         variants += [dict(surface='settlement', operation=op, arguments={})
-                     for op in ('fail', 'cancel', 'observe_statement', 'distribute', 'bind_refund',
+                     for op in ('fail', 'cancel', 'observe_statement', 'distribute',
                                 'observe_mock_cancel_acceptance', 'observe_external_payment', 'reconcile',
                                 'restore', 'canonical_state', 'export_journal', '__init__', [], None)]
         texts = [json.dumps(row) for row in variants]

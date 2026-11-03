@@ -1324,11 +1324,105 @@ initiating/binding settlement. Acceptance pauses, retains its refusal after comm
 and transfers only on the separately supplied fresh acceptance key. Historical
 initiate receipts remain `INITIATED` while current settlement views are `COMMITTED`.
 
-Settlement actions never observe payments, issue, adopt, transfer or consume
-rights, fetch recordings or advance ticket journals. Refund, distribution,
-statement-source integration, F04, reward coupling, primary-payment handoff and
-standalone finance tooling are excluded. Existing false funds/finality/durability/
+The five base settlement actions above never observe payments, issue, adopt,
+transfer or consume rights, fetch recordings or advance ticket journals. Refund
+controls are documented below. Distribution, statement-source integration, F04,
+reward coupling, primary-payment handoff and standalone finance tooling remain
+excluded. Existing false funds/finality/durability/
 production flags remain false. No network, persistence, chain execution, credentials
 or runtime activation is added. Product policy remains **UNDETERMINED — Astra/User**;
 legal/accounting treatment remains **UNDETERMINED — User/designated external reviewers**.
 See the [coverage and actual validation record](../../validation/2026-11-03-plan-local-ticket-settlement-controls/README.md).
+
+
+### Explicit refund controls on the shared ticket desk
+
+Two additional local selectors and importable methods use the same shared
+`SettlementMachine`. `bind_refund` forwards once to its existing FSM operation;
+`observe_recorded_cancel_acceptance` calls the unchanged `CancelAcceptanceAdapter`
+once. This selector observes an existing synthetic fact through
+`observe_mock_cancel_acceptance`; it is not a new protocol command or an execution
+of cancellation. Construction never fetches. All fields below are required;
+`settlement_id` can be positional in Python and the other fields are keyword-only.
+
+| Operation | Exact required `arguments` fields |
+| --- | --- |
+| `bind_refund` | `settlement_id`, `idempotency_key`, `refund_id`, `amount`, `beneficiary_role`, `reason` |
+| `observe_recorded_cancel_acceptance` | `settlement_id`, `source_id`, `idempotency_key` |
+
+```python
+desk.settlement.bind_refund(
+    "claim-1", idempotency_key="refund-bind-1", refund_id="refund-1",
+    amount=4000, beneficiary_role="fixture-buyer-1", reason="fixture-caller-request")
+desk.settlement.observe_recorded_cancel_acceptance(
+    "claim-1", source_id="acceptance-1", idempotency_key="accept-1")
+```
+
+`TicketOperationsSession(..., cancel_acceptance_source=source)` and
+`TicketSettlementSession(machine, cancel_acceptance_source=source)` accept an
+optional caller-supplied source. Old fixtures and callers remain compatible.
+Without a configured source, explicit observation raises
+`CancelAcceptanceSourceError`. Version-1 fixture files optionally contain
+`cancel_acceptances`, an array of exact entries:
+
+```json
+{"settlement_id":"claim-1","source_id":"acceptance-1","recorded_text":"{\"settlement_id\":\"claim-1\",\"source_id\":\"acceptance-1\",\"amount\":1000}"}
+```
+
+Each entry requires both identities and exactly one of `recorded_text` or `fault`.
+Both identifiers use the existing fixture identifier rules; duplicate identity
+pairs, unknown fields, wrong containers and unsupported faults are structural
+errors. The only fault strings are `synthetic_cancel_acceptance_error` and
+`synthetic_cancel_acceptance_timeout`, both immediate synthetic exceptions.
+Recording text is kept raw until fetch. The unchanged source/adapter decodes and
+checks a payload with exactly `settlement_id`, `source_id`, `amount`; identities
+must match the explicit request and the FSM validates economic amounts.
+
+Each explicit observation fetches exactly once, including replay. Missing,
+malformed or mismatched recordings and synthetic faults preserve source error
+`{type,message}` diagnostics; domain refusals preserve `{code}`. Source failures
+never reach the FSM or consume an idempotency key. No retry, follow-up or new key
+is generated. The CLI continues to the next explicit line and exits **1** after
+source/domain refusals. Structural failures stop with **2**; success exits **0**.
+FSM refusals such as `REFUND_OBLIGATION_REQUIRED` and
+`REFUND_ACCEPTANCE_EXCEEDS_OBLIGATION` remain unchanged. Accepted replays return
+historical first receipts with `duplicate: true`, `applied: null`; refused keys
+retain their first refusal even after later progress.
+
+From repository root, run each example through files and stdin (all exit **0**):
+
+```bash
+for scenario in partial full replay; do
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_refund_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_refund_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_refund_session.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_refund_${scenario}.jsonl"
+done
+```
+
+The fixture preserves explicit issuance, both adoptions and clocks. Its amounts,
+identities, beneficiary, reason and keys are examples supplied by the caller,
+not product defaults. `partial` binds 4000 and observes 1000 then 500; outstanding
+refund becomes 2500 and open PG adjustment 1500. `full` binds one initial gross
+refund of 10001, then records its full acceptance: refund outstanding becomes 0
+and adjustment outstanding 10001. Confirmed cash remains 10001 throughout both
+journeys, and `external_return_closed` remains false. `replay` repeats the first
+binding and observation after later acceptance, preserving historical receipts.
+
+Both CAPTURED and COMMITTED permit these existing operations. Fully accepting a
+partial obligation does not select a burden rule. Partial bindings, even when
+they sum to gross, keep `refund_bearer_policy = UNDEFINED` and the existing
+`DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED` refusal. A single initial gross
+binding retains `FIXTURE_FULL_GROSS_RECLASS`, a fixture reclassification without
+legal liability determination. Repeating an accepted source under a new explicit
+key retains the existing economically inert journal-entry characterization.
+
+Refund actions do not cancel bookings, revoke tickets, transfer ownership,
+consume admission, synchronize views or execute a return. Existing mock-only
+flags remain unchanged. Product policy remains **UNDETERMINED — Astra/User**;
+legal refund liability remains **UNDETERMINED — User/legal through I10**. There
+is no HTTP/SDK/catalogue change, persistence, external service, F04, reward
+coupling, primary-payment handoff, standalone finance tool or runtime activation.
+See the [coverage and actual validation record](../../validation/2026-11-03-plan-plan-local-ticket-refund-controls/README.md).
