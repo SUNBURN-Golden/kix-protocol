@@ -1676,3 +1676,76 @@ tax/accounting treatment remains **UNDETERMINED — User and designated advisers
 This supplies no authenticated quote authority, payment handoff, settlement,
 issuance, persistence, network call, protocol/catalogue/SDK change or runtime
 activation. See the [builder evidence and remaining delivery gates](../../validation/2026-11-03-plan-local-calculated-booking-quotes/README.md).
+
+## Source-backed issued ticket handoff on the shared desk
+
+`issued_ticket_adapter.IssuedTicketAdapter(source, *, resale, admission)` reads
+`source.view(reservation_id)` and `source.view_show(show_id)` on each explicit
+`apply(*, surface, reservation_id, right_id, idempotency_key)` invocation. The
+shared `TicketOperationsSession.adopt_issued_from_booking` uses the same
+reservation machine as booking, resale and admission. Construction adds no reads
+or mutations. Only `resale` and `admission` are accepted targets.
+
+After a separate explicit booking `issue` request, adopt on each desired surface
+with separate requests. No show, booking, policy or payment fields are resupplied:
+
+```json
+{"surface":"resale","operation":"adopt_issued_from_booking","arguments":{"reservation_id":"reserve-2","right_id":"issue-2","idempotency_key":"second-resale-adopt"}}
+{"surface":"admission","operation":"adopt_issued_from_booking","arguments":{"reservation_id":"reserve-2","right_id":"issue-2","idempotency_key":"second-admission-adopt"}}
+```
+
+Each invocation forwards exactly once to the selected session's existing
+`adopt_issued`, returning its receipt unchanged. The explicit expected right must
+match the recorded issuance and right; reservation/show/slot identities must
+agree. Unrelated view fields are allowed. Required source fields and scalar
+bounds are checked without coercion or defaults. Explicit `quote_ref: null` is
+preserved; `gate_roles` is copied in its recorded order.
+
+| Read | Forwarded fields |
+|---|---|
+| Reservation view | `reservation_id`, `show_id`, `slot`, `buyer_role`, `expires_ms`, `order_id`, `amount`, `quote_ref`, `payment_ref` |
+| Show snapshot | `organizer_role`, `capacity`, `gate_roles`, `primary_price`, `resale_cap`, `resale_allowed`, `organizer_bps`, `platform_bps` |
+| Caller | `right_id`, `idempotency_key` |
+
+The buyer and payment are the original booking values. Current ownership, right
+version, listing state and later payment/amount fields never replace them.
+Missing issuance is a local extraction refusal. Phase, consumption, eligibility,
+expiry and existing target key semantics remain the FSM's decisions; there is no
+`ISSUED` phase precheck that could suppress historical replay after consumption.
+
+`IssuedTicketSourceError` wraps read failures and
+`InvalidIssuedTicketRecord` identifies missing/malformed/mismatched source data
+or invalid adapter selectors/identifiers. These local exceptions are not protocol
+error codes. Extraction failures invoke no target mutation and bind no target
+key, so a later explicit corrected request can use that key. Target refusals pass
+through unchanged, including retained refusals and changed-body key conflicts.
+Every invocation rereads the source; no cache, retry or fallback is added.
+
+The selector exists only in the shared local desk. Standalone CLIs and manual
+`adopt_issued` retain their existing complete schemas. Structural JSON/schema
+errors stop the stream with exit 2; source/domain refusals continue and yield
+exit 1; an all-success stream exits 0.
+
+Run either transcript with file input or stdin (both intentionally exit 1):
+
+```bash
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --requests reference/booking_resale_admission/fixtures/ticket_operations_issued_handoff.jsonl
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_issued_handoff_boundaries.jsonl
+```
+
+The lifecycle transcript keeps issuance, both adoptions, listing, authorization
+and consumption separate and replays historical receipts after consumption. The
+boundary transcript demonstrates missing/unissued/mismatched sources, explicit
+issuance and recovery using the same keys, then target refusals and key conflicts.
+No automatic second adoption, listing, payment observation, authorization,
+consumption, clock change or credential reissuance occurs. Mock-only flags and
+fixture prerequisites remain unchanged. This is in-memory synthetic input
+plumbing, without persistence, network/provider integration, funds, chain or
+runtime activation. Product policy remains **UNDETERMINED — Astra/User**; legal
+effects remain **UNDETERMINED — User/legal**. See the
+[validation record](../../validation/2026-11-03-plan-local-issued-ticket-handoff/README.md)
+for source-informed coverage, actual commands and pending delivery gates.
