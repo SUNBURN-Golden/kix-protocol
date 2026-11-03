@@ -156,3 +156,49 @@ with their existing owners.
   distribution to change a claim within the existing FSM; no checks were weakened.
 - KTX tests/Clippy could not start because the offline Cargo cache lacks `bcs`.
   Formatting and architecture pass; hosted KTX/KIX CI remains a separate gate.
+
+## Fix round 1 (delivered-head review + exact-head CI)
+
+Delivered implementation head observed in this worktree:
+`124df639b9f70f6c3f60b199d4cf5aec3f37eea0`, based on observed
+`origin/main` `c641a7437f8dcf9094740bd0a4024ea1d2b89317`. The sections above
+describe the pre-delivery builder worktree and remain historical evidence; the
+delivered head above is the current review target.
+
+No review findings were supplied to this round (the handoff reported "review
+passed or unavailable"), and no failed-job or failing-step log was available
+(the handoff noted a possible Actions billing/runner refusal). No code-level CI
+failure could be reproduced from the repository: the offline CI equivalents,
+including the full checker block and all reference suites, pass at this head.
+Consequently this round makes **no implementation, test, contract, workflow or
+lock change**; it only records re-verification. If hosted CI still cannot start a
+runner, that is an infrastructure matter outside this node and outside this
+session's network/GitHub ban.
+
+Re-run shape: from the repository root, `PYTHONPATH` unset, Python 3.12 (the CI
+interpreter), `PYTHONDONTWRITEBYTECODE=1`.
+
+| Command | Actual result |
+|---|---|
+| `env -u PYTHONPATH python3.12 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p 'test_settlement_claim*.py'` | **13 PASS**, 0.068 s |
+| `env -u PYTHONPATH python3.12 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | **161 PASS**, 6.455 s |
+| CI suite loop (`settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation token_reward provider_facts`) under Python 3.12 | 224 / 664 / 161 / 85 / 186 / 73 PASS |
+| `python3.12 reference/credit_advance_f04/example_settlement_claim_adapter.py` | exit 0, actual-machine JSON |
+| CI stdlib checker block (`check_status_register` … `check_cargo_offline_cache`, each plain and `--self-test`, plus `check_stage5_host.py --self-test`) | PASS |
+| `check_openapi_contract.py` (+ `--self-test`), `check_integration_gate_openapi.py` (+ `--self-test`), `unittest integration_gate.test_offline_limits` | PASS / PASS; PASS / PASS; **9 PASS** |
+| `python3.12 scripts/verify_runtime_architecture.py`; `python3.12 scripts/test_runtime_architecture.py` | PASS; **7 PASS** |
+| `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | PASS, exit 0 |
+| `cargo test -p kix-kernel --locked --offline` | UNAVAILABLE, resolution error before tests: offline cache lacks `bcs` (unchanged; no Rust source touched) |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `69564b16…` and `b607996c…` match the required locked blobs |
+| `git status --porcelain`; `git diff --check` | clean implementation tree; exit 0 |
+
+Individually scoped runs of `test_settlement_claim_adapter.py` (8 PASS) and
+`test_settlement_claim_source.py` (5 PASS) also pass without `PYTHONPATH`,
+matching how CI discovery imports the suite.
+
+No new contract violation or contract-undefined semantics were found in this
+round. Locked blobs, `reference/v0.3-rc1/**`, `.aiops/`, `docs/tasks/`, contracts
+and workflows are unchanged. Exact-head KTX/KIX run IDs remain unavailable in
+this session; the supervisor publishes this round's head, and non-author
+exact-head review plus required KTX/KIX CI remain separate merge gates. No
+product, legal, accounting or collateral decision is made or implied here.
