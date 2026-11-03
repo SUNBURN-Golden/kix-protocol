@@ -708,7 +708,7 @@ For example:
 ```
 
 Every line must be an object with **exactly** `operation` and `arguments`.
-The following are the only local selectors. Python methods take the first
+Without a quote adapter, the following are the only local selectors. Python methods take the first
 identity argument positionally or by keyword and the rest by keyword only.
 All listed arguments are required; extra arguments are rejected.
 
@@ -1013,3 +1013,83 @@ The [builder evidence](../../validation/2026-11-03-plan-local-ticket-desk-reconc
 records coverage, actual commands and local limits. Normal CI still requires the
 unchanged HTTP suite; non-author exact-head A2 review and completed/success KTX
 and KIX workflows remain required before merge.
+
+## Synthetic recorded booking quotes
+
+`BookingQuoteSource.fetch(recording_id)` supplies caller-selected, unauthenticated
+synthetic inputs. `FakeBookingQuoteSource(recordings=...)` copies a map of JSON
+strings or `SyntheticBookingQuoteFault.ERROR/TIMEOUT`, exposes a read-only
+`recordings` map and tuple snapshot `calls`, and decodes a detached dictionary on
+each fetch. Missing recordings return `None`; faults raise immediately without
+sleep or retry. Construction and import do not fetch or initialize a clock.
+
+`BookingQuoteAdapter(session, source).confirm_recorded_quote(recording_id,
+reservation_id=..., order_id=..., idempotency_key=...)` validates all four caller
+identifiers before fetching once, including every replay invocation. A record
+must be an ordinary dictionary with exactly `reservation_id`, positive integer
+`amount` (the existing mock money bound), and nonempty identifier `quote_ref`.
+Booleans, floats, nulls, containers, missing fields and unknown fields are refused.
+Recorded reservation must equal the caller's expected reservation. The adapter
+copies the record and delegates once to the existing `BookingSession.confirm`,
+returning its receipt unchanged. The selector never enters the FSM fingerprint
+or journal; two selectors containing identical inputs replay the same key.
+
+Missing, malformed, mismatched or failed fetches cause no session/FSM call or key
+binding. `BookingQuoteNotFound` and `InvalidBookingQuoteRecord` derive from local
+`BookingQuoteSourceError`; unexpected fetch exceptions are wrapped in that base
+error. Session/FSM exceptions propagate unchanged. There is no state inspection,
+receipt cache, fallback, retry, discount calculation or quote generation. Missing
+session clock, primary-price mismatch, expiry, order binding and immutable
+first-result behavior remain governed by the existing session and FSM. Even after
+a successful confirmation, a subsequent source failure returns a local error,
+never a cached success.
+
+`booking_quote_fixture.load_fixture(path)` builds only a source. Its exact schema:
+
+```json
+{"fixture_version":1,"provenance":"MOCK_GATE_ONLY","quotes":[{"recording_id":"record-1","recorded_text":"{\"reservation_id\":\"reserve-1\",\"amount\":10001,\"quote_ref\":\"quote-1\"}"}]}
+```
+
+Each entry requires `recording_id` and exactly one of `recorded_text` (string) or
+`fault` (`synthetic_booking_quote_error` / `synthetic_booking_quote_timeout`).
+Duplicate selectors, duplicate JSON keys at any depth, unknown fields, unsupported
+versions/faults and invalid scalar shapes are rejected. Embedded record text is
+validated on fetch, including duplicate keys and nonfinite numbers. An empty
+`quotes` array is allowed and supplies no recordings. Loading does no FSM setup.
+
+The standalone booking CLI opts in using `--quotes PATH` and accepts this additional
+local selector only when a source is supplied:
+
+```json
+{"operation":"confirm_recorded_quote","arguments":{"recording_id":"record-1","reservation_id":"reserve-1","order_id":"order-1","idempotency_key":"confirm-1"}}
+```
+
+All four arguments are required, with no extra fields. `dispatch_request` and
+`run_requests` also accept keyword-only `quote_adapter=None` for explicit local
+injection. Existing CLI operations and behavior without a source are preserved;
+the combined ticket desk supplies no adapter and gains no quote selector. This
+helper is not a new protocol command or an HTTP/OpenAPI operation.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/booking_cli.py --quotes reference/booking_resale_admission/fixtures/booking_quotes.json --requests reference/booking_resale_admission/fixtures/booking_recorded_confirm.jsonl
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/booking_cli.py --quotes reference/booking_resale_admission/fixtures/booking_quotes.json --requests - < reference/booking_resale_admission/fixtures/booking_recorded_boundaries.jsonl
+```
+
+The confirmation transcript has 7 successes, exit 0: explicit clock, registration,
+hold, confirmation, replay through an alias and two views. The boundary transcript
+has 20 responses, exit 1, exercising absence, malformed/mismatched recordings,
+both immediate faults, price mismatch and retained refusal, success, source
+failure after success, conflicting replay, explicit cancellation, historical
+confirmation replay and expiry of a second hold. Source errors use
+`error.type/message`, contribute exit 1 and continue only through subsequent
+explicit lines. FSM errors retain `error.code`. Structural/setup/file failures
+and `BookingInputError` stop with exit 2. Invalid caller identifier scalars are
+local `InvalidBookingQuoteRecord` errors (exit 1), rejected before fetching.
+
+Both transcripts reach `CONFIRMED`; payment, settlement, issuance and right remain
+absent. No payment handoff or automatic follow-up occurs. All existing false
+non-claim flags remain false. B03/B04 remain partial mock capabilities; price,
+discount and quote-authority policy remain **UNDETERMINED — Astra/User**. There
+is no authenticated quote, pricing engine, persistence, network, paid dependency,
+credentials or production activation. See the [coverage and execution record](../../validation/2026-11-03-plan-plan-local-booking-quote-source/README.md)
+for existing coverage reuse, new boundary tests and outstanding review/CI gates.

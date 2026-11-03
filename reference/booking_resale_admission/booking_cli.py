@@ -8,6 +8,9 @@ import sys
 
 from admission_fixture import FixtureError, decode_json, exact_fields
 from booking_session import BookingInputError, BookingSession
+from booking_quote_adapter import BookingQuoteAdapter
+from booking_quote_fixture import load_fixture
+from booking_quote_source import BookingQuoteSourceError
 from reservation_fsm import ReservationError, ReservationMachine
 
 # Local selectors for existing FSM operations, not new protocol commands.
@@ -29,9 +32,15 @@ _DISPATCH = {
 }
 
 
-def dispatch_request(session: BookingSession, request: dict) -> dict:
+def dispatch_request(session: BookingSession, request: dict, *, quote_adapter=None) -> dict:
     exact_fields(request, {"operation", "arguments"}, "request")
     operation = request["operation"]
+    if type(operation) is str and operation == "confirm_recorded_quote" and quote_adapter is not None:
+        exact_fields(request["arguments"],
+                     {"recording_id", "reservation_id", "order_id", "idempotency_key"},
+                     "confirm_recorded_quote arguments")
+        return {"operation": operation,
+                "receipt": quote_adapter.confirm_recorded_quote(**request["arguments"])}
     if type(operation) is not str or operation not in _DISPATCH:
         raise FixtureError("unsupported session operation")
     method, fields, result_key = _DISPATCH[operation]
@@ -49,7 +58,7 @@ def _emit(value):
     print(json.dumps(value, sort_keys=True, allow_nan=False))
 
 
-def run_requests(session: BookingSession, lines) -> int:
+def run_requests(session: BookingSession, lines, *, quote_adapter=None) -> int:
     rejected = False
     for line in lines:
         operation = None
@@ -57,11 +66,11 @@ def run_requests(session: BookingSession, lines) -> int:
             request = decode_json(line)
             if type(request) is dict and type(request.get("operation")) is str:
                 operation = request["operation"]
-            result = dispatch_request(session, request)
+            result = dispatch_request(session, request, quote_adapter=quote_adapter)
         except (FixtureError, BookingInputError) as error:
             _emit(_error(operation, error))
             return 2
-        except ReservationError as error:
+        except (ReservationError, BookingQuoteSourceError) as error:
             result = _error(operation, error)
             rejected = True
         _emit(result)
@@ -71,14 +80,17 @@ def run_requests(session: BookingSession, lines) -> int:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--requests", required=True, help="JSONL path, or - for stdin")
+    parser.add_argument("--quotes", help="synthetic recorded-quote source fixture path")
     args = parser.parse_args(argv)
     try:
         session = BookingSession(ReservationMachine())
+        adapter = (BookingQuoteAdapter(session, load_fixture(args.quotes))
+                   if args.quotes is not None else None)
         requests = (nullcontext(sys.stdin) if args.requests == "-"
                     else Path(args.requests).open(encoding="utf-8"))
         with requests as lines:
-            return run_requests(session, lines)
-    except (OSError, UnicodeError) as error:
+            return run_requests(session, lines, quote_adapter=adapter)
+    except (FixtureError, OSError, UnicodeError) as error:
         _emit(_error(None, error))
         return 2
 
