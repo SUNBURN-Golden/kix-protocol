@@ -209,7 +209,7 @@ assert sys.path == before
 assert all(sys.modules[name] is value for name, value in sentinels.items())
 '''
         result = subprocess.run([sys.executable, '-B', '-c', code], input=json.dumps(request()),
-                                text=True, capture_output=True)
+                                text=True, capture_output=True, cwd=HERE)
         self.assertEqual(result.returncode, 0, result.stderr)
 
 

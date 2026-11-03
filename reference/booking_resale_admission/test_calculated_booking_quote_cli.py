@@ -50,7 +50,7 @@ runpy.run_module(sys.argv.pop(1), run_name='__main__')
 '''
         extra = ['--fixture', str(FIXTURE)] if desk == 'ticket_operations' else []
         return subprocess.run([sys.executable, '-B', '-c', code, desk + '_cli', *extra, *args],
-                              input=stdin, text=True, capture_output=True)
+                              input=stdin, text=True, capture_output=True, cwd=HERE)
 
     def test_each_transcript_matches_direct_session_and_keeps_other_surfaces_unchanged(self):
         for name, cli in (('booking', booking_cli), ('ticket_operations', ticket_operations_cli)):

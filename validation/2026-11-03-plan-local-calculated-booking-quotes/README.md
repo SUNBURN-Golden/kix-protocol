@@ -270,3 +270,45 @@ runtime/durability, distributed fencing, bank exactly-once, chain finality,
 legal compliance or runtime activation is claimed. No protocol/catalogue/SDK,
 coin/TIX or storage/replication engine change. Follow-up is the required delivery
 verification on the authorized host, not additional product implementation.
+
+## Fix round 1 (delivered-head review + exact-head CI)
+
+Delivered implementation head reviewed by CI and non-author review:
+`47e51671b5e3afca6aa6ff02ef15b25cb8ef2e3e`. The earlier report above describes
+the pre-delivery worktree (`8306d37…`) and the builder's PYTHONPATH-assisted
+environment; both are historical evidence, not the delivered-head result.
+
+The exact-head KIX protocol run failed 4 tests. Root cause: the socket-denial
+subprocess helpers in `test_calculated_booking_quote_cli.py:52` and
+`test_calculated_booking_quote_source.py:211` spawned `python -B -c` without
+`cwd=`, so the child's `sys.path[0]` was the repository root, not the suite
+directory. The builder's recorded runs exported
+`PYTHONPATH=…/reference/booking_resale_admission`, which masked the defect; CI
+runs `python3 -m unittest discover -s reference/booking_resale_admission
+-t reference/booking_resale_admission` from the repository root with no
+PYTHONPATH. Fix: pass `cwd=HERE` in both helpers (the pre-existing
+`test_booking_quote_cli.py:191-193` and `test_ticket_operations_cli.py:319-322`
+pattern). No implementation, fixture or contract change; no CI change.
+
+Re-run in the exact CI shape from the repository root, with `PYTHONPATH`
+unset entirely (`env -u PYTHONPATH`) and `PYTHONDONTWRITEBYTECODE=1`:
+
+| Command | Actual result |
+|---|---|
+| `python3 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission` | **651 PASS**, 30.528 s |
+| `python3.12 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission` (CI Python 3.12) | **651 PASS**, 43.936 s |
+| `python3 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_calculated_booking_quote_*.py' -v` | **12 PASS**, 1.869 s (includes all 4 previously failing tests) |
+| `python3 -m unittest test_commerce test_commerce_driver` (in `reference/v0.3-rc1`) | **27 PASS**, 0.339 s |
+| CI suite loop over `settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation token_reward provider_facts` | 224 / 651 / 148 / 85 / 186 / 73 PASS |
+| `python3 scripts/check_openapi_contract.py` and `--self-test` | PASS / PASS; 84 commands, sha256 `ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e` |
+| `python3 scripts/check_integration_gate_openapi.py` and `--self-test` | PASS / PASS |
+| `python3 -m unittest integration_gate.test_offline_limits` | **9 PASS**, 0.114 s |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `69564b16…` and `b607996c…` match the required locked blobs |
+| `git diff --stat HEAD` | only the two test helpers changed (2 insertions, 2 deletions) |
+
+Locked blobs and `reference/v0.3-rc1/**` are unchanged by this fix; no
+`runtime/`, `.github/`, `.aiops/`, `docs/tasks/` or contract path was touched.
+Exact-final-head KTX/KIX run IDs remain **unavailable in this session**; the
+supervisor publishes this round's head and the normal non-author exact-head
+review and CI gates still apply. No new product policy, secret, network, real
+funds/providers or runtime activation is involved.
