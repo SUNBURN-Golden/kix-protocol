@@ -574,13 +574,14 @@ The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
 {"surface":"admission","operation":"view","arguments":{"right_id":"issue-1"}}
 ```
 
-`surface` is exactly `booking`, `resale` or `admission`. The eleven booking selectors
+`surface` is exactly `booking`, `resale`, `admission` or `settlement`. The eleven booking selectors
 and exact required arguments are listed in [the booking table](#local-booking-desk-session-and-jsonl-cli).
 All fifteen resale selectors and seven admission selectors documented above retain
 their exact arguments, including
 optional resale payment `buyer_role`. The existing dispatchers validate them;
-Only each surface's documented selectors are accepted; setup-only payment observation,
-settlement operations and a settlement surface are refused. Booking retains its existing `register_show` selector without adding
+Only each surface's documented selectors are accepted. Primary payment observation remains
+setup-only. The five settlement selectors and their required arguments are documented
+[below](#explicit-settlement-controls-on-the-shared-ticket-desk); other settlement operations are refused. Booking retains its existing `register_show` selector without adding
 organizer lifecycle operations. Output adds
 `surface` to the existing `operation` plus `receipt`, `view` or `error` envelope.
 Domain errors retain `{code}`; local errors retain `{type,message}`. Exit 0 means
@@ -631,8 +632,9 @@ replay of a fixture clock counts. A failed initialization does not count. Views
 and reconciliation need no session clock. Confirm requires an explicit valid
 `quote_ref`. Missing clock or invalid quote emits local `BookingInputError`, stops
 at that line with exit 2 and binds no FSM key. Earlier accepted effects remain.
-Booking calls fetch no recordings and perform no payment observation, issuance,
-settlement orchestration or automatic admission operation.
+Booking calls fetch no recordings and perform no payment observation,
+settlement orchestration or automatic admission operation. Issuance requires the
+separate explicit `booking.issue` request described below.
 
 For example, after loading the existing fixture:
 
@@ -1265,3 +1267,68 @@ their existing named owners. No payment lookup/handoff, automatic actions,
 persistence, frontend, funds execution, chain issuance/finality, production
 runtime, legal compliance or production readiness is claimed. Non-author A2
 exact-head review and successful exact-head KTX/KIX workflows remain delivery gates.
+
+
+### Explicit settlement controls on the shared ticket desk
+
+`desk.settlement` wraps the exact settlement machine shared by booking, resale and
+admission. These five local selectors expose existing FSM operations only. Each
+forwards once, returning the original receipt/view or raising the original FSM
+error. Construction performs no settlement call beyond caller-supplied setup.
+Each method accepts `settlement_id` positionally or by keyword; every other
+argument is required and keyword-only. There are no generated keys or defaults.
+
+| Operation | Exact required `arguments` fields |
+| --- | --- |
+| `initiate` | `settlement_id`, `idempotency_key`, `trade_id`, `gross`, `debtor_role`, `policy`, `currency` |
+| `authorize` | `settlement_id`, `idempotency_key` |
+| `capture` | `settlement_id`, `idempotency_key` |
+| `commit` | `settlement_id`, `idempotency_key`, `movement_id`, `gross`, `amount`, `fee`, `tax`, `held`, `adjustment`, `adjustment_reason` |
+| `view` | `settlement_id` |
+
+Supply currency explicitly (`KRW` is the existing FSM's accepted currency).
+Supply policy unchanged with its existing `kind`, `fee_bps`, `residual_payee` and
+`fee_payee` fields; the FSM owns policy validation and domain errors. Resale
+allocations do not supply settlement policy. Every statement component is
+explicit, including `adjustment_reason: null` for zero adjustment. Example:
+
+```json
+{"surface":"settlement","operation":"authorize","arguments":{"settlement_id":"claim-2","idempotency_key":"authorize-2"}}
+```
+
+Output is `{surface, operation, receipt}` or `{surface, operation, view}`. Domain
+refusals retain `{error:{code}}` and continue only to the next supplied line,
+producing exit 1. Structural errors (missing/extra/duplicate fields, unsupported
+selectors or nonfinite numbers) stop with exit 2. All-success input exits 0.
+
+From repository root, each complete journey deliberately exits **1**:
+
+```bash
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_session.json \
+  --requests reference/booking_resale_admission/fixtures/ticket_operations_settlement_booking.jsonl
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_session.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_settlement_resale.jsonl
+```
+
+Both transcripts work as files or stdin. The version-1 fixture retains the issued
+anchor, committed settlement, both adoptions and explicit clocks. A separately
+prepared paid reservation occupies slot 1 without issuance. The 13-line booking
+journey explicitly initializes the booking clock, initiates and binds settlement,
+then issuance refuses `SETTLEMENT_NOT_COMMITTED`. Explicit authorize, capture and
+commit permit a separately requested issuance with the caller's fresh key. Replay
+of the earlier refused key still refuses. The 16-line resale journey explicitly
+lists the anchor and observes the merged synthetic recorded-payment source before
+initiating/binding settlement. Acceptance pauses, retains its refusal after commit,
+and transfers only on the separately supplied fresh acceptance key. Historical
+initiate receipts remain `INITIATED` while current settlement views are `COMMITTED`.
+
+Settlement actions never observe payments, issue, adopt, transfer or consume
+rights, fetch recordings or advance ticket journals. Refund, distribution,
+statement-source integration, F04, reward coupling, primary-payment handoff and
+standalone finance tooling are excluded. Existing false funds/finality/durability/
+production flags remain false. No network, persistence, chain execution, credentials
+or runtime activation is added. Product policy remains **UNDETERMINED — Astra/User**;
+legal/accounting treatment remains **UNDETERMINED — User/designated external reviewers**.
+See the [coverage and actual validation record](../../validation/2026-11-03-plan-local-ticket-settlement-controls/README.md).

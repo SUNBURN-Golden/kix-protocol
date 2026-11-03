@@ -19,7 +19,7 @@ from fake_presentation_source import SyntheticPresentationFault
 from fake_resale_offer_source import SyntheticResaleOfferFault
 from resale_cli import _DISPATCH as RESALE_DISPATCH
 from test_resale_cli import RecordedPaymentDeskChecks
-from ticket_operations_cli import dispatch_request, run_requests
+from ticket_operations_cli import _SETTLEMENT_DISPATCH, dispatch_request, run_requests
 from ticket_operations_fixture import load_fixture
 from test_ticket_operations_session import (FIXTURE, HERE, assert_booking_journey, fixture,
                                             machines, requests, snapshot)
@@ -257,7 +257,7 @@ class TicketOperationsCliTests(unittest.TestCase):
                     valid | {"operation": []}, valid | {"arguments": []},
                     requests("admission")[0] | {"surface": "resale"}]
         for surface, selectors in (("booking", BOOKING_DISPATCH), ("resale", RESALE_DISPATCH),
-                                   ("admission", ADMISSION_DISPATCH)):
+                                   ("admission", ADMISSION_DISPATCH), ("settlement", _SETTLEMENT_DISPATCH)):
             for operation, (_, fields, _) in selectors.items():
                 args = dict.fromkeys(fields, "x")
                 for field in fields:
