@@ -1324,7 +1324,7 @@ initiating/binding settlement. Acceptance pauses, retains its refusal after comm
 and transfers only on the separately supplied fresh acceptance key. Historical
 initiate receipts remain `INITIATED` while current settlement views are `COMMITTED`.
 
-The five base settlement actions above never observe payments, issue, adopt,
+The base settlement actions above never observe payments, issue, adopt,
 transfer or consume rights, fetch recordings or advance ticket journals. Refund
 controls, recorded statements and explicit distribution are documented below. F04,
 reward coupling, primary-payment handoff and standalone finance tooling remain
@@ -1518,3 +1518,67 @@ persistence, external service or production runtime is added. Mock provenance
 and false funds/finality/durability flags remain. In-memory replay does not prove
 durability, bank exactly-once, chain finality or cross-machine rollback.
 See the [coverage and actual verification record](../../validation/2026-11-03-plan-local-ticket-statement-distribution/README.md).
+
+### Settlement failure, cancellation and reconciliation on the shared ticket desk
+
+`desk.settlement` also exposes three direct, single-call forwards to the existing
+`SettlementMachine`. No wrapper validation, defaults, cache, source fetch, retry
+or inferred compensation is added. Receipts and exceptions propagate unchanged.
+In Python, `settlement_id` may be positional; every other parameter is required
+and keyword-only. The JSONL envelope remains exactly `surface`, `operation`,
+`arguments`, with `surface: "settlement"` and these exact argument fields:
+
+| Operation | Required arguments | Output |
+|---|---|---|
+| `fail` | `settlement_id`, `idempotency_key`, `reason` | `receipt` |
+| `cancel` | `settlement_id`, `idempotency_key`, `reason` | `receipt` |
+| `reconcile` | `settlement_id`, `idempotency_key` | `receipt` |
+
+```python
+desk.settlement.fail("claim", idempotency_key="decline", reason="synthetic-decline")
+desk.settlement.reconcile("claim", idempotency_key="local-check")
+```
+
+Failure and cancellation accept `INITIATED` and `AUTHORIZED`, refuse after
+`CAPTURED` or `COMMITTED` with `ILLEGAL_TRANSITION`, and produce terminal
+`FAILED` or `CANCELLED` respectively. Fresh-key terminal mutation refuses with
+`TERMINAL_IMMUTABLE`. An exact accepted replay returns the first snapshot with
+`duplicate: true`, `applied: null`; changed operation, settlement identity or
+body under a bound key yields `IDEMPOTENCY_CONFLICT`. Historical receipts do
+not become current views. The FSM's validation order and retained refusals apply.
+
+Reconciliation works in every existing phase, including terminal phases. Its
+receipt includes `matched`, `state_digest`, `entry_count`, `settlement` and
+existing provenance/execution flags. It compares this process's journal replay
+with its state, adds no economic journal entry and performs no repair. The same
+key returns the historical reconciliation snapshot; an explicit fresh key sees
+current state. In-memory journal restoration forgets reconciliation receipts
+and retained refusals; this is process-local idempotency, not durable closure
+or bank reconciliation. These are local selectors, with no new protocol command.
+
+Run either transcript as a file or stdin from the repository root:
+
+```sh
+for scenario in exceptions reconciliation; do
+  PYTHONDONTWRITEBYTECODE=1 python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_settlement_${scenario}.jsonl"
+  PYTHONDONTWRITEBYTECODE=1 python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_settlement_${scenario}.jsonl"
+done
+```
+
+The exception journey exits 1 after explicit successes/refusals and continues
+through every line. The reconciliation journey exits 0, explicitly capturing,
+committing/observing recorded statements, distributing, binding a refund and
+observing synthetic acceptance between historical and fresh reports. Structural
+JSON/schema errors exit 2 immediately; domain refusals exit 1 and continue.
+Fixture version 1 is unchanged. The issued anchor, both adoptions and explicit
+clocks are retained; `reserve-2` is bound to a pre-capture `claim-2`.
+
+These controls never automatically cancel reservations, release inventory,
+change ownership, refund money or close external returns. Legal termination
+and refund effects remain **UNDETERMINED — User/legal**. No real PG/bank/KYC,
+network, funds, chain execution, persistence or runtime activation is involved.
+See the [coverage and actual verification record](../../validation/2026-11-03-plan-local-ticket-settlement-exceptions/README.md).

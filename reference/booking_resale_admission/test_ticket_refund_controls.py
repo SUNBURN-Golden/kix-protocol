@@ -378,8 +378,10 @@ class TicketRefundControlsTests(unittest.TestCase):
             load_value(base|{'cancel_acceptances':entries})
         for path in HERE.glob('fixtures/ticket_operations*session.json'):
             desk = load_fixture(path)
-            if path != FIXTURE:
+            if 'cancel_acceptances' not in json.loads(path.read_text()):
                 self.assertIsNone(desk.settlement._cancel_acceptance_adapter)
+            else:
+                self.assertEqual(desk.settlement._cancel_acceptance_adapter._source.calls, ())
         # Payload decoding belongs to explicit fetch, not fixture construction.
         desk = load_value(base|{'cancel_acceptances':[good|{'recorded_text':'{'}]})
         self.assertEqual(desk.settlement._cancel_acceptance_adapter._source.calls,())
@@ -394,7 +396,7 @@ class TicketRefundControlsTests(unittest.TestCase):
                 variants.append(json.dumps(row))
             variants += [json.dumps(template|{'arguments':None}),
                          json.dumps(template|{'arguments':template['arguments']|{'extra':1}})]
-        variants += [json.dumps(request(op)) for op in ('observe_mock_cancel_acceptance','cancel')]
+        variants += [json.dumps(request(op)) for op in ('observe_mock_cancel_acceptance','restore')]
         variants += [json.dumps(bind()).replace('4000',number) for number in ('NaN','Infinity','-Infinity','1e999')]
         variants += ['{"surface":"settlement","operation":"bind_refund","arguments":{"amount":1,"amount":2}}',
                      '{"surface":"settlement","surface":"booking","operation":"view","arguments":{}}']

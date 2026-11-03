@@ -147,7 +147,8 @@ class TicketSettlementControlsTests(unittest.TestCase):
     def test_fsm_methods_forward_once_with_exact_objects_receipts_and_errors(self):
         self.assertEqual(set(_SETTLEMENT_DISPATCH), {'initiate', 'authorize', 'capture', 'commit', 'view',
                                                           'bind_refund', 'observe_recorded_cancel_acceptance',
-                                                          'commit_recorded_statement', 'observe_recorded_statement', 'distribute'})
+                                                          'commit_recorded_statement', 'observe_recorded_statement', 'distribute',
+                                                          'fail', 'cancel', 'reconcile'})
         for operation, (_, fields, key) in _SETTLEMENT_DISPATCH.items():
             if operation in ('observe_recorded_cancel_acceptance', 'commit_recorded_statement',
                              'observe_recorded_statement'):
@@ -260,8 +261,8 @@ class TicketSettlementControlsTests(unittest.TestCase):
                          for bad in [None, [], args | {'extra': None},
                                      *[{k:v for k,v in args.items() if k != field} for field in fields]]]
         variants += [dict(surface='settlement', operation=op, arguments={})
-                     for op in ('fail', 'cancel', 'observe_statement',
-                                'observe_mock_cancel_acceptance', 'observe_external_payment', 'reconcile',
+                     for op in ('observe_statement',
+                                'observe_mock_cancel_acceptance', 'observe_external_payment',
                                 'restore', 'canonical_state', 'export_journal', '__init__', [], None)]
         texts = [json.dumps(row) for row in variants]
         texts += ['{"surface":"settlement","operation":"view","arguments":{"settlement_id":"a","settlement_id":"b"}}',
