@@ -146,10 +146,12 @@ class TicketSettlementControlsTests(unittest.TestCase):
 
     def test_fsm_methods_forward_once_with_exact_objects_receipts_and_errors(self):
         self.assertEqual(set(_SETTLEMENT_DISPATCH), {'initiate', 'authorize', 'capture', 'commit', 'view',
-                                                          'bind_refund', 'observe_recorded_cancel_acceptance'})
+                                                          'bind_refund', 'observe_recorded_cancel_acceptance',
+                                                          'commit_recorded_statement', 'observe_recorded_statement', 'distribute'})
         for operation, (_, fields, key) in _SETTLEMENT_DISPATCH.items():
-            if operation == 'observe_recorded_cancel_acceptance':
-                continue  # Adapter forwarding is covered in test_ticket_refund_controls.
+            if operation in ('observe_recorded_cancel_acceptance', 'commit_recorded_statement',
+                             'observe_recorded_statement'):
+                continue  # Adapter forwarding is covered in the focused refund/statement modules.
             signature = inspect.signature(getattr(TicketSettlementSession, operation))
             self.assertEqual(set(signature.parameters) - {'self'}, fields)
             for name, parameter in signature.parameters.items():
@@ -258,7 +260,7 @@ class TicketSettlementControlsTests(unittest.TestCase):
                          for bad in [None, [], args | {'extra': None},
                                      *[{k:v for k,v in args.items() if k != field} for field in fields]]]
         variants += [dict(surface='settlement', operation=op, arguments={})
-                     for op in ('fail', 'cancel', 'observe_statement', 'distribute',
+                     for op in ('fail', 'cancel', 'observe_statement',
                                 'observe_mock_cancel_acceptance', 'observe_external_payment', 'reconcile',
                                 'restore', 'canonical_state', 'export_journal', '__init__', [], None)]
         texts = [json.dumps(row) for row in variants]
