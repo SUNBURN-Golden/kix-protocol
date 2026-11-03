@@ -236,7 +236,8 @@ class TicketOperationsCliTests(unittest.TestCase):
                     with patch("ticket_operations_cli._" + surface, return_value=result) as dispatch:
                         self.assertEqual(dispatch_request(session, {"surface": surface, **nested}),
                                          {"surface": surface, **result})
-                        dispatch.assert_called_once_with(getattr(session, surface), nested)
+                        kwargs = {"quote_adapter": None} if surface == "booking" else {}
+                        dispatch.assert_called_once_with(getattr(session, surface), nested, **kwargs)
         # Argument validation, including optional buyer_role, remains delegated.
         for buyer in ("omitted", None, "buyer-2"):
             transcript = requests("transfer")

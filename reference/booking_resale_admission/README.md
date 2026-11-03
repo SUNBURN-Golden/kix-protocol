@@ -1066,8 +1066,9 @@ local selector only when a source is supplied:
 
 All four arguments are required, with no extra fields. `dispatch_request` and
 `run_requests` also accept keyword-only `quote_adapter=None` for explicit local
-injection. Existing CLI operations and behavior without a source are preserved;
-the combined ticket desk supplies no adapter and gains no quote selector. This
+injection. Existing CLI operations and behavior without a source are preserved.
+The [shared ticket desk](#recorded-booking-quotes-on-the-shared-desk) supports the
+same explicit composition through `--quotes` or Python injection. This
 helper is not a new protocol command or an HTTP/OpenAPI operation.
 
 ```bash
@@ -1093,3 +1094,103 @@ discount and quote-authority policy remain **UNDETERMINED — Astra/User**. Ther
 is no authenticated quote, pricing engine, persistence, network, paid dependency,
 credentials or production activation. See the [coverage and execution record](../../validation/2026-11-03-plan-plan-local-booking-quote-source/README.md)
 for existing coverage reuse, new boundary tests and outstanding review/CI gates.
+
+### Recorded booking quotes on the shared desk
+
+The shared `ticket_operations_cli.py` accepts optional `--quotes PATH` alongside
+required `--fixture PATH` and `--requests PATH|-`. It reuses
+`booking_quote_fixture.load_fixture` and its exact source-only schema above,
+then binds `BookingQuoteAdapter` to the shared session's existing `.booking`.
+The shared setup fixture has no additional fields. It still contains synthetic
+issued inventory; the new examples register a separate show and reservation.
+No additional reservation machine, clock initialization or quote fetch occurs
+when composing the adapter.
+
+Both shared Python entry points accept keyword-only `quote_adapter=None`:
+`dispatch_request(session, request, *, quote_adapter=None)` returns one result;
+`run_requests(session, lines, *, quote_adapter=None)` prints JSONL and returns
+the exit status. Only the booking surface receives this adapter. Explicit Python
+composition from the repository root (with `reference/booking_resale_admission`
+on `PYTHONPATH`) is:
+
+```python
+import json
+from pathlib import Path
+from booking_quote_adapter import BookingQuoteAdapter
+from booking_quote_fixture import load_fixture as load_quotes
+from ticket_operations_fixture import load_fixture
+from ticket_operations_cli import dispatch_request, run_requests
+
+fixtures = Path("reference/booking_resale_admission/fixtures")
+desk = load_fixture(fixtures / "ticket_operations_session.json")
+quotes = load_quotes(fixtures / "ticket_operations_booking_quotes.json")
+adapter = BookingQuoteAdapter(desk.booking, quotes)
+rows = (fixtures / "ticket_operations_recorded_confirm.jsonl").read_text().splitlines()
+# Explicit clock, separate show registration, hold and recorded confirmation.
+for line in rows[:4]:
+    result = dispatch_request(desk, json.loads(line), quote_adapter=adapter)
+    print(json.dumps(result, sort_keys=True))
+status = run_requests(desk, rows[4:], quote_adapter=adapter)
+assert status == 0
+assert quotes.calls == ("desk-record-1", "desk-alias")
+```
+
+The existing selector keeps all four required arguments and the shared envelope:
+
+```json
+{"surface":"booking","operation":"confirm_recorded_quote","arguments":{"recording_id":"desk-record-1","reservation_id":"desk-reserve-1","order_id":"desk-order-1","idempotency_key":"desk-confirm-1"}}
+```
+
+Without `--quotes` or an injected adapter, this selector remains unsupported
+(`FixtureError`, exit 2); every existing booking/resale/admission operation keeps
+its prior behavior. Results retain `surface`, `operation` and unchanged `receipt`
+or `view`. Domain refusals use `error.code`; source failures use
+`error.type/message`, contribute exit 1 and allow only explicitly supplied later
+lines to run. Malformed input, fixture/file errors and `BookingInputError` stop
+with exit 2, including after earlier exit-1 refusals. All-success input exits 0.
+Unexpected programming exceptions propagate.
+
+Run both examples through files and stdin from the repository root:
+
+```bash
+for scenario in recorded_confirm recorded_boundaries; do
+  PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --quotes reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+  echo "file exit: $?"
+  PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --quotes reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+  echo "stdin exit: $?"
+done
+```
+
+`recorded_confirm` emits 7 rows and exits 0: explicit clock, registration, hold,
+confirmation, alias replay and current reservation/show views. `recorded_boundaries`
+emits 20 rows and exits 1: missing/malformed/mismatched records, both source faults,
+price refusal, conflicting replay of that refusal, confirmation, source failure
+after success, conflicting quote replay, cancellation, historical confirmation
+replay and a second hold's expiry. That historical receipt remains `CONFIRMED`
+with `duplicate: true` and `applied: null`; the current view is `CANCELLED`.
+The confirmation example's current view is `CONFIRMED`. Both show zero payments
+for the new show and null payment, settlement, issuance and right fields for the
+new reservation. Existing settlement/resale/admission state stays unchanged.
+
+Every identifier-valid confirmation invocation fetches exactly once, including
+replay. Invalid callers never fetch; rejected source data never reaches the
+session or binds the key. There is no retry, fallback to an earlier receipt,
+payment-reservation handoff or automatic settlement/issuance. The scope remains
+synthetic, in-memory Track P service composition. Pricing, discounts and
+quote-authority policy remain **UNDETERMINED — Astra/User**. No catalogue/SDK,
+protocol command, persistence, network or runtime activation is added.
+
+`test_ticket_operations_quotes.py` compares shared dispatch with direct adapter
+execution on an independently constructed equivalent graph after every step,
+including errors, digests and journals. It checks source rejection/key reuse,
+shared key collisions, fetch accounting, file/stdin outputs and exits 0/1/2,
+and compatibility of all existing shared journeys. This is source-informed local
+evidence; full HTTP coverage, non-author A2 exact-head review and exact-final-head
+KTX/KIX workflow success remain delivery gates. See the
+[coverage and actual command record](../../validation/2026-11-03-plan-local-ticket-desk-quotes/README.md).
