@@ -17,6 +17,11 @@ from settlement_fsm import SettlementError
 _DOMAIN_ERRORS = (AdmissionError, ReservationError, ResaleError, SettlementError)
 # Local Python method selectors; no new wire commands or read catalogue.
 _DISPATCH = {
+    "adopt_issued": (AdmissionSession.adopt_issued,
+                     {"right_id", "idempotency_key", "show_id", "organizer_role", "capacity",
+                      "gate_roles", "primary_price", "resale_cap", "resale_allowed", "organizer_bps",
+                      "platform_bps", "slot", "buyer_role", "expires_ms", "order_id", "amount",
+                      "payment_ref", "reservation_id", "quote_ref"}, "receipt"),
     "authorize_admission": (AdmissionSession.authorize_admission,
                             {"presentation_id", "admission_id", "idempotency_key", "gate_role", "expires_ms"},
                             "receipt"),

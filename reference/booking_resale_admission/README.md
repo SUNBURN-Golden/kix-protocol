@@ -131,10 +131,11 @@ consumed = session.consume(
 )
 ```
 
-The six public methods and all required arguments are:
+The seven public methods and all required arguments are:
 
 | Local method selector | Arguments |
 |---|---|
+| `adopt_issued` | Complete explicit adoption input listed in [fulfillment](#explicit-ticket-fulfillment-on-the-shared-desk), including `idempotency_key` |
 | `authorize_admission` | `presentation_id`, `admission_id`, `idempotency_key`, `gate_role`, `expires_ms` |
 | `consume` | `presentation_id`, `consume_id`, `idempotency_key`, `gate_role` |
 | `view` | `right_id` |
@@ -369,6 +370,7 @@ are added. The caller explicitly chooses every mutation's idempotency key.
 
 | Session method / local CLI selector | Arguments besides mandatory `idempotency_key` on mutations |
 |---|---|
+| `adopt_issued` | Complete explicit adoption input listed in [fulfillment](#explicit-ticket-fulfillment-on-the-shared-desk) |
 | `list_resale` | `offer_id`, `listing_id` |
 | `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
 | `release_hold` | `hold_id`, `buyer_role` |
@@ -572,13 +574,13 @@ The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
 {"surface":"admission","operation":"view","arguments":{"right_id":"issue-1"}}
 ```
 
-`surface` is exactly `booking`, `resale` or `admission`. The nine booking selectors
+`surface` is exactly `booking`, `resale` or `admission`. The eleven booking selectors
 and exact required arguments are listed in [the booking table](#local-booking-desk-session-and-jsonl-cli).
-All fourteen resale selectors and six admission selectors documented above retain
+All fifteen resale selectors and seven admission selectors documented above retain
 their exact arguments, including
 optional resale payment `buyer_role`. The existing dispatchers validate them;
-Only each surface's existing selectors are accepted; fixture-only setup and a settlement surface
-are refused. Booking retains its existing `register_show` selector without adding
+Only each surface's documented selectors are accepted; setup-only payment observation,
+settlement operations and a settlement surface are refused. Booking retains its existing `register_show` selector without adding
 organizer lifecycle operations. Output adds
 `surface` to the existing `operation` plus `receipt`, `view` or `error` envelope.
 Domain errors retain `{code}`; local errors retain `{type,message}`. Exit 0 means
@@ -720,12 +722,14 @@ All listed arguments are required; extra arguments are rejected.
 | `release` | `reservation_id`, `idempotency_key` |
 | `confirm` | `order_id`, `reservation_id`, `amount`, `quote_ref`, `idempotency_key` |
 | `cancel` | `reservation_id`, `idempotency_key` |
+| `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key` |
+| `issue` | `issuance_id`, `order_id`, `idempotency_key` |
 | `reconcile` | `reservation_id`, `idempotency_key` |
 | `view` | `reservation_id` |
 | `view_show` | `show_id` |
 
 A successful explicit `set_clock` **through this session** is required before
-registration, hold, release, confirm and cancel, even when the supplied machine
+registration, hold, release, confirm, cancel, settlement binding and issuance, even when the supplied machine
 already has a clock. A successful
 replay counts as explicit initialization; it does not change current time.
 Views require no clock initialization and do not mutate state. Reconciliation
@@ -760,8 +764,10 @@ Expected transcript outcomes:
 
 Confirmation is a reservation agreement, separate from payment and issuance.
 This desk is a local service, not an authenticated organizer interface. It exposes
-no payment lookup/observation, settlement binding, issuance, admission, persistence,
-external calls or runtime activation. The payment–reservation handoff remains
+no payment lookup/observation, admission, persistence, external calls or runtime activation.
+Settlement binding and issuance are explicit forwarding calls; they require caller-prepared
+synthetic payment/settlement facts. The standalone CLI has no payment setup interface
+and no settlement source; a configured Python session or the shared fixture supplies those facts. The payment–reservation handoff remains
 blocked. `MOCK_GATE_ONLY`, `IN_MEMORY_FSM`, false non-claim flags and B01/B02/B04
 status remain unchanged. Authentication, approved product TTLs, discounts, provider
 authority and compensation remain `UNDETERMINED` under the existing
@@ -1194,3 +1200,68 @@ and compatibility of all existing shared journeys. This is source-informed local
 evidence; full HTTP coverage, non-author A2 exact-head review and exact-final-head
 KTX/KIX workflow success remain delivery gates. See the
 [coverage and actual command record](../../validation/2026-11-03-plan-local-ticket-desk-quotes/README.md).
+
+
+## Explicit ticket fulfillment on the shared desk
+
+Four explicit local selectors expose existing FSM methods (§§9–11); they add no
+protocol commands. `booking.bind_settlement(reservation_id, *, settlement_id,
+idempotency_key)` records a binding without running any settlement operation.
+`booking.issue(issuance_id, *, order_id, idempotency_key)` returns the FSM's
+issuance receipt. Both require a successful session `set_clock`, including a
+successful replay; fixture initialization alone is insufficient. Unbound issuance
+still returns memory evidence with `settlement_gate: UNBOUND`. Bound issuance
+requires the existing synthetic committed settlement view and matching amount.
+
+`resale.adopt_issued` and `admission.adopt_issued` each take `right_id` as the
+positional-or-keyword subject and all these keyword-only required arguments:
+`idempotency_key`, `show_id`, `organizer_role`, `capacity`, `gate_roles`,
+`primary_price`, `resale_cap`, `resale_allowed`, `organizer_bps`, `platform_bps`,
+`slot`, `buyer_role`, `expires_ms`, `order_id`, `amount`, `payment_ref`,
+`reservation_id`, `quote_ref`. The CLI requires exactly the same complete input.
+Explicit nulls are forwarded unchanged where the FSM permits them; the desk adds
+no policy defaults or values inferred from views. Each call returns the original
+receipt or raises the original error. Neither issuance nor either adoption
+performs another action, fetches a recording, lists a ticket or admits anyone.
+
+The new fixture retains the existing already-issued anchor, clocks, binding and
+both adoptions. Its second reservation uses slot 1, separate IDs and a distinct
+synthetic payment reference. Its hold, confirmation, payment observation and
+settlement initiate/authorize/capture/commit are explicit existing setup entries.
+Its binding, issuance and adoptions are deliberately absent from setup. Existing
+fixture validation still requires at least one issued anchor and both adoptions
+for every ticket issued during setup.
+
+From repository root (each command intentionally exits **1**):
+
+```bash
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --requests reference/booking_resale_admission/fixtures/ticket_operations_fulfillment.jsonl
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_fulfillment.jsonl
+```
+
+The 18 requests explicitly initialize booking time, bind the prepared settlement,
+issue the second ticket, separately adopt it into resale and admission, list it,
+and attempt admission (`LISTING_LOCKED`). Cancellation is explicit. Replaying the
+refused authorization still returns `LISTING_LOCKED`; an explicitly supplied fresh
+key authorizes, then a separate consume advances reservation/admission version
+to 2. Replayed issuance/adoption receipts retain their original snapshots
+(issuance version 1); final views show current state. Resale's local version stays
+1; no synchronization is introduced. Exit codes remain 0 for successes, 1 for
+continued domain/source refusals and 2 for stopping input/setup failures.
+
+`test_ticket_fulfillment.py` compares each request's receipts/errors, canonical
+states, digests and journals against a separately constructed direct-FSM graph,
+checks unrelated journals and fetch histories, and covers strict arguments,
+retained refusals, conflicts, expiry and bound/unbound issuance. This is
+source-informed local composition evidence, not clean-room verification or full
+HTTP-suite success. See [actual validation and limits](../../validation/2026-11-03-plan-local-ticket-fulfillment-desk/README.md).
+
+Policy values remain **UNDETERMINED — Astra/User**; legal and provider facts retain
+their existing named owners. No payment lookup/handoff, automatic actions,
+persistence, frontend, funds execution, chain issuance/finality, production
+runtime, legal compliance or production readiness is claimed. Non-author A2
+exact-head review and successful exact-head KTX/KIX workflows remain delivery gates.

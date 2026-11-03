@@ -15,6 +15,9 @@ from reservation_fsm import ReservationError, ReservationMachine
 
 # Local selectors for existing FSM operations, not new protocol commands.
 _DISPATCH = {
+    "bind_settlement": (BookingSession.bind_settlement,
+                        {"reservation_id", "settlement_id", "idempotency_key"}, "receipt"),
+    "issue": (BookingSession.issue, {"issuance_id", "order_id", "idempotency_key"}, "receipt"),
     "register_show": (BookingSession.register_show,
                       {"show_id", "organizer_role", "capacity", "gate_roles", "primary_price",
                        "resale_cap", "resale_allowed", "organizer_bps", "platform_bps",

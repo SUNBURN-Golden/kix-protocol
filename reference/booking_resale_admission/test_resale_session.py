@@ -33,7 +33,9 @@ def snapshot(*machines):
 
 # Explicit examples for every direct forwarding method, including operations not
 # needed by the happy transcript. Selectors/arguments are public session inputs.
+_ADOPTION = json.loads((HERE / "fixtures/ticket_operations_fulfillment.jsonl").read_text().splitlines()[3])["arguments"]
 FORWARD = (
+    ("adopt_issued", "right_id", _ADOPTION),
     ("reconcile", "listing_id", dict(listing_id="l", idempotency_key="k")),
     ("hold_buy", "hold_id", dict(hold_id="h", listing_id="l", buyer_role="buyer", idempotency_key="k")),
     ("release_hold", "hold_id", dict(hold_id="h", buyer_role="buyer", idempotency_key="k")),

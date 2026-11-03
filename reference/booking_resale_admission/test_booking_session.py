@@ -22,6 +22,13 @@ def snapshot(machine):
     return machine.canonical_state(), machine.state_digest(), machine.export_journal()
 
 
+def fulfillment_requests():
+    path = HERE / "fixtures" / "ticket_operations_fulfillment.jsonl"
+    return [{"operation": row["operation"], "arguments": row["arguments"]}
+            for row in map(json.loads, path.read_text().splitlines())
+            if row["surface"] == "booking" and row["operation"] in ("bind_settlement", "issue")][:2]
+
+
 def invoke(target, request):
     try:
         return getattr(target, request["operation"])(**request["arguments"])
@@ -45,7 +52,7 @@ class BookingSessionTests(unittest.TestCase):
 
     def test_only_one_requested_call_with_exact_arguments_and_unchanged_receipt_or_error(self):
         # Every allowed method, including local prerequisites, forwards exactly once.
-        rows = requests("booking_boundaries")
+        rows = requests("booking_boundaries") + fulfillment_requests()
         examples = {row["operation"]: row for row in rows}
         examples["view"] = requests()[4]
         examples["reconcile"] = requests("booking_reconcile")[4]
@@ -64,7 +71,7 @@ class BookingSessionTests(unittest.TestCase):
             self.assertIs(getattr(session, operation)(**args), expected)
             self.assertEqual(args, original)
             identity = {"set_clock": "subject_id", "register_show": "show_id", "hold": "reservation_id",
-                        "confirm": "order_id", "view_show": "show_id"}.get(operation, "reservation_id")
+                        "confirm": "order_id", "view_show": "show_id", "issue": "issuance_id"}.get(operation, "reservation_id")
             subject = args.pop(identity)
             method.assert_called_once_with(subject, **args)
             self.assertEqual(len(machine.mock_calls), 1)
@@ -81,7 +88,7 @@ class BookingSessionTests(unittest.TestCase):
         machine.set_clock("clock", now_ms=7, idempotency_key="outside-clock")
         session = BookingSession(machine)
         before = snapshot(machine)
-        for row in requests("booking_boundaries"):
+        for row in requests("booking_boundaries") + fulfillment_requests():
             if row["operation"] not in ("set_clock", "view", "view_show"):
                 with self.assertRaises(BookingInputError):
                     getattr(session, row["operation"])(**row["arguments"])
