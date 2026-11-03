@@ -4,6 +4,7 @@ from admission_fixture import _validate_setup
 from admission_fsm import AdmissionMachine
 from admission_session import AdmissionSession
 from booking_session import BookingSession
+from issued_ticket_adapter import IssuedTicketAdapter
 from presentation_source import PresentationSource
 from reservation_fsm import ReservationMachine
 from resale_fsm import ResaleMachine
@@ -126,3 +127,10 @@ class TicketOperationsSession:
         self.booking = BookingSession(tickets)
         self.resale = ResaleSession(resale, offer_source, payment_source=payment_source)
         self.admission = AdmissionSession(admission, presentation_source)
+        self._issued_ticket_adapter = IssuedTicketAdapter(
+            tickets, resale=self.resale, admission=self.admission)
+
+    def adopt_issued_from_booking(self, *, surface, reservation_id, right_id, idempotency_key):
+        return self._issued_ticket_adapter.apply(
+            surface=surface, reservation_id=reservation_id, right_id=right_id,
+            idempotency_key=idempotency_key)

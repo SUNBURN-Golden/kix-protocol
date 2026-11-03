@@ -141,6 +141,38 @@ class TicketOperationsFixtureTests(unittest.TestCase):
 
 
 class TicketOperationsCliTests(unittest.TestCase):
+    def test_source_backed_adoption_shared_only_exact_arguments(self):
+        class StringSubclass(str):
+            pass
+
+        for surface in ("resale", "admission"):
+            valid = dict(surface=surface, operation="adopt_issued_from_booking", arguments=dict(
+                reservation_id="reserve-1", right_id="issue-1", idempotency_key="handoff"))
+            session = load_fixture(FIXTURE)
+            receipt = {"opaque": object()}
+            with patch.object(session, "adopt_issued_from_booking", return_value=receipt) as adopt:
+                self.assertIs(dispatch_request(session, valid)["receipt"], receipt)
+                adopt.assert_called_once_with(surface=surface, **valid["arguments"])
+            variants = [valid | {"surface": wrong} for wrong in ("booking", "settlement")]
+            with self.assertRaises(FixtureError):
+                dispatch_request(session, valid | {"operation": StringSubclass(valid["operation"])})
+            variants += [valid | {"arguments": bad} for bad in ([], None, {},
+                valid["arguments"] | {"show_id": "forbidden"},
+                *[{k: v for k, v in valid["arguments"].items() if k != missing}
+                  for missing in valid["arguments"]])]
+            for bad in variants:
+                before = snapshot(machines(session))
+                with patch.object(session, "adopt_issued_from_booking") as adopt:
+                    code, output = run(session, [bad, valid])
+                    self.assertEqual((code, len(output)), (2, 1))
+                    self.assertEqual(output[0]["error"]["type"], "FixtureError")
+                    adopt.assert_not_called()
+                self.assertEqual(snapshot(machines(session)), before)
+            for module in ("resale_cli", "admission_cli", "booking_cli"):
+                cli = __import__(module)
+                with self.assertRaises(FixtureError):
+                    cli.dispatch_request(Mock(), {k: v for k, v in valid.items() if k != "surface"})
+
     def cli(self, *args, stdin=None):
         return subprocess.run([sys.executable, str(HERE / "ticket_operations_cli.py"), *args],
                               input=stdin, capture_output=True, text=True, cwd=HERE.parent, check=False)

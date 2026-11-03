@@ -14,6 +14,7 @@ from booking_quote_fixture import load_fixture as load_quote_fixture
 from booking_quote_source import BookingQuoteSourceError
 from calculated_booking_quote_fixture import load_fixture as load_calculated_fixture
 from booking_session import BookingInputError
+from issued_ticket_adapter import IssuedTicketSourceError
 from presentation_source import PresentationSourceError
 from resale_cli import dispatch_request as _resale
 from resale_offer_source import ResaleOfferSourceError
@@ -63,7 +64,14 @@ def dispatch_request(session: TicketOperationsSession, request: dict, *, quote_a
     if type(surface) is not str or surface not in ("booking", "resale", "admission", "settlement"):
         raise FixtureError("surface must be booking, resale, admission or settlement")
     nested = {"operation": request["operation"], "arguments": request["arguments"]}
-    if surface == "booking":
+    if type(request["operation"]) is str and request["operation"] == "adopt_issued_from_booking":
+        if surface not in ("resale", "admission"):
+            raise FixtureError("adopt_issued_from_booking requires resale or admission surface")
+        exact_fields(request["arguments"], {"reservation_id", "right_id", "idempotency_key"},
+                     "adopt_issued_from_booking arguments")
+        result = {"operation": request["operation"], "receipt": session.adopt_issued_from_booking(
+            surface=surface, **request["arguments"])}
+    elif surface == "booking":
         result = _booking(session.booking, nested, quote_adapter=quote_adapter)
     elif surface == "resale":
         result = _resale(session.resale, nested)
@@ -106,7 +114,7 @@ def run_requests(session: TicketOperationsSession, lines, *, quote_adapter=None)
             return 2
         except (*_DOMAIN_ERRORS, ResaleOfferSourceError, PresentationSourceError,
                 ResalePaymentSourceError, BookingQuoteSourceError, CancelAcceptanceSourceError,
-                StatementSourceError) as error:
+                StatementSourceError, IssuedTicketSourceError) as error:
             result = _error(surface, operation, error)
             rejected = True
         _emit(result)
