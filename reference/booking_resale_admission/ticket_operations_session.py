@@ -14,14 +14,19 @@ from resale_session import ResaleSession
 from settlement_fsm import SettlementMachine
 from cancel_acceptance_adapter import CancelAcceptanceAdapter
 from cancel_acceptance_source import CancelAcceptanceSource, CancelAcceptanceSourceError
+from statement_adapter import StatementAdapter
+from statement_source import StatementSource, StatementSourceError
 
 
 class TicketSettlementSession:
     """Explicit existing settlement operations on the shared ticket graph."""
 
     def __init__(self, machine: SettlementMachine, *,
-                 cancel_acceptance_source: CancelAcceptanceSource | None = None) -> None:
+                 cancel_acceptance_source: CancelAcceptanceSource | None = None,
+                 statement_source: StatementSource | None = None) -> None:
         self._machine = machine
+        self._statement_adapter = (StatementAdapter(machine, statement_source)
+                                   if statement_source is not None else None)
         self._cancel_acceptance_adapter = (
             CancelAcceptanceAdapter(machine, cancel_acceptance_source)
             if cancel_acceptance_source is not None else None)
@@ -51,6 +56,24 @@ class TicketSettlementSession:
             settlement_id, idempotency_key=idempotency_key, refund_id=refund_id,
             amount=amount, beneficiary_role=beneficiary_role, reason=reason)
 
+    def commit_recorded_statement(self, settlement_id, *, movement_id, idempotency_key):
+        if self._statement_adapter is None:
+            raise StatementSourceError("no synthetic statement source configured")
+        return self._statement_adapter.apply(
+            operation="commit", settlement_id=settlement_id,
+            movement_id=movement_id, idempotency_key=idempotency_key)
+
+    def observe_recorded_statement(self, settlement_id, *, movement_id, idempotency_key):
+        if self._statement_adapter is None:
+            raise StatementSourceError("no synthetic statement source configured")
+        return self._statement_adapter.apply(
+            operation="observe_statement", settlement_id=settlement_id,
+            movement_id=movement_id, idempotency_key=idempotency_key)
+
+    def distribute(self, settlement_id, *, idempotency_key, order):
+        return self._machine.distribute(
+            settlement_id, idempotency_key=idempotency_key, order=order)
+
     def observe_recorded_cancel_acceptance(self, settlement_id, *, source_id, idempotency_key):
         if self._cancel_acceptance_adapter is None:
             raise CancelAcceptanceSourceError("no synthetic cancellation acceptance source configured")
@@ -65,7 +88,8 @@ class TicketOperationsSession:
     def __init__(self, *, setup: list, offer_source: ResaleOfferSource,
                  presentation_source: PresentationSource,
                  payment_source: ResalePaymentSource | None = None,
-                 cancel_acceptance_source: CancelAcceptanceSource | None = None) -> None:
+                 cancel_acceptance_source: CancelAcceptanceSource | None = None,
+                 statement_source: StatementSource | None = None) -> None:
         """Execute caller-supplied allowlisted setup through public FSM methods.
 
         No clock, policy, issuance or settlement defaults are supplied. Structural
@@ -86,7 +110,8 @@ class TicketOperationsSession:
             method = getattr(machines[entry["machine"]], entry["operation"])
             method(entry["subject_id"], idempotency_key=entry["idempotency_key"], **entry["body"])
         self.settlement = TicketSettlementSession(
-            book, cancel_acceptance_source=cancel_acceptance_source)
+            book, cancel_acceptance_source=cancel_acceptance_source,
+            statement_source=statement_source)
         self.booking = BookingSession(tickets)
         self.resale = ResaleSession(resale, offer_source, payment_source=payment_source)
         self.admission = AdmissionSession(admission, presentation_source)

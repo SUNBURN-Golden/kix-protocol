@@ -20,6 +20,7 @@ from resale_payment_source import ResalePaymentSourceError
 from ticket_operations_fixture import load_fixture
 from ticket_operations_session import TicketOperationsSession, TicketSettlementSession
 from cancel_acceptance_source import CancelAcceptanceSourceError
+from statement_source import StatementSourceError
 
 
 # Local selectors for existing FSM operations; no policy or statement defaults.
@@ -34,6 +35,12 @@ _SETTLEMENT_DISPATCH = {
     "commit": (TicketSettlementSession.commit,
                {"settlement_id", "idempotency_key", "movement_id", "gross", "amount",
                 "fee", "tax", "held", "adjustment", "adjustment_reason"}, "receipt"),
+    "commit_recorded_statement": (TicketSettlementSession.commit_recorded_statement,
+                                  {"settlement_id", "movement_id", "idempotency_key"}, "receipt"),
+    "observe_recorded_statement": (TicketSettlementSession.observe_recorded_statement,
+                                   {"settlement_id", "movement_id", "idempotency_key"}, "receipt"),
+    "distribute": (TicketSettlementSession.distribute,
+                   {"settlement_id", "idempotency_key", "order"}, "receipt"),
     "bind_refund": (TicketSettlementSession.bind_refund,
                     {"settlement_id", "idempotency_key", "refund_id", "amount",
                      "beneficiary_role", "reason"}, "receipt"),
@@ -91,7 +98,8 @@ def run_requests(session: TicketOperationsSession, lines, *, quote_adapter=None)
             _emit(_error(surface, operation, error))
             return 2
         except (*_DOMAIN_ERRORS, ResaleOfferSourceError, PresentationSourceError,
-                ResalePaymentSourceError, BookingQuoteSourceError, CancelAcceptanceSourceError) as error:
+                ResalePaymentSourceError, BookingQuoteSourceError, CancelAcceptanceSourceError,
+                StatementSourceError) as error:
             result = _error(surface, operation, error)
             rejected = True
         _emit(result)

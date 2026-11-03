@@ -544,7 +544,7 @@ desk.admission.authorize_admission("ticket-1", admission_id="entry-1",
 Alternatively `ticket_operations_fixture.load_fixture(path)` returns a configured
 desk. Its JSON object requires exactly `fixture_version` (integer `1`),
 `provenance` (`"MOCK_GATE_ONLY"`), `setup`, `offers` and `presentations`, plus
-optional `payments` (documented below).
+optional `payments`, `cancel_acceptances` and `statements` (documented below).
 Every setup row requires exactly `machine`, `operation`, `subject_id`,
 `idempotency_key`, `body`, using the existing admission fixture's exact schemas:
 
@@ -580,7 +580,7 @@ All fifteen resale selectors and seven admission selectors documented above reta
 their exact arguments, including
 optional resale payment `buyer_role`. The existing dispatchers validate them;
 Only each surface's documented selectors are accepted. Primary payment observation remains
-setup-only. The five settlement selectors and their required arguments are documented
+setup-only. The settlement selectors and their required arguments are documented
 [below](#explicit-settlement-controls-on-the-shared-ticket-desk); other settlement operations are refused. Booking retains its existing `register_show` selector without adding
 organizer lifecycle operations. Output adds
 `surface` to the existing `operation` plus `receipt`, `view` or `error` envelope.
@@ -1326,7 +1326,7 @@ initiate receipts remain `INITIATED` while current settlement views are `COMMITT
 
 The five base settlement actions above never observe payments, issue, adopt,
 transfer or consume rights, fetch recordings or advance ticket journals. Refund
-controls are documented below. Distribution, statement-source integration, F04,
+controls, recorded statements and explicit distribution are documented below. F04,
 reward coupling, primary-payment handoff and standalone finance tooling remain
 excluded. Existing false funds/finality/durability/
 production flags remain false. No network, persistence, chain execution, credentials
@@ -1426,3 +1426,95 @@ legal refund liability remains **UNDETERMINED — User/legal through I10**. Ther
 is no HTTP/SDK/catalogue change, persistence, external service, F04, reward
 coupling, primary-payment handoff, standalone finance tool or runtime activation.
 See the [coverage and actual validation record](../../validation/2026-11-03-plan-plan-local-ticket-refund-controls/README.md).
+
+
+### Recorded statements and explicit distribution on the shared ticket desk
+
+Both `TicketOperationsSession` and `TicketSettlementSession` accept optional
+`statement_source: StatementSource | None = None`. The existing `StatementAdapter`
+uses the same settlement instance shared with booking, resale and admission.
+Construction never fetches. Old fixtures work without a source; an explicit
+recorded request then raises `StatementSourceError` before calling the FSM.
+
+| Operation / Python method | Exact required `arguments` fields | Existing delegation |
+| --- | --- | --- |
+| `commit_recorded_statement` | `settlement_id`, `movement_id`, `idempotency_key` | `StatementAdapter.apply(operation="commit", ...)` |
+| `observe_recorded_statement` | `settlement_id`, `movement_id`, `idempotency_key` | `StatementAdapter.apply(operation="observe_statement", ...)` |
+| `distribute` | `settlement_id`, `idempotency_key`, `order` | `SettlementMachine.distribute` |
+
+These are local selectors for existing operations. Python permits positional
+`settlement_id`; all other arguments are required keyword-only. Direct `commit`
+and both refund controls remain available. The caller selects commit or later
+observation explicitly and supplies every request key and distribution order.
+No phase inference, sorting, default order, generated key, automatic distribution,
+receipt caching or retry occurs. Every recorded request, including replay,
+fetches once. Distribution fetches nothing.
+
+The shared version-1 `MOCK_GATE_ONLY` fixture accepts optional `statements`:
+
+```json
+"statements": [
+  {"settlement_id":"claim-2","movement_id":"statement-1","recorded_text":"{\"settlement_id\":\"claim-2\", ...}"},
+  {"settlement_id":"claim-2","movement_id":"timeout","fault":"synthetic_statement_timeout"}
+]
+```
+
+Every entry has exactly the two identities and one of `recorded_text` or `fault`.
+Identity pairs must be unique, using the existing 1–100 character, unpadded
+identifier rules. Both `synthetic_statement_error` and
+`synthetic_statement_timeout` are supported immediate synthetic failures; neither
+waits for a clock or observes an external provider. Raw recorded text stays
+undecoded until requested. The ellipsis above abbreviates a record; runnable
+complete records are in `fixtures/ticket_operations_statement_session.json`.
+
+A fetched document has exactly `settlement_id`, `movement_id`, `gross`, `amount`,
+`fee`, `tax`, `held`, `adjustment`, `adjustment_reason`. Missing recordings,
+malformed documents, missing/extra fields, mismatched identities and source
+faults make no FSM call and bind no key. Properly shaped records with invalid
+economic components reach unchanged FSM validation and retain its refusal keys.
+Source failures produce `{error:{type,message}}`; domain refusals produce
+`{error:{code}}`. Both continue to the next explicit line and exit 1. Structural
+fixture/request errors stop with exit 2; all-success transcripts exit 0.
+
+From repository root, run each transcript using files and stdin:
+
+```bash
+for scenario in distribution boundaries; do
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_statement_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_statement_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_statement_session.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_statement_${scenario}.jsonl"
+done
+```
+
+`distribution` exits **0**. Its fixture preserves the issued anchor, both
+adoptions and explicit clocks, and prepares a separate paid ticket bound to
+`claim-2`. The transcript commits statement 1, explicitly issues that ticket,
+distributes, observes statement 2, then distributes again. Synthetic gross 10001
+and 500 fee bps give obligation faces 500 platform / 9501 organizer. Statement 1
+has gross 6000, cash 5500, fee 200, tax 100, held 100 and adjustment 100 with an
+explicit reason. Statement 2 has gross 4001, cash 3801, fee 200 and zero other
+components. Both distributions explicitly supply `["platform", "organizer"]`.
+The first allocates 500 / 5000; the second allocates 0 / 3801. Final confirmed and
+distributed cash is 9301, non-cash accounting and outstanding obligations are
+700, and open receivable is zero. Tax and held stay non-cash. Statements never
+change distribution totals by themselves.
+
+`boundaries` exits **1**, continuing through explicit replay, conflicting keys,
+non-list/duplicate/missing/unknown order refusals, a changed frozen order and a
+partial-refund distribution refusal. Historical receipts remain first snapshots;
+accepted replay does not apply money again. Partial refunds retain
+`refund_bearer_policy: UNDEFINED`, block further distribution and preserve prior
+allocations. Repeating a movement under a fresh observation key remains the
+existing economically inert journal-entry characterization.
+
+All amounts, rates and role labels are caller-supplied synthetic examples.
+Waterfall values remain **UNDETERMINED — User/accounting**; recipient-priority
+policy remains **UNDETERMINED — Astra**; refund liability remains
+**UNDETERMINED — User/legal**. No policy, protocol command, catalogue/SDK, F04,
+persistence, external service or production runtime is added. Mock provenance
+and false funds/finality/durability flags remain. In-memory replay does not prove
+durability, bank exactly-once, chain finality or cross-machine rollback.
+See the [coverage and actual verification record](../../validation/2026-11-03-plan-local-ticket-statement-distribution/README.md).

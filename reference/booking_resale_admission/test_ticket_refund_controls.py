@@ -394,7 +394,7 @@ class TicketRefundControlsTests(unittest.TestCase):
                 variants.append(json.dumps(row))
             variants += [json.dumps(template|{'arguments':None}),
                          json.dumps(template|{'arguments':template['arguments']|{'extra':1}})]
-        variants += [json.dumps(request(op)) for op in ('distribute','observe_mock_cancel_acceptance','cancel')]
+        variants += [json.dumps(request(op)) for op in ('observe_mock_cancel_acceptance','cancel')]
         variants += [json.dumps(bind()).replace('4000',number) for number in ('NaN','Infinity','-Infinity','1e999')]
         variants += ['{"surface":"settlement","operation":"bind_refund","arguments":{"amount":1,"amount":2}}',
                      '{"surface":"settlement","surface":"booking","operation":"view","arguments":{}}']
