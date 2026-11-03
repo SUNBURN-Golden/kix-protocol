@@ -348,8 +348,10 @@ class TicketStatementDistributionTests(unittest.TestCase):
                 self.assertEqual(session.settlement._statement_adapter._source.calls, ())
             # Optional compatibility holds for every old shared-desk fixture.
             for file in (HERE/'fixtures').glob('ticket_operations*session.json'):
-                if file != FIXTURE:
+                if 'statements' not in json.loads(file.read_text()):
                     self.assertIsNone(load_fixture(file).settlement._statement_adapter)
+                else:
+                    self.assertEqual(load_fixture(file).settlement._statement_adapter._source.calls, ())
 
     def test_cli_source_errors_continue_structural_errors_stop(self):
         value = json.loads(FIXTURE.read_text())

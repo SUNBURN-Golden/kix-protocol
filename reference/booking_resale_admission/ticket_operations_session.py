@@ -43,6 +43,17 @@ class TicketSettlementSession:
     def capture(self, settlement_id, *, idempotency_key):
         return self._machine.capture(settlement_id, idempotency_key=idempotency_key)
 
+    def fail(self, settlement_id, *, idempotency_key, reason):
+        return self._machine.fail(
+            settlement_id, idempotency_key=idempotency_key, reason=reason)
+
+    def cancel(self, settlement_id, *, idempotency_key, reason):
+        return self._machine.cancel(
+            settlement_id, idempotency_key=idempotency_key, reason=reason)
+
+    def reconcile(self, settlement_id, *, idempotency_key):
+        return self._machine.reconcile(settlement_id, idempotency_key=idempotency_key)
+
     def commit(self, settlement_id, *, idempotency_key, movement_id, gross, amount,
                fee, tax, held, adjustment, adjustment_reason):
         return self._machine.commit(
