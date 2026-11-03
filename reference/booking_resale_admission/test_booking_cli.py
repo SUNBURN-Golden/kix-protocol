@@ -16,7 +16,7 @@ from admission_fixture import FixtureError
 from booking_cli import dispatch_request, run_requests
 from booking_session import BookingSession
 from reservation_fsm import REPLAYABLE, ReservationMachine
-from test_booking_session import HERE, invoke, requests, snapshot
+from test_booking_session import fulfillment_requests, HERE, invoke, requests, snapshot
 from test_reservation_fsm import assert_not_final
 
 
@@ -100,10 +100,10 @@ class BookingCliTests(unittest.TestCase):
                 self.assertEqual(snapshot(wrapped), before)
 
     def test_every_argument_required_extra_arguments_and_excluded_selectors_rejected_without_dispatch(self):
-        examples = {r["operation"]: r for r in requests("booking_boundaries")}
+        examples = {r["operation"]: r for r in requests("booking_boundaries") + fulfillment_requests()}
         examples["reconcile"] = requests("booking_reconcile")[4]
         self.assertEqual(set(examples), {"register_show", "set_clock", "hold", "release", "confirm",
-                                         "cancel", "view", "view_show", "reconcile"})
+                                         "cancel", "view", "view_show", "reconcile", "bind_settlement", "issue"})
         variants = [None, [], True, {}, {"operation": "view"},
                     {"operation": "view", "arguments": {}, "extra": 1},
                     {"operation": [], "arguments": {}}, {"operation": "view", "arguments": []}]

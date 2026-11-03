@@ -220,8 +220,10 @@ class AdmissionCliTests(unittest.TestCase):
         variants = [[], {}, {"operation": "view"}, {"operation": "view", "arguments": {}, "extra": 1},
                     {"operation": "adopt_issued", "arguments": {}}, {"operation": [], "arguments": {}},
                     {"operation": "view", "arguments": []}]
-        # Includes all six explicit methods and their mandatory arguments.
+        # Includes all explicit methods and their mandatory arguments.
         unique = {r["operation"]: r for r in requests()}
+        adopt = json.loads((HERE / "fixtures/ticket_operations_fulfillment.jsonl").read_text().splitlines()[4])
+        unique["adopt_issued"] = {k: v for k, v in adopt.items() if k != "surface"}
         unique["reconcile"] = {"operation": "reconcile",
                                "arguments": {"right_id": "issue-1", "idempotency_key": "recon"}}
         for req in unique.values():

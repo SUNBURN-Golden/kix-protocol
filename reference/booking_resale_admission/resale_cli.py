@@ -18,6 +18,11 @@ from settlement_fsm import SettlementError
 _DOMAIN_ERRORS = (ReservationError, ResaleError, SettlementError)
 # Local Python selectors only; this is not a new protocol-command catalogue.
 _DISPATCH = {
+    "adopt_issued": (ResaleSession.adopt_issued,
+                     {"right_id", "idempotency_key", "show_id", "organizer_role", "capacity",
+                      "gate_roles", "primary_price", "resale_cap", "resale_allowed", "organizer_bps",
+                      "platform_bps", "slot", "buyer_role", "expires_ms", "order_id", "amount",
+                      "payment_ref", "reservation_id", "quote_ref"}, "receipt"),
     "list_resale": (ResaleSession.list_resale, {"offer_id", "listing_id", "idempotency_key"}, "receipt"),
     "hold_buy": (ResaleSession.hold_buy,
                  {"hold_id", "listing_id", "buyer_role", "idempotency_key"}, "receipt"),

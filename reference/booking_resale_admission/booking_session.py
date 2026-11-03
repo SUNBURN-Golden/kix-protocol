@@ -1,4 +1,4 @@
-"""Explicit pre-payment desk over a caller-supplied in-memory reservation FSM."""
+"""Explicit booking and fulfillment desk over a caller-supplied in-memory reservation FSM."""
 
 from mock_gates import GateError, _ident
 from reservation_fsm import ReservationMachine
@@ -56,6 +56,17 @@ class BookingSession:
     def cancel(self, reservation_id: object, *, idempotency_key: object) -> dict:
         self._require_clock()
         return self._machine.cancel(reservation_id, idempotency_key=idempotency_key)
+
+    def bind_settlement(self, reservation_id: object, *, settlement_id: object,
+                        idempotency_key: object) -> dict:
+        self._require_clock()
+        return self._machine.bind_settlement(
+            reservation_id, settlement_id=settlement_id, idempotency_key=idempotency_key,
+        )
+
+    def issue(self, issuance_id: object, *, order_id: object, idempotency_key: object) -> dict:
+        self._require_clock()
+        return self._machine.issue(issuance_id, order_id=order_id, idempotency_key=idempotency_key)
 
     def reconcile(self, reservation_id: object, *, idempotency_key: object) -> dict:
         return self._machine.reconcile(reservation_id, idempotency_key=idempotency_key)

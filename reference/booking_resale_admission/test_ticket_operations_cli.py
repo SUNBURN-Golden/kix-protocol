@@ -265,7 +265,7 @@ class TicketOperationsCliTests(unittest.TestCase):
                                          arguments={k: v for k, v in args.items() if k != field}))
                 variants.append(dict(surface=surface, operation=operation, arguments=args | {"extra": 1}))
         variants += [dict(surface="booking", operation=op, arguments={})
-                     for op in ("observe_payment", "issue", "bind_settlement", "authorize_admission",
+                     for op in ("observe_payment", "authorize_admission",
                                 "consume", "cancel_show", "restore", "export_journal", "canonical_state")]
         for request in variants:
             with self.subTest(request=request):
