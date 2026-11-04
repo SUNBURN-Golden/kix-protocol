@@ -226,3 +226,130 @@ class AdmissionSessionTests(unittest.TestCase):
             machine.reconcile.assert_called_once_with(subject, idempotency_key=key)
             self.assertEqual(len(machine.mock_calls), 1)
         self.assertEqual(presentations.mock_calls, [])
+
+
+def admission_inputs(operation, **changes):
+    """Complete synthetic caller inputs; no view supplies identity or version."""
+    common = dict(idempotency_key="entry-key" if operation == "authorize_admission_inputs" else "consume-key",
+                  right_id="issue-1", version=1, gate_role="gate-a", request=FIXTURE_REQUEST)
+    if operation == "authorize_admission_inputs":
+        common.update(admission_id="entry-1", holder_role="buyer-1", expires_ms=FIXTURE_AUTH_EXPIRY)
+    else:
+        common.update(consume_id="consume-1")
+    return common | changes
+
+
+class AdmissionRequestInputsTests(unittest.TestCase):
+    def configured(self):
+        from pathlib import Path
+        from admission_fixture import load_fixture
+        return load_fixture(Path(__file__).resolve().parent / "fixtures/admission_request_inputs_session.json")
+
+    def graph(self, session):
+        machine = session._machine
+        return machine._settlement, machine._tickets, machine._ownership, machine
+
+    def compare(self, session, control, operation, arguments):
+        from test_ticket_operations_session import outcome, snapshot
+        method = {"authorize_admission_inputs": "authorize_admission", "consume_inputs": "consume"}[operation]
+        result = outcome(lambda: getattr(session, operation)(**arguments))
+        self.assertEqual(result, outcome(lambda: getattr(control._machine, method)(**arguments)))
+        self.assertEqual(snapshot(self.graph(session)), snapshot(self.graph(control)))
+        self.assertEqual(session._adapter._source.calls, ())
+        self.assertEqual(control._adapter._source.calls, ())
+        if "error" not in result:
+            assert_flags(self, result)
+        return result
+
+    def test_one_call_preserves_opaque_values_receipt_exception_and_bypasses_source(self):
+        from unittest.mock import call as mock_call
+        for operation, method, identity in (("authorize_admission_inputs", "authorize_admission", "admission_id"),
+                                             ("consume_inputs", "consume", "consume_id")):
+            arguments = {field: object() for field in admission_inputs(operation)}
+            machine, presentations = Mock(spec=AdmissionMachine), Mock()
+            presentations.fetch.side_effect = AssertionError("direct inputs must not fetch")
+            session = AdmissionSession(machine, presentations)
+            receipt = {"opaque": object()}
+            getattr(machine, method).return_value = receipt
+            for error in (None, AdmissionError("SYNTHETIC"), RuntimeError("programming fault")):
+                with self.subTest(operation=operation, error=error):
+                    machine.reset_mock()
+                    getattr(machine, method).side_effect = error
+                    if error is None:
+                        self.assertIs(getattr(session, operation)(**arguments), receipt)
+                    else:
+                        with self.assertRaises(type(error)) as caught:
+                            getattr(session, operation)(**arguments)
+                        self.assertIs(caught.exception, error)
+                    forwarded = dict(arguments)
+                    subject = forwarded.pop(identity)
+                    self.assertEqual(machine.mock_calls, [getattr(mock_call, method)(subject, **forwarded)])
+                    self.assertEqual(presentations.mock_calls, [])
+
+    def test_direct_input_refusals_and_retained_first_results_match_fsm(self):
+        for operation, cases in (
+            ("authorize_admission_inputs", (("STALE_VERSION", {"version": 2}),
+                                            ("NOT_HOLDER", {"holder_role": "other"}),
+                                            ("ADMISSION_WINDOW", {"expires_ms": FIXTURE_NOW}),
+                                            ("ADMISSION_REQUEST", {"request": "bad"}))),
+            ("consume_inputs", (("STALE_VERSION", {"version": 2}),
+                                ("ADMISSION_REQUEST", {"request": "bad"}),
+                                ("GATE_MISMATCH", {"gate_role": "gate-b"}),
+                                ("ADMISSION_REQUEST_MISMATCH", {"request": "22" * 32}))),
+        ):
+            for code, change in cases:
+                with self.subTest(operation=operation, code=code):
+                    session, control = self.configured(), self.configured()
+                    if operation == "consume_inputs":
+                        self.compare(session, control, "authorize_admission_inputs",
+                                     admission_inputs("authorize_admission_inputs"))
+                    from test_ticket_operations_session import snapshot
+                    before = snapshot(self.graph(session))
+                    arguments = admission_inputs(operation, **change)
+                    for _ in range(2):
+                        self.assertEqual(self.compare(session, control, operation, arguments), {"error": {"code": code}})
+                    self.assertEqual(snapshot(self.graph(session)), before)
+                    valid = admission_inputs(operation)
+                    self.assertEqual(self.compare(session, control, operation, valid),
+                                     {"error": {"code": "IDEMPOTENCY_CONFLICT"}})
+                    self.assertNotIn("error", self.compare(session, control, operation, valid | {"idempotency_key": "fresh"}))
+
+    def test_changed_binding_conflicts_for_every_direct_input_field(self):
+        from test_ticket_operations_session import snapshot
+        session, control = self.configured(), self.configured()
+        for operation in ("authorize_admission_inputs", "consume_inputs"):
+            arguments = admission_inputs(operation)
+            first = self.compare(session, control, operation, arguments)
+            before = snapshot(self.graph(session))
+            for field in arguments:
+                if field == "idempotency_key":
+                    continue
+                with self.subTest(operation=operation, field=field):
+                    self.assertEqual(self.compare(session, control, operation, arguments | {field: "changed"}),
+                                     {"error": {"code": "IDEMPOTENCY_CONFLICT"}})
+            self.assertEqual(self.compare(session, control, operation, arguments),
+                             first | {"duplicate": True, "applied": None})
+            self.assertEqual(snapshot(self.graph(session)), before)
+
+    def test_recorded_and_direct_paths_share_fsm_identity_in_both_orders(self):
+        from test_ticket_operations_session import snapshot
+        for recorded_first in (True, False):
+            book, tickets, resale, machine = build_fixture()
+            presentations = source()
+            session = AdmissionSession(machine, presentations)
+            for operation, method, identity in (("authorize_admission_inputs", "authorize_admission", "admission_id"),
+                                                 ("consume_inputs", "consume", "consume_id")):
+                args = admission_inputs(operation)
+                recorded_args = {k: args[k] for k in (identity, "idempotency_key", "gate_role")}
+                if operation == "authorize_admission_inputs":
+                    recorded_args["expires_ms"] = args["expires_ms"]
+                def recorded():
+                    return getattr(session, method)("ticket", **recorded_args)
+                def direct():
+                    return getattr(session, operation)(**args)
+                first, replay = (recorded, direct) if recorded_first else (direct, recorded)
+                receipt = first()
+                before = snapshot((book, tickets, resale, machine))
+                self.assertEqual(replay(), receipt | {"duplicate": True, "applied": None})
+                self.assertEqual(snapshot((book, tickets, resale, machine)), before)
+            self.assertEqual(presentations.calls, (("authorize_admission", "ticket"), ("consume", "ticket")))
