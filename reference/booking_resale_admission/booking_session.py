@@ -55,6 +55,15 @@ class BookingSession:
         return self._machine.confirm(order_id, reservation_id=reservation_id, amount=amount,
                                      quote_ref=quote_ref, idempotency_key=idempotency_key)
 
+    def preview_calculated_quote(self, request_text: str) -> dict:
+        """Return a calculation only, without consulting reservation state."""
+        try:
+            return calculate_booking_quote(request_text)
+        except BookingQuoteSourceError:
+            raise
+        except Exception as error:
+            raise BookingQuoteSourceError("booking quote fetch failed") from error
+
     def confirm_calculated_quote(self, request_text: str, *, reservation_id: str,
                                  order_id: str, idempotency_key: str) -> dict:
         """Calculate caller text once, then use ordinary mock confirmation validation."""

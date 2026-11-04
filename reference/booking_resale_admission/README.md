@@ -864,6 +864,7 @@ All listed arguments are required; extra arguments are rejected.
 | `hold` | `reservation_id`, `show_id`, `slot`, `buyer_role`, `expires_ms`, `idempotency_key` |
 | `release` | `reservation_id`, `idempotency_key` |
 | `confirm` | `order_id`, `reservation_id`, `amount`, `quote_ref`, `idempotency_key` |
+| `preview_calculated_quote` | `request_text` only; returns `quote`, requires no clock or reservation |
 | `cancel` | `reservation_id`, `idempotency_key` |
 | `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key` |
 | `issue` | `issuance_id`, `order_id`, `idempotency_key` |
@@ -2064,6 +2065,117 @@ tax/accounting treatment remains **UNDETERMINED — User/designated advisers**.
 B03/B05 remain partial mock capabilities; this is no operational activation or
 production durability, distributed fencing, bank exactly-once or chain-finality
 evidence.
+
+## Calculation-only booking quote preview
+
+`BookingSession.preview_calculated_quote(request_text)` returns the complete,
+unchanged `calculate_booking_quote` result. The shared graph exposes the same
+method as `desk.booking.preview_calculated_quote(request_text)`. Each invocation
+calculates once and returns a fresh result; modifying a returned quote does not
+affect later previews or confirmation.
+
+Both local JSONL booking desks accept:
+
+```json
+{"operation":"preview_calculated_quote","arguments":{"request_text":"<complete kix:commerce:2 request JSON text>"}}
+```
+
+Shared requests additionally require `"surface":"booking"`. Standalone responses
+contain exactly `{operation, quote}`; shared responses contain
+`{surface, operation, quote}`. No startup quote-source flag is required. This is a
+local calculation selector, with no new protocol command or catalogue query.
+
+The inner request uses the existing strict CE1 schema:
+
+```json
+{
+  "schemaVersion": "kix:commerce:2",
+  "orderId": "calculation-order",
+  "orderVersion": 1,
+  "scope": {"issuerId": "fixture-issuer", "eventId": "fixture-event", "performanceId": "fixture-performance"},
+  "policyRef": "fixture-policy",
+  "expiresAt": 1,
+  "lines": [{"lineId": "L1", "inventoryId": "fixture-inventory", "gross": {
+    "asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"},
+    "atoms": "10001"
+  }}],
+  "discounts": []
+}
+```
+
+The result `quote` has exactly `schemaVersion`, `evidenceClass`, `request`, `asset`,
+`lines`, `totals` and `quoteHash`. `evidenceClass` is `"CALCULATION_ONLY"`.
+`request` contains the complete calculation input, and `asset` retains the complete
+KRW metadata above. Each result line has `lineId`, `inventoryId`, `grossAtoms`,
+`discountAtoms`, `payableAtoms` and `discounts`. `totals` has `grossAtoms`,
+`discountAtoms` and `payableAtoms`. Every atom amount remains an exact decimal
+string. For this example those three amounts are `"10001"`, `"0"`, `"10001"`,
+respectively, in both the line and totals; `quoteHash` is the unchanged
+calculator's hash. No receipt flags or integer conversions are added to preview.
+
+The boundary remains exactly one line, the complete existing KRW asset,
+`discounts=[]` (even zero-valued discount rules are refused), and payable amount
+`1..10**12`. Preview uses the existing calculator's bounded decoding and rejection
+rules without an additional inner parser. Calculation `orderId`, scope and
+`expiresAt` remain hash-bound metadata. Preview establishes no reservation
+validity, quote currentness, price approval or authenticated quote authority.
+
+Preview neither accesses reservation state nor changes any shared FSM, journal,
+clock or source-call history. It needs no session mutation clock, reservation ID
+or idempotency key. Extra arguments including those fields are structural errors.
+Confirmation remains a separate explicit operation:
+
+```python
+quote = session.preview_calculated_quote(request_text)  # works before setup
+# Explicitly set_clock, register_show and hold before confirming.
+receipt = session.confirm_calculated_quote(
+    request_text, reservation_id="reserve-1", order_id="order-1",
+    idempotency_key="confirm-1",
+)
+# receipt["reservation"]["amount"] == int(quote["totals"]["payableAtoms"])
+# receipt["reservation"]["quote_ref"] == quote["quoteHash"]
+```
+
+Confirmation recalculates the supplied text and retains existing primary-price,
+reservation-expiry, key-conflict, retained-refusal and historical-replay checks.
+Preview does not reserve inventory or automatically confirm, pay, bind settlement
+or issue a right. Source/calculation exceptions retain their existing classes;
+unexpected calculator exceptions use the existing `BookingQuoteSourceError`
+normalization. Success exits 0; calculation/domain refusals continue and exit 1;
+malformed envelopes (including duplicate keys) stop immediately with exit 2.
+Invalid inner calculation text is a calculation refusal, not an outer-envelope
+error. A later explicit confirmation still needs its session clock.
+
+Run the file and stdin examples from the repository root:
+
+```bash
+for scenario in confirm boundaries; do
+  requests="reference/booking_resale_admission/fixtures/booking_quote_preview_${scenario}.jsonl"
+  python3.12 -B reference/booking_resale_admission/booking_cli.py --requests "$requests"
+  python3.12 -B reference/booking_resale_admission/booking_cli.py --requests - < "$requests"
+  requests="reference/booking_resale_admission/fixtures/ticket_operations_quote_preview_${scenario}.jsonl"
+  fixture=reference/booking_resale_admission/fixtures/ticket_operations_session.json
+  python3.12 -B reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests "$requests"
+  python3.12 -B reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests - < "$requests"
+done
+```
+
+The [booking](fixtures/booking_quote_preview_confirm.jsonl) and
+[shared](fixtures/ticket_operations_quote_preview_confirm.jsonl) confirmation
+transcripts preview before any session clock, then explicitly set up, preview,
+confirm, replay and view. The [booking boundary](fixtures/booking_quote_preview_boundaries.jsonl)
+and [shared boundary](fixtures/ticket_operations_quote_preview_boundaries.jsonl)
+transcripts preserve calculator and confirmation refusals, cancellation and
+historical replay. Confirmation transcripts exit 0; boundary transcripts exit 1.
+Shared booking identities remain separate from the existing fixture history.
+
+`test_booking_quote_preview.py` and `test_booking_quote_preview_cli.py` cover the
+preview integration gaps; see the [coverage map and actual validation evidence](../../validation/2026-11-04-plan-local-booking-quote-preview/README.md).
+These are source-informed local tests. B03/B05 remain partial mock capabilities.
+Pricing/quote authority remains **UNDETERMINED — Astra/User**; tax/accounting
+remains **UNDETERMINED — User/designated advisers**. No production, durability,
+bank exactly-once, distributed fencing, legal-compliance or chain-finality claim
+is made.
 
 ## Request-time synthetic settlement facts
 
