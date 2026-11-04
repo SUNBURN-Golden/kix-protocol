@@ -514,3 +514,8 @@
 - [Request-time local resale inputs](../reference/booking_resale_admission/README.md#request-time-resale-inputs) · [plan-local-resale-request-inputs evidence](../validation/2026-11-04-plan-local-resale-request-inputs/README.md) — Complete caller inputs through one existing FSM listing call, empty-offer file/stdin transcripts and explicit continuation; synthetic only, policy/legal effects UNDETERMINED, non-author review and exact-head CI pending.
 
 - [Request-time local admission inputs](../reference/booking_resale_admission/README.md#request-time-admission-inputs) · [plan-local-admission-request-inputs evidence](../validation/2026-11-04-plan-local-admission-request-inputs/README.md) — Separate complete caller-input authorization/consumption on standalone and shared desks, empty-recording file/stdin transcripts and existing FSM checks/replay semantics; synthetic only, policy/legal effects UNDETERMINED, non-author review and exact-head CI pending.
+
+## Guided local booking console evidence
+
+- [Guided local booking console usage](../reference/booking_resale_admission/README.md#guided-local-booking-console) — standard-library prompts over one local synthetic desk; calculation-only preview and explicit mock reservation confirmation.
+- [2026-11-05 console builder validation](../validation/2026-11-05-plan-plan-local-booking-console/README.md) — coverage mapping, executed commands, protected-byte checks and pending non-author exact-head review/CI. This index grants no production or merge authority.

@@ -2339,3 +2339,101 @@ authentication, pricing, distribution and refund policy remain
 **UNDETERMINED — Astra/User**. Source-informed parity is not independent review,
 durability, chain finality or production readiness evidence. See the
 [coverage and actual builder evidence](../../validation/2026-11-04-plan-local-ticket-stdio-client/README.md).
+
+## Guided local booking console
+
+[`booking_console.py`](booking_console.py) provides a standard-library terminal
+interface to one explicitly launched `TicketOperationsClient` subprocess. Import
+launches nothing. Run from the repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/booking_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1
+```
+
+Both flags are required. The cleanup budget `1` is an explicit caller example,
+not a response deadline or product default. Select a local fixture deliberately:
+show configuration is fixture-owned, with no console registration or organizer
+lifecycle. The supplied fixture is reused unchanged and has synthetic settlement,
+payment, reservation confirmation, settlement binding, issuance and matching
+resale/admission adoptions already in its history. `show-1` has capacity 2:
+slot 0 is occupied/issued, and slot 1 supports this example. Console actions do
+not perform those setup payment/issuance operations. Every launch starts a fresh
+in-memory service; quitting loses its state.
+
+For a reproducible guided interaction (view show → clock → hold → preview →
+explicit confirmation → view reservation):
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/booking_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/booking_console_confirm.txt
+```
+
+The plain-text answers in [`booking_console_confirm.txt`](fixtures/booking_console_confirm.txt)
+enter synthetic identities and keys, clock `1000000`, expiry `1120000`, slot `1`
+and the caller-selected [`booking_console_quote.json`](fixtures/booking_console_quote.json).
+These are fixture examples, not product timing, price, seat-selection or TTL policy.
+The amount is `10001` KRW atoms with 0 decimals. Calculation request `expiresAt`
+and scope are calculator inputs; preview does not validate reservation currentness
+or bind those fields to booking identifiers. The existing service validates the
+actual confirmation and hold against its explicit session clock and show price.
+
+Type one action per prompt. Every field is explicitly entered; there are no
+inferred identities, generated keys, wall-clock reads or automatic expiries.
+
+| Action | Prompt fields / behavior |
+|---|---|
+| `view_show` | Known `show_id`; no catalogue lookup |
+| `set_clock` | `subject_id` (existing selector requires literal `clock`), `now_ms`, `idempotency_key`; required successfully through this session before booking mutation |
+| `hold` | `reservation_id`, `show_id`, `slot`, `buyer_role`, `expires_ms`, `idempotency_key` |
+| `load_quote` | Caller-selected UTF-8 file path; also used for explicit reload; clears preview even on identical text or load failure |
+| `target` | Synthetic `reservation_id`, `order_id`, confirmation `idempotency_key`; entering/editing clears preview |
+| `preview` | Requires loaded text and target; calls `preview_calculated_quote`, stores successful immutable snapshot |
+| `confirm` | Redisplays target and quote; literal `CONFIRM` submits `confirm_calculated_quote` once; any other answer declines without a request |
+| `view` | Explicit `reservation_id`; enter the identity returned in the receipt |
+| `release` / `cancel` | Explicit `reservation_id` and `idempotency_key`; each selected action submits once |
+| `quit` | Closes the owned child; sends no release/cancel/compensation |
+
+`load_quote` reads UTF-8 bytes without newline normalization and never parses or
+reconstructs the request text. Use the existing supported complete commerce schema:
+one undiscounted KRW line, full asset fields, caller scope/policy/expiry and
+`discounts=[]`. Calculation and domain validation remain service-owned. `preview`
+prints quote lines, `grossAtoms`, `discountAtoms`, `payableAtoms`, exact decimal
+amounts, asset and `quoteHash`, plus the original quote. The pending target is
+explicit. Confirmation sends exactly the successful preview's text and identifiers
+without rereading the file. External file edits affect the next explicit load
+only. Reloading, editing identifiers, a failed preview, declining or attempting
+confirmation requires another successful preview before any further confirmation.
+
+Every original desk envelope is printed with reversible JSON escaping, including
+reservation phase/amount/quote reference, mock labels and false authority/finality
+flags. Confirmation is **MOCK_GATE_ONLY** reservation confirmation. Quotes remain
+**CALCULATION_ONLY**. Reservation confirmation, payment and chain issuance are
+separate facts. Preview alone does not establish availability, approval, entitlement,
+expiry validity, payment or issuance.
+
+Known domain/source errors preserve exact `{code}` or `{type,message}` details
+and allow another explicitly selected action. Startup errors, `FixtureError`,
+`BookingInputError`, transport uncertainty, EOF, interruption and terminal I/O
+errors fence the console and close the same child. Diagnostics preserve the last
+available reply, exception/cause details and available request/reply bytes as
+lossless escaped representations. A failed diagnostic output stream cannot
+permit further submissions. No retry, restart, polling or automatic compensation
+occurs. Cleanup cannot undo accepted work; uncertainty remains uncertainty.
+The cleanup budget applies only to the client's shutdown waits; requests block
+without a response deadline. Exit 0 means clean quit, 1 means a known refusal or
+nonzero child exit, and 2 means terminal/uncertain failure (invalid arguments also
+exit 2 before launch).
+
+For embedding, `run_console(client, *, input_stream, output_stream, error_stream)`
+is synchronous and takes an already launched client; its caller owns `close()`
+in `finally`, as `main()` does. It must not be invoked again on a failed session.
+No persistence, sockets, external calls, payment observation, issuance, catalogue,
+read-model, organizer lifecycle or new protocol command is added. Product policy
+remains **UNDETERMINED — Astra/User**; legal effects remain
+**UNDETERMINED — User/legal**. See the
+[indexed console validation record](../../validation/2026-11-05-plan-plan-local-booking-console/README.md)
+for coverage, actual checks and outstanding review/CI gates.
