@@ -172,6 +172,37 @@ class SettlementClaimAdapterTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "UNKNOWN_SETTLEMENT")
         self.assertEqual(spy.mock_calls, [])
 
+    def test_non_string_selector_source_first_characterization(self):
+        # Contract-undefined boundary: like the sibling settlement adapters, the
+        # selector is forwarded to the source before its type is compared, so the
+        # source's own diagnostic is what surfaces. It can never reach an offer.
+        book, _ = settlement_book("COMMITTED")
+        machine = CreditMachine()
+        cases = (
+            (Mock(fetch=Mock(return_value=book.view(SID))), 1,
+             SettlementClaimIdentityMismatch, 1),
+            (Mock(fetch=Mock(return_value=None)), None, SettlementClaimNotFound, None),
+            (LocalSettlementClaimSource(book), 1, SettlementError, 1),
+            (FakeSettlementClaimSource(recordings={}), 1, SettlementClaimNotFound, 1),
+        )
+        for source, selector, error, read in cases:
+            with self.subTest(source=type(source).__name__, selector=selector):
+                before = observables(machine)
+                with self.assertRaises(error) as caught:
+                    SettlementClaimAdapter(machine, source).offer(
+                        **request(settlement_id=selector))
+                if isinstance(caught.exception, SettlementError):
+                    self.assertEqual(caught.exception.code, "INVALID_ID")
+                if hasattr(source, "fetch") and isinstance(source.fetch, Mock):
+                    source.fetch.assert_called_once_with(read)
+                if isinstance(source, FakeSettlementClaimSource):
+                    self.assertEqual(source.calls, (read,))
+                self.assertEqual(observables(machine), before)
+        # No failed non-string selector bound the caller key or created a case.
+        offered = SettlementClaimAdapter(machine, LocalSettlementClaimSource(book)).offer(**request())
+        self.assertEqual(offered["credit"]["phase"], "OFFERED")
+        self.assertEqual([e["op"] for e in machine.export_journal()], ["offer"])
+
     def test_credit_validation_and_rejection_replay_match_direct_offer(self):
         book, _ = settlement_book("COMMITTED")
         valid = book.view(SID)

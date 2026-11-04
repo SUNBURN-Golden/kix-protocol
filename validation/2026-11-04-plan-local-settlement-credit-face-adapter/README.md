@@ -240,3 +240,70 @@ The standalone narrow modules also pass (adapter 8 PASS, source 5 PASS). No new
 contract violation, contract-undefined semantics or missing acceptance predicate
 was found. Exact-head hosted KTX/KIX run IDs remain unavailable in this session;
 non-author exact-head review and required KTX/KIX CI remain separate merge gates.
+
+## Fix round 3 (non-blocking review note addressed; no failed-job log)
+
+Round-start HEAD was `756e82619d5cab46761287678f99b75bba7d6ecf` (round-2 evidence
+commit) over unchanged implementation head
+`124df639b9f70f6c3f60b199d4cf5aec3f37eea0`, based on observed `origin/main`
+`c641a7437f8dcf9094740bd0a4024ea1d2b89317`. The round-3 review verdict was
+**NO BLOCKING FINDINGS**. Its sole non-blocking note said selector-type
+validation happens after the source read, so a non-string selector surfaces a
+source-dependent outcome, and suggested characterization coverage or
+documentation. The review also confirmed that this cannot forward an
+incorrectly identified claim and that the node specifies no invalid-selector
+error code.
+
+Because the boundary is contract-undefined and the source-first order matches
+the sibling `StatementAdapter` and `CancelAcceptanceAdapter`, this round does not
+invent a new error code or change runtime behavior. It records the boundary as a
+labeled characterization and documents it:
+
+- `reference/credit_advance_f04/test_settlement_claim_adapter.py` — new
+  `SettlementClaimAdapterTests.test_non_string_selector_source_first_characterization`
+  covers a foreign returned view (`SettlementClaimIdentityMismatch`), an absent
+  lookup (`SettlementClaimNotFound`), the actual local machine
+  (`SettlementError("INVALID_ID")`) and the fake source
+  (`SettlementClaimNotFound`). Each case asserts the read happens once, no offer
+  is made, machine observables are unchanged, and the caller key stays unbound
+  (a later valid offer under the same key succeeds).
+- `reference/credit_advance_f04/README.md` — documents this ordering as
+  characterized behavior, not a new contract.
+
+No failed-job, failing-step or host runner log was supplied; the handoff
+again noted a possible Actions billing/runner refusal. No code-level CI failure
+could be reproduced from the repository: every offline equivalent available in
+this environment passes at the observed tree.
+
+Re-run shape: repository root, `PYTHONPATH` unset, Python 3.12.15 (the CI
+interpreter), `PYTHONDONTWRITEBYTECODE=1`.
+
+| Command | Actual result |
+|---|---|
+| `env -u PYTHONPATH python3.12 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p 'test_settlement_claim*.py'` | **14 PASS**, 0.074 s |
+| `env -u PYTHONPATH python3.12 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | **162 PASS**, 6.583 s |
+| CI suite loop (`settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation token_reward provider_facts`) | 224 / 664 / 162 / 85 / 186 / 73 PASS (sequential) |
+| `python3.12 -m unittest integration_gate.test_http_gate readiness.test_faults` | PASS |
+| CI stdlib checker block (31 scripts, plain + `--self-test`, plus stage-5 self-test) | PASS, 63 invocations |
+| `check_openapi_contract.py`, `check_integration_gate_openapi.py` (each plain + `--self-test`); `unittest integration_gate.test_offline_limits` | PASS / PASS; PASS / PASS; **9 PASS** |
+| `scripts/verify_runtime_architecture.py`; `scripts/test_runtime_architecture.py` | PASS; **7 PASS** |
+| `example_settlement_claim_adapter.py` (twice, byte-compared) | exit 0 both; deterministic; OFFERED with 0 drawn exposure, `MOCK_COMMIT_OBSERVED` draw, journal `offer, bind_settlement, approve, draw` |
+| `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | PASS, exit 0 |
+| `cargo test -p kix-kernel --locked --offline` (not re-attempted this round) | Still unavailable in this environment: offline cache lacks `bcs`. No Rust file changed. |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `69564b166f0c27f9af5d8422f0a466b18d74c20f`, `b607996c83a119c349f1cc90469ac1ba82764e20` — match |
+| Protected-byte verification (`reference/v0.3-rc1/**`, `.aiops/`, `docs/tasks/`, `.github/workflows/`, both locks) | PASS: 123 tracked files byte-identical; no added protected files |
+| `git diff --check` | PASS, exit 0 |
+
+One unrelated flake was observed only while two heavy suites ran concurrently:
+`reference/provider_facts/test_payment_lookup_cli.py` exceeded its 10-second
+subprocess timeout. Re-running the suite alone, and the sequential CI loop
+above, both pass (73 tests). CI runs suites sequentially, so this local
+concurrency artifact is not a repository failure and no file was changed for it.
+
+The hosted exact-head KTX/KIX run IDs remain unavailable in this session; if
+hosted CI still cannot start a runner, that is an infrastructure matter outside
+this node and outside this session's network/GitHub ban. No new contract
+violation or contract-undefined semantic is introduced: the selector ordering is
+recorded, not redefined. No product, legal, accounting or collateral decision is
+made or implied. Non-author exact-head review and required KTX/KIX CI remain
+separate merge gates.

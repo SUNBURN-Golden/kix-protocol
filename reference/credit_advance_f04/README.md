@@ -63,6 +63,13 @@ Local exceptions inherit `SettlementClaimSourceError`: `SettlementClaimNotFound`
 for absent record/claim, `InvalidSettlementClaimRecord` for malformed envelopes,
 and `SettlementClaimIdentityMismatch` for identity mismatches. They are internal
 diagnostics, not catalogue codes. Failures before offer cannot bind a credit key.
+As in the sibling settlement adapters, the selector is passed to the source once
+before its type is compared. A non-string selector therefore surfaces the
+source's own outcome: `SettlementError("INVALID_ID")` from the actual local
+machine, `SettlementClaimNotFound` for an absent lookup, or
+`SettlementClaimIdentityMismatch` when a foreign view is returned. This ordering
+is characterized behavior, not a new contract; no selector that fails these
+checks can reach an offer or bind a key.
 The entire claim is deep-copied, retaining extra fields and original values.
 Claim provenance, flags, arithmetic, amount and beneficiary validation remain in
 the existing offer; its receipt and exceptions pass through unchanged.
