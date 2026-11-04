@@ -519,3 +519,5 @@
 
 - [Guided local booking console usage](../reference/booking_resale_admission/README.md#guided-local-booking-console) — standard-library prompts over one local synthetic desk; calculation-only preview and explicit mock reservation confirmation.
 - [2026-11-05 console builder validation](../validation/2026-11-05-plan-plan-local-booking-console/README.md) — coverage mapping, executed commands, protected-byte checks and pending non-author exact-head review/CI. This index grants no production or merge authority.
+
+- [Guided local resale console usage](../reference/booking_resale_admission/README.md#guided-local-resale-console) · [2026-11-05 resale console builder evidence](../validation/2026-11-05-plan-plan-local-resale-console/README.md) — Standard-library prompts over one live synthetic ticket desk; separate listing/payment/ownership outcomes, explicit replay/current views and terminal uncertainty fencing. No policy or capability-grade change; independent exact-head review/CI pending.
