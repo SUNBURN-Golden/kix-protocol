@@ -15,7 +15,11 @@ def main(argv=None):
     parser.add_argument("--cleanup-timeout", type=float, required=True)
     args = parser.parse_args(argv)
     try:
-        with TicketOperationsClient.launch(args.fixture, cleanup_timeout=args.cleanup_timeout) as client:
+        client = TicketOperationsClient.launch(args.fixture, cleanup_timeout=args.cleanup_timeout)
+    except ValueError as error:
+        parser.error(str(error))
+    try:
+        try:
             def send(operation, arguments):
                 reply = client.request(dict(surface="resale", operation=operation, arguments=arguments))
                 print(json.dumps(reply, sort_keys=True, allow_nan=False), flush=True)
@@ -34,10 +38,13 @@ def main(argv=None):
                 return 1
             if "error" in send("view", identity):
                 return 1
-        return 0
+        finally:
+            exit_code = client.close()
     except TicketDeskTransportUncertainty as error:
         # Local diagnostic only: no invented business error and no resend.
         parser.exit(2, f"{error}\n")
+    # A child that exits nonzero during cleanup means the journey is not clean.
+    return 0 if exit_code == 0 else 1
 
 
 if __name__ == "__main__":

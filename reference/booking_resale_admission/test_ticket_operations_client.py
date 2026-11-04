@@ -360,7 +360,7 @@ class TicketOperationsClientTests(unittest.TestCase):
         probe = subprocess.run([sys.executable, '-c',
             'from unittest.mock import patch\n'
             'with patch("subprocess.Popen", side_effect=AssertionError("import launched")):\n'
-            ' import ticket_operations_client\n'], capture_output=True, timeout=10)
+            ' import ticket_operations_client\n'], cwd=HERE, capture_output=True, timeout=10)
         self.assertEqual((probe.returncode, probe.stdout, probe.stderr), (0, b'', b''))
         command = [sys.executable, str(HERE / 'example_ticket_operations_client.py'),
                    '--fixture', str(FIXTURE), '--offer-id', 'offer-1', '--listing-id', 'list-1',

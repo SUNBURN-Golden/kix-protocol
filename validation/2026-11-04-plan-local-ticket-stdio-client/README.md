@@ -116,6 +116,40 @@ The following final-code checks were rerun after those changes:
 | All 19 commands in the checker phase listed above, including both normal and `--self-test` forms | PASS again: every command exit 0; 9 offline-limit tests and 7 architecture tests passed. |
 | `python3 /tmp/kix-stdio-preserve.py`; `python3 scripts/check_docs_index.py` after completing this report | PASS: all 1,332 protected/non-task tracked blobs and both locks unchanged; exact seven changed paths; refs and Python ASTs valid; whitespace and index valid. |
 
+### Review fix round 1
+
+The independent review found one blocking defect: the client import probe ran
+`python -c 'import ticket_operations_client'` without a `cwd`, so under the
+repository's CI invocation (`python3 -m unittest discover -s
+reference/booking_resale_admission -t reference/booking_resale_admission` from the
+repository root, with no `PYTHONPATH`) the child's `sys.path[0]` was the
+repository root and the import raised `ModuleNotFoundError`. The exact-head KIX
+protocol job failed on that assertion in the CI log. The earlier local runs
+exported `PYTHONPATH` and therefore hid the defect.
+
+Fixes applied:
+
+- `test_ticket_operations_client.py`: pass `cwd=HERE` to the import probe, matching
+  the sibling probe convention, so the child imports the suite module without an
+  environment override.
+- `example_ticket_operations_client.py`: map a rejected `cleanup_timeout` to an
+  argparse usage error (exit 2) instead of an uncaught `ValueError` traceback, and
+  return a nonzero example status when the child exits nonzero during cleanup
+  instead of discarding `close()`'s return code.
+
+Rerun evidence, with `PYTHONPATH` explicitly removed to match CI:
+
+| Command | Actual result |
+|---|---|
+| `env -u PYTHONPATH PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission` | PASS: 743 tests in 63.471 s; exit 0. |
+| `env -u PYTHONPATH PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_ticket_operations_client.py -v` | PASS: 13 tests in 2.427 s; exit 0. |
+| `env -u PYTHONPATH ... example_ticket_operations_client.py ... --cleanup-timeout 0` | Exit 2: argparse usage error, no traceback. |
+| `python3 scripts/check_ci_test_discovery.py` and `--self-test` | PASS: discovery ok; self-test pass (18 negative controls). |
+
+The final task-head SHA and exact-head KTX/KIX CI run IDs remain unrecorded here:
+the supervisor performs the commit/push and CI runs after this builder session.
+No final-head or CI value is inferred or fabricated.
+
 Rust was not retried: no Rust source, toolchain or dependency-cache inputs changed.
 Its four unavailable results above still require provisioned CI dependencies.
 
