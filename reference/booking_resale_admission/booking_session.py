@@ -2,6 +2,8 @@
 
 from mock_gates import GateError, _ident
 from reservation_fsm import ReservationMachine
+from booking_quote_source import BookingQuoteSourceError, InvalidBookingQuoteRecord
+from calculated_booking_quote_source import calculate_booking_quote
 
 
 class BookingInputError(ValueError):
@@ -52,6 +54,26 @@ class BookingSession:
             raise BookingInputError(f"explicit valid quote_ref required: {error.code}") from error
         return self._machine.confirm(order_id, reservation_id=reservation_id, amount=amount,
                                      quote_ref=quote_ref, idempotency_key=idempotency_key)
+
+    def confirm_calculated_quote(self, request_text: str, *, reservation_id: str,
+                                 order_id: str, idempotency_key: str) -> dict:
+        """Calculate caller text once, then use ordinary mock confirmation validation."""
+        try:
+            for value in (reservation_id, order_id, idempotency_key):
+                _ident(value)
+        except GateError as error:
+            raise InvalidBookingQuoteRecord(error.code) from error
+        # Recalculate on every valid invocation, including replay. Only calculation
+        # failures are source errors; session and FSM exceptions pass through.
+        try:
+            quote = calculate_booking_quote(request_text)
+        except BookingQuoteSourceError:
+            raise
+        except Exception as error:
+            raise BookingQuoteSourceError("booking quote fetch failed") from error
+        return self.confirm(order_id, reservation_id=reservation_id,
+                            amount=int(quote["totals"]["payableAtoms"]),
+                            quote_ref=quote["quoteHash"], idempotency_key=idempotency_key)
 
     def cancel(self, reservation_id: object, *, idempotency_key: object) -> dict:
         self._require_clock()
