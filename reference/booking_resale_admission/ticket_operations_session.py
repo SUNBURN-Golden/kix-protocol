@@ -17,6 +17,7 @@ from cancel_acceptance_adapter import CancelAcceptanceAdapter
 from cancel_acceptance_source import CancelAcceptanceSource, CancelAcceptanceSourceError
 from statement_adapter import StatementAdapter
 from statement_source import StatementSource, StatementSourceError
+from settlement_input_adapter import SettlementInputAdapter
 
 
 class TicketSettlementSession:
@@ -24,8 +25,11 @@ class TicketSettlementSession:
 
     def __init__(self, machine: SettlementMachine, *,
                  cancel_acceptance_source: CancelAcceptanceSource | None = None,
-                 statement_source: StatementSource | None = None) -> None:
+                 statement_source: StatementSource | None = None,
+                 booking_source=None, resale_source=None) -> None:
         self._machine = machine
+        self._input_adapter = SettlementInputAdapter(
+            machine, booking_source=booking_source, resale_source=resale_source)
         self._statement_adapter = (StatementAdapter(machine, statement_source)
                                    if statement_source is not None else None)
         self._cancel_acceptance_adapter = (
@@ -37,6 +41,20 @@ class TicketSettlementSession:
         return self._machine.initiate(
             settlement_id, idempotency_key=idempotency_key, trade_id=trade_id,
             gross=gross, debtor_role=debtor_role, policy=policy, currency=currency)
+
+    def initiate_from_booking(self, settlement_id, *, reservation_id, idempotency_key,
+                              trade_id, debtor_role, policy):
+        return self._input_adapter.apply(
+            source_kind="booking", source_id=reservation_id, settlement_id=settlement_id,
+            idempotency_key=idempotency_key, trade_id=trade_id, debtor_role=debtor_role,
+            policy=policy)
+
+    def initiate_from_resale(self, settlement_id, *, listing_id, idempotency_key,
+                             trade_id, debtor_role, policy):
+        return self._input_adapter.apply(
+            source_kind="resale", source_id=listing_id, settlement_id=settlement_id,
+            idempotency_key=idempotency_key, trade_id=trade_id, debtor_role=debtor_role,
+            policy=policy)
 
     def authorize(self, settlement_id, *, idempotency_key):
         return self._machine.authorize(settlement_id, idempotency_key=idempotency_key)
@@ -123,7 +141,7 @@ class TicketOperationsSession:
             method(entry["subject_id"], idempotency_key=entry["idempotency_key"], **entry["body"])
         self.settlement = TicketSettlementSession(
             book, cancel_acceptance_source=cancel_acceptance_source,
-            statement_source=statement_source)
+            statement_source=statement_source, booking_source=tickets, resale_source=resale)
         self.booking = BookingSession(tickets)
         self.resale = ResaleSession(resale, offer_source, payment_source=payment_source)
         self.admission = AdmissionSession(admission, presentation_source)

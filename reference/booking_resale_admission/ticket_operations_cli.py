@@ -23,10 +23,17 @@ from ticket_operations_fixture import load_fixture
 from ticket_operations_session import TicketOperationsSession, TicketSettlementSession
 from cancel_acceptance_source import CancelAcceptanceSourceError
 from statement_source import StatementSourceError
+from settlement_input_adapter import SettlementInputSourceError
 
 
 # Local selectors for existing FSM operations; no policy or statement defaults.
 _SETTLEMENT_DISPATCH = {
+    "initiate_from_booking": (TicketSettlementSession.initiate_from_booking,
+                              {"settlement_id", "reservation_id", "idempotency_key",
+                               "trade_id", "debtor_role", "policy"}, "receipt"),
+    "initiate_from_resale": (TicketSettlementSession.initiate_from_resale,
+                             {"settlement_id", "listing_id", "idempotency_key",
+                              "trade_id", "debtor_role", "policy"}, "receipt"),
     "initiate": (TicketSettlementSession.initiate,
                  {"settlement_id", "idempotency_key", "trade_id", "gross",
                   "debtor_role", "policy", "currency"}, "receipt"),
@@ -114,7 +121,7 @@ def run_requests(session: TicketOperationsSession, lines, *, quote_adapter=None)
             return 2
         except (*_DOMAIN_ERRORS, ResaleOfferSourceError, PresentationSourceError,
                 ResalePaymentSourceError, BookingQuoteSourceError, CancelAcceptanceSourceError,
-                StatementSourceError, IssuedTicketSourceError) as error:
+                StatementSourceError, IssuedTicketSourceError, SettlementInputSourceError) as error:
             result = _error(surface, operation, error)
             rejected = True
         _emit(result)
