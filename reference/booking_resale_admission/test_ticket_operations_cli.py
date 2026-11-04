@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from admission_cli import _DISPATCH as ADMISSION_DISPATCH
+from test_admission_cli import AdmissionInputsDeskChecks
 from admission_fixture import FixtureError
 from booking_cli import _DISPATCH as BOOKING_DISPATCH
 from fake_presentation_source import SyntheticPresentationFault
@@ -377,3 +378,11 @@ class TicketRecordedPaymentCliTests(RecordedPaymentDeskChecks, unittest.TestCase
     constructor = "ticket_operations_session.SettlementMachine"
     loader = staticmethod(load_fixture)
     run_rows = staticmethod(run)
+
+
+class TicketAdmissionRequestInputsCliTests(AdmissionInputsDeskChecks, unittest.TestCase):
+    shared = True
+    fixture_stem = "ticket_operations_admission_inputs"
+    cli_prefix = "ticket_operations"
+    loader = staticmethod(load_fixture)
+    runner = staticmethod(run_requests)

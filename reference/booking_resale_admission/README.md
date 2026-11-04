@@ -131,19 +131,21 @@ consumed = session.consume(
 )
 ```
 
-The seven public methods and all required arguments are:
+The nine public methods and all required arguments are:
 
 | Local method selector | Arguments |
 |---|---|
 | `adopt_issued` | Complete explicit adoption input listed in [fulfillment](#explicit-ticket-fulfillment-on-the-shared-desk), including `idempotency_key` |
 | `authorize_admission` | `presentation_id`, `admission_id`, `idempotency_key`, `gate_role`, `expires_ms` |
 | `consume` | `presentation_id`, `consume_id`, `idempotency_key`, `gate_role` |
+| `authorize_admission_inputs` | `admission_id`, `idempotency_key`, `right_id`, `version`, `holder_role`, `gate_role`, `request`, `expires_ms` |
+| `consume_inputs` | `consume_id`, `idempotency_key`, `right_id`, `version`, `gate_role`, `request` |
 | `view` | `right_id` |
 | `view_credential` | `right_id`, `version`, `holder_role` |
 | `reconcile` | `right_id`, `idempotency_key` |
 | `set_clock` | `subject_id`, `idempotency_key`, `now_ms` |
 
-Python authorization/consumption accept a positional presentation ID and the
+Recorded Python authorization/consumption accept a positional presentation ID and the
 remaining arguments as keyword-only, matching the adapter. Views, reconciliation and clock
 changes delegate directly to the existing machine. `set_clock` retains the
 machine's reservation clock delegation and does not advance the resale clock.
@@ -266,6 +268,91 @@ remain: P03 is **설계중**; production timing, identity, revocation and indepe
 currentness remain **UNDETERMINED**, owned by Astra/User and contract owners.
 No automatic consume, retry, polling, reissue, persistence, HTTP, frontend,
 protocol command, read catalogue, runtime activation or policy decision is added.
+
+## Request-time admission inputs
+
+A running `AdmissionSession` also accepts synthetic presentation data directly,
+without a startup recording. These two local Python selectors call the existing
+public FSM once each; they add no protocol commands. Recorded
+`authorize_admission` / `consume` keep their adapter and source-fetch behavior.
+
+```python
+from admission_fixture import load_fixture
+
+session = load_fixture("reference/booking_resale_admission/fixtures/admission_request_inputs_session.json")
+authorized = session.authorize_admission_inputs(
+    "entry-1", idempotency_key="entry-key", right_id="issue-1", version=1,
+    holder_role="buyer-1", gate_role="gate-a", request="11" * 32, expires_ms=1060000,
+)
+# Authorization leaves version 1; consuming requires this separate call.
+consumed = session.consume_inputs(
+    "consume-1", idempotency_key="consume-key", right_id="issue-1", version=1,
+    gate_role="gate-a", request="11" * 32,
+)
+```
+
+The signatures take `admission_id` or `consume_id` first, followed by mandatory
+keyword-only fields listed in the admission method table. All values are
+forwarded unchanged. The FSM validates identifiers/roles, integer version/expiry
+(excluding bool) and the opaque lowercase 64-hex-character `request`; there is
+no credential issuance or cryptographic verification here. No `presentation_id`
+or `external_dependency` is accepted by these selectors.
+
+Each standalone JSONL line has exactly `operation` and `arguments`:
+
+```json
+{"operation":"authorize_admission_inputs","arguments":{"admission_id":"entry-1","idempotency_key":"entry-key","right_id":"issue-1","version":1,"holder_role":"buyer-1","gate_role":"gate-a","request":"1111111111111111111111111111111111111111111111111111111111111111","expires_ms":1060000}}
+{"operation":"consume_inputs","arguments":{"consume_id":"consume-1","idempotency_key":"consume-key","right_id":"issue-1","version":1,"gate_role":"gate-a","request":"1111111111111111111111111111111111111111111111111111111111111111"}}
+```
+
+The shared desk accepts the same lines with exactly one extra envelope field,
+`"surface":"admission"`; its Python methods are
+`desk.admission.authorize_admission_inputs(...)` and
+`desk.admission.consume_inputs(...)`. Both selectors emit `receipt` and retain
+the supplied selector in `operation`. Domain errors retain their existing
+`error.code`, including malformed semantic input; they are not adapter
+`InvalidPresentationRecord` errors. Unknown/missing fields, wrong shapes,
+duplicate keys and nonfinite JSON stop with exit 2. Domain refusals continue
+only on supplied lines and yield exit 1; all-success streams yield exit 0.
+
+The [standalone fixture](fixtures/admission_request_inputs_session.json) and
+[shared fixture](fixtures/ticket_operations_admission_inputs_session.json) use
+fixture version 1, `MOCK_GATE_ONLY`, complete bound setup and `presentations: []`.
+The shared fixture also has `offers: []`. The clocks, amounts and expiry values
+are synthetic examples, never product defaults. From repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+for pair in admission:admission_request_inputs ticket_operations:ticket_operations_admission_inputs; do
+  desk="${pair%%:*}"
+  transcript="${pair#*:}"
+  python3.12 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${transcript}_session.json" \
+    --requests "reference/booking_resale_admission/fixtures/${transcript}.jsonl"
+  python3.12 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${transcript}_session.json" \
+    --requests - < "reference/booking_resale_admission/fixtures/${transcript}.jsonl"
+done
+```
+
+Both transcripts intentionally exit 1. The standalone 15-line stream includes
+consume-before-authorization, wrong gate/request, separate consumption, replay
+of both first receipts, a changed-input conflict, fresh competing consumption,
+and explicit clock advancement followed by expired consumption. The shared
+19-line stream lists and cancels explicitly, retains the first `LISTING_LOCKED`
+refusal, authorizes with a fresh key, consumes separately and replays. It then
+transfers the second right through explicit resale operations and refuses old
+version/holder and moved-credential admission inputs without reissuance.
+
+No presentation is fetched, identity/version inferred or refreshed, clock
+changed, view treated as admission authority, or next operation invoked by the
+direct methods. Bound reservation, ownership and settlement checks remain in
+the FSM. Replay shares the recorded path's first-result identity and returns
+historical receipts; views remain observations. Product policy stays
+**UNDETERMINED — Astra/User**; legal effects stay **UNDETERMINED — User/legal**.
+P03 remains design-stage. No network, hardware, credentials, persistence or
+activation is added. See the [validation record](../../validation/2026-11-04-plan-local-admission-request-inputs/README.md)
+for source-informed coverage, local results and outstanding review/CI gates.
 
 ## Synthetic local resale offers
 
@@ -570,7 +657,7 @@ reservation, resale and admission machine. Reservation, resale and admission
 share the settlement source; resale and admission share the reservation source;
 admission reads that same resale machine as its ownership source. Its `.booking`
 is the existing `BookingSession` over that exact reservation machine. Its `.resale`
-and `.admission` use the existing offer/presentation adapters. Each construction is a fresh sequential in-memory graph.
+and `.admission` offer both recorded adapters and explicit request-input methods. Each construction is a fresh sequential in-memory graph.
 
 With this directory on `PYTHONPATH`, callers can supply their own synthetic setup
 and sources:
@@ -630,7 +717,7 @@ The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
 
 `surface` is exactly `booking`, `resale`, `admission` or `settlement`. The eleven booking selectors
 and exact required arguments are listed in [the booking table](#local-booking-desk-session-and-jsonl-cli).
-All sixteen resale selectors and seven admission selectors documented above retain
+All sixteen resale selectors and nine admission selectors documented above retain
 their exact arguments, including
 optional resale payment `buyer_role`. The existing dispatchers validate them;
 Only each surface's documented selectors are accepted. Primary payment observation remains
