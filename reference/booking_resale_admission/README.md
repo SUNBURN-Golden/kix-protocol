@@ -2064,3 +2064,80 @@ tax/accounting treatment remains **UNDETERMINED — User/designated advisers**.
 B03/B05 remain partial mock capabilities; this is no operational activation or
 production durability, distributed fencing, bank exactly-once or chain-finality
 evidence.
+
+## Request-time synthetic settlement facts
+
+`TicketSettlementSession` on the shared desk accepts these complete caller inputs:
+
+```python
+desk.settlement.observe_statement(
+    settlement_id, idempotency_key=key, movement_id=movement_id,
+    gross=gross, amount=amount, fee=fee, tax=tax, held=held,
+    adjustment=adjustment, adjustment_reason=adjustment_reason,
+)
+desk.settlement.observe_mock_cancel_acceptance(
+    settlement_id, idempotency_key=key, source_id=source_id, amount=amount,
+)
+```
+
+Every parameter is required; parameters after `settlement_id` are keyword-only.
+Each call forwards once to the identically named existing public settlement FSM
+method and returns its receipt or raises its error unchanged. No recording source
+is required or fetched. Manual `commit`, recorded observations, distribution,
+refund binding, exception controls and reconciliation remain available.
+
+The shared JSONL envelope is exactly `{surface, operation, arguments}` with
+`surface: "settlement"`. Required argument fields are:
+
+| Operation | Exact arguments |
+|---|---|
+| `observe_statement` | `settlement_id`, `idempotency_key`, `movement_id`, `gross`, `amount`, `fee`, `tax`, `held`, `adjustment`, `adjustment_reason` |
+| `observe_mock_cancel_acceptance` | `settlement_id`, `idempotency_key`, `source_id`, `amount` |
+
+For example, after an explicit partial commit on `claim-2`:
+
+```json
+{"surface":"settlement","operation":"observe_statement","arguments":{"settlement_id":"claim-2","idempotency_key":"later","movement_id":"later","gross":4001,"amount":3801,"fee":200,"tax":0,"held":0,"adjustment":0,"adjustment_reason":null}}
+{"surface":"settlement","operation":"observe_mock_cancel_acceptance","arguments":{"settlement_id":"claim-2","idempotency_key":"accept","source_id":"accept","amount":1000}}
+```
+
+Include `adjustment_reason: null` explicitly when adjustment is zero. Malformed
+JSON, duplicate keys, nonfinite numbers, wrong containers and missing/extra fields
+stop before delegation. Well-shaped domain-invalid values reach the unchanged
+FSM; its retained refusal and idempotency semantics apply. Identical direct and
+recorded facts share one key space and replay the first receipt even after later
+state changes. Changed bodies, settlement IDs or operations with a used key
+conflict; fresh keys do not bypass movement/source binding. Responses retain
+`{surface, operation, receipt}` or the existing error envelope. Exit 0 means all
+requests succeeded; exit 1 means domain refusals occurred and subsequent explicit
+lines ran; exit 2 means structural failure stopped processing.
+
+From repository root, run both file and stdin journeys:
+
+```bash
+fixture=reference/booking_resale_admission/fixtures/ticket_operations_settlement_fact_inputs_session.json
+for scenario in journey boundaries; do
+  requests="reference/booking_resale_admission/fixtures/ticket_operations_settlement_fact_inputs_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests "$requests"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests - < "$requests"
+done
+```
+
+The version-1 `MOCK_GATE_ONLY` fixture retains the issued anchor and explicit
+clock/adoption setup; all five recording arrays are empty. Optional `statements`
+and `cancel_acceptances` may also be omitted. The journey (exit 0) explicitly
+commits `6000 = 5500 + 200 + 100 + 100 + 100`, observes the later
+`4001 = 3801 + 200`, distributes in caller order, binds a 4000 refund and observes
+1000 synthetic acceptance. Cash stays 9301, refund outstanding becomes 3000 and
+PG adjustment outstanding becomes 1000. These values and distribution order are
+synthetic examples, not policy. Boundaries (exit 1) demonstrates retained phase
+and refund refusals, replay, changed bodies, identity conflicts and overflows.
+
+Observation performs no automatic distribution, refund binding/completion, ticket
+mutation, retry or clock adjustment. `MOCK_SETTLEMENT_ONLY`, `IN_MEMORY_FSM`,
+unsupported external payment and false funds/bank/return-closure/right-cancellation/
+durability flags remain, even after full synthetic acceptance. Distribution
+priorities and refund-burden policy remain **UNDETERMINED — Astra/User**;
+legal/accounting effects remain **UNDETERMINED — User/designated advisers**.
+No persistence, provider calls or production capability is delivered. See the
+[coverage and actual builder evidence](../../validation/2026-11-04-plan-local-settlement-fact-inputs/README.md).

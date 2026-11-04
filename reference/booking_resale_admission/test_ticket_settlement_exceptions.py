@@ -122,10 +122,13 @@ class TicketSettlementExceptionsTests(unittest.TestCase):
                                 fee=0, tax=0, held=0, adjustment=0, adjustment_reason=None),
                         request('commit_recorded_statement', sid, movement_id='statement-1'),
                         request('observe_recorded_statement', sid, movement_id='statement-1'),
+                        request('observe_statement', sid, movement_id='terminal-later', gross=1, amount=1,
+                                fee=0, tax=0, held=0, adjustment=0, adjustment_reason=None),
                         request('distribute', sid, order=['platform','organizer']),
                         request('bind_refund', sid, refund_id='terminal-refund', amount=1,
                                 beneficiary_role='buyer-3', reason='synthetic'),
                         request('observe_recorded_cancel_acceptance', sid, source_id='acceptance-1'),
+                        request('observe_mock_cancel_acceptance', sid, source_id='terminal-source', amount=1),
                         request('fail', sid, reason='synthetic'), request('cancel', sid, reason='synthetic')]
                     # Recorded selectors need a matching source to reach the FSM.
                     for table, identity in [('statements','movement_id'),('cancel_acceptances','source_id')]:

@@ -52,6 +52,9 @@ _SETTLEMENT_DISPATCH = {
                 "fee", "tax", "held", "adjustment", "adjustment_reason"}, "receipt"),
     "commit_recorded_statement": (TicketSettlementSession.commit_recorded_statement,
                                   {"settlement_id", "movement_id", "idempotency_key"}, "receipt"),
+    "observe_statement": (TicketSettlementSession.observe_statement,
+                          {"settlement_id", "idempotency_key", "movement_id", "gross", "amount",
+                           "fee", "tax", "held", "adjustment", "adjustment_reason"}, "receipt"),
     "observe_recorded_statement": (TicketSettlementSession.observe_recorded_statement,
                                    {"settlement_id", "movement_id", "idempotency_key"}, "receipt"),
     "distribute": (TicketSettlementSession.distribute,
@@ -61,6 +64,8 @@ _SETTLEMENT_DISPATCH = {
                      "beneficiary_role", "reason"}, "receipt"),
     "observe_recorded_cancel_acceptance": (TicketSettlementSession.observe_recorded_cancel_acceptance,
                                            {"settlement_id", "source_id", "idempotency_key"}, "receipt"),
+    "observe_mock_cancel_acceptance": (TicketSettlementSession.observe_mock_cancel_acceptance,
+                                      {"settlement_id", "idempotency_key", "source_id", "amount"}, "receipt"),
     "view": (TicketSettlementSession.view, {"settlement_id"}, "view"),
 }
 
