@@ -2253,3 +2253,89 @@ priorities and refund-burden policy remain **UNDETERMINED — Astra/User**;
 legal/accounting effects remain **UNDETERMINED — User/designated advisers**.
 No persistence, provider calls or production capability is delivered. See the
 [coverage and actual builder evidence](../../validation/2026-11-04-plan-local-settlement-fact-inputs/README.md).
+
+## Live local subprocess client
+
+[`ticket_operations_client.py`](ticket_operations_client.py) is an importable,
+standard-library client for the existing shared JSONL desk. Importing it launches
+nothing. `TicketOperationsClient.launch(fixture, *, quotes=None,
+calculated_quotes=None, cleanup_timeout=...)` explicitly starts one child using
+`sys.executable`; quote fixture options are mutually exclusive. The child uses
+ordinary Python buffering and flushes every complete response. Its in-memory
+service graph stays alive until closed; it does not persist across launches.
+
+Set `PYTHONPATH` to `reference/booking_resale_admission` when importing from the
+repository root. For example, using the repository's synthetic fixtures:
+
+```python
+from ticket_operations_client import TicketOperationsClient
+
+with TicketOperationsClient.launch(
+    "reference/booking_resale_admission/fixtures/ticket_operations_session.json",
+    cleanup_timeout=1,  # caller's cleanup budget, not a response deadline
+) as desk:
+    listed = desk.request({
+        "surface": "resale", "operation": "list_resale",
+        "arguments": {"offer_id": "offer-1", "listing_id": "list-1",
+                      "idempotency_key": "caller-list"},
+    })
+    # Inspect the returned envelope before explicitly deciding the next request.
+    if "receipt" in listed:
+        listing = listed["receipt"]["listing"]
+        current = desk.request({
+            "surface": "resale", "operation": "view",
+            "arguments": {"listing_id": listing["listing_id"]},
+        })
+```
+
+Run the complete listing → view → cancellation → view example:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 reference/booking_resale_admission/example_ticket_operations_client.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --offer-id offer-1 --listing-id list-1 --list-key caller-list --cancel-key caller-cancel \
+  --cleanup-timeout 1
+```
+
+All identities and the cleanup budget above are synthetic caller choices, not
+policy defaults. The example derives the listing identity and seller from the
+first receipt, stops on errors, and prints unmodified envelopes with all mock
+labels. Example exits: 0 for the completed journey, 1 for a desk error, 2 for
+local transport uncertainty. Desk batch exits remain 0/1/2 as before.
+
+`request(dict)` submits one UTF-8 JSONL line once and blocks for one complete
+response before returning its decoded envelope. Only one request may be
+outstanding. Concurrent/reentrant calls and concurrent cleanup fail locally with
+`TicketDeskClientStateError` before writing. Serialization failures also occur
+before writing. Arguments are still validated by the existing desk dispatchers;
+no selectors, protocol commands or SDK/catalogue entries are added.
+
+Domain `{code}` and source `{type,message}` errors return unchanged and allow
+another explicit caller request. `FixtureError`, `BookingInputError` and startup
+error envelopes are terminal: they return unchanged and fence further requests.
+A startup error may race a broken pipe; only a fully received valid error
+envelope is a known desk result.
+
+Once submission begins, EOF, short writes, broken pipes, truncated lines,
+malformed UTF-8/JSON/envelopes, selector mismatches or caller interruption raise
+`TicketDeskTransportUncertainty` and permanently fence the client. Its `request`,
+`request_bytes` and `reply_bytes` retain the submitted snapshot and observed
+reply bytes in memory; `client.uncertainty` retains that same exception after
+cleanup. No business failure, rollback or permission to resend follows from
+uncertainty. There is no automatic retry, replay, restart or replacement child.
+
+Reads have no response timeout. Caller interruption fences an interrupted
+exchange; it does not establish what the desk accepted. Finish or interrupt the
+requesting caller before cleanup. `close()` closes stdin, waits for the owned
+child and returns its actual exit code; repeated calls return the retained code.
+The required finite positive `cleanup_timeout` bounds each graceful/termination
+wait during cleanup only. Cleanup terminates then kills/reaps if needed, closes
+descriptors, preserves uncertainty and cannot undo accepted operations. Context
+manager exit runs the same cleanup, including on caller exceptions.
+
+This remains **MOCK_GATE_ONLY**, in-memory, local and non-production. No sockets,
+frontend, storage, external providers or funds are used. Product timing,
+authentication, pricing, distribution and refund policy remain
+**UNDETERMINED — Astra/User**. Source-informed parity is not independent review,
+durability, chain finality or production readiness evidence. See the
+[coverage and actual builder evidence](../../validation/2026-11-04-plan-local-ticket-stdio-client/README.md).

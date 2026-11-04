@@ -106,7 +106,7 @@ def _error(surface, operation, error):
 
 
 def _emit(value):
-    print(json.dumps(value, sort_keys=True, allow_nan=False))
+    print(json.dumps(value, sort_keys=True, allow_nan=False), flush=True)
 
 
 def run_requests(session: TicketOperationsSession, lines, *, quote_adapter=None) -> int:
