@@ -7,6 +7,7 @@ from unittest.mock import Mock, call
 
 from fake_resale_offer_source import FakeResaleOfferSource, SyntheticResaleOfferFault
 from fake_resale_payment_source import FakeResalePaymentSource, SyntheticResalePaymentFault
+from mock_gates import OFFER_WINDOW_MS
 from resale_fixture import load_fixture
 from resale_fsm import ResaleError, ResaleMachine
 from resale_offer_source import ResaleOfferSourceError
@@ -50,6 +51,146 @@ FORWARD = (
     ("view_right", "right_id", dict(right_id="r")),
     ("view_presentation", "right_id", dict(right_id="r", version=2, holder_role="buyer")),
 )
+
+
+def request_inputs(**changes):
+    return dict(listing_id="request-list-1", right_id="issue-1", version=1,
+                seller_role="buyer-1", recipient_role="buyer-2", amount=8000,
+                expires_ms=1120000, idempotency_key="request-list-key",
+                reservation_id=None) | changes
+
+
+class ResaleRequestInputsTests(unittest.TestCase):
+    def configured(self):
+        return load_fixture(HERE / "fixtures/resale_request_inputs_session.json")
+
+    def test_exactly_one_call_opaque_inputs_receipt_and_exception_identity(self):
+        for binding in (None, object()):
+            arguments = {key: object() for key in request_inputs()}
+            arguments["reservation_id"] = binding
+            machine, offers, payments = Mock(spec=ResaleMachine), Mock(), Mock()
+            session = ResaleSession(machine, offers, payment_source=payments)
+            receipt = {"opaque": object()}
+            machine.list_resale.return_value = receipt
+            for error in (None, ResaleError("FIXTURE_ERROR"), RuntimeError("programming fault")):
+                machine.reset_mock()
+                machine.list_resale.side_effect = error
+                if error is None:
+                    self.assertIs(session.list_resale_inputs(**arguments), receipt)
+                else:
+                    with self.assertRaises(type(error)) as caught:
+                        session.list_resale_inputs(**arguments)
+                    self.assertIs(caught.exception, error)
+                forwarded = dict(arguments)
+                subject = forwarded.pop("listing_id")
+                self.assertEqual(machine.mock_calls, [call.list_resale(subject, **forwarded)])
+                self.assertEqual((offers.mock_calls, payments.mock_calls), ([], []))
+            del arguments["reservation_id"]
+            machine.reset_mock()
+            with self.assertRaises(TypeError):
+                session.list_resale_inputs(**arguments)
+            self.assertEqual(machine.mock_calls, [])
+
+    def compare(self, session, control, arguments):
+        from test_ticket_operations_session import outcome
+        result = outcome(lambda: session.list_resale_inputs(**arguments))
+        self.assertEqual(result, outcome(lambda: control._machine.list_resale(**arguments)))
+        self.assertEqual(snapshot(session._machine._settlement, session._machine._tickets, session._machine),
+                         snapshot(control._machine._settlement, control._machine._tickets, control._machine))
+        self.assertEqual(session._adapter._source.calls, ())
+        self.assertEqual(control._adapter._source.calls, ())
+        if "error" not in result:
+            assert_not_final(self, result)
+        return result
+
+    def test_request_refusals_retained_keys_and_direct_fsm_parity(self):
+        for binding in (None, "reserve-1"):
+            for code, change in (
+                ("STALE_VERSION", {"version": 2}),
+                ("NOT_HOLDER", {"seller_role": "other"}),
+                ("RESALE_CAP", {"amount": 20001}),
+                ("LISTING_WINDOW", {"expires_ms": 1000000}),
+                ("LISTING_WINDOW", {"expires_ms": 1000000 + OFFER_WINDOW_MS + 1}),
+                ("UNKNOWN_RESERVATION", {"reservation_id": "missing"}),
+            ):
+                with self.subTest(binding=binding, code=code, change=change):
+                    session, control = self.configured(), self.configured()
+                    before = snapshot(session._machine, session._machine._tickets, session._machine._settlement)
+                    arguments = request_inputs(reservation_id=binding) | change
+                    for _ in range(2):
+                        self.assertEqual(self.compare(session, control, arguments), {"error": {"code": code}})
+                    # Canonical economic state excludes retained first-result bookkeeping.
+                    self.assertEqual(snapshot(session._machine, session._machine._tickets,
+                                              session._machine._settlement), before)
+                    self.assertEqual(self.compare(session, control, request_inputs(reservation_id=binding)),
+                                     {"error": {"code": "IDEMPOTENCY_CONFLICT"}})
+                    self.assertEqual(self.compare(session, control, request_inputs(
+                        reservation_id=binding, idempotency_key="fresh"))["listing"]["phase"], "LISTED")
+
+    def test_replay_after_cancel_and_expiry_and_competing_sale_lock(self):
+        for binding in (None, "reserve-1"):
+            session, control = self.configured(), self.configured()
+            arguments = request_inputs(reservation_id=binding)
+            others = snapshot(session._machine._tickets, session._machine._settlement)
+            first = self.compare(session, control, arguments)
+            duplicate = first | {"duplicate": True, "applied": None}
+            self.assertEqual(first["listing"]["phase"], "LISTED")
+            self.assertIsNone(first["listing"]["hold_id"])
+            self.assertIsNone(first["listing"]["payment_ref"])
+            self.assertIsNone(first["listing"]["settlement_id"])
+            self.assertEqual(self.compare(session, control, arguments), duplicate)
+            for field in arguments:
+                if field == "idempotency_key":
+                    continue
+                changed = arguments | {field: "changed"}
+                self.assertEqual(self.compare(session, control, changed),
+                                 {"error": {"code": "IDEMPOTENCY_CONFLICT"}})
+            competing = arguments | {"listing_id": "competitor", "idempotency_key": "compete"}
+            self.assertEqual(self.compare(session, control, competing),
+                             {"error": {"code": "RIGHT_SALE_LOCKED"}})
+            for desk in (session, control):
+                desk.cancel_listing(arguments["listing_id"], seller_role="buyer-1", idempotency_key="cancel")
+                desk.set_clock("clock", now_ms=1120000, idempotency_key="later")
+            self.assertEqual(self.compare(session, control, arguments), duplicate)
+            self.assertEqual(session.view(arguments["listing_id"])["phase"], "CANCELLED")
+            self.assertEqual(self.compare(session, control, competing),
+                             {"error": {"code": "RIGHT_SALE_LOCKED"}})
+            self.assertEqual(self.compare(session, control, competing | {"idempotency_key": "fresh"}),
+                             {"error": {"code": "LISTING_WINDOW"}})
+            self.assertEqual(snapshot(session._machine._tickets, session._machine._settlement), others)
+            self.assertEqual(sum(e["op"] == "list_resale" for e in session._machine.export_journal()), 1)
+
+    def test_admission_lock_refusal_retained_after_lock_expiry(self):
+        from mock_gates import ADMISSION_WINDOW_MS
+        session, control = self.configured(), self.configured()
+        for desk in (session, control):
+            desk._machine._tickets.authorize_admission(
+                "entry", idempotency_key="entry", right_id="issue-1", version=1,
+                holder_role="buyer-1", gate_role="gate-a", request="11" * 32,
+                expires_ms=1000000 + ADMISSION_WINDOW_MS)
+        self.assertEqual(self.compare(session, control, request_inputs()),
+                         {"error": {"code": "ADMISSION_LOCKED"}})
+        for desk in (session, control):
+            desk._machine._tickets.set_clock("clock", idempotency_key="later",
+                                            now_ms=1000000 + ADMISSION_WINDOW_MS)
+        self.assertEqual(self.compare(session, control, request_inputs()),
+                         {"error": {"code": "ADMISSION_LOCKED"}})
+        self.assertEqual(self.compare(session, control, request_inputs(idempotency_key="fresh"))[
+            "listing"]["phase"], "LISTED")
+
+    def test_recorded_and_request_paths_share_existing_fsm_replay_identity(self):
+        for recorded_first in (True, False):
+            session = load_fixture(FIXTURE)
+            arguments = request_inputs(listing_id="list-1", idempotency_key="list-key",
+                                       reservation_id="reserve-1")
+            recorded = lambda: session.list_resale("offer-1", listing_id="list-1", idempotency_key="list-key")
+            direct = lambda: session.list_resale_inputs(**arguments)
+            first, replay = (recorded, direct) if recorded_first else (direct, recorded)
+            receipt = first()
+            before = snapshot(session._machine, session._machine._tickets, session._machine._settlement)
+            self.assertEqual(replay(), receipt | {"duplicate": True, "applied": None})
+            self.assertEqual(snapshot(session._machine, session._machine._tickets, session._machine._settlement), before)
+            self.assertEqual(session._adapter._source.calls, ("offer-1",))
 
 
 class ResaleSessionTests(unittest.TestCase):

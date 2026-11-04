@@ -46,6 +46,18 @@ class ResaleSession:
             offer_id, listing_id=listing_id, idempotency_key=idempotency_key,
         )
 
+    def list_resale_inputs(
+        self, listing_id: object, *, right_id: object, version: object,
+        seller_role: object, recipient_role: object, amount: object,
+        expires_ms: object, idempotency_key: object, reservation_id: object,
+    ) -> dict:
+        return self._machine.list_resale(
+            listing_id, right_id=right_id, version=version,
+            seller_role=seller_role, recipient_role=recipient_role,
+            amount=amount, expires_ms=expires_ms,
+            idempotency_key=idempotency_key, reservation_id=reservation_id,
+        )
+
     def hold_buy(self, hold_id: str, *, listing_id: str, buyer_role: str,
                  idempotency_key: str) -> dict:
         return self._machine.hold_buy(

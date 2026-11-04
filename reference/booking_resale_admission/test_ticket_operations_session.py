@@ -64,7 +64,10 @@ def direct_call(graph, request, value):
     surface, operation = request["surface"], request["operation"]
     machine = graph[{"settlement": 0, "booking": 1, "resale": 2, "admission": 3}[surface]]
     args = dict(request["arguments"])
-    if operation == "list_resale":
+    if operation == "list_resale_inputs":
+        return {"surface": surface, "operation": operation,
+                "receipt": machine.list_resale(**args)}
+    elif operation == "list_resale":
         identity = args.pop("offer_id")
         record = json.loads(next(e["recorded_text"] for e in value["offers"]
                                  if e["offer_id"] == identity))
@@ -139,9 +142,11 @@ class TicketOperationsSessionTests(unittest.TestCase):
 
     def test_transcripts_session_and_cli_match_direct_graph_after_every_request(self):
         for scenario in ("cancel", "admission", "transfer", "payment_listed", "payment_held",
-                         "reconcile", "booking", "booking_admission"):
+                         "reconcile", "booking", "booking_admission", "request_inputs"):
             with self.subTest(scenario=scenario):
-                path = (HERE / "fixtures" / "ticket_operations_payment_session.json"
+                path = (HERE / "fixtures" / f"ticket_operations_{scenario}_session.json"
+                        if scenario == "request_inputs" else
+                        HERE / "fixtures" / "ticket_operations_payment_session.json"
                         if scenario.startswith("payment_") else FIXTURE)
                 value = json.loads(path.read_text())
                 session, cli = load_fixture(path), load_fixture(path)

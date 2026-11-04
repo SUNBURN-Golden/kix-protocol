@@ -363,6 +363,135 @@ class ResaleCliTests(unittest.TestCase):
         check_reconcile_cli(self, 'resale')
 
 
+class RequestInputsDeskChecks:
+    """Same strict request boundary exercised through both executable desks."""
+
+    def configured(self):
+        return self.loader(HERE / "fixtures" / f"{self.prefix}_request_inputs_session.json")
+
+    def desk(self, session):
+        return session.resale if self.shared else session
+
+    def graph(self, session):
+        desk = self.desk(session)
+        machine = desk._machine
+        return (machine._settlement, machine._tickets, machine) + (
+            (session.admission._machine,) if self.shared else ())
+
+    def request(self, **changes):
+        from test_resale_session import request_inputs
+        row = dict(operation="list_resale_inputs", arguments=request_inputs(**changes))
+        return row | ({"surface": "resale"} if self.shared else {})
+
+    def compare_rows(self, rows):
+        from test_ticket_operations_session import direct_call, direct_graph, outcome
+        session = self.configured()
+        value = json.loads((HERE / "fixtures" / f"{self.prefix}_request_inputs_session.json").read_text())
+        self.assertEqual(value["offers"], [])
+        control = direct_graph(value["setup"])
+        results = []
+        for request in rows:
+            shared = request if self.shared else request | {"surface": "resale"}
+            expected = outcome(lambda: direct_call(control, shared, value))
+            code, actual = self.run_rows(session, [request])
+            if "error" in expected:
+                self.assertEqual((code, actual[0]["error"]), (1, expected["error"]))
+            else:
+                if not self.shared:
+                    del expected["surface"]
+                self.assertEqual((code, actual), (0, [expected]))
+                assert_not_final(self, actual[0].get("receipt", actual[0].get("view")))
+            results += actual
+            self.assertEqual(snapshot(*self.graph(session)), snapshot(*(control if self.shared else control[:3])))
+            self.assertEqual(self.desk(session)._adapter._source.calls, ())
+        return session, results
+
+    def test_request_inputs_empty_offers_file_stdin_and_direct_fsm_parity(self):
+        path = HERE / "fixtures" / f"{self.prefix}_request_inputs.jsonl"
+        rows = [json.loads(line) for line in path.read_text().splitlines()]
+        session, expected = self.compare_rows(rows)
+        first = expected[0]["receipt"]
+        self.assertEqual(first["listing"]["phase"], "LISTED")
+        self.assertIsNone(first["listing"]["hold_id"])
+        self.assertIsNone(first["listing"]["payment_ref"])
+        self.assertIsNone(first["listing"]["settlement_id"])
+        self.assertEqual(expected[1]["receipt"], first | {"duplicate": True, "applied": None})
+        self.assertEqual(expected[5]["receipt"], expected[1]["receipt"])
+        self.assertEqual(expected[2]["receipt"]["listing"]["phase"], "BUY_HELD")
+        self.assertEqual(expected[3]["receipt"]["listing"]["phase"], "LISTED")
+        self.assertEqual(expected[4]["receipt"]["listing"]["phase"], "CANCELLED")
+        self.assertEqual(expected[6]["view"]["phase"], "CANCELLED")
+        self.assertEqual(self.desk(session).view_right("issue-1")["right"]["version"], 1)
+        outputs = []
+        for selector, stdin in ((str(path), None), ("-", path.read_text())):
+            process = subprocess.run([
+                sys.executable, str(HERE / f"{self.prefix}_cli.py"),
+                "--fixture", str(HERE / "fixtures" / f"{self.prefix}_request_inputs_session.json"),
+                "--requests", selector], input=stdin, capture_output=True, text=True, check=False)
+            self.assertEqual((process.returncode, process.stderr), (0, ""))
+            self.assertEqual([json.loads(line) for line in process.stdout.splitlines()], expected)
+            outputs.append(process.stdout)
+        self.assertEqual(outputs[0], outputs[1])
+
+    def test_request_inputs_strict_fields_stop_before_any_dispatch(self):
+        valid = self.request()
+        arguments = valid["arguments"]
+        bad = [valid | {"arguments": {k: v for k, v in arguments.items() if k != field}}
+               for field in arguments]
+        bad += [valid | {"arguments": arguments | {field: "unexpected"}}
+                for field in ("extra", "offer_id")]
+        bad += [valid | {"arguments": shape} for shape in (None, [], "text", 1)]
+        bad += [None, [], "text", valid | {"extra": True}]
+        bad += [{k: v for k, v in valid.items() if k != field} for field in valid]
+        for request in bad:
+            with self.subTest(request=request):
+                session = self.configured()
+                before = snapshot(*self.graph(session))
+                desk = self.desk(session)
+                with patch.object(desk._machine, "list_resale", wraps=desk._machine.list_resale) as method:
+                    code, results = self.run_rows(session, [request, valid])
+                    self.assertEqual((code, len(results)), (2, 1))
+                    self.assertEqual(results[0]["error"]["type"], "FixtureError")
+                    method.assert_not_called()
+                self.assertEqual(snapshot(*self.graph(session)), before)
+                self.assertEqual(desk._adapter._source.calls, ())
+
+    def test_request_inputs_domain_errors_continue_only_explicit_lines(self):
+        from test_resale_session import request_inputs
+        for binding in (None, "reserve-1"):
+            for code, change in (("STALE_VERSION", {"version": 2}),
+                                 ("NOT_HOLDER", {"seller_role": "other"}),
+                                 ("RESALE_CAP", {"amount": 20001}),
+                                 ("LISTING_WINDOW", {"expires_ms": 1000000})):
+                with self.subTest(binding=binding, code=code):
+                    refusal = self.request(**(request_inputs(reservation_id=binding) | change))
+                    valid = self.request(reservation_id=binding)
+                    fresh = self.request(reservation_id=binding, idempotency_key="fresh")
+                    competing = self.request(listing_id="compete", idempotency_key="compete")
+                    rows = [refusal, refusal, valid, fresh, fresh, competing]
+                    _, expected = self.compare_rows(rows)
+                    self.assertEqual([r["error"]["code"] for r in expected if "error" in r],
+                                     [code, code, "IDEMPOTENCY_CONFLICT", "RIGHT_SALE_LOCKED"])
+                    session = self.configured()
+                    status, actual = self.run_rows(session, rows)
+                    self.assertEqual((status, actual), (1, expected))
+                    # Also check executable exit convention and continued output.
+                    process = subprocess.run([
+                        sys.executable, str(HERE / f"{self.prefix}_cli.py"),
+                        "--fixture", str(HERE / "fixtures" / f"{self.prefix}_request_inputs_session.json"),
+                        "--requests", "-"], input="".join(json.dumps(r) + "\n" for r in rows),
+                        capture_output=True, text=True, check=False)
+                    self.assertEqual((process.returncode, process.stderr), (1, ""))
+                    self.assertEqual([json.loads(line) for line in process.stdout.splitlines()], expected)
+
+
+class ResaleRequestInputsCliTests(RequestInputsDeskChecks, unittest.TestCase):
+    shared = False
+    prefix = "resale"
+    loader = staticmethod(load_fixture)
+    run_rows = staticmethod(run)
+
+
 class RecordedPaymentDeskChecks:
     """Shared acceptance checks for both local entry points, not another FSM model."""
 

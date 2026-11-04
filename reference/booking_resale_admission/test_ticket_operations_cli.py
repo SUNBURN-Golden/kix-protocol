@@ -18,7 +18,7 @@ from booking_cli import _DISPATCH as BOOKING_DISPATCH
 from fake_presentation_source import SyntheticPresentationFault
 from fake_resale_offer_source import SyntheticResaleOfferFault
 from resale_cli import _DISPATCH as RESALE_DISPATCH
-from test_resale_cli import RecordedPaymentDeskChecks
+from test_resale_cli import RecordedPaymentDeskChecks, RequestInputsDeskChecks
 from ticket_operations_cli import _SETTLEMENT_DISPATCH, dispatch_request, run_requests
 from ticket_operations_fixture import load_fixture
 from test_ticket_operations_session import (FIXTURE, HERE, assert_booking_journey, fixture,
@@ -30,6 +30,13 @@ def run(session, rows):
     with redirect_stdout(output):
         code = run_requests(session, [json.dumps(row) for row in rows])
     return code, [json.loads(line) for line in output.getvalue().splitlines()]
+
+
+class TicketOperationsRequestInputsCliTests(RequestInputsDeskChecks, unittest.TestCase):
+    shared = True
+    prefix = "ticket_operations"
+    loader = staticmethod(load_fixture)
+    run_rows = staticmethod(run)
 
 
 class TicketOperationsFixtureTests(unittest.TestCase):

@@ -372,6 +372,7 @@ are added. The caller explicitly chooses every mutation's idempotency key.
 |---|---|
 | `adopt_issued` | Complete explicit adoption input listed in [fulfillment](#explicit-ticket-fulfillment-on-the-shared-desk) |
 | `list_resale` | `offer_id`, `listing_id` |
+| `list_resale_inputs` | `listing_id`, `right_id`, `version`, `seller_role`, `recipient_role`, `amount`, `expires_ms`, `reservation_id` (explicit value or `None` / JSON `null`) |
 | `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
 | `release_hold` | `hold_id`, `buyer_role` |
 | `cancel_listing` | `listing_id`, `seller_role` |
@@ -398,6 +399,59 @@ session = load_fixture("reference/booking_resale_admission/fixtures/resale_sessi
 receipt = session.list_resale("offer-1", listing_id="list-1", idempotency_key="list-key")
 current = session.view("list-1")
 ```
+
+### Request-time resale inputs
+
+`session.list_resale_inputs(listing_id, *, right_id, version, seller_role,
+recipient_role, amount, expires_ms, idempotency_key, reservation_id)` lists an
+already-adopted right using the caller's complete inputs. All nine fields are
+mandatory, including `reservation_id`: supply an explicit binding or `None`
+(`null` in JSON). The method forwards values unchanged in exactly one
+`ResaleMachine.list_resale` call. It fetches no offer or payment recording and
+performs no preflight, coercion, clock advancement, retry or follow-up.
+Ownership, version, reservation authority, price limits, expiry, admission/sale
+locks and retained first-result replay stay FSM-owned. A null binding is passed
+literally; any authority resolution belongs to the FSM.
+
+Standalone JSONL uses exactly this envelope and these argument fields:
+
+```json
+{"operation":"list_resale_inputs","arguments":{"listing_id":"request-list-1","right_id":"issue-1","version":1,"seller_role":"buyer-1","recipient_role":"buyer-2","amount":8000,"expires_ms":1120000,"idempotency_key":"request-list-key","reservation_id":null}}
+```
+
+For `ticket_operations_cli.py`, add exactly `"surface":"resale"` to the outer
+object. Missing/extra fields (including `offer_id`) and non-object envelopes or
+arguments are rejected before dispatch. Scalar semantics remain FSM-owned.
+Results contain `operation` and `receipt`; the shared desk also returns
+`surface`. Errors and exit conventions are unchanged: **0** for all success,
+**1** for domain/source refusals (only supplied later lines continue), **2** for
+structural/input failures (stop immediately). The existing recorded-offer
+`list_resale(offer_id, ...)` method remains available; identical FSM inputs and
+keys share its replay identity. This local selector adds no protocol command.
+
+The new fixtures contain `offers: []` and explicit synthetic issuance/adoption.
+Each transcript lists, replays, explicitly holds/releases/cancels, replays the
+original listing receipt and reads current state. From the repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+for desk in resale ticket_operations; do
+  python3 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${desk}_request_inputs_session.json" \
+    --requests "reference/booking_resale_admission/fixtures/${desk}_request_inputs.jsonl"
+  python3 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${desk}_request_inputs_session.json" \
+    --requests - < "reference/booking_resale_admission/fixtures/${desk}_request_inputs.jsonl"
+done
+```
+
+Both journeys exit **0**. Every subsequent payment, transfer, settlement or close
+requires its own explicit request. There are no services, credentials,
+persistence, authentication, external execution, activation or policy defaults.
+Fixture amounts/times/roles are synthetic examples, not product policy.
+Product policy remains **UNDETERMINED — Astra/User**; legal effects remain
+**UNDETERMINED — User/legal**. The [validation record](../../validation/2026-11-04-plan-local-resale-request-inputs/README.md)
+maps existing coverage and records local evidence, limitations and pending review/CI.
 
 ### Synthetic resale fixture schema
 
@@ -576,7 +630,7 @@ The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
 
 `surface` is exactly `booking`, `resale`, `admission` or `settlement`. The eleven booking selectors
 and exact required arguments are listed in [the booking table](#local-booking-desk-session-and-jsonl-cli).
-All fifteen resale selectors and seven admission selectors documented above retain
+All sixteen resale selectors and seven admission selectors documented above retain
 their exact arguments, including
 optional resale payment `buyer_role`. The existing dispatchers validate them;
 Only each surface's documented selectors are accepted. Primary payment observation remains
