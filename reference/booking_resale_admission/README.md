@@ -1749,3 +1749,86 @@ runtime activation. Product policy remains **UNDETERMINED — Astra/User**; lega
 effects remain **UNDETERMINED — User/legal**. See the
 [validation record](../../validation/2026-11-03-plan-local-issued-ticket-handoff/README.md)
 for source-informed coverage, actual commands and pending delivery gates.
+# Initiating settlement from local ticket records
+
+The shared `TicketOperationsSession` exposes two explicit Python methods and
+matching `surface: "settlement"` JSONL selectors:
+
+| Selector | Required arguments |
+|---|---|
+| `initiate_from_booking` | `settlement_id`, `reservation_id`, `idempotency_key`, `trade_id`, `debtor_role`, `policy` |
+| `initiate_from_resale` | `settlement_id`, `listing_id`, `idempotency_key`, `trade_id`, `debtor_role`, `policy` |
+
+`settlement_id` may be positional in Python; all other arguments are required
+keywords. `policy` is the existing complete object with `kind`, `fee_bps`,
+`residual_payee` and `fee_payee`. Values below are synthetic caller inputs,
+not product policy or inferred legal roles:
+
+```python
+from ticket_operations_fixture import load_fixture
+
+desk = load_fixture("reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json")
+desk.settlement.initiate_from_booking(
+    "claim-2", reservation_id="reserve-2", idempotency_key="booking-input",
+    trade_id="explicit-booking-trade", debtor_role="explicit-debtor",
+    policy={"kind": "PRIMARY_FEE_BPS", "fee_bps": 500,
+            "residual_payee": "organizer", "fee_payee": "platform"})
+# Binding, authorization, capture, statements and distribution are separate calls.
+```
+
+```json
+{"surface":"settlement","operation":"initiate_from_resale","arguments":{"settlement_id":"resale-claim","listing_id":"list-1","idempotency_key":"resale-input","trade_id":"explicit-resale-trade","debtor_role":"explicit-debtor","policy":{"kind":"PRIMARY_FEE_BPS","fee_bps":500,"residual_payee":"organizer","fee_payee":"platform"}}}
+```
+
+The resale example requires an existing listing (see the runnable transcript).
+Each request, including replay, reads the selected reservation/listing `view`
+once from the same session graph. It requires matching valid source identity,
+positive non-boolean integer `amount` in `1..10**12` and exact `"KRW"` currency.
+Booking also requires a valid recorded `order_id`; its current phase need not
+be `CONFIRMED`. Other source view fields are allowed. No auxiliary show/right
+lookup, coercion, fallback, cache, polling or retry is added by the adapter.
+After source validation it calls the unchanged `SettlementMachine.initiate`
+once, copying amount/currency and forwarding all caller target inputs unchanged.
+The target validates settlement/trade identities, debtor role and complete policy.
+
+Unavailable/faulting source reads raise local `SettlementInputSourceError`;
+malformed/mismatched records raise its `InvalidSettlementInputRecord` subclass.
+These failures perform zero settlement mutations and leave the target key free.
+Target errors and first receipts propagate unchanged. Source identity is absent
+from the existing target fingerprint/journal: identical extracted target bodies,
+even from different sources, retain manual/source replay equivalence. Changed
+target bodies keep the existing `IDEMPOTENCY_CONFLICT` behavior. No source-to-trade
+binding or source eligibility rule is established. Manual `initiate` remains available.
+
+CLI arguments must match exactly; `gross`/`currency` overrides are structural
+errors. Output retains `{surface,operation,receipt}` or `error:{type,message}`
+for local source errors and `error:{code}` for FSM refusals. Exit 0 means all
+requests succeeded, 1 means source/domain refusal with explicit-line continuation,
+and 2 means a structural error that stops input. No follow-up is automatic.
+
+Runnable file and stdin transcripts, from repository root:
+
+```bash
+fixture=reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json
+for scenario in booking resale boundaries; do
+  requests="reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests "$requests"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests - < "$requests"
+done
+```
+
+Booking and resale exit 0; boundaries exits 1. Each begins with fresh synthetic
+setup, preserving the issued anchor. Booking uses its existing setup-only payment
+observation. Resale explicitly lists, initiates before payment, binds, authorizes,
+captures, commits one recorded statement, distributes, observes a later statement,
+distributes again, observes recorded payment and transfers. Booking separately
+binds and issues. Replay returns the initial receipt after those later operations.
+Boundaries demonstrates absent sources, same-key repair, exact replay, changed
+trade and retained invalid-policy conflicts. See [builder evidence](../../validation/2026-11-04-plan-local-ticket-settlement-inputs/README.md).
+
+Initiation does not bind tickets, observe payment, authorize, capture, distribute,
+issue or transfer. Mock provenance and false execution/durability flags remain.
+Product policy is **UNDETERMINED — Astra/User**; legal debtor and accounting
+treatment are **UNDETERMINED — User/legal/accounting**. This is sequential,
+in-memory synthetic integration; it establishes no authority, production runtime,
+cross-machine rollback, durable funds execution or bank/chain finality.

@@ -146,12 +146,13 @@ class TicketSettlementControlsTests(unittest.TestCase):
 
     def test_fsm_methods_forward_once_with_exact_objects_receipts_and_errors(self):
         self.assertEqual(set(_SETTLEMENT_DISPATCH), {'initiate', 'authorize', 'capture', 'commit', 'view',
+                                                          'initiate_from_booking', 'initiate_from_resale',
                                                           'bind_refund', 'observe_recorded_cancel_acceptance',
                                                           'commit_recorded_statement', 'observe_recorded_statement', 'distribute',
                                                           'fail', 'cancel', 'reconcile'})
         for operation, (_, fields, key) in _SETTLEMENT_DISPATCH.items():
             if operation in ('observe_recorded_cancel_acceptance', 'commit_recorded_statement',
-                             'observe_recorded_statement'):
+                             'observe_recorded_statement', 'initiate_from_booking', 'initiate_from_resale'):
                 continue  # Adapter forwarding is covered in the focused refund/statement modules.
             signature = inspect.signature(getattr(TicketSettlementSession, operation))
             self.assertEqual(set(signature.parameters) - {'self'}, fields)
