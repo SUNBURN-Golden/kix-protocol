@@ -149,7 +149,8 @@ class TicketSettlementControlsTests(unittest.TestCase):
                                                           'initiate_from_booking', 'initiate_from_resale',
                                                           'bind_refund', 'observe_recorded_cancel_acceptance',
                                                           'commit_recorded_statement', 'observe_recorded_statement', 'distribute',
-                                                          'fail', 'cancel', 'reconcile'})
+                                                          'fail', 'cancel', 'reconcile',
+                                                          'observe_statement', 'observe_mock_cancel_acceptance'})
         for operation, (_, fields, key) in _SETTLEMENT_DISPATCH.items():
             if operation in ('observe_recorded_cancel_acceptance', 'commit_recorded_statement',
                              'observe_recorded_statement', 'initiate_from_booking', 'initiate_from_resale'):
@@ -262,8 +263,7 @@ class TicketSettlementControlsTests(unittest.TestCase):
                          for bad in [None, [], args | {'extra': None},
                                      *[{k:v for k,v in args.items() if k != field} for field in fields]]]
         variants += [dict(surface='settlement', operation=op, arguments={})
-                     for op in ('observe_statement',
-                                'observe_mock_cancel_acceptance', 'observe_external_payment',
+                     for op in ('observe_external_payment',
                                 'restore', 'canonical_state', 'export_journal', '__init__', [], None)]
         texts = [json.dumps(row) for row in variants]
         texts += ['{"surface":"settlement","operation":"view","arguments":{"settlement_id":"a","settlement_id":"b"}}',

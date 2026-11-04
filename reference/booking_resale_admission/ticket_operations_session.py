@@ -86,6 +86,19 @@ class TicketSettlementSession:
             settlement_id, idempotency_key=idempotency_key, refund_id=refund_id,
             amount=amount, beneficiary_role=beneficiary_role, reason=reason)
 
+    def observe_statement(self, settlement_id, *, idempotency_key, movement_id, gross,
+                          amount, fee, tax, held, adjustment, adjustment_reason):
+        return self._machine.observe_statement(
+            settlement_id, idempotency_key=idempotency_key, movement_id=movement_id,
+            gross=gross, amount=amount, fee=fee, tax=tax, held=held,
+            adjustment=adjustment, adjustment_reason=adjustment_reason)
+
+    def observe_mock_cancel_acceptance(self, settlement_id, *, idempotency_key,
+                                       source_id, amount):
+        return self._machine.observe_mock_cancel_acceptance(
+            settlement_id, idempotency_key=idempotency_key, source_id=source_id,
+            amount=amount)
+
     def commit_recorded_statement(self, settlement_id, *, movement_id, idempotency_key):
         if self._statement_adapter is None:
             raise StatementSourceError("no synthetic statement source configured")
