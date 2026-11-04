@@ -1973,3 +1973,94 @@ Product policy is **UNDETERMINED — Astra/User**; legal debtor and accounting
 treatment are **UNDETERMINED — User/legal/accounting**. This is sequential,
 in-memory synthetic integration; it establishes no authority, production runtime,
 cross-machine rollback, durable funds execution or bank/chain finality.
+
+## Request-time calculated booking confirmation
+
+A running `BookingSession` accepts complete calculation text directly, without
+preloading a quote recording:
+
+```python
+receipt = session.confirm_calculated_quote(
+    request_text, reservation_id="reserve-1", order_id="order-1",
+    idempotency_key="confirm-1",
+)
+# On the shared graph: desk.booking.confirm_calculated_quote(...)
+```
+
+The caller must explicitly set the session clock, register the show and hold the
+reservation first. The three booking identifiers are validated before calculation.
+Every valid invocation, including replay, calls `calculate_booking_quote` once,
+then `self.confirm` once with the exact integer payable amount and opaque quote
+hash. Its receipt is returned unchanged. No calculation result is cached; no
+recording ID, source construction/fetch, clock advance, retry, payment,
+settlement binding or issuance is introduced.
+
+Both JSONL desks accept the strict local selector below without `--quotes` or
+`--calculated-quotes`. Shared requests additionally require `"surface":"booking"`.
+This is local composition of existing confirmation, not a new protocol command.
+
+```json
+{"operation":"confirm_calculated_quote","arguments":{"request_text":"<complete kix:commerce:2 request JSON text>","reservation_id":"reserve-1","order_id":"order-1","idempotency_key":"confirm-1"}}
+```
+
+No extra or missing envelope/argument fields are accepted. The full inner text
+uses the [unchanged calculation schema and limits](#locally-calculated-booking-quotes):
+`schemaVersion="kix:commerce:2"`, `orderId`, `orderVersion`, `scope` (`issuerId`,
+`eventId`, `performanceId`), `policyRef`, `expiresAt`, exactly one `lines` entry
+(`lineId`, `inventoryId`, `gross` with complete KRW `asset` and canonical decimal
+string `atoms`), and `discounts=[]`. Booking amounts remain `1..10**12`, with exact
+arithmetic and primary-price equality. Bounded CE1 decoding rejects malformed
+text, duplicate fields and unsupported numeric forms/assets/discount rules.
+
+Calculation `orderId`, scope and `expiresAt` are hash-bound metadata; they are
+not equated with booking identities or the reservation expiry clock. Equivalent
+JSON formatting preserves the hash and replay binding. Existing confirmation
+owns price equality, reservation expiry, key conflicts, retained refusals and
+immutable first results. Replay can return a historical confirmed receipt while
+the current view shows cancellation.
+
+Calculation/input failures use `InvalidBookingQuoteRecord` (or existing
+`BookingQuoteSourceError` normalization for an unexpected calculator exception).
+They never invoke confirmation or bind its key, even after an earlier success.
+Source/domain refusals emit existing error shapes, continue through subsequent
+lines and exit 1. Structural errors and missing explicit session prerequisites
+stop immediately with exit 2; successful transcripts exit 0. Confirmation
+exceptions retain their existing identity/classification. Results keep
+`{operation, receipt}` and shared `surface` envelopes.
+
+From the repository root, run the complete file and stdin examples without a
+startup quote source:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/booking_cli.py \
+  --requests reference/booking_resale_admission/fixtures/booking_calculation_inputs_confirm.jsonl
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_calculation_inputs_confirm.jsonl
+```
+
+The [booking confirm](fixtures/booking_calculation_inputs_confirm.jsonl) and
+[shared confirm](fixtures/ticket_operations_calculation_inputs_confirm.jsonl)
+journeys explicitly clock/show/hold, calculate/confirm, replay and view. The
+[booking boundaries](fixtures/booking_calculation_inputs_boundaries.jsonl) and
+[shared boundaries](fixtures/ticket_operations_calculation_inputs_boundaries.jsonl)
+journeys reject malformed text/assets/discounts/multiple lines, retain price and
+expiry refusals, reject changed-input keys, cancel and replay historical results.
+They intentionally exit 1. Shared identities are separate from fixture history.
+
+`test_booking_calculation_inputs.py` covers method call counts, source rejection
+atomicity/key reuse, invalid identifiers, error identity, changed-input conflicts,
+price endpoints and opaque metadata. `test_booking_calculation_inputs_cli.py`
+compares each journey step's receipts/errors/state/digests/journals with the
+existing calculated-source/adapter path; it also covers strict envelopes,
+file/stdin exits, source-free startup and unchanged other shared machines/source
+calls. Existing calculator/FSM/adapter regressions supply the underlying
+coverage; see the [coverage map and actual evidence](../../validation/2026-11-04-plan-local-booking-calculation-inputs/README.md).
+
+Calculation `evidenceClass="CALCULATION_ONLY"` remains distinct from receipt
+`provenance="MOCK_GATE_ONLY"`. All authority, finality and durability flags remain
+false. Pricing and quote authority remain **UNDETERMINED — Astra/User**;
+tax/accounting treatment remains **UNDETERMINED — User/designated advisers**.
+B03/B05 remain partial mock capabilities; this is no operational activation or
+production durability, distributed fencing, bank exactly-once or chain-finality
+evidence.
