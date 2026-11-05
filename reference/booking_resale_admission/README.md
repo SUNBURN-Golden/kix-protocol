@@ -2437,3 +2437,119 @@ remains **UNDETERMINED — Astra/User**; legal effects remain
 **UNDETERMINED — User/legal**. See the
 [indexed console validation record](../../validation/2026-11-05-plan-plan-local-booking-console/README.md)
 for coverage, actual checks and outstanding review/CI gates.
+
+### Guided local resale console
+
+`resale_console.py` provides standard-library terminal prompts over one live
+local `TicketOperationsClient` child. Importing starts nothing. Supply both a
+caller-selected combined desk fixture and a finite positive cleanup budget:
+
+```bash
+python3 -B reference/booking_resale_admission/resale_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1
+```
+
+The budget applies to child cleanup, not response reads; reads have no deadline.
+Setup comes entirely from the selected fixture. The example fixture already
+contains synthetic issuance/adoption, recorded `payment-1` for `list-1` and
+committed `resale-claim` for 8000 KRW. Fixture prices, allocations and timing are
+examples. No settlement creation or payment generation shortcut is exposed.
+
+At `action`, select an exact selector below. Enter one value per subsequent
+prompt in the listed order. Every mutation then prompts for `idempotency_key`,
+prints the entire proposed `{surface, operation, arguments}` request, and requires
+literal uppercase `SUBMIT`. Anything else declines with zero submissions.
+Approval is consumed once; explicit replay requires selecting the action again,
+entering all identifiers/arguments and its key, and approving again. There are no
+implicit identifiers, keys, prices, expiry or clock values. `reservation_id`
+requires a JSON string (for example `"reserve-1"`) or explicit JSON `null`;
+other identifiers/labels are plain text. Integers require decimal digits, with
+no float conversion, fractional values or scientific notation. The unchanged
+service validates supported ranges, ownership and timing.
+
+| Action | Prompt order before the mutation key/approval |
+|---|---|
+| `list_resale_inputs` | `listing_id`, `right_id`, `version`, `seller_role`, `recipient_role`, `amount`, `expires_ms`, `reservation_id` |
+| `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
+| `release_hold` | `hold_id`, `buyer_role` |
+| `cancel_listing` | `listing_id`, `seller_role` |
+| `observe_recorded_payment` | `recording_id`, `listing_id` |
+| `bind_settlement` | `listing_id`, `settlement_id` |
+| `accept_resale` | `transfer_id`, `listing_id` |
+| `close` | `listing_id` |
+| `set_clock` | `subject_id` (existing subject `clock`), `now_ms` |
+| `view` | `listing_id`; no key/approval |
+| `view_right` | `right_id`; no key/approval |
+| `view_presentation` | `right_id`, `version`, `holder_role`; no key/approval |
+| `quit` | None; exits locally |
+
+Each selected action submits once to surface `resale`; views have no automatic
+follow-up reads. The full `desk=<JSON>` reply preserves selectors, error details,
+mock labels and false finality flags. Additional `Listing`, `Payment` and
+`Ownership` lines summarize only returned fields, with exact integer KRW amounts.
+Receipts are labeled `Action snapshot`, including `duplicate` and `applied`;
+explicit views are labeled `Current service observation`. A replayed receipt
+remains historical even when its listing or ownership has since changed.
+
+Run these reproducible terminal answer transcripts from the repository root:
+
+```bash
+python3 -B reference/booking_resale_admission/resale_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/resale_console_transfer.txt
+python3 -B reference/booking_resale_admission/resale_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/resale_console_cancel.txt
+```
+
+The [transfer answers](fixtures/resale_console_transfer.txt) use one desk child
+and exit 0. The following transcript guide separates the returned outcomes:
+
+| Explicit action | Returned observation |
+|---|---|
+| `set_clock clock 1000000` | Synthetic clock receipt |
+| List `list-1`, `issue-1`, version 1, buyer-1 → buyer-2, 8000, expiry 1120000, `"reserve-1"` | `LISTED`; no payment, ownership unchanged |
+| Hold `console-hold`, then `view list-1` | `BUY_HELD`; buyer-2 |
+| Observe `payment-1`; `view_right issue-1` | `PAYMENT_NOTED`; right still buyer-1, version 1 |
+| Bind `resale-claim` | Payment remains separate; settlement gate `BOUND` |
+| Accept `console-transfer` | `TRANSFERRED`; `MOCK_COMMIT_OBSERVED`; buyer-2, version 2 |
+| `view_presentation issue-1 1 buyer-1` | `matches_current_right: false`; no venue credential reissue |
+| Close `list-1` | `CLOSED` |
+| Explicitly repeat `console-transfer` with original key | Historical `TRANSFERRED`, `duplicate: true`, `applied: null` |
+| `view list-1`; `view_right issue-1` | Current `CLOSED`; buyer-2, version 2 |
+
+The [cancellation answers](fixtures/resale_console_cancel.txt) start another
+single child and exit 0. They list with explicit `null` reservation binding, hold
+`console-hold`, release it, and cancel `list-1`. Repeating the original listing
+with its original key returns the historical `LISTED` receipt with
+`duplicate: true`, `applied: null`. The separate current view is `CANCELLED`,
+with no payment or ownership transfer; the right stays buyer-1, version 1, and
+its original presentation matches again. Both answer files contain every key
+and every required `SUBMIT`, without hidden setup requests from the console.
+
+Settlement binding is optional under the existing contract: unbound transfer is
+allowed after payment observation; a bound transfer must pass the existing
+settlement source/commit/amount checks. Missing payment, missing recordings,
+unknown/uncommitted settlements, price and ownership refusals retain the desk's
+original errors. No automatic correction or binding occurs. Recorded-payment
+replay fetches the recording again and may fail; no cached fallback is added.
+
+Exit 0 is clean, 1 records known service refusals, and 2 fences terminal failure.
+Known refusals allow only another explicit action. Transport uncertainty,
+terminal envelopes, EOF, interruption and terminal I/O failure stop submissions;
+received replies and uncertainty diagnostics are retained when output permits.
+`main` closes its one child in `finally`; cleanup never retries, restarts or
+compensates business actions. Interruption/EOF cannot undo an accepted request.
+
+This is synthetic, in-memory tooling. Product policy remains
+**UNDETERMINED — Astra/User**; legal effects remain
+**UNDETERMINED — User/legal**. R01–R04 keep their existing capability grades.
+Mock payment/commit and version changes establish neither real funds nor chain
+finality, legal effects, distributed fencing, durability or venue reissuance.
+No sockets, providers, real money, production runtime or protocol commands are
+added. See [builder evidence](../../validation/2026-11-05-plan-plan-local-resale-console/README.md)
+for coverage, executed verification, limitations and pending independent
+exact-head review/CI gates.
