@@ -121,6 +121,11 @@ def run_console(client, *, input_stream, output_stream, error_stream):
         # Save before rendering: output failure must retain a received result.
         last_reply = reply
         print('desk=' + _json(reply), file=output_stream, flush=True)
+        if 'receipt' in reply:
+            print('Historical action snapshot; request a view explicitly for current state.',
+                  file=output_stream)
+        elif 'view' in reply:
+            print('Current service observation.', file=output_stream)
         if 'error' in reply:
             rejected = True
             if (reply['surface'] is None or reply['operation'] is None or
@@ -135,7 +140,7 @@ def run_console(client, *, input_stream, output_stream, error_stream):
               file=output_stream)
         while True:
             print('Actions: view_show, set_clock, hold, load_quote, target, preview, confirm, '
-                  'view, release, cancel, quit', file=output_stream)
+                  'bind_settlement, issue, view, release, cancel, quit', file=output_stream)
             action = prompt('action')
             try:
                 if action == 'quit':
@@ -180,6 +185,19 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                         continue
                     send('confirm_calculated_quote', dict(request_text=snapshot.request_text,
                                                           **vars(snapshot.target)))
+                elif action in {'bind_settlement', 'issue'}:
+                    names, confirmation = {
+                        'bind_settlement': (('reservation_id', 'settlement_id', 'idempotency_key'),
+                                            'BIND_SETTLEMENT'),
+                        'issue': (('issuance_id', 'order_id', 'idempotency_key'), 'ISSUE'),
+                    }[action]
+                    arguments = fields(names)
+                    print('proposed=' + _json(dict(surface='booking', operation=action,
+                                                   arguments=arguments)), file=output_stream)
+                    if prompt('Type literal ' + confirmation + ' to send once; anything else declines') != confirmation:
+                        print('Declined; no request sent.', file=output_stream)
+                        continue
+                    send(action, arguments)
                 elif action in {'view_show', 'set_clock', 'hold', 'view', 'release', 'cancel'}:
                     names = {
                         'view_show': ('show_id',),

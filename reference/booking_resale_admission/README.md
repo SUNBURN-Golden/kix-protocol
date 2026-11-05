@@ -2358,8 +2358,11 @@ show configuration is fixture-owned, with no console registration or organizer
 lifecycle. The supplied fixture is reused unchanged and has synthetic settlement,
 payment, reservation confirmation, settlement binding, issuance and matching
 resale/admission adoptions already in its history. `show-1` has capacity 2:
-slot 0 is occupied/issued, and slot 1 supports this example. Console actions do
-not perform those setup payment/issuance operations. Every launch starts a fresh
+slot 0 is occupied/issued, and slot 1 supports this example. Console actions in
+the transcript below do not perform those setup payment/issuance operations.
+For separate binding and issuance actions, see
+[guided fulfillment](#guided-local-fulfillment-in-the-shared-console).
+Every launch starts a fresh
 in-memory service; quitting loses its state.
 
 For a reproducible guided interaction (view show → clock → hold → preview →
@@ -2393,6 +2396,8 @@ inferred identities, generated keys, wall-clock reads or automatic expiries.
 | `target` | Synthetic `reservation_id`, `order_id`, confirmation `idempotency_key`; entering/editing clears preview |
 | `preview` | Requires loaded text and target; calls `preview_calculated_quote`, stores successful immutable snapshot |
 | `confirm` | Redisplays target and quote; literal `CONFIRM` submits `confirm_calculated_quote` once; any other answer declines without a request |
+| `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key`; literal `BIND_SETTLEMENT` |
+| `issue` | `issuance_id`, `order_id`, `idempotency_key`; literal `ISSUE` |
 | `view` | Explicit `reservation_id`; enter the identity returned in the receipt |
 | `release` / `cancel` | Explicit `reservation_id` and `idempotency_key`; each selected action submits once |
 | `quit` | Closes the owned child; sends no release/cancel/compensation |
@@ -2462,14 +2467,15 @@ prints the entire proposed `{surface, operation, arguments}` request, and requir
 literal uppercase `SUBMIT`. Anything else declines with zero submissions.
 Approval is consumed once; explicit replay requires selecting the action again,
 entering all identifiers/arguments and its key, and approving again. There are no
-implicit identifiers, keys, prices, expiry or clock values. `reservation_id`
-requires a JSON string (for example `"reserve-1"`) or explicit JSON `null`;
+implicit identifiers, keys, prices, expiry or clock values. In `list_resale_inputs`,
+`reservation_id` requires a JSON string (for example `"reserve-1"`) or explicit JSON `null`;
 other identifiers/labels are plain text. Integers require decimal digits, with
 no float conversion, fractional values or scientific notation. The unchanged
 service validates supported ranges, ownership and timing.
 
 | Action | Prompt order before the mutation key/approval |
 |---|---|
+| `adopt_issued_from_booking` | Plain-text `reservation_id`, `right_id`; see [guided fulfillment](#guided-local-fulfillment-in-the-shared-console) |
 | `list_resale_inputs` | `listing_id`, `right_id`, `version`, `seller_role`, `recipient_role`, `amount`, `expires_ms`, `reservation_id` |
 | `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
 | `release_hold` | `hold_id`, `buyer_role` |
@@ -2600,6 +2606,7 @@ last for mutations; no value is copied from a view or earlier reply.
 
 | Action | Prompt order | Required confirmation |
 |---|---|---|
+| `adopt_issued_from_booking` | `reservation_id`, `right_id`, `idempotency_key`; see [guided fulfillment](#guided-local-fulfillment-in-the-shared-console) | literal `ADOPT` |
 | `authorize_admission_inputs` | `admission_id`, `right_id`, `version`, `holder_role`, `gate_role`, `request`, `expires_ms`, `idempotency_key` | literal `AUTHORIZE` |
 | `consume_inputs` | `consume_id`, `right_id`, `version`, `gate_role`, `request`, `idempotency_key` | literal `CONSUME` |
 | `set_clock` | `subject_id`, `now_ms`, `idempotency_key` | literal `SET_CLOCK` |
@@ -2861,7 +2868,7 @@ python3 -B reference/booking_resale_admission/shared_ticket_console.py \
 Select `booking`, `resale`, `admission` or `settlement`. Each surface's `quit`
 returns to the shared menu; menu `quit` closes the desk once. Navigation and
 unknown menu input send no business requests. Surface actions and confirmations
-are unchanged. There are no automatic views, clock changes, retries, child
+are those of the individual consoles, including [guided fulfillment](#guided-local-fulfillment-in-the-shared-console). There are no automatic views, clock changes, retries, child
 replacements or compensation. `--fixture` and a finite positive
 `--cleanup-timeout` are required; that budget bounds cleanup, not response time.
 
@@ -2928,3 +2935,106 @@ capability-grade promotion. Persistence, real payment, issuance, production
 admission, legal/accounting effects and durable settlement closure remain open.
 See [coverage and actual builder validation](../../validation/2026-11-05-plan-local-shared-ticket-console/README.md);
 non-author exact-head review and required KTX/KIX CI remain delivery gates.
+
+## Guided local fulfillment in the shared console
+
+The shared console now exposes the existing booking fulfillment and issued-ticket
+handoff operations. It retains one `TicketOperationsClient`, child and service
+graph while switching surfaces. Booking uses `BookingSession`; target adoption
+uses the existing `IssuedTicketAdapter` through shared dispatch. The UI copies
+no issuance checks, original booking fields, show policy or adoption payload.
+
+Select `booking`, `resale` or `admission` at the shared menu, then enter an action.
+Each new mutation prints the complete `proposed=` request before its literal
+confirmation. Any other answer declines and discards that proposal. A later
+action requires entering all caller fields again. Confirmation sends exactly one
+request; there are no automatic reads, retries or downstream actions.
+
+| Surface / action | Fields in prompt order | Literal confirmation |
+|---|---|---|
+| booking / `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key` | `BIND_SETTLEMENT` |
+| booking / `issue` | `issuance_id`, `order_id`, `idempotency_key` | `ISSUE` |
+| admission / `adopt_issued_from_booking` | `reservation_id`, `right_id`, `idempotency_key` | `ADOPT` |
+| resale / `adopt_issued_from_booking` | `reservation_id`, `right_id`, `idempotency_key` | `SUBMIT` |
+
+All new fields are explicit nonempty strings without surrounding whitespace;
+adoption reservation IDs are plain text. Resale `list_resale_inputs` retains its
+existing JSON string or explicit `null` reservation prompt. Booking must first
+receive a successful explicit `set_clock`: enter `subject_id`, `now_ms`, then
+`idempotency_key`. Fixture clock initialization alone does not satisfy this
+session requirement; the service returns its original terminal `BookingInputError`
+if it is omitted. The console supplies no clock or identifier defaults.
+
+The caller selects issuance, each target adoption, resale listing/transfer,
+admission authorization and consumption independently. Binding does not issue;
+issuance does not adopt; adoption does not list, authorize or consume. Admission
+still uses `authorize_admission_inputs` (`admission_id`, `right_id`, `version`,
+`holder_role`, `gate_role`, `request`, `expires_ms`, `idempotency_key`, then
+`AUTHORIZE`) and a separate `consume_inputs` (`consume_id`, `right_id`, `version`,
+`gate_role`, `request`, `idempotency_key`, then `CONSUME`).
+
+The unchanged [fulfillment fixture](fixtures/ticket_operations_fulfillment_session.json)
+contains an explicitly synthetic `reserve-2` / `order-2` for `buyer-3`, slot 1 of
+`show-1`, amount `10001` KRW, quote `quote-2`, payment reference `cd` repeated 32
+times, and expiry `1120000`. Its setup has already reached `PAYMENT_NOTED` and
+committed synthetic settlement `claim-2`. It has **not** bound, issued or adopted
+that second ticket. `issue-2` is a caller-selected issuance ID in the examples.
+Clock `1000000`, all keys, roles, request hashes and times are example inputs,
+never defaults. The fixture's earlier `reserve-1` / `issue-1` is independent
+prepared inventory used only for boundary examples. No payment-reservation
+handoff has been added or unblocked.
+
+Run from repository root with Python 3.12, without sockets or new dependencies:
+
+```bash
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_fulfillment.txt
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_fulfillment_consume.txt
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_fulfillment_boundaries.txt
+```
+
+The first transcript exits 0: view prepared payment, set the booking clock,
+confirm binding, observe still `PAYMENT_NOTED`, confirm issuance, observe
+`ISSUED`, separately adopt into admission and resale, then request current views
+without restarting the child. Admission is `ELIGIBLE`; resale observes holder
+`buyer-3` / version 1. The second exits 0 and continues through `AUTHORIZED`,
+declined consumption and an unchanged authorized view, then independently
+confirmed consumption. Current admission and booking observe version 2;
+resale independently retains version 1. It explicitly replays issuance and both
+adoptions after consumption: historical receipts have `duplicate: true`,
+`applied: null` and their original version 1. A receipt is an action snapshot;
+only an explicitly requested view observes current local state. Booking labels
+this distinction alongside the complete original `desk=` envelope; resale and
+admission retain their existing receipt/view renderers.
+
+The boundaries transcript intentionally exits 1. It preserves source refusals
+before issuance, missing reservation/read failures and crossed reservation/right
+identities; declines binding and issuance without sending; explicitly issues and
+recovers using the previously source-refused adoption keys; then demonstrates
+exact replay and changed-body `IDEMPOTENCY_CONFLICT` for all four new actions.
+Adoption conflicts use the other valid `reserve-1` / `issue-1` pair, so they reach
+target idempotency rather than failing extraction first. Tests also derive an
+unpaid fixture by removing only `order-2`'s synthetic `observe_payment` entry;
+issuance returns retained `ILLEGAL_TRANSITION`, with current booking still
+`CONFIRMED` and no payment or right. No new unpaid fixture schema is introduced.
+
+Full `{error:{code}}` and `{error:{type,message}}` envelopes remain visible.
+Known source/domain refusals permit explicit continuation and make exit 1
+sticky. Terminal errors, transport uncertainty, interruption and output failure
+fence the entire shared console with exit 2 and one child cleanup. Later queued
+surface actions are not read or sent. Clean exit is 0.
+
+Product/admission policy remains **UNDETERMINED — Astra/User**; legal effects
+remain **UNDETERMINED — User/legal**. These source-informed synthetic examples
+retain false finality/durability/production flags. They add no chain execution,
+credential reissuance, organizer lifecycle, new protocol command, payment handoff,
+production runtime or persistence. See the [builder evidence and remaining
+review/CI gates](../../validation/2026-11-05-plan-local-fulfillment-console/README.md).
