@@ -2662,5 +2662,123 @@ production runtime or capability-grade change is introduced. Existing Class-B
 clock-skew characterization is retained without a cross-machine rollback claim.
 
 See [builder coverage, commands and limits](../../validation/2026-11-05-plan-plan-local-admission-console/README.md).
+
+## Guided local settlement console
+
+[`settlement_console.py`](settlement_console.py) supplies standard-library terminal
+prompts over one `TicketOperationsClient` child and the existing shared ticket
+desk. Importing launches nothing. The caller selects a fixture and an already
+known settlement ID; setup belongs to that fixture. Every selected action sends
+one request, and `main()` closes that same child in `finally`. `run_console(client,
+*, input_stream, output_stream, error_stream)` leaves cleanup to its caller.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_fact_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_journey.txt
+```
+
+Both options are required. The finite positive cleanup timeout bounds shutdown
+waits only; it is not a response deadline. Requests block synchronously. There
+are no sockets, credentials, downloads or provider calls.
+
+After `action`, the fields below are prompted in order. Every operation except
+`view` then prompts for an explicit `idempotency_key`, prints the complete
+`proposed=` request and requires literal `SUBMIT`. Every other answer discards
+that action. Approval is consumed by that selection. `quit` exits locally and
+sends nothing. The console exposes no other selectors.
+
+| Action | Fields in prompt order, before the mutation key |
+|---|---|
+| `commit`, `observe_statement` | `settlement_id`, `movement_id`, `gross`, `amount`, `fee`, `tax`, `held`, `adjustment`, `adjustment_reason` |
+| `commit_recorded_statement`, `observe_recorded_statement` | `settlement_id`, `movement_id` |
+| `distribute` | `settlement_id`, `order` |
+| `bind_refund` | `settlement_id`, `refund_id`, `amount`, `beneficiary_role`, `reason` |
+| `observe_mock_cancel_acceptance` | `settlement_id`, `source_id`, `amount` |
+| `observe_recorded_cancel_acceptance` | `settlement_id`, `source_id` |
+| `view` | `settlement_id` |
+
+Amounts require explicit decimal integers, never floats, exponent notation or
+implicit zeros. Signed negative integers are forwarded for service validation.
+`order` requires a JSON array of strings; its order and duplicates are preserved
+for service validation. `adjustment_reason` requires a JSON string or explicit
+`null`. Other fields require explicit nonempty text without surrounding
+whitespace. No identity, key, reason, amount or ordering defaults are supplied.
+Malformed local input discards the pending selection and returns to `action`.
+Economic validation and allocation calculations belong to the unchanged service.
+
+The existing wire envelope is preserved, for example:
+
+```json
+{"surface":"settlement","operation":"observe_statement","arguments":{"settlement_id":"claim-2","movement_id":"later","gross":4001,"amount":3801,"fee":200,"tax":0,"held":0,"adjustment":0,"adjustment_reason":null,"idempotency_key":"later"}}
+{"surface":"settlement","operation":"distribute","arguments":{"settlement_id":"claim-2","order":["platform","organizer"],"idempotency_key":"distribution"}}
+{"surface":"settlement","operation":"view","arguments":{"settlement_id":"claim-2"}}
+```
+
+Each reply is saved before display and printed in full as `desk=` JSON, including
+its original `receipt`, `view` or `error` envelope, provenance and false flags.
+Summaries copy service-provided integers directly and separately show Cash
+(`confirmed_cash`, `distributed_cash`, `undistributed_cash`), Statement position
+(`receivable_open`, `non_cash_accounted`), each Allocation (`payee`, `face`,
+`distributed`, `cancelled_unpaid`, `recovery_due`, `outstanding`), Refund
+(`refund_face`, `refund_accepted`, `refund_outstanding`, `refund_bearer_policy`,
+`distribution_blocked`), PG adjustment (`pg_adjustment_outstanding`) and
+`distribution_order`. Phase, provenance and flags are retained in the Settlement
+summary too. A null claim displays unavailable claim data, without invented zeros.
+
+**Action snapshot** means `receipt.settlement.claim`, including historical first
+results on replay with `duplicate: true`, `applied: null`. **Current service
+observation** means `view.claim` from a separately selected `view`. A receipt
+never triggers an automatic read. No sequencing, calculations, retry,
+compensation or automatic distribution is performed by the console.
+
+The [explicit answers](fixtures/settlement_console_journey.txt) run against one
+real local desk subprocess, using the unchanged fact-input fixture. Each mutation
+is followed by a caller-selected view. The transcript performs:
+
+| Explicit action on `claim-2` | Service result, integer synthetic units |
+|---|---|
+| Commit `initial`, key `manual-commit`, gross 6000, amount 5500, fee 200, tax 100, held 100, adjustment 100, reason `"synthetic"` | Cash 5500; open receivable 4001; non-cash accounted 500 |
+| Observe `later`, key `later`, gross 4001, amount 3801, fee 200, tax/held/adjustment 0, reason `null` | Cash 9301; open receivable 0; non-cash accounted 700 |
+| Distribute, key `distribution`, order `["platform","organizer"]` | Distributed cash 9301; undistributed cash 0; obligation faces remain organizer 9501, platform 500 |
+| Bind refund `refund`, key `refund`, amount 4000, beneficiary `buyer-3`, reason `synthetic` | Refund face/outstanding 4000; accepted 0; bearer policy `UNDEFINED`; distribution blocked |
+| Observe synthetic cancellation acceptance `accept`, key `accept`, amount 1000 | Refund accepted 1000; outstanding 3000; PG adjustment outstanding 1000 |
+| Explicitly repeat the original commit and key | Historical action snapshot: cash 5500, open receivable 4001; duplicate true, applied null |
+| Explicit `view` | Current cash 9301; refund outstanding 3000; PG adjustment outstanding 1000 |
+
+The final current display includes these separate lines (the full desk envelopes
+are also printed):
+
+```text
+synthetic cancellation acceptance; not real refund completion
+Current service observation Cash={"confirmed_cash": 9301, "distributed_cash": 9301, "undistributed_cash": 0}
+Current service observation Statement position={"non_cash_accounted": 700, "receivable_open": 0}
+Current service observation Refund={"distribution_blocked": true, "refund_accepted": 1000, "refund_bearer_policy": "UNDEFINED", "refund_face": 4000, "refund_outstanding": 3000}
+Current service observation PG adjustment={"pg_adjustment_outstanding": 1000}
+```
+
+Acceptance is always labelled **synthetic cancellation acceptance; not real
+refund completion**. `funds_executed`, `bank_debit_observed`,
+`external_return_closed` and `durable` remain false. Insufficient cash can leave
+residual obligations after explicit distribution; a shortfall is not itself a
+refusal and never shrinks obligation faces in the display.
+
+Known domain/source refusals preserve the desk error and allow another explicit
+selection. Startup/structural errors, uncertain transport, EOF, interruption or
+terminal I/O failure fence the console immediately. Diagnostics retain exception
+causes, observed request/reply bytes and the last complete reply; no queued action
+is submitted, child replaced, rollback inferred or request resubmitted. Exit 0
+means clean quit, 1 means known refusal or nonzero child exit, and 2 means terminal
+failure/uncertainty (including cleanup failure). Cleanup cannot undo accepted work.
+
+Distribution/refund policy remains **UNDETERMINED — Astra/User**; accounting/legal
+effects remain **UNDETERMINED — User/designated advisers**. The existing class-B
+zero-cash distribution uncertainty is preserved; the console neither selects a
+policy nor forbids an otherwise valid explicit request. This remains synthetic,
+local and in-memory. P04 durable closure, F04, reward coupling, persistence,
+new ledgers/read models, contracts/FSMs/catalogue/SDK changes and production
+runtime are outside scope. See [coverage and actual builder evidence](../../validation/2026-11-05-plan-plan-local-settlement-console/README.md);
+non-author exact-head review and both required CI workflows remain separate gates.
 These are source-informed composition tests; non-author A2 exact-final-head
 review and both exact-head KTX/KIX workflows remain required separately.
