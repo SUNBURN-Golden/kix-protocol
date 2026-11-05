@@ -2553,3 +2553,114 @@ No sockets, providers, real money, production runtime or protocol commands are
 added. See [builder evidence](../../validation/2026-11-05-plan-plan-local-resale-console/README.md)
 for coverage, executed verification, limitations and pending independent
 exact-head review/CI gates.
+
+## Guided local admission console
+
+[admission_console.py](admission_console.py) provides standard-library terminal
+prompts over one `TicketOperationsClient` and one local ticket-desk subprocess.
+Importing launches nothing. It exposes only the existing admission session
+selectors below. Authorization and consumption are separate actions, with
+separate confirmations; selecting consumption never invokes authorization.
+
+Run from the repository root with a **caller-selected** fixture containing
+already-issued and adopted synthetic tickets:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+python3 reference/booking_resale_admission/admission_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_admission_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/admission_console_consume.txt
+# Expected exit: 0. Omit the redirect for interactive prompts.
+python3 reference/booking_resale_admission/admission_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_admission_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/admission_console_decline.txt
+# Expected exit: 0; declining consumption submits nothing.
+```
+
+Both flags are required. `--cleanup-timeout` must be finite and positive; it
+budgets child cleanup only, with no response deadline. `main(argv=None)` launches
+once and closes in `finally`. `run_console(client, *, input_stream,
+output_stream, error_stream)` runs synchronous prompts with caller-owned cleanup.
+There are no sockets, polling, automatic requests or replacement children.
+
+The unchanged [shared fixture loader](ticket_operations_fixture.py) uses
+`fixture_version`, `provenance`, `setup`, `offers` and `presentations`. Each setup
+entry retains `machine`, `operation`, `subject_id`, `idempotency_key` and `body`;
+see [fixture input](#fixture-input). The reused
+[fixture](fixtures/ticket_operations_admission_inputs_session.json) contains two
+issued tickets, matching resale/admission adoptions, explicit clocks and empty
+presentation recordings. The console introduces no schema extension, setup,
+issuance or reissuance operation. All example identities, keys, times and policy
+fields are synthetic caller inputs, never product defaults.
+
+Each field occupies one terminal line, in this order. The idempotency key comes
+last for mutations; no value is copied from a view or earlier reply.
+
+| Action | Prompt order | Required confirmation |
+|---|---|---|
+| `authorize_admission_inputs` | `admission_id`, `right_id`, `version`, `holder_role`, `gate_role`, `request`, `expires_ms`, `idempotency_key` | literal `AUTHORIZE` |
+| `consume_inputs` | `consume_id`, `right_id`, `version`, `gate_role`, `request`, `idempotency_key` | literal `CONSUME` |
+| `set_clock` | `subject_id`, `now_ms`, `idempotency_key` | literal `SET_CLOCK` |
+| `view` | `right_id` | none |
+| `view_credential` | `right_id`, `version`, `holder_role` | none |
+| `quit` | local exit, no request | none |
+
+Mutation proposals are printed completely as `proposed=<JSON>`. Any other
+confirmation declines and discards that proposal; replay needs a new action,
+complete inputs and another confirmation. Integers accept ASCII decimal digits
+only, parsed directly without floats. Empty text or surrounding whitespace is
+rejected locally without submission. Accepted text is preserved exactly, with
+no trimming, case conversion or generated keys. Semantic checks remain at the
+desk: for example `BAD` request text is submitted unchanged and refused with
+its original `ADMISSION_REQUEST` error. `request` means the existing opaque
+lowercase 64-hex representation, not authentication. For a clock change, enter
+`clock` explicitly; the console never calculates expiry or synchronizes clocks.
+
+Every request has exactly `surface`, `operation`, `arguments`, with
+`surface="admission"`. Replies appear completely as `desk=<JSON>` before
+summaries: original surface/operation, receipt/view/error fields, codes, messages,
+flags and evidence remain intact. Receipts are labeled **Action snapshot**;
+explicit views are labeled **Current local observation**. Stored credential
+phase/version/holder, authorization, consumption and caller presentation
+`version/holder_role/fresh/decision` remain separate. A historical authorization
+or `fresh: true` does not establish current admission authority.
+
+The socket-free [consume answers](fixtures/admission_console_consume.txt) run
+this complete interaction in **one real desk subprocess**:
+
+| Explicit action | Observable outcome |
+|---|---|
+| `view issue-1`; `view_credential issue-1/1/buyer-1` | `ELIGIBLE`, version 1; presentation separate from stored credential |
+| `set_clock clock/1000000/console-clock`, `SET_CLOCK` | Caller-selected clock, no inferred time |
+| Authorize `entry-1/issue-1/1/buyer-1/gate-a/11×32/1060000/entry-key`, `AUTHORIZE` | Action snapshot `AUTHORIZED`, no consumption |
+| `view issue-1` | Current `AUTHORIZED`, version 1, `consume_id: null` |
+| Consume `consume-1/issue-1/1/gate-a/11×32/consume-key`, `CONSUME` | Separate action snapshot `CONSUMED`, version 2 |
+| Repeat complete authorization and `AUTHORIZE` | Historical `AUTHORIZED`, `duplicate: true`, `applied: null` |
+| `view issue-1`; `view_credential issue-1/1/buyer-1` | Current `CONSUMED`, version 2; caller version 1 remains visible, `fresh: false` |
+
+`11×32` above abbreviates the literal 64-character request in the answer file;
+enter all characters. The [decline answers](fixtures/admission_console_decline.txt)
+authorize then answer `no` to consumption, followed by an explicit unchanged-state
+view (`AUTHORIZED`, version 1, no consumption). No follow-up view is automatic.
+
+Exit codes are 0 clean, 1 after known refusals, 2 terminal failure. A known refusal
+allows another explicit action only. Terminal desk envelopes, transport
+uncertainty, EOF, interruption or terminal input/output failure fence the loop
+and stop submissions. Received replies are saved before rendering and retained
+in diagnostics where output permits. Partial transport bytes and original causes
+are preserved; there is no retry, replay, clock change, compensation or recovery.
+Cleanup/EOF does not undo an accepted operation. Broken output may prevent display.
+
+This is `MOCK_GATE_ONLY` / `IN_MEMORY_FSM`; `external_admission: UNSUPPORTED` and
+all false production/finality flags remain unchanged. Admission timing and
+identity policy: **UNDETERMINED — Astra/User**. Legal effects:
+**UNDETERMINED — User/legal**. P03 remains design-stage (설계중). No scanner,
+hardware, authentication, new protocol command, persistence, external service,
+production runtime or capability-grade change is introduced. Existing Class-B
+clock-skew characterization is retained without a cross-machine rollback claim.
+
+See [builder coverage, commands and limits](../../validation/2026-11-05-plan-plan-local-admission-console/README.md).
+These are source-informed composition tests; non-author A2 exact-final-head
+review and both exact-head KTX/KIX workflows remain required separately.
