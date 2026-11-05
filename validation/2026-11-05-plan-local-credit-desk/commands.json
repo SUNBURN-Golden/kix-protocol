@@ -1,0 +1,242 @@
+{
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "CARGO_NET_OFFLINE": "true"
+  },
+  "results": [
+    {
+      "command": "PYTHONPATH=reference/credit_advance_f04 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest test_credit_session test_credit_cli",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "...................\n----------------------------------------------------------------------\nRan 19 tests in 1.501s\n\nOK\n"
+    },
+    {
+      "command": "python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_credit_session.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "......\n----------------------------------------------------------------------\nRan 6 tests in 0.040s\n\nOK\n"
+    },
+    {
+      "command": "python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_credit_cli.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ".............\n----------------------------------------------------------------------\nRan 13 tests in 2.219s\n\nOK\n"
+    },
+    {
+      "command": "python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ".......................................................................................................................................................................\n----------------------------------------------------------------------\nRan 167 tests in 8.640s\n\nOK\n"
+    },
+    {
+      "command": "python3.12 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "Ran 167 tests in 7.751s\n\nOK\n"
+    },
+    {
+      "command": "for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation token_reward provider_facts; do PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s \"reference/$suite\" -t \"reference/$suite\"; done",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "settlement_f01_f03: Ran 224 tests in 1.770s OK\nbooking_resale_admission: Ran 838 tests in 87.158s OK\ncredit_advance_f04: Ran 167 tests in 7.756s OK\nai_delegation: Ran 85 tests in 2.611s OK\ntoken_reward: Ran 186 tests in 3.063s OK\nprovider_facts: Ran 73 tests in 11.553s OK\n"
+    },
+    {
+      "command": "python3 scripts/check_docs_index.py",
+      "exit_code": 0,
+      "stdout": "docs index ok: scanned=358 indexed=323 allowlisted=35\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_docs_index.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_ci_test_discovery.py",
+      "exit_code": 0,
+      "stdout": "ci test discovery ok: reference_suites=7 node_tests=8 modules=4 excluded=3\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_ci_test_discovery.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass (18 negative controls)\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_credit_evidence_map.py",
+      "exit_code": 0,
+      "stdout": "credit evidence map ok: rows=22 headings=22 items=5 citations=128 COVERED=14 PARTIAL=4 NOT_COVERED=1 OPEN=3\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_credit_evidence_map.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass (55 negative controls)\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_evidence_map_rollup.py",
+      "exit_code": 0,
+      "stdout": "evidence map roll-up ok: contracts=25; textual index only\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_evidence_map_rollup.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass (16 negative controls)\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_status_register.py",
+      "exit_code": 0,
+      "stdout": "capability register ok: paths=457 ev_ids=15 original32=32\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_status_register.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_class_b_index.py",
+      "exit_code": 0,
+      "stdout": "class B index ok: rows=218 sources=73 symbols=47; textual index only\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_class_b_index.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass (20 negative controls)\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_ci_checker_wiring.py",
+      "exit_code": 0,
+      "stdout": "ci checker wiring ok: scripts=35 plain=34 self_test=35 self_test_only=1 docs=22 citations=99\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_ci_checker_wiring.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass (13 negative controls)\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_tl_predicate_evidence_map.py",
+      "exit_code": 0,
+      "stdout": "tl predicate evidence map ok: rows=49 expected=49 citations=58 HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=24 PARTIAL=7\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_tl_predicate_evidence_map.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_openapi_contract.py",
+      "exit_code": 0,
+      "stdout": "openapi contract pin ok: commands=84 core=40 fsm=44 sha256=ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e gitBlob=619ae21c82ca3df5661bd3831613f15fa65225ff\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_openapi_contract.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_integration_gate_openapi.py",
+      "exit_code": 0,
+      "stdout": "integration-gate openapi ok: commands=84 productionEndpoint=false publicHost=false\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_integration_gate_openapi.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: pass\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/verify_runtime_architecture.py",
+      "exit_code": 0,
+      "stdout": "architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/test_runtime_architecture.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ".......\n----------------------------------------------------------------------\nRan 7 tests in 0.702s\n\nOK\n"
+    },
+    {
+      "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline",
+      "exit_code": 101,
+      "stdout": "",
+      "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (.../runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\n"
+    },
+    {
+      "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings",
+      "exit_code": 101,
+      "stdout": "",
+      "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (.../runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\n"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs",
+      "exit_code": 0,
+      "stdout": "69564b166f0c27f9af5d8422f0a466b18d74c20f\nb607996c83a119c349f1cc90469ac1ba82764e20\n",
+      "stderr": ""
+    },
+    {
+      "command": "git diff --exit-code origin/main -- reference/v0.3-rc1 .aiops docs/tasks .github runtime reference/credit_advance_f04/credit_fsm.py reference/credit_advance_f04/mock_credit.py reference/credit_advance_f04/open_terms.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python3 reference/credit_advance_f04/credit_cli.py --fixture reference/credit_advance_f04/fixtures/committed.json --requests reference/credit_advance_f04/fixtures/lifecycle.jsonl",
+      "exit_code": 0,
+      "stdout": "15 JSONL lines; two runs and one stdin run byte-identical; recorded in lifecycle.stdout.jsonl",
+      "stderr": ""
+    },
+    {
+      "command": "python3 reference/credit_advance_f04/credit_cli.py --fixture reference/credit_advance_f04/fixtures/committed.json --requests reference/credit_advance_f04/fixtures/settlement_gates.jsonl",
+      "exit_code": 1,
+      "stdout": "17 JSONL lines; two runs and one stdin run byte-identical; recorded in settlement_gates.stdout.jsonl",
+      "stderr": ""
+    },
+    {
+      "command": "python3 reference/credit_advance_f04/credit_cli.py --fixture reference/credit_advance_f04/fixtures/captured.json --requests reference/credit_advance_f04/fixtures/gate.jsonl",
+      "exit_code": 1,
+      "stdout": "13 JSONL lines; two runs and one stdin run byte-identical; recorded in gate.stdout.jsonl",
+      "stderr": ""
+    },
+    {
+      "command": "python3 reference/credit_advance_f04/credit_cli.py --fixture reference/credit_advance_f04/fixtures/unbound.json --requests reference/credit_advance_f04/fixtures/decline.jsonl",
+      "exit_code": 1,
+      "stdout": "14 JSONL lines; two runs and one stdin run byte-identical; recorded in decline.stdout.jsonl",
+      "stderr": ""
+    },
+    {
+      "command": "python3 reference/credit_advance_f04/credit_cli.py --fixture reference/credit_advance_f04/fixtures/unbound.json --requests reference/credit_advance_f04/fixtures/boundaries.jsonl",
+      "exit_code": 1,
+      "stdout": "51 JSONL lines; two runs and one stdin run byte-identical; recorded in boundaries.stdout.jsonl",
+      "stderr": ""
+    }
+  ]
+}
