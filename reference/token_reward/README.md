@@ -111,7 +111,84 @@ Running it alone starts a fresh session and reports `UNKNOWN_REWARD`.
 No request is retried or reconciled automatically. Boundary requests demonstrate
 open-window, forbidden obligation-pool and AI-approval rejections.
 
-## Output and errors
+## Guided local reward console
+
+Run one fresh in-process session with the same explicit opening-balance fixture:
+
+```bash
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json
+```
+
+Choose one of the twelve operations in the schema table above, or local `quit`.
+There is no startup read. Each selection collects every field again, even for a
+deliberate replay. Prompt order is:
+
+1. `reward_id_value` for every operation except `observe`, `reward_ids`, `pool_view`.
+2. The other required arguments in the table's order. For `observe` these are
+   `reward_key`, `source_view`, `rule_version`, `amount`, `source_kind`.
+3. For `mark_eligible` or `submit`, one JSON object of optional arguments. Only
+   the table's optional names are allowed. `{}` omits all; `null` on a named field
+   remains explicitly supplied. For example, `{"recipient_cap":null}` supplies
+   that key while omitting `abuse_kind` and `program_cap`. This prompt adds no
+   wrapper field to the request.
+4. For mutations, fresh `idempotency_key`, then confirmation. Reads have neither.
+
+Enter `reward_key`, `source_view`, `approval_ref` as strict JSON objects using
+the existing nested schemas above. Enter `window_closed`, `abuse_clear` as JSON
+`true` or `false`. `amount` is an explicit decimal integer (optional minus sign;
+no plus, exponent, decimal point or surrounding whitespace). Optional values use
+JSON, including null or the complete `execution_permit` object. All remaining
+fields are unquoted text without surrounding whitespace. Blank lines supply no
+defaults. Source metadata and caller approval records pass through unchanged;
+the console supplies no source phase, currency, flags, prior record or identity.
+The FSM decides economic and lifecycle predicates, including negative amounts,
+caps, pool restrictions, approval actors and unsupported selector values.
+
+Before every mutation, the console prints and flushes complete canonical
+`proposed={"operation":...,"arguments":...}`. Only literal `SUBMIT` sends that
+request once; line endings are stripped, other whitespace is significant.
+Anything else declines and discards the selection. A confirmation authorizes
+one dispatch. There are no automatic reads, retries, reconciliation, subsequent
+transitions, downstream actions or compensation. To inspect current state, choose
+`view`, `reward_ids` or `pool_view` explicitly. UNKNOWN stays unresolved until
+the caller separately selects and confirms a permitted action; a terminal
+failure cannot resume dispatch in that session.
+
+Complete `desk=<envelope>` output preserves provenance, receipts, reads and error
+codes. Receipts are **historical action snapshots**, including replayed receipts;
+explicit reads are **current session observations**. An old OBSERVED receipt
+does not mean an ISSUED reward moved backward. `ISSUED` is synthetic and all seven
+production flags remain false. Nothing authenticates the supplied source facts,
+window closure or human approval slot. Policy values and approver designation
+remain with the owners identified below.
+
+Console statuses:
+
+- **0:** explicit `quit` with no domain refusal. Declines, unknown menu choices
+  and recoverable `input_error=` field syntax errors do not change status.
+- **1:** any `TokenRewardError`; sticky through later accepted actions and reads.
+- **2:** setup/dispatch-format failure, EOF (including at confirmation), interrupt,
+  unexpected exception or I/O failure. Stop immediately, without rollback claims.
+  `FENCED:` diagnostics retain the last envelope when available; failure to write
+  a diagnostic cannot authorize another call. Earlier mutations may be applied.
+
+Reproduce both console transcripts from the repository root:
+
+```bash
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json < reference/token_reward/fixtures/reward_console_journey.txt
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json < reference/token_reward/fixtures/reward_console_boundaries.txt
+```
+
+The success transcript exits 0 after observe → hold → eligibility → submit →
+effects, explicit historical replays and reads. The boundary transcript exits 1
+after open-window, forbidden-pool and AI-approval refusals followed by successful
+actions/reads. Both end with `quit`; EOF is not a clean exit.
+The [console evidence record](../../validation/2026-11-05-plan-local-reward-console/README.md)
+contains captured stdout, coverage mapping and actual local checks. The console
+has no sockets, child processes, external dependencies or settlement/reward FSM
+coupling. All synthetic limitations and Class B observations below still apply.
+
+## JSONL output and errors
 
 Each output is deterministic sorted JSON containing `operation`, synthetic
 `provenance`, and exactly one of `receipt`, `view`, `reward_ids`, `pool_view`,
