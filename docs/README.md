@@ -534,3 +534,8 @@
 
 - [F04 local credit desk usage](../reference/credit_advance_f04/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged credit FSM; optional real local settlement replay for the bound-draw COMMITTED gate; no policy, approval or runtime activation.
 - [plan-local-credit-desk evidence](../validation/2026-11-05-plan-local-credit-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-05 로컬 AI 위임 데스크 — 위치 안내만
+
+- [Local AI delegation desk usage](../reference/ai_delegation/README.md) — seven explicit session methods and a strict JSONL CLI over the unchanged synthetic mock; execution disabled, A5 check-order discrepancy retained with its owners, no policy or runtime activation.
+- [plan-local-ai-delegation-desk evidence](../validation/2026-11-05-plan-local-ai-delegation-desk/README.md) — builder-authored coverage, executed commands and deterministic transcripts; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
