@@ -19,6 +19,8 @@ from ticket_operations_fixture import load_fixture
 from settlement_fsm import SettlementError
 from statement_source import StatementSourceError
 from cancel_acceptance_source import CancelAcceptanceSourceError
+from settlement_input_adapter import SettlementInputSourceError
+from test_ticket_settlement_controls import settlement_flags
 
 HERE = Path(__file__).resolve().parent
 FIXTURE = HERE / 'fixtures/ticket_operations_settlement_fact_inputs_session.json'
@@ -33,6 +35,13 @@ OBSERVE = ['observe_statement', 'claim-2', 'later', '4001', '3801', '200', '0', 
 DISTRIBUTE = ['distribute', 'claim-2', '["platform","organizer"]', 'distribution', 'SUBMIT']
 REFUND = ['bind_refund', 'claim-2', 'refund', '4000', 'buyer-3', 'synthetic', 'refund', 'SUBMIT']
 ACCEPT = ['observe_mock_cancel_acceptance', 'claim-2', 'accept', '1000', 'accept', 'SUBMIT']
+INPUTS = HERE / 'fixtures/ticket_operations_settlement_inputs_session.json'
+START_BOOKING = HERE / 'fixtures/settlement_console_start_booking.txt'
+POLICY = dict(kind='PRIMARY_FEE_BPS', fee_bps=500, residual_payee='organizer', fee_payee='platform')
+INIT = ['initiate_from_booking', 'claim-2', 'reserve-2', 'explicit-booking-trade',
+        'explicit-debtor', json.dumps(POLICY), 'booking-input', 'SUBMIT']
+AUTH = ['authorize', 'claim-2', 'auth-input', 'SUBMIT']
+CAPTURE = ['capture', 'claim-2', 'capture-input', 'SUBMIT']
 
 
 def script(lines):
@@ -40,12 +49,22 @@ def script(lines):
 
 
 class SettlementConsoleTests(unittest.TestCase):
-    def drive(self, answers, *, fixture=FIXTURE, client=None, stream=None):
+    def drive(self, answers, *, fixture=FIXTURE, client=None, stream=None, unchanged=()):
         output, errors = io.StringIO(), io.StringIO()
         if client is None:
             client = TicketOperationsClient.launch(fixture, cleanup_timeout=1)
         calls, replies = [], []
         original = client.request
+        # Test-only source observations bracket the console, outside its request stream.
+        before = [original(row) for row in unchanged]
+        original_close = client.close
+
+        def checked_close():
+            try:
+                self.assertEqual([original(row) for row in unchanged], before)
+            finally:
+                child_status = original_close()
+            return child_status
 
         def record(row):
             calls.append(deepcopy(row))
@@ -55,7 +74,7 @@ class SettlementConsoleTests(unittest.TestCase):
 
         with patch('settlement_console.TicketOperationsClient.launch', return_value=client) as launch, \
                 patch.object(client, 'request', side_effect=record), \
-                patch.object(client, 'close', wraps=client.close) as close, \
+                patch.object(client, 'close', wraps=checked_close) as close, \
                 patch('sys.stdin', stream if stream is not None else script(answers)), \
                 patch('sys.stdout', output), patch('sys.stderr', errors):
             status = main(['--fixture', str(fixture), '--cleanup-timeout', '1'])
@@ -71,7 +90,8 @@ class SettlementConsoleTests(unittest.TestCase):
         for row, reply in zip(calls, replies, strict=True):
             try:
                 expected = dispatch_request(control, row)
-            except (SettlementError, StatementSourceError, CancelAcceptanceSourceError) as error:
+            except (SettlementError, StatementSourceError, CancelAcceptanceSourceError,
+                    SettlementInputSourceError) as error:
                 detail = ({'code': error.code} if isinstance(error, SettlementError) else
                           {'type': type(error).__name__, 'message': str(error)})
                 expected = dict(surface='settlement', operation=row['operation'], error=detail)
@@ -82,6 +102,8 @@ class SettlementConsoleTests(unittest.TestCase):
         self.assertEqual([json.loads(s) for s in re.findall(r'desk=(\{[^\n]+\})', output)], replies)
         self.assertIn('UNDETERMINED — Astra/User', output)
         self.assertIn('UNDETERMINED — User/designated advisers', output)
+        self.assertEqual([json.loads(s) for s in re.findall(r'proposed=(\{[^\n]+\})', output)],
+                         [r for r in calls if r['operation'] != 'view'])
 
     def summaries(self, replies, output):
         for reply in replies:
@@ -181,8 +203,113 @@ class SettlementConsoleTests(unittest.TestCase):
         self.parity(calls, replies, output, REFUNDS)
         self.summaries(replies, output)
 
+    def test_booking_start_journey_one_child_source_owned_amount_and_no_ticket_effects(self):
+        control = load_fixture(INPUTS)
+        for identity in ('claim-2', 'resale-claim'):
+            with self.assertRaises(SettlementError) as error:
+                control.settlement.view(identity)
+            self.assertEqual(error.exception.code, 'UNKNOWN_SETTLEMENT')
+        probes = [dict(surface=surface, operation=op, arguments={field: identity})
+                  for surface, op, field, identity in (
+                      ('booking', 'view', 'reservation_id', 'reserve-2'),
+                      ('resale', 'view_right', 'right_id', 'issue-1'),
+                      ('admission', 'view', 'right_id', 'issue-1'))]
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(
+                START_BOOKING.read_text().splitlines(), fixture=INPUTS, unchanged=probes)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (0, ''))
+        self.assertEqual([r['operation'] for r in calls], [
+            op for action in ('initiate_from_booking', 'authorize', 'capture',
+                'commit_recorded_statement', 'observe_recorded_statement', 'distribute',
+                'bind_refund', 'observe_mock_cancel_acceptance', 'initiate_from_booking')
+            for op in (action, 'view')])
+        self.parity(calls, replies, output, INPUTS)
+        self.summaries(replies, output)
+        self.assertEqual(calls[0]['arguments'], dict(settlement_id='claim-2',
+            reservation_id='reserve-2', trade_id='explicit-booking-trade',
+            debtor_role='explicit-debtor', policy=POLICY, idempotency_key='booking-input'))
+        self.assertEqual([replies[i]['view']['phase'] for i in (1, 3, 5, 7)],
+                         ['INITIATED', 'AUTHORIZED', 'CAPTURED', 'COMMITTED'])
+        for i in (0, 2):
+            self.assertIsNone(replies[i]['receipt']['settlement']['claim'])
+        self.assertEqual(replies[4]['receipt']['settlement']['claim']['confirmed_cash'], 0)
+        for reply in replies:
+            value = reply['view'] if 'view' in reply else reply['receipt']['settlement']
+            self.assertEqual((value['gross'], value['currency']), (10001, 'KRW'))
+            settlement_flags(self, value)
+        claim = replies[-1]['view']['claim']
+        self.assertEqual((claim['confirmed_cash'], claim['distributed_cash'],
+                          claim['refund_outstanding'], claim['pg_adjustment_outstanding']),
+                         (9301, 9301, 3000, 1000))
+        self.assertEqual(replies[-2]['receipt'], replies[0]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual(replies[-1]['view'], replies[-3]['view'])
+
+    def test_missing_sources_and_invalid_transition_continue_only_when_selected(self):
+        for kind in ('booking', 'resale'):
+            with self.subTest(source=kind):
+                missing = INIT.copy()
+                missing[0], missing[2] = 'initiate_from_' + kind, 'missing'
+                # Source errors leave the key free; only the subsequent explicit booking action uses it.
+                status, calls, replies, output, errors = self.drive(
+                    missing + INIT + VIEW + CAPTURE + VIEW + AUTH + VIEW + ['quit'], fixture=INPUTS)
+                self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+                self.parity(calls, replies, output, INPUTS)
+                self.assertEqual(replies[0]['error'], dict(type='SettlementInputSourceError',
+                    message='settlement input view failed'))
+                self.assertEqual(replies[3]['error'], dict(code='ILLEGAL_TRANSITION'))
+                self.assertEqual(replies[2]['view'], replies[4]['view'])
+                self.assertEqual(replies[-1]['view']['phase'], 'AUTHORIZED')
+
+    def test_policy_syntax_errors_discard_selection_without_any_submission(self):
+        bad = ('{', '', 'null', '[]', '1', 'true', '"policy"',
+               '{"fee_bps":1,"fee_bps":2}', '{"nested":{"k":1,"k":2}}',
+               '{"fee_bps":NaN}', '{"fee_bps":Infinity}', '{"fee_bps":-Infinity}',
+               '{"fee_bps":1e9999}')
+        for op in ('initiate_from_booking', 'initiate_from_resale'):
+            for value in bad:
+                with self.subTest(operation=op, policy=value):
+                    client, output, errors = Mock(), io.StringIO(), io.StringIO()
+                    status = run_console(client, input_stream=script(
+                        [op, *INIT[1:5], value, 'quit']), output_stream=output, error_stream=errors)
+                    self.assertEqual((status, errors.getvalue()), (0, ''))
+                    client.request.assert_not_called()
+                    self.assertIn('input_error=', output.getvalue())
+                    self.assertNotIn('proposed=', output.getvalue())
+
+    def test_policy_objects_are_forwarded_unchanged_and_retained_keys_conflict(self):
+        for policy, code in (({}, 'POLICY_FIELDS'), (POLICY | {'extra': 'explicit'}, 'POLICY_FIELDS'),
+                (POLICY | {'kind': 'UNSUPPORTED'}, 'POLICY_KIND'),
+                (POLICY | {'fee_bps': 10001}, 'POLICY_FEE_BPS'),
+                (POLICY | {'fee_bps': True}, 'POLICY_FEE_BPS'),
+                (POLICY | {'fee_bps': 0.5}, 'POLICY_FEE_BPS'),
+                (POLICY | {'fee_payee': 'organizer'}, 'POLICY_PAYEE_COLLISION')):
+            with self.subTest(policy=policy):
+                invalid = INIT.copy()
+                invalid[5] = json.dumps(policy)
+                fresh = INIT.copy()
+                fresh[-2] = 'fresh-init'
+                conflict = INIT.copy()
+                conflict[3] = 'changed-trade'
+                conflict[-2] = 'fresh-init'
+                status, calls, replies, output, errors = self.drive(
+                    invalid + INIT + fresh + AUTH + CAPTURE + VIEW + fresh + conflict + VIEW + ['quit'],
+                    fixture=INPUTS)
+                self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+                self.assertEqual(calls[0]['arguments']['policy'], policy)
+                self.assertEqual(replies[0]['error'], dict(code=code))
+                self.assertEqual(replies[1]['error'], dict(code='IDEMPOTENCY_CONFLICT'))
+                self.assertEqual(replies[-2]['error'], dict(code='IDEMPOTENCY_CONFLICT'))
+                self.assertEqual(replies[-3]['receipt'], replies[2]['receipt'] | dict(duplicate=True, applied=None))
+                self.assertEqual(replies[-1]['view'], replies[5]['view'])
+                self.assertEqual(replies[-1]['view']['phase'], 'CAPTURED')
+                self.parity(calls, replies, output, INPUTS)
+
     def test_every_mutation_requires_literal_single_use_submit(self):
-        actions = [COMMIT, OBSERVE, DISTRIBUTE, REFUND, ACCEPT,
+        resale = INIT.copy()
+        resale[0] = 'initiate_from_resale'
+        resale[2] = 'list-1'
+        actions = [INIT, resale, AUTH, CAPTURE, COMMIT, OBSERVE, DISTRIBUTE, REFUND, ACCEPT,
             ['commit_recorded_statement', 'claim-2', 'statement-1', 'key', 'SUBMIT'],
             ['observe_recorded_statement', 'claim-2', 'statement-2', 'key', 'SUBMIT'],
             ['observe_recorded_cancel_acceptance', 'claim-2', 'source', 'key', 'SUBMIT']]
@@ -193,6 +320,12 @@ class SettlementConsoleTests(unittest.TestCase):
         status, calls, _, output, errors = self.drive(COMMIT + OBSERVE[:-1] + ['no', 'quit'])
         self.assertEqual((status, len(calls), errors), (0, 1, ''))
         self.assertEqual(json.loads(output.split('proposed=')[1].splitlines()[0]), calls[0])
+        for action in (INIT, resale, AUTH, CAPTURE):
+            with self.subTest(action=action[0]):
+                # Approval of one selection cannot authorize the next transition.
+                status, calls, _, _, errors = self.drive(
+                    INIT + action[:-1] + ['no', 'quit'], fixture=INPUTS)
+                self.assertEqual((status, len(calls), errors), (0, 1, ''))
 
     def test_invalid_syntax_never_submits_or_invents_defaults(self):
         bad_inputs = [COMMIT[:i] + [v] for i, v in (
@@ -378,6 +511,15 @@ class SettlementConsoleTests(unittest.TestCase):
         self.assertIn('"refund_outstanding": 3000', result.stdout)
         self.assertIn('Action snapshot', result.stdout)
         self.assertIn('Current service observation', result.stdout)
+
+    def test_booking_start_transcript_as_cli_subprocess(self):
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'settlement_console.py'),
+            '--fixture', str(INPUTS), '--cleanup-timeout', '1'], input=START_BOOKING.read_text(),
+            text=True, capture_output=True, timeout=10, env=os.environ.copy())
+        self.assertEqual((result.returncode, result.stderr), (0, ''))
+        self.assertEqual(len(re.findall(r'desk=', result.stdout)), 18)
+        self.assertIn('"refund_outstanding": 3000', result.stdout)
+        self.assertIn('claim data unavailable (claim=null)', result.stdout)
 
 
 if __name__ == '__main__':
