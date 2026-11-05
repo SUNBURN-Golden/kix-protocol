@@ -7,6 +7,7 @@ import re
 import sys
 
 from booking_console import _diagnostic, _json
+from admission_fixture import decode_json
 from ticket_operations_client import TicketOperationsClient
 
 
@@ -14,6 +15,10 @@ from ticket_operations_client import TicketOperationsClient
 _STATEMENT = ('settlement_id', 'movement_id', 'gross', 'amount', 'fee', 'tax',
               'held', 'adjustment', 'adjustment_reason')
 _FIELDS = {
+    'initiate_from_booking': ('settlement_id', 'reservation_id', 'trade_id', 'debtor_role', 'policy'),
+    'initiate_from_resale': ('settlement_id', 'listing_id', 'trade_id', 'debtor_role', 'policy'),
+    'authorize': ('settlement_id',),
+    'capture': ('settlement_id',),
     'commit': _STATEMENT,
     'observe_statement': _STATEMENT,
     'commit_recorded_statement': ('settlement_id', 'movement_id'),
@@ -84,8 +89,17 @@ def run_console(client, *, input_stream, output_stream, error_stream):
 
     def field(name):
         hint = (' (JSON array of strings; explicit order)' if name == 'order' else
+                ' (JSON object; explicit synthetic policy)' if name == 'policy' else
                 ' (JSON string or explicit null)' if name == 'adjustment_reason' else '')
         value = prompt(name + hint)
+        if name == 'policy':
+            try:
+                value = decode_json(value)
+            except ValueError as error:
+                raise _InputError('policy requires a JSON object: ' + str(error)) from error
+            if type(value) is not dict:
+                raise _InputError('policy requires a JSON object')
+            return value
         if name in _AMOUNTS:
             if re.fullmatch(r'-?[0-9]+', value) is None:
                 raise _InputError(name + ' requires an explicit decimal integer')

@@ -2667,8 +2667,9 @@ See [builder coverage, commands and limits](../../validation/2026-11-05-plan-pla
 
 [`settlement_console.py`](settlement_console.py) supplies standard-library terminal
 prompts over one `TicketOperationsClient` child and the existing shared ticket
-desk. Importing launches nothing. The caller selects a fixture and an already
-known settlement ID; setup belongs to that fixture. Every selected action sends
+desk. Importing launches nothing. The caller selects a fixture and either an existing
+settlement ID or a new settlement ID plus an existing local reservation/listing.
+Source setup belongs to that fixture or explicit earlier desk actions. Every confirmed mutation sends
 one request, and `main()` closes that same child in `finally`. `run_console(client,
 *, input_stream, output_stream, error_stream)` leaves cleanup to its caller.
 
@@ -2691,6 +2692,9 @@ sends nothing. The console exposes no other selectors.
 
 | Action | Fields in prompt order, before the mutation key |
 |---|---|
+| `initiate_from_booking` | `settlement_id`, `reservation_id`, `trade_id`, `debtor_role`, `policy` |
+| `initiate_from_resale` | `settlement_id`, `listing_id`, `trade_id`, `debtor_role`, `policy` |
+| `authorize`, `capture` | `settlement_id` |
 | `commit`, `observe_statement` | `settlement_id`, `movement_id`, `gross`, `amount`, `fee`, `tax`, `held`, `adjustment`, `adjustment_reason` |
 | `commit_recorded_statement`, `observe_recorded_statement` | `settlement_id`, `movement_id` |
 | `distribute` | `settlement_id`, `order` |
@@ -2707,6 +2711,66 @@ for service validation. `adjustment_reason` requires a JSON string or explicit
 whitespace. No identity, key, reason, amount or ordering defaults are supplied.
 Malformed local input discards the pending selection and returns to `action`.
 Economic validation and allocation calculations belong to the unchanged service.
+
+`policy` requires an explicit JSON object. The existing strict fixture decoder
+rejects malformed JSON, duplicate keys (including nested keys), nonfinite constants
+and overflowing float exponents before any request is sent. Object contents pass
+through unchanged: missing/extra fields, unsupported kind, invalid basis points
+and payee collisions remain service validation. For example, `{}` is submitted
+and receives `POLICY_FIELDS`; that refusal retains its key, so a corrected body
+requires a separately supplied fresh key. No policy or identity is inferred.
+
+Initiation supplies neither `gross` nor `currency`; `SettlementInputAdapter` reads
+both from the selected source. The caller explicitly supplies every identifier,
+debtor role, synthetic policy and key. A complete example proposal is:
+
+```json
+{"surface":"settlement","operation":"initiate_from_booking","arguments":{"settlement_id":"claim-2","reservation_id":"reserve-2","trade_id":"explicit-booking-trade","debtor_role":"explicit-debtor","policy":{"kind":"PRIMARY_FEE_BPS","fee_bps":500,"residual_payee":"organizer","fee_payee":"platform"},"idempotency_key":"booking-input"}}
+```
+
+The 500 basis points, payee labels and identifiers here are synthetic caller
+inputs, never defaults or a resale economics decision. Initiation, authorization
+and capture each require their own literal `SUBMIT`. INITIATED and AUTHORIZED
+have `claim=null`; capture opens a claim with zero confirmed cash. Capturing
+before authorization receives `ILLEGAL_TRANSITION`; it never authorizes first.
+Missing sources return the full `SettlementInputSourceError` envelope, leave the
+target and key untouched, and allow another explicit selection.
+
+Two additional answer files start settlements that are absent from the unchanged
+input fixture. Run from the repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_start_booking.txt
+
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_start_resale.txt
+```
+
+The [booking answers](fixtures/settlement_console_start_booking.txt) create
+`claim-2` from `reserve-2` at source-owned 10001/KRW, explicitly authorize and
+capture, commit `statement-1`, observe `statement-2`, distribute, bind a 4000
+refund and accept a synthetic 1000 cancellation. Current cash/distributed cash
+is 9301, refund outstanding 3000 and PG adjustment outstanding 1000. Each step
+has an explicit view. The [resale answers](fixtures/settlement_console_start_resale.txt)
+first create `list-1` for `issue-1` through `resale.list_resale_inputs`, then
+navigate to settlement on the same child. They create `resale-claim` at
+source-owned 8000/KRW, authorize, capture, commit/observe the two recorded resale
+statements and distribute 8000. The fixture's `claim-1` remains an issuance
+anchor; neither target is preconstructed.
+
+Both journeys explicitly replay their original initiation key after later phases:
+the historical INITIATED receipt has `duplicate=true`, `applied=null`, and a null
+claim; the separately selected current view retains the later state. Changing
+`trade_id` with that retained key returns `IDEMPOTENCY_CONFLICT`. No settlement
+action binds the originating ticket, observes payment, issues/transfers a right,
+grants admission or advances another phase automatically. The resale listing
+remains LISTED, unbound and unpaid, with holder/version unchanged. See the
+[start-flow coverage and actual results](../../validation/2026-11-05-plan-local-settlement-console-start/README.md).
 
 The existing wire envelope is preserved, for example:
 

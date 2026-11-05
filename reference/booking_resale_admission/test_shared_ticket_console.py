@@ -18,6 +18,7 @@ from test_resale_fsm import assert_not_final as assert_resale_flags
 from resale_payment_source import ResalePaymentSourceError
 from statement_source import StatementSourceError
 from ticket_operations_cli import _error
+from ticket_operations_cli import dispatch_request
 from test_ticket_operations_client import direct
 from test_ticket_settlement_controls import settlement_flags
 from ticket_operations_client import TicketOperationsClient
@@ -28,6 +29,8 @@ ROOT = HERE.parents[1]
 FIXTURE = HERE / 'fixtures/ticket_operations_payment_session.json'
 QUOTE = HERE / 'fixtures/booking_console_quote.json'
 JOURNEY = HERE / 'fixtures/shared_ticket_console_journey.txt'
+START_RESALE = HERE / 'fixtures/settlement_console_start_resale.txt'
+INPUTS = HERE / 'fixtures/ticket_operations_settlement_inputs_session.json'
 SURFACES = ('booking', 'resale', 'admission', 'settlement')
 VIEWS = {'booking': ['view', 'reserve-1'], 'resale': ['view_right', 'issue-1'],
          'admission': ['view', 'issue-1'], 'settlement': ['view', 'resale-claim']}
@@ -47,9 +50,9 @@ def envelopes(output):
 
 
 class SharedTicketConsoleTests(unittest.TestCase):
-    def drive(self, answers=(), *, client=None, stream=None, output=None, errors=None):
+    def drive(self, answers=(), *, client=None, stream=None, output=None, errors=None, fixture=FIXTURE):
         if client is None:
-            client = TicketOperationsClient.launch(FIXTURE, cleanup_timeout=1)
+            client = TicketOperationsClient.launch(fixture, cleanup_timeout=1)
         output = io.StringIO() if output is None else output
         errors = io.StringIO() if errors is None else errors
         stream = script(answers) if stream is None else stream
@@ -66,8 +69,8 @@ class SharedTicketConsoleTests(unittest.TestCase):
                 patch.object(client, 'request', side_effect=record), \
                 patch.object(client, 'close', wraps=client.close) as close, \
                 patch('sys.stdin', stream), patch('sys.stdout', output), patch('sys.stderr', errors):
-            status = console.main(['--fixture', str(FIXTURE), '--cleanup-timeout', '1'])
-        launch.assert_called_once_with(FIXTURE, cleanup_timeout=1)
+            status = console.main(['--fixture', str(fixture), '--cleanup-timeout', '1'])
+        launch.assert_called_once_with(fixture, cleanup_timeout=1)
         close.assert_called_once_with()
         if isinstance(client, TicketOperationsClient):
             self.assertTrue(client._process.stdin.closed)
@@ -130,6 +133,61 @@ class SharedTicketConsoleTests(unittest.TestCase):
                       'UNDETERMINED — Astra/User', 'UNDETERMINED — User/designated advisers'):
             self.assertIn(label, output)
 
+    def test_resale_start_journey_creates_target_and_preserves_ticket_observations(self):
+        from settlement_fsm import SettlementError
+        from test_settlement_console import POLICY, SettlementConsoleTests
+        control = load_fixture(INPUTS)
+        for identity in ('claim-2', 'resale-claim'):
+            with self.assertRaises(SettlementError) as error:
+                control.settlement.view(identity)
+            self.assertEqual(error.exception.code, 'UNKNOWN_SETTLEMENT')
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(
+                START_RESALE.read_text().splitlines(), fixture=INPUTS)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (0, ''))
+        sequence = [('booking', 'view'), ('resale', 'list_resale_inputs'),
+                    ('resale', 'view'), ('resale', 'view_right')]
+        sequence += [('settlement', op) for action in ('initiate_from_resale', 'authorize',
+            'capture', 'commit_recorded_statement', 'observe_recorded_statement', 'distribute',
+            'initiate_from_resale') for op in (action, 'view')]
+        sequence += [('booking', 'view'), ('resale', 'view'), ('resale', 'view_right')]
+        self.assertEqual([(r['surface'], r['operation']) for r in calls], sequence)
+        for row, reply in zip(calls, replies, strict=True):
+            self.assertEqual(reply, dispatch_request(control, row))
+        self.assertEqual(envelopes(output), replies)
+        self.assertEqual([json.loads(s) for s in re.findall(r'proposed=(\{[^\n]+\})', output)],
+                         [r for r in calls if not r['operation'].startswith('view')])
+        self.assertEqual(calls[4]['arguments'], dict(settlement_id='resale-claim', listing_id='list-1',
+            trade_id='explicit-resale-trade', debtor_role='explicit-debtor', policy=POLICY,
+            idempotency_key='resale-input'))
+        # All source views are explicit transcript actions, before and after settlement work.
+        self.assertEqual(replies[0]['view'], replies[-3]['view'])
+        self.assertEqual(replies[2]['view'], replies[-2]['view'])
+        self.assertEqual(replies[3]['view'], replies[-1]['view'])
+        self.assertEqual(replies[-2]['view']['phase'], 'LISTED')
+        self.assertIsNone(replies[-2]['view']['settlement_id'])
+        self.assertIsNone(replies[-2]['view']['payment_ref'])
+        self.assertEqual(replies[-1]['view']['right']['holder_role'], 'buyer-1')
+        self.assertEqual(replies[-1]['view']['right']['version'], 1)
+        selected = replies[4:-3]
+        self.assertEqual([selected[i]['view']['phase'] for i in (1, 3, 5, 7)],
+                         ['INITIATED', 'AUTHORIZED', 'CAPTURED', 'COMMITTED'])
+        for i in (0, 2):
+            self.assertIsNone(selected[i]['receipt']['settlement']['claim'])
+        self.assertEqual(selected[4]['receipt']['settlement']['claim']['confirmed_cash'], 0)
+        for reply in selected:
+            value = reply['view'] if 'view' in reply else reply['receipt']['settlement']
+            self.assertEqual((value['gross'], value['currency']), (8000, 'KRW'))
+            settlement_flags(self, value)
+        SettlementConsoleTests.summaries(self, selected, output)
+        self.assertEqual(selected[-1]['view']['claim']['distributed_cash'], 8000)
+        self.assertEqual(selected[-2]['receipt'], selected[0]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual(selected[-1]['view'], selected[-3]['view'])
+        assert_not_final(self, replies[-3]['view'])
+        assert_resale_flags(self, replies[-2]['view'])
+        assert_resale_flags(self, replies[-1]['view'])
+
     def test_navigation_sends_nothing(self):
         answers = ['unknown', '', 'BOOKING'] + [v for name in SURFACES for v in (name, 'quit')] + ['quit']
         with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
@@ -149,6 +207,25 @@ class SharedTicketConsoleTests(unittest.TestCase):
             delegate.assert_called_once_with(client, input_stream=stream, output_stream=output, error_stream=errors)
         client.request.assert_not_called()
         client.close.assert_not_called()  # Embedded lifecycle belongs to caller.
+
+    def test_resale_initiation_conflict_preserves_current_view(self):
+        from settlement_fsm import SettlementError
+        answers = START_RESALE.read_text().splitlines()
+        index = len(answers) - 1 - answers[::-1].index('initiate_from_resale')
+        answers[index + 3] = 'changed-trade'
+        status, calls, replies, output, errors = self.drive(answers, fixture=INPUTS)
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        control = load_fixture(INPUTS)
+        for row, reply in zip(calls, replies, strict=True):
+            try:
+                expected = dispatch_request(control, row)
+            except SettlementError as error:
+                expected = _error(row['surface'], row['operation'], error)
+            self.assertEqual(reply, expected)
+        self.assertEqual(envelopes(output), replies)
+        self.assertEqual(replies[16]['error'], dict(code='IDEMPOTENCY_CONFLICT'))
+        self.assertEqual(replies[15]['view'], replies[17]['view'])
+        self.assertEqual(replies[2]['view'], replies[-2]['view'])
 
     def test_booking_reentry_discards_preview(self):
         answers = (['booking'] + CLOCK + HOLD + LOAD + TARGET + ['preview', 'quit',
@@ -361,6 +438,17 @@ class SharedTicketConsoleTests(unittest.TestCase):
         self.assertEqual(replies[-1]['view']['claim']['distributed_cash'], 8000)
         self.assertEqual(replies[14]['view']['phase'], 'CONFIRMED')
         self.assertEqual(replies[16]['view']['right']['holder_role'], 'buyer-2')
+
+    def test_resale_start_transcript_as_cli_subprocess(self):
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'shared_ticket_console.py'),
+            '--fixture', str(INPUTS), '--cleanup-timeout', '1'], cwd=ROOT, input=START_RESALE.read_text(),
+            text=True, capture_output=True, timeout=10, env=os.environ.copy())
+        self.assertEqual((result.returncode, result.stderr), (0, ''))
+        replies = envelopes(result.stdout)
+        self.assertEqual(len(replies), 21)
+        self.assertEqual(replies[17]['view']['claim']['distributed_cash'], 8000)
+        self.assertEqual(replies[-2]['view']['phase'], 'LISTED')
+        self.assertEqual(replies[-1]['view']['right']['holder_role'], 'buyer-1')
 
 
 if __name__ == '__main__':
