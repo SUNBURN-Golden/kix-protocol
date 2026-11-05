@@ -2782,3 +2782,85 @@ runtime are outside scope. See [coverage and actual builder evidence](../../vali
 non-author exact-head review and both required CI workflows remain separate gates.
 These are source-informed composition tests; non-author A2 exact-final-head
 review and both exact-head KTX/KIX workflows remain required separately.
+
+## Shared local ticket console
+
+Run all four existing consoles against **one** explicitly launched local ticket
+operations client and its single in-memory service graph, from the repository root:
+
+```bash
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1
+```
+
+Select `booking`, `resale`, `admission` or `settlement`. Each surface's `quit`
+returns to the shared menu; menu `quit` closes the desk once. Navigation and
+unknown menu input send no business requests. Surface actions and confirmations
+are unchanged. There are no automatic views, clock changes, retries, child
+replacements or compensation. `--fixture` and a finite positive
+`--cleanup-timeout` are required; that budget bounds cleanup, not response time.
+
+Every booking entry starts with empty quote text, confirmation identifiers and
+pending preview. Returning to the menu invalidates the previous preview even
+when no business state changed. Re-entering requires explicit `load_quote`,
+`target`, successful `preview` and literal `CONFIRM` before confirmation can be
+sent. The graph retains earlier business mutations until the desk is closed;
+leaving booking does not release or cancel a reservation.
+
+Known business refusals keep their complete `desk=` error envelope and allow
+another explicit action or surface selection. The final exit status remembers
+these refusals: `0` is clean completion, `1` means a known refusal or nonzero
+child exit, and `2` means terminal failure. Malformed replies, transport
+uncertainty, terminal desk errors, EOF, interruption and terminal I/O failures
+end the entire session before any subsequent selection. Cleanup failure yields
+`2`, and a nonzero child exit cannot downgrade an existing terminal status.
+Complete diagnostic causes and available wire bytes remain in `FENCED:` output.
+
+For embedding, `shared_ticket_console.run_console(client, *, input_stream,
+output_stream, error_stream)` delegates synchronously and leaves cleanup to its
+caller. On status `2`, the caller must close and retire the session even if a
+terminal I/O failure left the transport usable. The command-line `main()` owns
+one launch and one close in `finally`; it never invokes surface `main()`.
+
+The checked-in [synthetic answer transcript](fixtures/shared_ticket_console_journey.txt)
+runs the real entry point and child without sockets:
+
+```bash
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_journey.txt
+```
+
+Its 18 explicitly selected requests span all four surfaces, then revisit booking,
+resale and settlement. Caller inputs select clock `1000000`, hold free slot `1`
+as `shared-reservation`, preview the existing calculation fixture and confirm
+`shared-order` for synthetic `10001` KRW. Independently, the fixture's already
+issued `issue-1` is listed for synthetic `8000` KRW, held, observed against
+recorded `payment-1`, bound to preconfigured `resale-claim` and transferred to
+`buyer-2` at version `2`. Admission `view` still shows stored venue credential
+`buyer-1` / version `1`; explicit `view_credential` for that old presentation
+reports `STALE_VERSION` and `fresh=false`. Transfer does not reissue the credential.
+Settlement distributes the existing fixture cash using explicit order
+`["organizer"]`. The order reflects that fixture's single obligation, not a new
+product distribution policy. The two settlement views both report distributed
+cash `8000`. Later booking `view` still reports `CONFIRMED`; resale `view` and
+`view_right` still report `TRANSFERRED` and `buyer-2` / version `2`.
+
+Receipts are historical action snapshots. Only the transcript's explicitly
+requested views establish the reported current local observations; merely
+switching surfaces makes no observation. The new booking confirmation does not
+pay or issue a new ticket, and this journey does not automatically link that
+reservation to the fixture's existing resale/settlement records.
+
+All envelopes retain `MOCK_GATE_ONLY`, `MOCK_SETTLEMENT_ONLY`, `CALCULATION_ONLY`,
+`IN_MEMORY_FSM` and the existing false authority, execution, finality and
+durability flags. Product/admission/distribution policy remains
+**UNDETERMINED — Astra/User**; legal effects remain **UNDETERMINED — User/legal**;
+accounting/legal settlement effects remain **UNDETERMINED — User/designated advisers**.
+This is synthetic composition evidence for B04/B05, R01–R04 and P03/P04 with no
+capability-grade promotion. Persistence, real payment, issuance, production
+admission, legal/accounting effects and durable settlement closure remain open.
+See [coverage and actual builder validation](../../validation/2026-11-05-plan-local-shared-ticket-console/README.md);
+non-author exact-head review and required KTX/KIX CI remain delivery gates.
