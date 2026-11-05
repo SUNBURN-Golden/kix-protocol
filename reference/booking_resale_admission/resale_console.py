@@ -12,6 +12,7 @@ from ticket_operations_client import TicketOperationsClient
 
 # Prompt order is part of the documented terminal interface, not a wire catalogue.
 _FIELDS = {
+    'adopt_issued_from_booking': ('reservation_id', 'right_id'),
     'list_resale_inputs': ('listing_id', 'right_id', 'version', 'seller_role',
                            'recipient_role', 'amount', 'expires_ms', 'reservation_id'),
     'hold_buy': ('hold_id', 'listing_id', 'buyer_role'),
@@ -81,9 +82,9 @@ def run_console(client, *, input_stream, output_stream, error_stream):
             raise EOFError('terminal input ended; no further submissions')
         return line.removesuffix('\n').removesuffix('\r')
 
-    def field(name):
+    def field(name, *, nullable_reservation=False):
         hint = (' (synthetic; enter clock)' if name == 'subject_id' else
-                ' (JSON string or explicit null)' if name == 'reservation_id' else '')
+                ' (JSON string or explicit null)' if nullable_reservation else '')
         value = prompt(name + hint)
         if name in {'version', 'amount', 'expires_ms', 'now_ms'}:
             if re.fullmatch(r'[0-9]+', value) is None:
@@ -92,7 +93,7 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                 return int(value)
             except ValueError as error:
                 raise _InputError(name + ' integer is too long') from error
-        if name == 'reservation_id':
+        if nullable_reservation:
             try:
                 value = json.loads(value)
             except ValueError as error:
@@ -120,7 +121,9 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                 print('Unknown action; choose an action from the menu.', file=output_stream)
                 continue
             try:
-                arguments = {name: field(name) for name in _FIELDS[action]}
+                arguments = {name: field(name, nullable_reservation=(
+                    name == 'reservation_id' and action == 'list_resale_inputs'))
+                    for name in _FIELDS[action]}
                 mutation = action not in _VIEWS
                 if mutation:
                     arguments['idempotency_key'] = field('idempotency_key')

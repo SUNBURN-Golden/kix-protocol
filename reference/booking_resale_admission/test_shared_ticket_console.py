@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
@@ -15,9 +16,10 @@ import shared_ticket_console as console
 from test_admission_session import assert_flags
 from test_reservation_fsm import assert_not_final
 from test_resale_fsm import assert_not_final as assert_resale_flags
+from issued_ticket_adapter import IssuedTicketSourceError
 from resale_payment_source import ResalePaymentSourceError
 from statement_source import StatementSourceError
-from ticket_operations_cli import _error
+from ticket_operations_cli import _DOMAIN_ERRORS, _error
 from ticket_operations_cli import dispatch_request
 from test_ticket_operations_client import direct
 from test_ticket_settlement_controls import settlement_flags
@@ -29,12 +31,20 @@ ROOT = HERE.parents[1]
 FIXTURE = HERE / 'fixtures/ticket_operations_payment_session.json'
 QUOTE = HERE / 'fixtures/booking_console_quote.json'
 JOURNEY = HERE / 'fixtures/shared_ticket_console_journey.txt'
+FULFILLMENT = HERE / 'fixtures/ticket_operations_fulfillment_session.json'
+BIND = ['bind_settlement', 'reserve-2', 'claim-2', 'second-bind', 'BIND_SETTLEMENT']
+ISSUE = ['issue', 'issue-2', 'order-2', 'second-issue', 'ISSUE']
+ADOPT = ['adopt_issued_from_booking', 'reserve-2', 'issue-2']
+NEW_ACTIONS = [('booking', BIND), ('booking', ISSUE),
+               ('admission', ADOPT + ['second-admission-adopt', 'ADOPT']),
+               ('resale', ADOPT + ['second-resale-adopt', 'SUBMIT'])]
 START_RESALE = HERE / 'fixtures/settlement_console_start_resale.txt'
 INPUTS = HERE / 'fixtures/ticket_operations_settlement_inputs_session.json'
 SURFACES = ('booking', 'resale', 'admission', 'settlement')
 VIEWS = {'booking': ['view', 'reserve-1'], 'resale': ['view_right', 'issue-1'],
          'admission': ['view', 'issue-1'], 'settlement': ['view', 'resale-claim']}
 QUEUE = [item for name in SURFACES for item in [name, *VIEWS[name], 'quit']] + ['quit']
+FAULT_ACTIONS = [(name, VIEWS[name]) for name in SURFACES] + NEW_ACTIONS
 CLOCK = ['set_clock', 'clock', '1000000', 'shared-clock']
 HOLD = ['hold', 'shared-reservation', 'show-1', '1', 'shared-buyer', '1120000', 'shared-hold']
 LOAD = ['load_quote', str(QUOTE)]
@@ -78,19 +88,153 @@ class SharedTicketConsoleTests(unittest.TestCase):
             self.assertIsNotNone(client._process.returncode)
         return status, calls, replies, output.getvalue(), errors.getvalue()
 
-    def parity(self, calls, replies, output):
+    def parity(self, calls, replies, output, fixture=FIXTURE):
         # Direct service methods share source with the desk; no independent FSM claim.
-        control = load_fixture(FIXTURE)
+        control = load_fixture(fixture)
         expected = []
         for row in calls:
             try:
-                expected.append(direct(control, row))
-            except (ResalePaymentSourceError, StatementSourceError) as error:
+                if row['operation'] == 'adopt_issued_from_booking':
+                    expected.append(dict(surface=row['surface'], operation=row['operation'], receipt=
+                        control.adopt_issued_from_booking(surface=row['surface'], **row['arguments'])))
+                else:
+                    expected.append(direct(control, row))
+            except _DOMAIN_ERRORS + (ResalePaymentSourceError, StatementSourceError, IssuedTicketSourceError) as error:
                 expected.append(_error(row['surface'], row['operation'], error))
         self.assertEqual(replies, expected)
         self.assertEqual(envelopes(output), replies)
         for row in calls:
             self.assertEqual(set(row), {'surface', 'operation', 'arguments'})
+
+    def fulfillment(self, name):
+        answers = (HERE / ('fixtures/shared_ticket_console_fulfillment' + name + '.txt')).read_text().splitlines()
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            result = self.drive(answers, fixture=FULFILLMENT)
+        launch.assert_called_once()
+        status, calls, replies, output, errors = result
+        self.parity(calls, replies, output, FULFILLMENT)
+        for reply in replies:
+            if 'error' not in reply:
+                flags = {'booking': assert_not_final, 'resale': assert_resale_flags,
+                         'admission': assert_flags}[reply['surface']]
+                flags(self, reply.get('receipt', reply.get('view')))
+        return result
+
+    def test_live_fulfillment_separate_actions_one_child_and_explicit_views(self):
+        control = load_fixture(FULFILLMENT)
+        prepared = control.booking.view('reserve-2')
+        self.assertEqual(prepared['phase'], 'PAYMENT_NOTED')
+        self.assertIsNone(prepared['issuance_id'])
+        status, calls, replies, output, errors = self.fulfillment('')
+        self.assertEqual((status, errors), (0, ''))
+        self.assertEqual([(r['surface'], r['operation']) for r in calls], [
+            ('booking', op) for op in ('view', 'set_clock', 'bind_settlement', 'view', 'issue', 'view')
+        ] + [('admission', 'adopt_issued_from_booking'), ('admission', 'view'),
+             ('resale', 'adopt_issued_from_booking'), ('resale', 'view_right'), ('booking', 'view')])
+        for index, arguments in ((2, dict(reservation_id='reserve-2', settlement_id='claim-2',
+                                         idempotency_key='second-bind')),
+                                 (4, dict(issuance_id='issue-2', order_id='order-2',
+                                          idempotency_key='second-issue'))):
+            self.assertEqual(calls[index]['arguments'], arguments)
+        for index, key in ((6, 'second-admission-adopt'), (8, 'second-resale-adopt')):
+            self.assertEqual(calls[index]['arguments'], dict(reservation_id='reserve-2',
+                                                           right_id='issue-2', idempotency_key=key))
+        self.assertEqual(replies[3]['view']['phase'], 'PAYMENT_NOTED')
+        self.assertIsNone(replies[3]['view']['right'])
+        self.assertEqual(replies[5]['view']['phase'], 'ISSUED')
+        self.assertEqual(replies[5]['view']['settlement_gate'], 'MOCK_COMMIT_OBSERVED')
+        self.assertEqual(replies[7]['view']['phase'], 'ELIGIBLE')
+        self.assertEqual(replies[9]['view']['right']['holder_role'], 'buyer-3')
+        self.assertEqual(replies[5]['view'], replies[10]['view'])
+        self.assertIn('Historical action snapshot', output)
+        self.assertIn('Current service observation.', output)
+        proposed = [json.loads(v) for v in re.findall(r'proposed=(\{[^\n]+\})', output)]
+        self.assertEqual(proposed, [calls[i] for i in (2, 4, 6, 8)])
+
+    def test_live_fulfillment_authorize_decline_consume_then_historical_replays(self):
+        status, calls, replies, output, errors = self.fulfillment('_consume')
+        self.assertEqual((status, errors), (0, ''))
+        # First 11 requests are the issuance and separate adoption journey.
+        self.assertEqual([(r['surface'], r['operation']) for r in calls[11:]], [
+            ('admission', op) for op in ('authorize_admission_inputs', 'view', 'view', 'consume_inputs', 'view')
+        ] + [('booking', 'issue'), ('booking', 'view'),
+             ('admission', 'adopt_issued_from_booking'), ('admission', 'view'),
+             ('resale', 'adopt_issued_from_booking'), ('resale', 'view_right')])
+        self.assertEqual(replies[12]['view']['phase'], 'AUTHORIZED')
+        self.assertEqual(replies[12]['view'], replies[13]['view'])
+        self.assertEqual(replies[13]['view']['version'], 1)
+        self.assertEqual(replies[15]['view']['phase'], 'CONSUMED')
+        self.assertEqual(replies[15]['view']['version'], 2)
+        for first, replay in ((4, 16), (6, 18), (8, 20)):
+            self.assertEqual(calls[first], calls[replay])
+            self.assertEqual(replies[replay]['receipt'], replies[first]['receipt'] |
+                             {'duplicate': True, 'applied': None})
+        self.assertEqual(replies[16]['receipt']['evidence']['version'], 1)
+        self.assertEqual(replies[17]['view']['right']['version'], 2)
+        self.assertEqual(replies[19]['view']['phase'], 'CONSUMED')
+        self.assertEqual(replies[21]['view']['right']['version'], 1)
+        self.assertEqual([r['operation'] for r in calls].count('consume_inputs'), 1)
+        self.assertIn('Declined; no request sent.', output)
+        self.assertIn('Action snapshot: {"applied": null, "duplicate": true}', output)
+
+    def test_live_fulfillment_boundaries_preserve_source_domain_and_key_results(self):
+        status, calls, replies, output, errors = self.fulfillment('_boundaries')
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        self.assertEqual([r['error']['code'] for r in replies if 'code' in r.get('error', {})],
+                         ['IDEMPOTENCY_CONFLICT'] * 4)
+        source_errors = [r['error'] for r in replies if 'type' in r.get('error', {})]
+        self.assertEqual(len(source_errors), 8)  # unissued, missing, two crossed pairs per target
+        self.assertEqual({e['type'] for e in source_errors},
+                         {'InvalidIssuedTicketRecord', 'IssuedTicketSourceError'})
+        self.assertIn({'type': 'InvalidIssuedTicketRecord', 'message': 'issuance identity mismatch'}, source_errors)
+        self.assertEqual(output.count('Declined; no request sent.'), 2)
+        views = [r['view'] for r in replies if r['surface'] == 'booking' and 'view' in r]
+        self.assertEqual([v['phase'] for v in views], ['PAYMENT_NOTED', 'ISSUED'])
+        self.assertIsNone(views[0]['settlement_id'])
+        self.assertIsNone(views[0]['issuance_id'])
+        # Source refusal binds no target key; the same caller request later succeeds.
+        for surface in ('admission', 'resale'):
+            indices = [i for i, r in enumerate(calls) if r['surface'] == surface
+                       and r['operation'] == 'adopt_issued_from_booking'
+                       and r['arguments']['reservation_id'] == 'reserve-2'
+                       and r['arguments']['right_id'] == 'issue-2']
+            first, accepted, replay = indices
+            self.assertEqual(calls[first], calls[accepted])
+            self.assertIn('error', replies[first])
+            self.assertFalse(replies[accepted]['receipt']['duplicate'])
+            self.assertEqual(replies[replay]['receipt'], replies[accepted]['receipt'] |
+                             {'duplicate': True, 'applied': None})
+
+    def test_live_issue_without_payment_preserves_refusal_and_current_view(self):
+        value = json.loads(FULFILLMENT.read_text())
+        value['setup'] = [r for r in value['setup'] if not (
+            r['operation'] == 'observe_payment' and r['subject_id'] == 'order-2')]
+        with tempfile.TemporaryDirectory() as temp:
+            fixture = Path(temp) / 'unpaid.json'
+            fixture.write_text(json.dumps(value))
+            status, calls, replies, output, errors = self.drive(
+                ['booking', *CLOCK, *ISSUE, *ISSUE, 'view', 'reserve-2', 'quit',
+                 'resale', 'view_right', 'issue-1', 'quit', 'quit'], fixture=fixture)
+            self.parity(calls, replies, output, fixture)
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        self.assertEqual(replies[1]['error'], {'code': 'ILLEGAL_TRANSITION'})
+        self.assertEqual(replies[2], replies[1])
+        self.assertEqual(replies[3]['view']['phase'], 'CONFIRMED')
+        self.assertIsNone(replies[3]['view']['payment_ref'])
+        self.assertIsNone(replies[3]['view']['right'])
+        self.assertEqual(len(calls), 5)
+
+    def test_fulfillment_requires_explicit_successful_booking_clock(self):
+        for action in (BIND, ISSUE):
+            with self.subTest(operation=action[0]):
+                pending = script(['booking', *action, *QUEUE])
+                status, calls, replies, output, errors = self.drive(stream=pending, fixture=FULFILLMENT)
+                self.assertEqual((status, len(calls)), (2, 1))
+                self.assertEqual(replies[0]['error'], {'type': 'BookingInputError',
+                    'message': 'explicit successful session set_clock required before mutation'})
+                self.assertEqual(envelopes(output), replies)
+                self.assertEqual(pending.read(), script(QUEUE).read())
+                self.assertEqual(json.loads(errors.split('FENCED: ')[1].splitlines()[0])['last_reply'], replies[0])
 
     def test_live_shared_journey_one_child(self):
         answers = JOURNEY.read_text().splitlines()
@@ -274,32 +418,32 @@ class SharedTicketConsoleTests(unittest.TestCase):
                     self.assertEqual(output.count('Surfaces:'), 3)
 
     def test_terminal_envelopes_fence_every_surface(self):
-        for name in SURFACES:
+        for name, action in FAULT_ACTIONS:
             for kind in ('FixtureError', 'BookingInputError', 'startup'):
-                with self.subTest(surface=name, kind=kind):
+                with self.subTest(surface=name, operation=action[0], kind=kind):
                     client = Mock()
                     client.close.return_value = 0
                     reply = dict(surface=None if kind == 'startup' else name,
-                        operation=None if kind == 'startup' else VIEWS[name][0],
+                        operation=None if kind == 'startup' else action[0],
                         error=dict(type='FixtureError' if kind == 'startup' else kind, message='terminal original'))
                     client.request.return_value = reply
-                    pending = script([name, *VIEWS[name], *QUEUE])
+                    pending = script([name, *action, *QUEUE])
                     status, calls, replies, output, errors = self.drive(client=client, stream=pending)
                     self.assertEqual((status, len(calls), replies), (2, 1, [reply]))
                     self.assertEqual(envelopes(output), [reply])
                     self.assertEqual(pending.read(), script(QUEUE).read())
-                    self.assertEqual(json.loads(errors.split('FENCED: ')[1])['last_reply'], reply)
+                    self.assertEqual(json.loads(errors.split('FENCED: ')[1].splitlines()[0])['last_reply'], reply)
 
     def test_real_malformed_truncated_and_eof_replies_fence_every_surface(self):
-        for name in SURFACES:
+        for name, action in FAULT_ACTIONS:
             for raw in (b'not-json\n', b'{partial\xff', b''):
-                with self.subTest(surface=name, raw=raw):
+                with self.subTest(surface=name, operation=action[0], raw=raw):
                     worker = ('import sys; sys.stdin.buffer.readline(); '
                               'sys.stdout.buffer.write(' + repr(raw) + '); sys.stdout.buffer.flush()')
                     popen = subprocess.Popen
                     def launch_worker(command, **kwargs):
                         return popen([sys.executable, '-B', '-c', worker], **kwargs)
-                    pending = script([name, *VIEWS[name], *QUEUE])
+                    pending = script([name, *action, *QUEUE])
                     with patch('ticket_operations_client.subprocess.Popen', side_effect=launch_worker) as launch:
                         client = TicketOperationsClient.launch(FIXTURE, cleanup_timeout=1)
                         status, calls, replies, _, errors = self.drive(client=client, stream=pending)
@@ -312,9 +456,9 @@ class SharedTicketConsoleTests(unittest.TestCase):
                     self.assertIn('reply_bytes', errors)
 
     def test_real_write_uncertainty_and_request_interruption_fence_every_surface(self):
-        for name in SURFACES:
+        for name, action in FAULT_ACTIONS:
             for fault in ('broken', 'short', 'interrupted'):
-                with self.subTest(surface=name, fault=fault):
+                with self.subTest(surface=name, operation=action[0], fault=fault):
                     with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
                         client = TicketOperationsClient.launch(FIXTURE, cleanup_timeout=1)
                         if fault == 'interrupted':
@@ -322,7 +466,7 @@ class SharedTicketConsoleTests(unittest.TestCase):
                         else:
                             context = patch.object(client._process.stdin, 'write', **(
                                 {'return_value': 1} if fault == 'short' else {'side_effect': BrokenPipeError('write')}))
-                        pending = script([name, *VIEWS[name], *QUEUE])
+                        pending = script([name, *action, *QUEUE])
                         with context as transport:
                             status, calls, replies, _, errors = self.drive(client=client, stream=pending)
                             transport.assert_called_once()
@@ -355,7 +499,7 @@ class SharedTicketConsoleTests(unittest.TestCase):
                     self.assertEqual(pending.read(), script(QUEUE).read())
                     self.assertIn(type(failure).__name__, errors)
                     if name is not None:
-                        self.assertEqual(json.loads(errors.split('FENCED: ')[1])['last_reply'], replies[-1])
+                        self.assertEqual(json.loads(errors.split('FENCED: ')[1].splitlines()[0])['last_reply'], replies[-1])
 
     def test_display_failures_fence_all_surfaces_even_with_broken_diagnostics(self):
         class BrokenOutput(io.StringIO):
@@ -366,16 +510,16 @@ class SharedTicketConsoleTests(unittest.TestCase):
         class BrokenDiagnostics(io.StringIO):
             def write(self, text):
                 raise OSError('diagnostics')
-        for name in SURFACES:
+        for name, action in FAULT_ACTIONS:
             for broken_diagnostics in (False, True):
-                with self.subTest(surface=name, diagnostics=broken_diagnostics):
-                    pending = script([name, *VIEWS[name], *QUEUE])
+                with self.subTest(surface=name, operation=action[0], diagnostics=broken_diagnostics):
+                    pending = script([name, *action, *QUEUE])
                     status, calls, replies, _, errors = self.drive(stream=pending,
                         output=BrokenOutput(), errors=BrokenDiagnostics() if broken_diagnostics else io.StringIO())
                     self.assertEqual((status, len(calls), len(replies)), (2, 1, 1))
                     self.assertEqual(pending.read(), script(QUEUE).read())
                     if not broken_diagnostics:
-                        self.assertEqual(json.loads(errors.split('FENCED: ')[1])['last_reply'], replies[-1])
+                        self.assertEqual(json.loads(errors.split('FENCED: ')[1].splitlines()[0])['last_reply'], replies[-1])
         class BrokenMenu(io.StringIO):
             def write(self, text):
                 raise OSError('menu output')

@@ -56,6 +56,53 @@ class AdmissionConsoleTests(unittest.TestCase):
         self.assertIsNotNone(client._process.poll())
         return status, calls, replies, output.getvalue(), errors.getvalue()
 
+    def test_fulfillment_prompt_exact_request_decline_and_original_errors(self):
+        # Opaque caller values prove the UI neither checks eligibility nor assembles
+        # adapter fields. Full service behavior is covered by real-child journeys.
+        operations = [('adopt_issued_from_booking', ('reservation_id', 'right_id', 'idempotency_key'), 'ADOPT')]
+        for operation, names, confirmation in operations:
+            arguments = dict(zip(names, ('caller-subject', 'caller-binding', 'caller-key'), strict=True))
+            request = dict(surface='admission', operation=operation, arguments=arguments)
+            action = [operation, *arguments.values()]
+            for detail in (None, {'code': 'IDEMPOTENCY_CONFLICT'},
+                           {'type': 'InvalidIssuedTicketRecord', 'message': 'original "☀"\nerror'}):
+                with self.subTest(operation=operation, detail=detail):
+                    client = Mock()
+                    reply = dict(surface='admission', operation=operation,
+                                 **({'receipt': {'duplicate': False, 'applied': True}}
+                                    if detail is None else {'error': detail}))
+                    client.request.return_value = reply
+                    out, err = io.StringIO(), io.StringIO()
+                    status = run_console(client, input_stream=script(
+                        action + [confirmation.lower(), *action, confirmation, 'quit']),
+                        output_stream=out, error_stream=err)
+                    self.assertEqual((status, err.getvalue()), (int(detail is not None), ''))
+                    client.request.assert_called_once_with(request)
+                    self.assertEqual(out.getvalue().count('proposed=' + json.dumps(request, sort_keys=True)), 2)
+                    self.assertIn('Declined; no request sent.', out.getvalue())
+                    self.assertIn('desk=' + json.dumps(reply, sort_keys=True), out.getvalue())
+                    positions = [out.getvalue().index(name + ':') for name in names]
+                    self.assertEqual(positions, sorted(positions))
+
+    def test_fulfillment_confirmation_interruption_sends_nothing(self):
+        for operation, names in [('adopt_issued_from_booking',
+                                  ('reservation_id', 'right_id', 'idempotency_key'))]:
+            for failure in (None, KeyboardInterrupt('approval'), OSError('terminal input')):
+                with self.subTest(operation=operation, failure=type(failure).__name__):
+                    lines = script([operation, *('caller-' + name for name in names)])
+                    class BrokenInput:
+                        def readline(self):
+                            line = lines.readline()
+                            if not line and failure is not None:
+                                raise failure
+                            return line
+                    client = Mock()
+                    out, err = io.StringIO(), io.StringIO()
+                    self.assertEqual(run_console(client, input_stream=BrokenInput(),
+                        output_stream=out, error_stream=err), 2)
+                    client.request.assert_not_called()
+                    self.assertIn('FENCED:', err.getvalue())
+
     def test_eof_interrupt_and_input_failure_stop_and_close(self):
         for failure in (None, KeyboardInterrupt('interrupted'), OSError('input failed')):
             lines = script(AUTH)
