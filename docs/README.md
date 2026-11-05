@@ -540,3 +540,11 @@
 
 - [Local AI delegation desk usage](../reference/ai_delegation/README.md) — seven explicit session methods and a strict JSONL CLI over the unchanged synthetic mock; execution disabled, A5 check-order discrepancy retained with its owners, no policy or runtime activation.
 - [plan-local-ai-delegation-desk evidence](../validation/2026-11-05-plan-local-ai-delegation-desk/README.md) — builder-authored coverage, executed commands and deterministic transcripts; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-05 위치 동기화 — observed main #398
+
+고정 기준 cached `origin/main` `bca90b865442ba287b4aecf5ca6b5bde5d767a3a`; 원격 최신성은 fetch NOT_RUN으로 미검증이다. #290–#398의 104개 first-parent 병합 위치는 [개발계획 §5](DEVELOPMENT_PLAN.md#5-전체-단계), [capability register](status/CURRENT_CAPABILITY_REGISTER.md), [loop-node crosswalk](status/LOOP_NODE_CROSSWALK.md)에 연결한다. 기존 날짜별 집계·등급·소유자·열린 정지는 그대로다. 서로 다른 coverage 등급은 합산하지 않는다. 현재 source-map별 집계는 [roll-up](status/EVIDENCE_MAP_ROLLUP.md)과 아래 검증 기록의 실제 checker 출력으로 확인한다.
+
+- [plan-register-index-sync-20261105](../validation/2026-11-05-plan-register-index-sync-20261105/README.md) — §5 추가 71행, register 16행의 fixture 위치·근거, crosswalk 추가 14행·56 nonmatch·5 absent 번호 및 실제 로컬 검증. 등급·상태·소유자·canonical 완료 변경 없음.
+
+현재 index checker 집계(새 검증 기록 포함): **scanned=361, indexed=326, allowlisted=35**. 과거 집계는 당시 기준이며 바꾸지 않는다. 25개 계약의 roll-up은 textual index이며 다른 coverage 등급을 하나의 완료 수로 더하지 않는다.
