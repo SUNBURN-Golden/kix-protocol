@@ -529,3 +529,8 @@
 
 - [Shared local ticket console usage](../reference/booking_resale_admission/README.md#shared-local-ticket-console) · [2026-11-05 shared console builder evidence](../validation/2026-11-05-plan-local-shared-ticket-console/README.md) — Booking/resale/admission/settlement navigation over one live synthetic desk, explicit current views, fresh booking previews on re-entry and session-wide terminal fencing. No policy or capability-grade change; non-author exact-head review and KTX/KIX CI pending.
 - [Guided local fulfillment console](../reference/booking_resale_admission/README.md#guided-local-fulfillment-in-the-shared-console) · [2026-11-05 builder evidence](../validation/2026-11-05-plan-local-fulfillment-console/README.md) — Explicit synthetic paid-order binding/issuance, separate source-backed admission/resale adoptions, authorization and independently confirmed consumption on one local graph; historical receipts versus current views and session-wide fencing. No policy/capability-grade change; non-author exact-head review and KTX/KIX CI pending.
+
+## 2026-11-05 로컬 신용 데스크 — 위치 안내만
+
+- [F04 local credit desk usage](../reference/credit_advance_f04/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged credit FSM; optional real local settlement replay for the bound-draw COMMITTED gate; no policy, approval or runtime activation.
+- [plan-local-credit-desk evidence](../validation/2026-11-05-plan-local-credit-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
