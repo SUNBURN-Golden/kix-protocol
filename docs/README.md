@@ -488,6 +488,7 @@
 
 - [F4 local reward desk usage](../reference/token_reward/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged reward FSM; no policy, approval or runtime activation.
 - [plan-local-reward-desk evidence](../validation/2026-11-02-plan-local-reward-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
+- [Guided local reward console](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-05 builder evidence](../validation/2026-11-05-plan-local-reward-console/README.md) — Fresh in-process F4 session, complete proposals and literal single-use confirmation, historical snapshots and explicit reads; no policy or FSM change, A2 non-author review and exact-head KTX/KIX CI pending.
 
 - [Recorded payments in both local ticket desks](../reference/booking_resale_admission/README.md#recorded-payments-in-both-local-ticket-desks) · [plan-local-resale-payment-desk evidence](../validation/2026-11-02-plan-local-resale-payment-desk/README.md) — Strict synthetic payment recordings and explicit one-observation requests through standalone/shared desks; separate transfer/admission and unchanged STALE_VERSION refusals. No policy, provider authority, real funds or runtime activation.
 
