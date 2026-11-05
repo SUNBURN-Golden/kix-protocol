@@ -210,6 +210,39 @@ class CreditCliTests(unittest.TestCase):
             with self.subTest(text=text[:50]), self.assertRaises(FixtureError):
                 decode_json(text)
 
+    def test_duplicate_surrogate_keys_emit_utf8_json_errors_in_subprocess(self):
+        following = (_canonical(requests("decline")[0]) + "\n").encode("utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Path(directory) / "duplicate.json"
+            for key in ("\udc80", "\ud800"):
+                encoded_key = json.dumps(key, ensure_ascii=True)
+                duplicate = f'{{{encoded_key}:1,{encoded_key}:2}}'
+                for location in ("request", "nested_request", "fixture"):
+                    payload = ('{"nested":' + duplicate + '}'
+                               if location == "nested_request" else duplicate)
+                    fixture.write_text(payload, encoding="utf-8")
+                    for errors in ("surrogateescape", "strict"):
+                        with self.subTest(key=encoded_key, location=location, errors=errors):
+                            completed = subprocess.run(
+                                [sys.executable, str(CLI), "--fixture",
+                                 str(fixture if location == "fixture"
+                                     else FIXTURES / "unbound.json"), "--requests", "-"],
+                                input=(b"" if location == "fixture"
+                                       else (payload + "\n").encode("utf-8")) + following,
+                                capture_output=True, timeout=20,
+                                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1",
+                                     "PYTHONUTF8": "1",
+                                     "PYTHONIOENCODING": f"utf-8:{errors}"})
+                            self.assertEqual(completed.returncode, 2)
+                            self.assertEqual(completed.stderr, b"")
+                            lines = completed.stdout.decode("utf-8", errors="strict").splitlines()
+                            self.assertEqual(len(lines), 1)
+                            self.assertEqual(decode_json(lines[0]), {
+                                "operation": None, "provenance": PROVENANCE,
+                                "error": {"type": "FixtureError",
+                                          "message": f"duplicate JSON key: {encoded_key}"},
+                            })
+
     def assert_not_dispatched(self, request):
         session = CreditSession()
         with patch.object(session, "_machine") as machine:

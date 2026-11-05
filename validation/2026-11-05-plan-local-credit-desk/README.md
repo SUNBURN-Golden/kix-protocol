@@ -215,3 +215,73 @@ to Class B behavior need a separately authorized task.
 - `validation/2026-11-05-plan-local-credit-desk/gate.stdout.jsonl`
 - `validation/2026-11-05-plan-local-credit-desk/lifecycle.stdout.jsonl`
 - `validation/2026-11-05-plan-local-credit-desk/settlement_gates.stdout.jsonl`
+
+## PR fix round 1 — duplicate surrogate keys
+
+This is a separate follow-up record; the implementation-run results above remain
+historical. Task input is the supervisor's `plan-local-credit-desk` fix-round-1
+instruction and blocking review finding; no node task document or issue exists.
+Branch: `agent/kix-plan-local-credit-desk`. Observed local `origin/main` remains
+`121e0bde37c23c458b6cb4c54e4e650ba1315d92`; implementation and initial round HEAD
+is `ff26605884d6eec6d6a3239744dd25c3b8eadc60`. The implementation record's base
+matches that local main ref. Fetch is NOT_RUN because the supervisor forbids
+network actions; current remote main is unverified. No rebase/base change,
+commit, push or publication was performed. Final task head is pending the
+supervisor's commit; no merge commit or post-merge check applies.
+
+Finding accepted and reproduced: `_object` detects duplicates before
+`validate_json` validates Unicode. Interpolating the raw duplicate key into the
+diagnostic allowed `\udc80` to reach UTF-8/surrogateescape stdout as byte `0x80`.
+The fix formats the key with `json.dumps(key, ensure_ascii=True)`, so even
+unvalidated keys produce an escaped, printable diagnostic. CLI serialization,
+FSM methods, domain error codes and policy values are unchanged.
+
+Coverage mapping before this fix: strict decoder tests sufficiently cover ordinary
+duplicate keys, and separately cover lone surrogates; their combination at the
+subprocess byte boundary was not covered. The new
+`test_credit_cli.py::CreditCliTests.test_duplicate_surrogate_keys_emit_utf8_json_errors_in_subprocess`
+fills that gap with 12 cases: low/high surrogate keys, top-level/nested request
+and fixture inputs, and UTF-8 stdout with surrogateescape/strict errors. It
+strictly decodes stdout bytes, checks the complete `FixtureError` envelope,
+exit 2, empty stderr, and exactly one output despite a following valid request.
+This is builder-authored, source-informed regression evidence.
+
+| Command actually run | Result |
+|---|---|
+| `PYTHONPATH=reference/credit_advance_f04 python3 -m unittest test_credit_cli.CreditCliTests.test_duplicate_surrogate_keys_emit_utf8_json_errors_in_subprocess` before fix | exit 1; 1 test, 12 subcases: 9 failures, 3 errors; the three errors reproduce invalid UTF-8 byte `0x80` |
+| Same targeted command after fix | exit 0; 1 test, all 12 subcases pass |
+| `PYTHONPATH=reference/credit_advance_f04 python3 -m unittest test_credit_session test_credit_cli` | exit 0; 20 tests pass |
+| `python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | exit 0; 168 tests pass |
+| `python3.12 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | exit 0; 168 tests pass |
+| `python3 scripts/check_docs_index.py` and `--self-test` | both exit 0; scanned=358, indexed=323, allowlisted=35; self-test pass |
+| `python3 scripts/check_ci_test_discovery.py` and `--self-test` | both exit 0; F04 files=10 reached by existing workflow loop; 18 negative controls pass |
+| `python3 scripts/check_credit_evidence_map.py` and `--self-test` | both exit 0; rows=22, citations=128; 55 negative controls pass |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` before/after | both required blobs match: `69564b166f0c27f9af5d8422f0a466b18d74c20f`, `b607996c83a119c349f1cc90469ac1ba82764e20` |
+| `git diff --exit-code origin/main -- reference/v0.3-rc1 .aiops docs/tasks .github runtime` | exit 0; protected paths unchanged |
+| `git rev-parse HEAD:reference/v0.3-rc1 origin/main:reference/v0.3-rc1` | both tree IDs `a6ecb124dc2b2267ca6be19e39fbe2aef143074b`; working-tree diff also empty |
+| `git diff --check` | exit 0 |
+
+Python checks ran with `PYTHONDONTWRITEBYTECODE=1`. Raw check outputs and the
+reproduction result are in [fix-round-1.commands.json](fix-round-1.commands.json).
+The existing protocol workflow's F04 discover loop and both CI definitions were
+inspected; no CI changes were made. No CI failure was supplied. Hosted exact-head
+KTX and KIX run IDs/status/conclusions are unavailable and were not inspected
+(network prohibited). The supervisor must obtain non-author exact-head review
+and both completed/success workflows for the eventual final commit. Local READY
+means ready for supervisor delivery, not merge-ready or merge authorization.
+
+Complete changed paths for this fix round:
+
+- `reference/credit_advance_f04/credit_fixture.py`
+- `reference/credit_advance_f04/test_credit_cli.py`
+- `validation/2026-11-05-plan-local-credit-desk/README.md`
+- `validation/2026-11-05-plan-local-credit-desk/fix-round-1.commands.json`
+
+No domain contract violation or new contract-undefined characterization was
+found; this fixes the documented strict-JSON boundary. Existing Class B
+characterizations above remain unchanged. No STOP dependency, product policy,
+protocol command or external execution is needed. Rust/runtime, unrelated suites,
+Move, Sui and production behavior were not tested in this round; scope is the
+local Python decoder and CLI. No durability, financial, legal or production
+readiness claim follows. Remaining uncertainty is remote main freshness and the
+supervisor's eventual exact-head review/CI; no further in-scope code fix is known.

@@ -23,7 +23,8 @@ def _object(pairs):
     result = {}
     for key, value in pairs:
         if key in result:
-            raise FixtureError(f"duplicate JSON key: {key}")
+            # The pairs hook runs before Unicode validation; escape untrusted keys.
+            raise FixtureError(f"duplicate JSON key: {json.dumps(key, ensure_ascii=True)}")
         result[key] = value
     return result
 
