@@ -119,6 +119,70 @@ invalid JSON/Unicode, wrong object/array structures, missing/extra fields and
 unsupported selectors are rejected before dispatch. The FSM retains all value,
 lifecycle, idempotency and face predicates.
 
+## Live local subprocess client
+
+`CreditClient` uses only the Python standard library. Importing it launches
+nothing. `CreditClient.launch(fixture, cleanup_timeout=...)` explicitly launches
+one fresh `credit_cli.py` child using the current interpreter, an absolute local
+fixture path, binary stdin/stdout pipes and inherited stderr. The CLI flushes
+each JSONL reply, so sequential requests can depend on replies while stdin
+remains open. The child alone loads the fixture and owns the business session.
+
+```python
+from credit_client import CreditClient
+
+with CreditClient.launch("reference/credit_advance_f04/fixtures/committed.json",
+                         cleanup_timeout=1) as client:
+    # An explicit read, returning the existing UNKNOWN_ADVANCE domain error.
+    reply = client.request({"operation": "view",
+                            "arguments": {"advance_id": "caller-selected-id"}})
+    print(reply)
+```
+
+`request(dict) -> dict` preserves the envelopes above, integer amounts and nested
+business payloads. It validates finite JSON data before writing; the existing
+CLI/FSM still decides operation, argument and value acceptance. Replies require
+newline-terminated strict UTF-8 JSON, exact envelope fields, synthetic provenance,
+matching operation and the corresponding object payload. Duplicate keys,
+non-finite numbers, mismatches and incomplete output are transport failures.
+
+Only one request or cleanup may run at a time. Concurrent/reentrant calls raise
+`CreditClientStateError` before writing. Matching `error.code` domain rejections
+permit another explicitly supplied request. Typed fatal errors and startup
+errors (`operation:null`) make the client terminal. A startup broken-pipe race
+is transport uncertainty, never an inferred domain rejection.
+
+After submission begins, a short write, broken pipe, malformed reply, EOF or
+interruption raises `CreditTransportUncertainty` and permanently fences that
+instance. `client.uncertainty` retains the submitted `request` snapshot,
+`request_bytes` and observed `reply_bytes`. No retry, restart, replay,
+compensation or automatic reconciliation occurs. Uncertainty proves neither
+rejection nor rollback; earlier work may already have applied.
+
+Reads block without a product response deadline. The caller must supply a finite
+positive `cleanup_timeout` (booleans are rejected); it applies only to process
+cleanup. `close() -> int` closes stdin, waits, then terminates/kills and reaps
+only the owned child if needed. Repeated close returns the same exit code and
+preserves uncertainty. A `with` block always calls close, including on caller
+exceptions. `client.close()` is process cleanup; a request with
+`operation:"close"` is the existing credit-domain transition.
+
+Run the caller-configured example from the repository root:
+
+```bash
+python3 reference/credit_advance_f04/example_credit_client.py --fixture reference/credit_advance_f04/fixtures/committed.json --requests reference/credit_advance_f04/fixtures/lifecycle.jsonl --cleanup-timeout 1
+```
+
+The example submits the supplied transcript and prints replies plus additional
+reads using returned `receipt.credit.advance_id` and `claim_id`. A claim read
+starts once `snapshot_frozen` reports a noted claim; before the first draw the
+existing machine has no claim to read. The example stops at the first error and
+always cleans up. It invents no approval, amount, identifier or policy value.
+This is a runnable local example, with no credit console, new adapter,
+persistence, sockets, protocol command, SDK/catalogue change or real lending.
+Product policy remains **UNDETERMINED — Astra/User**; legal terms remain
+**UNDETERMINED — User/legal**.
+
 ## Synthetic limitations and Class B
 
 Draw and repay are in-memory mock exposure-ledger transitions. All flags remain
@@ -160,3 +224,6 @@ maps reused lifecycle coverage and new session/fixture/CLI tests, records
 actual checks and transcripts, and states remaining gates. Builder checks do not
 replace A2 non-author exact-final-head review or completed/success KTX and KIX
 exact-final-head CI. No merge authorization is implied.
+
+The [client evidence record](../../validation/2026-11-06-plan-local-credit-stdio-client/README.md)
+adds live-child parity, transport failure/fencing, import and cleanup coverage.
