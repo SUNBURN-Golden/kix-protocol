@@ -111,6 +111,93 @@ Running it alone starts a fresh session and reports `UNKNOWN_REWARD`.
 No request is retried or reconciled automatically. Boundary requests demonstrate
 open-window, forbidden obligation-pool and AI-approval rejections.
 
+## Live subprocess client
+
+`reward_client.RewardClient` uses only the Python standard library and owns one
+explicitly launched `reward_cli.py --fixture <absolute-path> --requests -` child.
+Importing starts nothing. Supply the fixture and a finite positive
+`cleanup_timeout`; there are no opening-balance or policy defaults:
+
+```python
+from reward_client import RewardClient
+
+with RewardClient.launch("reference/token_reward/fixtures/reward_session.json",
+                         cleanup_timeout=1) as client:
+    reply = client.request({"operation": "reward_ids", "arguments": {}})
+    print(reply["reward_ids"])
+```
+
+Use the module-directory import path described above. `request(dict) -> dict`
+sends exactly one JSONL request and blocks for one complete validated reply while
+stdin stays open. All twelve operations in the schema table are supported.
+The client supplies no balances, source facts, identities, approvals, budgets,
+reconciliation or subsequent operations. Optional omission and explicit null
+remain distinct on the wire. Structural validation and serialization happen
+before submission; local validation errors leave the client usable. Business
+predicates remain in the unchanged FSM.
+
+The client checks strict UTF-8/JSON, newline completion, exact envelope fields,
+matching operation, `MOCK_TOKEN_REWARD_ONLY` provenance and operation-specific
+payload shapes. Mutations require a receipt with `reward.reward_id` as a string;
+`view` requires an object with a string `reward_id`; `reward_ids` requires an
+array of strings (including an empty array); `pool_view` requires all five integer
+balances and the existing credit/spend entry shapes. It returns the business
+payload unchanged, without recalculating lifecycle or accounting decisions.
+Provenance validation is a synthetic label check, not authentication.
+
+Errors and lifetime:
+
+- Matching `error={"code": str}` domain refusals are returned unchanged and allow
+  the next explicitly supplied request. The CLI's eventual exit code remains 1.
+- A valid null-operation setup error, or a typed `{"type": str, "message": str}`
+  fatal error, is returned unchanged and terminates the client. Later requests
+  raise `RewardClientStateError` before writing.
+- Once submission starts, short writes, broken pipes, read/write failures,
+  interruptions, EOF and invalid or mismatched replies raise
+  `RewardTransportUncertainty` and permanently fence the instance. Its detached
+  `request`, `request_bytes` and observed `reply_bytes` are diagnostic evidence.
+  A startup failure may race the first write and appear as broken-pipe uncertainty.
+  An applied mutation may have lost its reply; cleanup establishes no rollback.
+- Busy, closed, terminal and uncertain clients reject requests with
+  `RewardClientStateError`. One nonblocking lock also rejects overlapping cleanup.
+  The owner must interrupt a blocked requester before closing; there is no product
+  response timeout. No retry, replacement child, compensation or automatic
+  reconciliation follows any error.
+- `close() -> int` closes stdin and reaps only the owned child, then closes stdout.
+  It waits up to `cleanup_timeout`, terminates on expiry, waits up to that timeout
+  again, then kills and reaps if necessary. It is idempotent and retains any
+  uncertainty. A context manager calls it even when the caller raises an exception.
+  Stderr is inherited, separate from JSONL stdout. Exit loses all in-memory state.
+
+Run the response-dependent example from the repository root:
+
+```bash
+python3 reference/token_reward/example_reward_client.py --fixture reference/token_reward/fixtures/reward_session.json --requests reference/token_reward/fixtures/participation.jsonl --cleanup-timeout 1
+```
+
+The example sends each caller-selected transcript request once. After each
+successful receipt it explicitly derives the **next** request from that reply:
+
+```python
+{"operation": "view",
+ "arguments": {"reward_id_value": reply["receipt"]["reward"]["reward_id"]}}
+```
+
+It then continues the supplied transcript, including its explicit `reward_ids`
+and `pool_view` reads, and stops at the first error. These added reads belong to
+the example; the client inserts none. Receipts, including duplicate receipts,
+are historical action snapshots; reads observe current session state. UNKNOWN
+requires a separately supplied reconciliation request in the same live child.
+Cancellation and a KRW refund remain separate observations and effects.
+
+The [client evidence record](../../validation/2026-11-06-plan-local-reward-stdio-client/README.md)
+maps reused lifecycle vectors, live-child and fault coverage, actual checks and
+pending review/CI gates. Reward policy remains **UNDETERMINED — Astra/User**;
+legal effects remain **UNDETERMINED — User/legal**. All synthetic and Class B
+limitations below apply. No settlement-source connection, parked settlement-reward
+adapter, coin/TIX module, persistence, protocol command or execution activation
+is introduced.
+
 ## Guided local reward console
 
 Run one fresh in-process session with the same explicit opening-balance fixture:
