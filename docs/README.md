@@ -548,3 +548,10 @@
 - [plan-register-index-sync-20261105](../validation/2026-11-05-plan-register-index-sync-20261105/README.md) — §5 추가 71행, register 16행의 fixture 위치·근거, crosswalk 추가 14행·56 nonmatch·5 absent 번호 및 실제 로컬 검증. 등급·상태·소유자·canonical 완료 변경 없음.
 
 현재 index checker 집계(새 검증 기록 포함): **scanned=361, indexed=326, allowlisted=35**. 과거 집계는 당시 기준이며 바꾸지 않는다. 25개 계약의 roll-up은 textual index이며 다른 coverage 등급을 하나의 완료 수로 더하지 않는다.
+
+## 2026-11-06 로컬 AI 위임 console — 위치 안내만
+
+- [Console 사용법](../reference/ai_delegation/README.md#interactive-console) — 명시적 입력·preview·SUBMIT, 합성 grant/query/proposal/결정/회수와 현재 기록 replay. 실행·효과 플래그는 false다.
+- [Console builder 검증 기록](../validation/2026-11-06-plan-plan-local-delegation-console/README.md) — 기존 coverage mapping, 실제 로컬 명령과 한계. 독립 A2 검토·exact-head CI·병합 승인이 아니며 A5의 class-C check-order 및 missing-grant 해석은 Astra/User 미해결 상태다.
+
+이 기록 추가 후 로컬 index checker 집계: **scanned=362, indexed=327, allowlisted=35**. 위 집계는 각 기록 당시 기준으로 보존한다.
