@@ -263,3 +263,61 @@ persistence, retries, polling, network access, credentials, SDK/OpenAPI change,
 provider conformance or runtime activation.
 
 See the [CLI coverage, actual commands and pending delivery gates](../../validation/2026-10-30-plan-local-payment-lookup-cli/README.md).
+
+## Guided local payment lookup console
+
+Run the standard-library, one-shot console with exactly one explicitly selected
+existing synthetic fixture. The same whole-fixture validator runs before prompts;
+there is no default, environment override, payment-key selector or credential input.
+Unknown options, abbreviated options and repeated `--fixture` are rejected.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 reference/provider_facts/payment_lookup_console.py \
+  --fixture reference/provider_facts/fixtures/payment_lookup.synthetic.json
+```
+
+Enter four lines, in order: `provider`, `account`, `operation`, confirmation.
+Identifiers must be complete and satisfy the existing OperationRef validator.
+Only line endings are removed; whitespace is never trimmed or defaulted.
+The console flushes `preview=` JSON with all three OperationRef fields and the
+original five-field PaymentRef (or `null` for an unbound operation). Preview only
+reads the local binding; it performs no router/fake lookup.
+
+Only literal `SUBMIT` calls `payment_lookup_cli.lookup_once` once through the
+existing local router. Every other confirmation declines and ends the session.
+There is no loop; trailing inputs, including another `SUBMIT`, are ignored.
+Missing binding/route still returns unresolved with zero fake calls. Registered
+routes call only the originally bound scope, even when another scope could succeed.
+
+Runnable stdin transcripts use the shipped JSON fixture unchanged:
+
+```bash
+for scenario in paid partial full timeout error decline; do
+  PYTHONDONTWRITEBYTECODE=1 python3 reference/provider_facts/payment_lookup_console.py \
+    --fixture reference/provider_facts/fixtures/payment_lookup.synthetic.json \
+    < "reference/provider_facts/fixtures/payment_lookup_console_${scenario}.txt"
+done
+```
+
+`result=` contains the complete existing CLI result schema documented above:
+provenance, limitations, complete references, fake-call snapshots, and either all
+ordered facts/receipt/item hashes or the original unresolved reason. JSON escapes
+Unicode and terminal controls while preserving decoded strings, exact integer
+amounts (including u128 maximum), raw timestamps, every cancellation and unchanged
+hash values. No timestamp zone, aggregation or completion decision is derived.
+
+A displayed history, displayed unresolved result or explicit decline returns `0`.
+Invalid input/configuration, EOF, interruption, unexpected errors, failed/short
+writes or flush failures terminate with `2` and a best-effort stderr diagnostic.
+These are local tooling exit conventions, not protocol outcomes. A failed display
+may follow a completed synthetic lookup; the process never retries or resumes.
+The complete result is retained in a local variable before rendering, with no
+persistence or automatic follow-up action.
+
+**MOCK_SYNTHETIC_PROVIDER_FACTS_ONLY — Analog, NOT Toss.** Provider authentication
+and merchant scope remain **UNDETERMINED — Toss/User**. Observations cannot decide
+payment/refund completion, issuance eligibility or UNKNOWN release. No facts are
+applied to booking, resale or settlement; the blocked payment–reservation handoff
+stays blocked. No interactive recording edits, provider calls, sockets, credentials,
+new protocol commands, policy values or production runtime are introduced.
+See [console coverage and executed validation](../../validation/2026-11-07-plan-local-payment-lookup-console/README.md).
