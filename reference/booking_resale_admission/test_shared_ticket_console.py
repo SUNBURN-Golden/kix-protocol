@@ -44,7 +44,10 @@ SURFACES = ('booking', 'resale', 'admission', 'settlement')
 VIEWS = {'booking': ['view', 'reserve-1'], 'resale': ['view_right', 'issue-1'],
          'admission': ['view', 'issue-1'], 'settlement': ['view', 'resale-claim']}
 QUEUE = [item for name in SURFACES for item in [name, *VIEWS[name], 'quit']] + ['quit']
-FAULT_ACTIONS = [(name, VIEWS[name]) for name in SURFACES] + NEW_ACTIONS
+PAYMENT_INPUT = ['observe_resale_payment', 'caller-listed', 'ef' * 32, '8000', 'null', 'caller-payment', 'SUBMIT']
+PAYMENT_LIST = ['list_resale_inputs', 'caller-listed', 'issue-1', '1', 'buyer-1', 'buyer-2',
+                '8000', '1120000', '"reserve-1"', 'caller-list', 'SUBMIT']
+FAULT_ACTIONS = [(name, VIEWS[name]) for name in SURFACES] + NEW_ACTIONS + [('resale', PAYMENT_INPUT)]
 CLOCK = ['set_clock', 'clock', '1000000', 'shared-clock']
 HOLD = ['hold', 'shared-reservation', 'show-1', '1', 'shared-buyer', '1120000', 'shared-hold']
 LOAD = ['load_quote', str(QUOTE)]
@@ -235,6 +238,187 @@ class SharedTicketConsoleTests(unittest.TestCase):
                 self.assertEqual(envelopes(output), replies)
                 self.assertEqual(pending.read(), script(QUEUE).read())
                 self.assertEqual(json.loads(errors.split('FENCED: ')[1].splitlines()[0])['last_reply'], replies[0])
+
+    def payment_parity(self, calls, replies, output):
+        control = load_fixture(INPUTS)
+        expected = []
+        for row in calls:
+            try:
+                expected.append(dispatch_request(control, row))
+            except _DOMAIN_ERRORS as error:
+                expected.append(_error(row['surface'], row['operation'], error))
+        self.assertEqual(replies, expected)
+        self.assertEqual(envelopes(output), replies)
+        proposals = [json.loads(v) for v in re.findall(r'proposed=(\{[^\n]+\})', output)]
+        self.assertEqual(proposals, [r for r in calls if not r['operation'].startswith('view')])
+        for reply in replies:
+            if 'error' not in reply:
+                flags = assert_resale_flags if reply['surface'] == 'resale' else settlement_flags
+                flags(self, reply.get('receipt', reply.get('view')))
+
+    def test_live_payment_inputs_listed_and_held_one_child_separate_settlement_and_transfer(self):
+        fixture = json.loads(INPUTS.read_text())
+        for held in (False, True):
+            name = 'held' if held else 'listed'
+            listing = 'caller-' + name
+            self.assertNotIn(listing, [json.loads(p['recorded_text'])['listing_id']
+                                       for p in fixture['payments']])
+            answers = (HERE / f'fixtures/shared_ticket_console_payment_inputs_{name}.txt').read_text().splitlines()
+            with self.subTest(held=held), \
+                    patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+                status, calls, replies, output, errors = self.drive(answers, fixture=INPUTS)
+            launch.assert_called_once()
+            self.assertEqual((status, errors), (0, ''))
+            self.payment_parity(calls, replies, output)
+            operations = [('settlement', 'view'), ('resale', 'list_resale_inputs')]
+            if held:
+                operations += [('resale', 'hold_buy')]
+            operations += [('resale', op) for op in ('view', 'observe_resale_payment', 'view', 'view_right')]
+            operations += [('settlement', op) for op in ('view', 'initiate_from_resale', 'authorize', 'capture',
+                'commit_recorded_statement', 'observe_recorded_statement', 'view')]
+            operations += [('resale', op) for op in ('bind_settlement', 'accept_resale', 'view', 'view_right',
+                'observe_resale_payment', 'view')]
+            self.assertEqual([(r['surface'], r['operation']) for r in calls], operations)
+            payment_indices = [i for i, r in enumerate(calls) if r['operation'] == 'observe_resale_payment']
+            first, replay = payment_indices
+            self.assertEqual(calls[first]['arguments'], dict(listing_id=listing, payment_ref='ef' * 32,
+                amount=8000, buyer_role='buyer-2' if held else None, idempotency_key='caller-payment'))
+            self.assertEqual(calls[first], calls[replay])
+            noted = replies[first]['receipt']
+            self.assertEqual(replies[first - 1]['view']['phase'], 'BUY_HELD' if held else 'LISTED')
+            self.assertEqual(noted['listing']['phase'], 'PAYMENT_NOTED')
+            self.assertIsNone(noted['listing']['settlement_id'])
+            self.assertEqual(noted['listing']['settlement_gate'], 'UNBOUND')
+            self.assertFalse(noted['listing']['ownership_transferred'])
+            self.assertEqual((noted['right']['holder_role'], noted['right']['version']), ('buyer-1', 1))
+            # Explicit views bracket payment: existing settlement remains identical.
+            self.assertEqual(replies[0]['view'], replies[first + 3]['view'])
+            self.assertEqual(replies[-4]['view']['phase'], 'TRANSFERRED')
+            self.assertEqual(replies[-4]['view']['settlement_gate'], 'MOCK_COMMIT_OBSERVED')
+            self.assertEqual((replies[-3]['view']['right']['holder_role'],
+                              replies[-3]['view']['right']['version']), ('buyer-2', 2))
+            self.assertEqual(replies[replay]['receipt'], noted | {'duplicate': True, 'applied': None})
+            self.assertEqual(replies[-1]['view'], replies[-4]['view'])
+
+    def test_payment_inputs_buyer_amount_refusals_replay_conflicts_and_unchanged_views(self):
+        cases = [(False, 'null', '8000', None), (False, '"buyer-2"', '8000', None),
+                 (False, '"wrong"', '8000', 'RECIPIENT_MISMATCH'),
+                 (True, '"buyer-2"', '8000', None), (True, 'null', '8000', 'BUYER_MISMATCH'),
+                 (True, '"wrong"', '8000', 'BUYER_MISMATCH'),
+                 (False, 'null', '7999', 'RESALE_AMOUNT_MISMATCH'),
+                 (True, '"buyer-2"', '8001', 'RESALE_AMOUNT_MISMATCH')]
+        for held, buyer, amount, code in cases:
+            with self.subTest(held=held, buyer=buyer, amount=amount):
+                action = PAYMENT_INPUT.copy()
+                action[3:5] = [amount, buyer]
+                conflict = action.copy()
+                conflict[2] = 'aa' * 32
+                prefix = PAYMENT_LIST + (['hold_buy', 'caller-hold', 'caller-listed', 'buyer-2',
+                                          'caller-hold-key', 'SUBMIT'] if held else [])
+                answers = ['resale', *prefix, 'view', 'caller-listed', 'view_right', 'issue-1',
+                    *action, 'view', 'caller-listed', 'view_right', 'issue-1', *action, *conflict,
+                    'view', 'caller-listed', 'view_right', 'issue-1', 'quit', 'quit']
+                status, calls, replies, output, errors = self.drive(answers, fixture=INPUTS)
+                self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+                self.payment_parity(calls, replies, output)
+                first = next(i for i, r in enumerate(calls) if r['operation'] == 'observe_resale_payment')
+                if code is not None:
+                    self.assertEqual(replies[first]['error'], {'code': code})
+                    self.assertEqual(replies[first + 3], replies[first])
+                    self.assertEqual(replies[first + 1]['view'], replies[first - 2]['view'])
+                else:
+                    self.assertEqual(replies[first + 3]['receipt'],
+                                     replies[first]['receipt'] | {'duplicate': True, 'applied': None})
+                self.assertEqual(replies[first + 4]['error'], {'code': 'IDEMPOTENCY_CONFLICT'})
+                self.assertEqual(replies[-2]['view'], replies[first + 1]['view'])
+                self.assertEqual(replies[-1]['view'], replies[first + 2]['view'])
+                # view_right includes current listing phase as well as ownership.
+                self.assertEqual(replies[first + 2]['view']['right'], replies[first - 1]['view']['right'])
+                if code is not None:
+                    self.assertEqual(replies[first + 2]['view'], replies[first - 1]['view'])
+
+    def test_payment_inputs_bound_transfer_gates_and_retained_refusals(self):
+        # Bind an absent claim first; create, capture and commit only when selected.
+        transcript = (HERE / 'fixtures/shared_ticket_console_payment_inputs_listed.txt').read_text().splitlines()
+        start = transcript.index('initiate_from_resale')
+        finish = transcript.index('view', transcript.index('observe_recorded_statement'))
+        settlement_actions = transcript[start:finish]
+        initiate_end = settlement_actions.index('SUBMIT') + 1
+        bind = ['bind_settlement', 'caller-listed', 'resale-claim', 'caller-bind', 'SUBMIT']
+        missing = ['accept_resale', 'gate-transfer', 'caller-listed', 'missing-transfer-key', 'SUBMIT']
+        uncommitted = ['accept_resale', 'gate-transfer', 'caller-listed', 'pending-transfer-key', 'SUBMIT']
+        fresh = ['accept_resale', 'gate-transfer', 'caller-listed', 'committed-transfer-key', 'SUBMIT']
+        answers = ['resale', *PAYMENT_LIST, *PAYMENT_INPUT, *bind, *missing, 'view', 'caller-listed',
+            'quit', 'settlement', *settlement_actions[:initiate_end], 'quit', 'resale', *uncommitted,
+            'view', 'caller-listed', 'quit', 'settlement', *settlement_actions[initiate_end:], 'quit',
+            'resale', *missing, *uncommitted, 'view', 'caller-listed', *fresh, 'view', 'caller-listed',
+            'view_right', 'issue-1', 'quit', 'quit']
+        status, calls, replies, output, errors = self.drive(answers, fixture=INPUTS)
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        self.payment_parity(calls, replies, output)
+        transfers = [r for r in replies if r['operation'] == 'accept_resale']
+        self.assertEqual([r['error']['code'] for r in transfers[:-1]],
+            ['UNKNOWN_SETTLEMENT', 'SETTLEMENT_NOT_COMMITTED'] * 2)
+        views = [r['view'] for r in replies if r['surface'] == 'resale' and r['operation'] == 'view']
+        self.assertEqual([v['phase'] for v in views], ['PAYMENT_NOTED'] * 3 + ['TRANSFERRED'])
+        self.assertTrue(all(v['current_version'] == 1 and not v['ownership_transferred'] for v in views[:-1]))
+        self.assertEqual(replies[-1]['view']['right']['version'], 2)
+
+    def test_received_payment_display_failure_retains_accepted_result_and_fences_navigation(self):
+        class BrokenPaymentOutput(io.StringIO):
+            def write(self, text):
+                if text.startswith('desk=') and json.loads(text[5:])['operation'] == 'observe_resale_payment':
+                    raise BrokenPipeError('payment display')
+                return super().write(text)
+        pending = script(['resale', *PAYMENT_LIST, *PAYMENT_INPUT, *QUEUE])
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, _, errors = self.drive(stream=pending,
+                output=BrokenPaymentOutput(), fixture=INPUTS)
+        launch.assert_called_once()
+        self.assertEqual((status, len(calls), len(replies)), (2, 2, 2))
+        self.assertEqual(replies[-1]['receipt']['listing']['phase'], 'PAYMENT_NOTED')
+        self.assertEqual(json.loads(errors.split('FENCED: ')[1].splitlines()[0])['last_reply'], replies[-1])
+        self.assertEqual(pending.read(), script(QUEUE).read())
+
+    def test_payment_transcripts_as_cli_subprocess(self):
+        for held in (False, True):
+            name = 'held' if held else 'listed'
+            answers = (HERE / f'fixtures/shared_ticket_console_payment_inputs_{name}.txt').read_text()
+            result = subprocess.run([sys.executable, '-B', str(HERE / 'shared_ticket_console.py'),
+                '--fixture', str(INPUTS), '--cleanup-timeout', '1'], cwd=ROOT, input=answers,
+                text=True, capture_output=True, timeout=10, env=os.environ.copy())
+            self.assertEqual((result.returncode, result.stderr), (0, ''))
+            replies = envelopes(result.stdout)
+            self.assertEqual(len(replies), 19 + int(held))
+            self.assertEqual(replies[-2]['receipt']['listing']['phase'], 'PAYMENT_NOTED')
+            self.assertEqual(replies[-2]['receipt']['duplicate'], True)
+            self.assertEqual(replies[-1]['view']['phase'], 'TRANSFERRED')
+            self.assertEqual(replies[-3]['view']['right']['version'], 2)
+
+    def test_payment_decline_and_confirmation_interrupt_fence_shared_navigation(self):
+        pending = script(['resale', *PAYMENT_INPUT[:-1], 'no', 'quit', 'quit'])
+        status, calls, _, output, errors = self.drive(stream=pending)
+        self.assertEqual((status, calls, errors), (0, [], ''))
+        self.assertIn('Declined; no request sent.', output)
+        for failure in (None, KeyboardInterrupt('approval'), OSError('approval')):
+            prefix = script(['resale', *PAYMENT_INPUT[:-1]])
+            queued = script(QUEUE)
+            class BrokenInput:
+                failed = False
+                def readline(self):
+                    line = prefix.readline()
+                    if line:
+                        return line
+                    if not self.failed:
+                        self.failed = True
+                        if failure is not None:
+                            raise failure
+                        return ''
+                    return queued.readline()
+            status, calls, _, _, errors = self.drive(stream=BrokenInput())
+            self.assertEqual((status, calls), (2, []))
+            self.assertEqual(queued.read(), script(QUEUE).read())
+            self.assertIn('FENCED:', errors)
 
     def test_live_shared_journey_one_child(self):
         answers = JOURNEY.read_text().splitlines()

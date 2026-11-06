@@ -19,6 +19,7 @@ _FIELDS = {
     'release_hold': ('hold_id', 'buyer_role'),
     'cancel_listing': ('listing_id', 'seller_role'),
     'observe_recorded_payment': ('recording_id', 'listing_id'),
+    'observe_resale_payment': ('listing_id', 'payment_ref', 'amount', 'buyer_role'),
     'bind_settlement': ('listing_id', 'settlement_id'),
     'accept_resale': ('transfer_id', 'listing_id'),
     'close': ('listing_id',),
@@ -82,9 +83,9 @@ def run_console(client, *, input_stream, output_stream, error_stream):
             raise EOFError('terminal input ended; no further submissions')
         return line.removesuffix('\n').removesuffix('\r')
 
-    def field(name, *, nullable_reservation=False):
+    def field(name, *, nullable=False):
         hint = (' (synthetic; enter clock)' if name == 'subject_id' else
-                ' (JSON string or explicit null)' if nullable_reservation else '')
+                ' (JSON string or explicit null)' if nullable else '')
         value = prompt(name + hint)
         if name in {'version', 'amount', 'expires_ms', 'now_ms'}:
             if re.fullmatch(r'[0-9]+', value) is None:
@@ -93,24 +94,26 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                 return int(value)
             except ValueError as error:
                 raise _InputError(name + ' integer is too long') from error
-        if nullable_reservation:
+        if nullable:
             try:
                 value = json.loads(value)
             except ValueError as error:
-                raise _InputError('reservation_id requires a JSON string or explicit null') from error
+                raise _InputError(name + ' requires a JSON string or explicit null') from error
             if value is None:
                 return None
             if type(value) is not str:
-                raise _InputError('reservation_id requires a JSON string or explicit null')
+                raise _InputError(name + ' requires a JSON string or explicit null')
         if not value or value != value.strip():
             raise _InputError(name + ' requires an explicit value without surrounding whitespace')
         return value
 
     try:
         print('Local synthetic resale console — MOCK_GATE_ONLY, in-memory.\n'
-              'Listing, recorded payment observation and ownership transfer are separate outcomes.\n'
+              'Listing, synthetic payment observation, settlement and ownership transfer are separate actions.\n'
               'Receipts are action snapshots; only explicitly requested views observe current state.\n'
               'Product policy: UNDETERMINED — Astra/User; legal effects: UNDETERMINED — User/legal.',
+              file=output_stream)
+        print('Payment inputs are synthetic; provider authentication: UNDETERMINED — Toss/User.',
               file=output_stream)
         while True:
             print('Actions: ' + ', '.join(_FIELDS) + ', quit', file=output_stream)
@@ -121,8 +124,9 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                 print('Unknown action; choose an action from the menu.', file=output_stream)
                 continue
             try:
-                arguments = {name: field(name, nullable_reservation=(
-                    name == 'reservation_id' and action == 'list_resale_inputs'))
+                arguments = {name: field(name, nullable=(
+                    (name == 'reservation_id' and action == 'list_resale_inputs') or
+                    (name == 'buyer_role' and action == 'observe_resale_payment')))
                     for name in _FIELDS[action]}
                 mutation = action not in _VIEWS
                 if mutation:

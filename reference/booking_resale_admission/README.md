@@ -2459,7 +2459,8 @@ The budget applies to child cleanup, not response reads; reads have no deadline.
 Setup comes entirely from the selected fixture. The example fixture already
 contains synthetic issuance/adoption, recorded `payment-1` for `list-1` and
 committed `resale-claim` for 8000 KRW. Fixture prices, allocations and timing are
-examples. No settlement creation or payment generation shortcut is exposed.
+examples. Caller-entered payment observations are synthetic inputs; settlement
+creation remains a separately selected action on the settlement console.
 
 At `action`, select an exact selector below. Enter one value per subsequent
 prompt in the listed order. Every mutation then prompts for `idempotency_key`,
@@ -2469,7 +2470,10 @@ Approval is consumed once; explicit replay requires selecting the action again,
 entering all identifiers/arguments and its key, and approving again. There are no
 implicit identifiers, keys, prices, expiry or clock values. In `list_resale_inputs`,
 `reservation_id` requires a JSON string (for example `"reserve-1"`) or explicit JSON `null`;
-other identifiers/labels are plain text. Integers require decimal digits, with
+`observe_resale_payment.buyer_role` also requires a JSON string (for example
+`"buyer-2"`) or literal `null`. Blank, non-string JSON and empty or whitespace-padded
+strings are refused without submission. Other buyer prompts and identifiers/labels
+remain plain text. Integers require decimal digits, with
 no float conversion, fractional values or scientific notation. The unchanged
 service validates supported ranges, ownership and timing.
 
@@ -2481,6 +2485,7 @@ service validates supported ranges, ownership and timing.
 | `release_hold` | `hold_id`, `buyer_role` |
 | `cancel_listing` | `listing_id`, `seller_role` |
 | `observe_recorded_payment` | `recording_id`, `listing_id` |
+| `observe_resale_payment` | `listing_id`, `payment_ref`, integer `amount`, JSON `buyer_role` or explicit `null` |
 | `bind_settlement` | `listing_id`, `settlement_id` |
 | `accept_resale` | `transfer_id`, `listing_id` |
 | `close` | `listing_id` |
@@ -2542,6 +2547,20 @@ settlement source/commit/amount checks. Missing payment, missing recordings,
 unknown/uncommitted settlements, price and ownership refusals retain the desk's
 original errors. No automatic correction or binding occurs. Recorded-payment
 replay fetches the recording again and may fail; no cached fallback is added.
+
+For a caller-created listing absent from payment recordings, select
+`observe_resale_payment`. Enter the listing ID, caller-chosen synthetic lowercase
+64-hex payment reference, integer amount, explicit buyer JSON string or `null`,
+and key, then inspect the complete `proposed=` request before `SUBMIT`. No payment
+source is fetched. In `LISTED`, null or the matching recipient is accepted; in
+`BUY_HELD`, the explicit matching buyer is required. The desk owns buyer, amount,
+reference, range and lifecycle validation. Observation alone records
+`PAYMENT_NOTED`; settlement, binding and transfer each require another selection
+and confirmation. Unbound transfer keeps its existing semantics. A bound transfer
+requires the existing committed settlement checks. Replay returns the first
+historical receipt even after transfer; it does not refresh ownership.
+Provider authentication remains **UNDETERMINED — Toss/User**; entered synthetic
+references are not authenticated provider evidence.
 
 Exit 0 is clean, 1 records known service refusals, and 2 fences terminal failure.
 Known refusals allow only another explicit action. Transport uncertainty,
@@ -2935,6 +2954,44 @@ capability-grade promotion. Persistence, real payment, issuance, production
 admission, legal/accounting effects and durable settlement closure remain open.
 See [coverage and actual builder validation](../../validation/2026-11-05-plan-local-shared-ticket-console/README.md);
 non-author exact-head review and required KTX/KIX CI remain delivery gates.
+
+### Caller-entered synthetic resale payments in the shared console
+
+The [LISTED answers](fixtures/shared_ticket_console_payment_inputs_listed.txt)
+and [HELD answers](fixtures/shared_ticket_console_payment_inputs_held.txt) use
+`ticket_operations_settlement_inputs_session.json`. Each creates a distinct
+`caller-listed` or `caller-held` listing absent from that fixture's payment
+recordings. From the repository root:
+
+```bash
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_payment_inputs_listed.txt
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_payment_inputs_held.txt
+```
+
+Both journeys exit 0. LISTED enters literal `null`; HELD first selects `hold_buy`
+with plain-text `buyer-2`, then enters JSON `"buyer-2"` for the payment buyer.
+Each explicitly observes synthetic `8000` KRW under a caller-supplied reference
+and key, views the unchanged holder/version and existing `claim-1`, then switches
+to settlement. Separate confirmed selections initiate `resale-claim`, authorize,
+capture, commit one recorded statement and observe another. Only after returning
+to resale do explicit binding and transfer change ownership to buyer-2/version 2.
+The final payment replay still describes the earlier `PAYMENT_NOTED` snapshot;
+the following current view stays `TRANSFERRED`.
+
+The 500 basis point example policy, roles, prices, references, clocks, keys and
+statement IDs are synthetic caller inputs reused from existing examples, never
+approved product defaults. Payment entry does not execute funds, authenticate a
+provider, settle, transfer, infer a buyer or generate a key. Product policy stays
+**UNDETERMINED — Astra/User**; provider authentication stays
+**UNDETERMINED — Toss/User**. The
+[payment input validation record](../../validation/2026-11-06-plan-plan-local-resale-payment-console-inputs/README.md)
+maps composition coverage, actual local results and pending review/CI gates.
 
 ## Guided local fulfillment in the shared console
 
