@@ -206,6 +206,29 @@ Run one fresh in-process session with the same explicit opening-balance fixture:
 python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json
 ```
 
+To use one live local synthetic desk child for the entire interaction, explicitly
+select subprocess mode and a finite positive cleanup timeout in seconds:
+
+```bash
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1
+```
+
+`--mode in-process` is the default and preserves the importable
+`run_console(session, *, input_stream, output_stream, error_stream)` interface.
+Both modes require `--fixture`. Subprocess mode requires `--cleanup-timeout`;
+supplying it in in-process mode is a usage error. The timeout is caller selected,
+with no default, and applies only to reclaiming the owned child. Response reads
+remain blocking with no product response deadline.
+
+Subprocess mode uses the existing `RewardClient` and unchanged `reward_cli.py`.
+It launches once, keeps stdin open between selections, and performs each confirmed
+mutation or explicit read in that same service session. It constructs no local
+fallback session. Importing the console launches nothing. Quit, EOF, interruption,
+rendering failure and dispatch failure all close/reap the owned child. Cleanup
+closes stdin, waits up to the supplied timeout, then terminates and, if needed,
+kills and reaps the child as described in the client section. This is resource
+reclamation and establishes no rollback; exiting loses the synthetic session.
+
 Choose one of the twelve operations in the schema table above, or local `quit`.
 There is no startup read. Each selection collects every field again, even for a
 deliberate replay. Prompt order is:
@@ -253,11 +276,20 @@ Console statuses:
 
 - **0:** explicit `quit` with no domain refusal. Declines, unknown menu choices
   and recoverable `input_error=` field syntax errors do not change status.
-- **1:** any `TokenRewardError`; sticky through later accepted actions and reads.
+- **1:** any matching domain `error={"code":...}` / `TokenRewardError`; sticky
+  through later explicitly selected accepted actions and reads.
 - **2:** setup/dispatch-format failure, EOF (including at confirmation), interrupt,
   unexpected exception or I/O failure. Stop immediately, without rollback claims.
-  `FENCED:` diagnostics retain the last envelope when available; failure to write
+  Null-operation setup errors and typed service error envelopes are printed
+  unchanged and stop immediately. Client-state failure, transport uncertainty,
+  unexpected child exit or cleanup failure also exit 2. A normal child exit 1
+  preserves domain-refusal status; cleanup cannot downgrade a failure.
+  `FENCED:` diagnostics retain the last envelope when available and the exception
+  chain. Transport uncertainty additionally preserves the detached `request`,
+  lossless `request_bytes_hex` and observed `reply_bytes_hex`. Cleanup errors have
+  separate diagnostics so the primary failure remains visible. Failure to write
   a diagnostic cannot authorize another call. Earlier mutations may be applied.
+  No error permits automatic retry, child restart or in-process fallback.
 
 Reproduce both console transcripts from the repository root:
 
@@ -266,14 +298,24 @@ python3 reference/token_reward/reward_console.py --fixture reference/token_rewar
 python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json < reference/token_reward/fixtures/reward_console_boundaries.txt
 ```
 
+Run the same transcripts against a live child:
+
+```bash
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_journey.txt
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_boundaries.txt
+```
+
 The success transcript exits 0 after observe → hold → eligibility → submit →
 effects, explicit historical replays and reads. The boundary transcript exits 1
 after open-window, forbidden-pool and AI-approval refusals followed by successful
 actions/reads. Both end with `quit`; EOF is not a clean exit.
 The [console evidence record](../../validation/2026-11-05-plan-local-reward-console/README.md)
 contains captured stdout, coverage mapping and actual local checks. The console
-has no sockets, child processes, external dependencies or settlement/reward FSM
-coupling. All synthetic limitations and Class B observations below still apply.
+has no child processes in in-process mode. Subprocess mode owns one local desk
+child; neither mode uses sockets, external services, dependencies or
+settlement/reward FSM coupling. The [live console evidence record](../../validation/2026-11-07-plan-plan-local-reward-live-console/README.md)
+records composition coverage, captured transcripts and local checks. All
+synthetic limitations and Class B observations below still apply.
 
 ## JSONL output and errors
 
