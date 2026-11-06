@@ -22,6 +22,7 @@ TRANSFER = HERE / 'fixtures/resale_console_transfer.txt'
 CANCEL = HERE / 'fixtures/resale_console_cancel.txt'
 LIST_ARGS = ['list-1', 'issue-1', '1', 'buyer-1', 'buyer-2', '8000', '1120000', '"reserve-1"', 'console-list']
 LIST = ['list_resale_inputs', *LIST_ARGS, 'SUBMIT']
+PAY_INPUT = ['observe_resale_payment', 'caller-listing', 'ef' * 32, '8000', 'null', 'caller-pay', 'SUBMIT']
 PAY = ['observe_recorded_payment', 'payment-1', 'list-1', 'pay', 'SUBMIT']
 ACCEPT = ['accept_resale', 'transfer', 'list-1', 'transfer-key', 'SUBMIT']
 VIEW = ['view', 'list-1']
@@ -112,6 +113,67 @@ class ResaleConsoleTests(unittest.TestCase):
                         output_stream=out, error_stream=err), 2)
                     client.request.assert_not_called()
                     self.assertIn('FENCED:', err.getvalue())
+
+    def test_payment_inputs_exact_proposal_and_one_submission_per_confirmation(self):
+        for buyer in ('null', '"buyer-2"', '"caller-☀"'):
+            # Large integer fidelity and opaque values are console boundary evidence;
+            # service ranges and eligibility remain service-owned.
+            args = ['caller-listing', 'caller-payment-ref', '999999999999', buyer, 'caller-key']
+            request = dict(surface='resale', operation='observe_resale_payment', arguments=dict(
+                listing_id=args[0], payment_ref=args[1], amount=999999999999,
+                buyer_role=json.loads(buyer), idempotency_key=args[4]))
+            reply = dict(surface='resale', operation='observe_resale_payment',
+                         receipt=dict(duplicate=False, applied='observe_resale_payment'))
+            client, output, errors = Mock(), io.StringIO(), io.StringIO()
+            client.request.return_value = reply
+            action = ['observe_resale_payment', *args]
+            status = run_console(client, input_stream=script(action + ['submit', *action, 'SUBMIT', 'quit']),
+                                 output_stream=output, error_stream=errors)
+            self.assertEqual((status, errors.getvalue()), (0, ''))
+            client.request.assert_called_once_with(request)
+            text = output.getvalue()
+            self.assertEqual(text.count('proposed=' + json.dumps(request, sort_keys=True)), 2)
+            self.assertIn('desk=' + json.dumps(reply, sort_keys=True), text)
+            self.assertIn('Declined; no request sent.', text)
+            labels = ['listing_id:', 'payment_ref:', 'amount:',
+                      'buyer_role (JSON string or explicit null):', 'idempotency_key:',
+                      'proposed=', 'Type literal SUBMIT']
+            positions = [text.index(label) for label in labels]
+            self.assertEqual(positions, sorted(positions))
+            self.assertIn('UNDETERMINED — Toss/User', text)
+
+    def test_invalid_payment_inputs_never_submit(self):
+        invalids = [(0, ''), (1, ' padded '), (2, ''), (2, '1.0'), (2, '1e3'),
+                    (2, '-1'), (2, ' 8000'), (2, '9' * 5000), (4, '')]
+        invalids += [(3, value) for value in ('', 'buyer-2', 'false', '0', '[]', '{}',
+                                             '""', '" buyer-2"', '"buyer-2 "')]
+        args = PAY_INPUT[1:-1]
+        for index, value in invalids:
+            with self.subTest(index=index, value=value[:30]):
+                client, output = Mock(), io.StringIO()
+                status = run_console(client, input_stream=script(
+                    ['observe_resale_payment', *args[:index], value, 'quit']),
+                    output_stream=output, error_stream=io.StringIO())
+                self.assertEqual(status, 0)
+                client.request.assert_not_called()
+                self.assertIn('input_error=', output.getvalue())
+                self.assertNotIn('proposed=', output.getvalue())
+
+    def test_payment_input_failure_at_every_prompt_fences_without_submission(self):
+        # Every boundary, including confirmation, requires explicit input.
+        for count in range(1, len(PAY_INPUT)):
+            for failure in (None, KeyboardInterrupt('payment input'), OSError('payment input')):
+                with self.subTest(count=count, failure=type(failure).__name__):
+                    prefix = script(PAY_INPUT[:count])
+                    class BrokenInput:
+                        def readline(self):
+                            line = prefix.readline()
+                            if not line and failure is not None:
+                                raise failure
+                            return line
+                    status, calls, replies, _, errors = self.drive([], stream=BrokenInput())
+                    self.assertEqual((status, calls, replies), (2, [], []))
+                    self.assertIn('FENCED:', errors)
 
     def test_live_transfer_transcript(self):
         with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
@@ -211,7 +273,7 @@ class ResaleConsoleTests(unittest.TestCase):
     def test_every_mutation_requires_literal_single_use_submission(self):
         actions = [LIST[:-1], ['hold_buy', 'h', 'list-1', 'buyer-2', 'h-key'],
             ['release_hold', 'h', 'buyer-2', 'release'], ['cancel_listing', 'list-1', 'buyer-1', 'cancel'],
-            PAY[:-1], ['bind_settlement', 'list-1', 'resale-claim', 'bind'], ACCEPT[:-1],
+            PAY[:-1], PAY_INPUT[:-1], ['bind_settlement', 'list-1', 'resale-claim', 'bind'], ACCEPT[:-1],
             ['close', 'list-1', 'close'], ['set_clock', 'clock', '1000000', 'clock-key']]
         answers = [v for action in actions for v in [*action, 'submit']]
         status, calls, _, output, errors = self.drive(answers + ['quit'])
