@@ -394,7 +394,7 @@ class AdmissionConsoleTests(unittest.TestCase):
             self.assertEqual(status, 0)
             client.request.assert_not_called()
             self.assertIn('input_error=', output.getvalue())
-        status, calls, replies, output, errors = self.drive(['authorize', 'consume', 'reconcile', 'quit'])
+        status, calls, replies, output, errors = self.drive(['authorize', 'consume', 'quit'])
         self.assertEqual((status, calls, errors), (0, [], ''))
         # Integer above float's exact range goes unchanged to existing semantic validation.
         status, calls, replies, output, errors = self.drive(

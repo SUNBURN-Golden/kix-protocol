@@ -140,7 +140,7 @@ def run_console(client, *, input_stream, output_stream, error_stream):
               file=output_stream)
         while True:
             print('Actions: view_show, set_clock, hold, load_quote, target, preview, confirm, '
-                  'bind_settlement, issue, view, release, cancel, quit', file=output_stream)
+                  'bind_settlement, issue, reconcile, view, release, cancel, quit', file=output_stream)
             action = prompt('action')
             try:
                 if action == 'quit':
@@ -185,11 +185,12 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                         continue
                     send('confirm_calculated_quote', dict(request_text=snapshot.request_text,
                                                           **vars(snapshot.target)))
-                elif action in {'bind_settlement', 'issue'}:
+                elif action in {'bind_settlement', 'issue', 'reconcile'}:
                     names, confirmation = {
                         'bind_settlement': (('reservation_id', 'settlement_id', 'idempotency_key'),
                                             'BIND_SETTLEMENT'),
                         'issue': (('issuance_id', 'order_id', 'idempotency_key'), 'ISSUE'),
+                        'reconcile': (('reservation_id', 'idempotency_key'), 'RECONCILE'),
                     }[action]
                     arguments = fields(names)
                     print('proposed=' + _json(dict(surface='booking', operation=action,

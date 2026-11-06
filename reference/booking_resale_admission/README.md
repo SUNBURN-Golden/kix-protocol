@@ -2398,6 +2398,7 @@ inferred identities, generated keys, wall-clock reads or automatic expiries.
 | `confirm` | Redisplays target and quote; literal `CONFIRM` submits `confirm_calculated_quote` once; any other answer declines without a request |
 | `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key`; literal `BIND_SETTLEMENT` |
 | `issue` | `issuance_id`, `order_id`, `idempotency_key`; literal `ISSUE` |
+| `reconcile` | `reservation_id`, `idempotency_key`; literal `RECONCILE` |
 | `view` | Explicit `reservation_id`; enter the identity returned in the receipt |
 | `release` / `cancel` | Explicit `reservation_id` and `idempotency_key`; each selected action submits once |
 | `quit` | Closes the owned child; sends no release/cancel/compensation |
@@ -2489,6 +2490,7 @@ service validates supported ranges, ownership and timing.
 | `bind_settlement` | `listing_id`, `settlement_id` |
 | `accept_resale` | `transfer_id`, `listing_id` |
 | `close` | `listing_id` |
+| `reconcile` | `listing_id`; then explicit key and literal `SUBMIT` |
 | `set_clock` | `subject_id` (existing subject `clock`), `now_ms` |
 | `view` | `listing_id`; no key/approval |
 | `view_right` | `right_id`; no key/approval |
@@ -2628,6 +2630,7 @@ last for mutations; no value is copied from a view or earlier reply.
 | `adopt_issued_from_booking` | `reservation_id`, `right_id`, `idempotency_key`; see [guided fulfillment](#guided-local-fulfillment-in-the-shared-console) | literal `ADOPT` |
 | `authorize_admission_inputs` | `admission_id`, `right_id`, `version`, `holder_role`, `gate_role`, `request`, `expires_ms`, `idempotency_key` | literal `AUTHORIZE` |
 | `consume_inputs` | `consume_id`, `right_id`, `version`, `gate_role`, `request`, `idempotency_key` | literal `CONSUME` |
+| `reconcile` | `right_id`, `idempotency_key` | literal `RECONCILE` |
 | `set_clock` | `subject_id`, `now_ms`, `idempotency_key` | literal `SET_CLOCK` |
 | `view` | `right_id` | none |
 | `view_credential` | `right_id`, `version`, `holder_role` | none |
@@ -2720,7 +2723,8 @@ sends nothing. The console exposes no other selectors.
 |---|---|
 | `initiate_from_booking` | `settlement_id`, `reservation_id`, `trade_id`, `debtor_role`, `policy` |
 | `initiate_from_resale` | `settlement_id`, `listing_id`, `trade_id`, `debtor_role`, `policy` |
-| `authorize`, `capture` | `settlement_id` |
+| `authorize`, `capture`, `reconcile` | `settlement_id` |
+| `fail`, `cancel` | `settlement_id`, `reason` |
 | `commit`, `observe_statement` | `settlement_id`, `movement_id`, `gross`, `amount`, `fee`, `tax`, `held`, `adjustment`, `adjustment_reason` |
 | `commit_recorded_statement`, `observe_recorded_statement` | `settlement_id`, `movement_id` |
 | `distribute` | `settlement_id`, `order` |
@@ -3095,3 +3099,87 @@ retain false finality/durability/production flags. They add no chain execution,
 credential reissuance, organizer lifecycle, new protocol command, payment handoff,
 production runtime or persistence. See the [builder evidence and remaining
 review/CI gates](../../validation/2026-11-05-plan-local-fulfillment-console/README.md).
+
+
+## Guided local ticket exception actions
+
+The four standalone consoles and the shared console expose existing desk
+reconciliation; settlement also exposes pre-capture failure and cancellation.
+They use the same `TicketOperationsClient`, dispatcher and service graph.
+There are no automatic views, clock updates, retries, worker restarts, repairs
+or compensation actions. Each submission requires newly entered fields and its
+own confirmation, including replay of an earlier key.
+
+| Surface / action | Explicit fields in order | Confirmation |
+|---|---|---|
+| booking / `reconcile` | `reservation_id`, `idempotency_key` | `RECONCILE` |
+| resale / `reconcile` | `listing_id`, `idempotency_key` | `SUBMIT` |
+| admission / `reconcile` | `right_id`, `idempotency_key` | `RECONCILE` |
+| settlement / `reconcile` | `settlement_id`, `idempotency_key` | `SUBMIT` |
+| settlement / `fail`, `cancel` | `settlement_id`, `reason`, `idempotency_key` | `SUBMIT` |
+
+Each field requires nonempty text without surrounding whitespace. No subject,
+key or reason is inferred. The complete `proposed=` envelope is displayed before
+confirmation. Any other confirmation declines with zero requests. EOF,
+interruption, transport uncertainty or display failure ends the session; queued
+navigation is not consumed. A fenced client refuses reconciliation before any
+write; the console never launches a replacement worker.
+
+For example, `settlement`, `fail`, `fail-init`, `synthetic-decline`,
+`caller-key`, `SUBMIT` in the shared console submits exactly:
+
+```json
+{"surface":"settlement","operation":"fail","arguments":{"settlement_id":"fail-init","reason":"synthetic-decline","idempotency_key":"caller-key"}}
+```
+
+Receipts are labeled **Historical action snapshot**, including a newly requested
+reconciliation receipt. Repeating a key returns the original snapshot with
+`duplicate: true`, `applied: null`. Only a separately selected `view` is a current
+observation. Full `desk=` JSON retains `matched`, `state_digest`, `entry_count`,
+subject snapshots, provenance and all false execution/finality flags. A digest
+match is process-local replay comparison, not authenticated operator evidence or
+permission to act. Original domain `{code}` and local `{type,message}` errors
+are printed unchanged. Same-key changed subject, reason or operation remains
+`IDEMPOTENCY_CONFLICT`; refusals stay retained without corrective submissions.
+
+`fail` and `cancel` accept only INITIATED/AUTHORIZED, with terminal FAILED or
+CANCELLED and `claim=null`. CAPTURED/COMMITTED refuse both with
+`ILLEGAL_TRANSITION`; new mutations after terminal state refuse with
+`TERMINAL_IMMUTABLE`. Reconciliation and views remain available after terminal
+state. Admission reconciliation with a fresh key can return `STALE_VERSION`
+after ownership transfer, even when an old reconciliation key still replays its
+historical success. These are existing service rules, not recovery controls.
+
+Run the checked-in answers from the repository root (omit redirection for
+interactive use). Every launch starts a fresh in-memory desk:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_reconcile.txt
+# Expected exit 1: selected conflicts and STALE_VERSION are retained.
+
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_exceptions.txt
+# Expected exit 1: pre-capture terminal actions, replays and post-capture refusals.
+
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_reconcile.txt
+# Expected exit 0: explicit statement/distribution/refund observations and reconciliation.
+```
+
+Exit 0 is clean completion, 1 a known refusal/nonzero child exit, 2 a terminal
+failure. The examples use synthetic identifiers, amounts, reasons and policies.
+Synthetic cancellation acceptance is **not real refund completion**. No queued
+authenticated operator-evidence work, durable recovery, reconciliation semantics,
+compensation/refund rules, terminal behavior, SDK/OpenAPI or runtime activation is
+changed. Product policy remains **UNDETERMINED — Astra/User**; legal/accounting
+effects remain **UNDETERMINED — User/designated advisers**. These results do not
+establish external execution, chain finality, legal compliance or production
+readiness. See the [coverage and actual validation record](../../validation/2026-11-06-plan-plan-local-ticket-exception-console/README.md)
+for results and pending non-author exact-head A2 review/KTX/KIX CI gates.

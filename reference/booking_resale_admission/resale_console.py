@@ -23,6 +23,7 @@ _FIELDS = {
     'bind_settlement': ('listing_id', 'settlement_id'),
     'accept_resale': ('transfer_id', 'listing_id'),
     'close': ('listing_id',),
+    'reconcile': ('listing_id',),
     'set_clock': ('subject_id', 'now_ms'),
     'view': ('listing_id',),
     'view_right': ('right_id',),
@@ -46,6 +47,9 @@ def render_outcomes(reply, output_stream):
     snapshot = 'receipt' in reply
     body = reply['receipt'] if snapshot else reply['view']
     label = 'Action snapshot' if snapshot else 'Current service observation'
+    if snapshot:
+        print('Historical action snapshot; request a view explicitly for current state.',
+              file=output_stream)
     print(label + ': ' + _json({k: body[k] for k in ('duplicate', 'applied') if k in body}),
           file=output_stream)
     listing = body.get('listing', body if 'listing_id' in body else {})
