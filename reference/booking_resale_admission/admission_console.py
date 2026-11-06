@@ -15,13 +15,14 @@ _FIELDS = {
     'authorize_admission_inputs': ('admission_id', 'right_id', 'version', 'holder_role',
                                    'gate_role', 'request', 'expires_ms'),
     'consume_inputs': ('consume_id', 'right_id', 'version', 'gate_role', 'request'),
+    'reconcile': ('right_id',),
     'view': ('right_id',),
     'view_credential': ('right_id', 'version', 'holder_role'),
     'set_clock': ('subject_id', 'now_ms'),
 }
 _CONFIRMATIONS = {'adopt_issued_from_booking': 'ADOPT',
                   'authorize_admission_inputs': 'AUTHORIZE', 'consume_inputs': 'CONSUME',
-                  'set_clock': 'SET_CLOCK'}
+                  'set_clock': 'SET_CLOCK', 'reconcile': 'RECONCILE'}
 
 
 class _InputError(ValueError):
@@ -39,6 +40,9 @@ def render_outcomes(reply, output_stream):
     snapshot = 'receipt' in reply
     body = reply['receipt'] if snapshot else reply['view']
     label = 'Action snapshot' if snapshot else 'Current local observation'
+    if snapshot:
+        print('Historical action snapshot; request a view explicitly for current state.',
+              file=output_stream)
     print(label + ': ' + _json({k: body[k] for k in ('duplicate', 'applied') if k in body}),
           file=output_stream)
     credential = body.get('credential', body if 'right_id' in body else {})

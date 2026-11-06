@@ -502,6 +502,78 @@ class SettlementConsoleTests(unittest.TestCase):
             self.assertEqual(main(['--fixture', str(FIXTURE), '--cleanup-timeout', '1']), 2)
         self.assertIn('launch failed', errors.getvalue())
 
+    def exception_journey(self, name):
+        fixture = HERE / 'fixtures/ticket_operations_settlement_exceptions_session.json'
+        probes = [dict(surface=surface, operation=op, arguments={field: identity})
+            for surface, op, field, identity in (
+                ('booking', 'view', 'reservation_id', 'reserve-2'),
+                ('resale', 'view_right', 'right_id', 'issue-1'),
+                ('admission', 'view', 'right_id', 'issue-1'))]
+        answers = (HERE / ('fixtures/settlement_console_' + name + '.txt')).read_text().splitlines()
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            result = self.drive(answers, fixture=fixture, unchanged=probes)
+        launch.assert_called_once()
+        status, calls, replies, output, errors = result
+        self.parity(calls, replies, output, fixture)
+        for reply in replies:
+            if 'error' not in reply:
+                settlement_flags(self, reply.get('receipt', reply.get('view')))
+        self.assertEqual(output.count('Historical action snapshot;'), sum('receipt' in r for r in replies))
+        self.assertIn('not real refund completion', output)
+        return result
+
+    def test_live_pre_capture_failure_cancellation_terminal_replays_and_post_capture_refusals(self):
+        status, calls, replies, output, errors = self.exception_journey('exceptions')
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        for i, phase in ((0, 'FAILED'), (6, 'CANCELLED'), (12, 'FAILED'), (18, 'CANCELLED')):
+            first = replies[i]['receipt']
+            self.assertEqual(first['settlement']['phase'], phase)
+            self.assertTrue(first['settlement']['terminal'])
+            self.assertIsNone(first['settlement']['claim'])
+            self.assertEqual(replies[i+1]['view'], first['settlement'])
+            self.assertTrue(replies[i+2]['receipt']['matched'])
+            self.assertEqual(replies[i+3]['receipt'], first | dict(duplicate=True, applied=None))
+            self.assertEqual(replies[i+4]['error'], {'code': 'IDEMPOTENCY_CONFLICT'})
+            self.assertEqual(replies[i+5]['error'], {'code': 'TERMINAL_IMMUTABLE'})
+        self.assertEqual([r['error'] for r in replies[24:28]], [{'code': 'ILLEGAL_TRANSITION'}] * 4)
+        self.assertEqual(replies[28]['receipt'], replies[20]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual(replies[29]['view'], replies[19]['view'])
+        self.assertEqual(replies[30]['error'], {'code': 'ILLEGAL_TRANSITION'})
+        self.assertEqual([r['error'] for r in replies[31:]], [{'code': 'IDEMPOTENCY_CONFLICT'}] * 3)
+        # This exact selection does not ask for capture, refund, distribution or repair.
+        self.assertEqual(set(r['operation'] for r in calls), {'fail', 'cancel', 'view', 'reconcile', 'authorize'})
+
+    def test_live_reconciliation_around_statements_distribution_refund_and_acceptance(self):
+        status, calls, replies, output, errors = self.exception_journey('reconcile')
+        self.assertEqual((status, errors), (0, ''))
+        first = replies[0]['receipt']
+        self.assertEqual(first['settlement']['phase'], 'AUTHORIZED')
+        for row, reply in zip(calls, replies, strict=True):
+            if row['arguments'].get('idempotency_key') == 'historical' and reply is not replies[0]:
+                self.assertEqual(reply['receipt'], first | dict(duplicate=True, applied=None))
+        claim = replies[-1]['view']['claim']
+        self.assertEqual((claim['distributed_cash'], claim['refund_face'], claim['refund_outstanding']),
+                         (9301, 4000, 3000))
+        self.assertNotEqual(replies[-2]['receipt']['settlement'], replies[-1]['view'])
+        self.assertEqual(replies[-3]['receipt']['settlement'], replies[-1]['view'])
+        expected = [json.loads(line) for line in (HERE /
+            'fixtures/ticket_operations_settlement_reconciliation.jsonl').read_text().splitlines()]
+        self.assertEqual(calls, expected)
+
+    def test_exception_answer_files_as_standalone_cli_subprocesses(self):
+        for name, expected_status, count in (('exceptions', 1, 34), ('reconcile', 0, 26)):
+            with self.subTest(transcript=name):
+                result = subprocess.run([sys.executable, '-B', str(HERE / 'settlement_console.py'),
+                    '--fixture', str(HERE / 'fixtures/ticket_operations_settlement_exceptions_session.json'),
+                    '--cleanup-timeout', '1'],
+                    input=(HERE / ('fixtures/settlement_console_' + name + '.txt')).read_text(),
+                    text=True, capture_output=True, timeout=10, env=os.environ.copy())
+                self.assertEqual(result.returncode, expected_status)
+                self.assertEqual(result.stderr, 'Child exit status=1\n' if expected_status else '')
+                self.assertEqual(len(re.findall(r'desk=', result.stdout)), count)
+                self.assertIn('Historical action snapshot;', result.stdout)
+                self.assertIn('not real refund completion', result.stdout)
+
     def test_documented_transcript_as_cli_subprocess(self):
         result = subprocess.run([sys.executable, '-B', str(HERE / 'settlement_console.py'),
             '--fixture', str(FIXTURE), '--cleanup-timeout', '1'], input=JOURNEY.read_text(),

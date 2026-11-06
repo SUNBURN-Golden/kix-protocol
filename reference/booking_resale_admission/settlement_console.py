@@ -19,6 +19,9 @@ _FIELDS = {
     'initiate_from_resale': ('settlement_id', 'listing_id', 'trade_id', 'debtor_role', 'policy'),
     'authorize': ('settlement_id',),
     'capture': ('settlement_id',),
+    'fail': ('settlement_id', 'reason'),
+    'cancel': ('settlement_id', 'reason'),
+    'reconcile': ('settlement_id',),
     'commit': _STATEMENT,
     'observe_statement': _STATEMENT,
     'commit_recorded_statement': ('settlement_id', 'movement_id'),
@@ -48,6 +51,9 @@ def render_outcomes(reply, output_stream):
     body = reply['receipt'] if snapshot else reply['view']
     settlement = body['settlement'] if snapshot else body
     label = 'Action snapshot' if snapshot else 'Current service observation'
+    if snapshot:
+        print('Historical action snapshot; request a view explicitly for current state.',
+              file=output_stream)
     print(label + ': ' + _json({k: body[k] for k in ('duplicate', 'applied') if k in body}),
           file=output_stream)
     print(label + ' Settlement=' + _json({k: v for k, v in settlement.items() if k != 'claim'}),

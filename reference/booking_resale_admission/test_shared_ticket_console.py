@@ -23,7 +23,7 @@ from ticket_operations_cli import _DOMAIN_ERRORS, _error
 from ticket_operations_cli import dispatch_request
 from test_ticket_operations_client import direct
 from test_ticket_settlement_controls import settlement_flags
-from ticket_operations_client import TicketOperationsClient
+from ticket_operations_client import TicketOperationsClient, TicketDeskTransportUncertainty
 from ticket_operations_fixture import load_fixture
 
 HERE = Path(__file__).resolve().parent
@@ -47,7 +47,16 @@ QUEUE = [item for name in SURFACES for item in [name, *VIEWS[name], 'quit']] + [
 PAYMENT_INPUT = ['observe_resale_payment', 'caller-listed', 'ef' * 32, '8000', 'null', 'caller-payment', 'SUBMIT']
 PAYMENT_LIST = ['list_resale_inputs', 'caller-listed', 'issue-1', '1', 'buyer-1', 'buyer-2',
                 '8000', '1120000', '"reserve-1"', 'caller-list', 'SUBMIT']
-FAULT_ACTIONS = [(name, VIEWS[name]) for name in SURFACES] + NEW_ACTIONS + [('resale', PAYMENT_INPUT)]
+EXCEPTION_ACTIONS = [
+    ('booking', ['reconcile', 'reserve-1', 'booking-reconcile', 'RECONCILE']),
+    ('resale', ['reconcile', 'list-1', 'resale-reconcile', 'SUBMIT']),
+    ('admission', ['reconcile', 'issue-1', 'admission-reconcile', 'RECONCILE']),
+    ('settlement', ['reconcile', 'resale-claim', 'settlement-reconcile', 'SUBMIT']),
+    ('settlement', ['fail', 'resale-claim', 'synthetic', 'settlement-fail', 'SUBMIT']),
+    ('settlement', ['cancel', 'resale-claim', 'synthetic', 'settlement-cancel', 'SUBMIT']),
+]
+FAULT_ACTIONS = ([(name, VIEWS[name]) for name in SURFACES] + NEW_ACTIONS
+                 + [('resale', PAYMENT_INPUT)] + EXCEPTION_ACTIONS)
 CLOCK = ['set_clock', 'clock', '1000000', 'shared-clock']
 HOLD = ['hold', 'shared-reservation', 'show-1', '1', 'shared-buyer', '1120000', 'shared-hold']
 LOAD = ['load_quote', str(QUOTE)]
@@ -108,6 +117,134 @@ class SharedTicketConsoleTests(unittest.TestCase):
         self.assertEqual(envelopes(output), replies)
         for row in calls:
             self.assertEqual(set(row), {'surface', 'operation', 'arguments'})
+
+    def test_live_cross_surface_reconciliation_history_current_views_and_conflicts(self):
+        fixture = HERE / 'fixtures/ticket_operations_session.json'
+        answers = (HERE / 'fixtures/shared_ticket_console_reconcile.txt').read_text().splitlines()
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(answers, fixture=fixture)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        self.parity(calls, replies, output, fixture)
+        for reply in replies:
+            if 'error' not in reply:
+                flags = {'booking': assert_not_final, 'resale': assert_resale_flags,
+                         'admission': assert_flags, 'settlement': settlement_flags}[reply['surface']]
+                flags(self, reply.get('receipt', reply.get('view')))
+        for surface, key, fresh in [('booking', 'booking-history', 'booking-fresh'),
+                ('resale', 'resale-recon', 'resale-current'),
+                ('settlement', 'settlement-history', 'settlement-current')]:
+            history = [reply['receipt'] for row, reply in zip(calls, replies, strict=True)
+                if row['surface'] == surface and row['operation'] == 'reconcile'
+                and row['arguments']['idempotency_key'] == key and 'receipt' in reply]
+            self.assertEqual(len(history), 2)
+            self.assertEqual(history[1], history[0] | dict(duplicate=True, applied=None))
+            current = next(reply['receipt'] for row, reply in zip(calls, replies, strict=True)
+                if row['surface'] == surface and row['arguments'].get('idempotency_key') == fresh)
+            self.assertTrue(current['matched'])
+            self.assertFalse(current['duplicate'])
+            self.assertNotEqual(history[0]['state_digest'], current['state_digest'])
+            self.assertGreater(current['entry_count'], history[0]['entry_count'])
+        booking_views = [r['view'] for r in replies if r['surface'] == 'booking' and 'view' in r]
+        self.assertEqual(booking_views[0]['phase'], 'RELEASED')
+        resale_views = [r['view'] for r in replies if r['surface'] == 'resale' and 'view' in r]
+        self.assertEqual(resale_views[0]['phase'], 'CLOSED')
+        admission = [r for r in replies if r['surface'] == 'admission' and r['operation'] == 'reconcile']
+        self.assertEqual(admission[1]['receipt'], admission[0]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual([r['error'] for r in admission[2:4]], [{'code': 'STALE_VERSION'}] * 2)
+        self.assertEqual(admission[-1]['error'], {'code': 'IDEMPOTENCY_CONFLICT'})
+        for surface in SURFACES:
+            self.assertTrue(any(r['surface'] == surface and r.get('error') ==
+                                {'code': 'IDEMPOTENCY_CONFLICT'} for r in replies))
+        snapshots = sum('receipt' in r for r in replies)
+        self.assertEqual(output.count('Historical action snapshot;'), snapshots)
+        self.assertIn('not real refund completion', output)
+        # No derived repair/compensation request: this is the exact selected sequence.
+        self.assertEqual([r['operation'] for r in calls], [
+            'set_clock', 'hold', 'reconcile', 'release', 'reconcile', 'view', 'reconcile', 'reconcile', 'reconcile',
+            'authorize_admission_inputs', 'reconcile', 'set_clock', 'list_resale_inputs', 'reconcile',
+            'hold_buy', 'observe_resale_payment', 'bind_settlement', 'accept_resale', 'close',
+            'reconcile', 'reconcile', 'reconcile', 'reconcile', 'view', 'reconcile', 'view',
+            'reconcile', 'reconcile', 'reconcile', 'reconcile', 'distribute', 'reconcile', 'view',
+            'reconcile', 'reconcile', 'reconcile'])
+
+    def test_shared_pre_capture_exceptions_preserve_booking_and_navigation(self):
+        fixture = HERE / 'fixtures/ticket_operations_settlement_exceptions_session.json'
+        actions = (HERE / 'fixtures/settlement_console_exceptions.txt').read_text().splitlines()
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(
+                ['booking', 'view', 'reserve-2', 'quit', 'settlement', *actions,
+                 'booking', 'view', 'reserve-2', 'quit', 'quit'], fixture=fixture)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        self.parity(calls, replies, output, fixture)
+        self.assertEqual(replies[0]['view'], replies[-1]['view'])
+        self.assertEqual([replies[i]['receipt']['settlement']['phase'] for i in (1, 7, 13, 19)],
+                         ['FAILED', 'CANCELLED', 'FAILED', 'CANCELLED'])
+        for reply in replies[1:-1]:
+            if 'error' not in reply:
+                settlement_flags(self, reply.get('receipt', reply.get('view')))
+
+    def test_already_fenced_client_rejects_exception_actions_before_writing_or_restarting(self):
+        for name, action in EXCEPTION_ACTIONS:
+            with self.subTest(surface=name, operation=action[0]):
+                with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+                    client = TicketOperationsClient.launch(FIXTURE, cleanup_timeout=1)
+                    with patch.object(client._process.stdin, 'write', return_value=1):
+                        with self.assertRaises(TicketDeskTransportUncertainty):
+                            client.request(dict(surface='booking', operation='view',
+                                                arguments=dict(reservation_id='reserve-1')))
+                    uncertainty = client.uncertainty
+                    self.assertIsNotNone(uncertainty)
+                    pending = script([name, *action, *QUEUE])
+                    with patch.object(client._process.stdin, 'write', side_effect=AssertionError('fenced write')) as write:
+                        status, calls, replies, _, errors = self.drive(client=client, stream=pending)
+                        write.assert_not_called()
+                launch.assert_called_once()
+                self.assertEqual((status, len(calls), replies), (2, 1, []))
+                self.assertIs(client.uncertainty, uncertainty)
+                self.assertEqual(pending.read(), script(QUEUE).read())
+                self.assertIn('TicketDeskClientStateError', errors)
+
+    def test_exception_declines_and_confirmation_interrupt_fence_queued_navigation(self):
+        for name, action in EXCEPTION_ACTIONS:
+            for failure in (None, KeyboardInterrupt('confirmation'), OSError('input')):
+                with self.subTest(surface=name, operation=action[0], failure=failure):
+                    prefix = script([name, *action[:-1]])
+                    queued = script(QUEUE)
+
+                    class BrokenInput:
+                        broken = False
+
+                        def readline(self):
+                            line = prefix.readline()
+                            if line:
+                                return line
+                            if not self.broken:
+                                self.broken = True
+                                if failure is None:
+                                    return ''
+                                raise failure
+                            return queued.readline()
+
+                    status, calls, _, _, errors = self.drive(stream=BrokenInput())
+                    self.assertEqual((status, calls), (2, []))
+                    self.assertEqual(queued.read(), script(QUEUE).read())
+                    self.assertIn('FENCED:', errors)
+            status, calls, _, output, errors = self.drive(
+                [name, *action[:-1], 'no', 'quit', 'settlement', 'quit', 'quit'])
+            self.assertEqual((status, calls, errors), (0, [], ''))
+            self.assertIn('Declined; no request sent.', output)
+
+    def test_reconciliation_transcript_as_cli_subprocess(self):
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'shared_ticket_console.py'),
+            '--fixture', str(HERE / 'fixtures/ticket_operations_session.json'), '--cleanup-timeout', '1'],
+            input=(HERE / 'fixtures/shared_ticket_console_reconcile.txt').read_text(),
+            text=True, capture_output=True, timeout=10, env=os.environ.copy())
+        self.assertEqual((result.returncode, result.stderr), (1, 'Child exit status=1\n'))
+        self.assertEqual(len(envelopes(result.stdout)), 36)
+        self.assertIn('STALE_VERSION', result.stdout)
+        self.assertIn('Historical action snapshot;', result.stdout)
 
     def fulfillment(self, name):
         answers = (HERE / ('fixtures/shared_ticket_console_fulfillment' + name + '.txt')).read_text().splitlines()
