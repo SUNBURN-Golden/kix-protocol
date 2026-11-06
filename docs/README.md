@@ -18,6 +18,13 @@
 9. [범위 편입 결정 기록(2026-09-29)](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) — #79 사용자 병합(`5cf4168`)으로 승인. 선택적 자체 토큰 계층과 확장형 권리·재고·검표 계층. 당시 설계·계획 문서화 한정이며 후속 조건부 범위는 [프로그램 로드맵 R-1~R-11](decisions/PROGRAM_ROADMAP_20260930.md)을 따른다. D-1~D-3의 잠금·해제 조건은 유지하며 범위 승인과 실행 시작을 분리한다. [개발계획 §18](DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입).
 10. [.aiops/program.json](../.aiops/program.json) — 현재 노드 입력·canonical 의존성. [감사·병합 판정 표](aiops/PROGRAM_ASTRA_DELEGATION.md), [pending catalogue](decisions/PROGRAM_ROADMAP_20260930_PENDING.json), [확대 후보](aiops/PROGRAM_EXPANSION_20261002_KO.md) — 외부 선행·별도 채택·release 결정을 완료로 간주하지 않는다. 후보 집계 반영은 별도 채택 뒤 개발계획 §17에 따른다.
 
+## Local reward subprocess client
+
+[Reward client guide](../reference/token_reward/README.md#live-subprocess-client)
+and [2026-11-06 builder evidence](../validation/2026-11-06-plan-local-reward-stdio-client/README.md)
+cover one explicitly launched synthetic in-memory child, response-derived reads
+and transport fencing. No policy decision, activation or independent review is implied.
+
 ## 계약 전용 OpenAPI
 
 [계약 전용 OpenAPI](contracts/openapi/README.md)는 `reference/v0.3-rc1/protocol_contract.json`의 로컬 호출 명령과 FSM `REPLAYABLE` 명령을 담은 OpenAPI 3.1 핀이다. 그 핀은 라이브 서버를 선언하지 않고, 운영 엔드포인트도 없다. 같은 84개 명령과 같은 로컬 호출 경로를 루프백에서 부르는 비운영 통합 관문이 따로 있다. 공개 호스트·실 PG·KYC·공연장·은행 연동이 아니며, 로컬 HTTP 성공은 운영 승인이 아니다. 선택적 로컬 파일 저널과 재시작 재생은 [준비 런타임 경계](contracts/READINESS_RUNTIME.md)에 적는다. 그 저장은 프로토콜 정본이 아니고, 공개 배치·운영 적합·외부 연동의 승인이 아니다.
