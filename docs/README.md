@@ -537,6 +537,7 @@
 
 - [F04 local credit desk usage](../reference/credit_advance_f04/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged credit FSM; optional real local settlement replay for the bound-draw COMMITTED gate; no policy, approval or runtime activation.
 - [plan-local-credit-desk evidence](../validation/2026-11-05-plan-local-credit-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
+- [Live local credit subprocess client](../reference/credit_advance_f04/README.md#live-local-subprocess-client) · [runnable example](../reference/credit_advance_f04/example_credit_client.py) · [plan-local-credit-stdio-client evidence](../validation/2026-11-06-plan-local-credit-stdio-client/README.md) — Explicit single-child JSONL exchanges, caller-directed requests and transport uncertainty fencing; synthetic/non-production only, non-author review and exact-head CI remain separate gates.
 
 ## 2026-11-05 로컬 AI 위임 데스크 — 위치 안내만
 
