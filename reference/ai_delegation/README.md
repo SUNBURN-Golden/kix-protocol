@@ -156,6 +156,124 @@ external funds/provider/chain calls, credentials or protocol changes are added.
 No durability, distributed fencing, bank exactly-once, chain finality, compliance,
 capability-grade increase or production readiness is claimed.
 
+## Interactive console
+
+[delegation_console.py](delegation_console.py) guides the same seven operations
+through `delegation_cli.dispatch_request`, in one fresh session per process:
+
+```bash
+python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json
+```
+
+Importable interface:
+`run_console(session, *, input_stream, output_stream, error_stream) -> int`;
+`main(argv=None) -> int`. Standard library only, synchronous, no model or
+execution service. The required registry fixture is the exact four-key schema
+above; no fixture default, restore, persistence or opening grant is supplied.
+
+Choose a menu operation, then enter **one line per argument**, in this order:
+
+| Operation | Console prompt order |
+|---|---|
+| `issue_grant` | `actor`, `grant_id`, `agent_id`, `authority`, `scope`, `limits`, `period` |
+| `call_tool` | `actor`, `grant_id`, `tool`, `args`, `now` |
+| `decide_proposal` | `actor`, `proposal_id`, `decision`, `now` |
+| `revoke_grant` | `actor`, `grant_id`, `reason` |
+| `view_grant` | `grant_id` |
+| `view_proposal` | `proposal_id` |
+| `attempt_execution` (always refused) | `actor`, `proposal_id` |
+| `quit` (local only) | none |
+
+Plain text fields are explicit nonempty strings without surrounding whitespace.
+No actor, identifier, authority, scope, amount, limit or logical time is inferred.
+`authority`, `scope`, `limits`, `period`, `args` and `now` use strict JSON:
+
+| Field | Structural checks before preview/dispatch |
+|---|---|
+| `authority` | array of strings |
+| `scope` | object with `surfaces` array of strings; optional `subjects` array of strings |
+| `limits` | exact object with integer `per_action_max`, `cumulative_max`, `count_max` and string `currency` |
+| `period` | exact object with integer `not_before`, `not_after` |
+| `now` | integer; booleans/floats excluded |
+| `args` | object matching the five supported tool schemas above |
+| `args.requested` | object with only `authority`, `scope`, `limits`, `period`, `note`; structured fields checked as above, `note` a string |
+
+Duplicate JSON keys, non-finite numbers, invalid Unicode, missing/extra fields and
+wrong structural types abandon the current action with `input_error=<CLI error
+envelope>` and zero dispatch. The next line selects a fresh action; do not supply
+the abandoned action's remaining fields. Unknown menu selections also dispatch
+nothing. Arrays, identifiers, ranges, currency, authority membership, scope,
+period validity and record binding are otherwise validated by the unchanged mock.
+An empty `requested` object is structurally valid and receives the mock's refusal
+if confirmed. Denied/unknown tool names accept an object for `args` and forward
+unchanged to the domain refusal path; this adds no supported tool or command.
+
+Every request, **including views**, prints and flushes its entire canonical
+`proposed={"arguments":...,"operation":...}` preview before asking for literal
+`SUBMIT`. Every other confirmation, including blank input or surrounding spaces,
+discards that request. Preview and decline perform no session reads or writes.
+Each confirmed request dispatches exactly once, using the exact previewed values;
+there are no preflight views, hidden actions, retries or cleanup mutations.
+Complete unchanged replies appear as `desk=<canonical CLI envelope>` on their own
+lines amid prompts. The reply is retained before rendering for failure diagnostics.
+
+### Runnable console transcripts
+
+From the repository root:
+
+```bash
+python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json < reference/ai_delegation/fixtures/delegation_console_journey.txt
+python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json < reference/ai_delegation/fixtures/delegation_console_replay.txt
+python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json < reference/ai_delegation/fixtures/delegation_console_boundaries.txt
+```
+
+[Journey](fixtures/delegation_console_journey.txt) exits 0: grant issuance, all
+five supported tools, human approve/reject, withdrawal after expiry, inert grant
+change, revocation, retained views and a new generation. Its requests match the
+existing desk lifecycle fixture. [Replay](fixtures/delegation_console_replay.txt)
+exits 1: explicitly confirmed duplicates and binding conflicts, including current
+approved/withdrawn/voided proposals and a revoked grant; first revocation reason
+is retained. Its requests match the existing desk replay fixture.
+[Boundaries](fixtures/delegation_console_boundaries.txt) exits 1: malformed and
+declined input sends no requests, followed by separately confirmed scope,
+expiration, amount, transfer and disabled-execution refusals and retained views.
+New transcripts exclude A5's simultaneous-error case.
+
+### Console output, exits and replay
+
+Exit **0** means clean `quit` with no ordinary domain refusal; invalid or declined
+input alone does not change this status. Exit **1** is sticky after any ordinary
+`AiDelegationError` refusal, even if later actions succeed. Exit **2** means EOF
+(including at confirmation), read/write/short-write/flush failure, unexpected
+error, interruption, setup failure or `MOCK_INVARIANT`; no later action runs and
+nothing is retried. Best-effort stderr `FENCED:` diagnostics include a CLI failure
+envelope and the last complete reply, when available. Diagnostic failure also
+stops immediately. Command-line usage follows argparse on stderr.
+
+A failure after dispatch may follow an already applied mutation. A missing reply
+is not evidence of non-application. Output failure fences the process without
+resubmission. State is process-local and disappears on exit.
+
+Replay is explicit re-entry of an existing operation followed by a fresh `SUBMIT`;
+there is no replay command. Duplicate grants/proposals return **current records**,
+including decisions, withdrawal or revocation; they are not historical receipts.
+Repeated revocation keeps the first reason. The mock's binding conflicts and
+current-record replay semantics above remain unchanged. Approval executes nothing;
+all eleven flags and proposal `effects_executed` remain false. The existing A5
+class-C discrepancy, missing-grant uncertainty and Astra/User ownership in
+[A5 and non-claims](#a5-and-non-claims) remain unresolved. No ordered-precedence
+conformance is claimed. Product limits and permitted surfaces remain
+**UNDETERMINED — Astra**, identity policy **UNDETERMINED — Astra/User**, and legal
+authority **UNDETERMINED — User/legal**; synthetic input values do not decide them.
+
+The [console builder evidence](../../validation/2026-11-06-plan-plan-local-delegation-console/README.md)
+maps existing coverage before the new [console tests](test_delegation_console.py),
+actual commands and limitations. Run its narrow tests before full discovery:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/ai_delegation python3 -m unittest test_delegation_console
+```
+
 ## Verification
 
 ```bash
