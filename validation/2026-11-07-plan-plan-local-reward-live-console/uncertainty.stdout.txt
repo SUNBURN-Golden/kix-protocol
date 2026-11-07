@@ -1,0 +1,10 @@
+Local synthetic reward console — MOCK_TOKEN_REWARD_ONLY, POINT_F4, in-memory.
+Receipts are historical action snapshots; explicit reads are current observations.
+Non-transferable; token_issued, onchain_recorded, funds_executed, krw_paid,
+chain_finality, durable, legal_authority remain false.
+Amounts, caps, budgets, durations and approval policy: UNDETERMINED — Astra/User.
+Actual approver designation: User-owned; caller inputs are synthetic assertions.
+UNKNOWN requires a separate explicit action; no automatic reads or retries.
+Actions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit
+action: reward_key (JSON object: program, source_op_id, recipient, kind): source_view (JSON object; complete caller snapshot, no defaults): rule_version: amount (explicit decimal integer in synthetic POINT_F4): source_kind (SETTLEMENT, RESALE, RESERVATION): idempotency_key: proposed={"arguments":{"amount":25,"idempotency_key":"participation-observe","reward_key":{"kind":"participation","program":"synthetic-program","recipient":"synthetic-recipient","source_op_id":"participation"},"rule_version":"synthetic-rule-v1","source_kind":"RESERVATION","source_view":{"bank_debit_observed":false,"currency":"KRW","durable":false,"external_return_closed":false,"funds_executed":false,"legal_debtor_bound":false,"metadata":{"label":"참여","opaque":[null,1.25,{"snapshot_ref":"synthetic-snapshot"}],"synthetic_only":true},"phase":"COMMITTED"}},"operation":"observe"}
+Type literal SUBMIT to send once; anything else declines: 

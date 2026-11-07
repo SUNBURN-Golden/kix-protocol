@@ -567,3 +567,5 @@ and transport fencing. No policy decision, activation or independent review is i
 이 기록 추가 후 로컬 index checker 집계: **scanned=362, indexed=327, allowlisted=35**. 위 집계는 각 기록 당시 기준으로 보존한다.
 
 - [Guided local payment lookup console](../reference/provider_facts/README.md#guided-local-payment-lookup-console) · [2026-11-07 builder evidence](../validation/2026-11-07-plan-local-payment-lookup-console/README.md) — Explicit synthetic fixture, complete OperationRef preview and one confirmed local router lookup; no payment-completion decision or economic application. Provider authentication UNDETERMINED — Toss/User; non-author A2 exact-head review and KTX/KIX CI remain required.
+
+- [Guided reward console subprocess mode](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-07 builder evidence](../validation/2026-11-07-plan-plan-local-reward-live-console/README.md) — One live synthetic local reward desk across confirmed actions and explicit reads; uncertainty stops submission, no retry/fallback, no policy, FSM or capability-grade change.
