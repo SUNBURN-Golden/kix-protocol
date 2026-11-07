@@ -159,15 +159,22 @@ capability-grade increase or production readiness is claimed.
 ## Interactive console
 
 [delegation_console.py](delegation_console.py) guides the same seven operations
-through `delegation_cli.dispatch_request`, in one fresh session per process:
+through `delegation_cli.dispatch_request` by default, in one fresh session per
+process. Explicit subprocess mode uses the same prompts and envelopes via one
+owned local desk child:
 
 ```bash
 python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json
+python3 reference/ai_delegation/delegation_console.py --mode subprocess --cleanup-timeout 1 --fixture reference/ai_delegation/fixtures/delegation_session.json
 ```
 
 Importable interface:
 `run_console(session, *, input_stream, output_stream, error_stream) -> int`;
-`main(argv=None) -> int`. Standard library only, synchronous, no model or
+`run_subprocess_console(fixture, *, cleanup_timeout, input_stream, output_stream,
+error_stream) -> int`; `main(argv=None) -> int`. `--mode in-process` is the default.
+`--cleanup-timeout` is required only in subprocess mode and rejected in in-process
+mode; it bounds child cleanup, never response reads. Standard library only,
+synchronous, no model or
 execution service. The required registry fixture is the exact four-key schema
 above; no fixture default, restore, persistence or opening grant is supplied.
 
@@ -274,10 +281,98 @@ actual commands and limitations. Run its narrow tests before full discovery:
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/ai_delegation python3 -m unittest test_delegation_console
 ```
 
+## Reusable local subprocess client
+
+[delegation_client.py](delegation_client.py) uses only the standard library.
+Importing it launches nothing. Put this directory on `PYTHONPATH`, then:
+
+```python
+from delegation_client import DelegationClient
+
+with DelegationClient.launch(
+        "reference/ai_delegation/fixtures/delegation_session.json",
+        cleanup_timeout=1) as client:
+    # A caller supplies every value; the existing lifecycle fixture is synthetic.
+    from delegation_fixture import decode_json
+    from pathlib import Path
+    issue = decode_json(Path("reference/ai_delegation/fixtures/lifecycle.jsonl")
+                        .read_text(encoding="utf-8").splitlines()[0])
+    reply = client.request(issue)
+    if "receipt" in reply:
+        # A subsequent explicit read depends on the response, before stdin EOF.
+        grant_id = reply["receipt"]["grant"]["grant_id"]
+        print(client.request({"operation": "view_grant",
+                              "arguments": {"grant_id": grant_id}}))
+    else:
+        print(reply)
+```
+
+`DelegationClient.launch(fixture, *, cleanup_timeout)` owns exactly one fresh
+sequential session, launched with `sys.executable`, the absolute `delegation_cli.py`
+path, `--fixture <absolute path> --requests -`, `shell=False`, binary stdin/stdout
+pipes and inherited stderr. The child uses ordinary buffering, without `-u`.
+The CLI flushes each complete canonical JSONL reply so requests and
+response-dependent reads can be interleaved without closing stdin.
+`request(request: dict) -> dict` sends one explicit request, using the seven
+selectors and exact required argument sets above. It validates finite JSON and
+serializes fully before writing; invalid local envelopes/selectors/arguments write
+nothing and leave the client usable. Nested business values pass unchanged to the
+mock. There is no duplicate implementation of authorization, limits, phase
+transitions, binding or replay predicates.
+
+Only one request or cleanup may be outstanding. Busy, closed or terminal use raises
+`DelegationClientStateError` before writing. Reads block without polling or a
+response deadline. The mandatory finite positive `cleanup_timeout` bounds each
+cleanup wait, in seconds; it is caller-selected transport cleanup input, not a
+product duration or policy value. `close() -> int` closes stdin and reaps only the
+owned child, escalating wait → terminate → kill as needed. It is idempotent after
+successful cleanup. Context manager exit calls `close()`; after an exceptional
+cleanup, the client remains terminal and cleanup can be explicitly completed.
+
+Each reply must be a newline-terminated UTF-8 JSON object with strict decoding:
+blank/truncated frames, duplicate keys, non-finite numbers, invalid Unicode and
+multiple objects in one frame fail. The client checks the exact envelope,
+operation correlation (except an explicit startup `operation=null` error),
+provenance, payload kind, grant/proposal/query structural variants, nullable fields,
+normalized `scope.subjects`, returned identifiers, nested provenance and
+`IN_MEMORY_FSM`. All eleven flags must be strictly `false`, as must proposal
+`effects_executed`. A successful `attempt_execution` reply is invalid. These are
+transport checks against the existing response shapes, not independent domain
+conformance or authentication of an untrusted executable.
+
+Ordinary correlated `{code: ...}` domain refusals allow a later explicit request.
+Typed `{type, message}` errors, startup errors and `MOCK_INVARIANT` are terminal;
+the complete envelope is returned and retained on `client.last_reply`. The console
+renders that envelope, then exits 2. Ordinary domain refusal is sticky exit 1.
+`client.last_reply` also retains a detached copy of the last validated reply before
+rendering. Malformed/mismatched replies, child exit during an exchange, short or
+broken writes, I/O failures and caller interruptions raise
+`DelegationTransportUncertainty` and permanently fence the client. The exception
+and `client.uncertainty` retain detached `request`, exact `request_bytes`, observed
+`reply_bytes`, exception cause and `last_reply`. Cleanup preserves this evidence.
+No retry, replacement child or in-process fallback occurs. Missing evidence never
+establishes non-application or permits resubmission. Diagnostic stderr `FENCED:`
+records include the exception chain and wire bytes as hex; cleanup failures get a
+separate diagnostic preserving the primary failure and last complete reply.
+
+Both console modes require a flushed preview and literal `SUBMIT` for **every**
+action, including views. Declines send nothing. Quit closes the child without a
+hidden read or mutation. Execution remains disabled; human approval is an inert
+memo. The [A5 discrepancy and owners](#a5-and-non-claims) remain unchanged.
+Product limits/surfaces are **UNDETERMINED — Astra**, identity **UNDETERMINED —
+Astra/User**, legal effects **UNDETERMINED — User/legal**. This local service mode
+adds no model service, socket, credential, persistence, public endpoint, production
+runtime, chain call or protocol command.
+
+The [live client/console builder evidence](../../validation/2026-11-07-plan-plan-local-delegation-live-console/README.md)
+contains the initial coverage map, commands/results, preservation manifests and
+captured transcripts. It is source-informed builder evidence; A2 non-author
+exact-final-head review and completed/success exact-head KTX/KIX CI remain gates.
+
 ## Verification
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/ai_delegation python3 -m unittest test_delegation_session test_delegation_serialization test_delegation_cli
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/ai_delegation python3 -m unittest test_delegation_client test_delegation_console_subprocess test_delegation_console test_delegation_cli test_delegation_serialization test_delegation_session
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/ai_delegation -t reference/ai_delegation
 ```
 

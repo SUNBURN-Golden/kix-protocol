@@ -48,7 +48,7 @@ def _error(operation, error):
 
 
 def _emit(value):
-    print(_canonical(value))
+    print(_canonical(value), flush=True)
 
 
 def run_requests(session: DelegationSession, lines) -> int:

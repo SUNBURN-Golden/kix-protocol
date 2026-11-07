@@ -1,0 +1,9 @@
+{
+  "docs/README.md": "fe5d4ff3d6160e7c5f7405b91679b61bef7733e27fa18696098cc4465a5f3ebd",
+  "reference/ai_delegation/README.md": "40dcd7910ae62ccfa8ac024d7da53dbce834a9eda7f948107dbb86f67d994865",
+  "reference/ai_delegation/delegation_cli.py": "0d8ec4249c4cfd03cebcf771cb4a96eeb9f64b7414f7f60b19f9bb5f9ddf1dea",
+  "reference/ai_delegation/delegation_console.py": "1b35fc3da46e359d4ff94c91b7a9e3b3ba028c5cb780f780c433876ad45b4d3a",
+  "reference/ai_delegation/delegation_client.py": "2c72bc3accb310347c57b1a32a8757e1365f8adaeb3083bc91b3301cd42bec2d",
+  "reference/ai_delegation/test_delegation_client.py": "21807d33d48f6acafa750147e95323ddf6fe930030ae9f5c4fe4b5a0c3392bec",
+  "reference/ai_delegation/test_delegation_console_subprocess.py": "d98278f48a4d1f2dd1487b0009f5d782dc6da7cc95a1a11801225ccefe40fe49"
+}
