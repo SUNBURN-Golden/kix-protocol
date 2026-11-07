@@ -3183,3 +3183,94 @@ effects remain **UNDETERMINED — User/designated advisers**. These results do n
 establish external execution, chain finality, legal compliance or production
 readiness. See the [coverage and actual validation record](../../validation/2026-11-06-plan-plan-local-ticket-exception-console/README.md)
 for results and pending non-author exact-head A2 review/KTX/KIX CI gates.
+
+
+## Commerce calculation console
+
+`commerce_calculation_client.py` is a reusable synchronous, single-writer client
+for the unchanged `../v0.3-rc1/commerce_driver.py`. Construction launches nothing;
+each explicit `request({"action": ..., "args": ...})` launches one fixed driver
+with the current Python interpreter, sends one CE1 request, closes stdin, retains
+one complete reply, and reaps the child. No shell, socket, retry, restart,
+fallback, persistence or arithmetic is added. Use Python 3.12 or newer (CE1 needs
+Unicode 15 normalization tables). Example from this directory:
+
+```python
+from pathlib import Path
+from commerce_calculation_client import CommerceCalculationClient, decode_input
+client = CommerceCalculationClient(cleanup_timeout=2)
+request = decode_input(Path("fixtures/commerce_console_quote.json").read_bytes())
+exchange = client.request({"action": "simulate_quote", "args": request})
+quote = exchange.response["result"]
+# Explicit separate calls may pass this full quote and its exact quoteHash.
+```
+
+`CalculationExchange` is frozen and retains `request_bytes`, `reply_bytes` and
+`returncode`; `response` returns a fresh detached decode. `client.history` retains
+all successful exchanges, and `last_exchange` also retains known refusals.
+Malformed replies, process failure, interruption, schema/hash/binding mismatch
+raise `CalculationUncertainty`, preserve diagnostic bytes and permanently fence
+the client. A shaped driver rejection (exit 2) is retained without promoting a
+success and allows a separately submitted corrected request. Cleanup timeout is
+only a positive cleanup budget; there is no automatic clock or response deadline.
+
+The guided console is calculation-only and separate from the booking console,
+restricted calculated-booking bridge and settlement. Run from the repository root:
+
+```bash
+env -u PYTHONPATH PYTHONDONTWRITEBYTECODE=1 python3.12 \
+  reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_journey.txt
+```
+
+Omit redirection for interactive use. Local controls:
+
+| Action | Explicit caller input / effect |
+|---|---|
+| `load_quote` | Path to a complete quote request JSON object; loads only |
+| `simulate_quote` | Shows full request, requires literal `SUBMIT_QUOTE` |
+| `load_legs` | Path to JSON array of existing payment legs; loads only |
+| `plan_payments` | Explicit synthetic integer `now`, retained quote/hash, literal `SUBMIT_PLAN` |
+| `select_lines` | Explicit JSON array of line IDs; selects only |
+| `propose_line_refund` | Retained full quote/plan and hashes, selected IDs, literal `SUBMIT_REFUND` |
+| `show`, `quit` | Local display/exit; no subprocess calculation |
+
+These are terminal controls, not new protocol commands. Every quote load attempt
+(even identical or failed) clears active quote, plan, refund and line selection.
+Every legs load or plan-input attempt clears plan, refund and line selection.
+Every new quote calculation clears the prior quote and dependents; every line
+selection attempt clears the prior refund. Decline/EOF submits nothing further.
+Failed replacement calculations cannot restore history as active state. `show`
+labels active hashes separately from historical successful exchanges. No implicit
+split, policy value, clock, file reload or allocation is supplied. Quote/plan
+outputs and arrays/atom strings pass unchanged into subsequent driver calls.
+
+All JSON files are decoded from original bytes with bounded CE1 before any
+reserialization: duplicate keys, fractions/exponents, negative zero and unsafe
+JSON number tokens are rejected. Amounts remain decimal atom strings, including
+`"9007199254740993"`. JSON file schemas are existing schema 2 inputs:
+
+- Quote: exactly `schemaVersion="kix:commerce:2"`, `orderId`, `orderVersion`,
+  `scope={issuerId,eventId,performanceId}`, `policyRef`, `expiresAt`, `lines`, `discounts`.
+- Lines: `lineId`, `inventoryId`, `gross={asset,atoms}`. Asset:
+  `namespace`, `reference`, `decimals`, `maxAtoms` (string).
+- Ordered discounts: `ruleId`, `bearerRef`, `kind`, `value` (string),
+  `eligibleLineIds`, `capAtoms` (string or null). No rules supplied by the tool.
+- Legs: `legId`, `providerRef`, `routeRef`, `amount={asset,atoms}`; use `[]` for
+  a free order. The driver validates exact totals, expiry and selected lines.
+
+Full results, original routes, hashes and required evidence are rendered.
+Quotes/plans retain their existing schemas; refund proposals retain
+`executionAuthorized=false`. Refund calculations use the plan's existing
+`checkedAt`; no new expiry rule. Retained hashes are not authenticated authority.
+
+Additional runnable answer files use the same command/redirection:
+`commerce_console_decline.txt`, `commerce_console_replacement.txt`,
+`commerce_console_free.txt`, `commerce_console_precision.txt` (exit 0), and
+`commerce_console_boundaries.txt` (exit 1 for explicit expiry, total and line
+refusals). Exit 2 means terminal failure. Fixtures contain caller-authored
+synthetic product values only. Product policy remains **UNDETERMINED — Astra/User**;
+legal/accounting treatment remains **UNDETERMINED — User/designated advisers**.
+No real payments/refunds, booking confirmation, settlement, public endpoint or
+production readiness. [Actual results, coverage and pending review/CI gates](../../validation/2026-11-08-plan-plan-local-commerce-calculation-console/README.md).

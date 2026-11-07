@@ -1,0 +1,11 @@
+Local synthetic commerce console — CALCULATION_ONLY; in-memory.
+No booking confirmation, payment, refund execution or settlement.
+Product policy: UNDETERMINED — Astra/User.
+Legal/accounting treatment: UNDETERMINED — User/designated advisers.
+Actions: load_quote, simulate_quote, load_legs, plan_payments, select_lines, propose_line_refund, show, quit
+action: Quote request JSON file path: Quote input loaded; active quote, plan and line selections invalidated.
+Actions: load_quote, simulate_quote, load_legs, plan_payments, select_lines, propose_line_refund, show, quit
+action: proposed={"action":"simulate_quote","args":{"discounts":[{"bearerRef":"organizer","capAtoms":null,"eligibleLineIds":["L1","L2","L3"],"kind":"FIXED","ruleId":"coupon","value":"6000"},{"bearerRef":"platform","capAtoms":null,"eligibleLineIds":["L1","L2","L3"],"kind":"BPS","ruleId":"member","value":"1000"}],"expiresAt":1000,"lines":[{"gross":{"asset":{"decimals":0,"maxAtoms":"340282366920938463463374607431768211455","namespace":"fiat","reference":"KRW"},"atoms":"10000"},"inventoryId":"inv-1","lineId":"L1"},{"gross":{"asset":{"decimals":0,"maxAtoms":"340282366920938463463374607431768211455","namespace":"fiat","reference":"KRW"},"atoms":"20000"},"inventoryId":"inv-2","lineId":"L2"},{"gross":{"asset":{"decimals":0,"maxAtoms":"340282366920938463463374607431768211455","namespace":"fiat","reference":"KRW"},"atoms":"30000"},"inventoryId":"inv-3","lineId":"L3"}],"orderId":"synthetic-bundle","orderVersion":1,"policyRef":"caller-synthetic-frozen-price","schemaVersion":"kix:commerce:2","scope":{"eventId":"fixture-show","issuerId":"fixture-issuer","performanceId":"evening"}}}
+Type literal SUBMIT_QUOTE to calculate once; anything else declines: Declined; no calculation submitted.
+Actions: load_quote, simulate_quote, load_legs, plan_payments, select_lines, propose_line_refund, show, quit
+action: 
