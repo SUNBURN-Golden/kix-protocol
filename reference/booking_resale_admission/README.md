@@ -2735,14 +2735,16 @@ sends nothing. The console exposes no other selectors.
 
 Amounts require explicit decimal integers, never floats, exponent notation or
 implicit zeros. Signed negative integers are forwarded for service validation.
-`order` requires a JSON array of strings; its order and duplicates are preserved
+`order` accepts a JSON array of strings or the exact terminal token `guided`;
+its order and duplicates are preserved
 for service validation. `adjustment_reason` requires a JSON string or explicit
 `null`. Other fields require explicit nonempty text without surrounding
 whitespace. No identity, key, reason, amount or ordering defaults are supplied.
 Malformed local input discards the pending selection and returns to `action`.
 Economic validation and allocation calculations belong to the unchanged service.
 
-`policy` requires an explicit JSON object. The existing strict fixture decoder
+`policy` accepts an explicit JSON object or the exact terminal token `guided`.
+For raw JSON, the existing strict fixture decoder
 rejects malformed JSON, duplicate keys (including nested keys), nonfinite constants
 and overflowing float exponents before any request is sent. Object contents pass
 through unchanged: missing/extra fields, unsupported kind, invalid basis points
@@ -2801,6 +2803,60 @@ action binds the originating ticket, observes payment, issues/transfers a right,
 grants admission or advances another phase automatically. The resale listing
 remains LISTED, unbound and unpaid, with holder/version unchanged. See the
 [start-flow coverage and actual results](../../validation/2026-11-05-plan-local-settlement-console-start/README.md).
+
+### Caller-entered policy and distribution order
+
+At `policy (JSON object or guided; explicit synthetic policy)`, enter `guided`
+to answer `kind`, `fee_bps`, `residual_payee`, then `fee_payee`. Every field is
+required. `PRIMARY_FEE_BPS` is the existing service policy kind. `fee_bps`
+uses explicit decimal integer syntax, including an explicitly entered `0`.
+There is no prefilled or recommended fee, policy kind, payee, debtor, transaction
+identifier or idempotency key. Negative and out-of-range integers, unsupported
+kinds and colliding payees are forwarded unchanged for service validation.
+The console composes exactly these four policy fields; it computes no split.
+
+At `order (JSON array of strings or guided; explicit order)`, enter `guided`,
+then an explicit nonnegative decimal integer at `payee_count`. Enter each payee
+at `payee_1`, `payee_2`, and so on, in the exact desired sequence. The count is
+terminal-only and has no default or two-payee ceiling. Zero composes `[]` for
+service validation. Labels must be nonempty and have no surrounding whitespace.
+Order and duplicates reach the service unchanged; there is no inferred membership,
+sorting, deduplication, allocation or frozen-order precheck. For endpoint fees,
+the caller must explicitly enter the payee sequence for the nonzero obligations.
+
+`guided` and `payee_count` never become protocol operations or request fields.
+Guided and equivalent raw-JSON entry produce identical existing request envelopes
+and service results. Both paths show the complete `proposed=` request and require
+literal `SUBMIT` for each mutation. Decline or malformed input discards the pending
+composition. EOF or transport uncertainty fences the console and closes the child
+without consuming queued actions, automatic reads or retries. Source-owned gross
+and currency, arithmetic, policy validation and retained order remain in the service.
+
+Run the additive synthetic answer files from the repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_guided_booking.txt
+
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_guided_resale.txt
+```
+
+The [guided booking answers](fixtures/settlement_console_guided_booking.txt) and
+[guided resale answers](fixtures/settlement_console_guided_resale.txt) select the
+same explicit actions, synthetic inputs and service observations as the raw start
+journeys above. They initiate from populated booking/resale sources, authorize,
+capture, commit and observe recorded statements, then distribute in caller-entered
+order. The resale path explicitly lists first on the same shared-console child.
+The numbers in these answer files are caller-supplied synthetic examples, never
+product policy. Product policy remains **UNDETERMINED — Astra/User**; legal/accounting
+treatment remains **UNDETERMINED — User/designated advisers**. This advances synthetic
+P04/F01–F03 interaction only, with no capability grade change or durable settlement
+closure claim. See [composer coverage, transcripts and actual checks](../../validation/2026-11-08-plan-local-settlement-input-composer/README.md).
 
 The existing wire envelope is preserved, for example:
 

@@ -37,6 +37,7 @@ REFUND = ['bind_refund', 'claim-2', 'refund', '4000', 'buyer-3', 'synthetic', 'r
 ACCEPT = ['observe_mock_cancel_acceptance', 'claim-2', 'accept', '1000', 'accept', 'SUBMIT']
 INPUTS = HERE / 'fixtures/ticket_operations_settlement_inputs_session.json'
 START_BOOKING = HERE / 'fixtures/settlement_console_start_booking.txt'
+GUIDED_BOOKING = HERE / 'fixtures/settlement_console_guided_booking.txt'
 POLICY = dict(kind='PRIMARY_FEE_BPS', fee_bps=500, residual_payee='organizer', fee_payee='platform')
 INIT = ['initiate_from_booking', 'claim-2', 'reserve-2', 'explicit-booking-trade',
         'explicit-debtor', json.dumps(POLICY), 'booking-input', 'SUBMIT']
@@ -46,6 +47,15 @@ CAPTURE = ['capture', 'claim-2', 'capture-input', 'SUBMIT']
 
 def script(lines):
     return io.StringIO('\n'.join(lines) + '\n')
+
+
+def guided_init(policy):
+    return [*INIT[:5], 'guided', policy['kind'], str(policy['fee_bps']),
+            policy['residual_payee'], policy['fee_payee'], *INIT[-2:]]
+
+
+def guided_order(order, key):
+    return ['distribute', 'claim-2', 'guided', str(len(order)), *order, key, 'SUBMIT']
 
 
 class SettlementConsoleTests(unittest.TestCase):
@@ -260,6 +270,152 @@ class SettlementConsoleTests(unittest.TestCase):
                 self.assertEqual(replies[3]['error'], dict(code='ILLEGAL_TRANSITION'))
                 self.assertEqual(replies[2]['view'], replies[4]['view'])
                 self.assertEqual(replies[-1]['view']['phase'], 'AUTHORIZED')
+
+    def test_guided_booking_journey_matches_raw_requests_results_and_ticket_observations(self):
+        raw = self.drive(START_BOOKING.read_text().splitlines(), fixture=INPUTS)
+        probes = [dict(surface=surface, operation=op, arguments={field: identity})
+                  for surface, op, field, identity in (
+                      ('booking', 'view', 'reservation_id', 'reserve-2'),
+                      ('resale', 'view_right', 'right_id', 'issue-1'),
+                      ('admission', 'view', 'right_id', 'issue-1'))]
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(
+                GUIDED_BOOKING.read_text().splitlines(), fixture=INPUTS, unchanged=probes)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (0, ''))
+        self.assertEqual((status, calls, replies), raw[:3])
+        self.parity(calls, replies, output, INPUTS)
+        self.summaries(replies, output)
+        self.assertEqual(replies[11]['view']['claim']['distributed_cash'], 9301)
+
+    def test_guided_policy_boundaries_and_service_refusals_match_raw(self):
+        policies = [(POLICY | {'fee_bps': bps}, None if 0 <= bps <= 10000 else 'POLICY_FEE_BPS')
+                    for bps in (0, 1, 9999, 10000, -1, 10001)]
+        policies += [(POLICY | {'fee_payee': 'organizer'}, 'POLICY_PAYEE_COLLISION'),
+                     (POLICY | {'kind': 'UNSUPPORTED'}, 'POLICY_KIND')]
+        for policy, code in policies:
+            with self.subTest(policy=policy):
+                tail = ['quit']
+                if code is None:
+                    # The caller explicitly chooses the sole nonzero payee at endpoints.
+                    order = (['organizer'] if policy['fee_bps'] == 0 else
+                             ['platform'] if policy['fee_bps'] == 10000 else ['platform', 'organizer'])
+                    tail = AUTH + CAPTURE + ['commit_recorded_statement', 'claim-2',
+                        'statement-1', 'commit', 'SUBMIT'] + guided_order(order, 'dist') + VIEW + tail
+                raw = INIT.copy()
+                raw[5] = json.dumps(policy)
+                baseline = self.drive(raw + tail, fixture=INPUTS)
+                status, calls, replies, output, errors = self.drive(guided_init(policy) + tail, fixture=INPUTS)
+                self.assertEqual((status, calls, replies), baseline[:3])
+                self.assertEqual(calls[0]['arguments']['policy'], policy)
+                self.assertIs(type(calls[0]['arguments']['policy']['fee_bps']), int)
+                self.assertEqual((status, errors), (1, 'Child exit status=1\n') if code else (0, ''))
+                if code:
+                    self.assertEqual(replies[0]['error'], {'code': code})
+                else:
+                    self.assertEqual(calls[-2]['arguments']['order'], order)
+                self.parity(calls, replies, output, INPUTS)
+
+    def test_guided_order_preserves_empty_duplicates_extra_payees_and_frozen_order(self):
+        cases = [([], 'empty'), (['platform', 'platform'], 'duplicate'),
+                 (['platform', 'organizer', 'extra'], 'extra'),
+                 (['platform', 'organizer'], 'duplicate'),
+                 (['platform', 'organizer'], 'accepted'),
+                 (['organizer', 'platform'], 'changed'),
+                 (['organizer', 'platform'], 'accepted'),
+                 (['platform', 'organizer'], 'accepted')]
+        guided = COMMIT + VIEW
+        raw = COMMIT + VIEW
+        for order, key in cases:
+            guided += guided_order(order, key) + VIEW
+            raw += ['distribute', 'claim-2', json.dumps(order), key, 'SUBMIT'] + VIEW
+        baseline = self.drive(raw + ['quit'])
+        status, calls, replies, output, errors = self.drive(guided + ['quit'])
+        self.assertEqual((status, calls, replies), baseline[:3])
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        self.assertEqual([r['arguments']['order'] for r in calls[2::2]], [o for o, _ in cases])
+        self.assertEqual([r['error']['code'] for r in replies if 'error' in r], [
+            'DISTRIBUTION_ORDER_MISMATCH', 'DISTRIBUTION_ORDER_DUPLICATE',
+            'DISTRIBUTION_ORDER_MISMATCH', 'IDEMPOTENCY_CONFLICT',
+            'DISTRIBUTION_ORDER_FROZEN', 'IDEMPOTENCY_CONFLICT'])
+        self.assertTrue(all(replies[i]['view'] == replies[1]['view'] for i in (3, 5, 7, 9)))
+        self.assertTrue(all(replies[i]['view'] == replies[11]['view'] for i in (13, 15, 17)))
+        self.assertEqual(replies[16]['receipt'], replies[10]['receipt'] | dict(duplicate=True, applied=None))
+        self.parity(calls, replies, output)
+
+    def test_guided_malformed_fields_discard_without_submission_or_defaults(self):
+        actions = []
+        for op in ('initiate_from_booking', 'initiate_from_resale'):
+            action = guided_init(POLICY)
+            action[0] = op
+            actions += [action[:i] + [value] for i, values in (
+                (6, ('', ' PRIMARY_FEE_BPS')), (8, ('', ' organizer')),
+                (9, ('', 'platform ')), (10, ('', ' key')),
+                (7, ('', '1.0', '1e3', 'true', '+1', ' 0', '0 ', '−1', '9' * 5000)))
+                for value in values]
+        order = guided_order(['platform', 'organizer'], 'key')
+        actions += [order[:i] + [value] for i, values in (
+            (3, ('', '-1', '-0', '+2', '2.0', 'true', ' 2', '9' * 5000)),
+            (4, ('', ' platform')), (5, ('', 'organizer ')), (6, ('',))) for value in values]
+        for action in actions:
+            with self.subTest(field=action[-2] if len(action) > 1 else action):
+                client, output = Mock(), io.StringIO()
+                errors = io.StringIO()
+                status = run_console(client, input_stream=script(action + ['quit']),
+                                     output_stream=output, error_stream=errors)
+                self.assertEqual((status, errors.getvalue()), (0, ''))
+                client.request.assert_not_called()
+                self.assertIn('input_error=', output.getvalue())
+                self.assertNotIn('proposed=', output.getvalue())
+
+    def test_guided_declines_do_not_reuse_approval(self):
+        resale = guided_init(POLICY)
+        resale[0] = 'initiate_from_resale'
+        actions = [guided_init(POLICY), resale, guided_order(['platform', 'organizer'], 'dist')]
+        answers = INIT + [v for action in actions for v in [*action[:-1], 'submit']] + ['quit']
+        status, calls, _, output, errors = self.drive(answers, fixture=INPUTS)
+        self.assertEqual((status, len(calls), errors), (0, 1, ''))
+        self.assertEqual(output.count('Declined; no request sent.'), len(actions))
+        self.assertEqual(output.count('proposed='), len(actions) + 1)
+
+    def test_guided_eof_at_each_composition_and_confirmation_boundary_closes_once(self):
+        resale = guided_init(POLICY)
+        resale[0] = 'initiate_from_resale'
+        for action, start in ((guided_init(POLICY), 6), (resale, 6),
+                              (guided_order(['platform', 'organizer'], 'dist'), 3)):
+            for end in range(start, len(action)):
+                with self.subTest(operation=action[0], end=end):
+                    status, calls, _, _, errors = self.drive(action[:end], fixture=INPUTS)
+                    self.assertEqual((status, calls), (2, []))
+                    self.assertIn('EOFError', errors)
+
+    def test_guided_transport_uncertainty_fences_before_queued_action_and_closes_once(self):
+        resale = guided_init(POLICY)
+        resale[0] = 'initiate_from_resale'
+        for action in (guided_init(POLICY), resale, guided_order(['platform', 'organizer'], 'dist')):
+            for raw in (b'not-json\n', b'{partial\xff', b''):
+                with self.subTest(operation=action[0], reply=raw):
+                    worker = ('import sys; sys.stdin.buffer.readline(); '
+                              'sys.stdout.buffer.write(' + repr(raw) + '); sys.stdout.buffer.flush()')
+                    process = subprocess.Popen([sys.executable, '-B', '-c', worker], stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0)
+                    client = TicketOperationsClient(process, cleanup_timeout=1)
+                    pending = script(action + VIEW + ['quit'])
+                    status, calls, replies, _, errors = self.drive([], stream=pending, client=client)
+                    self.assertEqual((status, len(calls), replies), (2, 1, []))
+                    self.assertEqual(pending.read(), script(VIEW + ['quit']).read())
+                    self.assertEqual(client.uncertainty.request, calls[0])
+                    self.assertEqual(client.uncertainty.reply_bytes, raw)
+                    self.assertIn('TicketDeskTransportUncertainty', errors)
+
+    def test_guided_booking_transcript_as_cli_subprocess(self):
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'settlement_console.py'),
+            '--fixture', str(INPUTS), '--cleanup-timeout', '1'], input=GUIDED_BOOKING.read_text(),
+            text=True, capture_output=True, timeout=10, env=os.environ.copy())
+        self.assertEqual((result.returncode, result.stderr), (0, ''))
+        replies = [json.loads(s) for s in re.findall(r'desk=(\{[^\n]+\})', result.stdout)]
+        self.assertEqual(len(replies), 18)
+        self.assertEqual(replies[11]['view']['claim']['distributed_cash'], 9301)
 
     def test_policy_syntax_errors_discard_selection_without_any_submission(self):
         bad = ('{', '', 'null', '[]', '1', 'true', '"policy"',
