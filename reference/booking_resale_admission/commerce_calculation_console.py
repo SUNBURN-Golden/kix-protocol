@@ -31,6 +31,35 @@ def _load(path):
         raise ConsoleInputError(str(error)) from error
 
 
+def _compose_legs(prompt):
+    """Freeze explicit local input; business validation belongs to the driver."""
+    from calculated_booking_quote_source import _calculator
+
+    def integer(label):
+        value = _parse(prompt(label).encode('utf-8'))
+        if type(value) is not int:
+            raise ConsoleInputError(label + ' must be an explicit CE1 integer')
+        return value
+
+    try:
+        count = integer('Explicit payment leg count')
+        if not 0 <= count <= _calculator()['commerce'].MAX_LEGS:
+            raise ConsoleInputError('payment leg count outside existing MAX_LEGS bound')
+        candidate = []
+        for index in range(count):
+            prefix = 'legs[' + str(index) + '].'
+            leg = {field: prompt(prefix + field) for field in ('legId', 'providerRef', 'routeRef')}
+            asset = {field: prompt(prefix + 'amount.asset.' + field)
+                     for field in ('namespace', 'reference')}
+            asset['decimals'] = integer(prefix + 'amount.asset.decimals')
+            asset['maxAtoms'] = prompt(prefix + 'amount.asset.maxAtoms')
+            leg['amount'] = dict(asset=asset, atoms=prompt(prefix + 'amount.atoms'))
+            candidate.append(leg)
+        return codec().canonical_bytes(candidate)
+    except (_calculator_rejection(), UnicodeError) as error:
+        raise ConsoleInputError(str(error)) from error
+
+
 def _render(exchange, stream):
     response = exchange.response
     print('driver=' + _json(response), file=stream, flush=True)
@@ -83,7 +112,7 @@ def run_console(client, *, input_stream, output_stream, error_stream):
               'Product policy: UNDETERMINED — Astra/User.\n'
               'Legal/accounting treatment: UNDETERMINED — User/designated advisers.', file=output_stream)
         while True:
-            print('Actions: load_quote, simulate_quote, load_legs, plan_payments, select_lines, '
+            print('Actions: load_quote, simulate_quote, load_legs, compose_legs, plan_payments, select_lines, '
                   'propose_line_refund, show, quit', file=output_stream)
             action = prompt('action')
             try:
@@ -109,6 +138,10 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                         raise ConsoleInputError('payment legs must be an array')
                     legs = codec().canonical_bytes(value)
                     print('Legs loaded; active plan and line selections invalidated.', file=output_stream)
+                elif action == 'compose_legs':
+                    legs = plan = refund = selected = None
+                    legs = _compose_legs(prompt)
+                    print('composed_legs=' + legs.decode('utf-8'), file=output_stream)
                 elif action == 'plan_payments':
                     plan = refund = selected = None
                     if quote is None or legs is None:

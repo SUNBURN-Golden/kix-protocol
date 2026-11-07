@@ -20,6 +20,11 @@
 
 ## Local commerce calculation console
 
+[Guided split-payment entry evidence](../validation/2026-11-08-plan-local-split-payment-entry/README.md)
+and the [extended console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+cover explicit synthetic leg composition, preview and separate submission.
+Calculation usability only; capability grades and policy decisions are unchanged.
+
 [Console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
 and [builder evidence](../validation/2026-11-08-plan-plan-local-commerce-calculation-console/README.md)
 cover explicit synthetic quote, payment-plan and selected-line reversal calculations
