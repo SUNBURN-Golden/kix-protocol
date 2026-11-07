@@ -94,11 +94,14 @@ def run_console(client, *, input_stream, output_stream, error_stream):
         return line.removesuffix('\n').removesuffix('\r')
 
     def field(name):
-        hint = (' (JSON array of strings; explicit order)' if name == 'order' else
-                ' (JSON object; explicit synthetic policy)' if name == 'policy' else
+        hint = (' (JSON array of strings or guided; explicit order)' if name == 'order' else
+                ' (JSON object or guided; explicit synthetic policy)' if name == 'policy' else
                 ' (JSON string or explicit null)' if name == 'adjustment_reason' else '')
         value = prompt(name + hint)
         if name == 'policy':
+            if value == 'guided':
+                return {key: field(key) for key in
+                        ('kind', 'fee_bps', 'residual_payee', 'fee_payee')}
             try:
                 value = decode_json(value)
             except ValueError as error:
@@ -106,14 +109,19 @@ def run_console(client, *, input_stream, output_stream, error_stream):
             if type(value) is not dict:
                 raise _InputError('policy requires a JSON object')
             return value
-        if name in _AMOUNTS:
-            if re.fullmatch(r'-?[0-9]+', value) is None:
-                raise _InputError(name + ' requires an explicit decimal integer')
+        if name in _AMOUNTS | {'fee_bps', 'payee_count'}:
+            pattern = r'[0-9]+' if name == 'payee_count' else r'-?[0-9]+'
+            if re.fullmatch(pattern, value) is None:
+                qualifier = 'nonnegative ' if name == 'payee_count' else ''
+                raise _InputError(name + ' requires an explicit ' + qualifier + 'decimal integer')
             try:
                 return int(value)
             except ValueError as error:
                 raise _InputError(name + ' integer is too long') from error
         if name in {'order', 'adjustment_reason'}:
+            if name == 'order' and value == 'guided':
+                count = field('payee_count')
+                return [field('payee_' + str(index + 1)) for index in range(count)]
             try:
                 value = json.loads(value)
             except ValueError as error:

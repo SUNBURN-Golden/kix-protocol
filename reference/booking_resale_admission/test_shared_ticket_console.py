@@ -39,6 +39,7 @@ NEW_ACTIONS = [('booking', BIND), ('booking', ISSUE),
                ('admission', ADOPT + ['second-admission-adopt', 'ADOPT']),
                ('resale', ADOPT + ['second-resale-adopt', 'SUBMIT'])]
 START_RESALE = HERE / 'fixtures/settlement_console_start_resale.txt'
+GUIDED_RESALE = HERE / 'fixtures/settlement_console_guided_resale.txt'
 INPUTS = HERE / 'fixtures/ticket_operations_settlement_inputs_session.json'
 SURFACES = ('booking', 'resale', 'admission', 'settlement')
 VIEWS = {'booking': ['view', 'reserve-1'], 'resale': ['view_right', 'issue-1'],
@@ -672,6 +673,37 @@ class SharedTicketConsoleTests(unittest.TestCase):
             delegate.assert_called_once_with(client, input_stream=stream, output_stream=output, error_stream=errors)
         client.request.assert_not_called()
         client.close.assert_not_called()  # Embedded lifecycle belongs to caller.
+
+    def test_guided_resale_matches_raw_on_one_child_and_preserves_ticket_observations(self):
+        from test_settlement_console import SettlementConsoleTests
+        raw = self.drive(START_RESALE.read_text().splitlines(), fixture=INPUTS)
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(
+                GUIDED_RESALE.read_text().splitlines(), fixture=INPUTS)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (0, ''))
+        self.assertEqual((status, calls, replies), raw[:3])
+        control = load_fixture(INPUTS)
+        self.assertEqual(replies, [dispatch_request(control, row) for row in calls])
+        self.assertEqual(envelopes(output), replies)
+        self.assertEqual([json.loads(s) for s in re.findall(r'proposed=(\{[^\n]+\})', output)],
+                         [r for r in calls if not r['operation'].startswith('view')])
+        self.assertEqual(replies[0]['view'], replies[-3]['view'])
+        self.assertEqual(replies[2]['view'], replies[-2]['view'])
+        self.assertEqual(replies[3]['view'], replies[-1]['view'])
+        SettlementConsoleTests.summaries(self, replies[4:-3], output)
+        self.assertEqual(replies[17]['view']['claim']['distributed_cash'], 8000)
+
+    def test_guided_resale_transcript_as_cli_subprocess(self):
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'shared_ticket_console.py'),
+            '--fixture', str(INPUTS), '--cleanup-timeout', '1'], cwd=ROOT, input=GUIDED_RESALE.read_text(),
+            text=True, capture_output=True, timeout=10, env=os.environ.copy())
+        self.assertEqual((result.returncode, result.stderr), (0, ''))
+        replies = envelopes(result.stdout)
+        self.assertEqual(len(replies), 21)
+        self.assertEqual(replies[17]['view']['claim']['distributed_cash'], 8000)
+        self.assertEqual(replies[-2]['view']['phase'], 'LISTED')
+        self.assertEqual(replies[-1]['view']['right']['holder_role'], 'buyer-1')
 
     def test_resale_initiation_conflict_preserves_current_view(self):
         from settlement_fsm import SettlementError
