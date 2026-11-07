@@ -1,6 +1,7 @@
 """Consent, snapshot dependency and terminal composition, using the real driver."""
 
 import io
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -8,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from commerce_calculation_client import CommerceCalculationClient, CalculationUncertainty, decode_input
+from commerce_calculation_client import CommerceCalculationClient, CalculationUncertainty, codec, decode_input
 from commerce_calculation_console import run_console
 from test_commerce_calculation_client import HERE, POPEN
 
@@ -19,6 +20,15 @@ PREFIX = 'reference/booking_resale_admission/fixtures/commerce_console_'
 
 def answers(name='journey'):
     return (FIXTURES / ('commerce_console_' + name + '.txt')).read_text()
+
+
+def compose(legs):
+    rows = ['compose_legs', str(len(legs))]
+    for leg in legs:
+        asset = leg['amount']['asset']
+        rows.extend([leg['legId'], leg['providerRef'], leg['routeRef'], asset['namespace'],
+                     asset['reference'], str(asset['decimals']), asset['maxAtoms'], leg['amount']['atoms']])
+    return '\n'.join(rows) + '\n'
 
 
 class RecordingClient(CommerceCalculationClient):
@@ -166,6 +176,155 @@ class CommerceCalculationConsoleTests(unittest.TestCase):
         self.assertEqual([exchange.response['error'] for exchange in client.exchanges if not exchange.response['ok']],
                          ['QUOTE_EXPIRED', 'PAYMENT_TOTAL_MISMATCH', 'UNKNOWN_REFUND_LINE'])
         self.assertEqual(len(client.history), 2)
+
+    def test_guided_split_refund_journey_and_file_parity(self):
+        for name in ('journey', 'free', 'precision'):
+            with self.subTest(name=name), patch('time.time', side_effect=AssertionError('no implicit clock')):
+                status, guided, output, errors = self.run_journey(answers('guided_' + name))
+                fstatus, loaded, _, ferrors = self.run_journey(answers(name))
+                self.assertEqual((status, errors, fstatus, ferrors), (0, '', 0, ''))
+                self.assertEqual(len(guided.exchanges), 3)
+                # Includes complete requests, replies, plan hashes and refund outputs.
+                self.assertEqual(guided.exchanges, loaded.exchanges)
+                legs = decode_input(guided.exchanges[1].request_bytes)['args']['legs']
+                preview = 'composed_legs=' + codec().canonical(legs)
+                self.assertIn(preview, output)
+                self.assertLess(output.index(preview), output.index('proposed={"action":"plan_payments"'))
+                self.assertLess(output.index(preview), output.index('Type literal SUBMIT_PLAN'))
+                refund = guided.history[-1].response['result']
+                if name == 'journey':
+                    self.assertEqual([leg['legId'] for leg in legs], ['card', 'bank'])
+                    self.assertEqual(refund['lineIds'], ['L2'])
+                elif name == 'free':
+                    self.assertEqual(legs, [])
+                    self.assertEqual(refund['originalRoutes'], [])
+                else:
+                    self.assertEqual(legs[0]['amount']['atoms'], '9007199254740993')
+                    self.assertEqual(refund['customerRefund']['atoms'], '9007199254740993')
+
+    def test_guided_driver_refusals_are_visible_without_correction_or_retry(self):
+        status, client, output, errors = self.run_journey(answers('guided_boundaries'))
+        self.assertEqual((status, errors, len(client.exchanges)), (1, '', 5))
+        expected = ['DUPLICATE_PAYMENT_LEG', 'PAYMENT_ASSET_MISMATCH',
+                    'PAYMENT_TOTAL_MISMATCH', 'QUOTE_EXPIRED']
+        self.assertEqual([e.response['error'] for e in client.exchanges[1:]], expected)
+        for error in expected:
+            self.assertIn('"error":"' + error + '"', output)
+        self.assertEqual(len(client.history), 1)
+        # Zero count is explicit even on a paid quote: the driver refuses the total.
+        prefix = answers('guided_journey').split('compose_legs\n')[0]
+        status, client, output, errors = self.run_journey(prefix +
+                    'compose_legs\n0\nplan_payments\n999\nSUBMIT_PLAN\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (1, '', 2))
+        self.assertEqual(client.exchanges[-1].response['error'], 'PAYMENT_TOTAL_MISMATCH')
+
+    def test_guided_replacement_invalidates_plan_refund_and_selection(self):
+        prefix = answers('guided_journey').split('show\n')[0]
+        same = answers('guided_journey').split('compose_legs\n')[1].split('plan_payments\n')[0]
+        cases = [('compose_legs\n' + same, 0, True),
+                 ('compose_legs\ntrue\n', 1, False),
+                 ('compose_legs\n1\nnew\nprovider\nroute\nfiat\nKRW\n1.5\n', 1, False),
+                 ('compose_legs\n1\ne\u0301\np\nr\nfiat\nKRW\n0\n100\n1\n', 1, False)]
+        for replacement, expected, complete in cases:
+            with self.subTest(replacement=replacement):
+                status, client, output, errors = self.run_journey(prefix + replacement +
+                    'propose_line_refund\nshow\nplan_payments\n' +
+                    ('999\nSUBMIT_PLAN\npropose_line_refund\n' if complete else '') + 'quit\n')
+                self.assertEqual((status, errors), (expected, ''))
+                self.assertEqual(len(client.exchanges), 4 if complete else 3)
+                self.assertIn('active={"plan":null,"quote":"', output)
+                self.assertIn('"refund":null}', output)
+                self.assertIn('Active quote, plan and explicit line selection are required.', output)
+                if not complete:
+                    self.assertIn('A successful active quote and loaded legs are required.', output)
+                self.assertIn('Historical successful exchanges (not active selections)', output)
+
+        status, client, output, errors = self.run_journey(answers('guided_replacement'))
+        self.assertEqual((status, errors, len(client.exchanges)), (0, '', 4))
+        self.assertEqual(output.count('Active quote, plan and explicit line selection are required.'), 2)
+
+    def test_guided_integer_and_encoding_failures_never_publish_candidate(self):
+        invalid_count = ('', '-1', '17', 'true', '"1"', '1.0', '1e0', '-0', '9007199254740993', '{}')
+        for count in invalid_count:
+            with self.subTest(count=count), patch('commerce_calculation_client.subprocess.Popen') as launch:
+                status, _, output, errors = self.run_journey('compose_legs\n' + count +
+                                                            '\nplan_payments\nquit\n')
+                self.assertEqual((status, errors), (1, ''))
+                self.assertIn('input_error=', output)
+                self.assertNotIn('composed_legs=', output)
+                launch.assert_not_called()
+        for value in ('true', '"0"', '0.0', '-0', '9007199254740993', '\ud800'):
+            with self.subTest(decimals=value):
+                status, client, output, errors = self.run_journey(
+                    'compose_legs\n1\nid\np\nr\nfiat\nKRW\n' + value + '\nquit\n')
+                self.assertEqual((status, errors, len(client.exchanges)), (1, '', 0))
+                self.assertNotIn('composed_legs=', output)
+        for literal in ('e\u0301', '\ud800', 'x' * codec().MAX_INPUT_BYTES):
+            script = 'compose_legs\n1\n' + literal + '\np\nr\nfiat\nKRW\n0\n100\n1\nquit\n'
+            status, client, output, errors = self.run_journey(script)
+            self.assertEqual((status, errors, len(client.exchanges)), (1, '', 0))
+            self.assertIn('input_error=', output)
+            self.assertNotIn('composed_legs=', output)
+
+    def test_guided_literal_strings_order_and_driver_owned_validation(self):
+        legs = json.loads((FIXTURES / 'commerce_console_legs.json').read_text())[::-1]
+        legs[0]['providerRef'] = ' synthetic provider '
+        legs[0]['routeRef'] = ''
+        legs[0]['amount']['asset']['decimals'] = -1
+        legs[0]['amount']['asset']['maxAtoms'] = ' 000100 '
+        legs[0]['amount']['atoms'] = '00018600'
+        prefix = answers('guided_journey').split('compose_legs\n')[0]
+        status, client, output, errors = self.run_journey(prefix + compose(legs) +
+                                                       'plan_payments\n999\nSUBMIT_PLAN\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (1, '', 2))
+        self.assertEqual(decode_input(client.exchanges[-1].request_bytes)['args']['legs'], legs)
+        self.assertIn('composed_legs=' + codec().canonical(legs), output)
+        self.assertFalse(client.exchanges[-1].response['ok'])
+        # CRLF removes only terminators; quotes, spaces, empty text and atom spellings survive.
+        with patch('commerce_calculation_client.subprocess.Popen') as launch:
+            status, _, output, errors = self.run_journey(compose(legs).replace('\n', '\r\n') + 'quit\n')
+        self.assertEqual((status, errors), (0, ''))
+        self.assertIn('composed_legs=' + codec().canonical(legs), output)
+        launch.assert_not_called()
+
+    def test_guided_eof_at_every_prompt_and_decline_submit_nothing_further(self):
+        script = answers('guided_journey')
+        composition = script.split('compose_legs\n')[1].split('plan_payments\n')[0]
+        prefix = script.split('compose_legs\n')[0]
+        # Also enter replacement after a successful refund; partial EOF keeps history only.
+        for initial, calls in ((prefix, 1), (script.split('show\n')[0], 3)):
+            for length in range(len(composition.splitlines()) + 1):
+                with self.subTest(calls=calls, length=length):
+                    partial = '\n'.join(composition.splitlines()[:length])
+                    status, client, output, errors = self.run_journey(initial + 'compose_legs\n' +
+                                                                      partial + ('\n' if length else ''))
+                    self.assertEqual((status, errors, len(client.exchanges)), (0, '', calls))
+                    self.assertIn('EOF; no further calculations submitted.', output)
+        for suffix in ('no\npropose_line_refund\nquit\n', ''):
+            status, client, _, errors = self.run_journey(script.split('SUBMIT_PLAN\n')[0] + suffix)
+            self.assertEqual((status, errors, len(client.exchanges)), (0, '', 1))
+        self.assertEqual(self.run_journey(answers('guided_decline'))[0], 0)
+
+    def test_guided_plan_uncertainty_fences_after_successful_quote(self):
+        children = []
+        def fail_plan(*args, **kwargs):
+            if not children:
+                child = POPEN(*args, **kwargs)
+            else:
+                child = POPEN([sys.executable, '-B', '-c',
+                               'import sys; sys.stdin.buffer.read(); print("malformed")'], **kwargs)
+            children.append(child)
+            return child
+        with patch('commerce_calculation_client.subprocess.Popen', side_effect=fail_plan) as launch:
+            status, client, _, errors = self.run_journey(answers('guided_journey') * 2)
+            self.assertEqual((status, launch.call_count, len(client.history)), (2, 2, 1))
+            self.assertIsInstance(client.uncertainty, CalculationUncertainty)
+            self.assertEqual(decode_input(client.uncertainty.request_bytes)['action'], 'plan_payments')
+            with self.assertRaisesRegex(RuntimeError, 'client fenced'):
+                client.request({'action': 'simulate_quote', 'args': {}})
+            self.assertEqual(launch.call_count, 2)
+        self.assertIn('FENCED', errors)
+        self.assertTrue(all(child.returncode is not None for child in children))
 
     def test_transport_failure_stops_console_without_retry_or_fallback(self):
         children = []

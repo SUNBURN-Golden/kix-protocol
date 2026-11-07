@@ -3287,6 +3287,7 @@ Omit redirection for interactive use. Local controls:
 | `load_quote` | Path to a complete quote request JSON object; loads only |
 | `simulate_quote` | Shows full request, requires literal `SUBMIT_QUOTE` |
 | `load_legs` | Path to JSON array of existing payment legs; loads only |
+| `compose_legs` | Explicit count and every leg field; previews the complete array, submits nothing |
 | `plan_payments` | Explicit synthetic integer `now`, retained quote/hash, literal `SUBMIT_PLAN` |
 | `select_lines` | Explicit JSON array of line IDs; selects only |
 | `propose_line_refund` | Retained full quote/plan and hashes, selected IDs, literal `SUBMIT_REFUND` |
@@ -3294,13 +3295,46 @@ Omit redirection for interactive use. Local controls:
 
 These are terminal controls, not new protocol commands. Every quote load attempt
 (even identical or failed) clears active quote, plan, refund and line selection.
-Every legs load or plan-input attempt clears plan, refund and line selection.
+Every legs load, composition or plan-input attempt clears plan, refund and line selection.
 Every new quote calculation clears the prior quote and dependents; every line
 selection attempt clears the prior refund. Decline/EOF submits nothing further.
 Failed replacement calculations cannot restore history as active state. `show`
 labels active hashes separately from historical successful exchanges. No implicit
 split, policy value, clock, file reload or allocation is supplied. Quote/plan
 outputs and arrays/atom strings pass unchanged into subsequent driver calls.
+
+To enter legs without a JSON file, choose `compose_legs`. Supply the explicit
+CE1 integer count from `0` through the existing driver's `MAX_LEGS` bound (16).
+For each leg, enter these fields in order: `legId`, `providerRef`, `routeRef`,
+`amount.asset.namespace`, `amount.asset.reference`, `amount.asset.decimals`,
+`amount.asset.maxAtoms`, `amount.atoms`. Decimals must be a CE1 integer;
+all other fields are literal text with only line terminators removed. Atom
+strings are never converted to numbers. No metadata, split, route or amount
+is inferred from the quote; blank input supplies no default. Use synthetic
+provider and route references. Identifiers, assets and amounts are validated
+by the unchanged driver when submitted.
+
+Count `0` explicitly composes `[]`, including for a free order; the driver decides
+whether it matches the quote. The console prints `composed_legs=<complete array>`
+and returns to the menu. Choose `plan_payments` separately, enter synthetic `now`,
+inspect the full envelope, then type `SUBMIT_PLAN` to calculate once. Starting
+composition immediately clears the old legs, plan, refund and line selections,
+while preserving the active quote and historical successful exchanges. Malformed
+or incomplete input cannot restore the previous legs or selections. Refusals
+remain visible; correction needs another explicit input and submission.
+
+Run the command above with `commerce_console_guided_journey.txt` for an explicitly
+entered two-leg plan and selected-line refund. Additional guided answer files:
+`commerce_console_guided_free.txt` (explicit empty array),
+`commerce_console_guided_precision.txt` (exact atoms above JavaScript's safe range),
+`commerce_console_guided_replacement.txt`, `commerce_console_guided_decline.txt`
+(exit 0), and `commerce_console_guided_boundaries.txt` (expected exit 1 for duplicate
+legs, asset mismatch, incorrect totals and expiry). Equivalent guided/file arrays
+produce identical calculation requests and replies. [Guided-entry evidence and
+pending gates](../../validation/2026-11-08-plan-local-split-payment-entry/README.md).
+This advances B03/B04 and F03 calculation usability only; capability grades remain
+unchanged. Booking quote entry, payment execution and booking/payment handoff
+are outside this console's scope.
 
 All JSON files are decoded from original bytes with bounded CE1 before any
 reserialization: duplicate keys, fractions/exponents, negative zero and unsafe
