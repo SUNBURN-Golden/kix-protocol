@@ -6,6 +6,7 @@ import sys
 
 from ai_delegation_mock import AiDelegationError, _canonical
 from delegation_cli import _error, dispatch_request
+from delegation_client import DelegationClient, DelegationTransportUncertainty
 from delegation_fixture import FixtureError, decode_json, exact_fields, load_fixture, validate_json
 
 
@@ -88,15 +89,50 @@ def _write(stream, text):
 
 def _diagnostic(error, stream, *, operation=None, last_reply=None):
     try:
-        _write(stream, "FENCED: " + _canonical({
-            "failure": _error(operation, error), "last_reply": last_reply}) + "\n")
+        detail = {"failure": _error(operation, error), "last_reply": last_reply, "exceptions": []}
+        seen = set()
+        while error is not None and id(error) not in seen:
+            seen.add(id(error))
+            detail["exceptions"].append({"type": type(error).__name__, "message": str(error)})
+            if isinstance(error, DelegationTransportUncertainty):
+                detail.update(request=error.request, request_bytes_hex=error.request_bytes.hex(),
+                              reply_bytes_hex=error.reply_bytes.hex())
+            error = error.__cause__ or (None if error.__suppress_context__ else error.__context__)
+        _write(stream, "FENCED: " + _canonical(detail) + "\n")
     except (Exception, KeyboardInterrupt):
         pass  # A failed diagnostic never re-enters the action loop.
 
 
 def run_console(session, *, input_stream, output_stream, error_stream) -> int:
+    """Preserve the importable in-process entry point."""
+    return _run_console(lambda request: dispatch_request(session, request), state={},
+                        input_stream=input_stream, output_stream=output_stream, error_stream=error_stream)
+
+
+def run_subprocess_console(fixture, *, cleanup_timeout, input_stream, output_stream, error_stream) -> int:
+    """Own one child through quit/failure; cleanup never submits or retries."""
+    state, client, status = {}, None, 2
+    try:
+        client = DelegationClient.launch(fixture, cleanup_timeout=cleanup_timeout)
+        status = _run_console(client.request, state=state, input_stream=input_stream,
+                              output_stream=output_stream, error_stream=error_stream)
+    except (Exception, KeyboardInterrupt) as error:
+        _diagnostic(error, error_stream, last_reply=state.get("last_reply"))
+    finally:
+        if client is not None:
+            try:
+                code = client.close()
+                if code != 0 and not (code == 1 and status == 1):
+                    raise RuntimeError(f"local delegation desk exited with status {code}")
+            except (Exception, KeyboardInterrupt) as error:
+                _diagnostic(error, error_stream, last_reply=state.get("last_reply"))
+                status = 2
+    return status
+
+
+def _run_console(send_request, *, state, input_stream, output_stream, error_stream) -> int:
     """Confirm and dispatch once per explicit action; terminal failures never retry."""
-    last_reply = None
+    state["last_reply"] = None
     operation = None
     rejected = False
 
@@ -155,7 +191,7 @@ def run_console(session, *, input_stream, output_stream, error_stream) -> int:
                 continue
             terminal = None
             try:
-                reply = dispatch_request(session, request)
+                reply = send_request(request)
             except AiDelegationError as error:
                 reply = _error(operation, error)
                 rejected = True
@@ -164,12 +200,17 @@ def run_console(session, *, input_stream, output_stream, error_stream) -> int:
             except FixtureError as error:
                 reply = _error(operation, error)
                 terminal = error
-            last_reply = reply  # Retain the unchanged complete envelope before output can fail.
+            state["last_reply"] = reply  # Retain the unchanged complete envelope before output can fail.
             say("\ndesk=" + _canonical(reply))
             if terminal is not None:
                 raise terminal
+            if "error" in reply:
+                rejected = True
+                if (reply["operation"] != operation or set(reply["error"]) != {"code"}
+                        or reply["error"].get("code") == "MOCK_INVARIANT"):
+                    raise RuntimeError("local delegation desk returned a terminal error")
     except (Exception, KeyboardInterrupt) as error:
-        _diagnostic(error, error_stream, operation=operation, last_reply=last_reply)
+        _diagnostic(error, error_stream, operation=operation, last_reply=state["last_reply"])
         return 2
 
 
@@ -177,7 +218,17 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixture", type=Path, required=True,
                         help="explicit synthetic registry fixture; no default")
+    parser.add_argument("--mode", choices=("in-process", "subprocess"), default="in-process")
+    parser.add_argument("--cleanup-timeout", type=float,
+                        help="required for subprocess mode; finite positive seconds for cleanup only")
     args = parser.parse_args(argv)
+    if args.mode == "subprocess":
+        if args.cleanup_timeout is None:
+            parser.error("--mode subprocess requires --cleanup-timeout")
+        return run_subprocess_console(args.fixture, cleanup_timeout=args.cleanup_timeout,
+                                      input_stream=sys.stdin, output_stream=sys.stdout, error_stream=sys.stderr)
+    if args.cleanup_timeout is not None:
+        parser.error("--cleanup-timeout requires --mode subprocess")
     try:
         session = load_fixture(args.fixture)
     except (Exception, KeyboardInterrupt) as error:
