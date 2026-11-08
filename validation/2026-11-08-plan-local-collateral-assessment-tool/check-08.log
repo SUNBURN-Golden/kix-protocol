@@ -1,0 +1,19 @@
+$ python3 scripts/check_ci_checker_wiring.py --self-test
+exit: 0
+stdout:
+self-test: detected unwired checker
+self-test: detected plain-only wiring
+self-test: detected unlisted self-test-only checker
+self-test: detected missing cited checker
+self-test: detected document cites unrun checker
+self-test: detected allowlisted script wired plain
+self-test: detected allowlisted script missing self-test
+self-test: detected missing allowlisted script
+self-test: detected workflow invokes missing file
+self-test: detected commented-out invocation
+self-test: detected no scripts
+self-test: detected no invocations
+self-test: detected no documents
+self-test: pass (13 negative controls)
+
+stderr:

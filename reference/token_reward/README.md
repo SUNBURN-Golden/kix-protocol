@@ -1,5 +1,89 @@
 # Local F4 reward desk
 
+## Local collateral assessment
+
+The stdlib-only `collateral_assessment.dispatch_request(request)` exposes the
+existing `token_reward_model.collateral_recognized` calculation for synthetic
+U2/TK-12 assessment. Use the existing module-directory import convention
+(`reference/token_reward` on your Python import path). It returns the complete
+existing model result unchanged inside `result`:
+
+```python
+from collateral_assessment import dispatch_request
+
+output = dispatch_request({
+    "operation": "collateral_recognized",
+    "arguments": {
+        "liability_krw": 100,
+        "collateral_items": [
+            {"kind": "KRW_GUARANTEE", "amount": 30},
+            {"kind": "ESCROW", "amount": 25},
+            {"kind": "TOKEN", "amount": 999},
+        ],
+    },
+})
+# output["result"] == {"liability_krw": 100, "recognized_krw": 55,
+#                      "token_recognized": 0, "currency": "KRW"}
+```
+
+Exactly `operation` and `arguments` are required. Arguments must contain exactly
+`liability_krw` and `collateral_items`; neither has a default. An explicit `[]`
+recognizes zero. Item kinds and fields are validated by the unchanged model;
+each item has `kind` and `amount`. The local selector adds no protocol command.
+The existing implementation requires positive integer liability and item amounts
+at most `MONEY_MAX = 10**12`, and bounds the recognized sum by the same constant.
+These are implementation limits, not approved product limits. Integers are never
+converted to floats, rounded or accepted from strings. Fractional/exponent JSON
+numbers and booleans are rejected as amounts. Synthetic examples set no policy.
+
+Run from the repository root:
+
+```bash
+python3 reference/token_reward/collateral_cli.py --request reference/token_reward/fixtures/collateral_mixed.json
+python3 reference/token_reward/collateral_cli.py --request - < reference/token_reward/fixtures/collateral_empty.json
+python3 reference/token_reward/collateral_cli.py --guided
+python3 reference/token_reward/collateral_cli.py --guided < reference/token_reward/fixtures/collateral_guided_mixed.txt
+```
+
+Select exactly one mode. File/stdin mode consumes one UTF-8 JSON document,
+rejecting duplicate keys at every depth, non-finite numbers, invalid Unicode,
+trailing documents, and missing/extra envelope or argument fields. Guided mode
+requires liability, an explicit nonnegative item count, and every item's kind
+and integer amount, in decimal JSON notation. Zero count explicitly means empty.
+It prints the complete proposal to stderr, then requires literal `CALCULATE`.
+No calculation occurs during composition/preview. Any other confirmation
+discards it with `cancelled: true`; EOF, interruption and malformed/incomplete
+input discard it with an input error. There is no retry or retained selection.
+
+Stdout is one deterministic JSON response. Every response carries `operation`,
+`provenance: "MOCK_TOKEN_REWARD_ONLY"`, `evidence_class: "CALCULATION_ONLY"`
+and a fixed synthetic scope notice. Success adds `result`; domain rejection
+adds `error: {"code": "..."}`; input/I/O failures add `error` with `type` and
+`message`. The importable dispatcher raises `FixtureError` or the original
+`TokenRewardError` instead of wrapping exceptions.
+
+| Exit | Meaning |
+|---|---|
+| 0 | Calculated, or explicitly declined (no `result` on decline) |
+| 1 | Existing model rejected the input |
+| 2 | Malformed/incomplete input, interruption, I/O failure or argument usage error |
+
+Argument usage errors use argparse's stderr help and have no JSON response.
+Domain codes stay unchanged: `INVALID_AMOUNT`, `COLLATERAL_TYPE`,
+`COLLATERAL_KIND_UNSUPPORTED`, `COLLATERAL_FIELDS`,
+`TOKEN_ONLY_COLLATERAL_REJECTED`, `PRICE_SOURCE_UNDEFINED`. A `valuation` key
+on any item reaches the model and is refused; the tool never strips it.
+The model's check ordering determines which code wins for multiple errors.
+
+This calculates no adequacy/eligibility threshold and grants no loan or legal
+approval. Asset selection and collateral ratios remain **UNDETERMINED —
+Astra/User**; legal enforceability remains **UNDETERMINED — User/legal**.
+There is no custody, F04 connection, external service, token package or runtime
+activation. Existing `CollateralTests` and TL-4 remain author-side evidence;
+see [interface coverage, actual CLI transcripts and local verification](../../validation/2026-11-08-plan-local-collateral-assessment-tool/README.md).
+
+## Reward desk scope
+
 `RewardSession` exposes the existing TL-3 off-chain `RewardMachine` in one
 fresh, in-memory session. The JSONL CLI accepts explicit local requests and
 embeds the FSM's receipts, views and domain error codes unchanged. Provenance

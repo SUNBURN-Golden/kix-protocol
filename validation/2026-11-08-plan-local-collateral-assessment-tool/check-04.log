@@ -1,0 +1,10 @@
+$ python3 scripts/check_status_register.py --self-test
+exit: 0
+stdout:
+self-test: detected missing path (path not found: docs/status/NO_SUCH_FILE_9f3a.md)
+self-test: detected undefined EV id (undefined evidence id referenced: EV-XXX)
+self-test: detected dropped original id (original id E01 appears 0 times as a row key (want 1))
+self-test: detected duplicated original id (original id E01 appears 2 times as a row key (want 1))
+self-test: pass
+
+stderr:
