@@ -17,7 +17,7 @@ from reward_console import main, run_console
 from reward_fixture import FixtureError, load_fixture
 from test_reward_session import FIXTURES, OPERATIONS, requests
 from tl4_support import human_approval
-from token_reward_model import ALWAYS_FALSE_FLAGS, PROVENANCE, TokenRewardError, _canonical
+from token_reward_model import ALWAYS_FALSE_FLAGS, PROVENANCE, TokenRewardError, _canonical, reward_id
 
 
 HERE = Path(__file__).resolve().parent
@@ -53,6 +53,134 @@ def answers(row, confirmation='SUBMIT'):
     return lines
 
 
+def guided_answers(row, confirmation='SUBMIT', *, guided=('reward_key', 'approval_ref')):
+    """Test-owned prompt sequence; preserve explicit omission and caller text."""
+    lines = answers(row, confirmation)
+    for name in reversed(ORDER[row['operation']]):
+        if name not in guided or name not in {'reward_key', 'approval_ref'}:
+            continue
+        index = 1 + ORDER[row['operation']].index(name)
+        value = row['arguments'][name]
+        if name == 'reward_key':
+            composed = [value[k] for k in ('program', 'source_op_id', 'recipient', 'kind')]
+        else:
+            composed = [value['record_id'], _canonical(value['generation'])]
+            composed += [value[k] for k in ('authority_id', 'actor_type', 'action', 'scope_ref')]
+            composed += [str(len(value['evidence_refs']))] + value['evidence_refs']
+            composed += (['include', _canonical(value['prior_record'])]
+                         if 'prior_record' in value else ['omit'])
+        lines[index:index + 1] = [':guided'] + composed
+    return lines
+
+
+def invalid_guided_inputs():
+    approval = ['submit', 'caller-reward', ':guided', 'caller-record']
+    for bad in ('true', 'null', '1.0', '1e3', '"1"', '{', '9' * 5000):
+        yield approval + [bad]
+    count = approval + ['1', 'caller-authority', 'HUMAN', 'point-payout', 'caller-scope']
+    for bad in ('-1', 'true', 'null', '1.0', '"1"', '[]', '{', '9' * 5000):
+        yield count + [bad]
+    for bad in ('', 'OMIT', ' include', 'null'):
+        yield count + ['0', bad]
+    for bad in ('false', '1', '{}', '[]', '{', '"\\ud800"'):
+        yield count + ['0', 'include', bad]
+    yield ['observe', ':guided', '\ud800', 'source', 'recipient', 'kind']
+    yield count + ['1', '\ud800', 'omit']
+
+
+class GuidedCompositionTests:
+    """New composition paths, exercised with each existing desk harness."""
+
+    def test_guided_raw_envelope_parity(self):
+        scenarios = [requests('participation'),
+                     requests('unknown_pending') + requests('unknown_resolution'),
+                     requests('participation')[:5] + mutation_examples()[-1:]]
+        for rows in scenarios:
+            raw = self.guided_drive([v for row in rows for v in answers(row)] + ['quit'])
+            for mixed in (False, True):
+                with self.subTest(mixed=mixed, scenario=rows[0]['arguments']['idempotency_key']):
+                    lines = [v for i, row in enumerate(rows) for v in guided_answers(
+                        row, guided=('approval_ref',) if mixed and i % 2 == 0
+                        else ('reward_key', 'approval_ref'))]
+                    status, calls, output, errors = self.guided_drive(lines + ['quit'])
+                    self.assertEqual((status, calls, errors), (raw[0], rows, ''))
+                    self.assertEqual(printed('proposed', output), printed('proposed', raw[2]))
+                    self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+                    self.parity(calls, output)
+
+    def test_guided_opaque_values_precision_and_prior_record(self):
+        for prior in ('omit', None, 'prior|한글:e\u0301'):
+            rows = requests('participation')[:4]
+            rows[0]['arguments']['reward_key'].update(
+                program='프로그램|:e\u0301', source_op_id='source|:雪', recipient='한글:|', kind='kind|:')
+            for row in rows[1:]:
+                row['arguments']['reward_id_value'] = reward_id(**rows[0]['arguments']['reward_key'])
+            approval = rows[-1]['arguments']['approval_ref']
+            approval.update(record_id='record|雪', authority_id='caller|authority',
+                            scope_ref='scope:e\u0301',
+                            evidence_refs=['second|雪', 'first:e\u0301', 'second|雪'])
+            if prior != 'omit':
+                approval['prior_record'] = prior
+            raw = self.guided_drive([v for r in rows for v in answers(r)] + ['quit'])
+            status, calls, output, errors = self.guided_drive(
+                [v for r in rows for v in guided_answers(r)] + ['quit'])
+            self.assertEqual((status, calls, errors), (0, rows, ''))
+            self.assertEqual(raw[0], 0)
+            self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+            self.assertEqual(printed('proposed', output), rows)
+            self.parity(calls, output)
+        row = requests('participation')[0]
+        row['arguments']['reward_key']['program'] = '  caller|프로그램\t'
+        raw = self.guided_drive(answers(row) + ['quit'])
+        status, calls, output, errors = self.guided_drive(guided_answers(row) + ['quit'])
+        self.assertEqual((status, calls, errors), (1, [row], ''))
+        self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+        self.parity(calls, output)
+        # Empty evidence and a caller AI actor reach the existing domain predicates.
+        for change in ({'evidence_refs': []}, {'actor_type': 'AI'}, {'generation': -1},
+                       {'generation': 2**80 + 1}, {'record_id': '  caller|雪  '},
+                       {'evidence_refs': ['']}, {'actor_type': ''}):
+            rows = requests('participation')[:4]
+            rows[-1]['arguments']['approval_ref'].update(change)
+            raw = self.guided_drive([v for r in rows for v in answers(r)] + ['quit'])
+            status, calls, output, errors = self.guided_drive(
+                [v for r in rows for v in guided_answers(r)] + ['quit'])
+            self.assertEqual((status, calls, errors), (1, rows, ''))
+            self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+            self.parity(calls, output)
+
+    def test_guided_fixture_transcripts(self):
+        for name, scenario, expected in (('journey', 'participation', 0), ('boundaries', 'boundaries', 1)):
+            text = (FIXTURES / ('reward_console_guided_' + name + '.txt')).read_text(encoding='utf-8')
+            status, calls, output, errors = self.guided_drive(text.splitlines())
+            self.assertEqual((status, calls, errors), (expected, requests(scenario), ''))
+            raw = self.guided_drive([v for r in requests(scenario) for v in answers(r)] + ['quit'])
+            self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+            if name == 'boundaries':
+                self.assertEqual(output.count('input_error='), 3)
+                self.assertEqual(output.count('Declined; no request sent.'), 1)
+
+    def test_guided_decline_invalid_and_eof_no_dispatch(self):
+        rows = [requests('participation')[0], requests('participation')[3], mutation_examples()[-1]]
+        rows[-1]['arguments']['approval_ref']['prior_record'] = 'explicit-prior'
+        for row in rows:
+            lines = guided_answers(row)
+            status, calls, output, errors = self.guided_drive(guided_answers(row, 'no') + ['quit'])
+            self.assertEqual((status, calls, errors), (0, [], ''))
+            self.assertEqual(printed('proposed', output), [row])
+            for cut in range(len(lines)):
+                with self.subTest(operation=row['operation'], cut=cut):
+                    status, calls, output, errors = self.guided_drive(lines[:cut])
+                    self.assertEqual((status, calls, printed('desk', output)), (2, [], []))
+                    self.assertIn('EOFError', errors)
+        for lines in invalid_guided_inputs():
+            with self.subTest(invalid=repr(lines)):
+                status, calls, output, errors = self.guided_drive(lines + ['quit'])
+                self.assertEqual((status, calls, errors), (0, [], ''))
+                self.assertIn('input_error=', output)
+                self.assertNotIn('proposed=', output)
+
+
 def script(lines):
     return io.StringIO('\n'.join(lines) + '\n')
 
@@ -73,7 +201,10 @@ def mutation_examples():
     return rows
 
 
-class RewardConsoleTests(unittest.TestCase):
+class RewardConsoleTests(GuidedCompositionTests, unittest.TestCase):
+    def guided_drive(self, lines):
+        return self.drive(lines)
+
     def drive(self, lines, *, stream=None, output=None, errors=None, dispatch=None):
         output = io.StringIO() if output is None else output
         errors = io.StringIO() if errors is None else errors
@@ -191,7 +322,7 @@ class RewardConsoleTests(unittest.TestCase):
     def test_proposal_is_complete_and_flushed_before_confirmation(self):
         row = requests('participation')[0]
         output = io.StringIO()
-        pending = iter(answers(row) + ['quit'])
+        pending = iter(guided_answers(row) + ['quit'])
         class CheckingInput:
             def readline(inner):
                 line = next(pending)

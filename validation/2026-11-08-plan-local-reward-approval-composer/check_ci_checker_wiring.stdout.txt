@@ -1,0 +1,1 @@
+ci checker wiring ok: scripts=35 plain=34 self_test=35 self_test_only=1 docs=22 citations=99
