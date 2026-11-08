@@ -1,0 +1,15 @@
+net_residual_revenue
+100
+40
+3
+4
+3
+5
+5
+CALCULATE
+USE_RESIDUAL
+10
+1
+3
+4
+CALCULATE

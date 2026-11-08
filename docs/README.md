@@ -588,3 +588,5 @@ and transport fencing. No policy decision, activation or independent review is i
 - [Local delegation live console builder evidence](../validation/2026-11-07-plan-plan-local-delegation-live-console/README.md) — source-informed coverage, actual local checks, preservation and transcripts; no status promotion, A2 review or exact-head CI claim.
 
 - [Guided delegation input composer builder evidence](../validation/2026-11-08-plan-local-delegation-input-composer/README.md) — optional guided composition, unchanged envelopes, local child parity and failure fencing; A5, policy owners, A2 review and exact-head CI gates remain unchanged.
+
+- [Local reward-budget workbench](../reference/token_reward/README.md#local-reward-budget-workbench) · [2026-11-08 builder evidence](../validation/2026-11-08-plan-local-reward-budget-workbench/README.md) — Caller-entered synthetic residual revenue and budget ceiling calculations, exact integer transport and explicitly confirmed handoff; product values UNDETERMINED — Astra/User, accounting treatment UNDETERMINED — User/designated advisers. A2 non-author exact-head review and KTX/KIX CI remain pending.

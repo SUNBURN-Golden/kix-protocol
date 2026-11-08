@@ -1,0 +1,12 @@
+{
+  "operation": "net_residual_revenue",
+  "arguments": {
+    "gross_revenue": 100,
+    "refundable_window_revenue": 40,
+    "customer_deposit_outlay": 3,
+    "organizer_settlement_outlay": 4,
+    "refund_reserve_outlay": 3,
+    "operating_cost": 5,
+    "loss_provision": 5
+  }
+}

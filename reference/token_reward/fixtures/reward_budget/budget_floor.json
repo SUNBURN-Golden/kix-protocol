@@ -1,0 +1,10 @@
+{
+  "operation": "reward_budget",
+  "arguments": {
+    "cap": 100,
+    "ratio_numerator": 1,
+    "ratio_denominator": 3,
+    "net_residual": 40,
+    "periods": 4
+  }
+}

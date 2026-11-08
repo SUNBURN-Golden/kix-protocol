@@ -1,0 +1,1 @@
+{"operation":"net_residual_revenue","provenance":"MOCK_TOKEN_REWARD_ONLY","result":{"net_residual":40},"unit":"POINT_F4"}

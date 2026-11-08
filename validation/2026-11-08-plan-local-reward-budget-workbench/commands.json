@@ -1,0 +1,629 @@
+[
+  {
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward",
+      "-p",
+      "test_reward_budget_workbench.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 2.334,
+    "stdout": "01.stdout.txt",
+    "stderr": "01.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_docs_index.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.077,
+    "stdout": null,
+    "stderr": null,
+    "capture_note": "Initial docs-index output was overwritten by the overlapping suite collector. Result also observed in tool output; checker repeated after correcting collector."
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.051,
+    "stdout": "03.stdout.txt",
+    "stderr": "03.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_status_register.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.301,
+    "stdout": "04.stdout.txt",
+    "stderr": "04.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_status_register.py",
+      "--self-test"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 1.376,
+    "stdout": "05.stdout.txt",
+    "stderr": "05.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_tl_predicate_evidence_map.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.039,
+    "stdout": "06.stdout.txt",
+    "stderr": "06.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_tl_predicate_evidence_map.py",
+      "--self-test"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.09,
+    "stdout": "07.stdout.txt",
+    "stderr": "07.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_class_b_index.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.108,
+    "stdout": "08.stdout.txt",
+    "stderr": "08.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_class_b_index.py",
+      "--self-test"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.025,
+    "stdout": "09.stdout.txt",
+    "stderr": "09.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_ci_test_discovery.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.131,
+    "stdout": "10.stdout.txt",
+    "stderr": "10.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_ci_test_discovery.py",
+      "--self-test"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.081,
+    "stdout": "11.stdout.txt",
+    "stderr": "11.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_ci_checker_wiring.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.043,
+    "stdout": "12.stdout.txt",
+    "stderr": "12.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_ci_checker_wiring.py",
+      "--self-test"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.026,
+    "stdout": "13.stdout.txt",
+    "stderr": "13.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_openapi_contract.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.1,
+    "stdout": "14.stdout.txt",
+    "stderr": "14.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_openapi_contract.py",
+      "--self-test"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.19,
+    "stdout": "15.stdout.txt",
+    "stderr": "15.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_integration_gate_openapi.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.077,
+    "stdout": "16.stdout.txt",
+    "stderr": "16.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_integration_gate_openapi.py",
+      "--self-test"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.098,
+    "stdout": "17.stdout.txt",
+    "stderr": "17.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/verify_runtime_architecture.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.045,
+    "stdout": "18.stdout.txt",
+    "stderr": "18.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/test_runtime_architecture.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.325,
+    "stdout": "19.stdout.txt",
+    "stderr": "19.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": null,
+    "stdout": "suite.stdout.txt",
+    "stderr": "suite.stderr.txt",
+    "capture_note": "Full output preserved; initial record metadata overwritten by overlapping foreground collectors. unittest reports 16.107s; collector elapsed duration unavailable."
+  },
+  {
+    "argv": [
+      "python3.12",
+      "scripts/check_docs_index.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.044,
+    "stdout": "21.stdout.txt",
+    "stderr": "21.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--request",
+      "reference/token_reward/fixtures/reward_budget/residual.json"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.067,
+    "stdout": "22.stdout.txt",
+    "stderr": "22.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--request",
+      "-"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": "reference/token_reward/fixtures/reward_budget/residual.json",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.043,
+    "stdout": "23.stdout.txt",
+    "stderr": "23.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--request",
+      "reference/token_reward/fixtures/reward_budget/budget_floor.json"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.048,
+    "stdout": "24.stdout.txt",
+    "stderr": "24.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--request",
+      "-"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": "reference/token_reward/fixtures/reward_budget/budget_floor.json",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.033,
+    "stdout": "25.stdout.txt",
+    "stderr": "25.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--request",
+      "reference/token_reward/fixtures/reward_budget/budget_cap.json"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.046,
+    "stdout": "26.stdout.txt",
+    "stderr": "26.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--request",
+      "-"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": "reference/token_reward/fixtures/reward_budget/budget_cap.json",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.042,
+    "stdout": "27.stdout.txt",
+    "stderr": "27.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--guided"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": "reference/token_reward/fixtures/reward_budget/guided_floor.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.05,
+    "stdout": "28.stdout.txt",
+    "stderr": "28.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--guided"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": "reference/token_reward/fixtures/reward_budget/guided_cap.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.037,
+    "stdout": "29.stdout.txt",
+    "stderr": "29.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_budget_workbench.py",
+      "--guided"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": "reference/token_reward/fixtures/reward_budget/guided_decline.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.035,
+    "stdout": "30.stdout.txt",
+    "stderr": "30.stderr.txt"
+  },
+  {
+    "argv": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.876,
+    "stdout": "31.stdout.txt",
+    "stderr": "31.stderr.txt"
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--locked",
+      "--offline"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 101,
+    "duration_seconds": 0.145,
+    "stdout": "32.stdout.txt",
+    "stderr": "32.stderr.txt"
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 101,
+    "duration_seconds": 0.13,
+    "stdout": "33.stdout.txt",
+    "stderr": "33.stderr.txt"
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--locked",
+      "--offline"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 101,
+    "duration_seconds": 0.044,
+    "stdout": "34.stdout.txt",
+    "stderr": "34.stderr.txt"
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 101,
+    "duration_seconds": 0.064,
+    "stdout": "35.stdout.txt",
+    "stderr": "35.stderr.txt"
+  },
+  {
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "exit_status": 0,
+    "duration_seconds": 0.007,
+    "stdout": "diff-check.stdout.txt",
+    "stderr": "diff-check.stderr.txt"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "validation/2026-11-08-plan-local-reward-budget-workbench/check_preservation.py"
+    ],
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-budget-workbench",
+    "stdin": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_status": 0,
+    "duration_seconds": 0.293,
+    "stdout": "preservation.stdout.txt",
+    "stderr": "preservation.stderr.txt"
+  }
+]

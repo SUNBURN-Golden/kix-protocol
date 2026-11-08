@@ -1,0 +1,3 @@
+PASS: 110 protected files byte-identical before/after; locked blobs match.
+PASS: complete changed-path list confined to tool/tests/fixtures/docs/evidence.
+PASS: file/stdin transcripts byte-identical; no stderr.

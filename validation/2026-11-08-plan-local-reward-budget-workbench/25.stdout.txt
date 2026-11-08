@@ -1,0 +1,1 @@
+{"operation":"reward_budget","provenance":"MOCK_TOKEN_REWARD_ONLY","result":{"budget_ceiling":13},"unit":"POINT_F4"}

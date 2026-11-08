@@ -1,0 +1,23 @@
+Synthetic POINT_F4 calculations only. All inputs are caller-supplied.
+Product values: UNDETERMINED — Astra/User.
+Accounting treatment: UNDETERMINED — User/designated advisers.
+net_residual already aggregates the selected periods; periods is not a multiplier.
+Select net_residual_revenue or reward_budget:
+gross_revenue (JSON scalar):
+refundable_window_revenue (JSON scalar):
+customer_deposit_outlay (JSON scalar):
+organizer_settlement_outlay (JSON scalar):
+refund_reserve_outlay (JSON scalar):
+operating_cost (JSON scalar):
+loss_provision (JSON scalar):
+Request: {"arguments":{"customer_deposit_outlay":3,"gross_revenue":100,"loss_provision":5,"operating_cost":5,"organizer_settlement_outlay":4,"refund_reserve_outlay":3,"refundable_window_revenue":40},"operation":"net_residual_revenue"}
+Enter CALCULATE to confirm; any other line declines:
+{"operation":"net_residual_revenue","provenance":"MOCK_TOKEN_REWARD_ONLY","result":{"net_residual":40},"unit":"POINT_F4"}
+Enter USE_RESIDUAL to copy the displayed residual into a budget; any other line ends:
+cap (JSON scalar):
+ratio_numerator (JSON scalar):
+ratio_denominator (JSON scalar):
+periods (JSON scalar):
+Request: {"arguments":{"cap":10,"net_residual":40,"periods":4,"ratio_denominator":3,"ratio_numerator":1},"operation":"reward_budget"}
+Enter CALCULATE to confirm; any other line declines:
+{"operation":"reward_budget","provenance":"MOCK_TOKEN_REWARD_ONLY","result":{"budget_ceiling":10},"unit":"POINT_F4"}

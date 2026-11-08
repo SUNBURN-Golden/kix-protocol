@@ -416,3 +416,91 @@ maps reused lifecycle coverage and new session/serialization/CLI tests, records
 actual checks and transcripts, and states remaining gates. Builder checks do not
 replace A2 non-author exact-final-head review or completed/success KTX and KIX
 exact-final-head CI. No merge authorization is implied.
+
+## Local reward-budget workbench
+
+`reward_budget_workbench.py` exposes only the existing `net_residual_revenue`
+and `reward_budget` calculations through a stdlib dispatcher and CLI. It creates
+no reward session. These are local selectors, with no protocol command or
+catalogue change. All financial components, caps, ratios and periods are
+caller-supplied synthetic inputs. Product values remain **UNDETERMINED —
+Astra/User**; accounting treatment remains **UNDETERMINED — User/designated
+advisers**. Fixture numbers establish no product policy.
+
+With `reference/token_reward` on your Python import path:
+
+```python
+from reward_budget_workbench import dispatch_request
+
+reply = dispatch_request({
+    "operation": "reward_budget",
+    "arguments": {"cap": 100, "ratio_numerator": 1, "ratio_denominator": 3,
+                  "net_residual": 40, "periods": 4},
+})
+# reply['result'] == {'budget_ceiling': 13}
+```
+
+The request has exactly `operation` and `arguments`. All fields below are
+required, with no optional fields or defaults. Guided mode asks in this order:
+
+| Local selector | Required arguments |
+|---|---|
+| `net_residual_revenue` | `gross_revenue`, `refundable_window_revenue`, `customer_deposit_outlay`, `organizer_settlement_outlay`, `refund_reserve_outlay`, `operating_cost`, `loss_provision` |
+| `reward_budget` | `cap`, `ratio_numerator`, `ratio_denominator`, `net_residual`, `periods` |
+
+Success has exactly `operation`, `provenance: "MOCK_TOKEN_REWARD_ONLY"`,
+`unit: "POINT_F4"` and `result`. The residual result is `{"net_residual":40}`;
+a budget result is `{"budget_ceiling":13}` for the example above. Values remain
+Python integers through JSON transport and the unchanged model. `net_residual`
+must already aggregate the caller-selected periods; `periods` is descriptive,
+**not a multiplier**. Integer flooring and the cap are applied by the model.
+The model also retains its overflow refusal before applying the cap.
+
+Run from the repository root (choose exactly one mode):
+
+```bash
+python3.12 reference/token_reward/reward_budget_workbench.py --request reference/token_reward/fixtures/reward_budget/residual.json
+python3.12 reference/token_reward/reward_budget_workbench.py --request - < reference/token_reward/fixtures/reward_budget/residual.json
+python3.12 reference/token_reward/reward_budget_workbench.py --guided < reference/token_reward/fixtures/reward_budget/guided_floor.txt
+python3.12 reference/token_reward/reward_budget_workbench.py --guided < reference/token_reward/fixtures/reward_budget/guided_cap.txt
+python3.12 reference/token_reward/reward_budget_workbench.py --guided < reference/token_reward/fixtures/reward_budget/guided_decline.txt
+```
+
+File/stdin mode reads **one complete JSON document**, including multiline JSON.
+It emits one success JSON line to stdout; batches and multiple documents are
+rejected. The synthetic residual example `100,40,3,4,3,5,5` yields `40`.
+With residual `40` and ratio `1/3`, `budget_floor.json` yields `13` under cap
+`100`, and `budget_cap.json` yields `10` under cap `10`.
+
+Guided mode prints prompts and a complete `Request: {...}` preview to stdout;
+result envelopes occupy their own JSON lines. Enter either selector literally,
+then one JSON scalar per argument. JSON types are preserved: strings, booleans,
+null and fractional values receive the model's existing rejection. Objects and
+arrays are malformed guided scalar input. Enter literal `CALCULATE` after the
+preview to dispatch once; any other line declines with exit 0. Confirmation is
+case-sensitive and does not trim whitespace.
+
+After a successful residual calculation, literal `USE_RESIDUAL` selects a budget
+calculation using only that displayed residual. Any other line ends with no
+budget call. After selection, enter cap, numerator, denominator and periods,
+then confirm the complete budget request separately with `CALCULATE`. Direct
+budget selection asks for `net_residual` too. EOF at any prompt stops with exit
+2 and no incomplete calculation; an earlier successful residual stays displayed.
+There are no retries or inferred answers.
+
+The importable dispatcher propagates the original `TokenRewardError` unchanged;
+JSON and shape failures raise `FixtureError`. The CLI writes error envelopes to
+stderr, with `error: {"code": ...}` for model refusals and
+`error: {"type": ..., "message": ...}` for local parsing/shape/I/O failures.
+Exit status is 0 for success or explicit decline, 1 for a model refusal, and 2
+for malformed input, I/O failure or incomplete guided input. Errors contain no
+successful result. Strict JSON rejects duplicate keys, non-finite numbers and
+invalid Unicode. The other modes do not automatically chain calculations.
+
+The workbench performs no currency conversion, reward submission, settlement,
+credit, payouts, network access, persistence or token activation. It establishes
+no accounting, legal or production-readiness conclusion. Existing arithmetic
+coverage is reused; new tests cover the adapter boundaries. See the
+[builder validation record](../../validation/2026-11-08-plan-local-reward-budget-workbench/README.md)
+for coverage mapping, actual transcripts/checks, preservation and pending A2
+non-author exact-head review and KTX/KIX CI gates.
