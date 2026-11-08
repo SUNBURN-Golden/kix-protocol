@@ -7,7 +7,7 @@ import sys
 
 from reward_cli import _error, dispatch_request
 from reward_client import RewardClient, RewardTransportUncertainty
-from reward_fixture import FixtureError, decode_json, exact_fields, load_fixture
+from reward_fixture import FixtureError, decode_json, exact_fields, load_fixture, validate_json
 from token_reward_model import TokenRewardError, _canonical
 
 
@@ -34,9 +34,9 @@ _OPTIONALS = {
 _APPROVAL_FIELDS = {'record_id', 'generation', 'authority_id', 'actor_type',
                     'action', 'scope_ref', 'evidence_refs'}
 _HINTS = {
-    'reward_key': 'JSON object: program, source_op_id, recipient, kind',
+    'reward_key': 'JSON object or :guided: program, source_op_id, recipient, kind',
     'source_view': 'JSON object; complete caller snapshot, no defaults',
-    'approval_ref': 'JSON object; caller synthetic approval record',
+    'approval_ref': 'JSON object or :guided; caller synthetic approval record',
     'window_closed': 'JSON boolean: true or false; caller assertion',
     'abuse_clear': 'JSON boolean: true or false',
     'amount': 'explicit decimal integer in synthetic POINT_F4',
@@ -49,6 +49,37 @@ _HINTS = {
 
 class _InputError(ValueError):
     pass
+
+
+def _compose_reward_key(prompt):
+    """Collect caller text only; no identity generation or session access."""
+    return {name: prompt(name + ' (verbatim string)')
+            for name in ('program', 'source_op_id', 'recipient', 'kind')}
+
+
+def _compose_approval_ref(prompt):
+    """Collect a synthetic assertion, without inferring actors or evidence."""
+    value = {'record_id': prompt('record_id (verbatim string)')}
+    generation = decode_json(prompt('generation (JSON integer)'))
+    if type(generation) is not int:
+        raise _InputError('generation requires a JSON integer')
+    value['generation'] = generation
+    for name in ('authority_id', 'actor_type', 'action', 'scope_ref'):
+        value[name] = prompt(name + ' (verbatim string)')
+    count = decode_json(prompt('evidence_refs item count (nonnegative JSON integer)'))
+    if type(count) is not int or count < 0:
+        raise _InputError('evidence_refs item count requires a nonnegative JSON integer')
+    value['evidence_refs'] = [prompt(f'evidence_refs item {index + 1} (verbatim string)')
+                              for index in range(count)]
+    choice = prompt('prior_record (include / omit; explicit choice required)')
+    if choice not in {'include', 'omit'}:
+        raise _InputError('prior_record requires literal include or omit')
+    if choice == 'include':
+        prior = decode_json(prompt('prior_record (JSON string or null)'))
+        if prior is not None and type(prior) is not str:
+            raise _InputError('prior_record requires a JSON string or null')
+        value['prior_record'] = prior
+    return value
 
 
 def _diagnostic(error, stream, *, last_reply=None):
@@ -116,7 +147,12 @@ def _run_console(send_request, *, state, input_stream, output_stream, error_stre
         hint = _HINTS.get(name)
         raw = prompt(name + (' (' + hint + ')' if hint else ''))
         if name in {'reward_key', 'source_view', 'approval_ref', 'window_closed', 'abuse_clear'}:
-            value = decode_json(raw)
+            if raw == ':guided' and name == 'reward_key':
+                value = _compose_reward_key(prompt)
+            elif raw == ':guided' and name == 'approval_ref':
+                value = _compose_approval_ref(prompt)
+            else:
+                value = decode_json(raw)
             if name in {'window_closed', 'abuse_clear'}:
                 if type(value) is not bool:
                     raise _InputError(name + ' requires a JSON boolean')
@@ -128,6 +164,7 @@ def _run_console(send_request, *, state, input_stream, output_stream, error_stre
                     raise _InputError('approval evidence_refs requires a JSON array')
             elif type(value) is not dict:
                 raise _InputError('source_view requires a JSON object')
+            validate_json(value)
             return value
         if name == 'amount':
             if re.fullmatch(r'-?[0-9]+', raw) is None:

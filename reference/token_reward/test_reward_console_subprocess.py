@@ -14,8 +14,8 @@ from reward_client import RewardClient, RewardClientStateError, RewardTransportU
 from reward_console import main, run_subprocess_console
 from reward_fixture import load_fixture
 import test_reward_client as client_tests
-from test_reward_console import (CONSOLE, FIXTURE, READS, answers, mutation_examples,
-                                 printed, script)
+from test_reward_console import (CONSOLE, FIXTURE, READS, GuidedCompositionTests, answers,
+                                 guided_answers, mutation_examples, printed, script)
 from test_reward_session import FIXTURES, OPERATIONS, requests
 from token_reward_model import ALWAYS_FALSE_FLAGS, PROVENANCE
 
@@ -27,7 +27,26 @@ def diagnostics(output):
     return [json.loads(line.removeprefix('FENCED: ')) for line in output.splitlines()]
 
 
-class RewardConsoleSubprocessTests(unittest.TestCase):
+class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
+    def guided_drive(self, lines):
+        sent = []
+        output = io.StringIO()
+        def capture(client):
+            original = client._process.stdin.write
+            def write(raw):
+                row = json.loads(raw)
+                # The complete proposal must be flushed before any mutation write.
+                if row['operation'] not in READS:
+                    self.assertEqual(printed('proposed', output.getvalue())[-1], row)
+                    self.assertGreater(output.flush.call_count, 0)
+                sent.append(row)
+                return original(raw)
+            client._process.stdin.write = write
+        with patch.object(output, 'flush', wraps=output.flush):
+            result = self.drive(lines, output=output, configure=capture)
+        self.assertEqual(sent, result[1])  # No hidden writes, including discarded selections.
+        return result[:4]
+
     def drive(self, lines=(), *, input_stream=None, output=None, configure=None, fixture=FIXTURE):
         """Run with a test-only deadline and deterministic child teardown, never polling."""
         output = io.StringIO() if output is None else output
@@ -118,7 +137,7 @@ class RewardConsoleSubprocessTests(unittest.TestCase):
                 if row['operation'] == 'view':
                     row = deepcopy(row)
                     row['arguments']['reward_id_value'] = printed('desk', output.getvalue())[0]['receipt']['reward']['reward_id']
-                yield from answers(row)
+                yield from guided_answers(row)
             self.assertEqual(len(printed('desk', output.getvalue())), len(rows))
             self.assertFalse(children[0]._process.stdin.closed)
             yield 'quit'
@@ -402,7 +421,9 @@ class RewardConsoleSubprocessTests(unittest.TestCase):
         self.assertEqual(len(log.read_bytes().splitlines()), 1)
 
     def test_cli_transcripts_match_default_in_process(self):
-        for name, expected_code in (('reward_console_journey.txt', 0), ('reward_console_boundaries.txt', 1)):
+        for name, expected_code in (('reward_console_journey.txt', 0), ('reward_console_boundaries.txt', 1),
+                                   ('reward_console_guided_journey.txt', 0),
+                                   ('reward_console_guided_boundaries.txt', 1)):
             text = (FIXTURES / name).read_text(encoding='utf-8')
             command = [sys.executable, '-B', str(CONSOLE), '--fixture', str(FIXTURE)]
             direct = subprocess.run(command, input=text, text=True, capture_output=True, timeout=10)

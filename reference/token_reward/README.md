@@ -244,7 +244,36 @@ deliberate replay. Prompt order is:
 4. For mutations, fresh `idempotency_key`, then confirmation. Reads have neither.
 
 Enter `reward_key`, `source_view`, `approval_ref` as strict JSON objects using
-the existing nested schemas above. Enter `window_closed`, `abuse_clear` as JSON
+the existing nested schemas above. At `reward_key` or `approval_ref`, literal
+`:guided` optionally collects the same object field by field. Raw JSON remains
+available independently at every selection, including `submit` and `supersede`.
+
+Guided `reward_key` asks for `program`, `source_op_id`, `recipient`, `kind` in
+that order. Guided `approval_ref` asks for `record_id`, `generation`,
+`authority_id`, `actor_type`, `action`, `scope_ref`, then `evidence_refs` and
+`prior_record`. All string fields are verbatim lines: only line endings are
+removed, with no trimming, Unicode normalization, delimiter splitting or default
+actor. `generation` requires a JSON integer excluding booleans, with no float
+conversion or console policy limit. The existing FSM decides acceptable values.
+
+For `evidence_refs`, enter an explicit nonnegative JSON integer count followed
+by exactly that many verbatim strings. Order and duplicates are preserved; zero
+produces `[]` for the FSM's existing evidence-required refusal. No evidence is
+inferred from a source snapshot or earlier reply. For `prior_record`, enter
+literal `omit` to leave the key absent, or `include` followed by an explicit
+JSON string or `null`. Omission, null and a supplied identifier stay distinct in
+the request. Invalid composition discards the selection without dispatch; EOF
+fences the session. Both paths use the existing structural validation before
+preview and the same single-use `SUBMIT` confirmation.
+
+These approval records are caller-entered **synthetic assertions**. Composition
+provides no signature, credential, authentication or real approver provisioning.
+Actual approver designation remains User-owned and E-1 remains open. Amounts,
+caps, budgets, durations and approval policy remain **UNDETERMINED — Astra/User**.
+Source snapshots, eligibility assertions, digests and outcomes are entered
+separately; composition never fills them from an approval or earlier action.
+
+Enter `window_closed`, `abuse_clear` as JSON
 `true` or `false`. `amount` is an explicit decimal integer (optional minus sign;
 no plus, exponent, decimal point or surrounding whitespace). Optional values use
 JSON, including null or the complete `execution_permit` object. All remaining
@@ -316,6 +345,20 @@ child; neither mode uses sockets, external services, dependencies or
 settlement/reward FSM coupling. The [live console evidence record](../../validation/2026-11-07-plan-plan-local-reward-live-console/README.md)
 records composition coverage, captured transcripts and local checks. All
 synthetic limitations and Class B observations below still apply.
+
+Reproduce the guided journey (exit 0) and boundaries (exit 1, including three
+discarded malformed selections, a decline and confirmed domain refusals):
+
+```bash
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json < reference/token_reward/fixtures/reward_console_guided_journey.txt
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json < reference/token_reward/fixtures/reward_console_guided_boundaries.txt
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_guided_journey.txt
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_guided_boundaries.txt
+```
+
+The [approval composer evidence](../../validation/2026-11-08-plan-local-reward-approval-composer/README.md)
+records coverage, exact child-write parity, captured transcripts and actual local
+checks. U3/F4 and TL-3 offchain boundaries and capability grades are unchanged.
 
 ## JSONL output and errors
 
