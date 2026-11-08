@@ -1,5 +1,88 @@
 # Local F4 reward desk
 
+## Local supply reconciliation
+
+`supply_reconciliation.dispatch_request(request)` exposes the unchanged
+`token_reward_model.supply_report` and `reconcile_supply` calculations. Put
+`reference/token_reward` on the Python import path, as for the other local tools:
+
+```python
+from supply_reconciliation import dispatch_request
+
+report = dispatch_request({"operation": "supply_report", "arguments": {"events": []}})["result"]
+reply = dispatch_request({"operation": "reconcile_supply", "arguments": {
+    "offchain": report, "chain_supply": 0}})
+```
+
+These are local selectors, with no new protocol command. Exactly `operation` and
+`arguments` are required. `supply_report` takes exactly `events`, an explicit
+array (including `[]`). `reconcile_supply` takes exactly `offchain`, the supplied
+report itself, and `chain_supply`, a caller-entered synthetic nonnegative integer.
+No argument has a default. The tool does not rebuild or repair a supplied report,
+fill missing totals, deduplicate events, reorder events or coerce numbers.
+
+Every hypothetical event has exactly `event_id`, `op`, `amount`, `approved`,
+`path_approved`, and `program`. The existing model accepts `MINT`, `ALLOCATE`,
+`BURN`, and `HOLDER_BURN`. Amounts are positive integers at most `10**12`;
+approval fields are booleans. IDs and non-null programs are trimmed, nonempty
+strings of at most 100 characters. `MINT` and `ALLOCATE` require a program;
+`BURN` allows null; `HOLDER_BURN` requires `approved=false` and `program=null`.
+Approval fields are hypothetical assertions, with no authenticated authorization.
+The model checks conservation and aggregate bounds. These bounds and fixture
+quantities describe implementation/examples, not product policy values.
+
+A complete report has `events`, `minted_total`, `unapproved_mint`,
+`allocated_total`, `burned_total`, `holder_burn_outside_layer`, `layer_supply`,
+and `figure`. Allocation does not change layer supply. Holder burn is recorded
+outside that layer. Reconciliation compares six numeric totals with recomputed
+events; it does not authenticate reports or validate every metadata field.
+Do not treat numeric equality as report authenticity or independent chain evidence.
+
+Run one UTF-8 JSON request from a file or stdin:
+
+```bash
+python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_report.json
+python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_match.json
+```
+
+The `supply_*.json` fixtures also demonstrate holder burn, unexplained difference,
+unapproved mint, unapproved path, both causes, duplicate events and tampered
+totals. Reconciliation fixtures contain complete supplied reports. One JSON
+document is required; duplicate keys at any depth, non-finite numbers, invalid
+UTF-8/Unicode, trailing documents and missing/extra envelope/argument fields
+are rejected. Nested domain validation remains in the existing functions.
+
+Stdout contains one canonical JSON envelope: `operation`,
+`provenance="MOCK_TOKEN_REWARD_ONLY"`, `evidence_class="CALCULATION_ONLY"`,
+`notice`, and either the complete unchanged `result` or `error`.
+Reconciliation retains exactly `alarm`, `mismatch`, `stop_payout`,
+`offchain_supply`, `chain_supply`, and `figure`; results preserve
+`SYNTHETIC_SUPPLY_FIGURE`. A supported operation identified before rejection
+is retained; otherwise `operation` is null. The dispatcher raises original
+domain exceptions or `FixtureError` for malformed local inputs.
+
+| Exit | Meaning |
+|---|---|
+| 0 | Calculation completed, including alarming reconciliation results |
+| 1 | Domain rejection: `error={"code":"<original code>"}` |
+| 2 | Input/I/O/encoding failure: `error` has `type` and `message` |
+
+Argparse usage errors use stderr and emit no JSON. Duplicate events retain
+`SUPPLY_EVENT_DUPLICATE`; altered numeric totals retain `SUPPLY_REPORT_MISMATCH`.
+Both causes currently select `UNAPPROVED_PATH` before `UNAPPROVED_MINT`.
+This is the existing class-B characterization in
+[TL-4 §6.B](../../docs/decisions/TL4_THREAT_MODEL_20261009.md#b-계약이-정의하지-않음-성격만-기록),
+with no new contractual precedence.
+
+Events describe hypothetical inputs. The tool never mints, allocates, burns,
+queries a chain or controls payouts. `stop_payout=true` is a **reported model
+flag**, and executes no stop. Supply policy and operational responses remain
+**UNDETERMINED — Astra/User**. No sockets, chain client, dependencies, persistence,
+runtime activation or V1–V5 implementation are introduced. The
+[builder evidence and transcripts](../../validation/2026-11-09-plan-local-supply-reconciliation-tool/README.md)
+map reused model coverage and interface checks; A2 non-author exact-head review
+and both required workflows remain delivery gates.
+
 ## Local collateral assessment
 
 The stdlib-only `collateral_assessment.dispatch_request(request)` exposes the
