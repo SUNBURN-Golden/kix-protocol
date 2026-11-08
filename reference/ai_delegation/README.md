@@ -193,7 +193,8 @@ Choose a menu operation, then enter **one line per argument**, in this order:
 
 Plain text fields are explicit nonempty strings without surrounding whitespace.
 No actor, identifier, authority, scope, amount, limit or logical time is inferred.
-`authority`, `scope`, `limits`, `period`, `args` and `now` use strict JSON:
+`authority`, `scope`, `limits`, `period` and `args` accept strict JSON or literal
+`:guided` for the composition prompts below. `now` always uses strict JSON:
 
 | Field | Structural checks before preview/dispatch |
 |---|---|
@@ -214,6 +215,39 @@ period validity and record binding are otherwise validated by the unchanged mock
 An empty `requested` object is structurally valid and receives the mock's refusal
 if confirmed. Denied/unknown tool names accept an object for `args` and forward
 unchanged to the domain refusal path; this adds no supported tool or command.
+
+For guided entry, supply one line at each prompt. There are no prefilled values:
+
+| Guided value | Prompt sequence |
+|---|---|
+| `authority` | nonnegative JSON integer item count, then that many verbatim string items |
+| `scope` | `surfaces` count/items; literal `include` or `omit` for `subjects`; if included, its count/items |
+| `limits` | JSON integers `per_action_max`, `cumulative_max`, `count_max`; verbatim `currency` |
+| `period` | JSON integers `not_before`, `not_after` |
+| `query_grant` args | no fields; composes `{}` and still requires final confirmation |
+| `query_subject` args | `surface`; `include`/`omit` for `subject`; if included, its verbatim value |
+| `propose_action` args | `proposal_id`, `surface`, JSON integer `amount`, `kind`; optional `subject` as above |
+| `withdraw_proposal` args | `proposal_id` |
+| `propose_grant_change` args | `proposal_id`, then `requested` as JSON or `:guided` |
+| `requested` | a separate `include`/`omit` choice for each of `authority`, `scope`, `limits`, `period`, `note`, in that order; included structured fields accept JSON or `:guided`, and included `note` is verbatim text |
+
+Counts and include/omit choices never enter the request. Blank choices are errors.
+Omitted keys differ from included empty lists or strings. List order and duplicates
+are preserved in the request; the existing desk may normalize its records.
+Nested strings preserve spaces, commas, Unicode and literal `:guided` without
+trimming or splitting; only line terminators are removed. Top-level identifiers
+keep their existing nonempty/no-surrounding-whitespace checks. Integers remain
+exact, including values above `2**53`; booleans and floats are input errors.
+No value is rounded, clamped, generated or chosen from the fixture.
+
+Empty authority, empty `requested`, unsupported currency, out-of-range integers
+and `EXECUTE` still reach the unchanged mock refusal path only after confirmation.
+Guided args for denied/unknown tools are input errors; their raw JSON object
+entry remains available. A malformed composition discards the action; enter a
+fresh menu action next. EOF at any composition prompt stops the console.
+Composition performs no desk reads or writes. The same complete preview and
+literal `SUBMIT` below govern both JSON and guided input; no composition metadata
+appears in the unchanged request envelope.
 
 Every request, **including views**, prints and flushes its entire canonical
 `proposed={"arguments":...,"operation":...}` preview before asking for literal
@@ -245,6 +279,26 @@ is retained. Its requests match the existing desk replay fixture.
 declined input sends no requests, followed by separately confirmed scope,
 expiration, amount, transfer and disabled-execution refusals and retained views.
 New transcripts exclude A5's simultaneous-error case.
+
+Guided equivalents also run through one real local child:
+
+```bash
+python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json --mode subprocess --cleanup-timeout 1 < reference/ai_delegation/fixtures/delegation_console_guided_journey.txt
+python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json --mode subprocess --cleanup-timeout 1 < reference/ai_delegation/fixtures/delegation_console_guided_boundaries.txt
+```
+
+[Guided journey](fixtures/delegation_console_guided_journey.txt) exits 0 and sends
+the exact existing lifecycle envelopes, including all five tools, human decisions
+and revocation. [Guided boundaries](fixtures/delegation_console_guided_boundaries.txt)
+exits 1: four malformed compositions and two declines send nothing; confirmed
+requests match the existing boundary transcript plus an `EXECUTE` authority refusal.
+The `1` second cleanup timeout is explicit synthetic transport configuration.
+The [composer builder evidence](../../validation/2026-11-08-plan-local-delegation-input-composer/README.md)
+records coverage, actual commands and captured subprocess transcripts. Product
+limits, permitted surfaces and proposal kinds remain **UNDETERMINED — Astra**;
+identity policy **UNDETERMINED — Astra/User**; legal effects **UNDETERMINED —
+User/legal**. A5 remains unresolved; A2 non-author exact-head review and required
+KTX/KIX CI remain separate gates.
 
 ### Console output, exits and replay
 

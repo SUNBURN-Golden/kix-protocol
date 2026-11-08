@@ -81,6 +81,72 @@ def _tool_args(tool, value):
             _structure(name, item)
 
 
+def _include(name, prompt):
+    choice = prompt(name + " (include / omit; explicit choice required)")
+    if choice not in {"include", "omit"}:
+        raise FixtureError(name + " requires literal include or omit")
+    return choice == "include"
+
+
+def _compose_string_list(name, prompt):
+    count = decode_json(prompt(name + " item count (nonnegative JSON integer)"))
+    _type(count, int, name + " item count")
+    if count < 0:
+        raise FixtureError(name + " item count must be nonnegative")
+    return [prompt(f"{name} item {index + 1} (verbatim string)") for index in range(count)]
+
+
+def _compose_value(name, prompt, *, tool=None):
+    """Compose input only: no session, client, defaults or dispatch capability."""
+    raw = prompt(name + " (JSON or :guided" +
+                 ("; " + _HINTS[name] if name in _HINTS else "") + ")")
+    if raw != ":guided":
+        return decode_json(raw)
+
+    def integer(key):
+        value = decode_json(prompt(key + " (JSON integer)"))
+        _type(value, int, key)
+        return value
+
+    def string(key):
+        return prompt(key + " (verbatim string)")
+
+    def member(key):
+        if key in {"authority", "scope", "limits", "period", "requested"}:
+            return _compose_value(key, prompt)
+        return integer(key) if key == "amount" else string(key)
+
+    if name == "authority":
+        return _compose_string_list(name, prompt)
+    if name == "scope":
+        value = {"surfaces": _compose_string_list("surfaces", prompt)}
+        if _include("subjects", prompt):
+            value["subjects"] = _compose_string_list("subjects", prompt)
+        return value
+    if name == "limits":
+        return {"per_action_max": integer("per_action_max"),
+                "cumulative_max": integer("cumulative_max"),
+                "count_max": integer("count_max"), "currency": string("currency")}
+    if name == "period":
+        return {"not_before": integer("not_before"), "not_after": integer("not_after")}
+    if name == "requested":
+        return {key: member(key) for key in ("authority", "scope", "limits", "period", "note")
+                if _include(key, prompt)}
+    if name == "args":
+        if tool not in _TOOLS:
+            raise FixtureError("guided args require a supported tool; raw JSON remains available")
+        # Presentation order only; _tool_args remains the structural validator.
+        order = {"query_grant": (), "query_subject": ("surface",),
+                 "propose_action": ("proposal_id", "surface", "amount", "kind"),
+                 "withdraw_proposal": ("proposal_id",),
+                 "propose_grant_change": ("proposal_id", "requested")}
+        value = {key: member(key) for key in order[tool]}
+        if "subject" in _TOOLS[tool][1] and _include("subject", prompt):
+            value["subject"] = string("subject")
+        return value
+    raise FixtureError("unsupported guided value: " + name)
+
+
 def _write(stream, text):
     if stream.write(text) != len(text):
         raise OSError("short console write; no further submissions")
@@ -168,13 +234,16 @@ def _run_console(send_request, *, state, input_stream, output_stream, error_stre
                 for name in _FIELDS[operation]:
                     if name == "tool":
                         say("Supported tools: " + ", ".join(_TOOLS))
-                    raw = prompt(name + (" (" + _HINTS[name] + ")" if name in _HINTS else ""))
-                    if name in {"authority", "scope", "limits", "period", "args", "now"}:
-                        value = decode_json(raw)
+                    if name in {"authority", "scope", "limits", "period", "args"}:
+                        value = _compose_value(name, prompt, tool=arguments.get("tool"))
                     else:
-                        if not raw or raw != raw.strip():
+                        raw = prompt(name + (" (" + _HINTS[name] + ")" if name in _HINTS else ""))
+                        if name == "now":
+                            value = decode_json(raw)
+                        elif not raw or raw != raw.strip():
                             raise FixtureError(name + " requires an explicit value without surrounding whitespace")
-                        value = raw
+                        else:
+                            value = raw
                     validate_json(value)
                     if name == "args":
                         _tool_args(arguments["tool"], value)

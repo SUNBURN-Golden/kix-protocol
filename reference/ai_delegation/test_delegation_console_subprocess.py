@@ -14,7 +14,8 @@ from delegation_client import DelegationClient, DelegationClientStateError, Dele
 from delegation_console import main, run_subprocess_console
 from delegation_fixture import load_fixture
 import test_delegation_client as client_tests
-from test_delegation_console import CONSOLE, FIXTURES, FailingOutput, desk_requests, entered, records
+from test_delegation_console import (CONSOLE, FIXTURES, FailingOutput, desk_requests,
+                                     entered, guided_entered, records)
 
 
 FIXTURE = client_tests.FIXTURE
@@ -80,6 +81,96 @@ class DelegationConsoleSubprocessTests(unittest.TestCase):
             with self.assertRaises(ChildProcessError):
                 os.waitpid(process.pid, os.WNOHANG)
         return result[0], writes, output.getvalue(), errors.getvalue(), clients[0]
+
+    def test_guided_real_child_journey_matches_raw(self):
+        results = []
+        for name in ("journey", "guided_journey"):
+            text = (FIXTURES / ("delegation_console_" + name + ".txt")).read_text()
+            status, writes, output, errors, client = self.drive(text)
+            self.assertEqual((status, errors), (0, ""))
+            self.assertEqual(writes, desk_requests("lifecycle"))
+            self.assertEqual(records(output, "proposed="), writes)
+            replies = records(output, "desk=")
+            self.assertEqual(client.last_reply, replies[-1])
+            for row in replies:
+                body = row.get("view") or row["receipt"]
+                body = body.get("grant") or body.get("proposal") or body
+                for flag in client_tests.FALSE_FLAGS:
+                    self.assertIs(body[flag], False)
+                if "effects_executed" in body:
+                    self.assertIs(body["effects_executed"], False)
+            results.append((writes, replies))
+        self.assertEqual(*results)
+        self.assertEqual(results[1][1][4]["receipt"]["proposal"]["phase"], "HUMAN_APPROVED")
+        self.assertEqual(results[1][1][12]["view"]["phase"], "VOIDED_BY_REVOCATION")
+
+    def test_guided_boundaries_zero_invalid_writes_and_confirmed_refusals(self):
+        raw = (FIXTURES / "delegation_console_boundaries.txt").read_text()
+        guided = (FIXTURES / "delegation_console_guided_boundaries.txt").read_text()
+        raw_status, raw_writes, raw_output, raw_errors, _ = self.drive(raw)
+        status, writes, output, errors, _ = self.drive(guided)
+        execute = deepcopy(ISSUE)
+        execute["arguments"]["authority"] = ["EXECUTE"]
+        self.assertEqual((raw_status, raw_errors, status, errors), (1, "", 1, ""))
+        self.assertEqual(writes, raw_writes + [execute])
+        self.assertEqual(records(output, "desk=")[:-1], records(raw_output, "desk="))
+        self.assertEqual(records(output, "desk=")[-1]["error"], {"code": "EXECUTE_AUTHORITY_DISABLED"})
+        self.assertEqual(output.count("input_error="), 4)
+        self.assertEqual(output.count("Declined; no request sent."), 2)
+        self.assertEqual(len(records(output, "proposed=")), len(writes) + 2)
+
+    def test_guided_confirmation_after_flushed_preview_writes_once(self):
+        output = io.StringIO()
+        state = {}
+        text = guided_entered(ISSUE) + "quit\n"
+        class Input(io.StringIO):
+            def readline(inner):
+                if inner.tell() == len(guided_entered(ISSUE).removesuffix("SUBMIT\n")):
+                    self.assertEqual(records(output.getvalue(), "proposed="), [ISSUE])
+                    state["client"].request.assert_not_called()
+                return super().readline()
+        class Output(io.StringIO):
+            def flush(inner):
+                output.seek(0)
+                output.truncate()
+                output.write(inner.getvalue())
+                return super().flush()
+        def configure(client):
+            state["client"] = client
+            client.request = Mock(wraps=client.request)
+        status, writes, _, errors, _ = self.drive(source=Input(text), output=Output(), configure=configure)
+        self.assertEqual((status, writes, errors), (0, [ISSUE], ""))
+        state["client"].request.assert_called_once_with(ISSUE)
+
+    def test_guided_eof_and_output_failures_stop_queued_sentinel(self):
+        text = guided_entered(ISSUE)
+        # Every grant composition prompt and confirmation: EOF cannot write.
+        for count in range(len(text.splitlines(True))):
+            with self.subTest(eof=count):
+                status, writes, _, errors, _ = self.drive("".join(text.splitlines(True)[:count]))
+                self.assertEqual((status, writes), (2, []))
+                self.assertIn("EOFError", errors)
+        for marker, expected in (("item count", []), ("include / omit", []),
+                                 ("proposed=", []), ("Type literal", []), ("desk=", [ISSUE])):
+            for mode in ("write", "short", "flush"):
+                with self.subTest(marker=marker, mode=mode):
+                    status, writes, _, errors, client = self.drive(text + entered(VIEW) + "quit\n",
+                        output=FailingOutput(marker, mode))
+                    self.assertEqual((status, writes), (2, expected))
+                    if expected:
+                        self.assertEqual(diagnostics(errors)[0]["last_reply"], client.last_reply)
+
+    def test_guided_transport_uncertainty_stops_sentinel_without_retry(self):
+        raw = b'{"operation":'
+        log, worker = client_tests.fault_worker(self, raw, exited=True)
+        with patch("delegation_client.subprocess.Popen", side_effect=worker) as launched:
+            status, writes, _, errors, client = self.drive(guided_entered(ISSUE) + entered(VIEW) + "quit\n")
+        self.assertEqual((status, writes), (2, [ISSUE]))
+        self.assertEqual(client.uncertainty.request, ISSUE)
+        self.assertEqual(client.uncertainty.reply_bytes, raw)
+        self.assertEqual(diagnostics(errors)[0]["reply_bytes_hex"], raw.hex())
+        self.assertEqual(client_tests.decode_json(log.read_text()), ISSUE)
+        launched.assert_called_once()
 
     def test_real_child_journey_and_replay_match_existing_fixtures(self):
         for name, vector, code in (("journey", "lifecycle", 0), ("replay", "replay", 1)):

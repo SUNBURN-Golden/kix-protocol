@@ -53,6 +53,66 @@ def entered(request, confirmation="SUBMIT"):
     return "\n".join([op, *values, confirmation]) + "\n"
 
 
+def guided_value(name, value, *, tool=None):
+    """Test input renderer from the documented schema, never console field tables.
+
+    Expected envelopes always come from literal requests / pre-existing desk vectors.
+    """
+    def items(values):
+        return [str(len(values)), *values]
+
+    def optional(obj, key):
+        return ["include", *nested(key, obj[key])] if key in obj else ["omit"]
+
+    def nested(key, item):
+        if key in {"authority", "scope", "limits", "period", "requested"}:
+            return guided_value(key, item)
+        return [_canonical(item) if key == "amount" else item]
+
+    if name == "authority":
+        lines = items(value)
+    elif name == "scope":
+        lines = items(value["surfaces"])
+        lines += ["include", *items(value["subjects"])] if "subjects" in value else ["omit"]
+    elif name == "limits":
+        lines = [str(value[k]) for k in ("per_action_max", "cumulative_max", "count_max")]
+        lines += [value["currency"]]
+    elif name == "period":
+        lines = [str(value["not_before"]), str(value["not_after"])]
+    elif name == "requested":
+        lines = []
+        for key in ("authority", "scope", "limits", "period", "note"):
+            lines += optional(value, key)
+    elif tool == "query_grant":
+        lines = []
+    elif tool == "query_subject":
+        lines = [value["surface"], *optional(value, "subject")]
+    elif tool == "propose_action":
+        lines = [value["proposal_id"], value["surface"], str(value["amount"]), value["kind"],
+                 *optional(value, "subject")]
+    elif tool == "withdraw_proposal":
+        lines = [value["proposal_id"]]
+    elif tool == "propose_grant_change":
+        lines = [value["proposal_id"], *guided_value("requested", value["requested"])]
+    else:
+        return [_canonical(value)]  # Denied/unknown tools keep raw JSON input.
+    return [":guided", *lines]
+
+
+def guided_entered(request, confirmation="SUBMIT"):
+    a, op = request["arguments"], request["operation"]
+    if op == "issue_grant":
+        lines = [op, a["actor"], a["grant_id"], a["agent_id"]]
+        for name in ("authority", "scope", "limits", "period"):
+            lines += guided_value(name, a[name])
+    elif op == "call_tool":
+        lines = [op, a["actor"], a["grant_id"], a["tool"],
+                 *guided_value("args", a["args"], tool=a["tool"]), str(a["now"])]
+    else:
+        return entered(request, confirmation)
+    return "\n".join([*lines, confirmation]) + "\n"
+
+
 def records(output, prefix):
     return [json.loads(line[len(prefix):]) for line in output.splitlines() if line.startswith(prefix)]
 
@@ -127,6 +187,141 @@ class ConsoleTests(unittest.TestCase):
         self.assertEqual(replies, expected)
         self.assert_envelopes(replies)
         return replies
+
+    def assert_guided_raw_parity(self, requests, *, expected_status=None):
+        outcomes = []
+        for render in (entered, guided_entered):
+            status, output, errors, spy = self.run_input(
+                "".join(render(r) for r in requests) + "quit\n")
+            self.assertEqual(errors, "")
+            self.assertEqual(records(output, "proposed="), requests)
+            self.assertEqual([c.args[1] for c in spy.call_args_list], requests)
+            self.assertEqual(spy.call_count, len(requests))
+            replies = records(output, "desk=")
+            self.assert_envelopes(replies)
+            outcomes.append((status, replies))
+        self.assertEqual(*outcomes)
+        if expected_status is not None:
+            self.assertEqual(outcomes[0][0], expected_status)
+        return outcomes[0][1]
+
+    def test_guided_raw_envelope_parity(self):
+        rows = self.assert_guided_raw_parity(desk_requests("lifecycle"), expected_status=0)
+        self.assertEqual(rows[4]["receipt"]["proposal"]["phase"], "HUMAN_APPROVED")
+        self.assertEqual(rows[12]["view"]["phase"], "VOIDED_BY_REVOCATION")
+
+    def test_guided_optionals_exact_integers_and_verbatim_strings(self):
+        issue = desk_requests("lifecycle")[0]
+        # Each independent literal input must survive preview and dispatch, even if
+        # the unchanged mock refuses it. No composer-derived expected field tables.
+        variants = [
+            ("scope", {"surfaces": ["표면,opaque", "surface-a", "surface-a"]}),
+            ("scope", {"surfaces": ["surface-a"], "subjects": []}),
+            ("scope", {"surfaces": []}),
+            ("authority", ["PROPOSE", "QUERY", "QUERY"]),
+            ("authority", []), ("authority", ["EXECUTE"]),
+            ("authority", [" QUERY ", "", ":guided"]),
+            ("grant_id", "불투명:001,/id"),
+            ("limits", {"per_action_max": 9007199254740993, "cumulative_max": 10**12,
+                        "count_max": -1, "currency": " caller currency "}),
+            ("limits", {"per_action_max": 1, "cumulative_max": 10**12,
+                        "count_max": 10**12, "currency": "KRW"}),
+            ("period", {"not_before": -9007199254740993, "not_after": 9007199254740993}),
+        ]
+        for key, value in variants:
+            request = copy.deepcopy(issue)
+            request["arguments"][key] = value
+            with self.subTest(key=key, value=value):
+                self.assert_guided_raw_parity([request])
+        for args in ({"surface": "surface-a"}, {"surface": "surface-a", "subject": ""},
+                     {"surface": "  표면,opaque  ", "subject": ":guided"}):
+            request = {"operation": "call_tool", "arguments": {
+                "actor": "agent-a", "grant_id": "g-1", "tool": "query_subject", "args": args, "now": 15}}
+            self.assert_guided_raw_parity([issue, request])
+        for amount in (0, -1, 1, 10**12, 10**12 + 1, 9007199254740993):
+            request = copy.deepcopy(desk_requests("lifecycle")[3])
+            request["arguments"]["args"]["amount"] = amount
+            self.assert_guided_raw_parity([issue, request])
+        for requested in ({}, {"note": ""}, {"note": "  메모,opaque  "},
+                          {"authority": []}, {"scope": {"surfaces": [], "subjects": []}},
+                          {"authority": ["EXECUTE"]}):
+            request = {"operation": "call_tool", "arguments": {"actor": "agent-a", "grant_id": "g-1",
+                "tool": "propose_grant_change", "args": {"proposal_id": "요청:001", "requested": requested},
+                "now": 15}}
+            self.assert_guided_raw_parity([issue, request])
+
+    def test_guided_requested_allows_mixed_raw_structured_entry(self):
+        request = desk_requests("lifecycle")[9]
+        text = guided_entered(request)
+        for key, value in request["arguments"]["args"]["requested"].items():
+            if key != "note":
+                text = text.replace("\n".join(guided_value(key, value)) + "\n", _canonical(value) + "\n", 1)
+        status, output, errors, spy = self.run_input(text + "quit\n")
+        self.assertEqual((status, errors, spy.call_count), (1, "", 1))  # no grant; composition still exact
+        self.assertEqual(records(output, "proposed="), [request])
+        self.assertEqual(spy.call_args.args[1], request)
+
+    def test_guided_decline_and_eof_at_every_new_prompt_send_nothing(self):
+        examples = [r for r in desk_requests("lifecycle") if r["operation"] in {"issue_grant", "call_tool"}]
+        for request in examples:
+            text = guided_entered(request)
+            for count in range(len(text.splitlines(True))):
+                with self.subTest(op=request["operation"], count=count, request=request):
+                    status, _, errors, spy = self.run_input("".join(text.splitlines(True)[:count]))
+                    self.assertEqual(status, 2)
+                    self.assertIn("EOFError", errors)
+                    spy.assert_not_called()
+            for confirmation in ("", "no", "submit", " SUBMIT", "SUBMIT "):
+                status, output, errors, spy = self.run_input(guided_entered(request, confirmation) + "quit\n")
+                self.assertEqual((status, errors), (0, ""))
+                self.assertEqual(records(output, "proposed="), [request])
+                spy.assert_not_called()
+
+    def test_guided_malformed_composition_discards_action(self):
+        issue = "issue_grant\nhuman-a\ng-1\nagent-a\n"
+        tool = "call_tool\nagent-a\ng-1\n"
+        prefixes = []
+        for invalid in ("-1", "true", "1.0", "null", "", "bad", "NaN", "1e9999", "[]"):
+            prefixes += [issue + ":guided\n" + invalid + "\n",
+                         issue + '[]\n:guided\n' + invalid + "\n",
+                         issue + '[]\n:guided\n0\ninclude\n' + invalid + "\n"]
+        for invalid in ("", "yes", "Include", " include", "omit "):
+            prefixes += [issue + '[]\n:guided\n0\n' + invalid + "\n",
+                         tool + 'query_subject\n:guided\ns\n' + invalid + "\n"]
+            for earlier in range(5):
+                prefixes += [tool + 'propose_grant_change\n:guided\np\n:guided\n' +
+                             'omit\n' * earlier + invalid + "\n"]
+        for invalid in ("true", "1.0", "null", "bad", "", "NaN"):
+            for before in ([], ["1"], ["1", "2"]):
+                prefixes += [issue + '[]\n{"surfaces":[]}\n:guided\n' +
+                             "\n".join([*before, invalid]) + "\n"]
+            for before in ([], ["0"]):
+                prefixes += [issue + '[]\n{"surfaces":[]}\n' +
+                    '{"per_action_max":1,"cumulative_max":2,"count_max":1,"currency":"KRW"}\n:guided\n' +
+                    "\n".join([*before, invalid]) + "\n"]
+            prefixes += [tool + 'propose_action\n:guided\np\ns\n' + invalid + "\n"]
+        prefixes += [tool + name + "\n:guided\n" for name in ("transfer", "unknown", "delegate")]
+        prefixes += [tool + 'propose_grant_change\n:guided\np\nnull\n',
+                     tool + 'propose_grant_change\n:guided\np\n:guided\ninclude\nnull\n' + 'omit\n'*4,
+                     issue + ':guided\n1\n\ud800\n{}\n{}\n{}\n']
+        for prefix in prefixes:
+            with self.subTest(prefix=prefix):
+                status, output, errors, spy = self.run_input(prefix + "quit\n")
+                self.assertEqual((status, errors), (0, ""))
+                self.assertIn("input_error=", output)
+                self.assertEqual(records(output, "proposed="), [])
+                spy.assert_not_called()
+
+    def test_guided_preview_and_prompt_output_failures_fence_sentinel(self):
+        request = desk_requests("lifecycle")[0]
+        text = guided_entered(request) + entered(request) + "quit\n"
+        for marker, count in (("item count", 0), ("item 1", 0), ("include / omit", 0),
+                              ("per_action_max (", 0), ("proposed=", 0), ("Type literal", 0), ("desk=", 1)):
+            for mode in ("write", "short", "flush"):
+                with self.subTest(marker=marker, mode=mode):
+                    status, _, _, spy = self.run_input(text, output=FailingOutput(marker, mode))
+                    self.assertEqual(status, 2)
+                    self.assertEqual(spy.call_count, count)
 
     def test_console_journey(self):
         rows = self.transcript("journey", desk_requests("lifecycle"), 0)

@@ -585,3 +585,5 @@ and transport fencing. No policy decision, activation or independent review is i
 
 - [Reusable local delegation client and subprocess console](../reference/ai_delegation/README.md#reusable-local-subprocess-client) — standard-library JSONL child ownership, explicit confirmations, terminal transport fencing; execution disabled, A5 and policy/identity/legal owners unchanged.
 - [Local delegation live console builder evidence](../validation/2026-11-07-plan-plan-local-delegation-live-console/README.md) — source-informed coverage, actual local checks, preservation and transcripts; no status promotion, A2 review or exact-head CI claim.
+
+- [Guided delegation input composer builder evidence](../validation/2026-11-08-plan-local-delegation-input-composer/README.md) — optional guided composition, unchanged envelopes, local child parity and failure fencing; A5, policy owners, A2 review and exact-head CI gates remain unchanged.
