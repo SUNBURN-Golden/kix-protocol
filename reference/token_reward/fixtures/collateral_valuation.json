@@ -1,0 +1,13 @@
+{
+  "operation": "collateral_recognized",
+  "arguments": {
+    "liability_krw": 100,
+    "collateral_items": [
+      {
+        "kind": "KRW_GUARANTEE",
+        "amount": 30,
+        "valuation": 1
+      }
+    ]
+  }
+}

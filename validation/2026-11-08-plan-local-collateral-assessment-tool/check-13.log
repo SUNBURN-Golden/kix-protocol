@@ -1,0 +1,6 @@
+$ python3 scripts/check_integration_gate_openapi.py
+exit: 0
+stdout:
+integration-gate openapi ok: commands=84 productionEndpoint=false publicHost=false
+
+stderr:
