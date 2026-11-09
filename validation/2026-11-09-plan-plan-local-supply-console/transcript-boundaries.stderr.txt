@@ -1,0 +1,18 @@
+Local supply console — MOCK_TOKEN_REWARD_ONLY / CALCULATION_ONLY / SYNTHETIC_SUPPLY_FIGURE
+Synthetic inputs and results only. No mint, allocation, burn, chain query or payout control occurs. stop_payout is a reported model flag, not an executed action. Supply policy and operational responses remain UNDETERMINED — Astra/User.
+State is in memory. :cancel abandons the current action. show displays active selections; no calculation occurs on editing.
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: event count (zero explicitly selects []) (explicit decimal integer): Events selected. Active report and comparison cleared.
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: proposed={"arguments":{"events":[]},"operation":"supply_report"}
+Type literal CALCULATE to dispatch once; anything else declines: Declined; no request sent. Previous result selection cleared.
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: event_id (verbatim string): Cancelled; no request sent. Invalidated selections remain cleared.
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: event count (zero explicitly selects []) (explicit decimal integer): Cancelled; no request sent. Invalidated selections remain cleared.
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: event count (zero explicitly selects []) (explicit decimal integer): event_id (verbatim string): op (MINT / ALLOCATE / BURN / HOLDER_BURN): Cancelled; no request sent. Invalidated selections remain cleared.
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: active={"comparison":null,"events":[],"report":null}
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: 

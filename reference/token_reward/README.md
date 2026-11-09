@@ -1,5 +1,99 @@
 # Local F4 reward desk
 
+## Local supply console
+
+Run the separate, stdlib-only terminal console from the repository root:
+
+```bash
+python3 reference/token_reward/supply_console.py
+# Replay a file-free composition journey (no JSON request file required):
+python3 reference/token_reward/supply_console.py < reference/token_reward/fixtures/supply_console_match.txt
+```
+
+`supply_cli.py` retains its existing file/stdin interface. The console calls the
+same `supply_reconciliation.dispatch_request` for each explicitly confirmed
+calculation. It keeps selections only in memory; starting a new process starts
+with no events, report or comparison selected. The importable entry points are
+`run_console(*, input_stream, output_stream, error_stream) -> int` and
+`main(argv=None) -> int`. No arguments are required or accepted.
+
+| Menu action | Explicit input / effect |
+|---|---|
+| `add_event` | Append one complete hypothetical event in entry order |
+| `replace_event` | Enter a displayed 1-based position, then all six replacement fields |
+| `replace_events` | Enter a nonnegative event count, then every event; `0` deliberately selects `[]` |
+| `show` | Display complete selected events, active report and comparison; null means unselected |
+| `calculate` | Preview the complete `supply_report` request, then type literal `CALCULATE` to dispatch once |
+| `reconcile` | Enter a fresh synthetic `chain_supply`, preview `reconcile_supply` with the exact returned report, then type literal `RECONCILE` to dispatch once |
+| `quit` | End the local session |
+
+Every event prompts, in order, for `event_id`, `op`, `amount`, `approved`,
+`path_approved`, `program`. IDs are verbatim text, never trimmed or repaired.
+Operations are literal `MINT`, `ALLOCATE`, `BURN`, `HOLDER_BURN`. Amounts use
+explicit decimal integers and the existing model's positive bound. Both approval
+fields require literal `true` or `false`. Programs require an explicit JSON
+string (including quotes) or `null`; nothing is defaulted. The existing model
+restrictions described below apply. Individual input validation performs no
+calculation; aggregate conservation, duplicate IDs and total bounds are checked
+only by the confirmed dispatcher call. Entry order is preserved.
+
+Prompts, complete previews, `show` and notices go to stderr. Stdout contains one
+complete canonical JSON envelope per result/error, preserving all result fields
+and original domain codes. `MOCK_TOKEN_REWARD_ONLY`, `CALCULATION_ONLY` and
+`SYNTHETIC_SUPPLY_FIGURE` identify scope. For example, enter these lines at the
+prompts (the quantities and program below are synthetic example inputs):
+
+```text
+add_event
+mint-example
+MINT
+10
+true
+true
+"synthetic-program"
+calculate
+CALCULATE
+reconcile
+10
+RECONCILE
+show
+quit
+```
+
+The report contains `minted_total=10` and `layer_supply=10`. The separate
+comparison returns `alarm="MATCH"`, `mismatch=false`, `stop_payout=false`, with
+both supplied figures displayed. Full executable transcripts for MATCH, holder
+burn, unexplained difference, unapproved mint/path, both causes, duplicate
+events, conservation failure and declines are in `fixtures/supply_console_*.txt`.
+Their [actual output captures and evidence](../../validation/2026-11-09-plan-plan-local-supply-console/README.md)
+retain complete envelopes and previews. Both causes retain the class-B
+`UNAPPROVED_PATH` characterization from TL-4 §6.B; this sets no policy precedence.
+
+Starting any event edit immediately clears the active report and comparison.
+An incomplete edit leaves the previous events selected but cannot restore old
+results. `calculate` clears both results before preparation, so a decline or
+failure cannot reuse an old report. A successful report is retained whole and
+forwarded without repair, filtering, arithmetic or inferred chain supply.
+`reconcile` clears the comparison first; a decline, invalid input or failure
+retains the report and requires a fresh chain figure on the next attempt.
+
+Use `:cancel` at any prompt to abandon the current action (reserved as a control
+line). Any confirmation other than its exact literal declines. Invalid input,
+cancellation, EOF or interruption before confirmation dispatches nothing for
+that action. No failure automatically retries. Invalid fields emit an error and
+return to the menu, retaining the invalidation rules above. EOF, interruption,
+encoding/I/O or unexpected dispatcher failure stops the session. Exit status is
+`0` on clean quit, sticky `1` after a confirmed domain rejection, or sticky `2`
+after invalid input/terminal failure; `2` takes precedence. Pre-confirmation
+model validation retains its original code but exits `2`. Alarming results are
+successful calculations. `stop_payout` is only a displayed flag.
+
+Supply policy and operational responses remain **UNDETERMINED — Astra/User**.
+Hypothetical events perform no minting, burning, allocation, payout control,
+chain query, persistence, runtime activation or protocol command. Local checks
+are builder evidence; A2 non-author exact-head review and completed/success KTX
+and KIX workflows remain delivery gates.
+
 ## Local supply reconciliation
 
 `supply_reconciliation.dispatch_request(request)` exposes the unchanged

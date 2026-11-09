@@ -1,0 +1,92 @@
+[
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_both_causes.txt",
+    "exit_status": 0,
+    "stdout": "transcript-both_causes.stdout.txt",
+    "stderr": "transcript-both_causes.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_boundaries.txt",
+    "exit_status": 0,
+    "stdout": "transcript-boundaries.stdout.txt",
+    "stderr": "transcript-boundaries.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_conservation.txt",
+    "exit_status": 1,
+    "stdout": "transcript-conservation.stdout.txt",
+    "stderr": "transcript-conservation.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_duplicate.txt",
+    "exit_status": 1,
+    "stdout": "transcript-duplicate.stdout.txt",
+    "stderr": "transcript-duplicate.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_holder_burn.txt",
+    "exit_status": 0,
+    "stdout": "transcript-holder_burn.stdout.txt",
+    "stderr": "transcript-holder_burn.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_match.txt",
+    "exit_status": 0,
+    "stdout": "transcript-match.stdout.txt",
+    "stderr": "transcript-match.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_unapproved_mint.txt",
+    "exit_status": 0,
+    "stdout": "transcript-unapproved_mint.stdout.txt",
+    "stderr": "transcript-unapproved_mint.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_unapproved_path.txt",
+    "exit_status": 0,
+    "stdout": "transcript-unapproved_path.stdout.txt",
+    "stderr": "transcript-unapproved_path.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "reference/token_reward/supply_console.py"
+    ],
+    "stdin": "reference/token_reward/fixtures/supply_console_unexplained.txt",
+    "exit_status": 0,
+    "stdout": "transcript-unexplained.stdout.txt",
+    "stderr": "transcript-unexplained.stderr.txt"
+  }
+]
