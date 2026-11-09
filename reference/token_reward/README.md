@@ -717,3 +717,118 @@ maps reused lifecycle coverage and new session/serialization/CLI tests, records
 actual checks and transcripts, and states remaining gates. Builder checks do not
 replace A2 non-author exact-final-head review or completed/success KTX and KIX
 exact-final-head CI. No merge authorization is implied.
+
+## Local pool accounting workbench
+
+This separate process-local **synthetic POINT_F4 simulation** exposes only the
+unchanged `token_reward_model.PoolLedger` constructor, `credit`, `spend` and
+`view`. It has no connection to RewardMachine, settlement, credit, bank accounts
+or token issuance. Pure JSON helpers are imported from `reward_fixture`; its
+reward-session loader is never called. Process exit loses all state.
+
+Pool balances, funding policy and approval values remain **UNDETERMINED —
+Astra/User**. Accounting and legal treatment remain **UNDETERMINED —
+User/designated advisers**. Example quantities are caller-provided synthetic
+inputs, never defaults, recommended balances, funding policy or approval values.
+
+Both executables require `--fixture PATH`, with exactly these fields:
+
+```json
+{"fixture_version":1,"provenance":"MOCK_TOKEN_REWARD_ONLY","opening_balances":{"CUSTOMER_DEPOSIT":20,"ORGANIZER_SETTLEMENT":20,"REFUND_RESERVE":20,"PROTOCOL_REVENUE":2,"TOKEN_TREASURY_REWARD":9}}
+```
+
+All five opening balances are explicit. Version must be integer `1`; provenance
+must match. The model rejects missing/extra pools with `POOL_BALANCES_REQUIRED`
+and invalid opening amounts with its original codes. Its existing numeric bound
+is `10**12` per balance; this is an implementation predicate, not product policy.
+
+Put `reference/token_reward` on `PYTHONPATH` for the importable interface:
+
+```python
+from pool_session import PoolSession, read_opening_balances, dispatch_request
+
+session = PoolSession(read_opening_balances("reference/token_reward/fixtures/pool_session.json"))
+credited = session.credit("PROTOCOL_REVENUE", 5, "synthetic-source")
+spent = session.spend("PROTOCOL_REVENUE", 3, "synthetic-program")
+current = session.view()
+reply = dispatch_request(session, {"operation": "view", "arguments": {}})
+```
+
+Session methods return model snapshots with `balances`, `credits` and `spends`.
+Returned snapshots are detached. Domain errors raise unchanged `TokenRewardError`.
+The session constructs exactly one ledger and forwards each selected call once.
+
+JSONL records require exactly `operation` and `arguments`. The only local
+selectors and their exact argument fields are:
+
+| Selector | Argument fields |
+|---|---|
+| `credit` | `pool`, `amount`, `source_ref` |
+| `spend` | `pool`, `amount`, `program_ref` |
+| `view` | Empty object `{}` |
+
+For example:
+
+```jsonl
+{"operation":"credit","arguments":{"pool":"PROTOCOL_REVENUE","amount":5,"source_ref":"synthetic-source"}}
+{"operation":"spend","arguments":{"pool":"PROTOCOL_REVENUE","amount":3,"program_ref":"synthetic-program"}}
+{"operation":"view","arguments":{}}
+```
+
+Amounts and references are always explicit. JSON values are never coerced:
+booleans, floats, null and numeric strings reach the model unchanged and retain
+its original amount rejection codes. Integers remain exact, including values
+above binary-float precision. Missing/unknown fields, unsupported selectors,
+duplicate keys, malformed JSON/UTF-8, invalid Unicode and non-finite numbers are
+interface errors before dispatch. A blank JSONL line is malformed; empty EOF
+ends normally. Local selectors add no protocol commands.
+
+```bash
+python3 reference/token_reward/pool_cli.py --fixture reference/token_reward/fixtures/pool_session.json --requests reference/token_reward/fixtures/pool_journey.jsonl
+python3 reference/token_reward/pool_cli.py --fixture reference/token_reward/fixtures/pool_session.json --requests - < reference/token_reward/fixtures/pool_boundaries.jsonl
+python3 reference/token_reward/pool_console.py --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_journey.txt
+python3 reference/token_reward/pool_console.py --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_boundaries.txt
+```
+
+Each JSONL output has `operation`, `provenance`, `unit: "POINT_F4"`, a synthetic
+notice and all seven false flags listed above. It contains exactly one of
+`initialized`, `view`, or `error`. The initialization acknowledgement describes
+the supplied opening balances without an implicit view. Successful actions
+preserve the complete model snapshot unchanged under `view`; there are no
+receipts. Domain errors retain `{"code":"<original code>"}`; interface/setup/I/O
+errors use `type` and `message` (constructor domain errors retain their code).
+Setup/I/O diagnostics go to stderr; request errors appear in the JSONL stream.
+Argparse usage errors use its normal stderr help.
+
+The guided console is also importable as
+`pool_console.run_console(opening_balances, input_stream=..., output_stream=..., error_stream=...)`.
+It displays and flushes the complete initialization proposal before constructing
+a ledger. Only literal `SUBMIT` constructs it. A decline exits without construction.
+After initialization, select `credit`, `spend`, `view` or local `quit`. Enter the
+mutation fields in table order; strings are verbatim, and amount input is a
+signed decimal integer (`+2`, `2`, `-2` are parsed exactly, then model-validated).
+Each mutation prints and flushes a complete request preview and requires another
+literal `SUBMIT`. Any other confirmation discards that request. `view` performs
+one explicitly selected read. No other implicit reads or actions occur.
+
+Only `PROTOCOL_REVENUE` and `TOKEN_TREASURY_REWARD` permit spends. All three
+obligation pools reject spending with `POOL_FORBIDDEN_FOR_TOKEN_SPEND`.
+Insufficient funds produce `POOL_EXHAUSTED_PAUSED` without borrowing from another
+pool. Ordinary domain refusals preserve state. **Repeated source/program
+references are not deduplication keys**: another accepted call appends another
+entry and changes the balance again, exactly as a direct model call does.
+
+Exit codes: **0** clean completion/quit or initialization decline; **1** any
+confirmed domain refusal; **2** malformed input, setup, EOF in the console,
+interruption or I/O failure. Domain refusal continues only to the next explicitly
+supplied record or console selection. Malformed input stops. Terminal failure
+stops further dispatch. Output failure after a mutation does not roll it back;
+there is no retry. Console prompts are human text, while replies are JSON.
+
+There is no polling, retry, restoration, persistence, external call, transfer or
+funding automation. `token_issued`, `onchain_recorded`, `funds_executed`, `krw_paid`,
+`chain_finality`, `durable` and `legal_authority` remain false. These tests establish
+no bank execution, chain finality, durability, accounting/legal conclusion or
+production readiness. The [pool workbench validation record](../../validation/2026-11-09-plan-plan-local-pool-accounting-workbench/README.md)
+contains the coverage map, real transcripts, actual commands and protected-byte
+checks. A2 non-author exact-head review and required KTX/KIX CI remain delivery gates.
