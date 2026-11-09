@@ -6,9 +6,10 @@ import re
 import sys
 
 from pool_cli import diagnostic, emit
+from pool_client import PoolClient, validate_cleanup_timeout
 from pool_session import (NOTICE, PoolSession, dispatch_request, error_reply,
                           initialized_reply, read_opening_balances)
-from reward_fixture import FixtureError, validate_json
+from reward_fixture import FixtureError, decode_json, validate_json
 from token_reward_model import POOLS, TokenRewardError, _canonical
 
 
@@ -26,7 +27,7 @@ def _parse_amount(raw):
         raise FixtureError("amount integer is too long") from error
 
 
-def run_console(opening_balances=_GUIDED, *, input_stream, output_stream, error_stream):
+def _interact(opening_balances, *, input_stream, output_stream, error_stream, start, dispatch):
     """Preview and flush before construction/mutation; terminal failures fence use.
 
     A model mutation can have completed before an output failure. No rollback or
@@ -50,6 +51,7 @@ def run_console(opening_balances=_GUIDED, *, input_stream, output_stream, error_
     try:
         if opening_balances is not _GUIDED:
             validate_json(opening_balances)
+            opening_balances = decode_json(_canonical(opening_balances))
         print(NOTICE + "\n"
               "token_issued, onchain_recorded, funds_executed, krw_paid, chain_finality, "
               "durable, legal_authority remain false.\n"
@@ -65,8 +67,8 @@ def run_console(opening_balances=_GUIDED, *, input_stream, output_stream, error_
         if not preview({"operation": "initialize", "arguments": {"opening_balances": opening_balances}}):
             print("Initialization declined; no session constructed.", file=output_stream, flush=True)
             return 0
-        session = PoolSession(opening_balances)
-        emit(initialized_reply(opening_balances), output_stream)
+        session, acknowledgement = start(opening_balances)
+        emit(acknowledgement, output_stream)
         while True:
             action = prompt("Action (credit, spend, view, quit)")
             if action == "quit":
@@ -85,14 +87,62 @@ def run_console(opening_balances=_GUIDED, *, input_stream, output_stream, error_
                 print("Request declined; no dispatch.", file=output_stream, flush=True)
                 continue
             try:
-                result = dispatch_request(session, request)
+                result = dispatch(session, request)
             except TokenRewardError as error:
                 result = error_reply(action, error)
                 rejected = True
             emit(result, output_stream)
+            if "error" in result:
+                if "type" in result["error"]:
+                    return 2
+                rejected = True
     except (Exception, KeyboardInterrupt) as error:
         diagnostic(error, error_stream)
         return 2
+
+
+def run_console(opening_balances=_GUIDED, *, input_stream, output_stream, error_stream,
+                fixture=None, cleanup_timeout=None):
+    """Use a child only when explicitly selected by fixture and cleanup_timeout.
+
+    All preview/confirmation paths share _interact; start runs only after SUBMIT.
+    Every post-launch exit closes the owned child, including output failures.
+    """
+    client = None
+
+    def start(balances):
+        nonlocal client
+        if fixture is None:
+            return PoolSession(balances), initialized_reply(balances)
+        client = PoolClient.launch(fixture, expected_opening_balances=balances,
+                                   cleanup_timeout=cleanup_timeout)
+        return client, client.initialized_reply
+
+    def dispatch(session, request):
+        return session.request(request) if fixture is not None else dispatch_request(session, request)
+
+    status = 2
+    try:
+        if fixture is not None:
+            if opening_balances is _GUIDED:
+                raise FixtureError("subprocess mode requires fixture opening balances")
+            validate_cleanup_timeout(cleanup_timeout)
+        elif cleanup_timeout is not None:
+            raise FixtureError("cleanup_timeout requires subprocess mode")
+        status = _interact(opening_balances, input_stream=input_stream, output_stream=output_stream,
+                           error_stream=error_stream, start=start, dispatch=dispatch)
+    except (Exception, KeyboardInterrupt) as error:
+        diagnostic(error, error_stream)
+    finally:
+        if client is not None:
+            try:
+                code = client.close()
+                if status != 2 and code != (1 if client.domain_refused else 0):
+                    raise RuntimeError(f"unexpected pool child exit: {code}")
+            except (Exception, KeyboardInterrupt) as error:
+                diagnostic(error, error_stream)
+                status = 2
+    return status
 
 
 def main(argv=None):
@@ -101,13 +151,23 @@ def main(argv=None):
     mode.add_argument("--fixture", type=Path)
     mode.add_argument("--guided-init", action="store_true",
                       help="explicitly enter all five synthetic opening balances")
+    parser.add_argument("--mode", choices=("in-process", "subprocess"), default="in-process")
+    parser.add_argument("--cleanup-timeout", type=float, help="subprocess cleanup only, finite positive seconds")
     args = parser.parse_args(argv)
     try:
+        if args.mode == "subprocess":
+            if args.guided_init:
+                raise FixtureError("subprocess mode requires --fixture")
+            validate_cleanup_timeout(args.cleanup_timeout)
+        elif args.cleanup_timeout is not None:
+            raise FixtureError("--cleanup-timeout requires --mode subprocess")
         opening = _GUIDED if args.guided_init else read_opening_balances(args.fixture)
     except (Exception, KeyboardInterrupt) as error:
         diagnostic(error, sys.stderr)
         return 2
-    return run_console(opening, input_stream=sys.stdin, output_stream=sys.stdout, error_stream=sys.stderr)
+    return run_console(opening, input_stream=sys.stdin, output_stream=sys.stdout, error_stream=sys.stderr,
+                       fixture=args.fixture if args.mode == "subprocess" else None,
+                       cleanup_timeout=args.cleanup_timeout)
 
 
 if __name__ == "__main__":

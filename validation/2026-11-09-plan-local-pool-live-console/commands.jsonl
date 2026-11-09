@@ -1,0 +1,36 @@
+{"label": "pool-focused-final", "command": "python3 -m unittest discover -s reference/token_reward -t reference/token_reward -p 'test_pool*.py'", "exit": 0, "seconds": 2.502}
+{"label": "architecture", "command": "python3 scripts/verify_runtime_architecture.py", "exit": 0, "seconds": 0.034}
+{"label": "architecture-tests", "command": "python3 scripts/test_runtime_architecture.py", "exit": 0, "seconds": 0.243}
+{"label": "check_docs_index", "command": "python3 scripts/check_docs_index.py", "exit": 0, "seconds": 0.033}
+{"label": "check_docs_index-self-test", "command": "python3 scripts/check_docs_index.py --self-test", "exit": 0, "seconds": 0.043}
+{"label": "check_tl_predicate_evidence_map", "command": "python3 scripts/check_tl_predicate_evidence_map.py", "exit": 0, "seconds": 0.037}
+{"label": "check_tl_predicate_evidence_map-self-test", "command": "python3 scripts/check_tl_predicate_evidence_map.py --self-test", "exit": 0, "seconds": 0.087}
+{"label": "check_class_b_index", "command": "python3 scripts/check_class_b_index.py", "exit": 0, "seconds": 0.071}
+{"label": "check_class_b_index-self-test", "command": "python3 scripts/check_class_b_index.py --self-test", "exit": 0, "seconds": 0.027}
+{"label": "check_ci_checker_wiring", "command": "python3 scripts/check_ci_checker_wiring.py", "exit": 0, "seconds": 0.041}
+{"label": "check_ci_checker_wiring-self-test", "command": "python3 scripts/check_ci_checker_wiring.py --self-test", "exit": 0, "seconds": 0.039}
+{"label": "check_ci_test_discovery", "command": "python3 scripts/check_ci_test_discovery.py", "exit": 0, "seconds": 0.112}
+{"label": "check_ci_test_discovery-self-test", "command": "python3 scripts/check_ci_test_discovery.py --self-test", "exit": 0, "seconds": 0.076}
+{"label": "check_openapi_contract", "command": "python3 scripts/check_openapi_contract.py", "exit": 0, "seconds": 0.088}
+{"label": "check_openapi_contract-self-test", "command": "python3 scripts/check_openapi_contract.py --self-test", "exit": 0, "seconds": 0.187}
+{"label": "check_integration_gate_openapi", "command": "python3 scripts/check_integration_gate_openapi.py", "exit": 0, "seconds": 0.07}
+{"label": "check_integration_gate_openapi-self-test", "command": "python3 scripts/check_integration_gate_openapi.py --self-test", "exit": 0, "seconds": 0.098}
+{"label": "rust-format", "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check", "exit": 0, "seconds": 0.264}
+{"label": "kernel-offline", "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline", "exit": 101, "seconds": 0.052}
+{"label": "workspace-offline", "command": "cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline", "exit": 101, "seconds": 0.055}
+{"label": "clippy-offline", "command": "cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings", "exit": 101, "seconds": 0.107}
+{"label": "token-reward-discovery", "command": "python3 -m unittest discover -s reference/token_reward -t reference/token_reward", "exit": 0, "seconds": 53.877}
+{"label": "subprocess-journey", "command": "python3 reference/token_reward/pool_console.py --mode subprocess --fixture reference/token_reward/fixtures/pool_session.json --cleanup-timeout 1 < reference/token_reward/fixtures/pool_console_journey.txt", "exit": 0, "seconds": 0.112}
+{"label": "subprocess-boundaries", "command": "python3 reference/token_reward/pool_console.py --mode subprocess --fixture reference/token_reward/fixtures/pool_session.json --cleanup-timeout 1 < reference/token_reward/fixtures/pool_console_boundaries.txt", "exit": 1, "seconds": 0.108}
+{"label": "in-process-journey", "command": "python3 reference/token_reward/pool_console.py --mode in-process --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_journey.txt", "exit": 0, "seconds": 0.041}
+{"label": "in-process-boundaries", "command": "python3 reference/token_reward/pool_console.py --mode in-process --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_boundaries.txt", "exit": 1, "seconds": 0.039}
+{"label": "guided-journey", "command": "python3 reference/token_reward/pool_console.py --guided-init < reference/token_reward/fixtures/pool_console_opening_journey.txt", "exit": 0, "seconds": 0.038}
+{"label": "guided-boundaries", "command": "python3 reference/token_reward/pool_console.py --guided-init < reference/token_reward/fixtures/pool_console_opening_boundaries.txt", "exit": 1, "seconds": 0.039}
+{"label": "pool-focused-initial", "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/token_reward -t reference/token_reward -p 'test_pool*.py'", "exit": 0, "note": "initial 56-test run; combined stdout/stderr in pool-focused-initial.log; recorded after runner creation"}
+{"label": "token-reward-python312", "command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward", "exit": 0, "seconds": 47.046}
+{"label": "docs-index-final", "command": "python3 scripts/check_docs_index.py", "exit": 0, "seconds": 0.033}
+{"label": "preservation", "command": "python3 validation/2026-11-09-plan-local-pool-live-console/verify_preservation.py", "exit": 0, "seconds": 0.386}
+{"label": "diff-check", "command": "git diff --check", "exit": 0, "seconds": 0.006}
+{"label": "transcript-check", "command": "python3 validation/2026-11-09-plan-local-pool-live-console/verify_transcripts.py", "exit": 0, "seconds": 0.022}
+{"label": "preservation", "command": "python3 validation/2026-11-09-plan-local-pool-live-console/verify_preservation.py", "exit": 0, "seconds": 0.41}
+{"label": "diff-check", "command": "git diff --check", "exit": 0, "seconds": 0.016}

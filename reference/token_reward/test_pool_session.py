@@ -182,8 +182,8 @@ class PoolSessionTests(unittest.TestCase):
                 self.assertEqual(actual.exception.code, expected.exception.code)
 
     def test_new_modules_import_only_stdlib_and_selected_local_helpers(self):
-        allowed = {"pool_session", "pool_cli", "reward_fixture", "token_reward_model"}
-        for name in ("pool_session.py", "pool_cli.py", "pool_console.py"):
+        allowed = {"pool_session", "pool_cli", "pool_client", "reward_fixture", "token_reward_model"}
+        for name in ("pool_session.py", "pool_cli.py", "pool_console.py", "pool_client.py"):
             tree = ast.parse((Path(__file__).parent / name).read_text())
             for node in ast.walk(tree):
                 modules = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
