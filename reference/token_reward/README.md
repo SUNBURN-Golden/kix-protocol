@@ -731,7 +731,8 @@ Astra/User**. Accounting and legal treatment remain **UNDETERMINED —
 User/designated advisers**. Example quantities are caller-provided synthetic
 inputs, never defaults, recommended balances, funding policy or approval values.
 
-Both executables require `--fixture PATH`, with exactly these fields:
+`pool_cli.py` requires `--fixture PATH`. The console requires exactly one of
+`--fixture PATH` or `--guided-init`. Fixture mode retains exactly these fields:
 
 ```json
 {"fixture_version":1,"provenance":"MOCK_TOKEN_REWARD_ONLY","opening_balances":{"CUSTOMER_DEPOSIT":20,"ORGANIZER_SETTLEMENT":20,"REFUND_RESERVE":20,"PROTOCOL_REVENUE":2,"TOKEN_TREASURY_REWARD":9}}
@@ -788,6 +789,9 @@ python3 reference/token_reward/pool_cli.py --fixture reference/token_reward/fixt
 python3 reference/token_reward/pool_cli.py --fixture reference/token_reward/fixtures/pool_session.json --requests - < reference/token_reward/fixtures/pool_boundaries.jsonl
 python3 reference/token_reward/pool_console.py --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_journey.txt
 python3 reference/token_reward/pool_console.py --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_boundaries.txt
+python3 reference/token_reward/pool_console.py --guided-init
+python3 reference/token_reward/pool_console.py --guided-init < reference/token_reward/fixtures/pool_console_opening_journey.txt
+python3 reference/token_reward/pool_console.py --guided-init < reference/token_reward/fixtures/pool_console_opening_boundaries.txt
 ```
 
 Each JSONL output has `operation`, `provenance`, `unit: "POINT_F4"`, a synthetic
@@ -802,6 +806,20 @@ Argparse usage errors use its normal stderr help.
 
 The guided console is also importable as
 `pool_console.run_console(opening_balances, input_stream=..., output_stream=..., error_stream=...)`.
+Omitting the positional opening balances selects guided entry; explicitly passing
+`None`, `{}` or another invalid fixture value retains constructor validation.
+Guided entry prompts for `CUSTOMER_DEPOSIT`, `ORGANIZER_SETTLEMENT`,
+`REFUND_RESERVE`, `PROTOCOL_REVENUE`, then `TOKEN_TREASURY_REWARD`. Every prompt
+requires a separate explicit signed ASCII decimal integer (`[+-]?[0-9]+`).
+No balance is suggested, defaulted, trimmed, rounded, clamped or retried.
+Blank input, decimals, exponents, booleans, whitespace and Unicode digits are
+lexical errors. All five values are collected without constructing a ledger.
+The complete initialization then uses the same preview, confirmation and result
+envelopes as fixture mode. Zero and `10**12` are accepted opening amounts;
+negative and over-limit integers reach the unchanged model after confirmation,
+retaining `INVALID_NONNEGATIVE`, `operation: null` and exit `2`. Credit/spend
+amount validation separately retains `INVALID_AMOUNT`.
+
 It displays and flushes the complete initialization proposal before constructing
 a ledger. Only literal `SUBMIT` constructs it. A decline exits without construction.
 After initialization, select `credit`, `spend`, `view` or local `quit`. Enter the
@@ -810,6 +828,17 @@ signed decimal integer (`+2`, `2`, `-2` are parsed exactly, then model-validated
 Each mutation prints and flushes a complete request preview and requires another
 literal `SUBMIT`. Any other confirmation discards that request. `view` performs
 one explicitly selected read. No other implicit reads or actions occur.
+
+For a file-free journey, run `--guided-init` and enter all the lines in
+`fixtures/pool_console_opening_journey.txt` at its prompts. The first five lines
+are explicitly entered synthetic example balances; the remaining lines confirm
+initialization and perform credit, spend and view in the same process. Decline
+exits `0`; incomplete input, EOF, interruption or terminal failure before
+confirmation exits `2` without constructing a ledger. Later terminal failure
+stops further dispatch without rollback or automatic retry. The
+[opening composer evidence and captured transcripts](../../validation/2026-11-09-plan-local-pool-opening-composer/README.md)
+include a here-document invocation requiring no fixture or input file. Local
+results retain A2 non-author exact-final-head review and both required CI gates.
 
 Only `PROTOCOL_REVENUE` and `TOKEN_TREASURY_REWARD` permit spends. All three
 obligation pools reject spending with `POOL_FORBIDDEN_FOR_TOKEN_SPEND`.
