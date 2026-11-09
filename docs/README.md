@@ -44,6 +44,12 @@ capability grades, protocol commands and runtime activation are unchanged.
 
 ## Local commerce calculation console
 
+[Guided bundle quote composition evidence](../validation/2026-11-09-plan-plan-local-bundle-quote-composer/README.md)
+and the [console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+cover explicit multi-line synthetic quotes with ordered discounts, guided payment
+legs and original-route refund proposals. Calculation-only; policy remains
+UNDETERMINED and capability grades are unchanged.
+
 [Guided split-payment entry evidence](../validation/2026-11-08-plan-local-split-payment-entry/README.md)
 and the [extended console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
 cover explicit synthetic leg composition, preview and separate submission.

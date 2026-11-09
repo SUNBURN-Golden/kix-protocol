@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from commerce_calculation_client import CommerceCalculationClient, CalculationUncertainty, codec, decode_input
 from commerce_calculation_console import run_console
+from calculated_booking_quote_source import _calculator
 from test_commerce_calculation_client import HERE, POPEN
 
 
@@ -29,6 +30,25 @@ def compose(legs):
         rows.extend([leg['legId'], leg['providerRef'], leg['routeRef'], asset['namespace'],
                      asset['reference'], str(asset['decimals']), asset['maxAtoms'], leg['amount']['atoms']])
     return '\n'.join(rows) + '\n'
+
+
+def compose_quote(request):
+    rows = ['compose_quote', request['orderId'], str(request['orderVersion'])]
+    rows.extend(request['scope'][field] for field in ('issuerId', 'eventId', 'performanceId'))
+    rows.extend([request['policyRef'], str(request['expiresAt']), str(len(request['lines']))])
+    for line in request['lines']:
+        asset = line['gross']['asset']
+        rows.extend([line['lineId'], line['inventoryId'], asset['namespace'], asset['reference'],
+                     str(asset['decimals']), asset['maxAtoms'], line['gross']['atoms']])
+    rows.append(str(len(request['discounts'])))
+    for rule in request['discounts']:
+        rows.extend([rule['ruleId'], rule['bearerRef'], rule['kind'], rule['value'],
+                     json.dumps(rule['eligibleLineIds']), json.dumps(rule['capAtoms'])])
+    return '\n'.join(rows) + '\n'
+
+
+def quote_fixture(name='quote'):
+    return json.loads((FIXTURES / ('commerce_console_' + name + '.json')).read_text())
 
 
 class RecordingClient(CommerceCalculationClient):
@@ -325,6 +345,173 @@ class CommerceCalculationConsoleTests(unittest.TestCase):
             self.assertEqual(launch.call_count, 2)
         self.assertIn('FENCED', errors)
         self.assertTrue(all(child.returncode is not None for child in children))
+
+    def test_bundle_journey_file_parity(self):
+        commerce = _calculator()['commerce']
+        # These entry points must only run in calculator children, never composition/client code.
+        with patch.object(commerce, 'build_quote', side_effect=AssertionError('in-process calculation')), \
+             patch.object(commerce, 'plan_payments', side_effect=AssertionError('in-process calculation')), \
+             patch.object(commerce, 'propose_line_refund', side_effect=AssertionError('in-process calculation')), \
+             patch('time.time', side_effect=AssertionError('implicit clock')):
+            for name in ('journey', 'precision', 'free'):
+                with self.subTest(name=name), \
+                     patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                    status, guided, output, errors = self.run_journey(answers('bundle_' + name))
+                    self.assertEqual(launch.call_count, 3)
+                    fstatus, loaded, _, ferrors = self.run_journey(answers(name))
+                    self.assertEqual((status, errors, fstatus, ferrors), (0, '', 0, ''))
+                    self.assertEqual(guided.exchanges, loaded.exchanges)
+                    request = decode_input(guided.exchanges[0].request_bytes)['args']
+                    preview = 'composed_quote=' + codec().canonical(request)
+                    self.assertIn(preview, output)
+                    self.assertLess(output.index(preview), output.index('Type literal SUBMIT_QUOTE'))
+                    for exchange in guided.exchanges:
+                        self.assertEqual(exchange.response['result']['evidenceClass'], 'CALCULATION_ONLY')
+                    self.assertIs(guided.exchanges[-1].response['result']['executionAuthorized'], False)
+                    if name == 'precision':
+                        self.assertEqual(request['lines'][0]['gross']['atoms'], '9007199254740993')
+                    if name == 'free':
+                        self.assertEqual(request['discounts'], [])
+                        self.assertEqual(guided.exchanges[-1].response['result']['originalRoutes'], [])
+
+    def test_bundle_driver_refusals_preserve_input_and_dispatch_once(self):
+        mutations = [
+            ('DUPLICATE_LINE', lambda q: q['lines'][1].update(lineId='L1')),
+            ('DUPLICATE_INVENTORY', lambda q: q['lines'][1].update(inventoryId='inv-1')),
+            ('DUPLICATE_DISCOUNT_RULE', lambda q: q['discounts'][1].update(ruleId='coupon')),
+            ('DUPLICATE_ID', lambda q: q['discounts'][0].update(eligibleLineIds=['L1', 'L1'])),
+            ('UNKNOWN_DISCOUNT_LINE', lambda q: q['discounts'][0].update(eligibleLineIds=['missing'])),
+            ('MIXED_QUOTE_ASSETS', lambda q: q['lines'][1]['gross']['asset'].update(reference='USD')),
+            ('DISCOUNT_EXCEEDS_PAYABLE', lambda q: q['discounts'][0].update(value='60001')),
+        ]
+        for expected, mutate in mutations:
+            request = quote_fixture(); mutate(request)
+            with self.subTest(error=expected), \
+                 patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                status, client, output, errors = self.run_journey(compose_quote(request) +
+                                                  'simulate_quote\nSUBMIT_QUOTE\nshow\nquit\n')
+                self.assertEqual((status, errors, launch.call_count), (1, '', 1))
+                self.assertEqual(len(client.exchanges), 1)
+                self.assertEqual(decode_input(client.exchanges[0].request_bytes)['args'], request)
+                self.assertEqual(client.exchanges[0].response['error'], expected)
+                self.assertIn('"error":"' + expected + '"', output)
+                self.assertEqual(client.history, ())
+        status, client, _, errors = self.run_journey(answers('bundle_boundaries'))
+        self.assertEqual((status, errors), (1, ''))
+        self.assertEqual([e.response['error'] for e in client.exchanges], [m[0] for m in mutations])
+
+    def test_bundle_literal_strings_caps_and_array_order(self):
+        request = quote_fixture()
+        request['lines'].reverse()
+        request['discounts'].reverse()
+        request['discounts'][0]['eligibleLineIds'].reverse()
+        request['discounts'][0]['capAtoms'] = '1234'
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'quote.json'; path.write_text(json.dumps(request))
+            suffix = 'simulate_quote\nSUBMIT_QUOTE\nquit\n'
+            status, guided, _, errors = self.run_journey(compose_quote(request) + suffix)
+            fstatus, loaded, _, ferrors = self.run_journey('load_quote\n' + str(path) + '\n' + suffix)
+        self.assertEqual((status, errors, fstatus, ferrors), (0, '', 0, ''))
+        self.assertEqual(guided.exchanges, loaded.exchanges)
+        self.assertEqual(decode_input(guided.exchanges[0].request_bytes)['args'], request)
+        request['orderId'] = ' synthetic "order" '
+        request['policyRef'] = ''
+        request['lines'][0]['gross']['atoms'] = '00030000'
+        request['lines'][0]['gross']['asset']['maxAtoms'] = ' 00100 '
+        request['lines'][0]['gross']['asset']['decimals'] = -1
+        request['discounts'][0]['kind'] = 'bps'
+        request['discounts'][0]['value'] = ' 01000 '
+        request['discounts'][0]['capAtoms'] = ''
+        with patch('commerce_calculation_client.subprocess.Popen') as launch:
+            status, _, output, errors = self.run_journey(compose_quote(request).replace('\n', '\r\n') + 'quit\n')
+        self.assertEqual((status, errors), (0, ''))
+        self.assertIn('composed_quote=' + codec().canonical(request), output)
+        launch.assert_not_called()
+
+    def test_bundle_integer_json_and_encoding_failures_never_publish(self):
+        rows = compose_quote(quote_fixture('precision_quote')).splitlines()
+        invalid = ('', 'true', '"1"', '1.0', '1e0', '-0', '9007199254740993', '{}', '\ud800')
+        cases = []
+        for index in (2, 7, 8, 13, 16):
+            for value in invalid:
+                cases.append(rows[:index] + [value])
+        for index, values in ((8, ('-1', '0', '301')), (16, ('-1', '65'))):
+            cases.extend(rows[:index] + [value] for value in values)
+        discount_rows = compose_quote(quote_fixture()).splitlines()
+        # Eligibility/cap are typed JSON; duplicates and membership are left to the driver.
+        for index, values in ((35, ('', 'null', '{}', '[1]', '"L1"', '["L1",]')),
+                              (36, ('', '0', 'false', '[]', '{}', '"unterminated'))):
+            cases.extend(discount_rows[:index] + [value] for value in values)
+        for literal in ('e\u0301', '\ud800', 'x' * codec().MAX_INPUT_BYTES):
+            cases.append(rows[:1] + [literal] + rows[2:])
+        for rows in cases:
+            with self.subTest(prefix=repr(rows)[:160]), \
+                 patch('commerce_calculation_client.subprocess.Popen') as launch:
+                status, _, output, errors = self.run_journey('\n'.join(rows) +
+                                                     '\nsimulate_quote\nshow\nquit\n')
+                self.assertEqual((status, errors), (1, ''))
+                self.assertNotIn('composed_quote=', output)
+                self.assertIn('input_error=', output)
+                self.assertIn('Load a quote request first.', output)
+                launch.assert_not_called()
+
+    def test_bundle_replacement_clears_input_quote_and_dependents(self):
+        prefix = answers('bundle_journey').rsplit('\nshow\n', 1)[0] + '\n'
+        same = compose_quote(quote_fixture())
+        malformed = [same.splitlines()[:index] + [value] for index, value in
+                     ((2, 'true'), (35, '[1]'), (36, '0'), (1, 'e\u0301'))]
+        # For encoding failure, supply the rest of the candidate too.
+        malformed[-1] += same.splitlines()[2:]
+        replacements = [(same, 0)] + [('\n'.join(rows) + '\n', 1) for rows in malformed]
+        for replacement, expected in replacements:
+            with self.subTest(replacement=replacement):
+                status, client, output, errors = self.run_journey(prefix + replacement +
+                    ('simulate_quote\n' if expected else '') +
+                    'propose_line_refund\nplan_payments\nshow\nquit\n')
+                self.assertEqual((status, errors, len(client.exchanges)), (expected, '', 3))
+                self.assertIn('active={"plan":null,"quote":null,"refund":null}', output)
+                self.assertIn('Active quote, plan and explicit line selection are required.', output)
+                self.assertIn('A successful active quote and loaded legs are required.', output)
+                if expected:
+                    self.assertIn('Load a quote request first.', output)
+        # Re-simulation and re-planning can reuse stored legs, but never old line selection.
+        status, client, output, errors = self.run_journey(prefix + same +
+            'simulate_quote\nSUBMIT_QUOTE\nplan_payments\n999\nSUBMIT_PLAN\npropose_line_refund\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (0, '', 5))
+        self.assertIn('Active quote, plan and explicit line selection are required.', output)
+        refused = quote_fixture(); refused['lines'][1]['lineId'] = 'L1'
+        status, client, output, errors = self.run_journey(prefix + compose_quote(refused) +
+            'simulate_quote\nSUBMIT_QUOTE\npropose_line_refund\nshow\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (1, '', 4))
+        self.assertIn('active={"plan":null,"quote":null,"refund":null}', output)
+        self.assertIn('Historical successful exchanges (not active selections)', output)
+        self.assertEqual(self.run_journey(answers('bundle_replacement'))[0], 0)
+
+    def test_bundle_eof_decline_and_each_confirmation_launch_counts(self):
+        composition = compose_quote(quote_fixture()).splitlines()
+        # EOF at every quote prompt, initially and while replacing all active dependents.
+        for prefix, calls in (('', 0), (answers('bundle_journey').rsplit('\nshow\n', 1)[0] + '\n', 3)):
+            for length in range(1, len(composition) + 1):
+                with self.subTest(calls=calls, length=length), \
+                     patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                    status, client, output, errors = self.run_journey(prefix +
+                        '\n'.join(composition[:length]) + '\n')
+                    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+                    self.assertEqual(len(client.exchanges), calls)
+                    self.assertIn('EOF; no further calculations submitted.', output)
+                    self.assertEqual(output.count('composed_quote='),
+                                     int(bool(prefix)) + int(length == len(composition)))
+        script = answers('bundle_journey')
+        for index, literal in enumerate(('SUBMIT_QUOTE', 'SUBMIT_PLAN', 'SUBMIT_REFUND')):
+            for suffix in ('no\nquit\n', ''):
+                with self.subTest(literal=literal, suffix=suffix), \
+                     patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                    status, client, _, errors = self.run_journey(script.split(literal + '\n')[0] + suffix)
+                    self.assertEqual((status, errors, launch.call_count), (0, '', index))
+                    self.assertEqual(len(client.exchanges), index)
+        with patch('commerce_calculation_client.subprocess.Popen') as launch:
+            self.assertEqual(self.run_journey(answers('bundle_decline'))[0], 0)
+            launch.assert_not_called()
 
     def test_transport_failure_stops_console_without_retry_or_fallback(self):
         children = []
