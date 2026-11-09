@@ -13,6 +13,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 import shared_ticket_console as console
+from test_resale_console import RECORDED_FIXTURE, RECORDED_LIST, recorded_parity
+from test_admission_console import RECORDED_AUTH, RECORDED_CONSUME
 from test_admission_session import assert_flags
 from test_reservation_fsm import assert_not_final
 from test_resale_fsm import assert_not_final as assert_resale_flags
@@ -56,8 +58,10 @@ EXCEPTION_ACTIONS = [
     ('settlement', ['fail', 'resale-claim', 'synthetic', 'settlement-fail', 'SUBMIT']),
     ('settlement', ['cancel', 'resale-claim', 'synthetic', 'settlement-cancel', 'SUBMIT']),
 ]
+RECORDED_ACTIONS = [('resale', RECORDED_LIST), ('admission', RECORDED_AUTH),
+                    ('admission', RECORDED_CONSUME)]
 FAULT_ACTIONS = ([(name, VIEWS[name]) for name in SURFACES] + NEW_ACTIONS
-                 + [('resale', PAYMENT_INPUT)] + EXCEPTION_ACTIONS)
+                 + [('resale', PAYMENT_INPUT)] + EXCEPTION_ACTIONS + RECORDED_ACTIONS)
 CLOCK = ['set_clock', 'clock', '1000000', 'shared-clock']
 HOLD = ['hold', 'shared-reservation', 'show-1', '1', 'shared-buyer', '1120000', 'shared-hold']
 LOAD = ['load_quote', str(QUOTE)]
@@ -118,6 +122,67 @@ class SharedTicketConsoleTests(unittest.TestCase):
         self.assertEqual(envelopes(output), replies)
         for row in calls:
             self.assertEqual(set(row), {'surface', 'operation', 'arguments'})
+
+    def test_recorded_shared_journey_and_executable_transcript(self):
+        answers = (HERE / 'fixtures/shared_ticket_console_recorded.txt').read_text()
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(
+                answers.splitlines(), fixture=RECORDED_FIXTURE)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (0, ''))
+        recorded_parity(self, calls, replies, output)
+        self.assertEqual([(c['surface'], c['operation']) for c in calls],
+            [('resale', op) for op in ('list_resale', 'view', 'cancel_listing', 'view', 'list_resale', 'view')]
+            + [('booking', 'view')]
+            + [('admission', op) for op in ('authorize_admission', 'view', 'view', 'consume',
+                                           'view', 'authorize_admission', 'consume', 'view')]
+            + [('settlement', 'view')])
+        self.assertEqual(replies[4]['receipt'], replies[0]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual(replies[5]['view']['phase'], 'CANCELLED')
+        self.assertEqual(replies[8]['view'], replies[9]['view'])
+        self.assertIsNone(replies[9]['view']['consume_id'])
+        self.assertEqual(replies[12]['receipt'], replies[7]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual(replies[13]['receipt'], replies[10]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual(replies[14]['view']['phase'], 'CONSUMED')
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'shared_ticket_console.py'),
+            '--fixture', str(RECORDED_FIXTURE), '--cleanup-timeout', '1'], cwd=ROOT,
+            input=answers, text=True, capture_output=True, timeout=10, env=os.environ.copy())
+        self.assertEqual((result.returncode, result.stderr), (0, ''))
+        self.assertEqual(envelopes(result.stdout), replies)
+
+    def test_received_recorded_action_display_failure_retains_receipt_and_fences(self):
+        for name, action in RECORDED_ACTIONS:
+            with self.subTest(operation=action[0]):
+                class BrokenRecordedOutput(io.StringIO):
+                    def write(self, text):
+                        if text.startswith('desk=') and json.loads(text[5:])['operation'] == action[0]:
+                            raise BrokenPipeError('recorded action display')
+                        return super().write(text)
+                prefix = RECORDED_AUTH if action == RECORDED_CONSUME else []
+                pending = script([name, *prefix, *action, *QUEUE])
+                with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+                    status, calls, replies, _, errors = self.drive(stream=pending,
+                        output=BrokenRecordedOutput(), fixture=RECORDED_FIXTURE)
+                launch.assert_called_once()
+                self.assertEqual((status, len(calls)), (2, 2 if prefix else 1))
+                self.assertIn('receipt', replies[-1])
+                self.assertEqual(json.loads(errors.split('FENCED: ')[1].splitlines()[0])['last_reply'], replies[-1])
+                self.assertEqual(pending.read(), script(QUEUE).read())
+
+    def test_recorded_stale_presentations_after_explicit_transfer(self):
+        transfer = ['resale', *RECORDED_LIST,
+            'observe_resale_payment', 'recorded-list', 'ef' * 32, '8000', '"buyer-2"', 'pay', 'SUBMIT',
+            'bind_settlement', 'recorded-list', 'resale-claim', 'bind', 'SUBMIT',
+            'accept_resale', 'recorded-transfer', 'recorded-list', 'transfer', 'SUBMIT', 'quit']
+        answers = transfer + ['admission', 'view', 'issue-1', *RECORDED_AUTH, *RECORDED_CONSUME,
+            'view', 'issue-1', 'quit', 'resale', 'view_right', 'issue-1', 'quit', 'quit']
+        status, calls, replies, output, errors = self.drive(answers, fixture=RECORDED_FIXTURE)
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        recorded_parity(self, calls, replies, output)
+        self.assertEqual([r['error'] for r in replies if 'error' in r], [dict(code='STALE_VERSION')] * 2)
+        self.assertEqual(replies[4]['view'], replies[7]['view'])
+        self.assertEqual((replies[-1]['view']['right']['holder_role'],
+                          replies[-1]['view']['right']['version']), ('buyer-2', 2))
 
     def test_live_cross_surface_reconciliation_history_current_views_and_conflicts(self):
         fixture = HERE / 'fixtures/ticket_operations_session.json'
@@ -187,7 +252,7 @@ class SharedTicketConsoleTests(unittest.TestCase):
                 settlement_flags(self, reply.get('receipt', reply.get('view')))
 
     def test_already_fenced_client_rejects_exception_actions_before_writing_or_restarting(self):
-        for name, action in EXCEPTION_ACTIONS:
+        for name, action in EXCEPTION_ACTIONS + RECORDED_ACTIONS:
             with self.subTest(surface=name, operation=action[0]):
                 with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
                     client = TicketOperationsClient.launch(FIXTURE, cleanup_timeout=1)
@@ -208,7 +273,7 @@ class SharedTicketConsoleTests(unittest.TestCase):
                 self.assertIn('TicketDeskClientStateError', errors)
 
     def test_exception_declines_and_confirmation_interrupt_fence_queued_navigation(self):
-        for name, action in EXCEPTION_ACTIONS:
+        for name, action in EXCEPTION_ACTIONS + RECORDED_ACTIONS:
             for failure in (None, KeyboardInterrupt('confirmation'), OSError('input')):
                 with self.subTest(surface=name, operation=action[0], failure=failure):
                     prefix = script([name, *action[:-1]])

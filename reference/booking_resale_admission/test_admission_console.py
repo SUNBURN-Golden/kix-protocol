@@ -12,6 +12,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 from admission_console import main, run_console
+from fake_presentation_source import SyntheticPresentationFault
+from test_resale_console import RECORDED_FIXTURE, recorded_input_boundaries, recorded_parity
 from test_admission_session import assert_flags
 from test_ticket_operations_session import direct_graph, direct_call, outcome, snapshot
 from ticket_operations_client import TicketOperationsClient
@@ -25,6 +27,8 @@ AUTH = ['authorize_admission_inputs', *AUTH_ARGS, 'AUTHORIZE']
 CONSUME = ['consume_inputs', 'consume-1', 'issue-1', '1', 'gate-a', '11' * 32, 'consume-key', 'CONSUME']
 VIEW = ['view', 'issue-1']
 CLOCK = ['set_clock', 'clock', '1060000', 'expire', 'SET_CLOCK']
+RECORDED_AUTH = ['authorize_admission', 'ticket-1', 'recorded-entry', 'gate-a', '1060000', 'recorded-auth-key', 'AUTHORIZE']
+RECORDED_CONSUME = ['consume', 'ticket-1', 'recorded-consume', 'gate-a', 'recorded-consume-key', 'CONSUME']
 
 
 def script(lines):
@@ -55,6 +59,84 @@ class AdmissionConsoleTests(unittest.TestCase):
         self.assertTrue(client._process.stdout.closed)
         self.assertIsNotNone(client._process.poll())
         return status, calls, replies, output.getvalue(), errors.getvalue()
+
+    def test_recorded_admission_inputs_and_confirmation_boundaries(self):
+        for action, arguments in [(RECORDED_AUTH, dict(presentation_id='ticket-1',
+                admission_id='recorded-entry', gate_role='gate-a', expires_ms=1060000,
+                idempotency_key='recorded-auth-key')),
+                (RECORDED_CONSUME, dict(presentation_id='ticket-1', consume_id='recorded-consume',
+                gate_role='gate-a', idempotency_key='recorded-consume-key'))]:
+            recorded_input_boundaries(self, run_console, 'admission', action, arguments)
+
+    def test_recorded_admission_separate_actions_replay_and_conflicts(self):
+        answers = (HERE / 'fixtures/admission_console_recorded.txt').read_text().splitlines()
+        conflicts = []
+        for action in (RECORDED_AUTH, RECORDED_CONSUME):
+            changed = action.copy()
+            changed[2] = 'changed-binding'
+            conflicts += changed
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(
+                answers[:-1] + conflicts + ['view', 'issue-1', 'quit'], fixture=RECORDED_FIXTURE)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        recorded_parity(self, calls, replies, output)
+        self.assertEqual([c['operation'] for c in calls], ['authorize_admission', 'view', 'view',
+            'consume', 'view', 'authorize_admission', 'consume', 'view',
+            'authorize_admission', 'consume', 'view'])
+        self.assertEqual(replies[1]['view'], replies[2]['view'])
+        self.assertEqual(replies[2]['view']['phase'], 'AUTHORIZED')
+        self.assertIsNone(replies[2]['view']['consume_id'])
+        self.assertEqual(output.count('Declined; no request sent.'), 1)
+        for first, replay in ((0, 5), (3, 6)):
+            self.assertEqual(replies[replay]['receipt'],
+                replies[first]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual(replies[5]['receipt']['credential']['phase'], 'AUTHORIZED')
+        self.assertEqual((replies[7]['view']['phase'], replies[7]['view']['version']), ('CONSUMED', 2))
+        self.assertEqual([replies[i]['error'] for i in (8, 9)], [dict(code='IDEMPOTENCY_CONFLICT')] * 2)
+        self.assertEqual(replies[7]['view'], replies[10]['view'])
+        for reply in replies:
+            if 'error' not in reply:
+                assert_flags(self, reply.get('receipt', reply.get('view')))
+
+    def test_recorded_authorization_alone_and_consume_never_auto_authorizes(self):
+        for action, code, phase in ((RECORDED_AUTH, None, 'AUTHORIZED'),
+                                    (RECORDED_CONSUME, 'ADMISSION_REQUIRED', 'ELIGIBLE')):
+            status, calls, replies, output, errors = self.drive(
+                action + ['view', 'issue-1', 'quit'], fixture=RECORDED_FIXTURE)
+            self.assertEqual(status, int(code is not None))
+            self.assertEqual([c['operation'] for c in calls], [action[0], 'view'])
+            recorded_parity(self, calls, replies, output)
+            if code:
+                self.assertEqual(replies[0]['error'], dict(code=code))
+            self.assertEqual(replies[-1]['view']['phase'], phase)
+            self.assertIsNone(replies[-1]['view']['consume_id'])
+
+    def test_recorded_presentation_missing_and_faults_preserve_observations(self):
+        for action in (RECORDED_AUTH, RECORDED_CONSUME):
+            for kind in ('missing', 'ERROR', 'TIMEOUT'):
+                value = json.loads(RECORDED_FIXTURE.read_text())
+                value['presentations'] = ([] if kind == 'missing' else [dict(
+                    operation=action[0], presentation_id='ticket-1', fault=SyntheticPresentationFault[kind].value)])
+                with self.subTest(operation=action[0], kind=kind), tempfile.TemporaryDirectory() as temp:
+                    fixture = Path(temp) / 'source.json'
+                    fixture.write_text(json.dumps(value))
+                    status, calls, replies, output, errors = self.drive(
+                        ['view', 'issue-1'] + action + ['view', 'issue-1', 'quit'], fixture=fixture)
+                    self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+                    recorded_parity(self, calls, replies, output, fixture)
+                    self.assertEqual(replies[1]['error']['type'],
+                        'PresentationNotFound' if kind == 'missing' else 'PresentationSourceError')
+                    self.assertEqual(replies[0]['view'], replies[2]['view'])
+
+    def test_recorded_admission_documented_subprocess(self):
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'admission_console.py'),
+            '--fixture', str(RECORDED_FIXTURE), '--cleanup-timeout', '1'],
+            input=(HERE / 'fixtures/admission_console_recorded.txt').read_text(),
+            text=True, capture_output=True, timeout=10, env=os.environ.copy())
+        self.assertEqual((result.returncode, result.stderr), (0, ''))
+        self.assertIn('Declined; no request sent.', result.stdout)
+        self.assertIn('"phase": "CONSUMED"', result.stdout)
 
     def test_fulfillment_prompt_exact_request_decline_and_original_errors(self):
         # Opaque caller values prove the UI neither checks eligibility nor assembles
@@ -394,7 +476,7 @@ class AdmissionConsoleTests(unittest.TestCase):
             self.assertEqual(status, 0)
             client.request.assert_not_called()
             self.assertIn('input_error=', output.getvalue())
-        status, calls, replies, output, errors = self.drive(['authorize', 'consume', 'quit'])
+        status, calls, replies, output, errors = self.drive(['authorize', 'unsupported', 'quit'])
         self.assertEqual((status, calls, errors), (0, [], ''))
         # Integer above float's exact range goes unchanged to existing semantic validation.
         status, calls, replies, output, errors = self.drive(

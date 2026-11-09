@@ -13,6 +13,7 @@ from ticket_operations_client import TicketOperationsClient
 # Prompt order is part of the documented terminal interface, not a wire catalogue.
 _FIELDS = {
     'adopt_issued_from_booking': ('reservation_id', 'right_id'),
+    'list_resale': ('offer_id', 'listing_id'),
     'list_resale_inputs': ('listing_id', 'right_id', 'version', 'seller_role',
                            'recipient_role', 'amount', 'expires_ms', 'reservation_id'),
     'hold_buy': ('hold_id', 'listing_id', 'buyer_role'),

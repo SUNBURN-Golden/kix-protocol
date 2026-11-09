@@ -2481,6 +2481,7 @@ service validates supported ranges, ownership and timing.
 | Action | Prompt order before the mutation key/approval |
 |---|---|
 | `adopt_issued_from_booking` | Plain-text `reservation_id`, `right_id`; see [guided fulfillment](#guided-local-fulfillment-in-the-shared-console) |
+| `list_resale` | Plain-text `offer_id`, `listing_id`; see [recorded ticket actions](#recorded-offers-and-presentations-in-the-ticket-console) |
 | `list_resale_inputs` | `listing_id`, `right_id`, `version`, `seller_role`, `recipient_role`, `amount`, `expires_ms`, `reservation_id` |
 | `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
 | `release_hold` | `hold_id`, `buyer_role` |
@@ -2628,6 +2629,8 @@ last for mutations; no value is copied from a view or earlier reply.
 | Action | Prompt order | Required confirmation |
 |---|---|---|
 | `adopt_issued_from_booking` | `reservation_id`, `right_id`, `idempotency_key`; see [guided fulfillment](#guided-local-fulfillment-in-the-shared-console) | literal `ADOPT` |
+| `authorize_admission` | `presentation_id`, `admission_id`, `gate_role`, integer `expires_ms`, `idempotency_key` | literal `AUTHORIZE` |
+| `consume` | `presentation_id`, `consume_id`, `gate_role`, `idempotency_key` | literal `CONSUME` |
 | `authorize_admission_inputs` | `admission_id`, `right_id`, `version`, `holder_role`, `gate_role`, `request`, `expires_ms`, `idempotency_key` | literal `AUTHORIZE` |
 | `consume_inputs` | `consume_id`, `right_id`, `version`, `gate_role`, `request`, `idempotency_key` | literal `CONSUME` |
 | `reconcile` | `right_id`, `idempotency_key` | literal `RECONCILE` |
@@ -3364,3 +3367,77 @@ synthetic product values only. Product policy remains **UNDETERMINED — Astra/U
 legal/accounting treatment remains **UNDETERMINED — User/designated advisers**.
 No real payments/refunds, booking confirmation, settlement, public endpoint or
 production readiness. [Actual results, coverage and pending review/CI gates](../../validation/2026-11-08-plan-plan-local-commerce-calculation-console/README.md).
+
+
+## Recorded offers and presentations in the ticket console
+
+The resale and admission menus (standalone or delegated from
+`shared_ticket_console.py`) expose the existing local service selectors
+`resale.list_resale`, `admission.authorize_admission` and `admission.consume`.
+These are local Python selectors, with no new protocol command or query.
+All three use the existing `TicketOperationsClient.request()` transport.
+
+| Action | Caller fields in prompt order | Confirmation |
+|---|---|---|
+| Resale `list_resale` | `offer_id`, `listing_id`, `idempotency_key` | `SUBMIT` |
+| Admission `authorize_admission` | `presentation_id`, `admission_id`, `gate_role`, `expires_ms`, `idempotency_key` | `AUTHORIZE` |
+| Admission `consume` | `presentation_id`, `consume_id`, `gate_role`, `idempotency_key` | `CONSUME` |
+
+Every field is required. Identifiers/roles/keys are plain text without surrounding
+whitespace; `expires_ms` uses decimal integer digits. No IDs, key, gate role or
+expiry is inferred or defaulted. The entire `proposed=` request contains caller
+inputs only and appears before literal confirmation. Decline or incomplete input
+sends nothing. A confirmation sends exactly one request; consumption requires a
+separate selection and `CONSUME`, even after `AUTHORIZE`. Manual `_inputs` actions
+remain available with their existing prompt order.
+
+Explicitly select a synthetic combined desk fixture at launch. The runnable
+examples below reuse the populated
+[fixture](fixtures/ticket_operations_session.json) unchanged: `fixture_version: 1`,
+`provenance: MOCK_GATE_ONLY`, `setup`, `offers`, and `presentations`. Offer
+`offer-1` supplies `issue-1` listing inputs. Presentation `ticket-1` has separately
+keyed `authorize_admission` and `consume` records; `recipient-1` is a recorded
+recipient authorization input. Each source entry retains its selector and exactly
+one `recorded_text` or `fault` payload. Fixture structure is checked by the loader;
+source parsing and adapter validation occur on explicit invocation. The console
+does no source discovery, lookup preview or automatic read.
+
+Run from the repository root (each exits 0):
+
+```bash
+python3 -B reference/booking_resale_admission/resale_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/resale_console_recorded.txt
+python3 -B reference/booking_resale_admission/admission_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/admission_console_recorded.txt
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_recorded.txt
+```
+
+The [resale answers](fixtures/resale_console_recorded.txt) list, explicitly view,
+cancel, then explicitly reconfirm the original listing key. The replay receipt
+retains `LISTED`, `duplicate: true`, `applied: null`; the selected current view
+remains `CANCELLED`. The [admission answers](fixtures/admission_console_recorded.txt)
+authorize, view, decline consumption and view the unchanged authorization, then
+separately select and confirm consumption. Reconfirming both original actions
+returns their historical receipts; the final explicit view remains `CONSUMED`.
+The [shared answers](fixtures/shared_ticket_console_recorded.txt) combine those
+actions and booking/settlement views using one child across navigation. It
+explicitly cancels the listing before authorization; navigation sends no requests.
+
+The complete `desk=` envelope remains primary. Missing/source-fault and stale
+presentation errors retain their service selectors and details. Replay fetches
+again through the configured source, without a console cache. Transport
+uncertainty or terminal/display failure fences the session with no retry or
+replacement child. These are source-informed synthetic in-memory composition
+examples, not evidence of identity, current authority, chain finality, provider
+verification or production readiness. Product policy remains **UNDETERMINED —
+Astra/User**; legal effects remain **UNDETERMINED — User/legal**. No runtime is
+activated. See the [builder validation record](../../validation/2026-11-09-plan-local-recorded-ticket-console/README.md)
+for coverage, actual local results and remaining non-author exact-HEAD review and
+KTX/KIX CI gates.

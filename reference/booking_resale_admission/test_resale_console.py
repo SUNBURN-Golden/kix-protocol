@@ -13,7 +13,10 @@ from unittest.mock import Mock, patch
 
 from resale_console import main, run_console
 from ticket_operations_client import TicketOperationsClient
-from ticket_operations_cli import dispatch_request
+from ticket_operations_cli import dispatch_request, _DOMAIN_ERRORS, _error
+from resale_offer_source import ResaleOfferSourceError
+from fake_resale_offer_source import SyntheticResaleOfferFault
+from presentation_source import PresentationSourceError
 from ticket_operations_fixture import load_fixture
 
 HERE = Path(__file__).resolve().parent
@@ -26,10 +29,71 @@ PAY_INPUT = ['observe_resale_payment', 'caller-listing', 'ef' * 32, '8000', 'nul
 PAY = ['observe_recorded_payment', 'payment-1', 'list-1', 'pay', 'SUBMIT']
 ACCEPT = ['accept_resale', 'transfer', 'list-1', 'transfer-key', 'SUBMIT']
 VIEW = ['view', 'list-1']
+RECORDED_FIXTURE = HERE / 'fixtures/ticket_operations_session.json'
+RECORDED_LIST = ['list_resale', 'offer-1', 'recorded-list', 'recorded-list-key', 'SUBMIT']
 
 
 def script(lines):
     return io.StringIO('\n'.join(lines) + '\n')
+
+
+def recorded_parity(test, calls, replies, output, fixture=RECORDED_FIXTURE):
+    """Compare complete envelopes against dispatch on an equivalent fresh graph."""
+    control = load_fixture(fixture)
+    expected = []
+    for row in calls:
+        try:
+            expected.append(dispatch_request(control, row))
+        except (*_DOMAIN_ERRORS, ResaleOfferSourceError, PresentationSourceError) as error:
+            expected.append(_error(row['surface'], row['operation'], error))
+    test.assertEqual(replies, expected)
+    displayed = [json.JSONDecoder().raw_decode(part)[0] for part in output.split('desk=')[1:]]
+    test.assertEqual(displayed, replies)
+    test.assertIn('MOCK_GATE_ONLY', output)
+    test.assertIn('UNDETERMINED', output)
+
+
+def recorded_input_boundaries(test, runner, surface, action, arguments):
+    """New selector composition gap: exact forwarding, approvals and every prompt."""
+    request = dict(surface=surface, operation=action[0], arguments=arguments)
+    reply = dict(surface=surface, operation=action[0], receipt=dict(duplicate=False, applied=True))
+    for approval in ('no', action[-1].lower(), ' ' + action[-1],
+                     'CONSUME' if action[-1] == 'AUTHORIZE' else 'AUTHORIZE'):
+        client, output, errors = Mock(), io.StringIO(), io.StringIO()
+        client.request.return_value = reply
+        status = runner(client, input_stream=script(action[:-1] + [approval] + action + ['quit']),
+                        output_stream=output, error_stream=errors)
+        test.assertEqual((status, errors.getvalue()), (0, ''))
+        client.request.assert_called_once_with(request)
+        test.assertEqual(output.getvalue().count('proposed=' + json.dumps(request, sort_keys=True)), 2)
+        test.assertIn('desk=' + json.dumps(reply, sort_keys=True), output.getvalue())
+        positions = [output.getvalue().index(name + ':') for name in arguments]
+        test.assertEqual(positions, sorted(positions))
+    for index, name in enumerate(arguments, start=1):
+        invalids = ('', ' padded ', '-1', '1.0', '1e3', ' 1', '9' * 5000) if name == 'expires_ms' else ('', ' padded ')
+        for value in invalids:
+            with test.subTest(operation=action[0], field=name, value=value[:20]):
+                client, output = Mock(), io.StringIO()
+                test.assertEqual(runner(client, input_stream=script(action[:index] + [value, 'quit']),
+                    output_stream=output, error_stream=io.StringIO()), 0)
+                client.request.assert_not_called()
+                test.assertIn('input_error=', output.getvalue())
+                test.assertNotIn('proposed=', output.getvalue())
+    for count in range(1, len(action)):
+        for failure in (None, KeyboardInterrupt('recorded input'), OSError('recorded input')):
+            with test.subTest(operation=action[0], boundary=count, failure=type(failure).__name__):
+                prefix = script(action[:count])
+                class BrokenInput:
+                    def readline(self):
+                        line = prefix.readline()
+                        if not line and failure is not None:
+                            raise failure
+                        return line
+                client, errors = Mock(), io.StringIO()
+                test.assertEqual(runner(client, input_stream=BrokenInput(),
+                    output_stream=io.StringIO(), error_stream=errors), 2)
+                client.request.assert_not_called()
+                test.assertIn('FENCED:', errors.getvalue())
 
 
 class ResaleConsoleTests(unittest.TestCase):
@@ -66,6 +130,52 @@ class ResaleConsoleTests(unittest.TestCase):
             self.assertEqual(row['surface'], 'resale')
         self.assertIn('MOCK_GATE_ONLY', output)
         self.assertIn('UNDETERMINED', output)
+
+    def test_recorded_listing_inputs_and_confirmation_boundaries(self):
+        recorded_input_boundaries(self, run_console, 'resale', RECORDED_LIST, dict(
+            offer_id='offer-1', listing_id='recorded-list', idempotency_key='recorded-list-key'))
+
+    def test_recorded_listing_real_child_replay_and_changed_binding(self):
+        answers = (HERE / 'fixtures/resale_console_recorded.txt').read_text().splitlines()
+        conflict = RECORDED_LIST.copy()
+        conflict[2] = 'changed-list'
+        with patch('ticket_operations_client.subprocess.Popen', wraps=subprocess.Popen) as launch:
+            status, calls, replies, output, errors = self.drive(
+                answers[:-1] + conflict + ['view', 'recorded-list', 'quit'], fixture=RECORDED_FIXTURE)
+        launch.assert_called_once()
+        self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+        recorded_parity(self, calls, replies, output)
+        self.assertEqual([c['operation'] for c in calls], ['list_resale', 'view', 'cancel_listing',
+            'view', 'list_resale', 'view', 'list_resale', 'view'])
+        self.assertEqual(replies[4]['receipt'], replies[0]['receipt'] | dict(duplicate=True, applied=None))
+        self.assertEqual(replies[4]['receipt']['listing']['phase'], 'LISTED')
+        self.assertEqual(replies[5]['view']['phase'], 'CANCELLED')
+        self.assertEqual(replies[6]['error'], dict(code='IDEMPOTENCY_CONFLICT'))
+        self.assertEqual(replies[5]['view'], replies[7]['view'])
+
+    def test_recorded_offer_missing_and_source_faults_preserve_observations(self):
+        for kind in ('missing', 'ERROR', 'TIMEOUT'):
+            value = json.loads(RECORDED_FIXTURE.read_text())
+            value['offers'] = ([] if kind == 'missing' else [dict(offer_id='offer-1', fault=SyntheticResaleOfferFault[kind].value)])
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temp:
+                fixture = Path(temp) / 'source.json'
+                fixture.write_text(json.dumps(value))
+                status, calls, replies, output, errors = self.drive(
+                    ['view_right', 'issue-1'] + RECORDED_LIST + ['view_right', 'issue-1', 'quit'], fixture=fixture)
+                self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+                recorded_parity(self, calls, replies, output, fixture)
+                self.assertEqual(replies[1]['error']['type'],
+                    'ResaleOfferNotFound' if kind == 'missing' else 'ResaleOfferSourceError')
+                self.assertEqual(replies[0]['view'], replies[2]['view'])
+
+    def test_recorded_listing_documented_subprocess(self):
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'resale_console.py'),
+            '--fixture', str(RECORDED_FIXTURE), '--cleanup-timeout', '1'],
+            input=(HERE / 'fixtures/resale_console_recorded.txt').read_text(),
+            text=True, capture_output=True, timeout=10, env=os.environ.copy())
+        self.assertEqual((result.returncode, result.stderr), (0, ''))
+        self.assertIn('"duplicate": true', result.stdout)
+        self.assertIn('"phase": "CANCELLED"', result.stdout)
 
     def test_fulfillment_prompt_exact_request_decline_and_original_errors(self):
         # Opaque caller values prove the UI neither checks eligibility nor assembles
