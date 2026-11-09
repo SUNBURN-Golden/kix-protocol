@@ -1,0 +1,8 @@
+['python3.12', 'scripts/check_docs_index.py']
+docs index ok: scanned=385 indexed=350 allowlisted=35
+['git', 'diff', '--check']
+['python3.12', 'validation/2026-11-10-plan-local-supply-live-console/verify_preservation.py']
+runtime/crates/kix-kernel/src/lib.rs 69564b166f0c27f9af5d8422f0a466b18d74c20f matches before/after and required lock
+runtime/crates/kix-kernel/tests/quarantine_capacity.rs b607996c83a119c349f1cc90469ac1ba82764e20 matches before/after and required lock
+110 protected files: identical SHA-256 manifest and file set before/after
+CLI, service, model, CI, .aiops, task documents and locked paths unchanged from HEAD

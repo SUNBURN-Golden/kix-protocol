@@ -16,8 +16,10 @@ ROOT = Path(__file__).resolve().parent
 
 
 class SupplyConsoleSubprocessTests(unittest.TestCase):
+    mode_args = ()
+
     def run_console(self, data=b'', *args):
-        return subprocess.run([sys.executable, str(ROOT / 'supply_console.py'), *args],
+        return subprocess.run([sys.executable, str(ROOT / 'supply_console.py'), *self.mode_args, *args],
                               input=data, capture_output=True, timeout=10,
                               env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
 
@@ -74,10 +76,26 @@ class SupplyConsoleSubprocessTests(unittest.TestCase):
             process = self.run_console(b'', *args)
             self.assertEqual((process.returncode, process.stdout), (2, b''))
             self.assertIn(b'usage:', process.stderr)
-        process = subprocess.run([sys.executable, '-c', 'import supply_console'], cwd=ROOT,
+        process = subprocess.run([sys.executable, '-c', 'import supply_console, supply_client'], cwd=ROOT,
                                  capture_output=True, timeout=10,
                                  env={**os.environ, 'PYTHONDONTWRITEBYTECODE': '1'})
         self.assertEqual((process.returncode, process.stdout, process.stderr), (0, b'', b''))
+
+
+class SupplyConsoleLiveSubprocessTests(SupplyConsoleSubprocessTests):
+    # Replay every existing terminal regression across the real CLI boundary.
+    mode_args = ('--mode', 'subprocess', '--cleanup-timeout', '1')
+
+    def test_explicit_mode_usage_errors(self):
+        for args in (('--mode', 'subprocess'),
+                     ('--mode', 'subprocess', '--cleanup-timeout', '0'),
+                     ('--mode', 'subprocess', '--cleanup-timeout', 'nan'),
+                     ('--mode', 'subprocess', '--cleanup-timeout', 'inf'),
+                     ('--mode', 'in-process', '--cleanup-timeout', '1')):
+            process = subprocess.run([sys.executable, str(ROOT / 'supply_console.py'), *args],
+                                     input=b'quit\n', capture_output=True, timeout=10)
+            self.assertEqual((process.returncode, process.stdout), (2, b''))
+            self.assertIn(b'usage:', process.stderr)
 
 
 if __name__ == '__main__':

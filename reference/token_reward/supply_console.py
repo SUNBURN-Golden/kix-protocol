@@ -1,10 +1,11 @@
-"""Compose synthetic supply events and compare one returned report in memory."""
+"""Compose synthetic supply events using in-process or explicit subprocess mode."""
 
 import argparse
 import re
 import sys
 
 from reward_fixture import FixtureError, decode_json, validate_json
+from supply_client import SupplyClient, validate_cleanup_timeout
 from supply_reconciliation import NOTICE, dispatch_request, supply_output
 from token_reward_model import TokenRewardError, _canonical, _money, _supply_event
 
@@ -17,7 +18,8 @@ class _Cancelled(Exception):
     pass
 
 
-def run_console(*, input_stream, output_stream, error_stream) -> int:
+def run_console(*, input_stream, output_stream, error_stream,
+                mode='in-process', cleanup_timeout=None) -> int:
     """Use literal confirmations; never dispatch previews, edits or retries.
 
     0: clean quit (declines/cancellation allowed); 1: sticky dispatch domain
@@ -26,6 +28,7 @@ def run_console(*, input_stream, output_stream, error_stream) -> int:
     events = active_report = active_comparison = None
     status = 0
     operation = None
+    client = None
 
     def tell(message):
         print(message, file=error_stream, flush=True)
@@ -83,6 +86,12 @@ def run_console(*, input_stream, output_stream, error_stream) -> int:
         emit(supply_output(operation, error=detail))
 
     try:
+        if mode not in ('in-process', 'subprocess'):
+            raise ValueError('mode must be in-process or subprocess')
+        if mode == 'subprocess':
+            client = SupplyClient(cleanup_timeout=cleanup_timeout)
+        elif cleanup_timeout is not None:
+            raise ValueError('cleanup_timeout requires subprocess mode')
         tell('Local supply console — MOCK_TOKEN_REWARD_ONLY / CALCULATION_ONLY / '
              'SYNTHETIC_SUPPLY_FIGURE\n' + NOTICE + '\n'
              'State is in memory. :cancel abandons the current action. '
@@ -151,7 +160,17 @@ def run_console(*, input_stream, output_stream, error_stream) -> int:
 
             # The only dispatcher call. Failures never cause an automatic retry.
             try:
-                reply = dispatch_request(request)
+                if client is None:
+                    reply = dispatch_request(request)
+                else:
+                    response = client.request(request)
+                    reply = response.reply
+                    if response.returncode:
+                        emit(reply)
+                        if response.returncode == 2:
+                            return 2
+                        status = max(status, 1)
+                        continue
             except TokenRewardError as error:
                 status = max(status, 1)
                 emit(supply_output(operation, error={'code': error.code}))
@@ -173,10 +192,31 @@ def run_console(*, input_stream, output_stream, error_stream) -> int:
         except (Exception, KeyboardInterrupt):
             pass
         return 2
+    finally:
+        if client is not None:
+            try:
+                client.close()
+            except (Exception, KeyboardInterrupt) as error:
+                try:
+                    tell('terminal_cleanup_error=' + type(error).__name__)
+                except (Exception, KeyboardInterrupt):
+                    pass
+                return 2
 
 
 def main(argv=None) -> int:
-    argparse.ArgumentParser(description=__doc__).parse_args(argv)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--mode', choices=('in-process', 'subprocess'), default='in-process')
+    parser.add_argument('--cleanup-timeout', type=float,
+                        help='required finite positive cleanup bound in subprocess mode only')
+    args = parser.parse_args(argv)
+    if args.mode == 'subprocess':
+        try:
+            validate_cleanup_timeout(args.cleanup_timeout)
+        except ValueError as error:
+            parser.error(str(error))
+    elif args.cleanup_timeout is not None:
+        parser.error('--cleanup-timeout requires --mode subprocess')
     # Incremental strict UTF-8 decoding: invalid later input cannot be read ahead
     # by a buffered text wrapper before an earlier confirmed action completes.
     class UTF8Lines:
@@ -184,7 +224,8 @@ def main(argv=None) -> int:
             return sys.stdin.buffer.readline().decode('utf-8')
 
     return run_console(input_stream=UTF8Lines() if hasattr(sys.stdin, 'buffer') else sys.stdin,
-                       output_stream=sys.stdout, error_stream=sys.stderr)
+                       output_stream=sys.stdout, error_stream=sys.stderr,
+                       mode=args.mode, cleanup_timeout=args.cleanup_timeout)
 
 
 if __name__ == '__main__':

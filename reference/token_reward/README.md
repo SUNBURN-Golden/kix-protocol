@@ -8,14 +8,22 @@ Run the separate, stdlib-only terminal console from the repository root:
 python3 reference/token_reward/supply_console.py
 # Replay a file-free composition journey (no JSON request file required):
 python3 reference/token_reward/supply_console.py < reference/token_reward/fixtures/supply_console_match.txt
+# Explicit subprocess mode (1 second is an example caller-selected cleanup bound):
+python3 reference/token_reward/supply_console.py --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/supply_console_match.txt
 ```
 
-`supply_cli.py` retains its existing file/stdin interface. The console calls the
-same `supply_reconciliation.dispatch_request` for each explicitly confirmed
-calculation. It keeps selections only in memory; starting a new process starts
+`supply_cli.py` retains its existing file/stdin interface. The default
+`--mode in-process` calls `supply_reconciliation.dispatch_request` for each
+explicitly confirmed calculation. `--mode subprocess` uses the reusable
+[`SupplyClient`](supply_client.py) to launch one `supply_cli.py --request -`
+process for each confirmed calculation, close stdin and await its complete reply
+and exit. It keeps selections only in memory; starting a new console starts
 with no events, report or comparison selected. The importable entry points are
-`run_console(*, input_stream, output_stream, error_stream) -> int` and
-`main(argv=None) -> int`. No arguments are required or accepted.
+`run_console(*, input_stream, output_stream, error_stream, mode="in-process",
+cleanup_timeout=None) -> int` and `main(argv=None) -> int`. A finite positive
+`--cleanup-timeout SECONDS` is required in subprocess mode and rejected in
+in-process mode. It bounds cleanup waits only; calculations have no implicit
+response deadline. Interrupt the caller if a child hangs.
 
 | Menu action | Explicit input / effect |
 |---|---|
@@ -93,6 +101,55 @@ Hypothetical events perform no minting, burning, allocation, payout control,
 chain query, persistence, runtime activation or protocol command. Local checks
 are builder evidence; A2 non-author exact-head review and completed/success KTX
 and KIX workflows remain delivery gates.
+
+### Reusable supply subprocess client
+
+With `reference/token_reward` on the import path:
+
+```python
+from supply_client import SupplyClient
+
+# Caller-selected cleanup bound; all quantities are synthetic examples.
+with SupplyClient(cleanup_timeout=1) as client:
+    report = client.request({"operation": "supply_report", "arguments": {"events": []}})
+    if report.returncode == 0:
+        comparison = client.request({"operation": "reconcile_supply", "arguments": {
+            "offchain": report.reply["result"], "chain_supply": 0}})
+```
+
+`SupplyResponse` retains `reply`, `returncode`, raw binary `stdout` and `stderr`.
+No import, construction, preview, edit, cancellation or decline launches a child.
+The fixed argv uses the current Python interpreter and resolved sibling CLI,
+binary pipes and `shell=False`. `communicate` closes stdin, drains both outputs
+and reaps the child before accepting a result. No persistent JSONL session is
+introduced. Requests and complete reports retain their JSON content and order.
+The client validates envelope/event shapes, types, labels, operation, returned
+events and supplied chain figure. Returned `offchain_supply` must equal the
+submitted report's `layer_supply`; disagreement fences the client as transport
+uncertainty. Arithmetic and classifications remain in the existing service/model.
+This validation is not report authentication.
+
+| Child exit | Required payload | Client / console behavior |
+|---|---|---|
+| `0` | Complete `result`, including alarming results | Return/emit unchanged; select result |
+| `1` | `error` with string `code` | Return/emit unchanged; console status stays at least `1`; another explicit action is allowed |
+| `2` | `error` with string `type` and `message` | Return/emit unchanged; client becomes terminal; console exits `2` |
+| Other exit, signal, malformed/mismatched reply or interrupted/failed transport | `SupplyTransportUncertainty` | Permanently fence client; console exits `2` |
+
+Strict JSON decoding rejects duplicate keys, invalid UTF-8/Unicode, non-finite
+numbers and trailing documents. Exact reply fields and exit/payload agreement
+are required. Uncertainty retains failure phase, submitted bytes, observed output
+bytes and exit status (when known). Cleanup terminates, drains and reaps, with
+bounded kill escalation; cleanup cannot authorize another request. `close()` is
+idempotent after successful cleanup. Busy, closed, terminal or fenced clients
+raise `SupplyClientStateError` before launching. There is no polling, automatic
+retry, restart or in-process fallback.
+
+[Both-mode transcripts and client integration evidence](../../validation/2026-11-10-plan-local-supply-live-console/README.md)
+cover these local boundaries. No chain lookup, execution, receipt digest, public
+schema, protocol command, new dependency or runtime activation is introduced.
+Supply policy and operational responses remain **UNDETERMINED — Astra/User**;
+`stop_payout` remains reported data.
 
 ## Local supply reconciliation
 
