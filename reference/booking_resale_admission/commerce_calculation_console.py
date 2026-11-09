@@ -31,18 +31,65 @@ def _load(path):
         raise ConsoleInputError(str(error)) from error
 
 
+def _integer(prompt, label):
+    value = _parse(prompt(label).encode('utf-8'))
+    if type(value) is not int:
+        raise ConsoleInputError(label + ' must be an explicit CE1 integer')
+    return value
+
+
+def _compose_quote(prompt):
+    """Encode caller-supplied schema 2 input, without calculating or repairing it."""
+    from calculated_booking_quote_source import _calculator
+
+    try:
+        commerce = _calculator()['commerce']
+        candidate = dict(schemaVersion=commerce.SCHEMA, orderId=prompt('orderId'),
+                         orderVersion=_integer(prompt, 'orderVersion'))
+        candidate['scope'] = {field: prompt('scope.' + field)
+                              for field in ('issuerId', 'eventId', 'performanceId')}
+        candidate['policyRef'] = prompt('policyRef')
+        candidate['expiresAt'] = _integer(prompt, 'expiresAt (Unix milliseconds)')
+        count = _integer(prompt, 'Explicit line count')
+        if not 1 <= count <= commerce.MAX_LINES:
+            raise ConsoleInputError('line count outside existing MAX_LINES bound')
+        candidate['lines'] = []
+        for index in range(count):
+            prefix = 'lines[' + str(index) + '].'
+            line = {field: prompt(prefix + field) for field in ('lineId', 'inventoryId')}
+            asset = {field: prompt(prefix + 'gross.asset.' + field)
+                     for field in ('namespace', 'reference')}
+            asset['decimals'] = _integer(prompt, prefix + 'gross.asset.decimals')
+            asset['maxAtoms'] = prompt(prefix + 'gross.asset.maxAtoms')
+            line['gross'] = dict(asset=asset, atoms=prompt(prefix + 'gross.atoms'))
+            candidate['lines'].append(line)
+        count = _integer(prompt, 'Explicit discount count')
+        if not 0 <= count <= commerce.MAX_RULES:
+            raise ConsoleInputError('discount count outside existing MAX_RULES bound')
+        candidate['discounts'] = []
+        for index in range(count):
+            prefix = 'discounts[' + str(index) + '].'
+            rule = {field: prompt(prefix + field) for field in ('ruleId', 'bearerRef', 'kind', 'value')}
+            eligible = _parse(prompt(prefix + 'eligibleLineIds (JSON string array)').encode('utf-8'))
+            if type(eligible) is not list or any(type(item) is not str for item in eligible):
+                raise ConsoleInputError('eligibleLineIds must be an explicit JSON array of strings')
+            rule['eligibleLineIds'] = eligible
+            cap = _parse(prompt(prefix + 'capAtoms (JSON string or null)').encode('utf-8'))
+            if cap is not None and type(cap) is not str:
+                raise ConsoleInputError('capAtoms must be an explicit JSON string or null')
+            rule['capAtoms'] = cap
+            candidate['discounts'].append(rule)
+        return codec().canonical_bytes(candidate)
+    except (_calculator_rejection(), UnicodeError) as error:
+        raise ConsoleInputError(str(error)) from error
+
+
 def _compose_legs(prompt):
     """Freeze explicit local input; business validation belongs to the driver."""
     from calculated_booking_quote_source import _calculator
 
-    def integer(label):
-        value = _parse(prompt(label).encode('utf-8'))
-        if type(value) is not int:
-            raise ConsoleInputError(label + ' must be an explicit CE1 integer')
-        return value
-
     try:
-        count = integer('Explicit payment leg count')
+        count = _integer(prompt, 'Explicit payment leg count')
         if not 0 <= count <= _calculator()['commerce'].MAX_LEGS:
             raise ConsoleInputError('payment leg count outside existing MAX_LEGS bound')
         candidate = []
@@ -51,7 +98,7 @@ def _compose_legs(prompt):
             leg = {field: prompt(prefix + field) for field in ('legId', 'providerRef', 'routeRef')}
             asset = {field: prompt(prefix + 'amount.asset.' + field)
                      for field in ('namespace', 'reference')}
-            asset['decimals'] = integer(prefix + 'amount.asset.decimals')
+            asset['decimals'] = _integer(prompt, prefix + 'amount.asset.decimals')
             asset['maxAtoms'] = prompt(prefix + 'amount.asset.maxAtoms')
             leg['amount'] = dict(asset=asset, atoms=prompt(prefix + 'amount.atoms'))
             candidate.append(leg)
@@ -112,7 +159,7 @@ def run_console(client, *, input_stream, output_stream, error_stream):
               'Product policy: UNDETERMINED — Astra/User.\n'
               'Legal/accounting treatment: UNDETERMINED — User/designated advisers.', file=output_stream)
         while True:
-            print('Actions: load_quote, simulate_quote, load_legs, compose_legs, plan_payments, select_lines, '
+            print('Actions: load_quote, compose_quote, simulate_quote, load_legs, compose_legs, plan_payments, select_lines, '
                   'propose_line_refund, show, quit', file=output_stream)
             action = prompt('action')
             try:
@@ -125,6 +172,10 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                         raise ConsoleInputError('quote request must be an object')
                     quote_input = codec().canonical_bytes(value)
                     print('Quote input loaded; active quote, plan and line selections invalidated.', file=output_stream)
+                elif action == 'compose_quote':
+                    quote_input = quote = plan = refund = selected = None
+                    quote_input = _compose_quote(prompt)
+                    print('composed_quote=' + quote_input.decode('utf-8'), file=output_stream)
                 elif action == 'simulate_quote':
                     quote = plan = refund = selected = None
                     if quote_input is None:

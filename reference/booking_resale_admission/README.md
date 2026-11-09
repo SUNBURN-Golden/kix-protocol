@@ -3288,6 +3288,7 @@ Omit redirection for interactive use. Local controls:
 | Action | Explicit caller input / effect |
 |---|---|
 | `load_quote` | Path to a complete quote request JSON object; loads only |
+| `compose_quote` | Explicit order, scope, lines, assets and ordered discounts; previews the request, submits nothing |
 | `simulate_quote` | Shows full request, requires literal `SUBMIT_QUOTE` |
 | `load_legs` | Path to JSON array of existing payment legs; loads only |
 | `compose_legs` | Explicit count and every leg field; previews the complete array, submits nothing |
@@ -3296,7 +3297,7 @@ Omit redirection for interactive use. Local controls:
 | `propose_line_refund` | Retained full quote/plan and hashes, selected IDs, literal `SUBMIT_REFUND` |
 | `show`, `quit` | Local display/exit; no subprocess calculation |
 
-These are terminal controls, not new protocol commands. Every quote load attempt
+These are terminal controls, not new protocol commands. Every quote load or composition attempt
 (even identical or failed) clears active quote, plan, refund and line selection.
 Every legs load, composition or plan-input attempt clears plan, refund and line selection.
 Every new quote calculation clears the prior quote and dependents; every line
@@ -3305,6 +3306,60 @@ Failed replacement calculations cannot restore history as active state. `show`
 labels active hashes separately from historical successful exchanges. No implicit
 split, policy value, clock, file reload or allocation is supplied. Quote/plan
 outputs and arrays/atom strings pass unchanged into subsequent driver calls.
+
+To enter a quote without a JSON file, choose `compose_quote`. Enter these fields
+in order, using caller-supplied synthetic values:
+
+1. `orderId`, `orderVersion`, `scope.issuerId`, `scope.eventId`,
+   `scope.performanceId`, `policyRef`, `expiresAt` (Unix milliseconds).
+2. Explicit line count, `1` through the existing `MAX_LINES` bound (300).
+   For each line: `lineId`, `inventoryId`, `gross.asset.namespace`,
+   `gross.asset.reference`, `gross.asset.decimals`, `gross.asset.maxAtoms`,
+   `gross.atoms`. Supply the full asset specification for every line.
+3. Explicit discount count, `0` through the existing `MAX_RULES` bound (64).
+   For each rule in application order: `ruleId`, `bearerRef`, `kind` (`FIXED`
+   or `BPS`), `value`, `eligibleLineIds`, `capAtoms`.
+
+Version, expiry, counts and decimals use explicit CE1 integer tokens; booleans,
+fractions, exponents, negative zero and unsafe JSON integers are refused.
+`eligibleLineIds` is an explicit JSON string array, such as `["L2","L1"]`.
+`capAtoms` is a JSON string, such as `"5000"`, or the literal `null`; blank input
+supplies no default. Other fields are literal text with only line terminators
+removed. Enter atom and discount value strings without JSON quotes; BPS uses
+the existing basis-point string (for example `1000`), without conversion.
+Zero discounts explicitly produces `discounts=[]`. Schema version comes from
+the existing calculator (`kix:commerce:2`). Array order, duplicate identities,
+eligibility, asset compatibility and discount limits pass to driver validation;
+the console does not repair or retry a refused request.
+
+Composition immediately clears quote input, active quote, plan, refund and line
+selection, even on invalid input or EOF. Stored legs and historical exchanges
+remain process-local. Only a complete CE1-encoded candidate becomes quote input.
+The console prints `composed_quote=<complete request>` and returns to the menu.
+Choose `simulate_quote`, inspect the envelope, and type `SUBMIT_QUOTE` to
+calculate once. Payment planning and refund proposals still require their own
+`SUBMIT_PLAN` and `SUBMIT_REFUND` confirmations.
+
+Run a complete file-free quote, guided split plan and selected-line refund:
+
+```bash
+env -u PYTHONPATH PYTHONDONTWRITEBYTECODE=1 python3.12 -B \
+  reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_bundle_journey.txt
+```
+
+Other bundle transcripts use the same command: `commerce_console_bundle_precision.txt`
+(exact `9007199254740993` atoms), `commerce_console_bundle_free.txt` (explicit zero
+discounts/legs), `commerce_console_bundle_decline.txt` and
+`commerce_console_bundle_replacement.txt` exit 0.
+`commerce_console_bundle_boundaries.txt` exits 1 for seven explicit driver refusals
+covering duplicate identities, eligibility, mixed assets and excessive discounts.
+Equivalent guided/file requests produce identical request bytes, results, hashes
+and original refund routes. [Bundle composition evidence and pending delivery gates](../../validation/2026-11-09-plan-plan-local-bundle-quote-composer/README.md).
+This advances B03 pricing/discount and F03 refund calculation usability; capability
+grades remain unchanged. Product policy remains **UNDETERMINED — Astra/User**;
+tax/accounting treatment remains **UNDETERMINED — User/designated advisers**.
 
 To enter legs without a JSON file, choose `compose_legs`. Supply the explicit
 CE1 integer count from `0` through the existing driver's `MAX_LEGS` bound (16).
