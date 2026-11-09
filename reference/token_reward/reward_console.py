@@ -8,7 +8,7 @@ import sys
 from reward_cli import _error, dispatch_request
 from reward_client import RewardClient, RewardTransportUncertainty
 from reward_fixture import FixtureError, decode_json, exact_fields, load_fixture, validate_json
-from token_reward_model import TokenRewardError, _canonical
+from token_reward_model import SOURCE_FINALITY_FLAGS, TokenRewardError, _canonical
 
 
 # Prompt order only: dispatch and all economic predicates remain in the desk.
@@ -35,7 +35,7 @@ _APPROVAL_FIELDS = {'record_id', 'generation', 'authority_id', 'actor_type',
                     'action', 'scope_ref', 'evidence_refs'}
 _HINTS = {
     'reward_key': 'JSON object or :guided: program, source_op_id, recipient, kind',
-    'source_view': 'JSON object; complete caller snapshot, no defaults',
+    'source_view': 'JSON object or :guided; complete caller snapshot, no defaults',
     'approval_ref': 'JSON object or :guided; caller synthetic approval record',
     'window_closed': 'JSON boolean: true or false; caller assertion',
     'abuse_clear': 'JSON boolean: true or false',
@@ -55,6 +55,24 @@ def _compose_reward_key(prompt):
     """Collect caller text only; no identity generation or session access."""
     return {name: prompt(name + ' (verbatim string)')
             for name in ('program', 'source_op_id', 'recipient', 'kind')}
+
+
+def _compose_source_view(prompt):
+    """Collect synthetic source assertions; domain predicates stay in the FSM."""
+    value = {name: prompt(name + ' (verbatim string)') for name in ('phase', 'currency')}
+    for name in SOURCE_FINALITY_FLAGS:
+        flag = decode_json(prompt(name + ' (JSON boolean; explicit caller assertion)'))
+        if type(flag) is not bool:
+            raise _InputError(name + ' requires a JSON boolean')
+        value[name] = flag
+    extra = decode_json(prompt('additional source fields (JSON object; {} supplies none)'))
+    if type(extra) is not dict:
+        raise _InputError('additional source fields requires a JSON object')
+    collisions = set(value) & set(extra)
+    if collisions:
+        raise _InputError('additional source fields cannot overwrite: ' + ', '.join(sorted(collisions)))
+    value.update(extra)
+    return value
 
 
 def _compose_approval_ref(prompt):
@@ -149,6 +167,8 @@ def _run_console(send_request, *, state, input_stream, output_stream, error_stre
         if name in {'reward_key', 'source_view', 'approval_ref', 'window_closed', 'abuse_clear'}:
             if raw == ':guided' and name == 'reward_key':
                 value = _compose_reward_key(prompt)
+            elif raw == ':guided' and name == 'source_view':
+                value = _compose_source_view(prompt)
             elif raw == ':guided' and name == 'approval_ref':
                 value = _compose_approval_ref(prompt)
             else:

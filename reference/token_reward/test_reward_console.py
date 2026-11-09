@@ -40,6 +40,9 @@ READS = {'view', 'reward_ids', 'pool_view'}
 OPTIONALS = {'mark_eligible': {'abuse_kind', 'recipient_cap', 'program_cap'},
              'submit': {'budget_ceiling', 'execution_permit'}}
 STRUCTURED = {'reward_key', 'source_view', 'approval_ref', 'window_closed', 'abuse_clear'}
+SOURCE_FLAGS = ('funds_executed', 'bank_debit_observed', 'legal_debtor_bound',
+                'external_return_closed', 'durable')
+SOURCE_FIELDS = ('phase', 'currency') + SOURCE_FLAGS
 
 
 def answers(row, confirmation='SUBMIT'):
@@ -53,16 +56,20 @@ def answers(row, confirmation='SUBMIT'):
     return lines
 
 
-def guided_answers(row, confirmation='SUBMIT', *, guided=('reward_key', 'approval_ref')):
+def guided_answers(row, confirmation='SUBMIT', *, guided=('reward_key', 'source_view', 'approval_ref')):
     """Test-owned prompt sequence; preserve explicit omission and caller text."""
     lines = answers(row, confirmation)
     for name in reversed(ORDER[row['operation']]):
-        if name not in guided or name not in {'reward_key', 'approval_ref'}:
+        if name not in guided or name not in {'reward_key', 'source_view', 'approval_ref'}:
             continue
         index = 1 + ORDER[row['operation']].index(name)
         value = row['arguments'][name]
         if name == 'reward_key':
             composed = [value[k] for k in ('program', 'source_op_id', 'recipient', 'kind')]
+        elif name == 'source_view':
+            composed = [value['phase'], value['currency']]
+            composed += [_canonical(value[k]) for k in SOURCE_FLAGS]
+            composed += [_canonical({k: v for k, v in value.items() if k not in SOURCE_FIELDS})]
         else:
             composed = [value['record_id'], _canonical(value['generation'])]
             composed += [value[k] for k in ('authority_id', 'actor_type', 'action', 'scope_ref')]
@@ -90,6 +97,130 @@ def invalid_guided_inputs():
 
 class GuidedCompositionTests:
     """New composition paths, exercised with each existing desk harness."""
+
+    def test_source_guided_raw_parity(self):
+        for scenario in ('participation', 'cancellation'):
+            rows = requests(scenario)
+            raw = self.guided_drive([v for row in rows for v in answers(row)] + ['quit'])
+            for mixed in (False, True):
+                with self.subTest(scenario=scenario, mixed=mixed):
+                    lines = [v for i, row in enumerate(rows) for v in guided_answers(
+                        row, guided=() if mixed and i % 2 else ('source_view',))]
+                    status, calls, output, errors = self.guided_drive(lines + ['quit'])
+                    self.assertEqual((status, calls, errors), (0, rows, ''))
+                    self.assertEqual(printed('proposed', output), printed('proposed', raw[2]))
+                    self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+                    replies = self.parity(calls, output)
+                    if scenario == 'cancellation':
+                        self.assertEqual([r['view']['phase'] for r in replies if 'view' in r],
+                                         ['REVERSED', 'CLAWBACK_CLAIM'])
+                        refund = next(r['receipt'] for r in replies if r['operation'] == 'observe_krw_refund')
+                        self.assertEqual((refund['reward']['phase'], refund['reward']['krw_phase']),
+                                         ('ISSUED', 'KRW_REFUND_NOTED'))
+                        self.assertNotEqual(refund['effect']['krw_effect_id'], refund['reward']['token_effect_id'])
+
+    def test_source_metadata_preservation_and_fresh_snapshots(self):
+        rows = requests('participation')[:3]
+        # No metadata wrapper or identity extraction; each selection has its own assertions.
+        rows[0]['arguments']['source_view'] = {k: v for k, v in rows[0]['arguments']['source_view'].items()
+                                              if k in SOURCE_FIELDS}
+        extra = {'metadata': {'phase': 'CANCELLED', 'currency': None, 'funds_executed': True,
+                              'sequence': 9007199254740993, 'negative': -9007199254740993,
+                              'opaque': [None, False, '한글:e\u0301', {'durable': True}]},
+                 'source_op_id': 'opaque-does-not-replace-key', 'unwrapped': [3, 2, 1], 'nullable': None}
+        rows[2]['arguments']['source_view'].update(extra)
+        raw = self.guided_drive([v for row in rows for v in answers(row)] + ['quit'])
+        status, calls, output, errors = self.guided_drive([v for row in rows for v in guided_answers(row)] + ['quit'])
+        self.assertEqual((status, calls, errors), (0, rows, ''))
+        self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+        replies = self.parity(calls, output)
+        self.assertEqual(replies[0]['receipt']['reward']['source_view'], rows[0]['arguments']['source_view'])
+        self.assertEqual(replies[2]['receipt']['reward']['source_view'], rows[2]['arguments']['source_view'])
+        self.assertEqual(replies[2]['receipt']['reward']['source_op_id'],
+                         rows[0]['arguments']['reward_key']['source_op_id'])
+
+    def test_source_domain_refusal_parity(self):
+        # Reuse valid prefixes so all four selectors exercise the existing source predicate.
+        cancellation = requests('cancellation')
+        prefixes = [([], requests('participation')[0]),
+                    (requests('participation')[:2], requests('participation')[2]),
+                    (cancellation[:2], cancellation[2]),
+                    (cancellation[:9], cancellation[9])]
+        invalid = [('phase', v, 'SOURCE_NOT_COMMITTED') for v in ('', ' ', ' COMMITTED', 'COMMITTED ', 'CANCELLED')]
+        invalid += [('currency', v, 'CURRENCY_UNSUPPORTED') for v in ('', ' ', ' KRW', 'KRW ', 'USD')]
+        invalid += [(k, True, 'SOURCE_VIEW_REJECTED') for k in SOURCE_FLAGS]
+        for prefix, template in prefixes:
+            for name, value, code in invalid:
+                with self.subTest(operation=template['operation'], field=name, value=value):
+                    row = deepcopy(template)
+                    row['arguments']['source_view'][name] = value
+                    rows = prefix + [row]
+                    raw = self.guided_drive([v for r in rows for v in answers(r)] + ['quit'])
+                    status, calls, output, errors = self.guided_drive(
+                        [v for r in rows for v in guided_answers(r, guided=('source_view',))] + ['quit'])
+                    self.assertEqual((status, calls, errors), (1, rows, ''))
+                    self.assertEqual(printed('proposed', output), printed('proposed', raw[2]))
+                    self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+                    self.assertEqual(self.parity(calls, output)[-1]['error']['code'], code)
+        rows = requests('boundaries')[:3]
+        status, calls, output, errors = self.guided_drive([v for r in rows for v in guided_answers(r)] + ['quit'])
+        self.assertEqual((status, calls, errors), (1, rows, ''))
+        self.assertEqual(self.parity(calls, output)[-1]['error']['code'], 'WINDOW_OPEN')
+        # Raw JSON still forwards incomplete and wrongly typed source snapshots to the FSM.
+        for snapshot in ({}, {'phase': 'COMMITTED'}, {'phase': 'COMMITTED', 'currency': 'KRW'},
+                         dict(requests('participation')[0]['arguments']['source_view'], durable=0)):
+            row = requests('participation')[0]
+            row['arguments']['source_view'] = snapshot
+            status, calls, output, errors = self.guided_drive(answers(row) + ['quit'])
+            self.assertEqual((status, calls, errors), (1, [row], ''))
+            self.parity(calls, output)
+
+    def test_source_incomplete_no_dispatch(self):
+        rows = [r for r in mutation_examples() if 'source_view' in r['arguments']]
+        for row in rows:
+            lines = guided_answers(row, guided=('source_view',))
+            status, calls, output, errors = self.guided_drive(
+                guided_answers(row, 'no', guided=('source_view',)) + ['quit'])
+            self.assertEqual((status, calls, errors), (0, [], ''))
+            self.assertEqual(printed('proposed', output), [row])
+            for cut in range(1, len(lines)):
+                with self.subTest(operation=row['operation'], cut=cut):
+                    status, calls, output, errors = self.guided_drive(lines[:cut])
+                    self.assertEqual((status, calls, printed('desk', output)), (2, [], []))
+                    self.assertIn('EOFError', errors)
+            start = lines.index(':guided') + 1
+            cases = []
+            for offset in range(2, 7):
+                cases += [lines[:start + offset] + [bad] for bad in
+                          ('', '0', '1', 'null', '"false"', '[]', '{}', 'False', '{')]
+            extras = ('null', '[]', 'false', '1', '"text"', '{', '{"x":NaN}',
+                      '{"x":1e9999}', '{"x":1,"x":2}', '{"x":"\\ud800"}')
+            cases += [lines[:start + 7] + [bad] for bad in extras]
+            cases += [lines[:start + 7] + [_canonical({k: row['arguments']['source_view'][k]})]
+                      for k in SOURCE_FIELDS]  # Even identical collisions are refused.
+            cases += [lines[:start] + ['\ud800', 'KRW'] + ['false'] * 5 + ['{}']]
+            for invalid in cases:
+                with self.subTest(operation=row['operation'], invalid=repr(invalid)):
+                    status, calls, output, errors = self.guided_drive(invalid + ['quit'])
+                    self.assertEqual((status, calls, errors), (0, [], ''))
+                    self.assertIn('input_error=', output)
+                    self.assertEqual(printed('proposed', output), [])
+
+    def test_source_transcripts(self):
+        for name, scenario, status in (('journey', 'participation', 0),
+                                        ('cancellation', 'cancellation', 0),
+                                        ('boundaries', 'boundaries', 1)):
+            lines = (FIXTURES / ('reward_console_source_' + name + '.txt')).read_text(encoding='utf-8').splitlines()
+            actual, calls, output, errors = self.guided_drive(lines)
+            self.assertEqual((actual, calls, errors), (status, requests(scenario), ''))
+            raw = self.guided_drive([v for r in requests(scenario) for v in answers(r)] + ['quit'])
+            self.assertEqual(printed('desk', output), printed('desk', raw[2]))
+            proposals = [r for r in requests(scenario) if r['operation'] not in READS]
+            if name == 'boundaries':
+                self.assertEqual(output.count('input_error='), 3)
+                self.assertEqual(output.count('Declined; no request sent.'), 1)
+                proposals.insert(0, requests(scenario)[0])
+            self.assertEqual(printed('proposed', output), proposals)
 
     def test_guided_raw_envelope_parity(self):
         scenarios = [requests('participation'),
