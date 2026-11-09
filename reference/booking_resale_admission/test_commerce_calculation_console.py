@@ -51,6 +51,23 @@ def quote_fixture(name='quote'):
     return json.loads((FIXTURES / ('commerce_console_' + name + '.json')).read_text())
 
 
+def pick(ids):
+    return 'pick_lines\n' + str(len(ids)) + '\n' + ''.join(value + '\n' for value in ids)
+
+
+def json_selection(script):
+    """Equivalent explicit JSON selection for a synthetic picker transcript."""
+    rows = iter(script.splitlines())
+    result = []
+    for row in rows:
+        if row == 'pick_lines':
+            ids = [next(rows) for _ in range(int(next(rows)))]
+            result.extend(['select_lines', json.dumps(ids)])
+        else:
+            result.append(row)
+    return '\n'.join(result) + '\n'
+
+
 class RecordingClient(CommerceCalculationClient):
     def __init__(self):
         super().__init__(cleanup_timeout=1)
@@ -512,6 +529,189 @@ class CommerceCalculationConsoleTests(unittest.TestCase):
         with patch('commerce_calculation_client.subprocess.Popen') as launch:
             self.assertEqual(self.run_journey(answers('bundle_decline'))[0], 0)
             launch.assert_not_called()
+
+    def test_picker_journey_json_parity(self):
+        commerce = _calculator()['commerce']
+        with patch.object(commerce, 'build_quote', side_effect=AssertionError('parent arithmetic')), \
+             patch.object(commerce, 'plan_payments', side_effect=AssertionError('parent arithmetic')), \
+             patch.object(commerce, 'propose_line_refund', side_effect=AssertionError('parent arithmetic')), \
+             patch('time.time', side_effect=AssertionError('implicit clock')):
+            for name in ('journey', 'precision', 'free'):
+                script = answers('picker_' + name)
+                with self.subTest(name=name):
+                    status, guided, output, errors = self.run_journey(script)
+                    jstatus, explicit, _, jerrors = self.run_journey(json_selection(script))
+                    self.assertEqual((status, errors, jstatus, jerrors), (0, '', 0, ''))
+                    self.assertEqual(guided.exchanges, explicit.exchanges)
+                    self.assertEqual(len(guided.exchanges), 3)
+                    quote, plan, refund = [e.response['result'] for e in guided.exchanges]
+                    display = output.split('quoteHash=')[1].split('Explicit selected line count')[0]
+                    self.assertTrue(display.startswith(quote['quoteHash'] + '\n'))
+                    self.assertIn('asset=' + codec().canonical(quote['asset']), display)
+                    for row in quote['lines']:
+                        shown = {field: row[field] for field in ('lineId', 'inventoryId',
+                                 'grossAtoms', 'discountAtoms', 'payableAtoms')}
+                        self.assertIn('refund_line=' + codec().canonical(shown), display)
+                    ids = ['L3', 'L1'] if name == 'journey' else ['L1']
+                    request = decode_input(guided.exchanges[-1].request_bytes)['args']
+                    self.assertEqual(request['line_ids'], ids)
+                    self.assertEqual(request['quote'], quote)
+                    self.assertEqual(request['payment_plan'], plan)
+                    self.assertEqual(request['expected_plan_hash'], plan['planHash'])
+                    self.assertIn('selected_lines=' + codec().canonical(ids), output)
+                    self.assertTrue(all(e.response['result']['evidenceClass'] == 'CALCULATION_ONLY'
+                                        for e in guided.exchanges))
+                    self.assertIs(refund['executionAuthorized'], False)
+                    if name == 'precision':
+                        self.assertEqual(refund['customerRefund']['atoms'], '9007199254740993')
+                    if name == 'free':
+                        self.assertEqual(refund['originalRoutes'], [])
+
+    def test_picker_selection_and_confirmation_launch_counts(self):
+        script = answers('picker_journey')
+        for suffix, count in (('show\nquit\n', 2),
+                              ('propose_line_refund\nno\nquit\n', 2),
+                              ('propose_line_refund\nSUBMIT_REFUND\nquit\n', 3)):
+            with self.subTest(suffix=suffix), \
+                 patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                status, client, output, errors = self.run_journey(
+                    script.split('propose_line_refund\n')[0] + suffix)
+                self.assertEqual((status, errors, launch.call_count, len(client.exchanges)), (0, '', count, count))
+                self.assertLess(output.index('selected_lines='), output.index('action: ', output.index('selected_lines=')))
+        # The count bound permits MAX_LINES; duplicates are left for driver validation.
+        ids = ['L1'] * _calculator()['commerce'].MAX_LINES
+        status, client, output, errors = self.run_journey(script.split('pick_lines\n')[0] + pick(ids) + 'quit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (0, '', 2))
+        self.assertIn('selected_lines=' + codec().canonical(ids), output)
+
+    def test_picker_driver_refusals_preserve_input(self):
+        script = answers('picker_boundaries')
+        status, guided, output, errors = self.run_journey(script)
+        jstatus, explicit, _, jerrors = self.run_journey(json_selection(script))
+        self.assertEqual((status, errors, jstatus, jerrors), (1, '', 1, ''))
+        self.assertEqual(guided.exchanges, explicit.exchanges)
+        self.assertEqual(len(guided.history), 2)
+        self.assertEqual([e.response['error'] for e in guided.exchanges[2:]][:3],
+                         ['INVALID_ID_LIST', 'DUPLICATE_ID', 'UNKNOWN_REFUND_LINE'])
+        ids_cases = [[], ['L1', 'L1'], ['missing'], [''], [' L1 ']]
+        for exchange, ids in zip(guided.exchanges[2:], ids_cases):
+            self.assertEqual(decode_input(exchange.request_bytes)['args']['line_ids'], ids)
+            self.assertFalse(exchange.response['ok'])
+            self.assertIn('selected_lines=' + codec().canonical(ids), output)
+        self.assertEqual(len(guided.exchanges), 7)
+        # CRLF strips terminators only; quotes and spaces remain literal IDs.
+        prefix = answers('picker_journey').split('pick_lines\n')[0]
+        ids = ['"L1"', ' L2 ', '']
+        status, client, output, errors = self.run_journey((prefix + pick(ids) +
+                                      'propose_line_refund\nSUBMIT_REFUND\nquit\n').replace('\n', '\r\n'))
+        self.assertEqual((status, errors, len(client.exchanges)), (1, '', 3))
+        self.assertEqual(decode_input(client.exchanges[-1].request_bytes)['args']['line_ids'], ids)
+
+    def test_picker_replacement_invalidates_selection_and_refund(self):
+        prefix = answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n'
+        invalid = ('', '-1', '301', 'true', '"1"', '1.0', '1e0', '-0', '9007199254740993', '{}', '\ud800')
+        replacements = [('pick_lines\n' + value + '\n', 1) for value in invalid]
+        replacements += [(pick([value]), 1) for value in ('e\u0301', '\ud800', 'x' * codec().MAX_INPUT_BYTES)]
+        replacements += [(pick(ids), 0) for ids in (['L3', 'L1'], ['L2'])]
+        replacements += [('select_lines\n[1]\n', 1), ('select_lines\n["L2"]\n', 0)]
+        for replacement, expected in replacements:
+            with self.subTest(replacement=repr(replacement)[:100]):
+                status, client, output, errors = self.run_journey(prefix + replacement +
+                    ('propose_line_refund\n' if expected else '') + 'show\nquit\n')
+                self.assertEqual((status, errors, len(client.exchanges)), (expected, '', 3))
+                q, p = [e.response['result'] for e in client.exchanges[:2]]
+                active = json.loads(output.rsplit('active=', 1)[1].splitlines()[0])
+                self.assertEqual(active, dict(quote=q['quoteHash'], plan=p['planHash'], refund=None))
+                if expected:
+                    self.assertIn('Active quote, plan and explicit line selection are required.', output)
+                    self.assertEqual(output.count('selected_lines='), 1)
+        # Replacing an explicit JSON selection with the picker clears its refund too.
+        status, client, output, errors = self.run_journey(json_selection(prefix) + pick(['L2']) +
+                    'show\npropose_line_refund\nSUBMIT_REFUND\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (0, '', 4))
+        self.assertIn('"refund":null', output)
+        self.assertEqual(decode_input(client.exchanges[-1].request_bytes)['args']['line_ids'], ['L2'])
+        self.assertEqual(self.run_journey(answers('picker_replacement'))[0], 0)
+
+    def test_picker_missing_inputs_and_upstream_invalidation(self):
+        prefix = answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n'
+        # All quote/payment input paths must also invalidate picker-created state.
+        changes = [('load_quote\n' + PREFIX + 'quote.json\n', 0, False),
+                   (compose_quote(quote_fixture()), 0, False),
+                   ('simulate_quote\nno\n', 0, False),
+                   ('load_legs\n' + PREFIX + 'legs.json\n', 0, True),
+                   ('compose_legs\n0\n', 0, True),
+                   ('plan_payments\n999\nSUBMIT_PLAN\n', 1, True)]
+        for change, extra, has_quote in changes:
+            with self.subTest(change=change):
+                status, client, output, errors = self.run_journey(prefix + change +
+                    'propose_line_refund\nshow\nquit\n')
+                self.assertEqual((status, errors, len(client.exchanges)), (0, '', 3 + extra))
+                self.assertIn('Active quote, plan and explicit line selection are required.', output)
+                active = json.loads(output.rsplit('active=', 1)[1].splitlines()[0])
+                self.assertEqual(active['quote'] is not None, has_quote)
+                self.assertIsNone(active['refund'])
+        refused = quote_fixture(); refused['lines'][1]['lineId'] = 'L1'
+        for initial, expected, calls in (('', 0, 0),
+                (prefix + 'load_quote\n' + PREFIX + 'quote.json\n', 0, 3),
+                (compose_quote(refused) + 'simulate_quote\nSUBMIT_QUOTE\n', 1, 1)):
+            status, client, output, errors = self.run_journey(initial +
+                'pick_lines\npropose_line_refund\nquit\n')
+            self.assertEqual((status, errors, len(client.exchanges)), (expected, '', calls))
+            self.assertIn('A successful active quote is required to pick lines.', output)
+            self.assertEqual(output.count('Explicit selected line count:'), int(calls == 3))
+        # Quote alone allows selection; submitting still requires a payment plan.
+        initial = answers('picker_journey').split('compose_legs\n')[0]
+        status, client, output, errors = self.run_journey(initial + pick(['L1']) +
+            'propose_line_refund\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (0, '', 1))
+        self.assertIn('selected_lines=["L1"]', output)
+        self.assertIn('Active quote, plan and explicit line selection are required.', output)
+
+    def test_picker_eof_and_decline(self):
+        script = answers('picker_journey')
+        selection = ['pick_lines', '2', 'L3', 'L1']
+        for initial, calls in ((script.split('pick_lines\n')[0], 2),
+                               (script.rsplit('\nshow\n', 1)[0] + '\n', 3)):
+            for length in range(1, len(selection) + 1):
+                with self.subTest(calls=calls, length=length):
+                    status, client, output, errors = self.run_journey(initial +
+                        '\n'.join(selection[:length]) + '\n')
+                    self.assertEqual((status, errors, len(client.exchanges)), (0, '', calls))
+                    self.assertIn('EOF; no further calculations submitted.', output)
+                    self.assertEqual(output.count('selected_lines='),
+                                     int(calls == 3) + int(length == len(selection)))
+        for suffix in ('', 'no\nshow\nquit\n'):
+            status, client, _, errors = self.run_journey(script.split('SUBMIT_REFUND\n')[0] + suffix)
+            self.assertEqual((status, errors, len(client.exchanges)), (0, '', 2))
+        self.assertEqual(self.run_journey(answers('picker_decline'))[0], 0)
+
+    def test_picker_refund_uncertainty_fences(self):
+        for failure in ('malformed', 'launch'):
+            children = []
+            def fail_refund(*args, **kwargs):
+                if len(children) < 2:
+                    child = POPEN(*args, **kwargs)
+                elif failure == 'launch':
+                    raise OSError('synthetic launch failure')
+                else:
+                    child = POPEN([sys.executable, '-B', '-c',
+                                   'import sys; sys.stdin.buffer.read(); print("malformed")'], **kwargs)
+                children.append(child)
+                return child
+            with self.subTest(failure=failure), \
+                 patch('commerce_calculation_client.subprocess.Popen', side_effect=fail_refund) as launch:
+                status, client, _, errors = self.run_journey(answers('picker_journey') * 2)
+                self.assertEqual((status, launch.call_count, len(client.history)), (2, 3, 2))
+                self.assertIsInstance(client.uncertainty, CalculationUncertainty)
+                request = decode_input(client.uncertainty.request_bytes)
+                self.assertEqual(request['action'], 'propose_line_refund')
+                self.assertEqual(request['args']['line_ids'], ['L3', 'L1'])
+                with self.assertRaisesRegex(RuntimeError, 'client fenced'):
+                    client.request(request)
+                self.assertEqual(launch.call_count, 3)
+            self.assertIn('FENCED', errors)
+            self.assertTrue(all(child.returncode is not None for child in children))
 
     def test_transport_failure_stops_console_without_retry_or_fallback(self):
         children = []

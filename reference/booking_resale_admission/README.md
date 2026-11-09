@@ -3294,6 +3294,7 @@ Omit redirection for interactive use. Local controls:
 | `compose_legs` | Explicit count and every leg field; previews the complete array, submits nothing |
 | `plan_payments` | Explicit synthetic integer `now`, retained quote/hash, literal `SUBMIT_PLAN` |
 | `select_lines` | Explicit JSON array of line IDs; selects only |
+| `pick_lines` | Displays active returned quote rows; collects an explicit count and literal line IDs, submits nothing |
 | `propose_line_refund` | Retained full quote/plan and hashes, selected IDs, literal `SUBMIT_REFUND` |
 | `show`, `quit` | Local display/exit; no subprocess calculation |
 
@@ -3301,11 +3302,52 @@ These are terminal controls, not new protocol commands. Every quote load or comp
 (even identical or failed) clears active quote, plan, refund and line selection.
 Every legs load, composition or plan-input attempt clears plan, refund and line selection.
 Every new quote calculation clears the prior quote and dependents; every line
-selection attempt clears the prior refund. Decline/EOF submits nothing further.
+selection attempt clears the prior selection and refund. Decline/EOF submits nothing further.
 Failed replacement calculations cannot restore history as active state. `show`
 labels active hashes separately from historical successful exchanges. No implicit
 split, policy value, clock, file reload or allocation is supplied. Quote/plan
 outputs and arrays/atom strings pass unchanged into subsequent driver calls.
+
+To select refund lines without a JSON array, choose `pick_lines` after a successful
+`simulate_quote`. It displays the returned `quoteHash`, full `asset`, and every
+returned row's `lineId`, `inventoryId`, `grossAtoms`, `discountAtoms`, `payableAtoms`.
+Amounts are the original exact integer strings; the picker computes no totals,
+discounts, allocations or refund amounts. Enter `Explicit selected line count`
+as a CE1 integer from `0` through the existing `MAX_LINES` bound (300), then enter
+each `line_ids[0]`, `line_ids[1]`, etc. as literal text, without JSON quotes.
+Only line terminators are removed. Order, duplicates, spaces, empty strings and
+unknown IDs are preserved; there is no default, trimming or silent deduplication.
+Zero explicitly selects `[]`, which the driver refuses only after submission.
+
+Entering `pick_lines` immediately clears the old selection and refund, even if
+the quote is missing, a count/encoding fails, or EOF interrupts collection.
+Only a complete CE1-encoded candidate is published as `selected_lines=<array>`.
+The quote, plan and historical exchanges remain available. `select_lines`
+continues to accept an explicit JSON array. Both paths require a successful
+active quote and payment plan for `propose_line_refund`; inspect its full envelope
+and separately type literal `SUBMIT_REFUND` to calculate once. Selection, preview,
+decline and EOF send no refund request. Driver identifier, duplicate and membership
+errors remain visible without input repair or retry. Transport failure fences the
+client and exits 2; a known refusal exits 1; a clean quit/decline/EOF exits 0 unless
+there was an earlier refusal. No refund execution is authorized.
+
+Run a guided quote, split plan and multiple-line selection from the repository root:
+
+```bash
+env -u PYTHONPATH PYTHONDONTWRITEBYTECODE=1 python3.12 -B \
+  reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_picker_journey.txt
+```
+
+Use the same command with `commerce_console_picker_precision.txt`,
+`commerce_console_picker_free.txt`, `commerce_console_picker_decline.txt` or
+`commerce_console_picker_replacement.txt` (exit 0). `commerce_console_picker_boundaries.txt`
+exits 1 for explicit empty, duplicate, unknown and malformed-ID selections.
+[Picker parity, failure evidence and pending delivery gates](../../validation/2026-11-09-plan-local-refund-line-picker/README.md)
+cover unchanged requests, complete results and hashes against explicit JSON selection.
+Refund policy remains **UNDETERMINED — Astra/User**; legal/accounting treatment
+remains **UNDETERMINED — User/designated advisers**. Capability grades are unchanged.
 
 To enter a quote without a JSON file, choose `compose_quote`. Enter these fields
 in order, using caller-supplied synthetic values:
