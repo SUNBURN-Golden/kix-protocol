@@ -861,3 +861,85 @@ no bank execution, chain finality, durability, accounting/legal conclusion or
 production readiness. The [pool workbench validation record](../../validation/2026-11-09-plan-plan-local-pool-accounting-workbench/README.md)
 contains the coverage map, real transcripts, actual commands and protected-byte
 checks. A2 non-author exact-head review and required KTX/KIX CI remain delivery gates.
+
+## Live pool subprocess client
+
+`pool_client.PoolClient` owns one synchronous `pool_cli.py` child using binary
+UTF-8 JSONL pipes, with separate inherited stderr. Importing launches nothing.
+The caller confirms its synthetic opening snapshot before launch and confirms
+each mutation before calling `request`. Put `reference/token_reward` on
+`PYTHONPATH`, then, after that confirmation:
+
+```python
+from pool_client import PoolClient
+from pool_session import read_opening_balances
+
+fixture = "reference/token_reward/fixtures/pool_session.json"  # caller-selected
+confirmed = read_opening_balances(fixture)  # preview and confirm before launch
+with PoolClient.launch(fixture, expected_opening_balances=confirmed,
+                       cleanup_timeout=1) as client:  # caller-selected cleanup seconds
+    acknowledgement = client.initialized_reply
+    # After separately confirming these complete mutation requests:
+    credited = client.request({"operation": "credit", "arguments": {
+        "pool": "PROTOCOL_REVENUE", "amount": 5, "source_ref": "synthetic-source"}})
+    spent = client.request({"operation": "spend", "arguments": {
+        "pool": "PROTOCOL_REVENUE", "amount": 3, "program_ref": "synthetic-program"}})
+    current = client.request({"operation": "view", "arguments": {}})
+```
+
+The console has an explicit live mode using a caller-selected fixture:
+
+```bash
+python3 reference/token_reward/pool_console.py --mode subprocess --cleanup-timeout 1 --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_journey.txt
+```
+
+`--mode in-process` remains the default and supports both `--fixture PATH` and
+`--guided-init`. Subprocess mode requires `--fixture PATH` and a caller-selected
+finite positive `--cleanup-timeout SECONDS`; it rejects `--guided-init`.
+In-process mode rejects a cleanup timeout. These combinations are checked before
+launch. Importable `run_console` selects subprocess mode with the additional
+`fixture=PATH, cleanup_timeout=SECONDS` keyword arguments and an explicit opening
+snapshot. Both modes share the same complete flushed previews, literal `SUBMIT`
+and action loop. Declining initialization launches nothing; declining a mutation
+writes nothing. `view` is one explicit request, with no confirmation or hidden read.
+
+Before launching, the client checks the fixture against the confirmed snapshot.
+Before permitting requests, it validates the existing initialization acknowledgement
+and compares its five balances with that snapshot, distinguishing integers from
+booleans/floats. A change between preview and startup fails closed. Initialization
+is an existing service acknowledgement, never an added wire request. The client
+validates strict JSONL framing, UTF-8/duplicate keys, selector correlation, complete
+payload shapes, synthetic provenance, unit/notice and literal false execution
+flags. It returns each complete decoded service envelope, without recomputing
+balances, removing entries or changing refusal codes. Wrong finite domain values
+still reach the unchanged model. A valid domain refusal permits only another
+explicit request; a typed service error fences the client.
+
+One exchange may be outstanding. Overlapping request/cleanup calls and use after
+fencing/close raise `PoolClientStateError` before another write. Local request
+shape failures submit nothing and leave the client usable. Broken pipes, short
+writes, malformed/truncated replies, lost acknowledgements and interruption
+raise `PoolTransportUncertainty`, permanently fencing this instance. The exception
+(and `client.uncertainty`) retains `phase`, detached `request`, `request_bytes`,
+`reply_bytes` observed before failure and a chained cause. Initialization uncertainty
+has no submitted request and empty request bytes. A mutation may already have been
+accepted when its acknowledgement is lost. No retry, replacement, rollback or
+rejection is inferred. Startup failure cleans up the child before raising.
+
+`close()` is idempotent and returns the reaped child exit status. It closes stdin,
+waits, and terminates then kills only the owned child when necessary. The required
+cleanup timeout applies to cleanup waits only. Reads remain blocking and
+interruptible, with no polling or response deadline. Console cleanup runs after
+every post-launch exit; observed domain refusals explain child status `1`, while
+unexpected child exits are terminal failures. Console exits remain `0` clean or
+declined initialization, sticky `1` for confirmed domain refusal, and `2` for
+terminal failure. Cleanup loses process-local state and proves no rollback.
+
+Repeated references still append repeated accepted entries. No deduplication,
+receipts, reward coupling, sockets, services, dependencies, persistence or protocol
+commands are added. Pool balances/funding policy remain caller-supplied synthetic
+inputs / **UNDETERMINED — Astra/User**; accounting treatment remains
+**UNDETERMINED — User/designated advisers**. No funds, issuance, chain finality,
+durability, legal authority, runtime activation or production readiness is claimed.
+[Builder coverage, transcripts and local validation](../../validation/2026-11-09-plan-local-pool-live-console/README.md)
+are separate from A2 non-author exact-final-head review and required KTX/KIX CI.
