@@ -1,0 +1,15 @@
+replace_events
+1
+mint-b
+MINT
+3
+false
+false
+"synthetic-program"
+calculate
+CALCULATE
+reconcile
+3
+RECONCILE
+show
+quit

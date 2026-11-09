@@ -20,6 +20,12 @@
 
 ## Local supply reconciliation
 
+[Terminal console usage](../reference/token_reward/README.md#local-supply-console)
+and [file-free console transcripts and builder evidence](../validation/2026-11-09-plan-plan-local-supply-console/README.md)
+cover explicit event composition, separately confirmed reporting and comparison
+against the returned report. Synthetic calculation only; policy remains
+UNDETERMINED — Astra/User, with non-author exact-head review and KTX/KIX CI pending.
+
 [Usage](../reference/token_reward/README.md#local-supply-reconciliation) and
 [builder evidence with file/stdin transcripts](../validation/2026-11-09-plan-local-supply-reconciliation-tool/README.md)
 expose synthetic event reporting and supplied-report reconciliation through the
