@@ -107,6 +107,25 @@ def _compose_legs(prompt):
         raise ConsoleInputError(str(error)) from error
 
 
+def _pick_lines(prompt, snapshot, output_stream):
+    """Display returned rows and encode literal selections; calculate nothing."""
+    from calculated_booking_quote_source import _calculator
+
+    print('quoteHash=' + snapshot['quoteHash'], file=output_stream)
+    print('asset=' + _json(snapshot['asset']), file=output_stream)
+    for row in snapshot['lines']:
+        print('refund_line=' + _json({field: row[field] for field in
+              ('lineId', 'inventoryId', 'grossAtoms', 'discountAtoms', 'payableAtoms')}), file=output_stream)
+    try:
+        count = _integer(prompt, 'Explicit selected line count')
+        if not 0 <= count <= _calculator()['commerce'].MAX_LINES:
+            raise ConsoleInputError('selected line count outside existing MAX_LINES bound')
+        candidate = [prompt('line_ids[' + str(index) + ']') for index in range(count)]
+        return codec().canonical_bytes(candidate)
+    except (_calculator_rejection(), UnicodeError) as error:
+        raise ConsoleInputError(str(error)) from error
+
+
 def _render(exchange, stream):
     response = exchange.response
     print('driver=' + _json(response), file=stream, flush=True)
@@ -160,7 +179,7 @@ def run_console(client, *, input_stream, output_stream, error_stream):
               'Legal/accounting treatment: UNDETERMINED — User/designated advisers.', file=output_stream)
         while True:
             print('Actions: load_quote, compose_quote, simulate_quote, load_legs, compose_legs, plan_payments, select_lines, '
-                  'propose_line_refund, show, quit', file=output_stream)
+                  'pick_lines, propose_line_refund, show, quit', file=output_stream)
             action = prompt('action')
             try:
                 if action == 'quit':
@@ -210,6 +229,14 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                     if type(value) is not list or any(type(item) is not str for item in value):
                         raise ConsoleInputError('line IDs must be an array of strings')
                     selected = codec().canonical_bytes(value)
+                    print('Line selection loaded; submit separately for driver validation.', file=output_stream)
+                elif action == 'pick_lines':
+                    selected = refund = None
+                    if quote is None:
+                        print('A successful active quote is required to pick lines.', file=output_stream)
+                        continue
+                    selected = _pick_lines(prompt, quote.response['result'], output_stream)
+                    print('selected_lines=' + selected.decode('utf-8'), file=output_stream)
                     print('Line selection loaded; submit separately for driver validation.', file=output_stream)
                 elif action == 'propose_line_refund':
                     refund = None
