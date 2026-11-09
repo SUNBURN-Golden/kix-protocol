@@ -9,14 +9,24 @@ from pool_cli import diagnostic, emit
 from pool_session import (NOTICE, PoolSession, dispatch_request, error_reply,
                           initialized_reply, read_opening_balances)
 from reward_fixture import FixtureError, validate_json
-from token_reward_model import TokenRewardError, _canonical
+from token_reward_model import POOLS, TokenRewardError, _canonical
 
 
 _FIELDS = {"credit": ("pool", "amount", "source_ref"),
            "spend": ("pool", "amount", "program_ref"), "view": ()}
+_GUIDED = object()
 
 
-def run_console(opening_balances, *, input_stream, output_stream, error_stream):
+def _parse_amount(raw):
+    if re.fullmatch(r"[+-]?[0-9]+", raw) is None:
+        raise FixtureError("amount requires an explicit decimal integer")
+    try:
+        return int(raw)
+    except ValueError as error:
+        raise FixtureError("amount integer is too long") from error
+
+
+def run_console(opening_balances=_GUIDED, *, input_stream, output_stream, error_stream):
     """Preview and flush before construction/mutation; terminal failures fence use.
 
     A model mutation can have completed before an output failure. No rollback or
@@ -38,7 +48,8 @@ def run_console(opening_balances, *, input_stream, output_stream, error_stream):
         return prompt("Literal SUBMIT confirms; anything else declines") == "SUBMIT"
 
     try:
-        validate_json(opening_balances)
+        if opening_balances is not _GUIDED:
+            validate_json(opening_balances)
         print(NOTICE + "\n"
               "token_issued, onchain_recorded, funds_executed, krw_paid, chain_finality, "
               "durable, legal_authority remain false.\n"
@@ -46,6 +57,11 @@ def run_console(opening_balances, *, input_stream, output_stream, error_stream):
               "Accounting and legal treatment: UNDETERMINED — User/designated advisers.\n"
               "Repeated references append again when accepted; no deduplication or receipts.",
               file=output_stream, flush=True)
+        if opening_balances is _GUIDED:
+            opening_balances = {
+                pool: _parse_amount(prompt(pool + " opening balance (signed decimal integer)"))
+                for pool in POOLS
+            }
         if not preview({"operation": "initialize", "arguments": {"opening_balances": opening_balances}}):
             print("Initialization declined; no session constructed.", file=output_stream, flush=True)
             return 0
@@ -61,12 +77,7 @@ def run_console(opening_balances, *, input_stream, output_stream, error_stream):
             for name in _FIELDS[action]:
                 raw = prompt(name + (" (signed decimal integer)" if name == "amount" else " (verbatim string)"))
                 if name == "amount":
-                    if re.fullmatch(r"[+-]?[0-9]+", raw) is None:
-                        raise FixtureError("amount requires an explicit decimal integer")
-                    try:
-                        arguments[name] = int(raw)
-                    except ValueError as error:
-                        raise FixtureError("amount integer is too long") from error
+                    arguments[name] = _parse_amount(raw)
                 else:
                     arguments[name] = raw
             request = {"operation": action, "arguments": arguments}
@@ -86,10 +97,13 @@ def run_console(opening_balances, *, input_stream, output_stream, error_stream):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fixture", type=Path, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--fixture", type=Path)
+    mode.add_argument("--guided-init", action="store_true",
+                      help="explicitly enter all five synthetic opening balances")
     args = parser.parse_args(argv)
     try:
-        opening = read_opening_balances(args.fixture)
+        opening = _GUIDED if args.guided_init else read_opening_balances(args.fixture)
     except (Exception, KeyboardInterrupt) as error:
         diagnostic(error, sys.stderr)
         return 2
