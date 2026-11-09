@@ -3,10 +3,12 @@
 from copy import deepcopy
 import io
 import json
+import subprocess
 import unittest
 from unittest.mock import patch
 
 from reward_fixture import FixtureError, decode_json
+from supply_client import SupplyClient
 import supply_console
 from supply_reconciliation import dispatch_request, supply_output
 from test_supply_reconciliation import fixture
@@ -325,6 +327,107 @@ class SupplyConsoleTests(unittest.TestCase):
         status, _, _, dispatch = self.run_session(
             calculate(events + [events[0]]) + calculate([]) + ['quit'])
         self.assertEqual((status, dispatch.call_count), (1, 2))
+
+
+class SupplyConsoleLiveTests(unittest.TestCase):
+    def run_session(self, lines, *, errors=None, child=None):
+        stdout, stderr = io.StringIO(), errors if errors is not None else io.StringIO()
+        requests, responses = [], []
+        original = SupplyClient.request
+
+        def send(client, request):
+            requests.append(deepcopy(request))
+            if request['operation'] == 'reconcile_supply':
+                self.assertIs(request['arguments']['offchain'], responses[-1].reply['result'])
+            response = original(client, request)
+            responses.append(response)
+            return response
+
+        process_kwargs = {'wraps': subprocess.Popen} if child is None else {'return_value': child}
+        with patch('supply_console.dispatch_request') as fallback, \
+                patch('supply_client.subprocess.Popen', **process_kwargs) as launch, \
+                patch.object(SupplyClient, 'request', send):
+            status = supply_console.run_console(
+                input_stream=io.StringIO('\n'.join(lines) + '\n'), output_stream=stdout,
+                error_stream=stderr, mode='subprocess', cleanup_timeout=1)
+        fallback.assert_not_called()
+        return (status, [decode_json(line) for line in stdout.getvalue().splitlines()],
+                stderr.getvalue(), launch, requests, responses)
+
+    def test_returned_report_forwarded_whole_and_serialized_without_repair(self):
+        events = fixture('report')['arguments']['events']
+        status, replies, _, launch, requests, responses = self.run_session(
+            calculate(events) + ['reconcile', '7', 'RECONCILE', 'quit'])
+        self.assertEqual((status, launch.call_count), (0, 2))
+        self.assertEqual(requests[1]['arguments']['offchain'], replies[0]['result'])
+        self.assertEqual(replies, [response.reply for response in responses])
+        self.assertEqual(replies[1], dispatch_request(requests[1]))
+
+    def test_edits_invalidate_before_cancel_failure_and_replacement(self):
+        events = fixture('report')['arguments']['events']
+        replacement = {**events[0], 'event_id': 'new-id'}
+        for edit in (['add_event', ':cancel'], ['replace_event', ':cancel'],
+                     ['replace_events', ':cancel'], ['replace_event', '99'],
+                     ['replace_events', '1', *event_lines(replacement)[:-1], ':cancel'],
+                     ['replace_event', '1', *event_lines(replacement)],
+                     ['replace_events', '0'], ['add_event', *event_lines(replacement)]):
+            with self.subTest(edit=edit):
+                status, _, stderr, launch, _, _ = self.run_session(
+                    calculate(events) + ['reconcile', '7', 'RECONCILE', *edit,
+                                         'show', 'reconcile', 'quit'])
+                self.assertEqual((status, launch.call_count), (2, 2))
+                state = SupplyConsoleTests.states(self, stderr)[0]
+                self.assertIsNone(state['report'])
+                self.assertIsNone(state['comparison'])
+
+    def test_preview_cancel_decline_invalid_input_and_failed_preview_launch_nothing(self):
+        cases = [compose([]) + ['show', 'quit'], compose([]) + ['calculate', 'no', 'quit'],
+                 compose([]) + ['calculate', ':cancel', 'quit'], ['add_event', ':cancel', 'quit'],
+                 ['replace_events', 'bad', 'quit'], ['calculate', 'quit'],
+                 compose([]) + ['calculate']]
+        for lines in cases:
+            with self.subTest(lines=lines):
+                _, _, _, launch, _, _ = self.run_session(lines)
+                launch.assert_not_called()
+
+        class FailedPreview(io.StringIO):
+            def write(self, value):
+                if value.startswith('proposed='):
+                    raise OSError('preview failed')
+                return super().write(value)
+
+        status, _, _, launch, _, _ = self.run_session(calculate([]) + ['quit'], errors=FailedPreview())
+        self.assertEqual(status, 2)
+        launch.assert_not_called()
+
+    def test_declined_recalculation_clears_report_and_declined_reconciliation_retains_it(self):
+        for outcome in ('no', ':cancel'):
+            status, _, stderr, launch, _, _ = self.run_session(
+                calculate([]) + ['reconcile', '0', outcome, 'show',
+                                 'calculate', outcome, 'show', 'reconcile', 'quit'])
+            states = SupplyConsoleTests.states(self, stderr)
+            self.assertIsNotNone(states[0]['report'])
+            self.assertIsNone(states[0]['comparison'])
+            self.assertIsNone(states[1]['report'])
+            self.assertEqual((status, launch.call_count), (2, 1))
+
+    def test_domain_rejection_is_sticky_but_allows_explicit_later_calculation(self):
+        events = fixture('report')['arguments']['events']
+        status, replies, _, launch, _, _ = self.run_session(
+            calculate(events + [events[0]]) + calculate([]) + ['quit'])
+        self.assertEqual((status, launch.call_count), (1, 2))
+        self.assertEqual(replies[0]['error']['code'], 'SUPPLY_EVENT_DUPLICATE')
+        self.assertIn('result', replies[1])
+
+    def test_transport_uncertainty_and_exit_two_stop_without_retry_or_fallback(self):
+        from test_supply_client import Child, wire
+        terminal = supply_output('supply_report', error={'type': 'FixtureError', 'message': 'bad'})
+        for child, expected in ((Child(b'invalid'), []), (Child(wire(terminal), 2), [terminal])):
+            with self.subTest(expected=expected):
+                status, replies, _, launch, _, _ = self.run_session(
+                    calculate([]) + ['calculate', 'CALCULATE', 'quit'], child=child)
+                self.assertEqual((status, launch.call_count), (2, 1))
+                self.assertEqual(replies, expected)
 
 
 if __name__ == '__main__':

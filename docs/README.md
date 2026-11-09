@@ -20,6 +20,12 @@
 
 ## Local supply reconciliation
 
+[Reusable subprocess client and explicit console mode](../reference/token_reward/README.md#reusable-supply-subprocess-client)
+and [both-mode transcripts and builder validation](../validation/2026-11-10-plan-local-supply-live-console/README.md)
+connect confirmed local requests to one CLI child per calculation, preserving
+complete replies and fencing transport uncertainty. Synthetic calculation only;
+policy remains UNDETERMINED — Astra/User. No runtime or capability-grade change.
+
 [Terminal console usage](../reference/token_reward/README.md#local-supply-console)
 and [file-free console transcripts and builder evidence](../validation/2026-11-09-plan-plan-local-supply-console/README.md)
 cover explicit event composition, separately confirmed reporting and comparison
