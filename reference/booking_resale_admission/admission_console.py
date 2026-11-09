@@ -12,6 +12,8 @@ from ticket_operations_client import TicketOperationsClient
 # Prompt order is part of the documented terminal interface, not a wire catalogue.
 _FIELDS = {
     'adopt_issued_from_booking': ('reservation_id', 'right_id'),
+    'authorize_admission': ('presentation_id', 'admission_id', 'gate_role', 'expires_ms'),
+    'consume': ('presentation_id', 'consume_id', 'gate_role'),
     'authorize_admission_inputs': ('admission_id', 'right_id', 'version', 'holder_role',
                                    'gate_role', 'request', 'expires_ms'),
     'consume_inputs': ('consume_id', 'right_id', 'version', 'gate_role', 'request'),
@@ -21,6 +23,7 @@ _FIELDS = {
     'set_clock': ('subject_id', 'now_ms'),
 }
 _CONFIRMATIONS = {'adopt_issued_from_booking': 'ADOPT',
+                  'authorize_admission': 'AUTHORIZE', 'consume': 'CONSUME',
                   'authorize_admission_inputs': 'AUTHORIZE', 'consume_inputs': 'CONSUME',
                   'set_clock': 'SET_CLOCK', 'reconcile': 'RECONCILE'}
 
