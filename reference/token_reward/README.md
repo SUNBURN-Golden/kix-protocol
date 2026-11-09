@@ -505,7 +505,7 @@ deliberate replay. Prompt order is:
 4. For mutations, fresh `idempotency_key`, then confirmation. Reads have neither.
 
 Enter `reward_key`, `source_view`, `approval_ref` as strict JSON objects using
-the existing nested schemas above. At `reward_key` or `approval_ref`, literal
+the existing nested schemas above. At `reward_key`, `source_view` or `approval_ref`, literal
 `:guided` optionally collects the same object field by field. Raw JSON remains
 available independently at every selection, including `submit` and `supersede`.
 
@@ -516,6 +516,28 @@ that order. Guided `approval_ref` asks for `record_id`, `generation`,
 removed, with no trimming, Unicode normalization, delimiter splitting or default
 actor. `generation` requires a JSON integer excluding booleans, with no float
 conversion or console policy limit. The existing FSM decides acceptable values.
+
+Guided `source_view` asks, in order, for verbatim `phase`, verbatim `currency`,
+then explicit JSON booleans `funds_executed`, `bank_debit_observed`,
+`legal_debtor_bound`, `external_return_closed`, `durable`, and finally
+`additional source fields`, an explicit JSON object (`{}` supplies none).
+Booleans cannot be blank, null, numbers or strings. Additional fields cannot
+collide with any of those seven prompted names, even if the values agree.
+Nested names remain opaque. For example,
+`{"metadata":{"sequence":9007199254740993,"phase":null},"label":"참여"}`
+adds exactly those top-level fields, preserving integers, Unicode, nulls and
+array order; no metadata wrapper is introduced.
+
+This choice is available independently for `observe`, `mark_eligible`,
+`observe_source_cancel` and `observe_krw_refund`. The console never supplies
+COMMITTED, KRW, false flags, window closure, source identity or `source_kind`.
+Blank/whitespace-bearing domain strings and true booleans reach the existing
+FSM refusal path unchanged. Raw JSON also forwards incomplete source objects
+to that path. The FSM currently requires COMMITTED, KRW and all five flags
+false for all four operations: cancellation does not imply a CANCELLED snapshot.
+A refund records its separate KRW effect without changing the token phase.
+Snapshots are synthetic caller assertions, with no settlement-machine connection
+or authentication. Legal effects remain **UNDETERMINED — User/legal**.
 
 For `evidence_refs`, enter an explicit nonnegative JSON integer count followed
 by exactly that many verbatim strings. Order and duplicates are preserved; zero
@@ -599,6 +621,24 @@ The success transcript exits 0 after observe → hold → eligibility → submit
 effects, explicit historical replays and reads. The boundary transcript exits 1
 after open-window, forbidden-pool and AI-approval refusals followed by successful
 actions/reads. Both end with `quit`; EOF is not a clean exit.
+
+Source-guided observation/eligibility and separate cancellation/refund journeys
+reuse the existing `participation.jsonl` and `cancellation.jsonl` vectors:
+
+```bash
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_source_journey.txt
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_source_cancellation.txt
+python3 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_source_boundaries.txt
+```
+
+Omit `--mode subprocess --cleanup-timeout 1` to replay in-process. The first two
+exit 0; boundaries exits 1 after confirmed refusals, also demonstrating metadata
+collision, malformed composition and decline without dispatch. Full captures,
+coverage mapping and commands are in the [source composer evidence](../../validation/2026-11-09-plan-local-reward-source-composer/README.md).
+This advances [token blueprint §9](../../docs/blueprints/optional-native-token-v1/README.md#9-거래-결합)
+and the capability register's TL-3 offchain surface only; capability grades,
+activation locks and A2 non-author exact-head review / KTX / KIX CI gates remain.
+
 The [console evidence record](../../validation/2026-11-05-plan-local-reward-console/README.md)
 contains captured stdout, coverage mapping and actual local checks. The console
 has no child processes in in-process mode. Subprocess mode owns one local desk

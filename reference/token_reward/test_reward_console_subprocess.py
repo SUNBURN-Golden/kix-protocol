@@ -236,39 +236,41 @@ class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
 
     def test_uncertainty_stops_and_preserves_evidence(self):
         row = requests('participation')[0]
-        for raw in (b'{', b'\xff\n', b'not-json\n'):
-            log, worker = client_tests.RewardClientTests.fault_worker(self, raw)
-            with patch('reward_client.subprocess.Popen', side_effect=worker) as launched:
-                status, calls, output, errors, client = self.drive(answers(row) + ['reward_ids'] + answers(row) + ['quit'])
-            self.assertEqual((status, calls, printed('desk', output)), (2, [row], []))
-            detail = diagnostics(errors)[0]
-            self.assertEqual(detail['request'], row)
-            self.assertEqual(bytes.fromhex(detail['request_bytes_hex']), log.read_bytes())
-            self.assertEqual(bytes.fromhex(detail['reply_bytes_hex']), raw)
-            self.assertIsNone(detail['last_reply'])
-            self.assertEqual(detail['exceptions'][0]['type'], 'RewardTransportUncertainty')
-            self.assertGreater(len(detail['exceptions']), 1)
-            self.assertEqual(client.uncertainty.reply_bytes, raw)
-            with self.assertRaises(RewardClientStateError):
-                client.request(IDS)
-            launched.assert_called_once()
+        for lines in (answers(row), guided_answers(row)):
+            for raw in (b'{', b'\xff\n', b'not-json\n'):
+                log, worker = client_tests.RewardClientTests.fault_worker(self, raw)
+                with patch('reward_client.subprocess.Popen', side_effect=worker) as launched:
+                    status, calls, output, errors, client = self.drive(lines + ['reward_ids'] + answers(row) + ['quit'])
+                self.assertEqual((status, calls, printed('desk', output)), (2, [row], []))
+                detail = diagnostics(errors)[0]
+                self.assertEqual(detail['request'], row)
+                self.assertEqual(bytes.fromhex(detail['request_bytes_hex']), log.read_bytes())
+                self.assertEqual(bytes.fromhex(detail['reply_bytes_hex']), raw)
+                self.assertIsNone(detail['last_reply'])
+                self.assertEqual(detail['exceptions'][0]['type'], 'RewardTransportUncertainty')
+                self.assertGreater(len(detail['exceptions']), 1)
+                self.assertEqual(client.uncertainty.reply_bytes, raw)
+                with self.assertRaises(RewardClientStateError):
+                    client.request(IDS)
+                launched.assert_called_once()
 
     def test_partial_reply_interruption_and_short_write_stop(self):
         row = requests('participation')[0]
-        for interrupted in (False, True):
-            def fault(client):
-                if interrupted:
-                    read = Mock(side_effect=[b'{', KeyboardInterrupt('caller interrupt')])
-                    client._process.stdout.read = read
-                else:
-                    client._process.stdin.write = Mock(return_value=1)
-            status, calls, output, errors, client = self.drive(answers(row) + ['pool_view', 'quit'], configure=fault)
-            self.assertEqual((status, calls), (2, [row]))
-            detail = diagnostics(errors)[0]
-            self.assertEqual(detail['request'], row)
-            self.assertEqual(bytes.fromhex(detail['reply_bytes_hex']), b'{' if interrupted else b'')
-            self.assertEqual(detail['exceptions'][-1]['type'], 'KeyboardInterrupt' if interrupted else 'OSError')
-            self.assertIsNotNone(client.uncertainty)
+        for lines in (answers(row), guided_answers(row)):
+            for interrupted in (False, True):
+                def fault(client):
+                    if interrupted:
+                        read = Mock(side_effect=[b'{', KeyboardInterrupt('caller interrupt')])
+                        client._process.stdout.read = read
+                    else:
+                        client._process.stdin.write = Mock(return_value=1)
+                status, calls, output, errors, client = self.drive(lines + ['pool_view', 'quit'], configure=fault)
+                self.assertEqual((status, calls), (2, [row]))
+                detail = diagnostics(errors)[0]
+                self.assertEqual(detail['request'], row)
+                self.assertEqual(bytes.fromhex(detail['reply_bytes_hex']), b'{' if interrupted else b'')
+                self.assertEqual(detail['exceptions'][-1]['type'], 'KeyboardInterrupt' if interrupted else 'OSError')
+                self.assertIsNotNone(client.uncertainty)
 
     def test_subprocess_options_and_mode_isolation(self):
         cases = [['--mode', 'subprocess'], ['--cleanup-timeout', '1'],
@@ -423,7 +425,10 @@ class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
     def test_cli_transcripts_match_default_in_process(self):
         for name, expected_code in (('reward_console_journey.txt', 0), ('reward_console_boundaries.txt', 1),
                                    ('reward_console_guided_journey.txt', 0),
-                                   ('reward_console_guided_boundaries.txt', 1)):
+                                   ('reward_console_guided_boundaries.txt', 1),
+                                   ('reward_console_source_journey.txt', 0),
+                                   ('reward_console_source_cancellation.txt', 0),
+                                   ('reward_console_source_boundaries.txt', 1)):
             text = (FIXTURES / name).read_text(encoding='utf-8')
             command = [sys.executable, '-B', str(CONSOLE), '--fixture', str(FIXTURE)]
             direct = subprocess.run(command, input=text, text=True, capture_output=True, timeout=10)
