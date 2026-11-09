@@ -205,12 +205,29 @@ class SupplyClientTests(unittest.TestCase):
                     patch('supply_client.subprocess.Popen', return_value=Child(wire(value))):
                 with self.assertRaises(SupplyTransportUncertainty):
                     client.request(request)
-        # Validate transport shapes, never reconstruct service arithmetic/decisions.
-        value = deepcopy(good)
+
+    def test_offchain_supply_mismatch_retains_evidence_and_fences(self):
+        request = fixture('match')
+        self.assertEqual(request['arguments']['offchain']['layer_supply'], 7)
+        value = dispatch_request(request)
         value['result']['offchain_supply'] = 99
+        raw, diagnostic = wire(value), b'diagnostic\n'
         with SupplyClient(cleanup_timeout=1) as client, \
-                patch('supply_client.subprocess.Popen', return_value=Child(wire(value))):
-            self.assertEqual(client.request(request).reply, value)
+                patch('supply_client.subprocess.Popen',
+                      return_value=Child(raw, stderr=diagnostic)) as launch:
+            with self.assertRaises(SupplyTransportUncertainty) as caught:
+                client.request(request)
+            evidence = caught.exception
+            self.assertIs(client.uncertainty, evidence)
+            self.assertIsInstance(evidence.__cause__, FixtureError)
+            self.assertEqual((evidence.phase, evidence.request_bytes, evidence.stdout,
+                              evidence.stderr, evidence.returncode),
+                             ('decode', wire(request), raw, diagnostic, 0))
+            # Neither a repeated comparison nor a different operation may launch.
+            for subsequent in (request, empty_request()):
+                with self.assertRaises(SupplyClientStateError):
+                    client.request(subsequent)
+            launch.assert_called_once()
 
     def test_invalid_inputs_and_construction_launch_nothing(self):
         with patch('supply_client.subprocess.Popen') as launch:

@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_offchain_supply_mismatch_retains_evidence_and_fences (test_supply_client.SupplyClientTests.test_offchain_supply_mismatch_retains_evidence_and_fences)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-supply-live-console/reference/token_reward/test_supply_client.py", line 217, in test_offchain_supply_mismatch_retains_evidence_and_fences
+    with self.assertRaises(SupplyTransportUncertainty) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: SupplyTransportUncertainty not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

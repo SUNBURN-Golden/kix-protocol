@@ -121,6 +121,8 @@ class SupplyClient:
                     raise FixtureError('invalid comparison types')
                 for field in ('offchain_supply', 'chain_supply'):
                     _money(result[field], positive=False)
+                if result['offchain_supply'] != request['arguments']['offchain']['layer_supply']:
+                    raise FixtureError('returned offchain_supply differs from submitted layer_supply')
                 if _canonical(result['chain_supply']) != _canonical(request['arguments']['chain_supply']):
                     raise FixtureError('returned chain_supply differs from submitted value')
             if result['figure'] != 'SYNTHETIC_SUPPLY_FIGURE':

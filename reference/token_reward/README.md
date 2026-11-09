@@ -124,8 +124,10 @@ binary pipes and `shell=False`. `communicate` closes stdin, drains both outputs
 and reaps the child before accepting a result. No persistent JSONL session is
 introduced. Requests and complete reports retain their JSON content and order.
 The client validates envelope/event shapes, types, labels, operation, returned
-events and supplied chain figure; arithmetic and classifications remain in the
-existing service/model. This validation is not report authentication.
+events and supplied chain figure. Returned `offchain_supply` must equal the
+submitted report's `layer_supply`; disagreement fences the client as transport
+uncertainty. Arithmetic and classifications remain in the existing service/model.
+This validation is not report authentication.
 
 | Child exit | Required payload | Client / console behavior |
 |---|---|---|

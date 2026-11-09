@@ -155,3 +155,80 @@ Commands below were actually run; prior runs and capture notes remain in the led
 | `PYTHONDONTWRITEBYTECODE=1 git diff --check` | PASS (exit 0) | [check-34.log](check-34.log) |
 | `PYTHONDONTWRITEBYTECODE=1 git rev-parse origin/main HEAD` | PASS (exit 0) | [check-27.log](check-27.log) |
 | `PYTHONDONTWRITEBYTECODE=1 git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | PASS (exit 0) | [check-28.log](check-28.log) |
+
+## PR fix round 1 — reconciliation response correlation
+
+This section records the follow-up to the supplied blocking review; the original
+builder evidence above remains historical. Task ID: `plan-local-supply-live-console`;
+task document: the supervisor's inline specification (no issue or `docs/tasks/`
+document exists). Branch: `agent/kix-plan-local-supply-live-console`.
+Observed local `origin/main` and merge base:
+`25e7f2ebaa08e3688a92b36ad3025325b5011d84`. Implementation HEAD at entry and
+unchanged Git HEAD at handoff: `df1e9dd1e189a6ad622f1e4c6cd1a0532473bf73`.
+The fix is uncommitted; a final committed fix head and merge SHA do not exist.
+Fetch and all network/publication actions are omitted under the supervisor's
+explicit instruction. Remote freshness is unverified; the local base matches
+the earlier builder base. No commit, push, comment, branch change or merge occurs.
+
+The blocking finding is confirmed and fixed. A successful reconciliation reply
+must now return `offchain_supply` equal to the submitted report's `layer_supply`.
+The comparison uses the submitted field directly, without recalculating supply
+or classifying alarms. Disagreement follows the existing decode-uncertainty path,
+which retains the complete observation and permanently fences further requests.
+
+Coverage mapping before this fix: arithmetic/classifications, real subprocess
+journeys, report forwarding, event invalidation, confirmation boundaries and
+in-process behavior were sufficiently covered by the tests mapped above.
+Reconciliation correlation was partially covered: chain input and amount types
+were checked, but the old test explicitly accepted an offchain mismatch.
+`SupplyClientTests.test_offchain_supply_mismatch_retains_evidence_and_fences`
+replaces that acceptance with the review's `99` versus `7` reproduction. It
+checks uncertainty phase, request bytes, complete stdout/stderr, child exit,
+retained uncertainty identity, and rejection of both repeated reconciliation
+and a subsequent report request with only one child launch. This closes the
+documented gap; existing arithmetic and console tests are reused unchanged.
+
+| Evidence / command actually run | Result | Capture |
+|---|---|---|
+| `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3.12 -m unittest test_supply_client.SupplyClientTests.test_offchain_supply_mismatch_retains_evidence_and_fences` before implementation fix | Expected FAIL: uncertainty not raised (exit 1) | [regression-before.log](fix-round-1/regression-before.log) |
+| Same regression command after implementation fix | PASS: 1 test (exit 0) | [regression-after.log](fix-round-1/regression-after.log) |
+| `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3.12 -m unittest test_reward_model.SupplyTests test_tl4_model_properties.SupplyPropertyTests test_supply_reconciliation test_supply_cli test_supply_client test_supply_console test_supply_console_subprocess` | PASS: 60 tests (exit 0) | [focused.log](fix-round-1/focused.log) |
+| `PYTHONDONTWRITEBYTECODE=1 python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward` | PASS: 371 tests (exit 0) | [discovery.log](fix-round-1/discovery.log) |
+| Documentation index, TL predicate evidence map, class-B index, checker wiring and test discovery, each plain and `--self-test` | PASS: all 10 commands (exit 0 each) | [Exact argv and results](fix-round-1/checks.jsonl), `check-01.log` through `check-10.log` |
+| `PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/verify_runtime_architecture.py` | PASS (exit 0) | [check-11.log](fix-round-1/check-11.log) |
+| `PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/test_runtime_architecture.py` | PASS: 7 tests (exit 0) | [check-12.log](fix-round-1/check-12.log) |
+| `PYTHONDONTWRITEBYTECODE=1 python3.12 validation/2026-11-10-plan-local-supply-live-console/verify_preservation.py` | PASS: 110 protected files unchanged, both locked blobs match | [check-13.log](fix-round-1/check-13.log) |
+| `git diff --check` | PASS (exit 0) | [check-14.log](fix-round-1/check-14.log) |
+
+Both kernel Git blobs matched the required values before editing and after
+the fix: `69564b166f0c27f9af5d8422f0a466b18d74c20f` (`src/lib.rs`) and
+`b607996c83a119c349f1cc90469ac1ba82764e20` (`tests/quarantine_capacity.rs`).
+All 110 protected-file hashes match the original before/after manifests,
+including `reference/v0.3-rc1/**`. The CLI, service, model, CI, `.aiops/`, and
+task documents remain unchanged from entry HEAD.
+
+Complete round-1 changed paths are listed in
+[changed-paths.txt](fix-round-1/changed-paths.txt). Source/document edits are
+limited to `reference/token_reward/supply_client.py`,
+`reference/token_reward/test_supply_client.py`,
+`reference/token_reward/README.md`, and this validation README; all other
+round-1 paths are validation logs/ledgers/path evidence under `fix-round-1/`.
+
+No remaining model-contract violation or new undefined behavior was found.
+The reviewed issue was a client task-acceptance gap; the model contract and
+arithmetic are unchanged. Existing simultaneous-unapproved-cause precedence
+remains the class-B characterization documented above. Policy and operational
+responses remain **UNDETERMINED — Astra/User**; `stop_payout` remains data.
+
+No CI failure log was supplied. KTX and KIX exact-head CI run IDs, statuses and
+conclusions are unavailable and were not queried. Post-merge CI and merge-blob
+checks are not applicable. Rust, Move, ZK, SDK and full protocol CI are not rerun
+for this Python-only correction; prior Rust cache limitations above remain
+historical. This is source-informed local builder evidence, not independent
+A2 approval or merge readiness. Supervisor-owned committed-head review and CI
+remain delivery gates. No production, chain, external services, sockets, funds,
+credentials, new dependency, policy default or runtime activation is introduced.
+
+Round-1 outcome: **STATUS: READY** for local builder handoff. The final
+[documentation and whitespace checks](fix-round-1/final-checks.log) pass after
+this evidence update. READY does not authorize merge.
