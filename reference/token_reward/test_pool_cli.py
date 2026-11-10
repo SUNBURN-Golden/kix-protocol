@@ -8,24 +8,79 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from pool_cli import main, run_requests
 from pool_session import PoolSession
 from test_pool_session import FIXTURE, check_metadata, opening, request
-from token_reward_model import PoolLedger, _canonical
+from token_reward_model import MONEY_MAX, POOLS, PROVENANCE, PoolLedger, _canonical
 
 
 HERE = Path(__file__).parent
 
 
-def cli(data=b"", *, fixture=FIXTURE, requests="-", env=None):
-    return subprocess.run([sys.executable, str(HERE / "pool_cli.py"), "--fixture", str(fixture),
+def cli(data=b"", *, fixture=FIXTURE, requests="-", env=None, stdin_init=False):
+    startup = ["--init-stdin"] if stdin_init else ["--fixture", str(fixture)]
+    return subprocess.run([sys.executable, str(HERE / "pool_cli.py"), *startup,
                            "--requests", str(requests)], input=data, capture_output=True,
                           env=env, timeout=15)
 
 
 class PoolCliTests(unittest.TestCase):
+    def test_stdin_initialization_matches_complete_fixture_envelopes(self):
+        init = (_canonical({"fixture_version": 1, "provenance": PROVENANCE,
+                            "opening_balances": opening()}) + "\n").encode()
+        records = [(HERE / f"fixtures/pool_{name}.jsonl").read_bytes()
+                   for name in ("journey", "boundaries")]
+        records += [b"", b"{}\n" + (_canonical(request("view")) + "\n").encode()]
+        for data in records:
+            with self.subTest(data=data):
+                expected, actual = cli(data), cli(init + data, stdin_init=True)
+                self.assertEqual((actual.returncode, actual.stdout, actual.stderr),
+                                 (expected.returncode, expected.stdout, expected.stderr))
+                self.replies(actual)
+
+    def test_invalid_stdin_initialization_never_acknowledges_or_dispatches(self):
+        good = {"fixture_version": 1, "provenance": PROVENANCE, "opening_balances": opening()}
+        invalid = [b"\n", b"{\n", b"\xff\n", b"[]\n", b"null\n",
+                   b'{"fixture_version":1,"fixture_version":1}\n',
+                   (_canonical(good).replace('"CUSTOMER_DEPOSIT":20',
+                                            '"CUSTOMER_DEPOSIT":20,"CUSTOMER_DEPOSIT":20') + "\n").encode()]
+        values = [{k: v for k, v in good.items() if k != missing} for missing in good]
+        values += [{**good, "extra": 1}, {**good, "fixture_version": True},
+                   {**good, "fixture_version": 1.0}, {**good, "fixture_version": 2},
+                   {**good, "provenance": "REAL"}]
+        values += [{**good, "opening_balances": balances} for balances in
+                   ({}, None, [], {**opening(), "OTHER": 0},
+                    {k: v for k, v in opening().items() if k != POOLS[0]})]
+        values += [{**good, "opening_balances": {**opening(), POOLS[0]: value}}
+                   for value in (True, 1.0, "1", -1, MONEY_MAX + 1)]
+        invalid += [(_canonical(value) + "\n").encode() for value in values]
+        invalid += [(_canonical(good).replace('20', value, 1) + "\n").encode()
+                    for value in ('NaN', '"\\ud800"')]
+        following = (_canonical(request("credit")) + "\n").encode()
+        for data in invalid:
+            with self.subTest(data=data):
+                result = cli(data + following, stdin_init=True)
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(result.stdout, b"")
+                check_metadata(self, json.loads(result.stderr))
+        for data in (b"", _canonical(good).encode(), (_canonical(good) + "\r").encode()):
+            result = cli(data, stdin_init=True)
+            self.assertEqual((result.returncode, result.stdout), (2, b""))
+            self.assertEqual(json.loads(result.stderr)["error"]["type"], "FixtureError")
+
+    def test_initialization_options_reject_before_consuming_stdin(self):
+        invalid = [["--requests", "-"], ["--fixture", str(FIXTURE), "--init-stdin", "--requests", "-"],
+                   ["--init-stdin", "--requests", str(HERE / "fixtures/pool_journey.jsonl")]]
+        source = Mock()
+        with patch("sys.stdin", source), patch("sys.stderr", io.StringIO()):
+            for args in invalid:
+                with self.subTest(args=args), self.assertRaises(SystemExit) as caught:
+                    main(args)
+                self.assertEqual(caught.exception.code, 2)
+        source.readline.assert_not_called()
+
     def replies(self, process):
         replies = [json.loads(line) for line in process.stdout.decode("utf-8").splitlines()]
         for reply in replies:

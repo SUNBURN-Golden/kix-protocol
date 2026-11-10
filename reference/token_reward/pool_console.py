@@ -102,8 +102,8 @@ def _interact(opening_balances, *, input_stream, output_stream, error_stream, st
 
 
 def run_console(opening_balances=_GUIDED, *, input_stream, output_stream, error_stream,
-                fixture=None, cleanup_timeout=None):
-    """Use a child only when explicitly selected by fixture and cleanup_timeout.
+                fixture=None, cleanup_timeout=None, stdin_init=False):
+    """Use a child when selected by fixture or stdin_init, with cleanup_timeout.
 
     All preview/confirmation paths share _interact; start runs only after SUBMIT.
     Every post-launch exit closes the owned child, including output failures.
@@ -112,19 +112,25 @@ def run_console(opening_balances=_GUIDED, *, input_stream, output_stream, error_
 
     def start(balances):
         nonlocal client
-        if fixture is None:
+        if stdin_init:
+            client = PoolClient.launch_from_balances(expected_opening_balances=balances,
+                                                     cleanup_timeout=cleanup_timeout)
+        elif fixture is None:
             return PoolSession(balances), initialized_reply(balances)
-        client = PoolClient.launch(fixture, expected_opening_balances=balances,
-                                   cleanup_timeout=cleanup_timeout)
+        else:
+            client = PoolClient.launch(fixture, expected_opening_balances=balances,
+                                       cleanup_timeout=cleanup_timeout)
         return client, client.initialized_reply
 
     def dispatch(session, request):
-        return session.request(request) if fixture is not None else dispatch_request(session, request)
+        return session.request(request) if fixture is not None or stdin_init else dispatch_request(session, request)
 
     status = 2
     try:
-        if fixture is not None:
-            if opening_balances is _GUIDED:
+        if fixture is not None and stdin_init:
+            raise FixtureError("fixture and stdin_init are mutually exclusive")
+        if fixture is not None or stdin_init:
+            if fixture is not None and opening_balances is _GUIDED:
                 raise FixtureError("subprocess mode requires fixture opening balances")
             validate_cleanup_timeout(cleanup_timeout)
         elif cleanup_timeout is not None:
@@ -156,8 +162,6 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.mode == "subprocess":
-            if args.guided_init:
-                raise FixtureError("subprocess mode requires --fixture")
             validate_cleanup_timeout(args.cleanup_timeout)
         elif args.cleanup_timeout is not None:
             raise FixtureError("--cleanup-timeout requires --mode subprocess")
@@ -167,7 +171,8 @@ def main(argv=None):
         return 2
     return run_console(opening, input_stream=sys.stdin, output_stream=sys.stdout, error_stream=sys.stderr,
                        fixture=args.fixture if args.mode == "subprocess" else None,
-                       cleanup_timeout=args.cleanup_timeout)
+                       cleanup_timeout=args.cleanup_timeout,
+                       stdin_init=args.mode == "subprocess" and args.guided_init)
 
 
 if __name__ == "__main__":
