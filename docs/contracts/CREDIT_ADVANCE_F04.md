@@ -510,3 +510,56 @@ REJECTED                               DEFAULTED
 - §5.1의 선택지 A는 채택된 목 경계다. 정책 숫자의 승인이 아니다. 조회의 `open_terms`는 `decided_value`가 없다.
 - 라이브 HTTP, 언더라이팅, KYC-AML, PG·은행 레일, 실여신, commerce-apps 변경은 없다.
 - 새 `protocol_contract` 명령은 없다. OpenAPI에는 이 기계의 `REPLAYABLE`이 `credit_<op>`로 있다. 2026-10-09 소유자 결정(JunTae).
+
+### 7.11 정산 잔차(settlement variance)
+
+이 절은 F01–F03 정산 목의 스냅샷과 F04 목의 고정된 청구 조회 사이의 정산 잔차를 정의한다.
+새 명령, 새 단계, 새 프로토콜 오류 코드, 새 OpenAPI 바이트, 새 정책 숫자를 만들지 않는다.
+관찰은 두 목의 상태를 바꾸지 않는다.
+
+정의는 이미 노출된 값만 쓴다. 호출자가 넘긴 두 스냅샷에 대해:
+
+```text
+variance = sum(settlement_view["obligations"][i]["outstanding"])
+           - credit_view["open_face"]
+```
+
+`settlement_view`는 `MockSettlement.view`의 출력이고, `credit_view`는 `MockCredit.view_claim`의 출력이다.
+이 정의는 정산 산술을 다시 계산하지 않고 `outstanding`과 `open_face`만 읽는다.
+두 스냅샷은 같은 `claim_id`와 `trade_id`를 가리켜야 하고, `currency`는 `KRW`이며,
+`credit_view["snapshot_frozen"]`은 `True`여야 한다.
+어긋나면 잔차 값이 아니라 호출 오류다. 참조 전용 코드는 `VIEW_BINDING_CONFLICT`, `VIEW_NOT_FROZEN`, `VIEW_INVALID`이며 프로토콜 오류 코드가 아니다.
+
+부호 규칙:
+
+- `variance > 0`: 공급된 정산 스냅샷의 미지급 액면 합이 고정된 F04 액면보다 크다.
+- `variance < 0`: 고정된 F04 액면이 공급된 정산 스냅샷의 미지급 액면 합보다 크다.
+- `variance = 0`: 관측된 값에서만 일치한다. 최종성, 내구성, 수락, 은행 일치를 뜻하지 않는다.
+
+관찰 시점은 호출자의 것이다. 두 스냅샷이 서로 다른 시점의 기계 출력이면 잔차는 그 차이를 그대로 보고한다.
+이 절은 어느 쪽이 현재인지, 어느 쪽이 권위인지 정하지 않는다.
+
+허용 오차는 호출자가 넘기는 필수 키워드 인자 `tolerance`다.
+기본값은 없다(`no default`). 타입은 `bool`이 아닌 `int`이고 `0 <= tolerance`다.
+누락은 `TOLERANCE_REQUIRED`, 형식 위반은 `TOLERANCE_INVALID`다. 둘 다 참조 전용 코드다.
+판정은 `abs(variance) <= tolerance`이며 경계를 포함한다.
+
+`tolerance` 안에 들어와도 그것은 수락·승인·대사 완료·노출 권한이 아니다.
+모든 관찰은 `fail_closed: true`, `authorizes_exposure: false`, `mutates_state: false`로 남는다.
+
+0이 아니거나 허용 오차를 벗어난 관찰은 기존 상태나 사유에 매핑하지 않는다. `NOT_BOUND`다.
+기존 F04 단계(`OFFERED` … `DEFAULTED`), 정산 오류(`SETTLEMENT_*`), `FACE_SNAPSHOT_FROZEN`, `MOCK_INVARIANT` 중 어느 것도 두 계약을 가로지르는 순수 관찰을 뜻하지 않는다.
+`SETTLEMENT_VARIANCE_NOT_BOUND`는 이 참조 모듈의 라벨이며 프로토콜 오류 코드가 아니다.
+매핑은 `{"code": "SETTLEMENT_VARIANCE_NOT_BOUND", "contract_status": "NOT_BOUND", "repair": "NONE"}`이고,
+새 상태·새 명령·새 오류 코드·수리 경로를 만들지 않는다.
+
+`cash_delta`와 `recovery_delta`는 진단용 동반 값이다.
+각각 정산 스냅샷의 `confirmed_cash`·`recovery_due`에서 F04 스냅샷의 `confirmed_cash_on_face`·`recovery_due_on_face`를 뺀 값이다.
+공식과 허용 오차 판정에서 제외한다. 확인 현금이나 회수채권을 잔차의 구성 요소로 쓰지 않는다.
+
+환불 구성 요소는 `NOT_BOUND`다. F04 `view_claim`에는 환불 필드가 없으므로 환불 때문에 생기는 잔차를 이 절은 계산하지 않는다.
+수리 경로는 `NONE`이다. 향후 바인딩의 담당은 사용자다.
+
+이 절은 정산 잔차의 뜻만 정의한다. 비청구: 통과는 F04·E06 또는 F01–F03의 구현·설계확정이 아니고,
+정산·회계·법률·은행·체인 최종성의 판단이 아니며, 실자금·내구성·분산 펜싱·정확히 한 번을 뜻하지 않는다.
+모든 실행 플래그는 거짓으로 남는다.
