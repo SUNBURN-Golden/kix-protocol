@@ -1,5 +1,10 @@
 # Local F4 reward desk
 
+The [non-normative consumer surface map](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md)
+separates reward, pool, supply and collateral tools from HTTP/SDK and ticket
+interfaces. It records prerequisites and evidence limits: pool references do
+not deduplicate calls, and synthetic snapshots/approvals are not authenticated facts.
+
 ## Local supply console
 
 Run the separate, stdlib-only terminal console from the repository root:

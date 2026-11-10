@@ -34,6 +34,11 @@
 
 호환 형식은 [docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)에 있다. 현재 생성물은 `bootstrap-2`다. `bootstrap-1`은 40개 명령 역사 핀으로 트리에 남아 있고 다시 생성하지 않는다. 둘 다 카탈로그 스키마 결합만 부여한다. 의미 적합성, N/N−1, 운영 적합, 감사 통과, 사용자 승인이 아니다. 의미 적합의 소비자는 HOLD다.
 
+The [non-normative consumer surface map](../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md)
+separates this local-call client from calculator, ticket and token-tool envelopes.
+It preserves semantic HOLD and the existing User-owned SD1 verifier-order blocker;
+BOOTSTRAP success does not resolve either boundary.
+
 타입 검사는 Node 24의 타입 제거로 돌린다. `tsc`와 패키지 의존성은 없다. 지울 수 있는 구문만 쓴다.
 
 ## 재생과 검사

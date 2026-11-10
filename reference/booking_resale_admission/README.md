@@ -2938,6 +2938,10 @@ review and both exact-head KTX/KIX workflows remain required separately.
 
 ## Shared local ticket console
 
+The [non-normative consumer surface map](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#ticket-sessions-and-consoles)
+records this desk's setup/source requirements, local selectors and historical
+replay/current-view distinction. These selectors are not HTTP catalogue aliases.
+
 Run all four existing consoles against **one** explicitly launched local ticket
 operations client and its single in-memory service graph, from the repository root:
 
@@ -3245,6 +3249,10 @@ for results and pending non-author exact-head A2 review/KTX/KIX CI gates.
 
 
 ## Commerce calculation console
+
+The [non-normative consumer surface map](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#commerce-calculator)
+distinguishes the calculator's `{action,args}` envelope and calculation hashes
+from ticket requests, HTTP identity and execution authority.
 
 `commerce_calculation_client.py` is a reusable synchronous, single-writer client
 for the unchanged `../v0.3-rc1/commerce_driver.py`. Construction launches nothing;
