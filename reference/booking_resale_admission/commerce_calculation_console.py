@@ -121,7 +121,7 @@ def _show_draft(candidate, stream):
 
 
 def _edit_quote(prompt, payload, action, conversions, stream):
-    """Replace a detached draft entry; never repair or calculate business inputs."""
+    """Edit a detached draft; never repair or calculate business inputs."""
     try:
         candidate = _draft(payload)
         _show_draft(candidate, stream)
@@ -129,15 +129,76 @@ def _edit_quote(prompt, payload, action, conversions, stream):
             candidate['orderVersion'] = _integer(prompt, 'orderVersion')
             candidate['expiresAt'] = _integer(prompt, 'expiresAt (Unix milliseconds)')
         else:
-            field = 'discounts' if action == 'edit_discount' else 'lines'
-            if not candidate[field]:
-                raise ConsoleInputError(field + ' has no replaceable entry')
-            position = _integer(prompt, 'Explicit ' + field + ' position (zero-based)')
-            if not 0 <= position < len(candidate[field]):
-                raise ConsoleInputError(field + ' position outside draft array')
-            prefix = field + '[' + str(position) + '].'
-            candidate[field][position] = (_compose_discount(prompt, prefix) if field == 'discounts'
-                else _compose_line(prompt, prefix, action == 'edit_line_decimal', conversions))
+            from calculated_booking_quote_source import _calculator
+
+            field = 'discounts' if action.endswith('_discount') else 'lines'
+            commerce = _calculator()['commerce']
+            def compose_entry(prefix):
+                return (_compose_discount(prompt, prefix) if field == 'discounts'
+                        else _compose_line(prompt, prefix, action.endswith('_decimal'), conversions))
+            _edit_array(prompt, candidate[field], field, action.split('_')[0],
+                        0 if field == 'discounts' else 1,
+                        commerce.MAX_RULES if field == 'discounts' else commerce.MAX_LINES,
+                        compose_entry)
+        return codec().canonical_bytes(candidate)
+    except (_calculator_rejection(), UnicodeError) as error:
+        raise ConsoleInputError(str(error)) from error
+
+
+def _edit_array(prompt, entries, field, operation, minimum, maximum, compose_entry):
+    """Positions are literal; move destinations are indices in the final array."""
+    size = len(entries) + (1 if operation == 'insert' else -1 if operation == 'remove' else 0)
+    if not minimum <= size <= maximum:
+        raise ConsoleInputError(field + ' count outside existing bound')
+    if not entries and operation != 'insert':
+        raise ConsoleInputError(field + ' has no replaceable entry')
+    position = _integer(prompt, 'Explicit ' + field + ' position (zero-based)')
+    if not 0 <= position < len(entries) + (operation == 'insert'):
+        raise ConsoleInputError(field + ' position outside draft array')
+    if operation == 'move':
+        destination = _integer(prompt, 'Explicit final ' + field + ' destination (zero-based)')
+        if not 0 <= destination < len(entries):
+            raise ConsoleInputError(field + ' destination outside draft array')
+        entries.insert(destination, entries.pop(position))
+    elif operation == 'remove':
+        entries.pop(position)
+    else:
+        entry = compose_entry(field + '[' + str(position) + '].')
+        if operation == 'insert':
+            entries.insert(position, entry)
+        else:
+            entries[position] = entry
+
+
+def _compose_leg(prompt, prefix, decimal_entry, conversions):
+    leg = {field: prompt(prefix + field) for field in ('legId', 'providerRef', 'routeRef')}
+    leg['amount'] = _compose_amount(prompt, prefix + 'amount', decimal_entry, conversions)
+    return leg
+
+
+def _leg_draft(payload):
+    candidate = _parse(payload)
+    if type(candidate) is not list:
+        raise ConsoleInputError('payment legs must be an array')
+    return candidate
+
+
+def _show_legs(candidate, stream):
+    if not candidate:
+        print('draft_legs=[]', file=stream)
+    for position, entry in enumerate(candidate):
+        print('draft_leg=' + _json(dict(position=position, entry=entry)), file=stream)
+
+
+def _edit_legs(prompt, payload, action, conversions, stream):
+    from calculated_booking_quote_source import _calculator
+
+    try:
+        candidate = _leg_draft(payload)
+        _show_legs(candidate, stream)
+        _edit_array(prompt, candidate, 'legs', action.split('_')[0], 0,
+                    _calculator()['commerce'].MAX_LEGS,
+                    lambda prefix: _compose_leg(prompt, prefix, action.endswith('_decimal'), conversions))
         return codec().canonical_bytes(candidate)
     except (_calculator_rejection(), UnicodeError) as error:
         raise ConsoleInputError(str(error)) from error
@@ -154,9 +215,7 @@ def _compose_legs(prompt, decimal_entry=False, conversions=None):
         candidate = []
         for index in range(count):
             prefix = 'legs[' + str(index) + '].'
-            leg = {field: prompt(prefix + field) for field in ('legId', 'providerRef', 'routeRef')}
-            leg['amount'] = _compose_amount(prompt, prefix + 'amount', decimal_entry, conversions)
-            candidate.append(leg)
+            candidate.append(_compose_leg(prompt, prefix, decimal_entry, conversions))
         return codec().canonical_bytes(candidate)
     except (_calculator_rejection(), UnicodeError) as error:
         raise ConsoleInputError(str(error)) from error
@@ -236,7 +295,10 @@ def run_console(client, *, input_stream, output_stream, error_stream):
             print('Actions: load_quote, compose_quote, compose_quote_decimal, simulate_quote, load_legs, '
                   'compose_legs, compose_legs_decimal, plan_payments, select_lines, '
                   'pick_lines, propose_line_refund, show_draft, edit_line, edit_line_decimal, '
-                  'edit_discount, edit_quote_metadata, show, quit', file=output_stream)
+                  'edit_discount, edit_quote_metadata, insert_line, insert_line_decimal, '
+                  'remove_line, move_line, insert_discount, remove_discount, move_discount, '
+                  'show_legs, edit_leg, edit_leg_decimal, insert_leg, insert_leg_decimal, '
+                  'remove_leg, move_leg, show, quit', file=output_stream)
             action = prompt('action')
             try:
                 if action == 'quit':
@@ -260,7 +322,9 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                         print('Load or compose a quote request draft first.', file=output_stream)
                         continue
                     _show_draft(_draft(quote_input), output_stream)
-                elif action in ('edit_line', 'edit_line_decimal', 'edit_discount', 'edit_quote_metadata'):
+                elif action in ('edit_line', 'edit_line_decimal', 'edit_discount', 'edit_quote_metadata',
+                                'insert_line', 'insert_line_decimal', 'remove_line', 'move_line',
+                                'insert_discount', 'remove_discount', 'move_discount'):
                     previous_input = quote_input
                     quote_input = quote = plan = refund = selected = None
                     if previous_input is None:
@@ -291,6 +355,23 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                     for conversion in conversions:
                         print('decimal_conversion=' + _json(conversion), file=output_stream)
                     print('composed_legs=' + legs.decode('utf-8'), file=output_stream)
+                elif action == 'show_legs':
+                    if legs is None:
+                        print('Load or compose payment legs first.', file=output_stream)
+                        continue
+                    _show_legs(_leg_draft(legs), output_stream)
+                elif action in ('edit_leg', 'edit_leg_decimal', 'insert_leg', 'insert_leg_decimal',
+                                'remove_leg', 'move_leg'):
+                    previous_legs = legs
+                    legs = plan = refund = selected = None
+                    if previous_legs is None:
+                        print('Load or compose payment legs first.', file=output_stream)
+                        continue
+                    conversions = []
+                    legs = _edit_legs(prompt, previous_legs, action, conversions, output_stream)
+                    for conversion in conversions:
+                        print('decimal_conversion=' + _json(conversion), file=output_stream)
+                    print('edited_legs=' + legs.decode('utf-8'), file=output_stream)
                 elif action == 'plan_payments':
                     plan = refund = selected = None
                     if quote is None or legs is None:
