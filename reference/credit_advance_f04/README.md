@@ -269,6 +269,50 @@ suite discovery (`test_settlement_credit_boundary.py`), so no CI file changes.
 No claim of durability, finality, bank exactly-once, live funds, production
 readiness or product-policy adoption is made.
 
+## Settlement variance observation (CR-CAPITAL-1110 #1)
+
+[`settlement_variance.py`](settlement_variance.py) defines the F04 §7.11
+settlement-variance observation between the F01–F03 settlement and F04 credit
+mock views:
+
+```text
+variance = sum(settlement_view["obligations"][i]["outstanding"])
+           - credit_view["open_face"]
+```
+
+It reads only caller-supplied literal snapshots; it does not call either
+machine, derive a face, repair a gap or authorize exposure. `tolerance` is a
+required keyword with no default: omission is `TOLERANCE_REQUIRED`, and a
+non-`int` (including `bool`) or negative value is `TOLERANCE_INVALID`.
+`within_tolerance` is `abs(variance) <= tolerance` and is never an acceptance.
+Every record is `fail_closed: true`, `authorizes_exposure: false`,
+`mutates_state: false`, and maps to `NOT_BOUND` with repair `NONE`.
+`cash_delta` and `recovery_delta` are diagnostic companions excluded from the
+formula and the tolerance gate; the refund component is `NOT_BOUND` because the
+F04 view has no refund field. Signs are `POSITIVE` (settlement outstanding
+exceeds the frozen credit face), `NEGATIVE` (the frozen face exceeds settlement
+outstanding) and `ZERO` (equal at the observed values only).
+
+The canonical fixture
+[`fixtures/settlement_variance_v1.json`](fixtures/settlement_variance_v1.json)
+is pinned by `FIXTURE_SHA256`; its six scenarios are literal snapshots captured
+from `MockSettlement.view` and `MockCredit.view_claim`, including a later
+partial distribution, a full refund reclassification, a positive observation,
+and the exact/one-past tolerance boundary.
+
+Vendoring: `settlement_variance.py` and the fixture may be copied
+byte-for-byte. The module imports only the Python standard library and reads no
+other reference module. Replay with:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/credit_advance_f04/settlement_variance.py --check
+```
+
+No protocol command, FSM state, error-table entry, OpenAPI byte or product
+policy value is added. Tolerance values stay caller-supplied; a future binding's
+owner is the User. Tests are reached by the existing credit-suite discovery
+(`test_settlement_variance_contract.py`), so no CI workflow change is needed.
+
 ## Verification
 
 ```bash
