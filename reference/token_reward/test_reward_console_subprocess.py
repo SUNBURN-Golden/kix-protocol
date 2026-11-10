@@ -12,12 +12,12 @@ from unittest.mock import Mock, patch
 
 from reward_client import RewardClient, RewardClientStateError, RewardTransportUncertainty
 from reward_console import main, run_subprocess_console
-from reward_fixture import load_fixture
+from reward_fixture import decode_json, load_fixture
 import test_reward_client as client_tests
 from test_reward_console import (CONSOLE, FIXTURE, READS, GuidedCompositionTests, answers,
                                  guided_answers, mutation_examples, printed, script)
 from test_reward_session import FIXTURES, OPERATIONS, requests
-from token_reward_model import ALWAYS_FALSE_FLAGS, PROVENANCE
+from token_reward_model import ALWAYS_FALSE_FLAGS, POOLS, PROVENANCE
 
 
 IDS = {'operation': 'reward_ids', 'arguments': {}}
@@ -47,11 +47,12 @@ class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
         self.assertEqual(sent, result[1])  # No hidden writes, including discarded selections.
         return result[:4]
 
-    def drive(self, lines=(), *, input_stream=None, output=None, configure=None, fixture=FIXTURE):
+    def drive(self, lines=(), *, input_stream=None, output=None, configure=None, fixture=FIXTURE,
+              guided=False):
         """Run with a test-only deadline and deterministic child teardown, never polling."""
         output = io.StringIO() if output is None else output
         errors, calls, clients, result = io.StringIO(), [], [], []
-        launch = RewardClient.launch
+        launch = RewardClient.launch_from_fixture if guided else RewardClient.launch
 
         def owned(*args, **kwargs):
             client = launch(*args, **kwargs)
@@ -71,14 +72,16 @@ class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
             try:
                 with patch('sys.stdin', input_stream if input_stream is not None else script(lines)), \
                         patch('sys.stdout', output), patch('sys.stderr', errors):
-                    result.append(main(['--fixture', str(fixture), '--mode', 'subprocess',
+                    startup = ['--guided-init'] if guided else ['--fixture', str(fixture)]
+                    result.append(main(startup + ['--mode', 'subprocess',
                                         '--cleanup-timeout', '1']))
             except BaseException as error:
                 result.append(error)
             finally:
                 done.set()
 
-        with patch('reward_console.RewardClient.launch', side_effect=owned) as launched, \
+        method = 'launch_from_fixture' if guided else 'launch'
+        with patch('reward_console.RewardClient.' + method, side_effect=owned) as launched, \
                 patch('reward_console.load_fixture', side_effect=AssertionError('in-process fallback')), \
                 patch('reward_console.dispatch_request', side_effect=AssertionError('in-process dispatch')), \
                 patch('socket.socket', side_effect=AssertionError('socket')), \
@@ -92,7 +95,8 @@ class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
             thread.join(10)
             self.assertFalse(thread.is_alive(), 'console did not stop within harness deadline')
             self.assertTrue(completed, 'console reply must arrive before input EOF')
-            launched.assert_called_once_with(fixture, cleanup_timeout=1.0)
+            expected = decode_json(fixture.read_text()) if guided else fixture
+            launched.assert_called_once_with(expected, cleanup_timeout=1.0)
         if isinstance(result[0], BaseException):
             raise result[0]
         self.assertEqual(len(clients), 1)
@@ -124,12 +128,26 @@ class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
         return replies
 
     def test_live_console_journey_before_eof(self):
+        self.live_journey(guided=False)
+
+    def test_live_guided_opening_journey_before_eof(self):
+        self.live_journey(guided=True)
+
+    def live_journey(self, *, guided):
         rows = requests('participation')
         output, children = io.StringIO(), []
         environment = dict(os.environ)
         environment.pop('PYTHONUNBUFFERED', None)
 
         def incremental():
+            if guided:
+                fixture = decode_json(FIXTURE.read_text())
+                for pool in POOLS:
+                    self.assertEqual(children, [])
+                    yield str(fixture['opening_balances'][pool])
+                self.assertEqual(printed('initialization', output.getvalue()), [fixture])
+                self.assertEqual(children, [])
+                yield 'SUBMIT'
             # Generate the next selection only after observing the previous reply.
             for index, row in enumerate(rows):
                 self.assertEqual(len(printed('desk', output.getvalue())), index)
@@ -148,7 +166,7 @@ class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
         with patch.dict(os.environ, environment, clear=True), \
                 patch('reward_client.subprocess.Popen', wraps=subprocess.Popen) as launched:
             status, calls, text, errors, _ = self.drive(input_stream=Input(), output=output,
-                                                       configure=children.append)
+                                                       configure=children.append, guided=guided)
         self.assertEqual((status, calls, errors), (0, rows, ''))
         replies = self.parity(calls, text)
         self.assertEqual(printed('proposed', text), [row for row in rows if row['operation'] not in READS])
@@ -157,6 +175,22 @@ class RewardConsoleSubprocessTests(GuidedCompositionTests, unittest.TestCase):
         self.assertEqual(replies[-3]['view']['phase'], 'ISSUED')
         self.assertEqual(len(replies[-1]['pool_view']['spends']), 1)
         launched.assert_called_once()
+
+    def test_opening_transcript_business_replies_match_fixture_console(self):
+        fixture = (FIXTURES / 'reward_console_opening_journey.txt').read_text()
+        command = [sys.executable, '-B', str(CONSOLE), '--guided-init', '--mode', 'subprocess',
+                   '--cleanup-timeout', '1']
+        guided = subprocess.run(command, input=fixture, text=True, capture_output=True, timeout=10)
+        file_mode = subprocess.run([sys.executable, '-B', str(CONSOLE), '--fixture', str(FIXTURE),
+                                    '--mode', 'subprocess', '--cleanup-timeout', '1'],
+                                   input=(FIXTURES / 'reward_console_source_journey.txt').read_text(),
+                                   text=True, capture_output=True, timeout=10)
+        self.assertEqual((guided.returncode, guided.stderr), (0, ''))
+        self.assertEqual((file_mode.returncode, file_mode.stderr), (0, ''))
+        self.assertEqual(printed('desk', guided.stdout), printed('desk', file_mode.stdout))
+        self.assertEqual(printed('initialized', guided.stdout), [{
+            'operation': 'initialize', 'provenance': PROVENANCE,
+            'initialized': decode_json(FIXTURE.read_text())}])
 
     def test_live_console_scenario_parity(self):
         scenarios = [requests('cancellation'), requests('unknown_pending'),

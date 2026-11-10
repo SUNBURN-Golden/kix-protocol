@@ -79,7 +79,12 @@ def exact_fields(value, required, context, optional=()):
 
 
 def load_fixture(path: str | Path) -> RewardSession:
-    fixture = decode_json(Path(path).read_text(encoding="utf-8"))
+    return session_from_fixture(decode_json(Path(path).read_text(encoding="utf-8")))
+
+
+def session_from_fixture(fixture) -> RewardSession:
+    """Validate the complete existing fixture shape, with no balance defaults."""
+    validate_json(fixture)
     exact_fields(fixture, {"fixture_version", "provenance", "opening_balances"}, "fixture")
     if type(fixture["fixture_version"]) is not int or fixture["fixture_version"] != 1:
         raise FixtureError("unsupported fixture_version")

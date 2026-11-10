@@ -5,7 +5,8 @@ from contextlib import nullcontext
 from pathlib import Path
 import sys
 
-from reward_fixture import FixtureError, decode_json, exact_fields, load_fixture, validate_json
+from reward_fixture import (FixtureError, decode_json, exact_fields, load_fixture,
+                            session_from_fixture, validate_json)
 from reward_session import RewardSession
 from token_reward_model import PROVENANCE, TokenRewardError, _canonical
 
@@ -101,19 +102,40 @@ def run_requests(session: RewardSession, lines) -> int:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fixture", type=Path, required=True)
+    startup = parser.add_mutually_exclusive_group(required=True)
+    startup.add_argument("--fixture", type=Path)
+    startup.add_argument("--init-stdin", action="store_true",
+                         help="read one fixture-shaped initialization record before requests")
     parser.add_argument("--requests", required=True, help="JSONL path, or - for stdin")
     args = parser.parse_args(argv)
+    if args.init_stdin and args.requests != "-":
+        parser.error("--init-stdin requires --requests -")
     try:
-        session = load_fixture(args.fixture)
-        requests = (nullcontext(sys.stdin) if args.requests == "-"
+        # One reader owns both initialization and requests: no text/binary buffer
+        # switch can discard bytes already queued after the opening record.
+        stdin = getattr(sys.stdin, "buffer", sys.stdin)
+        if args.init_stdin:
+            record = stdin.readline()
+            if isinstance(record, bytes):
+                record = record.decode("utf-8")
+            if not record.endswith("\n"):
+                raise FixtureError("initialization record requires a terminating newline")
+            fixture = decode_json(record)
+            session = session_from_fixture(fixture)
+            _emit({"operation": "initialize", "provenance": PROVENANCE,
+                   "initialized": fixture})
+        else:
+            session = load_fixture(args.fixture)
+        requests = (nullcontext(stdin) if args.requests == "-"
                     else Path(args.requests).open(encoding="utf-8"))
         with requests as lines:
-            return run_requests(session, lines)
+            return run_requests(session, (line.decode("utf-8") if isinstance(line, bytes)
+                                          else line for line in lines))
     except (FixtureError, TokenRewardError, OSError, UnicodeError) as error:
         _emit(_error(None, error))
         return 2
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8", errors="strict")
     raise SystemExit(main())

@@ -438,6 +438,7 @@ open-window, forbidden obligation-pool and AI-approval rejections.
 
 `reward_client.RewardClient` uses only the Python standard library and owns one
 explicitly launched `reward_cli.py --fixture <absolute-path> --requests -` child.
+Alternatively, `launch_from_fixture` uses the stdin startup described below.
 Importing starts nothing. Supply the fixture and a finite positive
 `cleanup_timeout`; there are no opening-balance or policy defaults:
 
@@ -538,12 +539,13 @@ python3 reference/token_reward/reward_console.py --fixture reference/token_rewar
 
 `--mode in-process` is the default and preserves the importable
 `run_console(session, *, input_stream, output_stream, error_stream)` interface.
-Both modes require `--fixture`. Subprocess mode requires `--cleanup-timeout`;
+Fixture-based startup in either mode requires `--fixture`. Subprocess mode also
+offers `--guided-init`, described below, and requires `--cleanup-timeout`;
 supplying it in in-process mode is a usage error. The timeout is caller selected,
 with no default, and applies only to reclaiming the owned child. Response reads
 remain blocking with no product response deadline.
 
-Subprocess mode uses the existing `RewardClient` and unchanged `reward_cli.py`.
+Subprocess mode uses `RewardClient` and `reward_cli.py`.
 It launches once, keeps stdin open between selections, and performs each confirmed
 mutation or explicit read in that same service session. It constructs no local
 fallback session. Importing the console launches nothing. Quit, EOF, interruption,
@@ -723,9 +725,87 @@ The [approval composer evidence](../../validation/2026-11-08-plan-local-reward-a
 records coverage, exact child-write parity, captured transcripts and actual local
 checks. U3/F4 and TL-3 offchain boundaries and capability grades are unchanged.
 
+## Fixture-free guided reward initialization
+
+Start a live local desk without an initialization file:
+
+```bash
+python3 reference/token_reward/reward_console.py --guided-init --mode subprocess --cleanup-timeout 1
+```
+
+`--guided-init` and `--fixture` are mutually exclusive. Guided initialization
+requires explicit subprocess mode and a finite positive cleanup timeout. Enter
+one JSON integer for each pool, in order: `CUSTOMER_DEPOSIT`,
+`ORGANIZER_SETTLEMENT`, `REFUND_RESERVE`, `PROTOCOL_REVENUE`,
+`TOKEN_TREASURY_REWARD`. All five are required; zero is an explicit value,
+never a default. Existing validation accepts integers in `0..MONEY_MAX`
+(`10**12`); booleans, floats, negative and oversized amounts retain
+`INVALID_NONNEGATIVE`. This model bound establishes no funding or product policy.
+
+The console prints and flushes `initialization=<complete fixture JSON>` and
+requires literal `SUBMIT` before spawning one child. Anything else declines
+(exit 0). Malformed/incomplete input, EOF before confirmation, interruption or
+preview failure exits 2 and starts no child. After confirmation, the usual
+operation composer runs: mutations require separate confirmation, reads remain
+explicit, and EOF/quit/failure reaps the owned child. No budget workbench,
+settlement connection or shared `PoolSession` ledger is introduced.
+
+Replay the synthetic source/approval journey, with explicit opening inputs:
+
+```bash
+python3 reference/token_reward/reward_console.py --guided-init --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_opening_journey.txt
+```
+
+The CLI's opt-in `--init-stdin --requests -` grammar is one newline-terminated
+UTF-8 JSON initialization record, followed by ordinary JSONL requests on the
+same stdin reader. `--fixture PATH` remains the alternative, with unchanged
+business envelopes and no startup acknowledgement. The complete input shape is:
+
+```json
+{"fixture_version":1,"provenance":"MOCK_TOKEN_REWARD_ONLY","opening_balances":{"CUSTOMER_DEPOSIT":0,"ORGANIZER_SETTLEMENT":0,"REFUND_RESERVE":0,"PROTOCOL_REVENUE":500,"TOKEN_TREASURY_REWARD":500}}
+```
+
+Those numbers are illustrative synthetic scenario inputs, never defaults.
+Both modes use the same fixture validation and `RewardSession` constructor.
+Missing/extra fields and duplicate JSON keys are rejected; no balance is inserted.
+Initialization failure emits the existing null-operation error and exits 2
+without processing queued requests. Successful stdin initialization emits and
+flushes exactly one startup-only acknowledgement before processing requests:
+
+```json
+{"operation":"initialize","provenance":"MOCK_TOKEN_REWARD_ONLY","initialized":{"fixture_version":1,"provenance":"MOCK_TOKEN_REWARD_ONLY","opening_balances":{"CUSTOMER_DEPOSIT":0,"ORGANIZER_SETTLEMENT":0,"REFUND_RESERVE":0,"PROTOCOL_REVENUE":500,"TOKEN_TREASURY_REWARD":500}}}
+```
+
+`initialize` is a startup discriminator, rejected as an ordinary operation;
+it is not a protocol command. The console renders this as `initialized=...`.
+`RewardClient.launch_from_fixture(confirmed_fixture, cleanup_timeout=...)`
+validates and detaches a complete caller-confirmed input before spawning, sends
+it once, and returns only after checking a complete UTF-8 newline, strict JSON
+(including duplicate rejection), exact acknowledgement fields, discriminator,
+provenance and canonical equality of the entire accepted input. Integer/boolean/
+float substitutions do not match. `client.initialized_reply` is a detached copy;
+it is `None` in the existing fixture-file client mode.
+
+Missing, invalid or mismatched acknowledgement, short write, I/O failure or
+interruption raises `RewardTransportUncertainty(phase="initialize")`, retaining
+the attempted input snapshot/bytes, observed reply bytes and chained cause.
+The client is permanently fenced and its child reaped before the exception
+escapes; no business request, retry, restart, fallback or implicit read follows.
+Ordinary uncertainty has `phase="request"`. Reads block without a response
+deadline; missing startup acknowledgement is detected by EOF or interruption.
+The timeout controls cleanup only. This handshake proves local input agreement,
+not authentication, real funding, token issuance, durability or finality.
+
+All existing false execution/finality/durability flags remain false, and all
+existing Class B uncertainties remain. Amounts, budgets, caps, durations and
+approval policy remain **UNDETERMINED — Astra/User**. There is no real funding,
+token issuance, external execution or production runtime.
+[Coverage, captured transcripts and actual local checks](../../validation/2026-11-10-plan-local-reward-guided-init/README.md)
+are builder evidence; non-author exact-head review and KTX/KIX CI remain separate gates.
+
 ## JSONL output and errors
 
-Each output is deterministic sorted JSON containing `operation`, synthetic
+Each business output is deterministic sorted JSON containing `operation`, synthetic
 `provenance`, and exactly one of `receipt`, `view`, `reward_ids`, `pool_view`,
 `error`. Domain errors are `{"code":"<unchanged TokenRewardError.code>"}`;
 format/setup/I/O errors use a distinct `type` and `message` (setup domain errors

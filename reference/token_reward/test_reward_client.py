@@ -14,6 +14,7 @@ from unittest.mock import patch
 from reward_client import RewardClient, RewardClientStateError, RewardTransportUncertainty
 from reward_cli import _error
 from reward_fixture import FixtureError, decode_json, load_fixture
+from test_reward_cli import invalid_initializations
 from test_reward_session import FIXTURES, OPERATIONS, requests
 from tl4_support import human_approval
 from token_reward_model import ALWAYS_FALSE_FLAGS, PROVENANCE, TokenRewardError, _canonical
@@ -458,6 +459,133 @@ class RewardClientTests(unittest.TestCase):
         rows = [decode_json(line) for line in result.stdout.decode().splitlines()]
         self.assertEqual(rows[-1]["error"], {"code": "WINDOW_OPEN"})
         self.assertEqual(len(rows), 5)  # observe/view, hold/view, first refusal
+
+
+class RewardInitializationClientTests(unittest.TestCase):
+    fault_worker = RewardClientTests.fault_worker
+    exchange = RewardClientTests.exchange
+    assert_fenced = RewardClientTests.assert_fenced
+    assert_synthetic = RewardClientTests.assert_synthetic
+
+    def setUp(self):
+        self.fixture = decode_json(FIXTURE.read_text())
+        self.ack = {"operation": "initialize", "provenance": PROVENANCE,
+                    "initialized": self.fixture}
+        self.clients = []
+        clients = self.clients
+        class TrackedClient(RewardClient):
+            def __init__(self, *args):
+                super().__init__(*args)
+                clients.append(self)
+        self.client_type = TrackedClient
+
+    def test_live_confirmed_input_is_detached_and_matches_file_mode(self):
+        original = deepcopy(self.fixture)
+        with patch("reward_client.subprocess.Popen", wraps=subprocess.Popen) as launched:
+            client = self.client_type.launch_from_fixture(self.fixture, cleanup_timeout=1)
+            self.addCleanup(client.close)
+            launched.assert_called_once_with(
+                [sys.executable, str(HERE.joinpath("reward_cli.py").resolve()),
+                 "--init-stdin", "--requests", "-"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0, shell=False)
+        self.fixture["opening_balances"]["PROTOCOL_REVENUE"] = 1
+        acknowledged = client.initialized_reply
+        acknowledged["initialized"]["opening_balances"].clear()
+        self.assertEqual(client.initialized_reply["initialized"], original)
+        file_client = RewardClient.launch(FIXTURE, cleanup_timeout=1)
+        self.addCleanup(file_client.close)
+        self.assertIsNone(file_client.initialized_reply)
+        for row in requests("participation"):
+            reply = self.exchange(client, row)
+            self.assertEqual(reply, self.exchange(file_client, row))
+            self.assert_synthetic(reply)
+        self.assertEqual(client.close(), 0)
+        self.assertEqual(file_client.close(), 0)
+
+    def test_invalid_confirmed_input_and_cleanup_timeout_spawn_nothing(self):
+        with patch("reward_client.subprocess.Popen") as launched:
+            for record in invalid_initializations():
+                with self.subTest(record=record):
+                    with self.assertRaises((FixtureError, TokenRewardError)):
+                        self.client_type.launch_from_fixture(decode_json(record), cleanup_timeout=1)
+            for timeout in (0, -1, True, None, "1", float("nan"), float("inf")):
+                with self.assertRaises(ValueError):
+                    self.client_type.launch_from_fixture(self.fixture, cleanup_timeout=timeout)
+            with self.assertRaises(TypeError):
+                self.client_type.launch_from_fixture(self.fixture)
+            launched.assert_not_called()
+
+    def assert_startup_fenced_and_reaped(self, error, raw):
+        self.assertEqual(len(self.clients), 1)
+        client = self.clients.pop()
+        self.assertIs(client.uncertainty, error)
+        self.assertEqual(error.phase, "initialize")
+        self.assertEqual(error.reply_bytes, raw)
+        self.assertEqual(error.request, self.fixture)
+        self.assertEqual(error.request_bytes, wire(self.fixture))
+        self.assertIsNotNone(error.__cause__)
+        self.assert_fenced(client)
+        self.assertTrue(client._closed)
+        self.assertIsNotNone(client._process.returncode)
+        self.assertTrue(client._process.stdin.closed)
+        self.assertTrue(client._process.stdout.closed)
+        self.assertIsNone(client.initialized_reply)
+        if os.name == "posix":
+            with self.assertRaises(ChildProcessError):
+                os.waitpid(client._process.pid, os.WNOHANG)
+
+    def test_bad_missing_and_mismatched_acknowledgements_never_allow_business_requests(self):
+        valid = wire(self.ack)
+        faults = [b"", b"{", b"\xff\n", b"[]\n", b"null\n", b"NaN\n", valid[:-1],
+                  wire(self.ack | {"operation": "pool_view"}),
+                  wire(self.ack | {"operation": None}), wire(self.ack | {"provenance": "LIVE"}),
+                  wire(self.ack | {"extra": None}), wire(self.ack | {"initialized": {}}),
+                  wire({k: v for k, v in self.ack.items() if k != "initialized"}),
+                  wire({"operation": None, "provenance": PROVENANCE, "error": {"code": "X"}}),
+                  valid.replace(b'"operation":', b'"operation":"initialize","operation":'),
+                  valid.replace(b'"CUSTOMER_DEPOSIT":0', b'"CUSTOMER_DEPOSIT":0,"CUSTOMER_DEPOSIT":0')]
+        for value in (False, 0.0, 1):
+            changed = deepcopy(self.fixture)
+            changed["opening_balances"]["CUSTOMER_DEPOSIT"] = value
+            faults.append(wire(self.ack | {"initialized": changed}))
+        for raw in faults:
+            with self.subTest(raw=raw):
+                log, worker = self.fault_worker(raw)
+                with patch("reward_client.subprocess.Popen", side_effect=worker) as launched:
+                    with self.assertRaises(RewardTransportUncertainty) as caught:
+                        self.client_type.launch_from_fixture(self.fixture, cleanup_timeout=1)
+                    self.assert_startup_fenced_and_reaped(caught.exception, raw)
+                    self.assertEqual(log.read_bytes(), wire(self.fixture))
+                    launched.assert_called_once()
+
+    def test_startup_short_write_flush_failure_and_interrupt_reap_without_retry(self):
+        for fault in ("short", "none", "broken", "write_interrupt", "flush", "read", "interrupt"):
+            with self.subTest(fault=fault):
+                log, worker = self.fault_worker(wire(self.ack))
+                parent = self.client_type
+                class FaultyClient(parent):
+                    def __init__(child, *args):
+                        super().__init__(*args)
+                        stream, method = child._process.stdin, "write"
+                        if fault in ("read", "interrupt"):
+                            stream, method = child._process.stdout, "read"
+                            options = {"side_effect": [b"{", KeyboardInterrupt() if fault == "interrupt" else OSError()]}
+                        elif fault == "flush":
+                            method, options = "flush", {"side_effect": OSError()}
+                        elif fault in ("short", "none"):
+                            options = {"return_value": 1 if fault == "short" else None}
+                        else:
+                            options = {"side_effect": KeyboardInterrupt() if fault == "write_interrupt" else BrokenPipeError()}
+                        injected = patch.object(stream, method, **options)
+                        injected.start()
+                        self.addCleanup(injected.stop)
+                with patch("reward_client.subprocess.Popen", side_effect=worker) as launched:
+                    with self.assertRaises(RewardTransportUncertainty) as caught:
+                        FaultyClient.launch_from_fixture(self.fixture, cleanup_timeout=1)
+                    self.assert_startup_fenced_and_reaped(caught.exception,
+                                                         b"{" if fault in ("read", "interrupt") else b"")
+                    self.assertEqual(log.read_bytes(), wire(self.fixture) if fault in ("flush", "read", "interrupt") else b"")
+                    launched.assert_called_once()
 
 
 if __name__ == "__main__":

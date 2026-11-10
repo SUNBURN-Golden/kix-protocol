@@ -96,6 +96,12 @@ through the unchanged local driver. No booking, settlement or execution authorit
 
 ## Local reward subprocess client
 
+[Fixture-free guided opening balances](../reference/token_reward/README.md#fixture-free-guided-reward-initialization)
+and [builder coverage, transcripts and offline checks](../validation/2026-11-10-plan-local-reward-guided-init/README.md)
+cover explicit five-pool input, complete preview/confirmation and a startup-only
+input acknowledgement before business requests. Synthetic scenarios only; no
+funding, token issuance or policy values. Review and exact-head CI remain pending.
+
 [Reward client guide](../reference/token_reward/README.md#live-subprocess-client)
 and [2026-11-06 builder evidence](../validation/2026-11-06-plan-local-reward-stdio-client/README.md)
 cover one explicitly launched synthetic in-memory child, response-derived reads

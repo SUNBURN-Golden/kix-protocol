@@ -629,5 +629,123 @@ with patch('socket.socket', side_effect=AssertionError('socket')), \\
         self.assertEqual(len(printed('desk', result.stdout)), len(requests('participation')))
 
 
+class RewardGuidedInitializationTests(unittest.TestCase):
+    def drive(self, text, *, output=None, input_stream=None):
+        from reward_console import run_guided_console
+        output = io.StringIO() if output is None else output
+        errors = io.StringIO()
+        status = run_guided_console(cleanup_timeout=1,
+            input_stream=io.StringIO(text) if input_stream is None else input_stream,
+            output_stream=output, error_stream=errors)
+        return status, output.getvalue(), errors.getvalue()
+
+    def test_every_opening_prompt_and_confirmation_eof_launches_nothing(self):
+        lines = ['0', '0', '0', '500', '500', 'SUBMIT']
+        with patch('reward_console.RewardClient.launch_from_fixture') as launch, \
+                patch('reward_client.subprocess.Popen') as popen:
+            for count in range(len(lines)):
+                status, _, errors = self.drive('\n'.join(lines[:count]) + ('\n' if count else ''))
+                self.assertEqual(status, 2)
+                self.assertIn('EOFError', errors)
+            launch.assert_not_called()
+            popen.assert_not_called()
+
+    def test_invalid_values_and_declines_do_not_start_child(self):
+        from token_reward_model import MONEY_MAX
+        with patch('reward_console.RewardClient.launch_from_fixture') as launch, \
+                patch('reward_client.subprocess.Popen') as popen:
+            for pool_index in range(5):
+                for invalid in ('', 'true', 'false', '-1', str(MONEY_MAX + 1), '0.0', 'null',
+                                '"0"', '{}', 'NaN', '1e999', '{"x":0,"x":0}'):
+                    lines = ['0'] * 5
+                    lines[pool_index] = invalid
+                    status, output, errors = self.drive('\n'.join(lines + ['SUBMIT', 'pool_view', 'quit']) + '\n')
+                    self.assertEqual(status, 2, (pool_index, invalid, output, errors))
+            for decline in ('no', 'submit', ' SUBMIT', 'SUBMIT ', ''):
+                status, output, errors = self.drive('0\n0\n0\n0\n0\n' + decline + '\n')
+                self.assertEqual((status, errors), (0, ''))
+                self.assertIn('Initialization declined', output)
+                self.assertEqual(printed('initialization', output)[0]['opening_balances'], {
+                    'CUSTOMER_DEPOSIT': 0, 'ORGANIZER_SETTLEMENT': 0, 'REFUND_RESERVE': 0,
+                    'PROTOCOL_REVENUE': 0, 'TOKEN_TREASURY_REWARD': 0})
+            launch.assert_not_called()
+            popen.assert_not_called()
+
+    def test_preview_flush_and_input_failures_never_launch(self):
+        class FailedPreview(io.StringIO):
+            def flush(self):
+                if 'initialization=' in self.getvalue():
+                    raise OSError('preview flush failed')
+                return super().flush()
+        class FailedInput:
+            def readline(self):
+                raise KeyboardInterrupt('caller interrupted')
+        with patch('reward_console.RewardClient.launch_from_fixture') as launch:
+            self.assertEqual(self.drive('0\n0\n0\n0\n0\nSUBMIT\n', output=FailedPreview())[0], 2)
+            self.assertEqual(self.drive('', input_stream=FailedInput())[0], 2)
+            launch.assert_not_called()
+
+    def test_full_preview_is_flushed_before_literal_confirmation_and_launch(self):
+        from token_reward_model import MONEY_MAX
+        expected = {'fixture_version': 1, 'provenance': PROVENANCE, 'opening_balances': {
+            'CUSTOMER_DEPOSIT': 0, 'ORGANIZER_SETTLEMENT': MONEY_MAX, 'REFUND_RESERVE': 2,
+            'PROTOCOL_REVENUE': 3, 'TOKEN_TREASURY_REWARD': 4}}
+        output = io.StringIO()
+        pending = iter(['0', str(MONEY_MAX), '2', '3', '4', 'SUBMIT', 'quit'])
+        from unittest.mock import Mock
+        client = Mock()
+        client.initialized_reply = {'operation': 'initialize', 'provenance': PROVENANCE,
+                                    'initialized': expected}
+        client.close.return_value = 0
+        class CheckedInput:
+            def readline(inner):
+                value = next(pending)
+                if value == 'SUBMIT':
+                    self.assertEqual(printed('initialization', output.getvalue()), [expected])
+                    self.assertGreater(output.flush.call_count, 0)
+                    launch.assert_not_called()
+                return value + '\n'
+        with patch.object(output, 'flush', wraps=output.flush), \
+                patch('reward_console.RewardClient.launch_from_fixture', return_value=client) as launch:
+            status, text, errors = self.drive('', input_stream=CheckedInput(), output=output)
+        self.assertEqual((status, errors), (0, ''))
+        launch.assert_called_once_with(expected, cleanup_timeout=1)
+        self.assertEqual(printed('initialized', text), [client.initialized_reply])
+        client.request.assert_not_called()
+        client.close.assert_called_once()
+
+    def test_guided_options_and_invalid_cleanup_are_prelaunch_errors(self):
+        options = [[], ['--mode', 'in-process'], ['--mode', 'subprocess'],
+                   ['--fixture', str(FIXTURE), '--mode', 'subprocess', '--cleanup-timeout', '1']]
+        with patch('reward_console.RewardClient.launch_from_fixture') as launch, \
+                patch('reward_console.load_fixture') as load, \
+                patch('sys.stderr', io.StringIO()), patch('sys.stdin', io.StringIO()) as input_stream:
+            for opts in options:
+                with self.assertRaises(SystemExit) as error:
+                    main(['--guided-init'] + opts)
+                self.assertEqual(error.exception.code, 2)
+            for value in ('0', '-1', 'nan', 'inf'):
+                self.assertEqual(main(['--guided-init', '--mode', 'subprocess',
+                                       '--cleanup-timeout=' + value]), 2)
+            self.assertEqual(input_stream.tell(), 0)
+            launch.assert_not_called()
+            load.assert_not_called()
+
+    def test_startup_uncertainty_stops_queued_business_actions_and_retains_phase(self):
+        from reward_client import RewardTransportUncertainty
+        fixture = json.loads(FIXTURE.read_text())
+        error = RewardTransportUncertainty(fixture, (_canonical(fixture) + '\n').encode(),
+                                           b'{', phase='initialize')
+        error.__cause__ = OSError('lost startup acknowledgement')
+        with patch('reward_console.RewardClient.launch_from_fixture', side_effect=error) as launch:
+            status, output, errors = self.drive('0\n0\n0\n500\n500\nSUBMIT\npool_view\nquit\n')
+        self.assertEqual(status, 2)
+        self.assertNotIn('Actions:', output)
+        self.assertNotIn('desk=', output)
+        self.assertIn('"phase":"initialize"', errors)
+        self.assertIn('lost startup acknowledgement', errors)
+        launch.assert_called_once()
+
+
 if __name__ == '__main__':
     unittest.main()
