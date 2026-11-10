@@ -11,7 +11,8 @@ import subprocess
 import sys
 import threading
 
-from pool_session import NOTICE, _DISPATCH, read_opening_balances
+from pool_session import (NOTICE, PoolSession, _DISPATCH, decode_opening_balances,
+                          read_opening_balances)
 from reward_fixture import FixtureError, decode_json, exact_fields, validate_json
 from token_reward_model import ALWAYS_FALSE_FLAGS, POOL_NAMES, PROVENANCE, UNIT, _canonical
 
@@ -37,10 +38,10 @@ def validate_cleanup_timeout(value):
 
 
 class PoolClient:
-    """Own one child and at most one exchange. Use launch() and close()/with.
+    """Own one child and one exchange; use launch()/launch_from_balances() and with.
 
-    expected_opening_balances is the caller's confirmed snapshot. The fixture is
-    checked before launch and the acknowledgement checked before any request.
+    expected_opening_balances is the caller's confirmed snapshot. Startup inputs
+    are checked before launch and the acknowledgement before any request.
     cleanup_timeout bounds cleanup waits only; it is a required caller input.
     """
 
@@ -54,12 +55,30 @@ class PoolClient:
             raise FixtureError("fixture opening balances differ from confirmed snapshot")
         command = [sys.executable, str(Path(__file__).with_name("pool_cli.py").resolve()),
                    "--fixture", str(fixture), "--requests", "-"]
+        return cls._launch(command, cleanup_timeout, expected, b"")
+
+    @classmethod
+    def launch_from_balances(cls, *, expected_opening_balances, cleanup_timeout):
+        """Send a detached confirmed snapshot once, before ordinary request JSONL."""
+        validate_cleanup_timeout(cleanup_timeout)
+        validate_json(expected_opening_balances)
+        record = _canonical({"fixture_version": 1, "provenance": PROVENANCE,
+                             "opening_balances": expected_opening_balances})
+        opening = decode_opening_balances(record)
+        PoolSession(opening)  # Disposable domain preflight; no local operations.
+        command = [sys.executable, str(Path(__file__).with_name("pool_cli.py").resolve()),
+                   "--init-stdin", "--requests", "-"]
+        return cls._launch(command, cleanup_timeout, _canonical(opening),
+                           (record + "\n").encode("utf-8"))
+
+    @classmethod
+    def _launch(cls, command, cleanup_timeout, expected, initialization_wire):
         # Binary unbuffered pipes; stderr inherited, never mixed with JSONL.
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                    bufsize=0, shell=False)
         client = cls(process, cleanup_timeout)
         try:
-            client._initialized_reply = client._exchange(None, b"", expected)
+            client._initialized_reply = client._exchange(None, initialization_wire, expected)
         except BaseException as error:
             try:
                 client.close()
@@ -156,7 +175,7 @@ class PoolClient:
         phase = "initialize" if expected is not None else "request"
         raw = bytearray()
         try:
-            if submitted is not None:
+            if wire:
                 written = self._process.stdin.write(wire)
                 if written != len(wire):
                     raise OSError("short request write")

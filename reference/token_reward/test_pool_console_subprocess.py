@@ -12,21 +12,121 @@ from pool_console import main, run_console
 from pool_session import initialized_reply
 from test_pool_console import console, replies
 from test_pool_session import FIXTURE, opening, request
+from token_reward_model import MONEY_MAX, POOLS
 
 
 HERE = Path(__file__).parent
 
 
-def live(text, *, output=None, source=None):
+def live(text, *, output=None, source=None, guided=False):
     output = output if output is not None else io.StringIO()
     errors = io.StringIO()
-    status = run_console(opening(), fixture=FIXTURE, cleanup_timeout=1,
+    startup = {"stdin_init": True} if guided else {"fixture": FIXTURE}
+    balances = () if guided else (opening(),)
+    status = run_console(*balances, **startup, cleanup_timeout=1,
                          input_stream=source if source is not None else io.StringIO(text),
                          output_stream=output, error_stream=errors)
     return status, output.getvalue(), errors.getvalue()
 
 
 class PoolConsoleSubprocessTests(unittest.TestCase):
+    def test_guided_real_child_matches_fixture_envelopes_and_confirmation_order(self):
+        for name, expected_status in (("journey", 0), ("boundaries", 1)):
+            text = (HERE / f"fixtures/pool_console_opening_{name}.txt").read_text()
+            expected = live((HERE / f"fixtures/pool_console_{name}.txt").read_text())
+            source, output = io.StringIO(text), io.StringIO()
+            flushed, clients, sent = [], [], []
+            output.flush = lambda: flushed.append(output.getvalue())
+            launch, submit = PoolClient.launch_from_balances, PoolClient.request
+
+            def start(**kwargs):
+                # All five inputs and the literal initialization confirmation were consumed.
+                self.assertEqual(source.tell(), len("".join(text.splitlines(True)[:6])))
+                self.assertEqual(kwargs["expected_opening_balances"], opening())
+                self.assertIn('"opening_balances":', flushed[-1])
+                self.assertEqual(flushed[-1], output.getvalue())
+                client = launch(**kwargs)
+                clients.append(client)
+                return client
+
+            def send(client, item):
+                self.assertIs(client, clients[0])
+                if item["operation"] != "view":
+                    self.assertEqual(text[:source.tell()].splitlines()[-1], "SUBMIT")
+                    self.assertEqual(flushed[-1], output.getvalue())
+                    self.assertIn('"operation":"' + item["operation"] + '"', output.getvalue())
+                sent.append(item)
+                return submit(client, item)
+
+            with self.subTest(name=name), patch("pool_client.subprocess.Popen", wraps=subprocess.Popen) as spawn, \
+                    patch("pool_console.PoolClient.launch_from_balances", side_effect=start), \
+                    patch.object(PoolClient, "request", autospec=True, side_effect=send), \
+                    patch("pool_console.PoolClient.launch", side_effect=AssertionError("fixture fallback")):
+                actual = live("", guided=True, source=source, output=output)
+            self.assertEqual((actual[0], actual[2]), (expected_status, ""))
+            self.assertEqual(replies(actual[1]), replies(expected[1]))
+            self.assertIn("view", [item["operation"] for item in sent])
+            if name == "journey":
+                self.assertIn("credit", [item["operation"] for item in sent])
+                self.assertIn("spend", [item["operation"] for item in sent])
+            self.assertEqual(len(clients), 1)
+            self.assertEqual(clients[0]._process.returncode, expected_status)
+            self.assertTrue(clients[0]._process.stdout.closed)
+            spawn.assert_called_once()
+            self.assertEqual(spawn.call_args.args[0][-3:], ["--init-stdin", "--requests", "-"])
+
+    def test_guided_cli_subprocess_selection(self):
+        data = (HERE / "fixtures/pool_console_opening_journey.txt").read_bytes()
+        actual = subprocess.run([sys.executable, str(HERE / "pool_console.py"), "--guided-init",
+                                 "--mode", "subprocess", "--cleanup-timeout", "1"],
+                                input=data, capture_output=True, timeout=15)
+        expected = live(data.decode(), guided=True)
+        self.assertEqual((actual.returncode, actual.stdout.decode(), actual.stderr.decode()), expected)
+
+    def test_guided_decline_eof_malformed_and_interrupted_input_launch_nothing(self):
+        balances = [str(opening()[pool]) + "\n" for pool in POOLS]
+        sources = []
+        for index in range(6):
+            for failure in ("", EOFError("end"), KeyboardInterrupt(), OSError("lost input"), UnicodeError("bad input")):
+                source = Mock(readline=Mock(side_effect=balances[:index] + [failure, "SUBMIT\n"]))
+                sources.append((source, 2))
+        for choice in ("no", "submit", " SUBMIT", "SUBMIT ", ""):
+            sources.append((io.StringIO("".join(balances) + choice + "\nSUBMIT\nview\n"), 0))
+        for index in range(5):
+            for raw in ("", "1.0", "true", " 1", "1 ", "١", "1" * 5000, "\ud800", "-1", str(MONEY_MAX + 1)):
+                values = balances.copy()
+                values[index] = raw + "\n"
+                sources.append((io.StringIO("".join(values) + "SUBMIT\nview\nquit\n"), 2))
+        with patch("pool_client.subprocess.Popen") as spawn, patch("pool_console.PoolClient.launch") as fixture:
+            for source, expected in sources:
+                with self.subTest(source=source):
+                    self.assertEqual(live("", source=source, guided=True)[0], expected)
+            spawn.assert_not_called()
+            fixture.assert_not_called()
+
+    def test_guided_prelaunch_output_failures_launch_nothing(self):
+        class BrokenOutput(io.StringIO):
+            def __init__(self, target, on_flush):
+                super().__init__()
+                self.target, self.on_flush = target, on_flush
+
+            def write(self, value):
+                if not self.on_flush and self.target in value:
+                    raise OSError("display lost")
+                return super().write(value)
+
+            def flush(self):
+                if self.on_flush and self.target in self.getvalue():
+                    raise OSError("flush lost")
+
+        for target in ("Synthetic POINT_F4", *[pool + " opening balance" for pool in POOLS], "PREVIEW", "Literal SUBMIT"):
+            for on_flush in (False, True):
+                with self.subTest(target=target, on_flush=on_flush), patch("pool_client.subprocess.Popen") as spawn:
+                    result = live("0\n" * 5 + "SUBMIT\nview\nquit\n", guided=True,
+                                  output=BrokenOutput(target, on_flush))
+                    self.assertEqual(result[0], 2)
+                    spawn.assert_not_called()
+
     def test_real_console_modes_have_identical_complete_journeys(self):
         for name, expected_status in (("journey", 0), ("boundaries", 1)):
             data = (HERE / f"fixtures/pool_console_{name}.txt").read_bytes()
@@ -243,16 +343,27 @@ class PoolConsoleSubprocessTests(unittest.TestCase):
             self.assertEqual(live("SUBMIT\nquit\n")[0], 2)
 
     def test_option_combinations_reject_before_launch(self):
-        invalid = [["--mode", "subprocess", "--guided-init", "--cleanup-timeout", "1"],
+        invalid = [["--mode", "subprocess", "--guided-init"],
+                   ["--mode", "in-process", "--guided-init", "--cleanup-timeout", "1"],
                    ["--mode", "in-process", "--fixture", str(FIXTURE), "--cleanup-timeout", "1"],
                    ["--mode", "subprocess", "--fixture", str(FIXTURE)]]
         invalid += [["--mode", "subprocess", "--fixture", str(FIXTURE), "--cleanup-timeout", value]
                     for value in ("0", "-1", "nan", "inf")]
-        with patch("pool_console.PoolClient.launch") as launch, patch("sys.stderr", io.StringIO()):
+        invalid += [["--mode", "subprocess", "--guided-init", "--cleanup-timeout", value]
+                    for value in ("0", "-1", "nan", "inf")]
+        with patch("pool_console.PoolClient.launch") as launch, \
+                patch("pool_console.PoolClient.launch_from_balances") as guided_launch, patch("sys.stderr", io.StringIO()):
             for args in invalid:
                 with self.subTest(args=args):
                     self.assertEqual(main(args), 2)
             launch.assert_not_called()
+            guided_launch.assert_not_called()
+        for options in ({"fixture": FIXTURE, "stdin_init": True, "cleanup_timeout": 1},
+                        {"stdin_init": True}, {"stdin_init": True, "cleanup_timeout": 0}):
+            with self.subTest(options=options), patch("pool_client.subprocess.Popen") as spawn:
+                self.assertEqual(run_console(input_stream=io.StringIO(), output_stream=io.StringIO(),
+                                             error_stream=io.StringIO(), **options), 2)
+                spawn.assert_not_called()
 
 
 if __name__ == "__main__":

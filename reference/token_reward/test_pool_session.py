@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from pool_session import PoolSession, dispatch_request, read_opening_balances
+from pool_session import PoolSession, decode_opening_balances, dispatch_request, read_opening_balances
 from reward_fixture import FixtureError, decode_json
 from token_reward_model import (ALWAYS_FALSE_FLAGS, MONEY_MAX, POOLS, PROVENANCE,
                                 PoolLedger, TokenRewardError, _canonical)
@@ -169,17 +169,34 @@ class PoolSessionTests(unittest.TestCase):
                 path.write_text(_canonical(item), encoding="utf-8")
                 with self.assertRaises(FixtureError):
                     read_opening_balances(path)
+                with self.assertRaises(FixtureError):
+                    decode_opening_balances(path.read_text())
             for balances in ({}, [], None, {**opening(), "OTHER": 1},
                              {key: value for key, value in opening().items() if key != POOLS[0]},
                              {**opening(), "PROTOCOL_REVENUE": True},
                              {**opening(), "PROTOCOL_REVENUE": MONEY_MAX + 1}):
                 path.write_text(_canonical({**good, "opening_balances": balances}), encoding="utf-8")
                 forwarded = read_opening_balances(path)
+                self.assertEqual(forwarded, decode_opening_balances(path.read_text()))
                 with self.assertRaises(TokenRewardError) as expected:
                     PoolLedger(balances)
                 with self.assertRaises(TokenRewardError) as actual:
                     PoolSession(forwarded)
                 self.assertEqual(actual.exception.code, expected.exception.code)
+
+    def test_decoder_and_file_reader_share_strict_json_rules(self):
+        self.assertEqual(decode_opening_balances(FIXTURE.read_text()), opening())
+        for text in ('{', 'null', '{"fixture_version":1,"fixture_version":1}',
+                     FIXTURE.read_text().replace('20', 'NaN', 1),
+                     FIXTURE.read_text().replace('20', '"\\ud800"', 1)):
+            with self.subTest(text=text), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "opening.json"
+                path.write_text(text)
+                with self.assertRaises(FixtureError) as decoded:
+                    decode_opening_balances(text)
+                with self.assertRaises(FixtureError) as read:
+                    read_opening_balances(path)
+                self.assertEqual(str(decoded.exception), str(read.exception))
 
     def test_new_modules_import_only_stdlib_and_selected_local_helpers(self):
         allowed = {"pool_session", "pool_cli", "pool_client", "reward_fixture", "token_reward_model"}

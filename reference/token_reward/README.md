@@ -788,7 +788,13 @@ Astra/User**. Accounting and legal treatment remain **UNDETERMINED —
 User/designated advisers**. Example quantities are caller-provided synthetic
 inputs, never defaults, recommended balances, funding policy or approval values.
 
-`pool_cli.py` requires `--fixture PATH`. The console requires exactly one of
+`pool_cli.py` requires exactly one of `--fixture PATH` or `--init-stdin`, plus
+`--requests PATH|-`. Stdin initialization requires `--requests -`: its first
+newline-terminated UTF-8 JSON record has the fixture shape below; subsequent
+records are ordinary requests. EOF before a complete initialization record,
+malformed JSON/UTF-8, duplicate keys or invalid balances exit `2` without an
+acknowledgement or request dispatch. File startup retains its existing behavior.
+The console requires exactly one of
 `--fixture PATH` or `--guided-init`. Fixture mode retains exactly these fields:
 
 ```json
@@ -951,20 +957,51 @@ python3 reference/token_reward/pool_console.py --mode subprocess --cleanup-timeo
 ```
 
 `--mode in-process` remains the default and supports both `--fixture PATH` and
-`--guided-init`. Subprocess mode requires `--fixture PATH` and a caller-selected
-finite positive `--cleanup-timeout SECONDS`; it rejects `--guided-init`.
+`--guided-init`. Subprocess mode supports either startup choice and requires a
+caller-selected finite positive `--cleanup-timeout SECONDS`.
 In-process mode rejects a cleanup timeout. These combinations are checked before
 launch. Importable `run_console` selects subprocess mode with the additional
 `fixture=PATH, cleanup_timeout=SECONDS` keyword arguments and an explicit opening
-snapshot. Both modes share the same complete flushed previews, literal `SUBMIT`
+snapshot. For file-free guided subprocess entry, omit the positional snapshot and
+pass `stdin_init=True, cleanup_timeout=SECONDS`; `stdin_init` and `fixture` are
+mutually exclusive. Both modes share the same complete flushed previews, literal `SUBMIT`
 and action loop. Declining initialization launches nothing; declining a mutation
 writes nothing. `view` is one explicit request, with no confirmation or hidden read.
 
-Before launching, the client checks the fixture against the confirmed snapshot.
+For guided live entry without an initialization fixture file:
+
+```bash
+python3 reference/token_reward/pool_console.py --guided-init --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/pool_console_opening_journey.txt
+```
+
+Here `1` is a caller-selected cleanup example, not a policy default. The first
+five input lines supply all balances explicitly. The complete flushed opening
+preview requires literal `SUBMIT` before one child is launched. Credit and spend
+each require their own confirmation; view remains explicit. Decline, EOF,
+malformed guided input or failed preview output launches no child.
+
+Importable callers can use the same transport after confirming all five values:
+
+```python
+# confirmed contains all five explicit synthetic integer opening balances.
+with PoolClient.launch_from_balances(expected_opening_balances=confirmed,
+                                      cleanup_timeout=1) as client:
+    acknowledgement = client.initialized_reply
+    current = client.request({"operation": "view", "arguments": {}})
+```
+
+Before launching, fixture startup checks the file against the confirmed snapshot.
+File-free startup detaches that snapshot with canonical serialization, decodes
+the fixture wrapper using `pool_session.decode_opening_balances(text)` (also used
+by the file reader), and uses a disposable `PoolSession` solely for constructor
+validation. It performs no local credit, spend or view. It sends the canonical
+fixture-shaped record plus newline once and flushes once to
+`pool_cli.py --init-stdin --requests -`; no initialization fixture is read or written.
 Before permitting requests, it validates the existing initialization acknowledgement
 and compares its five balances with that snapshot, distinguishing integers from
 booleans/floats. A change between preview and startup fails closed. Initialization
-is an existing service acknowledgement, never an added wire request. The client
+uses the existing service acknowledgement; the stdin startup record adds no
+selector to the credit/spend/view request dispatcher. The client
 validates strict JSONL framing, UTF-8/duplicate keys, selector correlation, complete
 payload shapes, synthetic provenance, unit/notice and literal false execution
 flags. It returns each complete decoded service envelope, without recomputing
@@ -979,7 +1016,9 @@ writes, malformed/truncated replies, lost acknowledgements and interruption
 raise `PoolTransportUncertainty`, permanently fencing this instance. The exception
 (and `client.uncertainty`) retains `phase`, detached `request`, `request_bytes`,
 `reply_bytes` observed before failure and a chained cause. Initialization uncertainty
-has no submitted request and empty request bytes. A mutation may already have been
+has `phase="initialize"` and `request=None`; `request_bytes` retains the attempted
+initialization record for stdin startup and remains empty for fixture startup.
+A mutation may already have been
 accepted when its acknowledgement is lost. No retry, replacement, rollback or
 rejection is inferred. Startup failure cleans up the child before raising.
 
@@ -1000,3 +1039,5 @@ inputs / **UNDETERMINED — Astra/User**; accounting treatment remains
 durability, legal authority, runtime activation or production readiness is claimed.
 [Builder coverage, transcripts and local validation](../../validation/2026-11-09-plan-local-pool-live-console/README.md)
 are separate from A2 non-author exact-final-head review and required KTX/KIX CI.
+The [guided live initialization record](../../validation/2026-11-10-plan-local-pool-guided-live-init/README.md)
+records file-free parity and initialization transport failure coverage.

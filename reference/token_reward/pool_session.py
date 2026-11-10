@@ -49,9 +49,9 @@ def initialized_reply(opening_balances):
     return envelope("initialize", "initialized", {"opening_balances": opening_balances})
 
 
-def read_opening_balances(path):
-    """Read only; never construct reward machinery or a ledger before confirmation."""
-    fixture = decode_json(Path(path).read_text(encoding="utf-8"))
+def decode_opening_balances(text):
+    """Decode a fixture record; domain validation remains in the constructor."""
+    fixture = decode_json(text)
     exact_fields(fixture, {"fixture_version", "provenance", "opening_balances"}, "fixture")
     if type(fixture["fixture_version"]) is not int or fixture["fixture_version"] != 1:
         raise FixtureError("unsupported fixture_version")
@@ -59,6 +59,11 @@ def read_opening_balances(path):
         raise FixtureError(f"fixture provenance must be {PROVENANCE}")
     # Five-pool shape and all amounts belong to the unchanged constructor.
     return fixture["opening_balances"]
+
+
+def read_opening_balances(path):
+    """Read only; never construct reward machinery or a ledger before confirmation."""
+    return decode_opening_balances(Path(path).read_text(encoding="utf-8"))
 
 
 def dispatch_request(session, request):

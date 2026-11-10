@@ -5,8 +5,8 @@ from contextlib import nullcontext
 from pathlib import Path
 import sys
 
-from pool_session import (PoolSession, dispatch_request, error_reply, initialized_reply,
-                          read_opening_balances)
+from pool_session import (PoolSession, decode_opening_balances, dispatch_request, error_reply,
+                          initialized_reply, read_opening_balances)
 from reward_fixture import FixtureError, decode_json
 from token_reward_model import TokenRewardError, _canonical
 
@@ -44,11 +44,25 @@ def run_requests(session, lines, *, output_stream):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fixture", type=Path, required=True)
+    startup = parser.add_mutually_exclusive_group(required=True)
+    startup.add_argument("--fixture", type=Path)
+    startup.add_argument("--init-stdin", action="store_true",
+                         help="read one fixture-shaped initialization record before requests")
     parser.add_argument("--requests", required=True, help="UTF-8 JSONL path, or - for stdin")
     args = parser.parse_args(argv)
+    if args.init_stdin and args.requests != "-":
+        parser.error("--init-stdin requires --requests -")
     try:
-        opening = read_opening_balances(args.fixture)
+        if args.init_stdin:
+            # Read raw framing before TextIO's universal-newline conversion.
+            record = getattr(sys.stdin, "buffer", sys.stdin).readline()
+            if isinstance(record, bytes):
+                record = record.decode("utf-8")
+            if not record.endswith("\n"):
+                raise FixtureError("initialization record requires a terminating newline")
+            opening = decode_opening_balances(record)
+        else:
+            opening = read_opening_balances(args.fixture)
         session = PoolSession(opening)
         requests = (nullcontext(sys.stdin) if args.requests == "-"
                     else Path(args.requests).open(encoding="utf-8"))
