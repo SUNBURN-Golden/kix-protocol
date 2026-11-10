@@ -140,7 +140,8 @@ def run_console(client, *, input_stream, output_stream, error_stream):
               file=output_stream)
         while True:
             print('Actions: view_show, set_clock, hold, load_quote, target, preview, confirm, '
-                  'bind_settlement, issue, reconcile, view, release, cancel, quit', file=output_stream)
+                  'confirm_recorded_quote, bind_settlement, issue, reconcile, view, release, cancel, quit',
+                  file=output_stream)
             action = prompt('action')
             try:
                 if action == 'quit':
@@ -185,8 +186,15 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                         continue
                     send('confirm_calculated_quote', dict(request_text=snapshot.request_text,
                                                           **vars(snapshot.target)))
-                elif action in {'bind_settlement', 'issue', 'reconcile'}:
+                elif action in {'confirm_recorded_quote', 'bind_settlement', 'issue', 'reconcile'}:
+                    if action == 'confirm_recorded_quote':
+                        # Selecting the source path consumes any calculated preview,
+                        # including on decline, invalid input or interrupted collection.
+                        pending = None
                     names, confirmation = {
+                        'confirm_recorded_quote': (
+                            ('recording_id', 'reservation_id', 'order_id', 'idempotency_key'),
+                            'CONFIRM_RECORDED_QUOTE'),
                         'bind_settlement': (('reservation_id', 'settlement_id', 'idempotency_key'),
                                             'BIND_SETTLEMENT'),
                         'issue': (('issuance_id', 'order_id', 'idempotency_key'), 'ISSUE'),
@@ -224,9 +232,15 @@ def main(argv=None):
     parser.add_argument('--fixture', required=True, type=Path, help='caller-selected synthetic desk fixture')
     parser.add_argument('--cleanup-timeout', required=True, type=float,
                         help='finite positive child cleanup budget; not a response deadline')
+    sources = parser.add_mutually_exclusive_group()
+    sources.add_argument('--quotes', type=Path, help='synthetic recorded quote source fixture')
+    sources.add_argument('--calculated-quotes', type=Path, help='synthetic calculated quote source fixture')
     args = parser.parse_args(argv)
+    source_options = {name: getattr(args, name) for name in ('quotes', 'calculated_quotes')
+                      if getattr(args, name) is not None}
     try:
-        client = TicketOperationsClient.launch(args.fixture, cleanup_timeout=args.cleanup_timeout)
+        client = TicketOperationsClient.launch(args.fixture, cleanup_timeout=args.cleanup_timeout,
+                                               **source_options)
     except ValueError as error:
         parser.error(str(error))
     except (Exception, KeyboardInterrupt) as error:

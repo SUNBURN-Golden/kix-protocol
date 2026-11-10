@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "initial_head": "2a50b8f1f7dab95b59de389e1f57db9eb88e2cc2",
+  "cached_origin_main": "2a50b8f1f7dab95b59de389e1f57db9eb88e2cc2",
+  "initial_tracked_files": 3114,
+  "byte_identical_tracked_files": 3108,
+  "allowed_changed_paths": [
+    "docs/README.md",
+    "reference/booking_resale_admission/README.md",
+    "reference/booking_resale_admission/booking_console.py",
+    "reference/booking_resale_admission/shared_ticket_console.py",
+    "reference/booking_resale_admission/test_booking_console.py",
+    "reference/booking_resale_admission/test_shared_ticket_console.py"
+  ],
+  "new_answer_files": [
+    "reference/booking_resale_admission/fixtures/booking_console_source_calculated.txt",
+    "reference/booking_resale_admission/fixtures/booking_console_source_recorded.txt",
+    "reference/booking_resale_admission/fixtures/shared_ticket_console_source_calculated.txt",
+    "reference/booking_resale_admission/fixtures/shared_ticket_console_source_recorded.txt"
+  ],
+  "locked_blobs_before_and_after": {
+    "runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20"
+  },
+  "historical_files_byte_identical": 108,
+  "historical_git_tree": "a6ecb124dc2b2267ca6be19e39fbe2aef143074b",
+  "all_other_initial_tracked_bytes_identical": true
+}

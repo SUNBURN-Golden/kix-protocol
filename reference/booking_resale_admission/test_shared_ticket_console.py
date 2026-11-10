@@ -13,6 +13,8 @@ import unittest
 from unittest.mock import Mock, patch
 
 import shared_ticket_console as console
+from test_booking_console import SOURCE_OPTIONS, SOURCE_CONFIRM, source_requests, source_parity
+from test_ticket_operations_session import FIXTURE as SOURCE_FIXTURE
 from test_resale_console import RECORDED_FIXTURE, RECORDED_LIST, recorded_parity
 from test_admission_console import RECORDED_AUTH, RECORDED_CONSUME
 from test_admission_session import assert_flags
@@ -61,7 +63,8 @@ EXCEPTION_ACTIONS = [
 RECORDED_ACTIONS = [('resale', RECORDED_LIST), ('admission', RECORDED_AUTH),
                     ('admission', RECORDED_CONSUME)]
 FAULT_ACTIONS = ([(name, VIEWS[name]) for name in SURFACES] + NEW_ACTIONS
-                 + [('resale', PAYMENT_INPUT)] + EXCEPTION_ACTIONS + RECORDED_ACTIONS)
+                 + [('resale', PAYMENT_INPUT), ('booking', SOURCE_CONFIRM)]
+                 + EXCEPTION_ACTIONS + RECORDED_ACTIONS)
 CLOCK = ['set_clock', 'clock', '1000000', 'shared-clock']
 HOLD = ['hold', 'shared-reservation', 'show-1', '1', 'shared-buyer', '1120000', 'shared-hold']
 LOAD = ['load_quote', str(QUOTE)]
@@ -77,9 +80,69 @@ def envelopes(output):
 
 
 class SharedTicketConsoleTests(unittest.TestCase):
-    def drive(self, answers=(), *, client=None, stream=None, output=None, errors=None, fixture=FIXTURE):
+
+    def test_source_shared_journeys_reentry_history_and_parity(self):
+        for kind, options in SOURCE_OPTIONS.items():
+            with self.subTest(kind=kind), patch('ticket_operations_client.subprocess.Popen',
+                                               wraps=subprocess.Popen) as launch:
+                answers = (HERE / f'fixtures/shared_ticket_console_source_{kind}.txt').read_text().splitlines()
+                status, calls, replies, output, errors = self.drive(
+                    answers, fixture=SOURCE_FIXTURE, source_options=options)
+                launch.assert_called_once()
+                self.assertEqual((status, errors), (1, 'Child exit status=1\n'))
+                expected = source_requests(kind)
+                # Navigation/re-entry does nothing; the two other views are explicit.
+                expected[3:3] = [dict(surface='resale', operation='view_right',
+                                     arguments={'right_id': 'issue-1'}),
+                                dict(surface='admission', operation='view',
+                                     arguments={'right_id': 'issue-1'})]
+                self.assertEqual(calls, expected)
+                source_parity(self, kind, calls, replies, output)
+                assert_resale_flags(self, replies[3]['view'])
+                assert_flags(self, replies[4]['view'])
+                self.assertGreaterEqual(output.count('Local synthetic booking console'), 2)
+
+    def test_source_transcripts_as_real_console_subprocesses(self):
+        for name in ('booking', 'shared_ticket'):
+            for kind, options in SOURCE_OPTIONS.items():
+                with self.subTest(console=name, kind=kind):
+                    answers = HERE / f'fixtures/{name}_console_source_{kind}.txt'
+                    result = subprocess.run([sys.executable, '-B', str(HERE / f'{name}_console.py'),
+                        '--fixture', str(SOURCE_FIXTURE), '--cleanup-timeout', '1',
+                        *(item for key, path in options.items()
+                          for item in ('--' + key.replace('_', '-'), str(path)))],
+                        input=answers.read_text(), text=True, capture_output=True, cwd=ROOT, timeout=20)
+                    self.assertEqual((result.returncode, result.stderr), (1, 'Child exit status=1\n'))
+                    calls = source_requests(kind)
+                    if name == 'shared_ticket':
+                        calls[3:3] = [dict(surface='resale', operation='view_right',
+                                          arguments={'right_id': 'issue-1'}),
+                                      dict(surface='admission', operation='view',
+                                          arguments={'right_id': 'issue-1'})]
+                    source_parity(self, kind, calls, envelopes(result.stdout), result.stdout)
+
+    def test_source_decline_incomplete_input_and_navigation_submit_nothing(self):
+        status, calls, replies, output, errors = self.drive(
+            ['booking', *SOURCE_CONFIRM[:-1], 'no', 'confirm_recorded_quote', ' ', 'quit',
+             'resale', 'quit', 'admission', 'quit', 'booking', 'confirm', 'quit', 'quit'],
+            fixture=SOURCE_FIXTURE, source_options=SOURCE_OPTIONS['recorded'])
+        self.assertEqual((status, calls, replies, errors), (0, [], [], ''))
+        self.assertIn('A new successful preview is required.', output)
+
+    def test_source_flags_conflict_before_launch(self):
+        with patch.object(console.TicketOperationsClient, 'launch') as launch, \
+                patch('sys.stderr', io.StringIO()):
+            with self.assertRaises(SystemExit) as result:
+                console.main(['--fixture', str(FIXTURE), '--cleanup-timeout', '1',
+                              '--quotes', 'a', '--calculated-quotes', 'b'])
+            self.assertEqual(result.exception.code, 2)
+            launch.assert_not_called()
+
+    def drive(self, answers=(), *, client=None, stream=None, output=None, errors=None, fixture=FIXTURE,
+              source_options=None):
+        source_options = source_options or {}
         if client is None:
-            client = TicketOperationsClient.launch(fixture, cleanup_timeout=1)
+            client = TicketOperationsClient.launch(fixture, cleanup_timeout=1, **source_options)
         output = io.StringIO() if output is None else output
         errors = io.StringIO() if errors is None else errors
         stream = script(answers) if stream is None else stream
@@ -96,8 +159,10 @@ class SharedTicketConsoleTests(unittest.TestCase):
                 patch.object(client, 'request', side_effect=record), \
                 patch.object(client, 'close', wraps=client.close) as close, \
                 patch('sys.stdin', stream), patch('sys.stdout', output), patch('sys.stderr', errors):
-            status = console.main(['--fixture', str(fixture), '--cleanup-timeout', '1'])
-        launch.assert_called_once_with(fixture, cleanup_timeout=1)
+            status = console.main(['--fixture', str(fixture), '--cleanup-timeout', '1',
+                                   *(item for name, path in source_options.items()
+                                     for item in ('--' + name.replace('_', '-'), str(path)))])
+        launch.assert_called_once_with(fixture, cleanup_timeout=1, **source_options)
         close.assert_called_once_with()
         if isinstance(client, TicketOperationsClient):
             self.assertTrue(client._process.stdin.closed)
