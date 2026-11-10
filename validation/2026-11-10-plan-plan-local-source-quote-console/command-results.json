@@ -1,0 +1,101 @@
+[
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "test_booking_console",
+      "test_shared_ticket_console"
+    ],
+    "exit_code": 1,
+    "output": ".............................................................EEEE..\n======================================================================\nERROR: test_source_shared_journeys_reentry_history_and_parity (test_shared_ticket_console.SharedTicketConsoleTests.test_source_shared_journeys_reentry_history_and_parity) (kind='recorded')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_shared_ticket_console.py\", line 100, in test_source_shared_journeys_reentry_history_and_parity\n    source_parity(self, kind, calls, replies, output)\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_booking_console.py\", line 108, in source_parity\n    assert_not_final(case, reply.get('receipt', reply.get('view')))\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_reservation_fsm.py\", line 91, in assert_not_final\n    test.assertEqual(body[\"external_admission\"], \"UNSUPPORTED\")\n                     ~~~~^^^^^^^^^^^^^^^^^^^^^^\nKeyError: 'external_admission'\n\n======================================================================\nERROR: test_source_shared_journeys_reentry_history_and_parity (test_shared_ticket_console.SharedTicketConsoleTests.test_source_shared_journeys_reentry_history_and_parity) (kind='calculated')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_shared_ticket_console.py\", line 100, in test_source_shared_journeys_reentry_history_and_parity\n    source_parity(self, kind, calls, replies, output)\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_booking_console.py\", line 108, in source_parity\n    assert_not_final(case, reply.get('receipt', reply.get('view')))\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_reservation_fsm.py\", line 91, in assert_not_final\n    test.assertEqual(body[\"external_admission\"], \"UNSUPPORTED\")\n                     ~~~~^^^^^^^^^^^^^^^^^^^^^^\nKeyError: 'external_admission'\n\n======================================================================\nERROR: test_source_transcripts_as_real_console_subprocesses (test_shared_ticket_console.SharedTicketConsoleTests.test_source_transcripts_as_real_console_subprocesses) (console='shared_ticket', kind='recorded')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_shared_ticket_console.py\", line 120, in test_source_transcripts_as_real_console_subprocesses\n    source_parity(self, kind, calls, envelopes(result.stdout), result.stdout)\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_booking_console.py\", line 108, in source_parity\n    assert_not_final(case, reply.get('receipt', reply.get('view')))\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_reservation_fsm.py\", line 91, in assert_not_final\n    test.assertEqual(body[\"external_admission\"], \"UNSUPPORTED\")\n                     ~~~~^^^^^^^^^^^^^^^^^^^^^^\nKeyError: 'external_admission'\n\n======================================================================\nERROR: test_source_transcripts_as_real_console_subprocesses (test_shared_ticket_console.SharedTicketConsoleTests.test_source_transcripts_as_real_console_subprocesses) (console='shared_ticket', kind='calculated')\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_shared_ticket_console.py\", line 120, in test_source_transcripts_as_real_console_subprocesses\n    source_parity(self, kind, calls, envelopes(result.stdout), result.stdout)\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_booking_console.py\", line 108, in source_parity\n    assert_not_final(case, reply.get('receipt', reply.get('view')))\n  File \"/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/test_reservation_fsm.py\", line 91, in assert_not_final\n    test.assertEqual(body[\"external_admission\"], \"UNSUPPORTED\")\n                     ~~~~^^^^^^^^^^^^^^^^^^^^^^\nKeyError: 'external_admission'\n\n----------------------------------------------------------------------\nRan 65 tests in 30.704s\n\nFAILED (errors=4)\n"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "test_booking_console",
+      "test_shared_ticket_console"
+    ],
+    "exit_code": 0,
+    "output": ".................................................................\n----------------------------------------------------------------------\nRan 65 tests in 31.206s\n\nOK\n"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "test_booking_quote_source",
+      "test_booking_quote_adapter",
+      "test_booking_quote_cli",
+      "test_calculated_booking_quote_source",
+      "test_calculated_booking_quote_cli",
+      "test_ticket_operations_quotes",
+      "test_ticket_operations_client",
+      "test_booking_quote_preview",
+      "test_booking_quote_preview_cli",
+      "test_ticket_operations_session",
+      "test_ticket_operations_cli"
+    ],
+    "exit_code": 0,
+    "output": ".....................................................................................................\n----------------------------------------------------------------------\nRan 101 tests in 24.447s\n\nOK\n"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "/tmp/kix-source-transcripts.py"
+    ],
+    "exit_code": 0,
+    "output": "booking_console_source_recorded: expected exit 1; 35 full envelopes; direct parity PASS\nbooking_console_source_calculated: expected exit 1; 31 full envelopes; direct parity PASS\nshared_ticket_console_source_recorded: expected exit 1; 37 full envelopes; direct parity PASS\nshared_ticket_console_source_calculated: expected exit 1; 33 full envelopes; direct parity PASS\n"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "/tmp/kix-source-offline.py"
+    ],
+    "exit_code": 0,
+    "output": "EXCLUDED SOCKET TEST: test_admission_fsm.AdmissionFsmTests.test_loopback_rejects_fsm_names_and_matches_published_admit\n...................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................\n----------------------------------------------------------------------\nRan 947 tests in 201.042s\n\nOK\n"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "/tmp/kix-source-preserve.py"
+    ],
+    "exit_code": 0,
+    "output": "{\n  \"result\": \"PASS\",\n  \"initial_head\": \"2a50b8f1f7dab95b59de389e1f57db9eb88e2cc2\",\n  \"cached_origin_main\": \"2a50b8f1f7dab95b59de389e1f57db9eb88e2cc2\",\n  \"initial_tracked_files\": 3114,\n  \"byte_identical_tracked_files\": 3108,\n  \"allowed_changed_paths\": [\n    \"docs/README.md\",\n    \"reference/booking_resale_admission/README.md\",\n    \"reference/booking_resale_admission/booking_console.py\",\n    \"reference/booking_resale_admission/shared_ticket_console.py\",\n    \"reference/booking_resale_admission/test_booking_console.py\",\n    \"reference/booking_resale_admission/test_shared_ticket_console.py\"\n  ],\n  \"new_answer_files\": [\n    \"reference/booking_resale_admission/fixtures/booking_console_source_calculated.txt\",\n    \"reference/booking_resale_admission/fixtures/booking_console_source_recorded.txt\",\n    \"reference/booking_resale_admission/fixtures/shared_ticket_console_source_calculated.txt\",\n    \"reference/booking_resale_admission/fixtures/shared_ticket_console_source_recorded.txt\"\n  ],\n  \"locked_blobs_before_and_after\": {\n    \"runtime/crates/kix-kernel/src/lib.rs\": \"69564b166f0c27f9af5d8422f0a466b18d74c20f\",\n    \"runtime/crates/kix-kernel/tests/quarantine_capacity.rs\": \"b607996c83a119c349f1cc90469ac1ba82764e20\"\n  },\n  \"historical_files_byte_identical\": 108,\n  \"historical_git_tree\": \"a6ecb124dc2b2267ca6be19e39fbe2aef143074b\",\n  \"all_other_initial_tracked_bytes_identical\": true\n}\n"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "scripts/check_docs_index.py"
+    ],
+    "exit_code": 0,
+    "output": "docs index ok: scanned=395 indexed=360 allowlisted=35\n"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "/tmp/kix-source-preserve.py"
+    ],
+    "exit_code": 0,
+    "output": "{\n  \"result\": \"PASS\",\n  \"initial_head\": \"2a50b8f1f7dab95b59de389e1f57db9eb88e2cc2\",\n  \"cached_origin_main\": \"2a50b8f1f7dab95b59de389e1f57db9eb88e2cc2\",\n  \"initial_tracked_files\": 3114,\n  \"byte_identical_tracked_files\": 3108,\n  \"allowed_changed_paths\": [\n    \"docs/README.md\",\n    \"reference/booking_resale_admission/README.md\",\n    \"reference/booking_resale_admission/booking_console.py\",\n    \"reference/booking_resale_admission/shared_ticket_console.py\",\n    \"reference/booking_resale_admission/test_booking_console.py\",\n    \"reference/booking_resale_admission/test_shared_ticket_console.py\"\n  ],\n  \"new_answer_files\": [\n    \"reference/booking_resale_admission/fixtures/booking_console_source_calculated.txt\",\n    \"reference/booking_resale_admission/fixtures/booking_console_source_recorded.txt\",\n    \"reference/booking_resale_admission/fixtures/shared_ticket_console_source_calculated.txt\",\n    \"reference/booking_resale_admission/fixtures/shared_ticket_console_source_recorded.txt\"\n  ],\n  \"locked_blobs_before_and_after\": {\n    \"runtime/crates/kix-kernel/src/lib.rs\": \"69564b166f0c27f9af5d8422f0a466b18d74c20f\",\n    \"runtime/crates/kix-kernel/tests/quarantine_capacity.rs\": \"b607996c83a119c349f1cc90469ac1ba82764e20\"\n  },\n  \"historical_files_byte_identical\": 108,\n  \"historical_git_tree\": \"a6ecb124dc2b2267ca6be19e39fbe2aef143074b\",\n  \"all_other_initial_tracked_bytes_identical\": true\n}\n"
+  }
+]

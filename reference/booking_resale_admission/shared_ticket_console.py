@@ -65,9 +65,15 @@ def main(argv=None):
     parser.add_argument('--fixture', required=True, type=Path, help='caller-selected synthetic desk fixture')
     parser.add_argument('--cleanup-timeout', required=True, type=float,
                         help='finite positive child cleanup budget; not a response deadline')
+    sources = parser.add_mutually_exclusive_group()
+    sources.add_argument('--quotes', type=Path, help='synthetic recorded quote source fixture')
+    sources.add_argument('--calculated-quotes', type=Path, help='synthetic calculated quote source fixture')
     args = parser.parse_args(argv)
+    source_options = {name: getattr(args, name) for name in ('quotes', 'calculated_quotes')
+                      if getattr(args, name) is not None}
     try:
-        client = TicketOperationsClient.launch(args.fixture, cleanup_timeout=args.cleanup_timeout)
+        client = TicketOperationsClient.launch(args.fixture, cleanup_timeout=args.cleanup_timeout,
+                                               **source_options)
     except ValueError as error:
         parser.error(str(error))
     except (Exception, KeyboardInterrupt) as error:

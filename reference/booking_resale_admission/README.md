@@ -2352,7 +2352,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/booking_
   --cleanup-timeout 1
 ```
 
-Both flags are required. The cleanup budget `1` is an explicit caller example,
+`--fixture` and `--cleanup-timeout` are required. The cleanup budget `1` is an explicit caller example,
 not a response deadline or product default. Select a local fixture deliberately:
 show configuration is fixture-owned, with no console registration or organizer
 lifecycle. The supplied fixture is reused unchanged and has synthetic settlement,
@@ -2396,6 +2396,7 @@ inferred identities, generated keys, wall-clock reads or automatic expiries.
 | `target` | Synthetic `reservation_id`, `order_id`, confirmation `idempotency_key`; entering/editing clears preview |
 | `preview` | Requires loaded text and target; calls `preview_calculated_quote`, stores successful immutable snapshot |
 | `confirm` | Redisplays target and quote; literal `CONFIRM` submits `confirm_calculated_quote` once; any other answer declines without a request |
+| `confirm_recorded_quote` | `recording_id`, `reservation_id`, `order_id`, `idempotency_key`; displays the complete proposal and requires literal `CONFIRM_RECORDED_QUOTE`; [optional source flags and examples](#source-backed-booking-confirmation-in-the-live-consoles) |
 | `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key`; literal `BIND_SETTLEMENT` |
 | `issue` | `issuance_id`, `order_id`, `idempotency_key`; literal `ISSUE` |
 | `reconcile` | `reservation_id`, `idempotency_key`; literal `RECONCILE` |
@@ -3735,3 +3736,78 @@ Astra/User**; legal effects remain **UNDETERMINED — User/legal**. No runtime i
 activated. See the [builder validation record](../../validation/2026-11-09-plan-local-recorded-ticket-console/README.md)
 for coverage, actual local results and remaining non-author exact-HEAD review and
 KTX/KIX CI gates.
+
+## Source-backed booking confirmation in the live consoles
+
+`booking_console.py` and `shared_ticket_console.py` accept one optional source:
+`--quotes PATH` for the existing `MOCK_GATE_ONLY` recorded fixture, or
+`--calculated-quotes PATH` for the existing `CALCULATION_ONLY` fixture. Both
+options together exit 2 before launching a child. With neither, the existing
+console flows remain available. The shared console passes the source to its
+single child once; switching surfaces never launches another desk.
+
+Choose `confirm_recorded_quote` in booking. Enter `recording_id`, `reservation_id`,
+`order_id`, then `idempotency_key`, each explicitly and without surrounding
+whitespace. The console displays `proposed=` with the complete escaped request.
+Only literal `CONFIRM_RECORDED_QUOTE` submits it, once. Any other answer declines;
+blank/invalid fields submit nothing. The proposal identifies the requested
+operation and source selector; it does not preview the source amount or hash.
+Source loading, lookup, calculation and validation remain service-owned. Selecting
+this action immediately discards any pending calculated confirmation, even on
+decline, invalid input or interruption. Loaded calculation text and target remain
+available; calculated `confirm` requires another successful `preview`. Leaving
+booking still discards all its local quote/target/preview state.
+
+Run these synthetic answer files from the repository root:
+
+```bash
+python3.12 -B reference/booking_resale_admission/booking_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --quotes reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/booking_console_source_recorded.txt
+python3.12 -B reference/booking_resale_admission/booking_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --calculated-quotes reference/booking_resale_admission/fixtures/calculated_booking_quotes.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/booking_console_source_calculated.txt
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --quotes reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_source_recorded.txt
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --calculated-quotes reference/booking_resale_admission/fixtures/calculated_booking_quotes.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_source_calculated.txt
+```
+
+All four boundary transcripts intentionally exit **1** after known refusals.
+They use the unchanged populated fixture: `show-1`, free slot `1`, explicit
+clock `1000000`, expiry `1120000`, and reservation `desk-reserve-1`. The initial
+issued/payment history belongs to fixture setup. No show registration or new
+setup occurs. `desk-record-1` and `desk-calc-1` confirm the synthetic amount
+`10001`. Missing/malformed/mismatched records and source faults keep their
+existing errors; synthetic source timeout is a known refusal, distinct from
+transport uncertainty. Off-price refusal binds its key as the service already
+defines. Explicit cancellation is followed by historical confirmation replay
+(`CONFIRMED`, duplicate true, applied null) and a separate current view
+(`CANCELLED`); changed order/hash under the same key is rejected. A second hold
+and explicit clock advance demonstrate reservation expiry. Calculation
+`expiresAt` remains hash-bound metadata, with no new expiration semantics.
+The shared transcripts additionally select explicit resale/admission reads and
+re-enter booking on the same graph.
+
+Clean success exits 0; terminal fixture/input/transport failures exit 2.
+Submitting this action without a source retains the service's terminal
+`FixtureError`. Interruption, terminal output failure and transport uncertainty
+fence the entire session, retaining diagnostics; no retry, automatic view,
+compensation or replacement child occurs. Use a new explicitly chosen session
+only outside this fenced interaction; no recovery outcome is inferred.
+
+These are local in-memory mock reservation actions; payment and chain issuance
+remain separate. Product policy: **UNDETERMINED — Astra/User**. Legal effects:
+**UNDETERMINED — User/legal**. No SDK, external service, persistence, protocol
+command or runtime activation was added. See the [coverage, full transcripts,
+actual local results and pending review/CI gates](../../validation/2026-11-10-plan-plan-local-source-quote-console/README.md).

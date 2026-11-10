@@ -615,6 +615,8 @@ and transport fencing. No policy decision, activation or independent review is i
 
 ## Guided local booking console evidence
 
+- [Source-backed booking console usage](../reference/booking_resale_admission/README.md#source-backed-booking-confirmation-in-the-live-consoles) · [2026-11-10 builder evidence](../validation/2026-11-10-plan-plan-local-source-quote-console/README.md) — Optional recorded/calculated sources on one live local child, explicit confirmation/current views, historical replay, original refusals and terminal fencing. Policy UNDETERMINED — Astra/User; legal effects UNDETERMINED — User/legal; independent exact-head A2 review and KTX/KIX CI remain pending.
+
 - [Guided local booking console usage](../reference/booking_resale_admission/README.md#guided-local-booking-console) — standard-library prompts over one local synthetic desk; calculation-only preview and explicit mock reservation confirmation.
 - [2026-11-05 console builder validation](../validation/2026-11-05-plan-plan-local-booking-console/README.md) — coverage mapping, executed commands, protected-byte checks and pending non-author exact-head review/CI. This index grants no production or merge authority.
 
