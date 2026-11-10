@@ -696,3 +696,7 @@ and transport fencing. No policy decision, activation or independent review is i
 
 - [Synthetic local payment effect desk](../reference/payment_effects/README.md) — explicit synthetic fixture initialization of one private in-memory Core, the four already-published effect commands and detached selected views. `send_effect` is a local intent only; no provider, bank, chain or network transmission, pending Finance projection or new protocol command.
 - [plan-plan-local-payment-effect-desk builder evidence](../validation/2026-11-10-plan-plan-local-payment-effect-desk/README.md) — real JSONL subprocess journeys, direct-Core parity, existing coverage mapping, actual local commands and protected-file preservation. Product values UNDETERMINED — Astra/User; provider facts UNDETERMINED — provider/User; legal/accounting treatment UNDETERMINED — User/designated advisers. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-10 Manifest-v1 verifier negative vectors — 위치 안내만
+
+- [plan-manifest-verifier-negative-vector-comple builder evidence](../validation/2026-11-10-plan-manifest-verifier-negative-vector-comple/README.md) — a 56-case companion single-fault matrix over the manifest, `bootstrap-2` profile and sidecar, run by the SDK conformance harness against a temporary verifier root. Every case asserts the exact error set without ordering. Positive manifest/profile/sidecar/vector bytes and `verify_compat.mjs` are unchanged; SD1 stays OPEN, scope stays BOOTSTRAP, and no semantic or N/N-1 claim is added.
