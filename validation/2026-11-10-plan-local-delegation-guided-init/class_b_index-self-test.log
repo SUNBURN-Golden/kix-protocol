@@ -1,0 +1,21 @@
+self-test: detected missing path
+self-test: detected missing test path
+self-test: detected altered quote
+self-test: detected short quote
+self-test: detected piped quote
+self-test: detected unknown symbol
+self-test: detected unknown dotted part
+self-test: detected unknown node:test name
+self-test: detected duplicate id
+self-test: detected bad id
+self-test: detected wrong count
+self-test: detected missing count token
+self-test: detected two counts lines
+self-test: detected invented owner
+self-test: detected invented contract
+self-test: detected out-of-scope source
+self-test: detected invented status
+self-test: detected superseded without supersession quote
+self-test: detected superseded with wrong PR
+self-test: detected wrong header
+self-test: pass (20 negative controls)

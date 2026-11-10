@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 import sys
 
-from ai_delegation_mock import AiDelegationError, _canonical
+from ai_delegation_mock import AiDelegationError, PROVENANCE, _canonical
 from delegation_cli import _error, dispatch_request
 from delegation_client import DelegationClient, DelegationTransportUncertainty
 from delegation_fixture import FixtureError, decode_json, exact_fields, load_fixture, validate_json
@@ -163,6 +163,11 @@ def _diagnostic(error, stream, *, operation=None, last_reply=None):
             if isinstance(error, DelegationTransportUncertainty):
                 detail.update(request=error.request, request_bytes_hex=error.request_bytes.hex(),
                               reply_bytes_hex=error.reply_bytes.hex())
+                if detail["last_reply"] is None:
+                    detail["last_reply"] = error.last_reply
+                if getattr(error, "cleanup_error", None) is not None:
+                    detail["cleanup_error"] = {"type": type(error.cleanup_error).__name__,
+                                               "message": str(error.cleanup_error)}
             error = error.__cause__ or (None if error.__suppress_context__ else error.__context__)
         _write(stream, "FENCED: " + _canonical(detail) + "\n")
     except (Exception, KeyboardInterrupt):
@@ -177,9 +182,45 @@ def run_console(session, *, input_stream, output_stream, error_stream) -> int:
 
 def run_subprocess_console(fixture, *, cleanup_timeout, input_stream, output_stream, error_stream) -> int:
     """Own one child through quit/failure; cleanup never submits or retries."""
+    return _run_owned_console(lambda: DelegationClient.launch(fixture, cleanup_timeout=cleanup_timeout),
+                             input_stream=input_stream, output_stream=output_stream, error_stream=error_stream)
+
+
+def run_guided_subprocess_console(*, cleanup_timeout, input_stream, output_stream, error_stream) -> int:
+    """Compose and confirm explicit synthetic registries before launching anything."""
+    def prompt(label):
+        _write(output_stream, label + ": ")
+        line = input_stream.readline()
+        if line == "":
+            raise EOFError("input ended before initialization; no child started")
+        return line.removesuffix("\n").removesuffix("\r")
+
+    try:
+        DelegationClient._validate_cleanup_timeout(cleanup_timeout)
+        _write(output_stream, "Synthetic identities only. Authority/identity policy: UNDETERMINED — Astra/User.\n")
+        fixture = {"fixture_version": 1, "provenance": PROVENANCE,
+                   "human_principals": _compose_string_list("human_principals", prompt),
+                   "ai_agents": _compose_string_list("ai_agents", prompt)}
+        validate_json(fixture)
+        _write(output_stream, "\nproposed_init=" + _canonical(fixture) + "\n")
+        if prompt("Type literal SUBMIT to initialize once; anything else declines") != "SUBMIT":
+            _write(output_stream, "Declined; no child started.\n")
+            return 0
+    except (Exception, KeyboardInterrupt) as error:
+        _diagnostic(error, error_stream)
+        return 2
+    return _run_owned_console(
+        lambda: DelegationClient.launch_from_fixture(fixture, cleanup_timeout=cleanup_timeout),
+        input_stream=input_stream, output_stream=output_stream, error_stream=error_stream, render_init=True)
+
+
+def _run_owned_console(launch, *, input_stream, output_stream, error_stream, render_init=False):
     state, client, status = {}, None, 2
     try:
-        client = DelegationClient.launch(fixture, cleanup_timeout=cleanup_timeout)
+        client = launch()
+        if render_init:
+            state["last_reply"] = client.initialized_reply
+            _write(output_stream, "\ninitialized=" + _canonical(state["last_reply"]) + "\n")
         status = _run_console(client.request, state=state, input_stream=input_stream,
                               output_stream=output_stream, error_stream=error_stream)
     except (Exception, KeyboardInterrupt) as error:
@@ -285,15 +326,22 @@ def _run_console(send_request, *, state, input_stream, output_stream, error_stre
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fixture", type=Path, required=True,
-                        help="explicit synthetic registry fixture; no default")
+    startup = parser.add_mutually_exclusive_group(required=True)
+    startup.add_argument("--fixture", type=Path, help="explicit synthetic registry fixture; no default")
+    startup.add_argument("--guided-init", action="store_true", help="compose and confirm synthetic registries")
     parser.add_argument("--mode", choices=("in-process", "subprocess"), default="in-process")
     parser.add_argument("--cleanup-timeout", type=float,
                         help="required for subprocess mode; finite positive seconds for cleanup only")
     args = parser.parse_args(argv)
+    if args.guided_init and args.mode != "subprocess":
+        parser.error("--guided-init requires explicit --mode subprocess")
     if args.mode == "subprocess":
         if args.cleanup_timeout is None:
             parser.error("--mode subprocess requires --cleanup-timeout")
+        if args.guided_init:
+            return run_guided_subprocess_console(cleanup_timeout=args.cleanup_timeout,
+                                                input_stream=sys.stdin, output_stream=sys.stdout,
+                                                error_stream=sys.stderr)
         return run_subprocess_console(args.fixture, cleanup_timeout=args.cleanup_timeout,
                                       input_stream=sys.stdin, output_stream=sys.stdout, error_stream=sys.stderr)
     if args.cleanup_timeout is not None:

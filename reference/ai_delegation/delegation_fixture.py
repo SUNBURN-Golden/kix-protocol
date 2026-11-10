@@ -78,11 +78,20 @@ def exact_fields(value, required, context, optional=()):
             f"optional: {', '.join(sorted(optional))}")
 
 
-def load_fixture(path: str | Path) -> DelegationSession:
-    fixture = decode_json(Path(path).read_text(encoding="utf-8"))
+def validate_fixture(fixture):
+    """Transport shape only; registry semantics remain in AiDelegationMock."""
+    validate_json(fixture)
     exact_fields(fixture, {"fixture_version", "provenance", "human_principals", "ai_agents"}, "fixture")
     if type(fixture["fixture_version"]) is not int or fixture["fixture_version"] != 1:
         raise FixtureError("unsupported fixture_version")
     if fixture["provenance"] != PROVENANCE:
         raise FixtureError(f"fixture provenance must be {PROVENANCE}")
+
+
+def session_from_fixture(fixture) -> DelegationSession:
+    validate_fixture(fixture)
     return DelegationSession(fixture["human_principals"], fixture["ai_agents"])
+
+
+def load_fixture(path: str | Path) -> DelegationSession:
+    return session_from_fixture(decode_json(Path(path).read_text(encoding="utf-8")))

@@ -660,6 +660,7 @@ and transport fencing. No policy decision, activation or independent review is i
 - [Local delegation live console builder evidence](../validation/2026-11-07-plan-plan-local-delegation-live-console/README.md) — source-informed coverage, actual local checks, preservation and transcripts; no status promotion, A2 review or exact-head CI claim.
 
 - [Guided delegation input composer builder evidence](../validation/2026-11-08-plan-local-delegation-input-composer/README.md) — optional guided composition, unchanged envelopes, local child parity and failure fencing; A5, policy owners, A2 review and exact-head CI gates remain unchanged.
+- [Guided delegation registry initialization builder evidence](../validation/2026-11-10-plan-local-delegation-guided-init/README.md) — fixture-free confirmed startup, correlated acknowledgement and failure fencing; synthetic identities only, authority UNDETERMINED — Astra/User, A5 and exact-head review/CI gates unchanged.
 
 - [Synthetic local pool accounting workbench](../reference/token_reward/README.md#local-pool-accounting-workbench) · [2026-11-09 pool workbench builder evidence](../validation/2026-11-09-plan-plan-local-pool-accounting-workbench/README.md) — Explicit five-pool initialization, direct model credit/spend/view, confirmed guided mutations and original refusals. Separate POINT_F4 process-local simulation; pool/funding/approval values UNDETERMINED — Astra/User, accounting/legal treatment UNDETERMINED — User/designated advisers; A2 non-author exact-head review and KTX/KIX CI pending.
 

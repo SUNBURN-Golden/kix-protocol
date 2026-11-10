@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from delegation_client import DelegationClient, DelegationClientStateError, DelegationTransportUncertainty
-from delegation_console import main, run_subprocess_console
+from delegation_console import main, run_guided_subprocess_console, run_subprocess_console
 from delegation_fixture import load_fixture
 import test_delegation_client as client_tests
 from test_delegation_console import (CONSOLE, FIXTURES, FailingOutput, desk_requests,
@@ -28,6 +28,63 @@ def diagnostics(text):
 
 
 class DelegationConsoleSubprocessTests(unittest.TestCase):
+    def test_guided_init_real_child_journey(self):
+        text = (FIXTURES / "delegation_console_guided_init_journey.txt").read_text()
+        result = subprocess.run([sys.executable, str(CONSOLE), "--guided-init", "--mode", "subprocess",
+                                 "--cleanup-timeout", "1"], input=text, text=True, capture_output=True, timeout=15)
+        self.assertEqual((result.returncode, result.stderr), (1, ""))
+        fixture = client_tests.decode_json(FIXTURE.read_text())
+        self.assertEqual(records(result.stdout, "proposed_init="), [fixture])
+        self.assertEqual(records(result.stdout, "initialized="), [
+            {"operation": None, "provenance": client_tests.PROVENANCE, "initialized": fixture}])
+        expected_session = load_fixture(FIXTURE)
+        expected = [client_tests.direct(expected_session, row) for row in desk_requests("lifecycle") + [EXECUTE]]
+        replies = records(result.stdout, "desk=")
+        self.assertEqual(replies, expected)
+        self.assertEqual(replies[4]["receipt"]["proposal"]["phase"], "HUMAN_APPROVED")
+        self.assertEqual(replies[12]["view"]["phase"], "VOIDED_BY_REVOCATION")
+        self.assertEqual(replies[-1]["error"], {"code": "DELEGATED_EXECUTION_DISABLED"})
+        for row in replies[:-1]:
+            body = row.get("view") or row["receipt"]
+            body = body.get("grant") or body.get("proposal") or body
+            for flag in client_tests.FALSE_FLAGS:
+                self.assertIs(body[flag], False)
+            if "effects_executed" in body:
+                self.assertIs(body["effects_executed"], False)
+
+    def test_guided_init_ack_render_failure_stops_before_operation(self):
+        fixture = client_tests.decode_json(FIXTURE.read_text())
+        ack = {"operation": None, "provenance": client_tests.PROVENANCE, "initialized": fixture}
+        for mode in ("write", "short", "flush"):
+            client = Mock(initialized_reply=ack)
+            client.close.return_value = 0
+            errors = io.StringIO()
+            with patch("delegation_console.DelegationClient.launch_from_fixture", return_value=client) as launched:
+                status = run_guided_subprocess_console(cleanup_timeout=1,
+                    input_stream=io.StringIO("1\nhuman-a\n2\nagent-a\nagent-b\nSUBMIT\n" + entered(ISSUE)),
+                    output_stream=FailingOutput("initialized=", mode), error_stream=errors)
+            self.assertEqual(status, 2)
+            self.assertEqual(diagnostics(errors.getvalue())[0]["last_reply"], ack)
+            client.request.assert_not_called()
+            client.close.assert_called_once()
+            launched.assert_called_once_with(fixture, cleanup_timeout=1)
+
+    def test_guided_init_malformed_ack_stops_queued_sentinel_and_reports_wire(self):
+        raw = b'{"operation":'
+        log, worker = client_tests.fault_worker(self, raw, exited=True)
+        output, errors = io.StringIO(), io.StringIO()
+        with patch("delegation_client.subprocess.Popen", side_effect=worker) as launched:
+            status = run_guided_subprocess_console(cleanup_timeout=1,
+                input_stream=io.StringIO("1\nhuman-a\n2\nagent-a\nagent-b\nSUBMIT\n" + entered(ISSUE)),
+                output_stream=output, error_stream=errors)
+        self.assertEqual(status, 2)
+        self.assertEqual(records(output.getvalue(), "proposed="), [])
+        self.assertEqual(records(output.getvalue(), "initialized="), [])
+        diagnostic = diagnostics(errors.getvalue())[0]
+        self.assertEqual(diagnostic["reply_bytes_hex"], raw.hex())
+        self.assertEqual(bytes.fromhex(diagnostic["request_bytes_hex"]), log.read_bytes())
+        launched.assert_called_once()
+
     def drive(self, text="quit\n", *, source=None, output=None, configure=None, fixture=FIXTURE):
         """One real child; test deadline only, no polling/restart/fallback."""
         output = io.StringIO() if output is None else output

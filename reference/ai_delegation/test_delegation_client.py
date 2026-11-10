@@ -9,7 +9,7 @@ import sys
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ai_delegation_mock import AiDelegationError, FALSE_FLAGS, PROVENANCE, _canonical
 from delegation_cli import _error
@@ -80,6 +80,141 @@ def fault_worker(test, raw, *, linger=False, stubborn=False, exited=False):
 
 
 class DelegationClientTests(unittest.TestCase):
+    def test_initialized_live_client_parity_and_detached_snapshots(self):
+        fixture = decode_json(FIXTURE.read_text())
+        expected_fixture = deepcopy(fixture)
+        with patch("delegation_client.subprocess.Popen", wraps=subprocess.Popen) as launched, patch(
+                "delegation_fixture.DelegationSession", side_effect=AssertionError("parent domain preflight")):
+            initialized = DelegationClient.launch_from_fixture(fixture, cleanup_timeout=1)
+        self.addCleanup(initialized.close)
+        self.assertEqual(launched.call_args.args[0][-3:], ["--init-stdin", "--requests", "-"])
+        launched.assert_called_once()
+        fixture["human_principals"].clear()
+        ack = initialized.initialized_reply
+        self.assertEqual(ack, {"operation": None, "provenance": PROVENANCE, "initialized": expected_fixture})
+        ack["initialized"]["ai_agents"].reverse()
+        self.assertEqual(initialized.initialized_reply["initialized"], expected_fixture)
+        file_client = self.launch()
+        self.assertIsNone(file_client.initialized_reply)
+        for row in requests("lifecycle") + requests("boundaries") + requests("replay"):
+            reply = exchange(self, initialized, row)
+            self.assertEqual(reply, exchange(self, file_client, row))
+            self.assert_synthetic(reply)
+        self.assertEqual(initialized.close(), file_client.close())
+
+    def test_startup_ack_failure_fences_and_reaps_without_retry(self):
+        fixture = decode_json(FIXTURE.read_text())
+        ack = {"operation": None, "provenance": PROVENANCE, "initialized": fixture}
+        malformed = [b"", b"{", b"\xff\n", b"{}\n", b"[]\n", wire(ack)[:-1],
+                     b'{"operation":null,"operation":null}\n', wire({**ack, "extra": True}),
+                     wire({**ack, "operation": "issue_grant"}), wire({**ack, "provenance": "REAL"}),
+                     wire(_error(None, OSError("complete setup failure"))),
+                     wire(_error(None, AiDelegationError("INVALID_ID")))]
+        for key, value in (("fixture_version", True), ("fixture_version", 1.0), ("fixture_version", 2),
+                           ("provenance", "REAL"), ("human_principals", []), ("ai_agents", None),
+                           ("ai_agents", ["agent-b", "agent-a"])):
+            malformed.append(wire({**ack, "initialized": {**fixture, key: value}}))
+        for raw in malformed:
+            with self.subTest(raw=raw):
+                process = Mock(stdin=io.BytesIO(), stdout=io.BytesIO(raw), returncode=0)
+                write = Mock(wraps=process.stdin.write)
+                process.stdin.write = write
+                clients = []
+                original = DelegationClient.__init__
+                def capture(client, *args):
+                    original(client, *args)
+                    clients.append(client)
+                with patch("delegation_client.subprocess.Popen", return_value=process) as launched, patch.object(
+                        DelegationClient, "__init__", capture):
+                    with self.assertRaises(DelegationTransportUncertainty) as caught:
+                        DelegationClient.launch_from_fixture(fixture, cleanup_timeout=1)
+                self.assertEqual(caught.exception.request_bytes, wire(fixture))
+                self.assertEqual(caught.exception.reply_bytes, raw)
+                self.assertIsNotNone(caught.exception.__cause__)
+                self.assert_fenced(clients[0])
+                write.assert_called_once_with(wire(fixture))
+                launched.assert_called_once()
+                process.wait.assert_called_once_with(timeout=1)
+                self.assertTrue(process.stdin.closed)
+                self.assertTrue(process.stdout.closed)
+                if b'complete setup failure' in raw:
+                    self.assertEqual(caught.exception.last_reply, decode_json(raw))
+
+    def test_startup_io_interruptions_and_cleanup_failure_preserve_primary(self):
+        fixture = decode_json(FIXTURE.read_text())
+        for fault in ("short", "none", "broken", "write_interrupt", "flush", "read", "interrupt", "cleanup"):
+            with self.subTest(fault=fault):
+                process = Mock(stdin=io.BytesIO(), stdout=io.BytesIO(), returncode=0)
+                if fault in {"short", "none"}:
+                    process.stdin.write = Mock(return_value=1 if fault == "short" else None)
+                elif fault in {"broken", "write_interrupt"}:
+                    process.stdin.write = Mock(side_effect=BrokenPipeError("write failed") if fault == "broken"
+                                               else KeyboardInterrupt("write interrupted"))
+                elif fault == "flush":
+                    process.stdin.flush = Mock(side_effect=OSError("flush failed"))
+                else:
+                    process.stdout.read = Mock(side_effect=[b"{", KeyboardInterrupt("read interrupted")
+                                                           if fault == "interrupt" else OSError("read failed")])
+                if fault == "cleanup":
+                    process.wait.side_effect = OSError("cleanup failed")
+                with patch("delegation_client.subprocess.Popen", return_value=process) as launched:
+                    with self.assertRaises(DelegationTransportUncertainty) as caught:
+                        DelegationClient.launch_from_fixture(fixture, cleanup_timeout=1)
+                self.assertEqual(caught.exception.request, fixture)
+                self.assertEqual(caught.exception.reply_bytes, b"{" if fault in {"read", "interrupt", "cleanup"} else b"")
+                if fault == "cleanup":
+                    self.assertEqual(str(caught.exception.__cause__), "read failed")
+                    self.assertEqual(str(caught.exception.cleanup_error), "cleanup failed")
+                launched.assert_called_once()
+
+    def test_startup_real_rejections_and_hostile_child_cleanup(self):
+        fixture = decode_json(FIXTURE.read_text())
+        for humans, agents, code in ((None, [], "INVALID_ID"), (["a", "a"], [], "INVALID_ID"),
+                                     (["same"], ["same"], "MOCK_INVARIANT")):
+            with self.assertRaises(DelegationTransportUncertainty) as caught:
+                DelegationClient.launch_from_fixture({**fixture, "human_principals": humans, "ai_agents": agents},
+                                                      cleanup_timeout=1)
+            self.assertEqual(caught.exception.last_reply["error"], {"code": code})
+        log, worker = fault_worker(self, b'{"wrong":true}\n', linger=True, stubborn=os.name == "posix")
+        processes = []
+        def capture(*args, **kwargs):
+            processes.append(worker(*args, **kwargs))
+            return processes[-1]
+        with patch("delegation_client.subprocess.Popen", side_effect=capture) as launched:
+            with self.assertRaises(DelegationTransportUncertainty):
+                DelegationClient.launch_from_fixture(fixture, cleanup_timeout=0.1)
+        self.assertEqual(decode_json(log.read_text()), fixture)
+        launched.assert_called_once()
+        self.assertEqual(processes[0].returncode, -9 if os.name == "posix" else -15)
+        if os.name == "posix":
+            with self.assertRaises(ChildProcessError):
+                os.waitpid(processes[0].pid, os.WNOHANG)
+
+    def test_startup_shape_and_timeout_validation_launch_nothing(self):
+        fixture = decode_json(FIXTURE.read_text())
+        with patch("delegation_client.subprocess.Popen") as launched:
+            for bad in ({}, {**fixture, "fixture_version": True}, {**fixture, "human_principals": ["\ud800"]}):
+                with self.assertRaises(FixtureError):
+                    DelegationClient.launch_from_fixture(bad, cleanup_timeout=1)
+            for timeout in (0, -1, True, None, "1", float("inf"), float("nan")):
+                with self.assertRaises(ValueError):
+                    DelegationClient.launch_from_fixture(fixture, cleanup_timeout=timeout)
+            launched.assert_not_called()
+
+    def test_startup_ack_requires_registry_types_even_if_echo_matches(self):
+        fixture = decode_json(FIXTURE.read_text())
+        for registry in (None, "agent-a", [1], [False], [{}]):
+            submitted = {**fixture, "ai_agents": registry}
+            raw = wire({"operation": None, "provenance": PROVENANCE, "initialized": submitted})
+            process = Mock(stdin=io.BytesIO(), stdout=io.BytesIO(raw), returncode=0)
+            with patch("delegation_client.subprocess.Popen", return_value=process) as launched:
+                with self.assertRaises(DelegationTransportUncertainty) as caught:
+                    DelegationClient.launch_from_fixture(submitted, cleanup_timeout=1)
+            self.assertIsInstance(caught.exception.__cause__, FixtureError)
+            self.assertEqual(caught.exception.reply_bytes, raw)
+            launched.assert_called_once()
+            process.wait.assert_called_once_with(timeout=1)
+
     def launch(self, fixture=FIXTURE, cleanup_timeout=1):
         client = DelegationClient.launch(fixture, cleanup_timeout=cleanup_timeout)
         self.addCleanup(client.close)
