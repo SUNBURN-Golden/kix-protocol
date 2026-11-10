@@ -213,6 +213,62 @@ characterizations:
   `state_digest`, `reject_unsupported` or `attempt_execution`; those remain
   machine-level surfaces covered by their existing tests.
 
+## Cross-boundary settlement-to-credit vector pack
+
+The synthetic pack in
+[`fixtures/settlement_credit_boundary_v1.json`](fixtures/settlement_credit_boundary_v1.json)
+and
+[`fixtures/settlement_credit_boundary_vectors_v1.json`](fixtures/settlement_credit_boundary_vectors_v1.json)
+crosses exactly one boundary: a caller copies the F01-F03 settlement view's
+`claim` object literally into `CreditMachine.offer(face=...)`. No adapter,
+console, subprocess client, protocol command, derivation function or product
+policy is involved. Settlement provenance is `MOCK_SETTLEMENT_ONLY`; credit
+provenance is `MOCK_CREDIT_F04_ONLY`. Every number and identifier is a
+caller-owned fixture literal.
+
+Replay the pack with the standard library only:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/credit_advance_f04/settlement_credit_boundary_vectors.py
+```
+
+The driver prints the canonical actual vectors and exits 0 on exact match, 1 on
+the first mismatch (naming the scenario and step), and 2 on invalid input. It
+dispatches only an explicit allowlist of existing public machine methods; a step
+is `{"step_id", "target", "operation", "arguments"}` where `arguments` is the
+full keyword call including the identifier parameter (`settlement_id`,
+`advance_id` or `claim_id`). A step result is `{"ok": value}` or
+`{"error": {"type": "SettlementError"|"CreditError", "code": ...}}`. Both files
+are canonical JSON (sorted keys, compact separators, UTF-8, one trailing
+newline); the vector file pins the fixture bytes with `fixture_sha256`.
+
+The six scenarios and their acceptance tags:
+
+| Scenario | Covers |
+| --- | --- |
+| `S1_captured_face_no_derivation` | captured claim snapshot embedded as the face; early draw refuses with `SETTLEMENT_NOT_COMMITTED`; the frozen face keeps `confirmed_cash_on_face: 0` after the settlement later commits |
+| `S2_committed_face_no_derivation` | committed claim snapshot embedded as the face; draw observes the mock commit and claims no finality |
+| `S3_face_snapshot_frozen_and_stable_view_claim` | first note freezes the face; a modified later face fails `FACE_SNAPSHOT_FROZEN`; `view_claim` is byte-equal before and after a settlement refund and partial acceptance |
+| `S4_refund_obligation_partial_acceptance` | refund obligation and partial acceptance are visible on the settlement claim; the credit face has no refund fields; `funds_executed` stays false |
+| `S5_shared_exposure_two_advances` | two advances share one exposure ledger; only the caller-supplied amounts set the limit; an over-ceiling draw fails `ADVANCE_EXCEEDS_OPEN_FACE` without changing the offer; the residual reserves exactly |
+| `S6_reconciliation_gap_reported_no_repair` | a settlement refund is absent from the frozen credit face and a second advance still draws; both reconciles report `matched: true` and neither repairs the gap |
+
+Existing coverage is cited, not duplicated:
+
+- Captured-versus-committed gate and the no-finality draw:
+  [`fixtures/settlement_gates.jsonl`](fixtures/settlement_gates.jsonl) and
+  `test_credit_fsm.py::CreditFsmTests.test_bound_draw_waits_for_mock_commit_and_does_not_claim_finality`.
+- The credit gate does not read the settlement view's refund fields:
+  `test_credit_properties.py::ClassBCharacterizationTests.test_b_the_gate_does_not_read_refund_fields_of_the_settlement_view`.
+
+The reconciliation gap is a **contract-undefined Class B characterization**. The
+pack reports it as `{"code": "SETTLEMENT_REFUND_NOT_REFLECTED_IN_CREDIT_FACE",
+"contract_status": "UNDEFINED", "repair": "NONE"}`; it implements no repair and
+adopts no pending Finance design or product term. Tests are run by the existing
+suite discovery (`test_settlement_credit_boundary.py`), so no CI file changes.
+No claim of durability, finality, bank exactly-once, live funds, production
+readiness or product-policy adoption is made.
+
 ## Verification
 
 ```bash
