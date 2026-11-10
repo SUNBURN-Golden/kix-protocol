@@ -178,6 +178,35 @@ authority and unresolved decision boundaries remain at their contracts.
 | Authenticated observations and durable effects | Local receipts, views, digests and “live” subprocesses supply no authenticated provider/chain source, durable economic transaction or distributed execution authority. | Existing [open inputs](../contracts/FIRST_BATCH_OPEN_INPUTS.md) retain their named User, provider and designated legal/accounting owners; [program locks](../decisions/PROGRAM_DECISIONS_20260928.md) §5 remain. No policy value is selected here. |
 | Finance projection/export and Capital ownership | [Finance completion design](../aiops/FINANCE_COMPLETION_DESIGN_KO.md) is **PENDING / unadopted / execution prohibited**. It proposes protocol finance logic here and financial screens in Commerce, explicitly no third repository/program. Separate Capital product/repository ownership was not established in this worktree; neither consumer repository was inspected. Pool/supply/collateral tools do not implement that architecture or a finance ledger. Unsupported consumer methods remain **NOT_BOUND**, release readiness **HOLD**. | **User/Astra** must reconcile any separate Capital interpretation and adopt applicable contracts/dependencies before integration. Accounting/legal classifications remain with User and designated advisers; no adoption, projection/export completion or consumer verification is claimed. |
 
+## Machine-readable consumer binding index
+
+The [machine-readable consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json)
+is a non-normative navigation record for `kix-commerce-apps`. It binds all 84
+published local-call commands (40 core + 44 FSM) and the 13 owner-decided read
+names to their pinned source, body-schema reference, gate envelope, offline
+journey evidence and exactly one status:
+
+- 40 core commands: **BOOTSTRAP_SCHEMA_BOUND**.
+- 44 FSM commands: 27 **MOCK_EVIDENCE** (exercised by the 44-step
+  `commerce_journey_conformance_v1.json` fixture) and 17
+  **BOOTSTRAP_SCHEMA_BOUND**.
+- 13 read names: **NOT_BOUND**; `read-model-reference` is not merged and the
+  candidate vectors are not conformance evidence.
+
+Semantic SDK consumption stays **HOLD_SEMANTIC**; the record grants
+`catalogue-schema-binding only`. External `kix-commerce-apps` expectations stay
+**UNVERIFIED** because that adapter is not in this repository. SD1 stays
+**OPEN**, User-owned and unresolved. **BOOTSTRAP is not consumer acceptance**,
+and `MOCK_EVIDENCE` is offline fixture evidence only; neither is semantic,
+N/N-1, production, audit or User approval.
+
+The [checker](../../validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py)
+re-derives the sets, recomputes every pin, cross-checks the producer tuple and
+journey fixture, and refuses drift, an unknown or missing command, a read query
+upgraded from `NOT_BOUND` or a semantic claim. It is validation evidence, not a
+second contract. This section extends the boundary map; it does not replace any
+row or statement above.
+
 ## Evidence and non-claims
 
 Behavioral statements above cite existing contracts, dispatchers and tests;

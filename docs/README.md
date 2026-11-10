@@ -27,6 +27,14 @@ Pool references do not deduplicate accepted calls; synthetic observations are no
 authenticated facts. Unsupported bindings remain NOT_BOUND and semantic SDK
 consumers HOLD. [Builder validation and remaining delivery gates](../validation/2026-11-10-audit29-consumer-surface-boundary-map/README.md).
 
+The [machine-readable consumer binding
+index](status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json) binds all 84 published
+commands and the 13 read names to their pins, statuses and offline journey
+evidence. BOOTSTRAP is not consumer acceptance; reads stay `NOT_BOUND`,
+semantic SDK consumption stays `HOLD_SEMANTIC`, external `kix-commerce-apps`
+expectations are `UNVERIFIED` and SD1 stays User-owned and `OPEN`.
+[Builder validation and actual local results](../validation/2026-11-10-plan-commerce-consumer-binding-index/README.md).
+
 ## BOOTSTRAP producer-qualification tuple
 
 [Non-normative identity record](status/PRODUCER_QUALIFICATION_TUPLE_V1.md)
