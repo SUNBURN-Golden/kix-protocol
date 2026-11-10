@@ -1,0 +1,79 @@
+{
+  "fixture_version": 1,
+  "provenance": "synthetic",
+  "setup": [
+    {
+      "operationId": "setup-event",
+      "actor": "operator",
+      "action": "create_event",
+      "body": {
+        "domain": "kix:fixture:lifecycle:0.3",
+        "eventId": "show",
+        "organizer": "organizer",
+        "policy": {
+          "primaryPrice": 100000,
+          "resaleCap": 150000,
+          "primaryFeeBps": 500,
+          "resaleFeeBps": 300,
+          "resaleOrganizerBps": 200,
+          "resaleAllowed": true,
+          "refundProfile": "FULL_CHAIN_UNWIND_FIXTURE"
+        },
+        "seats": ["A1"]
+      }
+    },
+    {
+      "operationId": "setup-primary",
+      "actor": "A",
+      "action": "prepare_trade",
+      "body": {
+        "domain": "kix:fixture:lifecycle:0.3",
+        "tradeId": "primary",
+        "inventoryId": "inv-440b90085b5c2c7c7cde569aa83abaeb55232cc2e9a0588e1dd6757cc27cdfe3",
+        "expectedInventoryVersion": 0,
+        "buyer": "A",
+        "amount": 100000,
+        "expectedVersion": 0
+      }
+    },
+    {
+      "operationId": "setup-capture",
+      "actor": "pg-adapter",
+      "action": "capture",
+      "body": {
+        "domain": "kix:fixture:lifecycle:0.3",
+        "scope": {
+          "provider": "toss",
+          "environment": "test",
+          "merchant": "kix-fixture",
+          "channel": "card"
+        },
+        "provenance": "synthetic",
+        "tradeId": "primary",
+        "orderId": "kix_n_d3hWowvx4ygc3PHtpfRBYsTEoSEuPUawaSm6TQVJk",
+        "paymentId": "pay-primary",
+        "amount": 100000,
+        "currency": "KRW",
+        "buyer": "A"
+      }
+    },
+    {
+      "operationId": "setup-commit",
+      "actor": "operator",
+      "action": "commit_trade",
+      "body": {
+        "domain": "kix:fixture:lifecycle:0.3",
+        "tradeId": "primary"
+      }
+    },
+    {
+      "operationId": "setup-cancel",
+      "actor": "operator",
+      "action": "cancel_event",
+      "body": {
+        "domain": "kix:fixture:lifecycle:0.3",
+        "eventId": "show"
+      }
+    }
+  ]
+}
