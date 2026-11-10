@@ -402,3 +402,129 @@ readiness or independent acceptance is supplied by these navigation additions.
 [audit29-43]: OPEN_USER_DECISIONS_20261026_ADDENDUM.md
 [audit29-44]: RS4_L2_DECISION_IMPACT_INVENTORY.md
 [audit29-45]: ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md
+
+## Audit30 current-tree supplement
+
+Basis: KIX audit #30, supplied external task input
+/workspace/kix-run/audits/audit_30_20261110.md. The builder observed starting
+HEAD/base and origin/main both at
+`bee3fc18281ca38204930d80a0e665b9575985d4` (merge #435, 2026-11-10). A
+session-start `git fetch origin main` succeeded; no base change was made.
+
+Bounded selection: exactly PRs #426–#435 named by
+`audit30-sync-nov10-location-tables`. This supplement does not inventory
+#399–#425 or any range after #435. It reconciles existing [docs index][audit30-1]
+entries with the [consumer surface boundary map][audit30-2], the
+[producer qualification tuple][audit30-3] and its [JSON record][audit30-4], the
+[SDK conformance negative vectors][audit30-5], and the
+[ticket/calculation guide][audit30-6], [reward/pool/supply guide][audit30-7],
+[delegation guide][audit30-8] and [payment-effect guide][audit30-9]; it is not a
+full current-tree inventory.
+
+Evidence limits (D1 in every row): source/test locations and historical builder
+validation are available. Local first-parent merge observations are recorded in
+the [validation record][audit30-10]. Merge observations do not establish
+non-author review, acceptance or successful CI. Final delivery heads, reviewer
+identities and exact-head KTX/KIX workflow results for these additions were not
+independently verified here; historical records retain their unavailable Rust
+checks, test failures/reruns and pending gates. Tests linked below were inspected
+for traceability, not rerun as behavioral tests in this documentation task.
+
+Non-claims: no qualification or evidence-grade promotion; operational capability
+count remains **0**, semantic consumers remain **HOLD**, unsupported bindings
+remain **NOT_BOUND**. Canonical dependencies below are copied from
+[program.json][audit30-11] at this base; their acceptance states are not
+inferred. Overlap is limited to existing reference/interface or calculation/model
+tooling, not the canonical node's full scope or prerequisites. No canonical
+completion arithmetic, new start, policy choice or runtime activation. Original
+rows, grades, owners, counts, selection rules and historical bases remain
+unchanged.
+
+| PR | Exact node ID | Local capability | Source | Existing tests | Validation record | Related register row | Canonical overlap and quoted spec | Delivery evidence / limitations |
+|---|---|---|---|---|---|---|---|---|
+| #426 | `audit29-refresh-current-capability-pointers` | Bounded audit-29 location supplement | [DEVELOPMENT_PLAN.md][audit30-12]; [CURRENT_CAPABILITY_REGISTER.md][audit30-13]; [LOOP_NODE_CROSSWALK.md][audit30-14] | None; document-only, no tests | [2026-11-10-audit29-refresh-current-capability-pointers][audit30-15] | Navigation only; no capability-grade row | None (documentation navigation); does not complete or start the canonical node | D1; Document-only; no runtime, grade, owner or count change |
+| #427 | `audit29-consumer-surface-boundary-map` | Non-normative consumer surface boundary inventory | [CONSUMER_SURFACE_BOUNDARY_MAP.md][audit30-2] | [test_http_gate.py][audit30-16]; [test_pool_session.py::PoolSessionTests.test_repeated_refs_match_direct_model_and_append_again][audit30-17] | [2026-11-10-audit29-consumer-surface-boundary-map][audit30-18] | EV-GATE; EV-BRA; EV-REF | None (non-normative navigation inventory); does not complete or start the canonical node | D1; Documentation inventory only; no alias, authentication, qualification or new binding |
+| #428 | `plan-local-commerce-draft-editor` | Ordered commerce draft editor with pre-display invalidation | [commerce_calculation_console.py][audit30-19] | [test_commerce_calculation_console.py::test_edit_journey_complete_input_parity][audit30-20]; [::test_edit_positions_metadata_and_ordered_display][audit30-20]; [::test_edit_exact_inputs_and_decimal_parity][audit30-20] | [2026-11-10-plan-local-commerce-draft-editor][audit30-21] | EV-REF; B03 price/discount; F03 refund/cancel | `k-stage6-economics-reference`: "immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts"; depends_on: `k-stage5-durable-tx`, `settlement-policy-deepening`, `booking-resale-admission-deepening`; does not complete or start the canonical node | D1; Existing quote/payment/refund calculation artifacts only; CALCULATION_ONLY, no execution authority |
+| #429 | `plan-local-reward-guided-init` | Guided five-pool reward initialization over stdin | [reward_fixture.py][audit30-22]; [reward_cli.py][audit30-23]; [reward_client.py][audit30-24]; [reward_console.py][audit30-25] | [test_reward_console.py::RewardGuidedInitializationTests][audit30-26]; [test_reward_cli.py::RewardInitializationCliTests][audit30-27]; [test_reward_client.py::RewardInitializationClientTests][audit30-28]; [test_reward_console_subprocess.py::test_live_guided_opening_journey_before_eof][audit30-29] | [2026-11-10-plan-local-reward-guided-init][audit30-30] | TL-3 offchain; TL-4 verification gap | `tl-3-offchain`: "reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6)"; depends_on: `tl-1`; does not complete or start the canonical node | D1; Existing reward model tooling only; synthetic five-pool startup acknowledgement, no funding or token issuance |
+| #430 | `plan-local-delegation-guided-init` | Guided delegation registry initialization | [delegation_fixture.py][audit30-31]; [delegation_cli.py][audit30-32]; [delegation_client.py][audit30-33]; [delegation_console.py][audit30-34] | [test_delegation_cli.py::test_fixture_and_stdin_init_reply_parity][audit30-35]; [test_delegation_client.py::test_initialized_live_client_parity_and_detached_snapshots][audit30-36]; [test_delegation_console.py::test_guided_init_confirmation_precedes_launch][audit30-37] | [2026-11-10-plan-local-delegation-guided-init][audit30-38] | P AI delegation; EV-DELEG | `ai-delegation-execution-decision`: "Execution stays disabled."; depends_on: `ai-delegation-contract-mock`, `rs-3a`, `rs-3b`; does not complete or start the canonical node | D1; Synthetic identities only; execution disabled, A5 stop and owners unchanged |
+| #431 | `plan-local-cart-structure-editor` | Ordered cart structure and payment-leg replacement editor | [commerce_calculation_console.py][audit30-19] | [test_commerce_calculation_console.py::test_structure_journey_parity][audit30-20]; [::test_structure_positions_order_and_no_launch][audit30-20]; [::test_structure_precision_and_literal_fields][audit30-20] | [2026-11-10-plan-local-cart-structure-editor][audit30-39] | EV-REF; B03 price/discount; F03 refund/cancel | `k-stage6-economics-reference`: "immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts"; depends_on: `k-stage5-durable-tx`, `settlement-policy-deepening`, `booking-resale-admission-deepening`; does not complete or start the canonical node | D1; Existing calculation artifacts only; CALCULATION_ONLY, executionAuthorized=false |
+| #432 | `plan-plan-local-source-quote-console` | Source-backed booking quote console | [booking_console.py][audit30-40]; [shared_ticket_console.py][audit30-41] | [test_booking_console.py::test_source_journeys_complete_parity_history_and_refusals][audit30-42]; [test_shared_ticket_console.py::test_source_shared_journeys_reentry_history_and_parity][audit30-43] | [2026-11-10-plan-plan-local-source-quote-console][audit30-44] | EV-BRA; P Wave4 booking/resale/admission | `booking-resale-admission-deepening`: "Update reference/booking_resale_admission and its tests for decided items."; depends_on: `p-sdk-0`; does not complete or start the canonical node | D1; Process-local synthetic booking/resale/admission console only; policy/legal effects UNDETERMINED |
+| #433 | `plan-plan-local-payment-effect-desk` | Synthetic local payment effect desk | [payment_effect_session.py][audit30-45]; [payment_effect_fixture.py][audit30-46]; [payment_effect_cli.py][audit30-47] | [test_payment_effect_session.py::test_cash_refund_receipts_and_views_match_direct_core][audit30-48]; [::test_effect_action_set_is_exactly_the_published_commands][audit30-48]; [test_payment_effect_cli.py::test_all_journeys_match_direct_core_execution][audit30-49] | [2026-11-10-plan-plan-local-payment-effect-desk][audit30-50] | EV-SET; P04 settlement/distribution | None (existing `reference/v0.3-rc1` effect commands only); does not complete or start the canonical node | D1; Local synthetic in-memory Core; send_effect is local intent only; no transmission, Finance projection or settlement connection |
+| #434 | `plan-producer-qualification-tuple-bundle` | BOOTSTRAP producer-qualification tuple identity record and checker | [PRODUCER_QUALIFICATION_TUPLE_V1.md][audit30-3]; [PRODUCER_QUALIFICATION_TUPLE_V1.json][audit30-4]; [check_producer_qualification_tuple.py][audit30-51] | [check_producer_qualification_tuple.py --self-test][audit30-51] | [2026-11-10-plan-producer-qualification-tuple-bundle][audit30-52] | K3 schema·SDK; EV-BCS; EV-GATE | `contract-compatibility-profile`: "negative tests reject mixed old/new catalogue/gate/SDK, wrong source/blob/sha256/domain/version, unsupported enum/receipt fields and source drift before writes."; depends_on: `p-sdk-1`, `k-stage3-schema-sdk-conformance`; does not complete or start the canonical node | D1; Identity-only non-normative record; SD1 OPEN (owner User); semantic HOLD; 13 read names NOT_BOUND; no N/N−1, production or User approval |
+| #435 | `plan-manifest-verifier-negative-vector-comple` | Companion single-fault manifest/profile/sidecar negative vectors | [manifest-verifier-negative.vectors.json][audit30-5]; [conformance.test.mjs][audit30-53] | [conformance.test.mjs::manifest-v1 verifier negative vectors reject exactly one fault each][audit30-53] (56 cases; `npm --prefix sdk run conformance`) | [2026-11-10-plan-manifest-verifier-negative-vector-comple][audit30-54] | K3 schema·SDK; EV-BCS; EV-GATE | `contract-compatibility-profile`: "negative tests reject mixed old/new catalogue/gate/SDK, wrong source/blob/sha256/domain/version, unsupported enum/receipt fields and source drift before writes."; depends_on: `p-sdk-1`, `k-stage3-schema-sdk-conformance`; does not complete or start the canonical node | D1; Companion matrix not bound in the manifest; unordered error-set assertion leaves SD1 OPEN; no semantic or N/N−1 claim |
+
+Calculations remain `CALCULATION_ONLY`; the commerce draft and cart editors
+retain `executionAuthorized=false` for refund proposals and do not close F03's
+external-return gap. Reward and delegation startup records are synthetic and
+unauthenticated. The payment-effect desk executes only the four already-published
+`reference/v0.3-rc1` local-intent commands. The producer tuple and negative-vector
+suite are identity-only: SD1 stays OPEN, semantic consumers HOLD and the 13 read
+names stay NOT_BOUND. "Live" denotes a local subprocess, not an operational
+service. TL-2, onchain TL-3, TL-5 and coin/TIX locks remain unchanged.
+
+The existing [SD1 verifier contract violation][audit30-55],
+[A5 AI-delegation stop][audit30-56],
+[RS-4 L2 FAILED_MEASUREMENT/HOLD][audit30-57]
+and [Stage-5 gate][audit30-58] remain open on their existing terms and owners. No
+SDK qualification, durability, legal compliance, authenticated provider facts,
+real funds, chain finality, production readiness or independent acceptance is
+supplied by these navigation additions.
+
+[audit30-1]: ../README.md
+[audit30-2]: CONSUMER_SURFACE_BOUNDARY_MAP.md
+[audit30-3]: PRODUCER_QUALIFICATION_TUPLE_V1.md
+[audit30-4]: PRODUCER_QUALIFICATION_TUPLE_V1.json
+[audit30-5]: ../../sdk/conformance/vectors/manifest-verifier-negative.vectors.json
+[audit30-6]: ../../reference/booking_resale_admission/README.md
+[audit30-7]: ../../reference/token_reward/README.md
+[audit30-8]: ../../reference/ai_delegation/README.md
+[audit30-9]: ../../reference/payment_effects/README.md
+[audit30-10]: ../../validation/2026-11-10-audit30-sync-nov10-location-tables/README.md
+[audit30-11]: ../../.aiops/program.json
+[audit30-12]: ../DEVELOPMENT_PLAN.md
+[audit30-13]: CURRENT_CAPABILITY_REGISTER.md
+[audit30-14]: LOOP_NODE_CROSSWALK.md
+[audit30-15]: ../../validation/2026-11-10-audit29-refresh-current-capability-pointers/README.md
+[audit30-16]: ../../integration_gate/test_http_gate.py
+[audit30-17]: ../../reference/token_reward/test_pool_session.py
+[audit30-18]: ../../validation/2026-11-10-audit29-consumer-surface-boundary-map/README.md
+[audit30-19]: ../../reference/booking_resale_admission/commerce_calculation_console.py
+[audit30-20]: ../../reference/booking_resale_admission/test_commerce_calculation_console.py
+[audit30-21]: ../../validation/2026-11-10-plan-local-commerce-draft-editor/README.md
+[audit30-22]: ../../reference/token_reward/reward_fixture.py
+[audit30-23]: ../../reference/token_reward/reward_cli.py
+[audit30-24]: ../../reference/token_reward/reward_client.py
+[audit30-25]: ../../reference/token_reward/reward_console.py
+[audit30-26]: ../../reference/token_reward/test_reward_console.py
+[audit30-27]: ../../reference/token_reward/test_reward_cli.py
+[audit30-28]: ../../reference/token_reward/test_reward_client.py
+[audit30-29]: ../../reference/token_reward/test_reward_console_subprocess.py
+[audit30-30]: ../../validation/2026-11-10-plan-local-reward-guided-init/README.md
+[audit30-31]: ../../reference/ai_delegation/delegation_fixture.py
+[audit30-32]: ../../reference/ai_delegation/delegation_cli.py
+[audit30-33]: ../../reference/ai_delegation/delegation_client.py
+[audit30-34]: ../../reference/ai_delegation/delegation_console.py
+[audit30-35]: ../../reference/ai_delegation/test_delegation_cli.py
+[audit30-36]: ../../reference/ai_delegation/test_delegation_client.py
+[audit30-37]: ../../reference/ai_delegation/test_delegation_console.py
+[audit30-38]: ../../validation/2026-11-10-plan-local-delegation-guided-init/README.md
+[audit30-39]: ../../validation/2026-11-10-plan-local-cart-structure-editor/README.md
+[audit30-40]: ../../reference/booking_resale_admission/booking_console.py
+[audit30-41]: ../../reference/booking_resale_admission/shared_ticket_console.py
+[audit30-42]: ../../reference/booking_resale_admission/test_booking_console.py
+[audit30-43]: ../../reference/booking_resale_admission/test_shared_ticket_console.py
+[audit30-44]: ../../validation/2026-11-10-plan-plan-local-source-quote-console/README.md
+[audit30-45]: ../../reference/payment_effects/payment_effect_session.py
+[audit30-46]: ../../reference/payment_effects/payment_effect_fixture.py
+[audit30-47]: ../../reference/payment_effects/payment_effect_cli.py
+[audit30-48]: ../../reference/payment_effects/test_payment_effect_session.py
+[audit30-49]: ../../reference/payment_effects/test_payment_effect_cli.py
+[audit30-50]: ../../validation/2026-11-10-plan-plan-local-payment-effect-desk/README.md
+[audit30-51]: ../../scripts/check_producer_qualification_tuple.py
+[audit30-52]: ../../validation/2026-11-10-plan-producer-qualification-tuple-bundle/README.md
+[audit30-53]: ../../sdk/conformance/conformance.test.mjs
+[audit30-54]: ../../validation/2026-11-10-plan-manifest-verifier-negative-vector-comple/README.md
+[audit30-55]: OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md
+[audit30-56]: OPEN_USER_DECISIONS_20261026_ADDENDUM.md
+[audit30-57]: RS4_L2_DECISION_IMPACT_INVENTORY.md
+[audit30-58]: ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md

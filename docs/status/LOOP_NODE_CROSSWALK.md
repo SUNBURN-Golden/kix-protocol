@@ -423,3 +423,80 @@ and [Stage-5 gate](ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md) remain
 open on their existing terms and owners. No SDK qualification, durability, legal
 compliance, authenticated provider facts, real funds, chain finality, production
 readiness or independent acceptance is supplied by these navigation additions.
+
+## 8. Audit30 current-tree supplement
+
+Basis: KIX audit #30, supplied external task input
+/workspace/kix-run/audits/audit_30_20261110.md. The builder observed starting
+HEAD/base and origin/main both at
+`bee3fc18281ca38204930d80a0e665b9575985d4` (merge #435, 2026-11-10). A
+session-start `git fetch origin main` succeeded; no base change was made.
+
+Bounded selection: exactly PRs #426–#435 named by
+`audit30-sync-nov10-location-tables`. This supplement does not inventory
+#399–#425 or any range after #435. It reconciles existing [docs index](../README.md)
+entries with the [consumer surface boundary map](CONSUMER_SURFACE_BOUNDARY_MAP.md),
+the [producer qualification tuple](PRODUCER_QUALIFICATION_TUPLE_V1.md) and its
+[JSON record](PRODUCER_QUALIFICATION_TUPLE_V1.json), the
+[SDK conformance negative vectors](../../sdk/conformance/vectors/manifest-verifier-negative.vectors.json),
+and the [ticket/calculation guide](../../reference/booking_resale_admission/README.md),
+[reward/pool/supply guide](../../reference/token_reward/README.md),
+[delegation guide](../../reference/ai_delegation/README.md) and
+[payment-effect guide](../../reference/payment_effects/README.md); it is not a full
+current-tree inventory.
+
+Evidence limits (D1 in every row): source/test locations and historical builder
+validation are available. Local first-parent merge observations are recorded in
+the [validation record](../../validation/2026-11-10-audit30-sync-nov10-location-tables/README.md).
+Merge observations do not establish non-author review, acceptance or successful
+CI. Final delivery heads, reviewer identities and exact-head KTX/KIX workflow
+results for these additions were not independently verified here; historical
+records retain their unavailable Rust checks, test failures/reruns and pending
+gates. Tests linked below were inspected for traceability, not rerun as
+behavioral tests in this documentation task.
+
+Non-claims: no qualification or evidence-grade promotion; operational capability
+count remains **0**, semantic consumers remain **HOLD**, unsupported bindings
+remain **NOT_BOUND**. Canonical dependencies below are copied from
+[program.json](../../.aiops/program.json) at this base; their acceptance states
+are not inferred. Overlap is limited to existing reference/interface or
+calculation/model tooling, not the canonical node's full scope or prerequisites.
+No canonical completion arithmetic, new start, policy choice or runtime
+activation. Original rows, grades, owners, counts, selection rules and historical
+bases remain unchanged.
+
+This section uses the explicit ten-PR task selection, not the historical
+literal-phrase selection in §§0–6. Earlier selection rules, selected/non-selected
+rows and totals retain their original bounds; these ten navigation rows are
+not added to those historical totals. Canonical counting remains
+DECISION_REQUIRED · Astra.
+
+| PR | Exact node ID | Local capability | Source | Existing tests | Validation record | Related register row | Canonical overlap and quoted spec | Delivery evidence / limitations |
+|---|---|---|---|---|---|---|---|---|
+| #426 | `audit29-refresh-current-capability-pointers` | Bounded audit-29 location supplement | [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md); [CURRENT_CAPABILITY_REGISTER.md](CURRENT_CAPABILITY_REGISTER.md); [LOOP_NODE_CROSSWALK.md](LOOP_NODE_CROSSWALK.md) | None; document-only, no tests | [2026-11-10-audit29-refresh-current-capability-pointers](../../validation/2026-11-10-audit29-refresh-current-capability-pointers/README.md) | Navigation only; no capability-grade row | None (documentation navigation); does not complete or start the canonical node | D1; Document-only; no runtime, grade, owner or count change |
+| #427 | `audit29-consumer-surface-boundary-map` | Non-normative consumer surface boundary inventory | [CONSUMER_SURFACE_BOUNDARY_MAP.md](CONSUMER_SURFACE_BOUNDARY_MAP.md) | [test_http_gate.py](../../integration_gate/test_http_gate.py); [test_pool_session.py::PoolSessionTests.test_repeated_refs_match_direct_model_and_append_again](../../reference/token_reward/test_pool_session.py) | [2026-11-10-audit29-consumer-surface-boundary-map](../../validation/2026-11-10-audit29-consumer-surface-boundary-map/README.md) | EV-GATE; EV-BRA; EV-REF | None (non-normative navigation inventory); does not complete or start the canonical node | D1; Documentation inventory only; no alias, authentication, qualification or new binding |
+| #428 | `plan-local-commerce-draft-editor` | Ordered commerce draft editor with pre-display invalidation | [commerce_calculation_console.py](../../reference/booking_resale_admission/commerce_calculation_console.py) | [test_commerce_calculation_console.py::test_edit_journey_complete_input_parity](../../reference/booking_resale_admission/test_commerce_calculation_console.py); [::test_edit_positions_metadata_and_ordered_display](../../reference/booking_resale_admission/test_commerce_calculation_console.py); [::test_edit_exact_inputs_and_decimal_parity](../../reference/booking_resale_admission/test_commerce_calculation_console.py) | [2026-11-10-plan-local-commerce-draft-editor](../../validation/2026-11-10-plan-local-commerce-draft-editor/README.md) | EV-REF; B03 price/discount; F03 refund/cancel | `k-stage6-economics-reference`: "immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts"; depends_on: `k-stage5-durable-tx`, `settlement-policy-deepening`, `booking-resale-admission-deepening`; does not complete or start the canonical node | D1; Existing quote/payment/refund calculation artifacts only; CALCULATION_ONLY, no execution authority |
+| #429 | `plan-local-reward-guided-init` | Guided five-pool reward initialization over stdin | [reward_fixture.py](../../reference/token_reward/reward_fixture.py); [reward_cli.py](../../reference/token_reward/reward_cli.py); [reward_client.py](../../reference/token_reward/reward_client.py); [reward_console.py](../../reference/token_reward/reward_console.py) | [test_reward_console.py::RewardGuidedInitializationTests](../../reference/token_reward/test_reward_console.py); [test_reward_cli.py::RewardInitializationCliTests](../../reference/token_reward/test_reward_cli.py); [test_reward_client.py::RewardInitializationClientTests](../../reference/token_reward/test_reward_client.py); [test_reward_console_subprocess.py::test_live_guided_opening_journey_before_eof](../../reference/token_reward/test_reward_console_subprocess.py) | [2026-11-10-plan-local-reward-guided-init](../../validation/2026-11-10-plan-local-reward-guided-init/README.md) | TL-3 offchain; TL-4 verification gap | `tl-3-offchain`: "reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6)"; depends_on: `tl-1`; does not complete or start the canonical node | D1; Existing reward model tooling only; synthetic five-pool startup acknowledgement, no funding or token issuance |
+| #430 | `plan-local-delegation-guided-init` | Guided delegation registry initialization | [delegation_fixture.py](../../reference/ai_delegation/delegation_fixture.py); [delegation_cli.py](../../reference/ai_delegation/delegation_cli.py); [delegation_client.py](../../reference/ai_delegation/delegation_client.py); [delegation_console.py](../../reference/ai_delegation/delegation_console.py) | [test_delegation_cli.py::test_fixture_and_stdin_init_reply_parity](../../reference/ai_delegation/test_delegation_cli.py); [test_delegation_client.py::test_initialized_live_client_parity_and_detached_snapshots](../../reference/ai_delegation/test_delegation_client.py); [test_delegation_console.py::test_guided_init_confirmation_precedes_launch](../../reference/ai_delegation/test_delegation_console.py) | [2026-11-10-plan-local-delegation-guided-init](../../validation/2026-11-10-plan-local-delegation-guided-init/README.md) | P AI delegation; EV-DELEG | `ai-delegation-execution-decision`: "Execution stays disabled."; depends_on: `ai-delegation-contract-mock`, `rs-3a`, `rs-3b`; does not complete or start the canonical node | D1; Synthetic identities only; execution disabled, A5 stop and owners unchanged |
+| #431 | `plan-local-cart-structure-editor` | Ordered cart structure and payment-leg replacement editor | [commerce_calculation_console.py](../../reference/booking_resale_admission/commerce_calculation_console.py) | [test_commerce_calculation_console.py::test_structure_journey_parity](../../reference/booking_resale_admission/test_commerce_calculation_console.py); [::test_structure_positions_order_and_no_launch](../../reference/booking_resale_admission/test_commerce_calculation_console.py); [::test_structure_precision_and_literal_fields](../../reference/booking_resale_admission/test_commerce_calculation_console.py) | [2026-11-10-plan-local-cart-structure-editor](../../validation/2026-11-10-plan-local-cart-structure-editor/README.md) | EV-REF; B03 price/discount; F03 refund/cancel | `k-stage6-economics-reference`: "immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts"; depends_on: `k-stage5-durable-tx`, `settlement-policy-deepening`, `booking-resale-admission-deepening`; does not complete or start the canonical node | D1; Existing calculation artifacts only; CALCULATION_ONLY, executionAuthorized=false |
+| #432 | `plan-plan-local-source-quote-console` | Source-backed booking quote console | [booking_console.py](../../reference/booking_resale_admission/booking_console.py); [shared_ticket_console.py](../../reference/booking_resale_admission/shared_ticket_console.py) | [test_booking_console.py::test_source_journeys_complete_parity_history_and_refusals](../../reference/booking_resale_admission/test_booking_console.py); [test_shared_ticket_console.py::test_source_shared_journeys_reentry_history_and_parity](../../reference/booking_resale_admission/test_shared_ticket_console.py) | [2026-11-10-plan-plan-local-source-quote-console](../../validation/2026-11-10-plan-plan-local-source-quote-console/README.md) | EV-BRA; P Wave4 booking/resale/admission | `booking-resale-admission-deepening`: "Update reference/booking_resale_admission and its tests for decided items."; depends_on: `p-sdk-0`; does not complete or start the canonical node | D1; Process-local synthetic booking/resale/admission console only; policy/legal effects UNDETERMINED |
+| #433 | `plan-plan-local-payment-effect-desk` | Synthetic local payment effect desk | [payment_effect_session.py](../../reference/payment_effects/payment_effect_session.py); [payment_effect_fixture.py](../../reference/payment_effects/payment_effect_fixture.py); [payment_effect_cli.py](../../reference/payment_effects/payment_effect_cli.py) | [test_payment_effect_session.py::test_cash_refund_receipts_and_views_match_direct_core](../../reference/payment_effects/test_payment_effect_session.py); [::test_effect_action_set_is_exactly_the_published_commands](../../reference/payment_effects/test_payment_effect_session.py); [test_payment_effect_cli.py::test_all_journeys_match_direct_core_execution](../../reference/payment_effects/test_payment_effect_cli.py) | [2026-11-10-plan-plan-local-payment-effect-desk](../../validation/2026-11-10-plan-plan-local-payment-effect-desk/README.md) | EV-SET; P04 settlement/distribution | None (existing `reference/v0.3-rc1` effect commands only); does not complete or start the canonical node | D1; Local synthetic in-memory Core; send_effect is local intent only; no transmission, Finance projection or settlement connection |
+| #434 | `plan-producer-qualification-tuple-bundle` | BOOTSTRAP producer-qualification tuple identity record and checker | [PRODUCER_QUALIFICATION_TUPLE_V1.md](PRODUCER_QUALIFICATION_TUPLE_V1.md); [PRODUCER_QUALIFICATION_TUPLE_V1.json](PRODUCER_QUALIFICATION_TUPLE_V1.json); [check_producer_qualification_tuple.py](../../scripts/check_producer_qualification_tuple.py) | [check_producer_qualification_tuple.py --self-test](../../scripts/check_producer_qualification_tuple.py) | [2026-11-10-plan-producer-qualification-tuple-bundle](../../validation/2026-11-10-plan-producer-qualification-tuple-bundle/README.md) | K3 schema·SDK; EV-BCS; EV-GATE | `contract-compatibility-profile`: "negative tests reject mixed old/new catalogue/gate/SDK, wrong source/blob/sha256/domain/version, unsupported enum/receipt fields and source drift before writes."; depends_on: `p-sdk-1`, `k-stage3-schema-sdk-conformance`; does not complete or start the canonical node | D1; Identity-only non-normative record; SD1 OPEN (owner User); semantic HOLD; 13 read names NOT_BOUND; no N/N−1, production or User approval |
+| #435 | `plan-manifest-verifier-negative-vector-comple` | Companion single-fault manifest/profile/sidecar negative vectors | [manifest-verifier-negative.vectors.json](../../sdk/conformance/vectors/manifest-verifier-negative.vectors.json); [conformance.test.mjs](../../sdk/conformance/conformance.test.mjs) | [conformance.test.mjs::manifest-v1 verifier negative vectors reject exactly one fault each](../../sdk/conformance/conformance.test.mjs) (56 cases; `npm --prefix sdk run conformance`) | [2026-11-10-plan-manifest-verifier-negative-vector-comple](../../validation/2026-11-10-plan-manifest-verifier-negative-vector-comple/README.md) | K3 schema·SDK; EV-BCS; EV-GATE | `contract-compatibility-profile`: "negative tests reject mixed old/new catalogue/gate/SDK, wrong source/blob/sha256/domain/version, unsupported enum/receipt fields and source drift before writes."; depends_on: `p-sdk-1`, `k-stage3-schema-sdk-conformance`; does not complete or start the canonical node | D1; Companion matrix not bound in the manifest; unordered error-set assertion leaves SD1 OPEN; no semantic or N/N−1 claim |
+
+Calculations remain `CALCULATION_ONLY`; the commerce draft and cart editors
+retain `executionAuthorized=false` for refund proposals and do not close F03's
+external-return gap. Reward and delegation startup records are synthetic and
+unauthenticated. The payment-effect desk executes only the four already-published
+`reference/v0.3-rc1` local-intent commands. The producer tuple and negative-vector
+suite are identity-only: SD1 stays OPEN, semantic consumers HOLD and the 13 read
+names stay NOT_BOUND. "Live" denotes a local subprocess, not an operational
+service. TL-2, onchain TL-3, TL-5 and coin/TIX locks remain unchanged.
+
+The existing [SD1 verifier contract violation](OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md),
+[A5 AI-delegation stop](OPEN_USER_DECISIONS_20261026_ADDENDUM.md),
+[RS-4 L2 FAILED_MEASUREMENT/HOLD](RS4_L2_DECISION_IMPACT_INVENTORY.md)
+and [Stage-5 gate](ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md) remain open on
+their existing terms and owners. No SDK qualification, durability, legal
+compliance, authenticated provider facts, real funds, chain finality, production
+readiness or independent acceptance is supplied by these navigation additions.
