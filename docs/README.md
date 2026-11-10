@@ -59,6 +59,12 @@ capability grades, protocol commands and runtime activation are unchanged.
 
 ## Local commerce calculation console
 
+[Draft editor evidence](../validation/2026-11-10-plan-local-commerce-draft-editor/README.md)
+and the [draft editing guide](../reference/booking_resale_admission/README.md#editing-a-quote-request-draft)
+cover ordered positional replacement, explicit version/expiry and separate
+recalculation through the frozen driver. CALCULATION_ONLY; product policy remains
+UNDETERMINED — Astra/User; no execution authority or stage-6 scope change.
+
 [Exact decimal-entry evidence](../validation/2026-11-10-plan-local-commerce-decimal-entry/README.md)
 and the [console guide](../reference/booking_resale_admission/README.md#exact-decimal-entry)
 cover explicitly selected decimal quote and payment-leg inputs, caller-supplied

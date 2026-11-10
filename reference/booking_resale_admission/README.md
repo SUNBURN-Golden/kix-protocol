@@ -3529,6 +3529,68 @@ legal/accounting treatment remains **UNDETERMINED — User/designated advisers**
 No FX, asset approval, new protocol command, SDK/catalogue change or execution
 authority is added. [Actual commands, coverage, transcripts and delivery limits](../../validation/2026-11-10-plan-local-commerce-decimal-entry/README.md).
 
+### Editing a quote request draft
+
+Use `show_draft` to inspect complete metadata and the original ordered arrays.
+Each `draft_line=` and `draft_discount=` record contains a zero-based `position`
+and the complete `entry`. Display submits nothing and preserves active selections.
+These controls edit process-local request inputs; returned quote bytes remain
+immutable historical calculation evidence.
+
+| Local control | Explicit replacement input |
+| --- | --- |
+| `edit_line` | Line position, `lineId`, `inventoryId`, complete gross asset metadata, gross atom string |
+| `edit_line_decimal` | Same fields, with exact decimal text instead of atoms using the existing converter |
+| `edit_discount` | Discount position, `ruleId`, `bearerRef`, `kind`, `value`, JSON `eligibleLineIds` string array, JSON string or null `capAtoms` |
+| `edit_quote_metadata` | Both `orderVersion` and `expiresAt (Unix milliseconds)` as explicit CE1 integers |
+
+Positions must be explicit CE1 integers within the displayed array; IDs are never
+used to locate an entry, even when duplicated. Empty arrays have no replaceable
+entry. Replacement prompts reuse the composition fields and require every value;
+there is no blank-to-keep behavior, insertion, deletion or reordering. Untouched
+fields, array order, atom strings and discount caps remain exactly as supplied.
+Changing a line ID does not repair discount eligibility. Version and expiry are
+never incremented, inferred from a clock, extended or defaulted. Business bounds
+and eligibility remain the frozen driver's responsibility.
+
+Every edit attempt clears the draft input, active quote, plan, refund and line
+selection **before display or input collection**. A detached complete candidate
+becomes the new draft only after canonical encoding succeeds, printed as
+`edited_quote=`. Decimal edits buffer `decimal_conversion=` until that success.
+Invalid positions, malformed input, encoding refusals and EOF publish no partial
+draft, restore no prior active state and send no request. Stored payment legs and
+historical request/reply bytes remain available; history cannot reactivate line
+selections. Missing structural arrays are local input refusals.
+
+Editing alone calculates nothing. Recalculate explicitly with `simulate_quote`
+and `SUBMIT_QUOTE`, then `plan_payments` with explicit `now` and `SUBMIT_PLAN`.
+Select refund lines again, then use `propose_line_refund` and `SUBMIT_REFUND`.
+Decline sends nothing; driver refusal envelopes are preserved. Transport
+uncertainty fences the client permanently without automatic retry.
+
+From the repository root:
+
+```bash
+python3.12 -B reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_edit_journey.txt
+```
+
+The synthetic journey composes and calculates a bundle, replaces a line and
+discount, explicitly sets version/expiry, recalculates, plans split payments and
+proposes a line refund. `commerce_console_edit_precision.txt` demonstrates exact
+`9007199254.740993` → `"9007199254740993"` at precision 6.
+`commerce_console_edit_replacement.txt` shows invalidation and abandoned metadata
+input (exit 0). `commerce_console_edit_boundaries.txt` exits 1 for four intentional
+driver refusals: duplicate line, stale eligibility, mixed assets and excessive
+discount. These examples choose synthetic caller values, not product policy.
+
+`CALCULATION_ONLY` and refund `executionAuthorized=false` remain unchanged.
+Product policy remains **UNDETERMINED — Astra/User**; legal/accounting treatment
+remains **UNDETERMINED — User/designated advisers**. No booking confirmation,
+protocol command, execution authority or stage-6 scope changes.
+[Builder coverage, commands and delivery limits](../../validation/2026-11-10-plan-local-commerce-draft-editor/README.md).
+
 ## Recorded offers and presentations in the ticket console
 
 The resale and admission menus (standalone or delegated from
