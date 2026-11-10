@@ -406,6 +406,75 @@ Track P는 이 표와 병행한다. 범위는 제품 프로토콜의 다음 항�
 | [2026-11-05-plan-local-ai-delegation-desk](../validation/2026-11-05-plan-local-ai-delegation-desk/README.md) | #397 | `00267bc478df74faf944f4c216f8a254dd3aa1da` | soulbound_jt | No merge-ready claim or permission to publish/merge is supplied. | 위치 포인터. 새 승인 아님. |
 | [2026-11-05-plan-local-reward-console](../validation/2026-11-05-plan-local-reward-console/README.md) | #398 | `bca90b865442ba287b4aecf5ca6b5bde5d767a3a` | soulbound_jt | Builder-authored evidence, not independent review. | 위치 포인터. 새 승인 아님. |
 
+
+### 2026-11-10 audit #29 — bounded current-tree location supplement
+
+Basis: KIX audit #29, supplied external task input
+/workspace/kix-run/audits/audit_29_20261110.md, identified its checkout only as
+`8a8a0fc`. The builder subsequently observed starting HEAD/base and cached
+origin/main both at `8a8a0fca7057b617235cf20cb28c8698be1a1f73` (2026-11-10).
+Fetch was NOT_RUN under the supervisor's no-network instruction; remote freshness
+is unverified. No base change was made.
+
+Bounded selection: exactly PRs #416–#425 named by
+`audit29-refresh-current-capability-pointers`. This supplement does not
+inventory #399–#415. It reconciles existing [docs index](README.md)
+entries and the [ticket/calculation guide](../reference/booking_resale_admission/README.md) and
+[reward/pool/supply guide](../reference/token_reward/README.md); it is not a full
+current-tree inventory.
+
+Evidence limits (D1 in every row): source/test locations and historical builder
+validation are available. Local first-parent merge observations are recorded in
+the [validation record](../validation/2026-11-10-audit29-refresh-current-capability-pointers/README.md). Merge observations do not establish
+non-author review, acceptance or successful CI. Final delivery heads, reviewer
+identities and exact-head KTX/KIX workflow results for these additions were not
+independently verified here; historical records retain their unavailable Rust
+checks, test failures/reruns and pending gates. In particular, the supply record's
+later fix-round-1 evidence remains distinct from its original builder run.
+Tests linked below were inspected for traceability, not rerun as behavioral tests
+in this documentation task. Reused TL-4 tests are not independent verification.
+
+Non-claims: no qualification or evidence-grade promotion; operational capability
+count remains **0**, semantic consumers remain **HOLD**, unsupported bindings
+remain **NOT_BOUND**. Canonical dependencies below are copied from
+[program.json](../.aiops/program.json) at this base; their acceptance
+states are not inferred. Overlap is limited to existing reference/interface or
+calculation/model tooling, not the canonical node's full scope or prerequisites.
+No canonical completion arithmetic, new start, policy choice or runtime activation.
+Original rows, grades, owners, counts, selection rules and historical bases remain
+unchanged.
+
+Related supplements: [capability register](status/CURRENT_CAPABILITY_REGISTER.md#audit29-current-tree-supplement) and [loop-node crosswalk §7](status/LOOP_NODE_CROSSWALK.md#7-audit29-current-tree-supplement). Local evidence: [audit #29 validation](../validation/2026-11-10-audit29-refresh-current-capability-pointers/README.md).
+
+| PR | Exact node ID | Local capability | Source | Existing tests | Validation record | Related register row | Canonical overlap and quoted spec | Delivery evidence / limitations |
+|---|---|---|---|---|---|---|---|---|
+| #416 | `plan-local-recorded-ticket-console` | Recorded ticket selectors | [resale_console.py](../reference/booking_resale_admission/resale_console.py); [admission_console.py](../reference/booking_resale_admission/admission_console.py); [shared_ticket_console.py](../reference/booking_resale_admission/shared_ticket_console.py) | [test_resale_console.py](../reference/booking_resale_admission/test_resale_console.py); [test_admission_console.py](../reference/booking_resale_admission/test_admission_console.py); [test_shared_ticket_console.py](../reference/booking_resale_admission/test_shared_ticket_console.py) | [2026-11-09-plan-local-recorded-ticket-console](../validation/2026-11-09-plan-local-recorded-ticket-console/README.md) | EV-BRA; P Wave4 booking/resale/admission | `booking-resale-admission-deepening`: "Update reference/booking_resale_admission and its tests for decided items."; depends_on: `p-sdk-0`; does not complete or start the canonical node | D1; Reference/interface artifacts only; no authentication or lifecycle approval |
+| #417 | `plan-plan-local-bundle-quote-composer` | Explicit bundle quote composition | [commerce_calculation_console.py::_compose_quote](../reference/booking_resale_admission/commerce_calculation_console.py) | [test_commerce_calculation_console.py::test_bundle_journey_file_parity](../reference/booking_resale_admission/test_commerce_calculation_console.py) | [2026-11-09-plan-plan-local-bundle-quote-composer](../validation/2026-11-09-plan-plan-local-bundle-quote-composer/README.md) | EV-REF; B03 price/discount; F03 refund/cancel | `k-stage6-economics-reference`: "immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts"; depends_on: `k-stage5-durable-tx`, `settlement-policy-deepening`, `booking-resale-admission-deepening`; does not complete or start the canonical node | D1; Existing quote/bundle/refund calculation artifacts only; CALCULATION_ONLY |
+| #418 | `plan-local-reward-source-composer` | Asserted reward source snapshots | [reward_console.py::_compose_source_view](../reference/token_reward/reward_console.py) | [test_reward_console.py](../reference/token_reward/test_reward_console.py); [test_reward_console_subprocess.py](../reference/token_reward/test_reward_console_subprocess.py) | [2026-11-09-plan-local-reward-source-composer](../validation/2026-11-09-plan-local-reward-source-composer/README.md) | TL-3 offchain; TL-4 verification gap | `tl-3-offchain`: "reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6)"; depends_on: `tl-1`; does not complete or start the canonical node | D1; Existing reward model tooling only; unauthenticated caller assertions, no source-machine connection |
+| #419 | `plan-plan-local-pool-accounting-workbench` | Synthetic pool accounting workbench | [pool_session.py](../reference/token_reward/pool_session.py); [pool_cli.py](../reference/token_reward/pool_cli.py); [pool_console.py](../reference/token_reward/pool_console.py) | [test_pool_session.py](../reference/token_reward/test_pool_session.py); [test_pool_cli.py](../reference/token_reward/test_pool_cli.py); [test_pool_console.py](../reference/token_reward/test_pool_console.py) | [2026-11-09-plan-plan-local-pool-accounting-workbench](../validation/2026-11-09-plan-plan-local-pool-accounting-workbench/README.md) | TL-3 offchain; TL-4 verification gap | `tl-3-offchain`: "reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6)"; depends_on: `tl-1`; does not complete or start the canonical node | D1; Existing pool model tooling only; separate POINT_F4 simulation, repeated accepted refs append again |
+| #420 | `plan-local-refund-line-picker` | Explicit refund line selection | [commerce_calculation_console.py::_pick_lines](../reference/booking_resale_admission/commerce_calculation_console.py) | [test_commerce_calculation_console.py::test_picker_journey_json_parity](../reference/booking_resale_admission/test_commerce_calculation_console.py) | [2026-11-09-plan-local-refund-line-picker](../validation/2026-11-09-plan-local-refund-line-picker/README.md) | EV-REF; F03 refund/cancel; B03 quote context | `k-stage6-economics-reference`: "immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts"; depends_on: `k-stage5-durable-tx`, `settlement-policy-deepening`, `booking-resale-admission-deepening`; does not complete or start the canonical node | D1; Existing selected-line refund calculation artifacts only; CALCULATION_ONLY, executionAuthorized=false |
+| #421 | `plan-local-pool-opening-composer` | Explicit five-pool opening balances | [pool_console.py](../reference/token_reward/pool_console.py) | [test_pool_console.py::test_guided_opening_journey_matches_fixture](../reference/token_reward/test_pool_console.py) | [2026-11-09-plan-local-pool-opening-composer](../validation/2026-11-09-plan-local-pool-opening-composer/README.md) | TL-3 offchain; TL-4 verification gap | `tl-3-offchain`: "reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6)"; depends_on: `tl-1`; does not complete or start the canonical node | D1; Existing pool model tooling only; caller balances, no funding defaults |
+| #422 | `plan-local-pool-live-console` | Persistent local pool child | [pool_client.py](../reference/token_reward/pool_client.py); [pool_console.py](../reference/token_reward/pool_console.py) | [test_pool_client.py](../reference/token_reward/test_pool_client.py); [test_pool_console_subprocess.py](../reference/token_reward/test_pool_console_subprocess.py) | [2026-11-09-plan-local-pool-live-console](../validation/2026-11-09-plan-local-pool-live-console/README.md) | TL-3 offchain; TL-4 verification gap | `tl-3-offchain`: "reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6)"; depends_on: `tl-1`; does not complete or start the canonical node | D1; Existing pool model tooling only; live means one local subprocess, no persistence or deduplication |
+| #423 | `plan-local-supply-live-console` | Supply reconciliation subprocess transport | [supply_client.py](../reference/token_reward/supply_client.py); [supply_console.py](../reference/token_reward/supply_console.py) | [test_supply_client.py](../reference/token_reward/test_supply_client.py); [test_supply_console.py](../reference/token_reward/test_supply_console.py); [test_supply_console_subprocess.py](../reference/token_reward/test_supply_console_subprocess.py) | [2026-11-10-plan-local-supply-live-console](../validation/2026-11-10-plan-local-supply-live-console/README.md); [fix round 1](../validation/2026-11-10-plan-local-supply-live-console/README.md#pr-fix-round-1--reconciliation-response-correlation) | TL-3 offchain (V6); TL-4 verification gap | `tl-3-offchain`: "reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6)"; depends_on: `tl-1`; does not complete or start the canonical node | D1; Existing V6 model tooling only; alarms and stop_payout execute nothing; retain fix-round-1 correlation evidence |
+| #424 | `plan-local-commerce-decimal-entry` | Exact decimal quote/payment-leg entry | [commerce_calculation_console.py::_compose_amount](../reference/booking_resale_admission/commerce_calculation_console.py) | [test_commerce_calculation_console.py::test_decimal_journey_atom_parity](../reference/booking_resale_admission/test_commerce_calculation_console.py) | [2026-11-10-plan-local-commerce-decimal-entry](../validation/2026-11-10-plan-local-commerce-decimal-entry/README.md) | EV-REF; B03 price/discount; F03 refund/cancel | `k-stage6-economics-reference`: "immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts"; depends_on: `k-stage5-durable-tx`, `settlement-policy-deepening`, `booking-resale-admission-deepening`; does not complete or start the canonical node | D1; Existing quote/payment/refund calculation artifacts only; explicit asset metadata, CALCULATION_ONLY |
+| #425 | `plan-local-pool-guided-live-init` | Guided pool initialization over stdin | [pool_session.py](../reference/token_reward/pool_session.py); [pool_cli.py](../reference/token_reward/pool_cli.py); [pool_client.py](../reference/token_reward/pool_client.py); [pool_console.py](../reference/token_reward/pool_console.py) | [test_pool_cli.py](../reference/token_reward/test_pool_cli.py); [test_pool_client.py](../reference/token_reward/test_pool_client.py); [test_pool_console_subprocess.py](../reference/token_reward/test_pool_console_subprocess.py) | [2026-11-10-plan-local-pool-guided-live-init](../validation/2026-11-10-plan-local-pool-guided-live-init/README.md) | TL-3 offchain; TL-4 verification gap | `tl-3-offchain`: "reference model for reward-transaction coupling (TK-4, TK-7, TK-8, TK-12, V6)"; depends_on: `tl-1`; does not complete or start the canonical node | D1; Existing pool model tooling only; confirmed five-balance local child initialization, no financial execution |
+
+Calculations remain `CALCULATION_ONLY`; line-refund proposals retain
+`executionAuthorized=false` and do not close F03's external-return gap.
+Reward source snapshots are unauthenticated assertions. Pool source/program
+references are not deduplication keys: repeated accepted calls append again.
+Supply alarms, including `stop_payout`, execute nothing. "Live" denotes a
+local subprocess, not an operational service. TL-2, onchain TL-3, TL-5 and
+coin/TIX locks remain unchanged.
+
+The existing [SD1 verifier contract violation](status/OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md),
+[A5 AI-delegation stop](status/OPEN_USER_DECISIONS_20261026_ADDENDUM.md),
+[RS-4 L2 FAILED_MEASUREMENT/HOLD](status/RS4_L2_DECISION_IMPACT_INVENTORY.md)
+and [Stage-5 gate](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md) remain
+open on their existing terms and owners. No SDK qualification, durability, legal
+compliance, authenticated provider facts, real funds, chain finality, production
+readiness or independent acceptance is supplied by these navigation additions.
+
 ## 6. E-4와 상태 수명
 
 ### 6.1 E-4
