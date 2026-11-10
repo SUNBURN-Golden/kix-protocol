@@ -54,6 +54,25 @@ def _compose_amount(prompt, field, decimal_entry, conversions):
     return amount
 
 
+def _compose_line(prompt, prefix, decimal_entry, conversions):
+    line = {field: prompt(prefix + field) for field in ('lineId', 'inventoryId')}
+    line['gross'] = _compose_amount(prompt, prefix + 'gross', decimal_entry, conversions)
+    return line
+
+
+def _compose_discount(prompt, prefix):
+    rule = {field: prompt(prefix + field) for field in ('ruleId', 'bearerRef', 'kind', 'value')}
+    eligible = _parse(prompt(prefix + 'eligibleLineIds (JSON string array)').encode('utf-8'))
+    if type(eligible) is not list or any(type(item) is not str for item in eligible):
+        raise ConsoleInputError('eligibleLineIds must be an explicit JSON array of strings')
+    rule['eligibleLineIds'] = eligible
+    cap = _parse(prompt(prefix + 'capAtoms (JSON string or null)').encode('utf-8'))
+    if cap is not None and type(cap) is not str:
+        raise ConsoleInputError('capAtoms must be an explicit JSON string or null')
+    rule['capAtoms'] = cap
+    return rule
+
+
 def _compose_quote(prompt, decimal_entry=False, conversions=None):
     """Encode caller-supplied schema 2 input, without calculating or repairing it."""
     from calculated_booking_quote_source import _calculator
@@ -72,25 +91,53 @@ def _compose_quote(prompt, decimal_entry=False, conversions=None):
         candidate['lines'] = []
         for index in range(count):
             prefix = 'lines[' + str(index) + '].'
-            line = {field: prompt(prefix + field) for field in ('lineId', 'inventoryId')}
-            line['gross'] = _compose_amount(prompt, prefix + 'gross', decimal_entry, conversions)
-            candidate['lines'].append(line)
+            candidate['lines'].append(_compose_line(prompt, prefix, decimal_entry, conversions))
         count = _integer(prompt, 'Explicit discount count')
         if not 0 <= count <= commerce.MAX_RULES:
             raise ConsoleInputError('discount count outside existing MAX_RULES bound')
         candidate['discounts'] = []
         for index in range(count):
             prefix = 'discounts[' + str(index) + '].'
-            rule = {field: prompt(prefix + field) for field in ('ruleId', 'bearerRef', 'kind', 'value')}
-            eligible = _parse(prompt(prefix + 'eligibleLineIds (JSON string array)').encode('utf-8'))
-            if type(eligible) is not list or any(type(item) is not str for item in eligible):
-                raise ConsoleInputError('eligibleLineIds must be an explicit JSON array of strings')
-            rule['eligibleLineIds'] = eligible
-            cap = _parse(prompt(prefix + 'capAtoms (JSON string or null)').encode('utf-8'))
-            if cap is not None and type(cap) is not str:
-                raise ConsoleInputError('capAtoms must be an explicit JSON string or null')
-            rule['capAtoms'] = cap
-            candidate['discounts'].append(rule)
+            candidate['discounts'].append(_compose_discount(prompt, prefix))
+        return codec().canonical_bytes(candidate)
+    except (_calculator_rejection(), UnicodeError) as error:
+        raise ConsoleInputError(str(error)) from error
+
+
+def _draft(payload):
+    candidate = _parse(payload)
+    if (type(candidate) is not dict or type(candidate.get('lines')) is not list
+            or type(candidate.get('discounts')) is not list):
+        raise ConsoleInputError('draft must be an object with lines and discounts arrays')
+    return candidate
+
+
+def _show_draft(candidate, stream):
+    print('draft_metadata=' + _json({key: value for key, value in candidate.items()
+                                    if key not in ('lines', 'discounts')}), file=stream)
+    for field, label in (('lines', 'draft_line'), ('discounts', 'draft_discount')):
+        for position, entry in enumerate(candidate[field]):
+            print(label + '=' + _json(dict(position=position, entry=entry)), file=stream)
+
+
+def _edit_quote(prompt, payload, action, conversions, stream):
+    """Replace a detached draft entry; never repair or calculate business inputs."""
+    try:
+        candidate = _draft(payload)
+        _show_draft(candidate, stream)
+        if action == 'edit_quote_metadata':
+            candidate['orderVersion'] = _integer(prompt, 'orderVersion')
+            candidate['expiresAt'] = _integer(prompt, 'expiresAt (Unix milliseconds)')
+        else:
+            field = 'discounts' if action == 'edit_discount' else 'lines'
+            if not candidate[field]:
+                raise ConsoleInputError(field + ' has no replaceable entry')
+            position = _integer(prompt, 'Explicit ' + field + ' position (zero-based)')
+            if not 0 <= position < len(candidate[field]):
+                raise ConsoleInputError(field + ' position outside draft array')
+            prefix = field + '[' + str(position) + '].'
+            candidate[field][position] = (_compose_discount(prompt, prefix) if field == 'discounts'
+                else _compose_line(prompt, prefix, action == 'edit_line_decimal', conversions))
         return codec().canonical_bytes(candidate)
     except (_calculator_rejection(), UnicodeError) as error:
         raise ConsoleInputError(str(error)) from error
@@ -188,7 +235,8 @@ def run_console(client, *, input_stream, output_stream, error_stream):
         while True:
             print('Actions: load_quote, compose_quote, compose_quote_decimal, simulate_quote, load_legs, '
                   'compose_legs, compose_legs_decimal, plan_payments, select_lines, '
-                  'pick_lines, propose_line_refund, show, quit', file=output_stream)
+                  'pick_lines, propose_line_refund, show_draft, edit_line, edit_line_decimal, '
+                  'edit_discount, edit_quote_metadata, show, quit', file=output_stream)
             action = prompt('action')
             try:
                 if action == 'quit':
@@ -207,6 +255,22 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                     for conversion in conversions:
                         print('decimal_conversion=' + _json(conversion), file=output_stream)
                     print('composed_quote=' + quote_input.decode('utf-8'), file=output_stream)
+                elif action == 'show_draft':
+                    if quote_input is None:
+                        print('Load or compose a quote request draft first.', file=output_stream)
+                        continue
+                    _show_draft(_draft(quote_input), output_stream)
+                elif action in ('edit_line', 'edit_line_decimal', 'edit_discount', 'edit_quote_metadata'):
+                    previous_input = quote_input
+                    quote_input = quote = plan = refund = selected = None
+                    if previous_input is None:
+                        print('Load or compose a quote request draft first.', file=output_stream)
+                        continue
+                    conversions = []
+                    quote_input = _edit_quote(prompt, previous_input, action, conversions, output_stream)
+                    for conversion in conversions:
+                        print('decimal_conversion=' + _json(conversion), file=output_stream)
+                    print('edited_quote=' + quote_input.decode('utf-8'), file=output_stream)
                 elif action == 'simulate_quote':
                     quote = plan = refund = selected = None
                     if quote_input is None:

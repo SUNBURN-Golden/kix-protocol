@@ -1,0 +1,11 @@
+test_edit_driver_rejections_and_uncertainty (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_edit_driver_rejections_and_uncertainty) ... ok
+test_edit_exact_inputs_and_decimal_parity (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_edit_exact_inputs_and_decimal_parity) ... ok
+test_edit_failures_clear_draft_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_edit_failures_clear_draft_and_dependents) ... ok
+test_edit_invalidation_history_eof_and_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_edit_invalidation_history_eof_and_launch_counts) ... ok
+test_edit_journey_complete_input_parity (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_edit_journey_complete_input_parity) ... ok
+test_edit_positions_metadata_and_ordered_display (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_edit_positions_metadata_and_ordered_display) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 15.074s
+
+OK

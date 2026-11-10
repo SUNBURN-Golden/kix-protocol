@@ -1,6 +1,7 @@
 """Consent, snapshot dependency and terminal composition, using the real driver."""
 
 import io
+import copy
 import json
 from pathlib import Path
 import subprocess
@@ -95,6 +96,39 @@ def json_selection(script):
     return '\n'.join(result) + '\n'
 
 
+def edit_entry(entry, position, *, discount=False, decimal_entry=False):
+    """Explicit replacement answers, with no blank-to-keep fields."""
+    if discount:
+        rows = ['edit_discount', str(position)]
+        rows.extend(entry[key] for key in ('ruleId', 'bearerRef', 'kind', 'value'))
+        rows.extend([json.dumps(entry['eligibleLineIds']), json.dumps(entry['capAtoms'])])
+    else:
+        amount = entry['gross']; asset = amount['asset']
+        rows = ['edit_line_decimal' if decimal_entry else 'edit_line', str(position),
+                entry['lineId'], entry['inventoryId'], asset['namespace'], asset['reference'],
+                str(asset['decimals']), asset['maxAtoms'],
+                decimal_text(amount) if decimal_entry else amount['atoms']]
+    return '\n'.join(rows) + '\n'
+
+
+def edited_inputs():
+    request = quote_fixture()
+    request['lines'][0]['gross']['atoms'] = '11000'
+    request['discounts'][0]['value'] = '7000'
+    request.update(orderVersion=7, expiresAt=2000)
+    return request
+
+
+def edit_journey():
+    request = edited_inputs()
+    return (compose_quote(quote_fixture()) + 'simulate_quote\nSUBMIT_QUOTE\nshow_draft\n' +
+            edit_entry(request['lines'][0], 0) +
+            edit_entry(request['discounts'][0], 0, discount=True) +
+            'edit_quote_metadata\n7\n2000\nsimulate_quote\nSUBMIT_QUOTE\n' +
+            compose(quote_fixture('legs')) + 'plan_payments\n999\nSUBMIT_PLAN\n' +
+            pick(['L3', 'L1']) + 'propose_line_refund\nSUBMIT_REFUND\nshow\nquit\n')
+
+
 class RecordingClient(CommerceCalculationClient):
     def __init__(self):
         super().__init__(cleanup_timeout=1)
@@ -113,6 +147,202 @@ class CommerceCalculationConsoleTests(unittest.TestCase):
         errors = io.StringIO()
         status = run_console(client, input_stream=io.StringIO(script), output_stream=output, error_stream=errors)
         return status, client, output.getvalue(), errors.getvalue()
+
+    def test_edit_journey_complete_input_parity(self):
+        script = edit_journey()
+        self.assertEqual(answers('edit_journey'), script)
+        request = edited_inputs()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'complete.json'; path.write_text(json.dumps(request))
+            # Separate complete caller-authored input, rather than editing a returned quote.
+            explicit = (compose_quote(quote_fixture()) + 'simulate_quote\nSUBMIT_QUOTE\n' +
+                        'load_quote\n' + str(path) + '\nsimulate_quote\nSUBMIT_QUOTE\n' +
+                        compose(quote_fixture('legs')) + 'plan_payments\n999\nSUBMIT_PLAN\n' +
+                        'select_lines\n["L3","L1"]\npropose_line_refund\nSUBMIT_REFUND\nquit\n')
+            commerce = _calculator()['commerce']
+            with patch.object(commerce, 'build_quote', side_effect=AssertionError('parent arithmetic')), \
+                 patch.object(commerce, 'plan_payments', side_effect=AssertionError('parent arithmetic')), \
+                 patch.object(commerce, 'propose_line_refund', side_effect=AssertionError('parent arithmetic')), \
+                 patch('time.time', side_effect=AssertionError('implicit clock')):
+                status, edited, output, errors = self.run_journey(script)
+                estatus, authored, _, eerrors = self.run_journey(explicit)
+        self.assertEqual((status, errors, estatus, eerrors), (0, '', 0, ''))
+        self.assertEqual(edited.exchanges, authored.exchanges)
+        self.assertEqual(len(edited.exchanges), 4)
+        self.assertEqual(decode_input(edited.exchanges[1].request_bytes)['args'], request)
+        for exchange in edited.exchanges:
+            self.assertEqual(exchange.response['result']['evidenceClass'], 'CALCULATION_ONLY')
+        self.assertIs(edited.exchanges[-1].response['result']['executionAuthorized'], False)
+        child = subprocess.run([sys.executable, '-B', str(HERE / 'commerce_calculation_console.py'),
+                                '--cleanup-timeout', '2'], input=script, text=True, capture_output=True)
+        self.assertEqual((child.returncode, child.stderr), (0, ''))
+        for exchange in edited.exchanges:
+            self.assertIn('driver=' + codec().canonical(exchange.response), child.stdout)
+        self.assertIn('edited_quote=' + codec().canonical(request), output)
+
+    def test_edit_positions_metadata_and_ordered_display(self):
+        request = quote_fixture()
+        request['lines'].reverse(); request['discounts'].reverse()
+        # Duplicate IDs must not make a position ambiguous.
+        request['lines'][2]['lineId'] = request['lines'][0]['lineId']
+        for field, position in (('lines', 0), ('lines', 2), ('discounts', 0), ('discounts', 1)):
+            candidate = copy.deepcopy(request)
+            entry = candidate[field][position]
+            entry['inventoryId' if field == 'lines' else 'bearerRef'] = 'replacement'
+            if field == 'discounts':
+                entry.update(eligibleLineIds=['L3', 'L1', 'L3'], capAtoms='1234')
+            with self.subTest(field=field, position=position), \
+                 patch('commerce_calculation_client.subprocess.Popen') as launch:
+                status, _, output, errors = self.run_journey(compose_quote(request) + 'show_draft\n' +
+                    edit_entry(entry, position, discount=field == 'discounts') + 'show_draft\nquit\n')
+                self.assertEqual((status, errors), (0, ''))
+                self.assertIn('edited_quote=' + codec().canonical(candidate), output)
+                labels = ['draft_line=' + codec().canonical(dict(position=i, entry=row))
+                          for i, row in enumerate(request['lines'])]
+                labels += ['draft_discount=' + codec().canonical(dict(position=i, entry=row))
+                           for i, row in enumerate(request['discounts'])]
+                self.assertEqual([output.index(label) for label in labels],
+                                 sorted(output.index(label) for label in labels))
+                metadata = {k: v for k, v in request.items() if k not in ('lines', 'discounts')}
+                self.assertIn('draft_metadata=' + codec().canonical(metadata), output)
+                launch.assert_not_called()
+        for version, expiry in ((1, 1000), (0, 0), (-1, -1), (7, 2000)):
+            candidate = copy.deepcopy(request); candidate.update(orderVersion=version, expiresAt=expiry)
+            status, _, output, errors = self.run_journey(compose_quote(request) +
+                f'edit_quote_metadata\n{version}\n{expiry}\nquit\n')
+            self.assertEqual((status, errors), (0, ''))
+            self.assertIn('edited_quote=' + codec().canonical(candidate), output)
+
+    def test_edit_invalidation_history_eof_and_launch_counts(self):
+        prefix = answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n'
+        original = self.run_journey(prefix)[1].exchanges
+        request = quote_fixture()
+        edits = [edit_entry(request['lines'][0], 0), edit_entry(request['lines'][-1], 2, decimal_entry=True),
+                 edit_entry(request['discounts'][0], 0, discount=True), 'edit_quote_metadata\n1\n1000\n']
+        for edit in edits:
+            rows = edit.splitlines()
+            # Every incomplete prompt abandons the candidate without publishing it.
+            for length in range(1, len(rows)):
+                with self.subTest(action=rows[0], eof=length), \
+                     patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                    status, client, output, errors = self.run_journey(prefix + '\n'.join(rows[:length]) + '\n')
+                    self.assertEqual((status, errors, launch.call_count), (0, '', 3))
+                    self.assertEqual(client.exchanges, original)
+                    self.assertNotIn('edited_quote=', output)
+                    self.assertNotIn('decimal_conversion=', output)
+            # Even an identical replacement invalidates active state but preserves legs/history.
+            status, client, output, errors = self.run_journey(prefix + edit +
+                'show\npropose_line_refund\nsimulate_quote\nSUBMIT_QUOTE\n' +
+                'plan_payments\n999\nSUBMIT_PLAN\npropose_line_refund\nquit\n')
+            self.assertEqual((status, errors, len(client.exchanges)), (0, '', 5))
+            self.assertEqual(client.exchanges[:3], original)
+            self.assertIn('active={"plan":null,"quote":null,"refund":null}', output)
+            self.assertEqual(output.count('Active quote, plan and explicit line selection are required.'), 2)
+            for suffix in ('show_draft\nshow\nquit\n', 'simulate_quote\nno\nquit\n', 'simulate_quote\n'):
+                with patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                    status, client, _, errors = self.run_journey(prefix + edit + suffix)
+                    self.assertEqual((status, errors, launch.call_count), (0, '', 3))
+                    self.assertEqual(client.exchanges, original)
+        # Display alone preserves active quote, plan, refund and selection.
+        status, client, output, errors = self.run_journey(prefix + 'show_draft\npropose_line_refund\nSUBMIT_REFUND\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (0, '', 4))
+        self.assertEqual(client.exchanges[-1], client.exchanges[-2])
+
+    def test_edit_failures_clear_draft_and_dependents(self):
+        prefix = answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n'
+        request = quote_fixture()
+        malformed = [action + '\n' + value + '\n' for action in ('edit_line', 'edit_line_decimal', 'edit_discount')
+                     for value in ('', '-1', '3', 'true', '"1"', '1.0', '1e0', '-0', '9007199254740993', '\ud800')]
+        malformed += ['edit_quote_metadata\ntrue\n', 'edit_quote_metadata\n1\n\n',
+                      edit_entry(request['lines'][0], 0).replace('inv-1\n', '\ud800\n'),
+                      edit_entry(request['lines'][0], 0).replace('inv-1\n', 'e\u0301\n'),
+                      edit_entry(request['lines'][0], 0, decimal_entry=True).replace('inv-1\n', 'e\u0301\n'),
+                      edit_entry(request['lines'][0], 0, decimal_entry=True).replace('10000\n', '1e4\n'),
+                      edit_entry(request['discounts'][0], 0, discount=True).replace('["L1", "L2", "L3"]', '[1]'),
+                      edit_entry(request['discounts'][0], 0, discount=True).replace('null\n', '1\n')]
+        for edit in malformed:
+            with self.subTest(edit=repr(edit)[:80]):
+                status, client, output, errors = self.run_journey(prefix + edit +
+                    'simulate_quote\nplan_payments\npropose_line_refund\nshow_draft\nshow\nquit\n')
+                self.assertEqual((status, errors, len(client.exchanges)), (1, '', 3))
+                self.assertIn('Load a quote request first.', output)
+                self.assertIn('active={"plan":null,"quote":null,"refund":null}', output)
+                self.assertNotIn('edited_quote=', output)
+                self.assertNotIn('decimal_conversion=', output)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'malformed.json'
+            for draft in ({}, {'lines': {}, 'discounts': []}, {'lines': [], 'discounts': None}):
+                path.write_text(json.dumps(draft))
+                for action in ('show_draft', 'edit_line', 'edit_line_decimal', 'edit_discount', 'edit_quote_metadata'):
+                    status, client, output, errors = self.run_journey('load_quote\n' + str(path) + '\n' + action + '\nquit\n')
+                    self.assertEqual((status, errors, len(client.exchanges)), (1, '', 0))
+                    self.assertIn('input_error=', output)
+                    self.assertIsNone(client.uncertainty)
+        for action in ('show_draft', 'edit_line', 'edit_line_decimal', 'edit_discount', 'edit_quote_metadata'):
+            self.assertEqual(self.run_journey(action + '\nquit\n')[0], 0)
+        free = quote_fixture('free_quote')
+        status, client, output, errors = self.run_journey(compose_quote(free) + 'edit_discount\nsimulate_quote\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (1, '', 0))
+        self.assertIn('discounts has no replaceable entry', output)
+        self.assertIn('Load a quote request first.', output)
+
+    def test_edit_exact_inputs_and_decimal_parity(self):
+        request, _ = decimal_inputs('precision')
+        entry = copy.deepcopy(request['lines'][0]); entry['inventoryId'] = 'precision-edited'
+        candidate = copy.deepcopy(request); candidate['lines'][0] = entry
+        suffix = 'simulate_quote\nSUBMIT_QUOTE\nquit\n'
+        results = []
+        for decimal_entry in (False, True):
+            status, client, output, errors = self.run_journey(compose_quote(request) +
+                edit_entry(entry, 0, decimal_entry=decimal_entry) + suffix)
+            self.assertEqual((status, errors), (0, ''))
+            self.assertIn('edited_quote=' + codec().canonical(candidate), output)
+            self.assertEqual(decode_input(client.exchanges[0].request_bytes)['args'], candidate)
+            self.assertEqual('decimal_conversion=' in output, decimal_entry)
+            results.append(client.exchanges)
+        self.assertEqual(*results)
+        literal = quote_fixture()
+        literal['lines'][0]['gross']['atoms'] = '0009007199254740993'
+        literal['lines'][0]['gross']['asset'].update(namespace=' custom ', reference='"unit"', decimals=-1, maxAtoms=' 001 ')
+        literal['discounts'][1].update(value=' 01000 ', eligibleLineIds=['L3', 'L1', 'L3'], capAtoms='0001234')
+        with patch('commerce_calculation_client.subprocess.Popen') as launch:
+            status, _, output, errors = self.run_journey(compose_quote(quote_fixture()) +
+                edit_entry(literal['lines'][0], 0) + edit_entry(literal['discounts'][1], 1, discount=True) + 'quit\n')
+            self.assertEqual((status, errors), (0, ''))
+            self.assertIn('edited_quote=' + codec().canonical(literal), output)
+            launch.assert_not_called()
+
+    def test_edit_driver_rejections_and_uncertainty(self):
+        for error, field, position, mutate in (
+                ('DUPLICATE_LINE', 'lines', 1, lambda row: row.update(lineId='L1')),
+                ('UNKNOWN_DISCOUNT_LINE', 'lines', 0, lambda row: row.update(lineId='new-line')),
+                ('MIXED_QUOTE_ASSETS', 'lines', 0, lambda row: row['gross']['asset'].update(reference='USD')),
+                ('DISCOUNT_EXCEEDS_PAYABLE', 'discounts', 0, lambda row: row.update(value='60001'))):
+            candidate = quote_fixture(); mutate(candidate[field][position])
+            edit = edit_entry(candidate[field][position], position, discount=field == 'discounts')
+            suffix = 'simulate_quote\nSUBMIT_QUOTE\nquit\n'
+            status, edited, _, errors = self.run_journey(compose_quote(quote_fixture()) + edit + suffix)
+            estatus, authored, _, eerrors = self.run_journey(compose_quote(candidate) + suffix)
+            self.assertEqual((status, errors, estatus, eerrors), (1, '', 1, ''))
+            self.assertEqual(edited.exchanges, authored.exchanges)
+            self.assertEqual(edited.exchanges[0].response['error'], error)
+            self.assertEqual(decode_input(edited.exchanges[0].request_bytes)['args'], candidate)
+        children = []
+        def malformed_after_edit(*args, **kwargs):
+            child = (POPEN(*args, **kwargs) if not children else
+                     POPEN([sys.executable, '-B', '-c', 'import sys; sys.stdin.buffer.read(); print("malformed")'], **kwargs))
+            children.append(child)
+            return child
+        with patch('commerce_calculation_client.subprocess.Popen', side_effect=malformed_after_edit) as launch:
+            status, client, _, errors = self.run_journey(edit_journey() * 2)
+            self.assertEqual((status, launch.call_count, len(client.history)), (2, 2, 1))
+            self.assertIsInstance(client.uncertainty, CalculationUncertainty)
+            self.assertEqual(decode_input(client.uncertainty.request_bytes)['args'], edited_inputs())
+            with self.assertRaisesRegex(RuntimeError, 'client fenced'):
+                client.request(decode_input(client.uncertainty.request_bytes))
+            self.assertEqual(launch.call_count, 2)
+        self.assertIn('FENCED', errors)
+        self.assertTrue(all(child.returncode is not None for child in children))
 
     def test_real_driver_journey_retains_exact_quote_and_plan_for_next_request(self):
         with patch('time.time', side_effect=AssertionError('no implicit business clock')):

@@ -1,0 +1,7 @@
+import sys
+
+def deny_sockets(event, args):
+    if event.startswith('socket.'):
+        raise RuntimeError('socket event prohibited during local validation: ' + event)
+
+sys.addaudithook(deny_sockets)

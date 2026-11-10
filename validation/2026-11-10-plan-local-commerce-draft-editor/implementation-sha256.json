@@ -1,0 +1,10 @@
+{
+  "docs/README.md": "404a2c3075a1416bf01c83b1d2120e27109f4992147568385b4c6df74f223377",
+  "reference/booking_resale_admission/README.md": "12cb1e54fa560c21089621ad43540dba5178a2b640cbd36c9c3a7bf13cadcf7c",
+  "reference/booking_resale_admission/commerce_calculation_console.py": "43faba2c974eb06668a43f1aae5dd24c5e1681c26ddd36c9ff68fc5188ee1a26",
+  "reference/booking_resale_admission/test_commerce_calculation_console.py": "7bc8ef84e8df86cdcb1818d3f5f9808ccfc87ac80b15c0a398649b425b6bbb10",
+  "reference/booking_resale_admission/fixtures/commerce_console_edit_boundaries.txt": "ee7544f869077f318a1b63f91d21d4c06e923b13de2892eed0809c91b1cd59e0",
+  "reference/booking_resale_admission/fixtures/commerce_console_edit_journey.txt": "0a179183079d3aab99bd4c7f4060a8d51327996d723274d47e91c469596163af",
+  "reference/booking_resale_admission/fixtures/commerce_console_edit_precision.txt": "480107a46d462aafce4d6858a5645704293df40beeffbd85f854329961852edf",
+  "reference/booking_resale_admission/fixtures/commerce_console_edit_replacement.txt": "a4fb745d9df51a01544197e1d544ff94deca494097c092cd6b149fcd221a97cf"
+}
