@@ -700,3 +700,14 @@ and transport fencing. No policy decision, activation or independent review is i
 ## 2026-11-10 Manifest-v1 verifier negative vectors — 위치 안내만
 
 - [plan-manifest-verifier-negative-vector-comple builder evidence](../validation/2026-11-10-plan-manifest-verifier-negative-vector-comple/README.md) — a 56-case companion single-fault matrix over the manifest, `bootstrap-2` profile and sidecar, run by the SDK conformance harness against a temporary verifier root. Every case asserts the exact error set without ordering. Positive manifest/profile/sidecar/vector bytes and `verify_compat.mjs` are unchanged; SD1 stays OPEN, scope stays BOOTSTRAP, and no semantic or N/N-1 claim is added.
+
+## 2026-11-10 audit #30 위치 동기화 — 위치 안내만
+
+Bounded selection: 정확히 PR #426–#435이며, #399–#425와 #435 이후 범위는 이 절의 대상이 아니다. 이 절은 위치 안내만이며 canonical node 수락·완료·등급·상태·소유자·집계 변경이 아니다. 관측 base와 `origin/main`은 `bee3fc18281ca38204930d80a0e665b9575985d4`(merge #435)이다. Canonical counting은 계속 `DECISION_REQUIRED · Astra`다.
+
+- [개발계획 §5 audit #30 보충](DEVELOPMENT_PLAN.md#2026-11-10-audit-30--bounded-current-tree-location-supplement)
+- [capability register — Audit30 supplement](status/CURRENT_CAPABILITY_REGISTER.md#audit30-current-tree-supplement)
+- [loop-node crosswalk §8](status/LOOP_NODE_CROSSWALK.md#8-audit30-current-tree-supplement)
+- [audit #30 builder 검증 기록](../validation/2026-11-10-audit30-sync-nov10-location-tables/README.md) — 관측 SHA, first-parent merge mapping, 실제 로컬 checker 결과, locked blob 및 `reference/v0.3-rc1/**` 보존, 남은 전달 gate. 비작성자 검토·exact-head KTX/KIX CI·병합 승인이 아니다.
+
+SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate는 기존 조건과 소유자로 열린 채 남는다. 운영 capability 수 **0**, semantic consumers **HOLD**, unsupported bindings **NOT_BOUND**를 바꾸지 않는다.
