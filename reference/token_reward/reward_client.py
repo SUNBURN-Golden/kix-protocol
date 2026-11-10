@@ -10,7 +10,8 @@ import subprocess
 import sys
 import threading
 
-from reward_fixture import FixtureError, decode_json, exact_fields, validate_json
+from reward_fixture import (FixtureError, decode_json, exact_fields,
+                            session_from_fixture, validate_json)
 from reward_cli import _APPROVAL, _DISPATCH
 from token_reward_model import POOL_NAMES, PROVENANCE, _canonical
 
@@ -27,11 +28,17 @@ class RewardTransportUncertainty(RuntimeError):
     resubmission, even if the desk exits or cleanup terminates it.
     """
 
-    def __init__(self, request, request_bytes, reply_bytes):
+    def __init__(self, request, request_bytes, reply_bytes, *, phase="request"):
         super().__init__("local reward desk exchange uncertain; client fenced")
         self.request = request
         self.request_bytes = request_bytes
         self.reply_bytes = reply_bytes
+        self.phase = phase
+
+
+def validate_cleanup_timeout(value):
+    if (type(value) not in (int, float) or not math.isfinite(value) or value <= 0):
+        raise ValueError("cleanup_timeout must be a finite positive number")
 
 
 class RewardClient:
@@ -44,10 +51,7 @@ class RewardClient:
 
     @classmethod
     def launch(cls, fixture, *, cleanup_timeout):
-        if (isinstance(cleanup_timeout, bool)
-                or not isinstance(cleanup_timeout, (int, float))
-                or not math.isfinite(cleanup_timeout) or cleanup_timeout <= 0):
-            raise ValueError("cleanup_timeout must be a finite positive number")
+        validate_cleanup_timeout(cleanup_timeout)
         command = [sys.executable, str(Path(__file__).with_name("reward_cli.py").resolve()),
                    "--fixture", str(Path(fixture).resolve()), "--requests", "-"]
         # Child buffering is ordinary Python buffering. stderr is inherited,
@@ -56,6 +60,33 @@ class RewardClient:
                                    bufsize=0, shell=False)
         return cls(process, cleanup_timeout)
 
+    @classmethod
+    def launch_from_fixture(cls, fixture, *, cleanup_timeout):
+        """Launch once from a caller-confirmed, detached in-memory fixture.
+
+        Only a complete matching startup acknowledgement makes the client usable.
+        Failure fences and reaps the child; no business request is sent.
+        """
+        validate_cleanup_timeout(cleanup_timeout)
+        validate_json(fixture)
+        wire = (_canonical(fixture) + "\n").encode("utf-8")
+        submitted = decode_json(wire.decode("utf-8"))
+        session_from_fixture(submitted)  # Disposable preflight; no operations.
+        command = [sys.executable, str(Path(__file__).with_name("reward_cli.py").resolve()),
+                   "--init-stdin", "--requests", "-"]
+        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   bufsize=0, shell=False)
+        client = cls(process, cleanup_timeout)
+        try:
+            client._initialized_reply = client._exchange(submitted, wire, phase="initialize")
+        except BaseException as error:
+            try:
+                client.close()
+            except BaseException as cleanup_error:
+                error.add_note(f"child cleanup raised {type(cleanup_error).__name__}: {cleanup_error}")
+            raise
+        return client
+
     def __init__(self, process, cleanup_timeout):
         self._process = process
         self._cleanup_timeout = cleanup_timeout
@@ -63,7 +94,26 @@ class RewardClient:
         self._terminal = False
         self._closed = False
         self._returncode = None
+        self._initialized_reply = None
         self.uncertainty = None
+
+    @property
+    def initialized_reply(self):
+        """A detached startup acknowledgement, or None in fixture-file mode."""
+        return decode_json(_canonical(self._initialized_reply))
+
+    @staticmethod
+    def _startup_reply(raw, fixture):
+        if not raw.endswith(b"\n"):
+            raise FixtureError("initialization acknowledgement requires a terminating newline")
+        reply = decode_json(raw.decode("utf-8"))
+        exact_fields(reply, {"operation", "provenance", "initialized"}, "initialization reply")
+        if reply["operation"] != "initialize" or reply["provenance"] != PROVENANCE:
+            raise FixtureError("invalid initialization discriminator or provenance")
+        # Canonical equality distinguishes int from bool/float, unlike Python ==.
+        if _canonical(reply["initialized"]) != _canonical(fixture):
+            raise FixtureError("acknowledged input differs from confirmed fixture")
+        return reply
 
     @staticmethod
     def _validate_request(request):
@@ -162,31 +212,34 @@ class RewardClient:
             self._validate_request(request)
             wire = (_canonical(request) + "\n").encode("utf-8")
             submitted = decode_json(wire.decode("utf-8"))
-            raw = bytearray()
-            try:
-                written = self._process.stdin.write(wire)
-                if written != len(wire):
-                    raise OSError("short request write")
-                self._process.stdin.flush()
-                # Retain partial diagnostic bytes even on caller interruption.
-                while True:
-                    chunk = self._process.stdout.read(1)
-                    if not chunk:
-                        break
-                    raw.extend(chunk)
-                    if chunk == b"\n":
-                        break
-                reply, terminal = self._reply(bytes(raw), submitted)
-                self._terminal = terminal
-                return reply
-            except BaseException as error:
-                # Includes caller interruption after submission has begun. Never
-                # interpret missing evidence as a business rejection or rollback.
-                self._terminal = True
-                self.uncertainty = RewardTransportUncertainty(submitted, wire, bytes(raw))
-                raise self.uncertainty from error
+            return self._exchange(submitted, wire)
         finally:
             self._guard.release()
+
+    def _exchange(self, submitted, wire, *, phase="request"):
+        raw = bytearray()
+        try:
+            written = self._process.stdin.write(wire)
+            if written != len(wire):
+                raise OSError("short request write")
+            self._process.stdin.flush()
+            # Retain partial diagnostic bytes even on caller interruption.
+            while True:
+                chunk = self._process.stdout.read(1)
+                if not chunk:
+                    break
+                raw.extend(chunk)
+                if chunk == b"\n":
+                    break
+            if phase == "initialize":
+                return self._startup_reply(bytes(raw), submitted)
+            reply, terminal = self._reply(bytes(raw), submitted)
+            self._terminal = terminal
+            return reply
+        except BaseException as error:
+            self._terminal = True
+            self.uncertainty = RewardTransportUncertainty(submitted, wire, bytes(raw), phase=phase)
+            raise self.uncertainty from error
 
     def close(self) -> int:
         """Close stdin, reap this child, and return its exit code; idempotent.
@@ -217,8 +270,15 @@ class RewardClient:
                 self._returncode = self._process.returncode
                 self._closed = True
                 return self._returncode
+            except BaseException:
+                # An interruption during startup cleanup must not orphan a child.
+                self._process.kill()
+                self._process.wait()
+                raise
             finally:
                 self._process.stdout.close()
+                self._returncode = self._process.returncode
+                self._closed = self._returncode is not None
         finally:
             self._guard.release()
 

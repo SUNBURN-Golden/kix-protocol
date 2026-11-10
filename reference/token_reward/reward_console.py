@@ -6,9 +6,10 @@ import re
 import sys
 
 from reward_cli import _error, dispatch_request
-from reward_client import RewardClient, RewardTransportUncertainty
-from reward_fixture import FixtureError, decode_json, exact_fields, load_fixture, validate_json
-from token_reward_model import SOURCE_FINALITY_FLAGS, TokenRewardError, _canonical
+from reward_client import RewardClient, RewardTransportUncertainty, validate_cleanup_timeout
+from reward_fixture import (FixtureError, decode_json, exact_fields, load_fixture,
+                            session_from_fixture, validate_json)
+from token_reward_model import POOLS, PROVENANCE, SOURCE_FINALITY_FLAGS, TokenRewardError, _canonical
 
 
 # Prompt order only: dispatch and all economic predicates remain in the desk.
@@ -110,7 +111,7 @@ def _diagnostic(error, stream, *, last_reply=None):
             detail['exceptions'].append({'type': type(error).__name__, 'message': str(error)})
             if isinstance(error, RewardTransportUncertainty):
                 detail.update(request=error.request, request_bytes_hex=error.request_bytes.hex(),
-                              reply_bytes_hex=error.reply_bytes.hex())
+                              reply_bytes_hex=error.reply_bytes.hex(), phase=error.phase)
             error = error.__cause__ or (None if error.__suppress_context__ else error.__context__)
         print('FENCED: ' + _canonical(detail), file=stream, flush=True)
     except (Exception, KeyboardInterrupt):
@@ -125,9 +126,49 @@ def run_console(session, *, input_stream, output_stream, error_stream) -> int:
 
 def run_subprocess_console(fixture, *, cleanup_timeout, input_stream, output_stream, error_stream) -> int:
     """Own one desk child until quit or failure; cleanup never authorizes a retry."""
+    return _run_owned_console(lambda: RewardClient.launch(fixture, cleanup_timeout=cleanup_timeout),
+                              input_stream=input_stream, output_stream=output_stream,
+                              error_stream=error_stream)
+
+
+def run_guided_console(*, cleanup_timeout, input_stream, output_stream, error_stream) -> int:
+    """Collect all balances and confirm the complete input before spawning once."""
+    def prompt(label):
+        print(label + ': ', end='', file=output_stream, flush=True)
+        line = input_stream.readline()
+        if line == '':
+            raise EOFError('initialization input ended; no child started')
+        return line.removesuffix('\n').removesuffix('\r')
+
+    try:
+        validate_cleanup_timeout(cleanup_timeout)
+        print('Synthetic opening balances only; no funding or token issuance.\n'
+              'Amounts, budgets and caps: UNDETERMINED — Astra/User. No defaults.',
+              file=output_stream, flush=True)
+        fixture = {'fixture_version': 1, 'provenance': PROVENANCE, 'opening_balances': {
+            pool: decode_json(prompt(pool + ' opening balance (JSON integer; explicit value required)'))
+            for pool in POOLS}}
+        session_from_fixture(fixture)  # Existing validation; no operations.
+        print('initialization=' + _canonical(fixture), file=output_stream, flush=True)
+        if prompt('Type literal SUBMIT to start one local reward desk; anything else declines') != 'SUBMIT':
+            print('Initialization declined; no child started.', file=output_stream, flush=True)
+            return 0
+    except (Exception, KeyboardInterrupt) as error:
+        _diagnostic(error, error_stream)
+        return 2
+    return _run_owned_console(
+        lambda: RewardClient.launch_from_fixture(fixture, cleanup_timeout=cleanup_timeout),
+        input_stream=input_stream, output_stream=output_stream, error_stream=error_stream,
+        show_initialization=True)
+
+
+def _run_owned_console(launch, *, input_stream, output_stream, error_stream,
+                       show_initialization=False) -> int:
     state, client, status = {}, None, 2
     try:
-        client = RewardClient.launch(fixture, cleanup_timeout=cleanup_timeout)
+        client = launch()
+        if show_initialization:
+            print('initialized=' + _canonical(client.initialized_reply), file=output_stream, flush=True)
         status = _run_console(client.request, state=state, input_stream=input_stream,
                               output_stream=output_stream, error_stream=error_stream)
     except (Exception, KeyboardInterrupt) as error:
@@ -265,15 +306,23 @@ def _run_console(send_request, *, state, input_stream, output_stream, error_stre
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--fixture', required=True, type=Path,
+    startup = parser.add_mutually_exclusive_group(required=True)
+    startup.add_argument('--fixture', type=Path,
                         help='caller-selected synthetic opening balances; no default')
+    startup.add_argument('--guided-init', action='store_true',
+                         help='explicitly enter and confirm all five synthetic opening balances')
     parser.add_argument('--mode', choices=('in-process', 'subprocess'), default='in-process')
     parser.add_argument('--cleanup-timeout', type=float,
                         help='required in subprocess mode; finite positive seconds for child cleanup only')
     args = parser.parse_args(argv)
+    if args.guided_init and args.mode != 'subprocess':
+        parser.error('--guided-init requires --mode subprocess')
     if args.mode == 'subprocess':
         if args.cleanup_timeout is None:
             parser.error('--mode subprocess requires --cleanup-timeout')
+        if args.guided_init:
+            return run_guided_console(cleanup_timeout=args.cleanup_timeout, input_stream=sys.stdin,
+                                      output_stream=sys.stdout, error_stream=sys.stderr)
         return run_subprocess_console(args.fixture, cleanup_timeout=args.cleanup_timeout,
                                       input_stream=sys.stdin, output_stream=sys.stdout, error_stream=sys.stderr)
     if args.cleanup_timeout is not None:

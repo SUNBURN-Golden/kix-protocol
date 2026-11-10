@@ -13,12 +13,32 @@ import unittest
 from unittest.mock import patch
 
 from reward_cli import dispatch_request, run_requests
-from reward_fixture import decode_json, load_fixture
+from reward_fixture import FixtureError, decode_json, load_fixture, session_from_fixture
 from test_reward_session import FIXTURES, requests
-from token_reward_model import ALWAYS_FALSE_FLAGS, PROVENANCE, _canonical
+from token_reward_model import ALWAYS_FALSE_FLAGS, MONEY_MAX, PROVENANCE, TokenRewardError, _canonical
 
 
 CLI = Path(__file__).with_name("reward_cli.py")
+
+
+def invalid_initializations():
+    """Wire-level gaps beyond existing session/opening validation coverage."""
+    fixture = decode_json((FIXTURES / "reward_session.json").read_text())
+    balances = fixture["opening_balances"]
+    for pool in balances:
+        yield _canonical(fixture | {"opening_balances": {k: v for k, v in balances.items() if k != pool}})
+        for value in (True, False, -1, MONEY_MAX + 1, 0.0, None, "0"):
+            yield _canonical(fixture | {"opening_balances": balances | {pool: value}})
+    yield _canonical(fixture | {"opening_balances": balances | {"EXTRA": 0}})
+    yield _canonical(fixture | {"extra": 0})
+    yield _canonical({k: v for k, v in fixture.items() if k != "opening_balances"})
+    for value in (True, 1.0, 2):
+        yield _canonical(fixture | {"fixture_version": value})
+    yield _canonical(fixture | {"provenance": "LIVE"})
+    record = _canonical(fixture)
+    yield record.replace('"CUSTOMER_DEPOSIT":0', '"CUSTOMER_DEPOSIT":0,"CUSTOMER_DEPOSIT":0')
+    yield record.replace('"fixture_version":1', '"fixture_version":1,"fixture_version":1')
+    yield record.replace('"CUSTOMER_DEPOSIT":0', '"CUSTOMER_DEPOSIT":NaN')
 
 
 class RewardCliTests(unittest.TestCase):
@@ -161,6 +181,72 @@ class RewardCliTests(unittest.TestCase):
             fixture.write_text(json.dumps(value))
             rows = self.output(self.invoke(text="", fixture=fixture), 2)
             self.assertEqual(rows[0]["error"]["code"], "INVALID_NONNEGATIVE")
+
+
+class RewardInitializationCliTests(unittest.TestCase):
+    invoke = RewardCliTests.invoke
+    def invoke_init(self, record, requests_text="", options=()):
+        return subprocess.run([sys.executable, str(CLI), "--init-stdin", "--requests", "-", *options],
+                              input=record + requests_text, capture_output=True, timeout=10)
+
+    def test_file_stdin_and_shared_validation_match_without_defaults(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "opening.json"
+            for record in invalid_initializations():
+                with self.subTest(record=record):
+                    path.write_text(record)
+                    with self.assertRaises((FixtureError, TokenRewardError)) as shared:
+                        session_from_fixture(decode_json(record))
+                    with self.assertRaises(type(shared.exception)):
+                        load_fixture(path)
+                    file_result = self.invoke(text=_canonical(requests("participation")[0]), fixture=path)
+                    stdin_result = self.invoke_init((record + "\n").encode(), b'{"operation":"pool_view","arguments":{}}\n')
+                    self.assertEqual(stdin_result.returncode, 2)
+                    self.assertEqual(stdin_result.stderr, b"")
+                    self.assertEqual(stdin_result.stdout.decode(), file_result.stdout)
+                    self.assertEqual(len(stdin_result.stdout.splitlines()), 1)
+
+    def test_queued_requests_and_complete_fixture_acknowledgement_parity(self):
+        fixture = decode_json((FIXTURES / "reward_session.json").read_text())
+        for name, status in (("participation", 0), ("cancellation", 0), ("unknown_pending", 1),
+                             ("unknown_resolution", 1), ("boundaries", 1)):
+            text = (FIXTURES / (name + ".jsonl")).read_bytes()
+            result = self.invoke_init((_canonical(fixture) + "\n").encode(), text)
+            self.assertEqual((result.returncode, result.stderr), (status, b""))
+            first, rest = result.stdout.split(b"\n", 1)
+            self.assertEqual(decode_json(first.decode()), {
+                "operation": "initialize", "provenance": PROVENANCE, "initialized": fixture})
+            self.assertEqual(rest.decode(), self.invoke(text=text.decode()).stdout)
+        for value in (0, MONEY_MAX):
+            opening = fixture | {"opening_balances": {pool: value for pool in fixture["opening_balances"]}}
+            result = self.invoke_init((_canonical(opening) + "\n").encode(),
+                                      b'{"operation":"pool_view","arguments":{}}\n')
+            self.assertEqual(result.returncode, 0)
+            rows = [decode_json(row.decode()) for row in result.stdout.splitlines()]
+            self.assertEqual(rows[0]["initialized"], opening)
+            self.assertEqual(rows[1]["pool_view"], session_from_fixture(opening).pool_view())
+
+    def test_framing_modes_and_initialize_is_not_a_business_selector(self):
+        fixture = (FIXTURES / "reward_session.json").read_text()
+        for record in (b"", fixture.strip().encode(), b"\xff\n", b"\n"):
+            result = self.invoke_init(record, b"")
+            self.assertEqual(result.returncode, 2)
+            rows = [decode_json(row.decode()) for row in result.stdout.splitlines()]
+            self.assertEqual(len(rows), 1)
+            self.assertIsNone(rows[0]["operation"])
+            self.assertIn("error", rows[0])
+        for options in (("--fixture", str(FIXTURES / "reward_session.json")),
+                        ("--requests", str(FIXTURES / "participation.jsonl"))):
+            result = self.invoke_init(b"", b"", options)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, b"")
+        result = self.invoke_init((_canonical(decode_json(fixture)) + "\n").encode(),
+                                  b'{"operation":"initialize","arguments":{}}\n'
+                                  b'{"operation":"pool_view","arguments":{}}\n')
+        self.assertEqual(result.returncode, 2)
+        rows = [decode_json(row.decode()) for row in result.stdout.splitlines()]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[1]["error"]["type"], "FixtureError")
 
 
 if __name__ == "__main__":
