@@ -59,6 +59,14 @@ capability grades, protocol commands and runtime activation are unchanged.
 
 ## Local commerce calculation console
 
+[Bundle/leg structure guide](../reference/booking_resale_admission/README.md#revising-bundle-structure-and-payment-legs)
+and [builder evidence](../validation/2026-11-10-plan-local-cart-structure-editor/README.md)
+cover ordered insertion/removal/moves, complete leg replacement and separate
+confirmed repricing/replanning/refund proposals. CALCULATION_ONLY;
+executionAuthorized=false. Product policy remains UNDETERMINED — Astra/User;
+legal/accounting treatment UNDETERMINED — User/designated advisers. Independent
+review and exact-head CI remain required; no capability or stage-6 promotion.
+
 [Draft editor evidence](../validation/2026-11-10-plan-local-commerce-draft-editor/README.md)
 and the [draft editing guide](../reference/booking_resale_admission/README.md#editing-a-quote-request-draft)
 cover ordered positional replacement, explicit version/expiry and separate

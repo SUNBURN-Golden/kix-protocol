@@ -3547,7 +3547,8 @@ immutable historical calculation evidence.
 Positions must be explicit CE1 integers within the displayed array; IDs are never
 used to locate an entry, even when duplicated. Empty arrays have no replaceable
 entry. Replacement prompts reuse the composition fields and require every value;
-there is no blank-to-keep behavior, insertion, deletion or reordering. Untouched
+there is no blank-to-keep behavior. Structural controls below add insertion,
+removal and reordering. Untouched
 fields, array order, atom strings and discount caps remain exactly as supplied.
 Changing a line ID does not repair discount eligibility. Version and expiry are
 never incremented, inferred from a clock, extended or defaulted. Business bounds
@@ -3590,6 +3591,77 @@ Product policy remains **UNDETERMINED — Astra/User**; legal/accounting treatme
 remains **UNDETERMINED — User/designated advisers**. No booking confirmation,
 protocol command, execution authority or stage-6 scope changes.
 [Builder coverage, commands and delivery limits](../../validation/2026-11-10-plan-local-commerce-draft-editor/README.md).
+
+### Revising bundle structure and payment legs
+
+These local controls edit stored request drafts. They launch no calculation.
+They reuse the same complete entry fields and exact amount converter as composition.
+
+| Local control | Explicit input |
+| --- | --- |
+| `insert_line`, `insert_line_decimal` | Insertion position, complete line fields (atoms or exact decimal text) |
+| `remove_line`, `move_line` | Existing position; move also asks for final destination position |
+| `insert_discount` | Insertion position, complete discount fields including literal eligibility and cap |
+| `remove_discount`, `move_discount` | Existing position; move also asks for final destination position |
+| `show_legs` | Displays each stored leg as `draft_leg={"position":…,"entry":…}` in array order; empty is `draft_legs=[]` |
+| `edit_leg`, `edit_leg_decimal` | Existing position, complete `legId`, `providerRef`, `routeRef`, amount asset metadata and atoms or decimal text |
+| `insert_leg`, `insert_leg_decimal` | Insertion position and the same complete leg fields |
+| `remove_leg`, `move_leg` | Existing position; move also asks for final destination position |
+
+All positions are zero-based CE1 integers. Insert accepts `0..n`, including append.
+Replace/remove accept `0..n-1`. Move removes the source then inserts at the
+**final destination index** in `0..n-1`: moving `0` to `2` in `[A,B,C]` produces
+`[B,C,A]`; moving `2` to `0` produces `[C,A,B]`. Identity duplicates do not change
+positional addressing. A same-position move still invalidates dependents.
+Structural results must retain 1–300 lines, 0–64 discounts and 0–16 legs.
+The final line cannot be removed; discounts and legs may become empty.
+Arrays are never truncated or sorted by the editor.
+
+Every quote mutation, including a failed or abandoned attempt, clears the quote
+draft, active quote, plan, refund and selected lines **before display, validation
+or prompts**, retaining stored legs. Every leg mutation clears stored legs, plan,
+refund and selected lines at the same point, retaining the quote draft and active
+quote. Detached candidates publish as `edited_quote=` or `edited_legs=` only after
+complete canonical encoding. Decimal conversion records are buffered until then.
+Malformed input, invalid positions, bounds, encoding failure and EOF never restore
+old selections. `show_legs` preserves selections. Historical successful exchanges
+remain immutable and cannot reactivate selections.
+
+Edits preserve caller identities, literal atom strings (including amounts above
+2^53), explicit asset metadata and discount array order. Discount order can change
+the calculated result. Removing a line never repairs dangling eligibility;
+duplicate identities are never deduplicated. Leg amounts are never rebalanced.
+Explicitly recalculate with `simulate_quote` / `SUBMIT_QUOTE`, then replan with
+`plan_payments`, caller-supplied `now` and `SUBMIT_PLAN`. Select refund lines again
+and use `propose_line_refund` / `SUBMIT_REFUND`. Each submission requires its own
+confirmation; decline or EOF submits nothing. The unchanged driver owns business
+refusals, including dangling references, duplicate identities, mixed assets and
+payment-total mismatch. Output failure stops the console; transport uncertainty
+fences it without retry.
+
+From the repository root:
+
+```bash
+python3.12 -B reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_structure_journey.txt
+```
+
+The journey inserts/removes bundle entries, reorders discounts, explicitly reprices,
+edits/inserts/removes/reorders split legs, replans and proposes a selected-line
+refund. Run the same command with `commerce_console_structure_precision.txt`
+(exact `9007199254.740993` → `"9007199254740993"`), `commerce_console_structure_free.txt`
+(empty discounts/legs), `commerce_console_structure_replacement.txt` (invalidation
+and abandoned edit) or `commerce_console_structure_decline.txt` (separate declines).
+These exit 0. `commerce_console_structure_boundaries.txt` exits 1 for eight explicit
+driver refusals. These are synthetic caller inputs, not product policy values.
+
+`CALCULATION_ONLY`; refund `executionAuthorized=false`. Product policy remains
+**UNDETERMINED — Astra/User**; legal/accounting treatment remains
+**UNDETERMINED — User/designated advisers**. No booking handoff, new protocol
+commands, SDK/catalogue, persistence, external services or runtime activation.
+This does not complete canonical stage-6 economics or raise capability grades.
+[Coverage, actual local evidence and pending independent review/exact-head CI](../../validation/2026-11-10-plan-local-cart-structure-editor/README.md).
 
 ## Recorded offers and presentations in the ticket console
 

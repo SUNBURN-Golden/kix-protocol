@@ -129,6 +129,98 @@ def edit_journey():
             pick(['L3', 'L1']) + 'propose_line_refund\nSUBMIT_REFUND\nshow\nquit\n')
 
 
+def structure_entry(action, position, entry):
+    """Caller answers for complete entries, sharing fixture formatting only."""
+    if 'discount' in action:
+        return edit_entry(entry, position, discount=True).replace('edit_discount\n', action + '\n', 1)
+    if 'leg' in action:
+        rows = compose([entry], action.endswith('_decimal')).splitlines()[2:]
+        return action + '\n' + str(position) + '\n' + '\n'.join(rows) + '\n'
+    return edit_entry(entry, position, decimal_entry=action.endswith('_decimal')).replace(
+        'edit_line_decimal\n' if action.endswith('_decimal') else 'edit_line\n', action + '\n', 1)
+
+
+def structure_inputs():
+    request = quote_fixture()
+    request['lines'] = [request['lines'][1], request['lines'][2], request['lines'][0]]
+    request['discounts'] = [request['discounts'][1], request['discounts'][0]]
+    legs = quote_fixture('legs')
+    legs[0]['amount']['atoms'] = '26000'
+    legs[1]['amount']['atoms'] = '18000'
+    gift = copy.deepcopy(legs[0]); gift.update(legId='gift', routeRef='synthetic-gift')
+    gift['amount']['atoms'] = '4000'
+    return request, [gift, *legs]
+
+
+def structure_journey():
+    request, legs = structure_inputs()
+    extra = copy.deepcopy(request['lines'][0]); extra.update(lineId='extra', inventoryId='extra-inv')
+    rule = copy.deepcopy(request['discounts'][0]); rule.update(ruleId='temporary', value='0')
+    return (answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n' +
+            structure_entry('insert_line', 3, extra) + 'remove_line\n3\nmove_line\n0\n2\n' +
+            structure_entry('insert_discount', 0, rule) + 'remove_discount\n0\nmove_discount\n0\n1\n' +
+            'show_draft\nsimulate_quote\nSUBMIT_QUOTE\nshow_legs\n' +
+            structure_entry('edit_leg', 0, legs[1]) + structure_entry('edit_leg_decimal', 1, legs[2]) +
+            structure_entry('insert_leg', 2, legs[0]) + 'remove_leg\n2\n' +
+            structure_entry('insert_leg_decimal', 2, legs[0]) + 'move_leg\n2\n0\nshow_legs\n' +
+            'plan_payments\n999\nSUBMIT_PLAN\n' + pick(['L3', 'L1']) +
+            'propose_line_refund\nSUBMIT_REFUND\nshow\nquit\n')
+
+
+def structure_precision(decimal_entry=True):
+    request, legs = decimal_inputs('precision')
+    original = copy.deepcopy(request)
+    original['lines'][0].update(lineId='temporary', inventoryId='temporary-inv')
+    suffix = '_decimal' if decimal_entry else ''
+    return (compose_quote(original) +
+            structure_entry('insert_line' + suffix, 1, request['lines'][0]) + 'remove_line\n0\n' +
+            'simulate_quote\nSUBMIT_QUOTE\ncompose_legs\n0\n' +
+            structure_entry('insert_leg' + suffix, 0, legs[0]) +
+            structure_entry('edit_leg' + suffix, 0, legs[0]) +
+            'plan_payments\n999\nSUBMIT_PLAN\n' + pick(['L1']) +
+            'propose_line_refund\nSUBMIT_REFUND\nquit\n')
+
+
+def structure_refusals():
+    """Explicit malformed business inputs; driver owns each refusal."""
+    base = quote_fixture(); base_legs = quote_fixture('legs')
+    cases = []
+    candidate = copy.deepcopy(base); candidate['lines'] = candidate['lines'][1:]
+    cases.append(('UNKNOWN_DISCOUNT_LINE', 'quote', 'remove_line\n0\n', candidate))
+    for code, change in (
+            ('DUPLICATE_LINE', {}), ('DUPLICATE_INVENTORY', dict(lineId='extra')),
+            ('MIXED_QUOTE_ASSETS', dict(lineId='extra', inventoryId='extra-inv'))):
+        entry = copy.deepcopy(base['lines'][0]); entry.update(change)
+        if code == 'MIXED_QUOTE_ASSETS':
+            entry['gross']['asset']['reference'] = 'USD'
+        candidate = copy.deepcopy(base); candidate['lines'].insert(3, entry)
+        cases.append((code, 'quote', structure_entry('insert_line', 3, entry), candidate))
+    candidate = copy.deepcopy(base); candidate['discounts'].insert(2, base['discounts'][0])
+    cases.append(('DUPLICATE_DISCOUNT_RULE', 'quote',
+                  structure_entry('insert_discount', 2, base['discounts'][0]), candidate))
+    for code in ('DUPLICATE_PAYMENT_LEG', 'PAYMENT_ASSET_MISMATCH', 'PAYMENT_TOTAL_MISMATCH'):
+        candidate = copy.deepcopy(base_legs)
+        if code == 'DUPLICATE_PAYMENT_LEG':
+            candidate[1]['legId'] = candidate[0]['legId']
+        elif code == 'PAYMENT_ASSET_MISMATCH':
+            candidate[1]['amount']['asset']['reference'] = 'USD'
+        else:
+            candidate[1]['amount']['atoms'] = '18601'
+        cases.append((code, 'legs', structure_entry('edit_leg', 1, candidate[1]), candidate))
+    return cases
+
+
+def structure_boundaries():
+    parts = []
+    for _, field, edit, _ in structure_refusals():
+        parts.append(compose_quote(quote_fixture()))
+        if field == 'legs':
+            parts.append('simulate_quote\nSUBMIT_QUOTE\n' + compose(quote_fixture('legs')))
+        parts.append(edit + ('simulate_quote\nSUBMIT_QUOTE\n' if field == 'quote'
+                             else 'plan_payments\n999\nSUBMIT_PLAN\n'))
+    return ''.join(parts) + 'quit\n'
+
+
 class RecordingClient(CommerceCalculationClient):
     def __init__(self):
         super().__init__(cleanup_timeout=1)
@@ -147,6 +239,390 @@ class CommerceCalculationConsoleTests(unittest.TestCase):
         errors = io.StringIO()
         status = run_console(client, input_stream=io.StringIO(script), output_stream=output, error_stream=errors)
         return status, client, output.getvalue(), errors.getvalue()
+
+    def test_structure_journey_parity(self):
+        script = structure_journey()
+        self.assertEqual(answers('structure_journey'), script)
+        request, legs = structure_inputs()
+        explicit = (answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n' +
+                    compose_quote(request) + 'simulate_quote\nSUBMIT_QUOTE\n' + compose(legs) +
+                    'plan_payments\n999\nSUBMIT_PLAN\nselect_lines\n["L3","L1"]\n'
+                    'propose_line_refund\nSUBMIT_REFUND\nquit\n')
+        commerce = _calculator()['commerce']
+        with patch.object(commerce, 'build_quote', side_effect=AssertionError('parent arithmetic')), \
+             patch.object(commerce, 'plan_payments', side_effect=AssertionError('parent arithmetic')), \
+             patch.object(commerce, 'propose_line_refund', side_effect=AssertionError('parent arithmetic')), \
+             patch('time.time', side_effect=AssertionError('implicit clock')):
+            status, edited, output, errors = self.run_journey(script)
+            estatus, authored, _, eerrors = self.run_journey(explicit)
+        self.assertEqual((status, errors, estatus, eerrors), (0, '', 0, ''))
+        # Exchange equality includes complete canonical request/reply bytes and child exit codes.
+        self.assertEqual(edited.exchanges, authored.exchanges)
+        self.assertEqual(len(edited.exchanges), 6)
+        self.assertEqual(decode_input(edited.exchanges[3].request_bytes)['args'], request)
+        self.assertEqual(decode_input(edited.exchanges[4].request_bytes)['args']['legs'], legs)
+        self.assertEqual(edited.exchanges[3].response['result']['totals']['payableAtoms'], '48000')
+        for exchange in edited.exchanges:
+            self.assertEqual(exchange.response['result']['evidenceClass'], 'CALCULATION_ONLY')
+        self.assertIs(edited.exchanges[-1].response['result']['executionAuthorized'], False)
+        self.assertIn('edited_quote=' + codec().canonical(request), output)
+        self.assertIn('edited_legs=' + codec().canonical(legs), output)
+        child = subprocess.run([sys.executable, '-B', str(HERE / 'commerce_calculation_console.py'),
+                                '--cleanup-timeout', '2'], input=script, text=True, capture_output=True)
+        self.assertEqual((child.returncode, child.stderr), (0, ''))
+        for exchange in edited.exchanges:
+            self.assertIn('proposed=' + exchange.request_bytes.decode().strip(), child.stdout)
+            self.assertIn('driver=' + codec().canonical(exchange.response), child.stdout)
+
+    def test_structure_positions_order_and_no_launch(self):
+        base = quote_fixture(); legs = quote_fixture('legs')
+        # Positional addressing remains unambiguous with duplicate identities.
+        for field, entries in (('line', base['lines']), ('discount', base['discounts']), ('leg', legs)):
+            for operation in ('insert', 'remove', 'move', 'edit'):
+                if operation == 'edit' and field != 'leg':
+                    continue  # Existing quote replacement coverage is sufficient.
+                for position in range(len(entries) + (operation == 'insert')):
+                    destinations = range(len(entries)) if operation == 'move' else (None,)
+                    for destination in destinations:
+                        expected = copy.deepcopy(entries)
+                        action = operation + '_' + field
+                        edit = action + '\n' + str(position) + '\n'
+                        if operation in ('insert', 'edit'):
+                            edit = structure_entry(action, position, entries[0])
+                            if operation == 'insert':
+                                expected.insert(position, entries[0])
+                            else:
+                                expected[position] = entries[0]
+                        elif operation == 'remove':
+                            del expected[position]
+                        else:
+                            edit += str(destination) + '\n'
+                            expected.insert(destination, expected.pop(position))
+                        if field == 'leg':
+                            prefix = compose(legs); candidate = expected; label = 'edited_legs='
+                            display = 'show_legs\n'
+                        else:
+                            prefix = compose_quote(base); candidate = copy.deepcopy(base)
+                            candidate['lines' if field == 'line' else 'discounts'] = expected
+                            label = 'edited_quote='; display = 'show_draft\n'
+                        with self.subTest(action=action, position=position, destination=destination), \
+                             patch('commerce_calculation_client.subprocess.Popen') as launch:
+                            status, _, output, errors = self.run_journey(prefix + edit + display + 'quit\n')
+                            self.assertEqual((status, errors), (0, ''))
+                            self.assertIn(label + codec().canonical(candidate), output)
+                            if field == 'leg':
+                                displayed = ['draft_leg=' + codec().canonical(dict(position=i, entry=row))
+                                             for i, row in enumerate(expected)]
+                                tail = output[output.index(label):]
+                                self.assertEqual([tail.index(row) for row in displayed],
+                                                 sorted(tail.index(row) for row in displayed))
+                            launch.assert_not_called()
+        for field in ('discount', 'leg'):
+            empty = copy.deepcopy(base); empty['discounts'] = []
+            prefix = compose([]) if field == 'leg' else compose_quote(empty)
+            entry = legs[0] if field == 'leg' else base['discounts'][0]
+            status, _, output, errors = self.run_journey(prefix +
+                structure_entry('insert_' + field, 0, entry) + 'remove_' + field + '\n0\n' +
+                ('show_legs\n' if field == 'leg' else 'show_draft\n') + 'quit\n')
+            self.assertEqual((status, errors), (0, ''))
+            self.assertIn('draft_legs=[]' if field == 'leg' else '"discounts":[]', output)
+
+    def test_structure_precision_and_literal_fields(self):
+        results = []
+        for decimal_entry in (False, True):
+            script = structure_precision(decimal_entry)
+            if decimal_entry:
+                self.assertEqual(answers('structure_precision'), script)
+            status, client, output, errors = self.run_journey(script)
+            self.assertEqual((status, errors, len(client.exchanges)), (0, '', 3))
+            self.assertIn('"9007199254740993"', output)
+            self.assertEqual('decimal_conversion=' in output, decimal_entry)
+            results.append(client.exchanges)
+        self.assertEqual(*results)
+        entry = quote_fixture()['lines'][0]
+        entry['gross'].update(atoms='0009007199254740993')
+        entry['gross']['asset'].update(namespace=' custom ', reference='"unit"', decimals=-1, maxAtoms=' 001 ')
+        rule = quote_fixture()['discounts'][0]
+        rule.update(value=' 01000 ', eligibleLineIds=['L3', 'L1', 'L3'], capAtoms='0001234')
+        leg = quote_fixture('legs')[0]
+        leg.update(providerRef=' custom provider ', routeRef='"route"')
+        leg['amount'] = copy.deepcopy(entry['gross'])
+        candidate = quote_fixture(); candidate['lines'].insert(0, entry); candidate['discounts'].insert(2, rule)
+        with patch('commerce_calculation_client.subprocess.Popen') as launch:
+            status, _, output, errors = self.run_journey(compose_quote(quote_fixture()) +
+                structure_entry('insert_line', 0, entry) + structure_entry('insert_discount', 2, rule) +
+                compose([]) + structure_entry('insert_leg', 0, leg) + structure_entry('edit_leg', 0, leg) + 'quit\n')
+            self.assertEqual((status, errors), (0, ''))
+            self.assertIn('edited_quote=' + codec().canonical(candidate), output)
+            self.assertIn('edited_legs=' + codec().canonical([leg]), output)
+            launch.assert_not_called()
+
+    def test_structure_invalidation_history_and_confirmations(self):
+        prefix = answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n'
+        original = self.run_journey(prefix)[1].exchanges
+        base = quote_fixture(); legs = quote_fixture('legs')
+        extra = copy.deepcopy(base['lines'][0]); extra.update(lineId='extra', inventoryId='extra-inv')
+        edits = [
+            ('quote', structure_entry('insert_line', 3, extra)),
+            ('quote', structure_entry('insert_line_decimal', 3, extra)),
+            ('quote', 'remove_line\n2\n'), ('quote', 'move_line\n0\n0\n'),
+            ('quote', structure_entry('insert_discount', 2, base['discounts'][0])),
+            ('quote', 'remove_discount\n1\n'), ('quote', 'move_discount\n1\n1\n'),
+            ('legs', structure_entry('edit_leg', 0, legs[0])),
+            ('legs', structure_entry('edit_leg_decimal', 0, legs[0])),
+            ('legs', structure_entry('insert_leg', 2, legs[0])),
+            ('legs', structure_entry('insert_leg_decimal', 2, legs[0])),
+            ('legs', 'remove_leg\n1\n'), ('legs', 'move_leg\n0\n0\n')]
+        for field, edit in edits:
+            with self.subTest(action=edit.splitlines()[0]), \
+                 patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                status, client, output, errors = self.run_journey(prefix + edit +
+                    'show\npropose_line_refund\nquit\n')
+                self.assertEqual((status, errors, launch.call_count), (0, '', 3))
+                self.assertEqual(client.exchanges, original)
+                active = dict(plan=None, refund=None,
+                              quote=original[0].response['result']['quoteHash'] if field == 'legs' else None)
+                self.assertIn('active=' + codec().canonical(active), output)
+                self.assertIn('Active quote, plan and explicit line selection are required.', output)
+                # Re-rendered historical success records remain exact.
+                for exchange in original:
+                    self.assertEqual(output.count('driver=' + codec().canonical(exchange.response)), 2)
+            # EOF at every new prompt, including decimal and complete-entry composition.
+            rows = edit.splitlines()
+            for length in range(1, len(rows)):
+                with self.subTest(action=rows[0], eof=length):
+                    status, client, output, errors = self.run_journey(prefix + '\n'.join(rows[:length]) + '\n')
+                    self.assertEqual((status, errors), (0, ''))
+                    self.assertEqual(client.exchanges, original)
+                    self.assertNotIn('edited_quote=', output)
+                    self.assertNotIn('edited_legs=', output)
+                    self.assertNotIn('decimal_conversion=', output)
+        # Show preserves quote, plan, refund and selected lines; a second proposal is identical.
+        status, client, _, errors = self.run_journey(prefix +
+            'show_legs\npropose_line_refund\nSUBMIT_REFUND\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (0, '', 4))
+        self.assertEqual(client.exchanges[-1], original[-1])
+        # Reprice explicitly; stored legs survive quote edits. Replanning clears old selection.
+        status, client, output, errors = self.run_journey(prefix + 'move_line\n0\n0\n'
+            'simulate_quote\nSUBMIT_QUOTE\nplan_payments\n999\nSUBMIT_PLAN\n'
+            'propose_line_refund\nquit\n')
+        self.assertEqual((status, errors, len(client.exchanges)), (0, '', 5))
+        self.assertEqual(client.exchanges[3:5], original[:2])
+        # Every submission still independently declines or abandons on EOF after structural edits.
+        ready = (compose_quote(base) + 'move_line\n0\n0\n',
+                 compose_quote(base) + 'simulate_quote\nSUBMIT_QUOTE\n' + compose(legs) + 'move_leg\n0\n0\n',
+                 compose_quote(base) + 'simulate_quote\nSUBMIT_QUOTE\n' + compose(legs) +
+                 'move_leg\n0\n0\nplan_payments\n999\nSUBMIT_PLAN\n' + pick(['L1']))
+        for expected, (script, action) in enumerate(zip(ready, (
+                'simulate_quote\n', 'plan_payments\n999\n', 'propose_line_refund\n'))):
+            for confirmation in ('', 'no\nquit\n'):
+                status, client, _, errors = self.run_journey(script + action + confirmation)
+                self.assertEqual((status, errors, len(client.exchanges)), (0, '', expected))
+
+    def test_structure_malformed_attempts_clear_dependents(self):
+        prefix = answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n'
+        original = self.run_journey(prefix)[1].exchanges
+        quote_actions = ('insert_line', 'insert_line_decimal', 'remove_line', 'move_line',
+                         'insert_discount', 'remove_discount', 'move_discount')
+        leg_actions = ('edit_leg', 'edit_leg_decimal', 'insert_leg', 'insert_leg_decimal', 'remove_leg', 'move_leg')
+        bad_tokens = ('', '-1', '999', 'true', '"1"', '1.0', '1e0', '-0', '9007199254740993', '\ud800')
+        # Each action fails against an active chain; the full integer grammar is exercised separately.
+        for action in quote_actions + leg_actions:
+            edit = action + '\ntrue\n'
+            status, client, output, errors = self.run_journey(prefix + edit +
+                'show\nsimulate_quote\n' + ('no\n' if action in leg_actions else '') +
+                'plan_payments\npropose_line_refund\nshow\nquit\n')
+            self.assertEqual((status, errors), (1, ''))
+            self.assertEqual(client.exchanges, original)
+            self.assertNotIn('edited_quote=', output); self.assertNotIn('edited_legs=', output)
+            self.assertIn('Active quote, plan and explicit line selection are required.', output)
+            active = dict(plan=None, refund=None, quote=original[0].response['result']['quoteHash']
+                          if action in leg_actions else None)
+            self.assertIn('active=' + codec().canonical(active), output)
+        for action in quote_actions + leg_actions:
+            for token in bad_tokens:
+                with self.subTest(action=action, token=repr(token)):
+                    status, client, output, errors = self.run_journey(compose_quote(quote_fixture()) +
+                        compose(quote_fixture('legs')) + action + '\n' + token + '\nquit\n')
+                    self.assertEqual((status, errors, len(client.exchanges)), (1, '', 0))
+                    self.assertIn('input_error=', output)
+                    self.assertNotIn('edited_quote=', output); self.assertNotIn('edited_legs=', output)
+        for action in ('move_line', 'move_discount', 'move_leg'):
+            for token in bad_tokens:
+                status, _, output, errors = self.run_journey(compose_quote(quote_fixture()) +
+                    compose(quote_fixture('legs')) + action + '\n0\n' + token + '\nquit\n')
+                self.assertEqual((status, errors), (1, ''))
+                self.assertIn('input_error=', output)
+        # New controls with missing drafts submit nothing; they still clear dependencies.
+        with patch('commerce_calculation_client.subprocess.Popen') as launch:
+            status, _, _, errors = self.run_journey('\n'.join(quote_actions + leg_actions) + '\nshow_legs\nquit\n')
+            self.assertEqual((status, errors), (0, '')); launch.assert_not_called()
+        # Canonical encoding fails after collecting full detached candidates: no partial publish/conversion.
+        line = quote_fixture()['lines'][0]; line['inventoryId'] = 'e\u0301'
+        leg = quote_fixture('legs')[0]; leg['routeRef'] = 'e\u0301'
+        edits = [structure_entry('insert_line_decimal', 0, line),
+                 structure_entry('insert_leg_decimal', 0, leg), structure_entry('edit_leg_decimal', 0, leg)]
+        rule = quote_fixture()['discounts'][0]; rule['capAtoms'] = 'e\u0301'
+        edits += [structure_entry('insert_discount', 0, rule),
+                  'insert_discount\n0\nr\nb\nFIXED\n1\n[1]\n',
+                  'insert_discount\n0\nr\nb\nFIXED\n1\n[]\n1\n']
+        for action, entry in (('insert_line_decimal', quote_fixture()['lines'][0]),
+                              ('insert_leg_decimal', quote_fixture('legs')[0]),
+                              ('edit_leg_decimal', quote_fixture('legs')[0])):
+            edit = structure_entry(action, 0, entry).splitlines()
+            edit[-1] = '1e4'
+            edits.append('\n'.join(edit) + '\n')
+        for edit in edits:
+            status, client, output, errors = self.run_journey(prefix + edit + 'show\nquit\n')
+            self.assertEqual((status, errors), (1, '')); self.assertEqual(client.exchanges, original)
+            self.assertNotIn('edited_quote=', output); self.assertNotIn('edited_legs=', output)
+            self.assertNotIn('decimal_conversion=', output)
+
+    def test_structure_cardinality_and_encoding_bounds(self):
+        base = quote_fixture(); legs = quote_fixture('legs')
+        for field, maximum, entry in (('line', 300, base['lines'][0]),
+                                      ('discount', 64, base['discounts'][0]), ('leg', 16, legs[0])):
+            for size, allowed in ((maximum - 1, True), (maximum, False), (maximum + 1, False)):
+                entries = [copy.deepcopy(entry) for _ in range(size)]
+                with tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / 'draft.json'
+                    candidate = copy.deepcopy(base)
+                    if field == 'leg':
+                        candidate = entries; loader = 'load_legs\n'; label = 'edited_legs='
+                    else:
+                        candidate['lines' if field == 'line' else 'discounts'] = entries
+                        loader = 'load_quote\n'; label = 'edited_quote='
+                    path.write_text(json.dumps(candidate))
+                    script = loader + str(path) + '\n' + structure_entry('insert_' + field, size, entry) + 'quit\n'
+                    status, client, output, errors = self.run_journey(script)
+                self.assertEqual((status, errors, len(client.exchanges)), (0 if allowed else 1, '', 0))
+                self.assertEqual(label in output, allowed)
+            # Moving and removal at the maximum use the full result, never truncate it.
+            with tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / 'maximum.json'
+                entries = [copy.deepcopy(entry) for _ in range(maximum)]
+                # Distinguish positions even though IDs remain duplicated.
+                for index, row in enumerate(entries):
+                    row['routeRef' if field == 'leg' else 'inventoryId' if field == 'line' else 'bearerRef'] = str(index)
+                candidate = copy.deepcopy(base)
+                if field == 'leg':
+                    candidate = entries; loader = 'load_legs\n'; label = 'edited_legs='
+                else:
+                    candidate['lines' if field == 'line' else 'discounts'] = entries
+                    loader = 'load_quote\n'; label = 'edited_quote='
+                path.write_text(json.dumps(candidate))
+                status, _, output, errors = self.run_journey(loader + str(path) + '\nmove_' + field +
+                    '\n0\n' + str(maximum - 1) + '\nremove_' + field + '\n0\nquit\n')
+                moved = entries[1:] + entries[:1]
+                if field != 'leg':
+                    candidate['lines' if field == 'line' else 'discounts'] = moved[1:]
+                else:
+                    candidate = moved[1:]
+                self.assertEqual((status, errors), (0, ''))
+                self.assertIn(label + codec().canonical(candidate), output)
+            if field == 'line':
+                candidate = copy.deepcopy(base); candidate['lines'] = candidate['lines'][:1]
+                script = compose_quote(candidate) + 'remove_line\n'
+            elif field == 'discount':
+                candidate = copy.deepcopy(base); candidate['discounts'] = []
+                script = compose_quote(candidate) + 'remove_discount\n'
+            else:
+                script = compose([]) + 'remove_leg\n'
+            status, _, output, errors = self.run_journey(script + 'quit\n')
+            self.assertEqual((status, errors), (1, '')); self.assertIn('input_error=', output)
+        # Reuse CE1 real size/depth limits, without changing the codec or frozen driver.
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'draft.json'
+            candidate = quote_fixture(); candidate['padding'] = 'x' * (codec().MAX_INPUT_BYTES - 1200)
+            path.write_bytes(codec().canonical_bytes(candidate))
+            large = copy.deepcopy(base['lines'][0]); large['inventoryId'] = 'x' * 1500
+            status, _, output, errors = self.run_journey('load_quote\n' + str(path) + '\n' +
+                structure_entry('insert_line', 3, large) + 'simulate_quote\nquit\n')
+            self.assertEqual((status, errors), (1, '')); self.assertNotIn('edited_quote=', output)
+            self.assertIn('Load a quote request first.', output)
+            # Canonical depth rejection is exercised on edit prompt JSON.
+            nested = '[' * 70 + '"L1"' + ']' * 70
+            status, _, output, errors = self.run_journey(compose_quote(base) +
+                'insert_discount\n0\nr\nb\nFIXED\n1\n' + nested + '\nquit\n')
+            self.assertEqual((status, errors), (1, '')); self.assertNotIn('edited_quote=', output)
+            large_leg = copy.deepcopy(legs[0]); large_leg['routeRef'] = 'x' * (codec().MAX_INPUT_BYTES - 600)
+            path.write_bytes(codec().canonical_bytes([large_leg]))
+            for action in ('insert_leg', 'edit_leg'):
+                entry = copy.deepcopy(legs[1]); entry['routeRef'] = 'y' * (codec().MAX_INPUT_BYTES + 1)
+                status, client, output, errors = self.run_journey('load_legs\n' + str(path) + '\n' +
+                    structure_entry(action, 0, entry) + 'show_legs\nquit\n')
+                self.assertEqual((status, errors, len(client.exchanges)), (1, '', 0))
+                self.assertNotIn('edited_legs=', output)
+                self.assertIn('Load or compose payment legs first.', output)
+
+    def test_structure_driver_refusals_and_wire_parity(self):
+        self.assertEqual(answers('structure_boundaries'), structure_boundaries())
+        for code, field, edit, candidate in structure_refusals():
+            if field == 'quote':
+                before = compose_quote(quote_fixture()); authored = compose_quote(candidate)
+                suffix = 'simulate_quote\nSUBMIT_QUOTE\nquit\n'
+            else:
+                quote = compose_quote(quote_fixture()) + 'simulate_quote\nSUBMIT_QUOTE\n'
+                before = quote + compose(quote_fixture('legs')); authored = quote + compose(candidate)
+                suffix = 'plan_payments\n999\nSUBMIT_PLAN\nquit\n'
+            with self.subTest(code=code), patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                status, edited, output, errors = self.run_journey(before + edit + suffix)
+                self.assertEqual(launch.call_count, 1 if field == 'quote' else 2)
+            estatus, explicit, _, eerrors = self.run_journey(authored + suffix)
+            self.assertEqual((status, errors, estatus, eerrors), (1, '', 1, ''))
+            self.assertEqual(edited.exchanges, explicit.exchanges)
+            self.assertEqual(edited.exchanges[-1].response['error'], code)
+            self.assertIn('"error":"' + code + '"', output)
+            self.assertIsNone(edited.uncertainty)
+
+    def test_structure_output_failure_and_uncertainty_stop(self):
+        prefix = answers('picker_journey').rsplit('\nshow\n', 1)[0] + '\n'
+        original = self.run_journey(prefix)[1].exchanges
+        for edit, failure in (
+                ('move_line\n0\n0\n', 'draft_metadata='), ('move_line\n0\n0\n', 'edited_quote='),
+                ('move_leg\n0\n0\n', 'draft_leg='), ('move_leg\n0\n0\n', 'edited_legs='),
+                ('show_legs\n', 'draft_leg=')):
+            class BrokenOutput(io.StringIO):
+                def write(self, text):
+                    if text.startswith(failure):
+                        raise OSError('structure output unavailable')
+                    return super().write(text)
+            status, client, _, errors = self.run_journey(prefix + edit + answers(), output=BrokenOutput())
+            self.assertEqual(status, 2); self.assertEqual(client.exchanges, original)
+            self.assertIn('structure output unavailable', errors)
+        # Fail after structural editing either before confirmation or rendering received evidence.
+        for stage, count in (('proposed=', 0), ('Type literal SUBMIT_QUOTE', 0), ('driver=', 1)):
+            class BrokenOutput(io.StringIO):
+                def write(self, text):
+                    if text.startswith(stage):
+                        raise OSError('submission output unavailable')
+                    return super().write(text)
+            status, client, _, errors = self.run_journey(compose_quote(quote_fixture()) +
+                'move_line\n0\n0\nsimulate_quote\nSUBMIT_QUOTE\n' + answers(), output=BrokenOutput())
+            self.assertEqual((status, len(client.history)), (2, count))
+            self.assertIn('submission output unavailable', errors)
+        for field in ('quote', 'legs'):
+            launches = []
+            def uncertain(*args, **kwargs):
+                if field == 'legs' and not launches:
+                    child = POPEN(*args, **kwargs)
+                else:
+                    child = POPEN([sys.executable, '-B', '-c',
+                                   'import sys; sys.stdin.buffer.read(); print("malformed")'], **kwargs)
+                launches.append(child)
+                return child
+            script = compose_quote(quote_fixture())
+            if field == 'quote':
+                script += 'move_line\n0\n0\nsimulate_quote\nSUBMIT_QUOTE\n'
+            else:
+                script += ('simulate_quote\nSUBMIT_QUOTE\n' + compose(quote_fixture('legs')) +
+                           'move_leg\n0\n0\nplan_payments\n999\nSUBMIT_PLAN\n')
+            with patch('commerce_calculation_client.subprocess.Popen', side_effect=uncertain):
+                status, client, _, errors = self.run_journey(script + answers())
+            self.assertEqual((status, len(launches)), (2, 1 if field == 'quote' else 2))
+            self.assertIsInstance(client.uncertainty, CalculationUncertainty)
+            self.assertIn('FENCED', errors)
+            self.assertTrue(all(child.returncode is not None for child in launches))
 
     def test_edit_journey_complete_input_parity(self):
         script = edit_journey()
