@@ -1,0 +1,1 @@
+{"commerceSchema": "kix:commerce:2", "encodingVersion": "kix:canonical-encoding:1", "report": ".local/verification/canonical.json", "result": "PASS"}

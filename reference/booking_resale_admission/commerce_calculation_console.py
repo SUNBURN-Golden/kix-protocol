@@ -38,7 +38,23 @@ def _integer(prompt, label):
     return value
 
 
-def _compose_quote(prompt):
+def _compose_amount(prompt, field, decimal_entry, conversions):
+    from calculated_booking_quote_source import _calculator
+
+    asset = {key: prompt(field + '.asset.' + key) for key in ('namespace', 'reference')}
+    asset['decimals'] = _integer(prompt, field + '.asset.decimals')
+    asset['maxAtoms'] = prompt(field + '.asset.maxAtoms')
+    if not decimal_entry:
+        return dict(asset=asset, atoms=prompt(field + '.atoms'))
+    text = prompt(field + '.decimal')
+    assets = _calculator()['assets']
+    amount = assets.Amount.from_decimal(assets.AssetSpec.from_dict(asset), text).to_dict()
+    if conversions is not None:
+        conversions.append(dict(field=field, decimalInput=text, **amount))
+    return amount
+
+
+def _compose_quote(prompt, decimal_entry=False, conversions=None):
     """Encode caller-supplied schema 2 input, without calculating or repairing it."""
     from calculated_booking_quote_source import _calculator
 
@@ -57,11 +73,7 @@ def _compose_quote(prompt):
         for index in range(count):
             prefix = 'lines[' + str(index) + '].'
             line = {field: prompt(prefix + field) for field in ('lineId', 'inventoryId')}
-            asset = {field: prompt(prefix + 'gross.asset.' + field)
-                     for field in ('namespace', 'reference')}
-            asset['decimals'] = _integer(prompt, prefix + 'gross.asset.decimals')
-            asset['maxAtoms'] = prompt(prefix + 'gross.asset.maxAtoms')
-            line['gross'] = dict(asset=asset, atoms=prompt(prefix + 'gross.atoms'))
+            line['gross'] = _compose_amount(prompt, prefix + 'gross', decimal_entry, conversions)
             candidate['lines'].append(line)
         count = _integer(prompt, 'Explicit discount count')
         if not 0 <= count <= commerce.MAX_RULES:
@@ -84,7 +96,7 @@ def _compose_quote(prompt):
         raise ConsoleInputError(str(error)) from error
 
 
-def _compose_legs(prompt):
+def _compose_legs(prompt, decimal_entry=False, conversions=None):
     """Freeze explicit local input; business validation belongs to the driver."""
     from calculated_booking_quote_source import _calculator
 
@@ -96,11 +108,7 @@ def _compose_legs(prompt):
         for index in range(count):
             prefix = 'legs[' + str(index) + '].'
             leg = {field: prompt(prefix + field) for field in ('legId', 'providerRef', 'routeRef')}
-            asset = {field: prompt(prefix + 'amount.asset.' + field)
-                     for field in ('namespace', 'reference')}
-            asset['decimals'] = _integer(prompt, prefix + 'amount.asset.decimals')
-            asset['maxAtoms'] = prompt(prefix + 'amount.asset.maxAtoms')
-            leg['amount'] = dict(asset=asset, atoms=prompt(prefix + 'amount.atoms'))
+            leg['amount'] = _compose_amount(prompt, prefix + 'amount', decimal_entry, conversions)
             candidate.append(leg)
         return codec().canonical_bytes(candidate)
     except (_calculator_rejection(), UnicodeError) as error:
@@ -178,7 +186,8 @@ def run_console(client, *, input_stream, output_stream, error_stream):
               'Product policy: UNDETERMINED — Astra/User.\n'
               'Legal/accounting treatment: UNDETERMINED — User/designated advisers.', file=output_stream)
         while True:
-            print('Actions: load_quote, compose_quote, simulate_quote, load_legs, compose_legs, plan_payments, select_lines, '
+            print('Actions: load_quote, compose_quote, compose_quote_decimal, simulate_quote, load_legs, '
+                  'compose_legs, compose_legs_decimal, plan_payments, select_lines, '
                   'pick_lines, propose_line_refund, show, quit', file=output_stream)
             action = prompt('action')
             try:
@@ -191,9 +200,12 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                         raise ConsoleInputError('quote request must be an object')
                     quote_input = codec().canonical_bytes(value)
                     print('Quote input loaded; active quote, plan and line selections invalidated.', file=output_stream)
-                elif action == 'compose_quote':
+                elif action in ('compose_quote', 'compose_quote_decimal'):
                     quote_input = quote = plan = refund = selected = None
-                    quote_input = _compose_quote(prompt)
+                    conversions = []
+                    quote_input = _compose_quote(prompt, action == 'compose_quote_decimal', conversions)
+                    for conversion in conversions:
+                        print('decimal_conversion=' + _json(conversion), file=output_stream)
                     print('composed_quote=' + quote_input.decode('utf-8'), file=output_stream)
                 elif action == 'simulate_quote':
                     quote = plan = refund = selected = None
@@ -208,9 +220,12 @@ def run_console(client, *, input_stream, output_stream, error_stream):
                         raise ConsoleInputError('payment legs must be an array')
                     legs = codec().canonical_bytes(value)
                     print('Legs loaded; active plan and line selections invalidated.', file=output_stream)
-                elif action == 'compose_legs':
+                elif action in ('compose_legs', 'compose_legs_decimal'):
                     legs = plan = refund = selected = None
-                    legs = _compose_legs(prompt)
+                    conversions = []
+                    legs = _compose_legs(prompt, action == 'compose_legs_decimal', conversions)
+                    for conversion in conversions:
+                        print('decimal_conversion=' + _json(conversion), file=output_stream)
                     print('composed_legs=' + legs.decode('utf-8'), file=output_stream)
                 elif action == 'plan_payments':
                     plan = refund = selected = None

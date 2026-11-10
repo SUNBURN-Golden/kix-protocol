@@ -50,6 +50,12 @@ capability grades, protocol commands and runtime activation are unchanged.
 
 ## Local commerce calculation console
 
+[Exact decimal-entry evidence](../validation/2026-11-10-plan-local-commerce-decimal-entry/README.md)
+and the [console guide](../reference/booking_resale_admission/README.md#exact-decimal-entry)
+cover explicitly selected decimal quote and payment-leg inputs, caller-supplied
+asset metadata, exact atom previews and separate calculation consent. Calculation-only;
+product policy remains UNDETERMINED — Astra/User and capability grades are unchanged.
+
 [Guided refund line picker evidence](../validation/2026-11-09-plan-local-refund-line-picker/README.md)
 and the [console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
 cover returned quote rows, exact atom strings, literal ID selection and separate

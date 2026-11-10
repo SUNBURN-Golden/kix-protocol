@@ -1,0 +1,11 @@
+test_decimal_conversion_failures_publish_and_submit_nothing (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_conversion_failures_publish_and_submit_nothing) ... ok
+test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) ... ok
+test_decimal_eof_decline_and_conversion_failure (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_eof_decline_and_conversion_failure) ... ok
+test_decimal_journey_atom_parity (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_journey_atom_parity) ... ok
+test_decimal_precision_boundaries (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_precision_boundaries) ... ok
+test_decimal_replacement_invalidates_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_replacement_invalidates_dependents) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 13.830s
+
+OK

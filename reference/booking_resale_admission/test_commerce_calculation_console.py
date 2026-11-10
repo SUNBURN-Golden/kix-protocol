@@ -23,23 +23,33 @@ def answers(name='journey'):
     return (FIXTURES / ('commerce_console_' + name + '.txt')).read_text()
 
 
-def compose(legs):
-    rows = ['compose_legs', str(len(legs))]
+def decimal_text(amount):
+    """Format fixture integers without floats or invoking the conversion under test."""
+    places = amount['asset']['decimals']
+    digits = amount['atoms'].zfill(places + 1)
+    return digits[:-places] + '.' + digits[-places:] if places else digits
+
+
+def compose(legs, decimal_entry=False):
+    rows = ['compose_legs_decimal' if decimal_entry else 'compose_legs', str(len(legs))]
     for leg in legs:
         asset = leg['amount']['asset']
         rows.extend([leg['legId'], leg['providerRef'], leg['routeRef'], asset['namespace'],
-                     asset['reference'], str(asset['decimals']), asset['maxAtoms'], leg['amount']['atoms']])
+                     asset['reference'], str(asset['decimals']), asset['maxAtoms'],
+                     decimal_text(leg['amount']) if decimal_entry else leg['amount']['atoms']])
     return '\n'.join(rows) + '\n'
 
 
-def compose_quote(request):
-    rows = ['compose_quote', request['orderId'], str(request['orderVersion'])]
+def compose_quote(request, decimal_entry=False):
+    rows = ['compose_quote_decimal' if decimal_entry else 'compose_quote',
+            request['orderId'], str(request['orderVersion'])]
     rows.extend(request['scope'][field] for field in ('issuerId', 'eventId', 'performanceId'))
     rows.extend([request['policyRef'], str(request['expiresAt']), str(len(request['lines']))])
     for line in request['lines']:
         asset = line['gross']['asset']
         rows.extend([line['lineId'], line['inventoryId'], asset['namespace'], asset['reference'],
-                     str(asset['decimals']), asset['maxAtoms'], line['gross']['atoms']])
+                     str(asset['decimals']), asset['maxAtoms'],
+                     decimal_text(line['gross']) if decimal_entry else line['gross']['atoms']])
     rows.append(str(len(request['discounts'])))
     for rule in request['discounts']:
         rows.extend([rule['ruleId'], rule['bearerRef'], rule['kind'], rule['value'],
@@ -49,6 +59,23 @@ def compose_quote(request):
 
 def quote_fixture(name='quote'):
     return json.loads((FIXTURES / ('commerce_console_' + name + '.json')).read_text())
+
+
+def decimal_inputs(name='journey'):
+    quote = quote_fixture('quote' if name == 'journey' else name + '_quote')
+    legs = quote_fixture('legs' if name == 'journey' else name + '_legs')
+    for amount in ([line['gross'] for line in quote['lines']] + [leg['amount'] for leg in legs]):
+        amount['asset'].update(namespace='fixture', reference='local:decimal-unit',
+                               decimals=6 if name == 'precision' else 2)
+    return quote, legs
+
+
+def decimal_journey(name='journey', quote_decimal=True, legs_decimal=True):
+    quote, legs = decimal_inputs(name)
+    ids = ['L2'] if name == 'journey' else ['L1']
+    return (compose_quote(quote, quote_decimal) + 'simulate_quote\nSUBMIT_QUOTE\n' +
+            compose(legs, legs_decimal) + 'plan_payments\n999\nSUBMIT_PLAN\n' + pick(ids) +
+            'propose_line_refund\nSUBMIT_REFUND\nshow\nquit\n')
 
 
 def pick(ids):
@@ -529,6 +556,234 @@ class CommerceCalculationConsoleTests(unittest.TestCase):
         with patch('commerce_calculation_client.subprocess.Popen') as launch:
             self.assertEqual(self.run_journey(answers('bundle_decline'))[0], 0)
             launch.assert_not_called()
+
+    def test_decimal_journey_atom_parity(self):
+        commerce = _calculator()['commerce']
+        with patch.object(commerce, 'build_quote', side_effect=AssertionError('in-process calculation')), \
+             patch.object(commerce, 'plan_payments', side_effect=AssertionError('in-process calculation')), \
+             patch.object(commerce, 'propose_line_refund', side_effect=AssertionError('in-process calculation')), \
+             patch('time.time', side_effect=AssertionError('implicit clock')):
+            for name in ('journey', 'precision', 'free'):
+                status, atom, _, errors = self.run_journey(decimal_journey(name, False, False))
+                self.assertEqual((status, errors), (0, ''))
+                for quote_decimal, legs_decimal in ((True, True), (True, False), (False, True)):
+                    with self.subTest(name=name, quote=quote_decimal, legs=legs_decimal), \
+                         patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                        status, client, output, errors = self.run_journey(
+                            decimal_journey(name, quote_decimal, legs_decimal))
+                        self.assertEqual((status, errors, launch.call_count), (0, '', 3))
+                        # Frozen request/reply bytes include every result and all three hashes.
+                        self.assertEqual(client.exchanges, atom.exchanges)
+                        quote, legs = decimal_inputs(name)
+                        amounts = []
+                        if quote_decimal:
+                            amounts += [('lines[' + str(i) + '].gross', line['gross'], 'SUBMIT_QUOTE')
+                                        for i, line in enumerate(quote['lines'])]
+                        if legs_decimal:
+                            amounts += [('legs[' + str(i) + '].amount', leg['amount'], 'SUBMIT_PLAN')
+                                        for i, leg in enumerate(legs)]
+                        self.assertEqual(output.count('decimal_conversion='), len(amounts))
+                        for field, amount, literal in amounts:
+                            preview = 'decimal_conversion=' + codec().canonical(
+                                dict(field=field, decimalInput=decimal_text(amount), **amount))
+                            self.assertIn(preview, output)
+                            composed = 'composed_quote=' if field.startswith('lines') else 'composed_legs='
+                            self.assertLess(output.index(preview), output.index(composed))
+                            self.assertLess(output.index(preview), output.index('Type literal ' + literal))
+                        self.assertEqual(decode_input(client.exchanges[0].request_bytes)['args']['discounts'],
+                                         quote['discounts'])
+                        self.assertTrue(all(e.response['result']['evidenceClass'] == 'CALCULATION_ONLY'
+                                            for e in client.exchanges))
+                        self.assertIs(client.exchanges[-1].response['result']['executionAuthorized'], False)
+                        if name == 'precision' and quote_decimal:
+                            self.assertIn('"decimalInput":"9007199254.740993"', output)
+                        if name == 'free':
+                            self.assertEqual(client.exchanges[-1].response['result']['originalRoutes'], [])
+                self.assertEqual(answers('decimal_' + name), decimal_journey(name))
+
+    def test_decimal_precision_boundaries(self):
+        maximum = str(2**128 - 1)
+        for decimals in (0, 2, 6, 18, 38):
+            for atoms in ('0', '1', '9007199254740993', maximum):
+                quote, legs = decimal_inputs('precision')
+                quote['lines'][0]['gross']['asset']['decimals'] = decimals
+                quote['lines'][0]['gross']['atoms'] = atoms
+                legs[0]['amount'] = json.loads(json.dumps(quote['lines'][0]['gross']))
+                # A free quote uses an explicit zero leg count, never a zero payment leg.
+                if atoms == '0':
+                    legs = []
+                def script(decimal):
+                    return (compose_quote(quote, decimal) + 'simulate_quote\nSUBMIT_QUOTE\n' +
+                            compose(legs, decimal) + 'plan_payments\n999\nSUBMIT_PLAN\n' +
+                            pick(['L1']) + 'propose_line_refund\nSUBMIT_REFUND\nquit\n')
+                with self.subTest(decimals=decimals, atoms=atoms):
+                    status, client, _, errors = self.run_journey(script(True))
+                    astatus, atom, _, aerrors = self.run_journey(script(False))
+                    self.assertEqual((status, errors, astatus, aerrors), (0, '', 0, ''))
+                    self.assertEqual(len(client.exchanges), 3)
+                    self.assertEqual(client.exchanges, atom.exchanges)
+                    self.assertEqual(client.exchanges[0].response['result']['totals']['payableAtoms'], atoms)
+        # Within-precision trailing zeroes survive the conversion preview exactly; CRLF only is removed.
+        script = compose_quote(decimal_inputs('precision')[0], True).replace('9007199254.740993', '1.200000')
+        status, _, output, errors = self.run_journey((script + 'quit\n').replace('\n', '\r\n'))
+        self.assertEqual((status, errors), (0, ''))
+        self.assertIn('"decimalInput":"1.200000"', output)
+        self.assertIn('"atoms":"1200000"', output)
+        # The caller's limit can be lower than the parser's global u128 bound.
+        quote, legs = decimal_inputs('precision')
+        for amount in (quote['lines'][0]['gross'], legs[0]['amount']):
+            amount['asset'].update(decimals=2, maxAtoms='100')
+            amount['atoms'] = '100'
+        for script, marker in ((compose_quote(quote, True), 'composed_quote='),
+                               (compose(legs, True), 'composed_legs=')):
+            status, _, output, errors = self.run_journey(script + 'quit\n')
+            self.assertEqual((status, errors), (0, ''))
+            self.assertIn(marker, output)
+            with patch('commerce_calculation_client.subprocess.Popen') as launch:
+                status, _, output, errors = self.run_journey(script.replace('1.00\n', '1.01\n') + 'quit\n')
+                self.assertEqual((status, errors), (1, ''))
+                self.assertNotIn(marker, output)
+                self.assertNotIn('decimal_conversion=', output)
+                launch.assert_not_called()
+
+    def test_decimal_conversion_failures_publish_and_submit_nothing(self):
+        quote, legs = decimal_inputs('precision')
+        # Positions are the interface prompts, not private calculator layout.
+        variants = [(compose_quote(quote, True).splitlines(), 'composed_quote=',
+                     ((11, ('', 'Fiat', ' fixture')), (12, ('', 'bad reference')),
+                      (13, ('', 'true', '"6"', '6.0', '6e0', '-1', '39')),
+                      (14, ('', '0', '01', '1e3', ' 100', str(2**128))),
+                      (15, ('', '1e6', '1E6', ' 1', '1 ', '+1', '-0', '.5', '01',
+                            '1.0000000', str(2**128), 'NaN', '０', '1\t', '9' * 81)))),
+                    (compose(legs, True).splitlines(), 'composed_legs=',
+                     ((5, ('', 'Fiat')), (6, ('', 'bad reference')),
+                      (7, ('', 'true', '"6"', '6.0', '-1', '39')),
+                      (8, ('', '0', '01', str(2**128))),
+                      (9, ('', '1e6', ' 1', '1 ', '1.0000000', str(2**128)))))]
+        for rows, marker, fields in variants:
+            for index, values in fields:
+                for value in values:
+                    with self.subTest(marker=marker, index=index, value=value), \
+                         patch('commerce_calculation_client.subprocess.Popen') as launch:
+                        status, client, output, errors = self.run_journey(
+                            '\n'.join(rows[:index] + [value]) + '\nsimulate_quote\nshow\nquit\n')
+                        self.assertEqual((status, errors), (1, ''))
+                        self.assertIn('input_error=', output)
+                        self.assertNotIn(marker, output)
+                        self.assertNotIn('decimal_conversion=', output)
+                        self.assertEqual(client.exchanges, [])
+                        launch.assert_not_called()
+        # No partial conversions escape if a later amount or final CE1 encoding fails.
+        quote, legs = decimal_inputs()
+        for compose_input, marker in ((compose_quote(quote, True), 'composed_quote='),
+                                      (compose(legs, True), 'composed_legs=')):
+            for bad in (compose_input.rsplit('186.00', 1)[0] + '1e6\n' if '186.00' in compose_input
+                        else compose_input.replace('300.00', '1e6'),
+                        compose_input.replace('synthetic-bundle', 'e\u0301').replace('original-card', 'e\u0301')):
+                status, _, output, errors = self.run_journey(bad + 'quit\n')
+                self.assertEqual((status, errors), (1, ''))
+                self.assertNotIn(marker, output)
+                self.assertNotIn('decimal_conversion=', output)
+
+    def test_decimal_driver_refusals_remain_explicit_and_exact(self):
+        cases = []
+        for key, value in (('reference', 'local:other'), ('decimals', 6), ('maxAtoms', '999999')):
+            quote, _ = decimal_inputs()
+            quote['lines'][1]['gross']['asset'][key] = value
+            cases.append((compose_quote(quote, True) + 'simulate_quote\nSUBMIT_QUOTE\n',
+                          'MIXED_QUOTE_ASSETS' if key == 'reference' else 'ASSET_METADATA_CONFLICT', quote))
+        quote, legs = decimal_inputs()
+        for line in quote['lines']:
+            line['gross']['asset']['maxAtoms'] = '30000'
+        cases.append((compose_quote(quote, True) + 'simulate_quote\nSUBMIT_QUOTE\n',
+                      'INVALID_ASSET_AMOUNT', quote))
+        for key, value in (('reference', 'local:other'), ('decimals', 6), ('maxAtoms', '999999')):
+            quote, legs = decimal_inputs()
+            legs[0]['amount']['asset'][key] = value
+            cases.append((compose_quote(quote, True) + 'simulate_quote\nSUBMIT_QUOTE\n' +
+                          compose(legs, True) + 'plan_payments\n999\nSUBMIT_PLAN\n',
+                          'PAYMENT_ASSET_MISMATCH', None))
+        quote, legs = decimal_inputs('free')
+        legs = decimal_inputs('precision')[1]
+        legs[0]['amount'] = json.loads(json.dumps(quote['lines'][0]['gross']))
+        cases.append((compose_quote(quote, True) + 'simulate_quote\nSUBMIT_QUOTE\n' +
+                      compose(legs, True) + 'plan_payments\n999\nSUBMIT_PLAN\n',
+                      'EMPTY_PAYMENT_LEG', None))
+        for script, expected, request in cases:
+            with self.subTest(expected=expected), \
+                 patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                status, client, output, errors = self.run_journey(script + 'show\nquit\n')
+                self.assertEqual((status, errors, launch.call_count), (1, '', 1 if request else 2))
+                self.assertEqual(client.exchanges[-1].response['error'], expected)
+                self.assertIn('decimal_conversion=', output)
+                if request:
+                    self.assertEqual(decode_input(client.exchanges[-1].request_bytes)['args'], request)
+        status, client, _, errors = self.run_journey(answers('decimal_boundaries'))
+        self.assertEqual((status, errors), (1, ''))
+        self.assertEqual([e.response['error'] for e in client.exchanges if not e.response['ok']],
+                         ['MIXED_QUOTE_ASSETS', 'INVALID_ASSET_AMOUNT', 'PAYMENT_ASSET_MISMATCH',
+                          'EMPTY_PAYMENT_LEG'])
+
+    def test_decimal_eof_decline_and_conversion_failure(self):
+        quote, legs = decimal_inputs()
+        for composition, marker in ((compose_quote(quote, True), 'composed_quote='),
+                                    (compose(legs, True), 'composed_legs=')):
+            rows = composition.splitlines()
+            for length in range(1, len(rows)):
+                with self.subTest(marker=marker, length=length), \
+                     patch('commerce_calculation_client.subprocess.Popen') as launch:
+                    status, _, output, errors = self.run_journey('\n'.join(rows[:length]) + '\n')
+                    self.assertEqual((status, errors), (0, ''))
+                    self.assertNotIn(marker, output)
+                    self.assertNotIn('decimal_conversion=', output)
+                    launch.assert_not_called()
+        for index, literal in enumerate(('SUBMIT_QUOTE', 'SUBMIT_PLAN', 'SUBMIT_REFUND')):
+            for suffix in ('no\nquit\n', ''):
+                with self.subTest(literal=literal, suffix=suffix), \
+                     patch('commerce_calculation_client.subprocess.Popen', wraps=POPEN) as launch:
+                    status, client, _, errors = self.run_journey(
+                        answers('decimal_journey').split(literal + '\n')[0] + suffix)
+                    self.assertEqual((status, errors, launch.call_count), (0, '', index))
+                    self.assertEqual(len(client.exchanges), index)
+        with patch('commerce_calculation_client.subprocess.Popen') as launch:
+            self.assertEqual(self.run_journey(answers('decimal_decline'))[0], 0)
+            launch.assert_not_called()
+
+    def test_decimal_replacement_invalidates_dependents(self):
+        for prefix_name, decimal_entry in (('bundle_journey', True), ('decimal_journey', False),
+                                           ('decimal_journey', True)):
+            prefix = answers(prefix_name).rsplit('\nshow\n', 1)[0] + '\n'
+            quote, legs = decimal_inputs() if prefix_name == 'decimal_journey' else (quote_fixture(), quote_fixture('legs'))
+            for kind in ('quote', 'legs'):
+                same = compose_quote(quote, decimal_entry) if kind == 'quote' else compose(legs, decimal_entry)
+                changed = same.replace('inv-1', 'changed-inventory') if kind == 'quote' else same.replace('original-card', 'changed-route')
+                malformed = ('compose_quote_decimal\nbroken\ntrue\n' if kind == 'quote'
+                             else 'compose_legs_decimal\ntrue\n')
+                invalid_conversion = (compose_quote(quote, True).replace('100.00\n', '1e6\n')
+                                      .replace('10000\n', '1e6\n') if kind == 'quote' else
+                                      compose(legs, True).replace('300.00\n', '1e6\n')
+                                      .replace('30000\n', '1e6\n'))
+                interrupted = '\n'.join(same.splitlines()[:-1]) + '\n'
+                for replacement, expected in ((same, 0), (changed, 0), (malformed, 1),
+                                               (invalid_conversion, 1), (interrupted, 0)):
+                    with self.subTest(prefix=prefix_name, kind=kind, replacement=replacement[:90]):
+                        tail = '' if replacement == interrupted else (
+                            ('simulate_quote\n' if kind == 'quote' and expected else '') +
+                            'propose_line_refund\nshow\nquit\n')
+                        status, client, output, errors = self.run_journey(prefix + replacement + tail)
+                        self.assertEqual((status, errors, len(client.exchanges)), (expected, '', 3))
+                        if tail:
+                            quote_hash = client.exchanges[0].response['result']['quoteHash']
+                            active = dict(plan=None, quote=None if kind == 'quote' else quote_hash, refund=None)
+                            self.assertIn('active=' + codec().canonical(active), output)
+                            self.assertIn('Active quote, plan and explicit line selection are required.', output)
+                # Recalculate after a valid replacement: the previous line selection stays invalid.
+                recalculate = ('simulate_quote\nSUBMIT_QUOTE\n' if kind == 'quote' else '')
+                status, client, output, errors = self.run_journey(prefix + same + recalculate +
+                    'plan_payments\n999\nSUBMIT_PLAN\npropose_line_refund\nquit\n')
+                self.assertEqual((status, errors, len(client.exchanges)), (0, '', 5 if kind == 'quote' else 4))
+                self.assertIn('Active quote, plan and explicit line selection are required.', output)
+        self.assertEqual(self.run_journey(answers('decimal_replacement'))[0], 0)
 
     def test_picker_journey_json_parity(self):
         commerce = _calculator()['commerce']
