@@ -1,0 +1,85 @@
+test_decimal_conversion_failures_publish_and_submit_nothing (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_conversion_failures_publish_and_submit_nothing) ... ok
+test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) ... 
+  test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) (expected='MIXED_QUOTE_ASSETS') ... FAIL
+  test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) (expected='MIXED_QUOTE_ASSETS') ... FAIL
+  test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) (expected='ASSET_AMOUNT_OVERFLOW') ... FAIL
+  test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) (expected='ZERO_PAYMENT_LEG') ... FAIL
+test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) ... FAIL
+test_decimal_eof_decline_and_conversion_failure (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_eof_decline_and_conversion_failure) ... ok
+test_decimal_journey_atom_parity (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_journey_atom_parity) ... ok
+test_decimal_precision_boundaries (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_precision_boundaries) ... ok
+test_decimal_replacement_invalidates_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_replacement_invalidates_dependents) ... ok
+
+======================================================================
+FAIL: test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) (expected='MIXED_QUOTE_ASSETS')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-commerce-decimal-entry/reference/booking_resale_admission/test_commerce_calculation_console.py", line 701, in test_decimal_driver_refusals_remain_explicit_and_exact
+    self.assertEqual(client.exchanges[-1].response['error'], expected)
+AssertionError: 'ASSET_METADATA_CONFLICT' != 'MIXED_QUOTE_ASSETS'
+- ASSET_METADATA_CONFLICT
++ MIXED_QUOTE_ASSETS
+
+
+======================================================================
+FAIL: test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) (expected='MIXED_QUOTE_ASSETS')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-commerce-decimal-entry/reference/booking_resale_admission/test_commerce_calculation_console.py", line 701, in test_decimal_driver_refusals_remain_explicit_and_exact
+    self.assertEqual(client.exchanges[-1].response['error'], expected)
+AssertionError: 'ASSET_METADATA_CONFLICT' != 'MIXED_QUOTE_ASSETS'
+- ASSET_METADATA_CONFLICT
++ MIXED_QUOTE_ASSETS
+
+
+======================================================================
+FAIL: test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) (expected='ASSET_AMOUNT_OVERFLOW')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-commerce-decimal-entry/reference/booking_resale_admission/test_commerce_calculation_console.py", line 701, in test_decimal_driver_refusals_remain_explicit_and_exact
+    self.assertEqual(client.exchanges[-1].response['error'], expected)
+AssertionError: 'INVALID_ASSET_AMOUNT' != 'ASSET_AMOUNT_OVERFLOW'
+- INVALID_ASSET_AMOUNT
++ ASSET_AMOUNT_OVERFLOW
+
+
+======================================================================
+FAIL: test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact) (expected='ZERO_PAYMENT_LEG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-commerce-decimal-entry/reference/booking_resale_admission/test_commerce_calculation_console.py", line 701, in test_decimal_driver_refusals_remain_explicit_and_exact
+    self.assertEqual(client.exchanges[-1].response['error'], expected)
+AssertionError: 'EMPTY_PAYMENT_LEG' != 'ZERO_PAYMENT_LEG'
+- EMPTY_PAYMENT_LEG
+?  ^^^^
++ ZERO_PAYMENT_LEG
+? + ^^
+
+
+======================================================================
+FAIL: test_decimal_driver_refusals_remain_explicit_and_exact (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_decimal_driver_refusals_remain_explicit_and_exact)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-commerce-decimal-entry/reference/booking_resale_admission/test_commerce_calculation_console.py", line 707, in test_decimal_driver_refusals_remain_explicit_and_exact
+    self.assertEqual([e.response['error'] for e in client.exchanges if not e.response['ok']],
+AssertionError: Lists differ: ['MIX[14 chars]S', 'INVALID_ASSET_AMOUNT', 'PAYMENT_ASSET_MIS[23 chars]LEG'] != ['MIX[14 chars]S', 'ASSET_AMOUNT_OVERFLOW', 'PAYMENT_ASSET_MI[23 chars]LEG']
+
+First differing element 1:
+'INVALID_ASSET_AMOUNT'
+'ASSET_AMOUNT_OVERFLOW'
+
+  ['MIXED_QUOTE_ASSETS',
+-  'INVALID_ASSET_AMOUNT',
++  'ASSET_AMOUNT_OVERFLOW',
+   'PAYMENT_ASSET_MISMATCH',
+-  'EMPTY_PAYMENT_LEG']
+?    ^^^^
+
++  'ZERO_PAYMENT_LEG']
+?   + ^^
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 16.671s
+
+FAILED (failures=5)

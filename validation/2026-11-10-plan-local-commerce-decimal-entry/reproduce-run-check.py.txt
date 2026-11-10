@@ -1,0 +1,24 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import time
+root = Path(__file__).resolve().parents[2]
+evidence = root / 'validation/2026-11-10-plan-local-commerce-decimal-entry'
+label, *command = sys.argv[1:]
+env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', CARGO_NET_OFFLINE='true')
+env.pop('PYTHONPATH', None)
+cwd = root / os.environ.get('CHECK_CWD', '.')
+stdin = os.environ.get('CHECK_STDIN')
+started = time.monotonic()
+with (evidence / (label + '.stdout.txt')).open('wb') as out, (evidence / (label + '.stderr.txt')).open('wb') as err:
+    with (root / stdin).open('rb') if stdin else open(os.devnull, 'rb') as source:
+        result = subprocess.run(command, cwd=cwd, env=env, stdin=source, stdout=out, stderr=err)
+record = dict(label=label, command=command, cwd=str(cwd), stdin=stdin, exitCode=result.returncode, seconds=round(time.monotonic()-started,3))
+with (evidence / 'command-results.jsonl').open('a') as stream:
+    stream.write(json.dumps(record) + '\n')
+print(json.dumps(record), flush=True)
+print((evidence / (label + '.stdout.txt')).read_text()[-1600:])
+print((evidence / (label + '.stderr.txt')).read_text()[-4000:])
+sys.exit(result.returncode)

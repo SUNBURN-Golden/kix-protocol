@@ -3466,6 +3466,61 @@ No real payments/refunds, booking confirmation, settlement, public endpoint or
 production readiness. [Actual results, coverage and pending review/CI gates](../../validation/2026-11-08-plan-plan-local-commerce-calculation-console/README.md).
 
 
+### Exact decimal entry
+
+Select `compose_quote_decimal` for quote-line gross amounts or `compose_legs_decimal`
+for split-payment leg amounts. Existing `compose_quote`, `compose_legs` and JSON
+file input continue to accept atom strings. Decimal and atom controls can be
+combined independently; equivalent inputs produce identical driver requests,
+results and hashes.
+
+Every decimal amount requires explicit `asset.namespace`, `asset.reference`,
+`asset.decimals` (a CE1 integer) and `asset.maxAtoms` (a canonical unsigned integer
+string), followed by `lines[i].gross.decimal` or `legs[i].amount.decimal`. No metadata
+is inferred or approved. The unchanged isolated `AssetSpec` / `Amount.from_decimal`
+parser accepts unsigned plain decimal text at precision 0 through 38 with a positive
+limit at most `2**128-1`. It rejects exponents, signs, whitespace, non-ASCII digits,
+overflow and excess fractional digits, including extra zeroes. Input never passes
+through float, trimming or rounding; only line terminators are removed.
+
+Once the entire candidate encodes successfully, each `decimal_conversion=` record
+shows `field`, original `decimalInput`, complete `asset` and resulting canonical
+`atoms`, followed by `composed_quote=` or `composed_legs=`. Failed or interrupted
+composition publishes no partial preview or candidate. Preview records are console
+output only and never enter driver inputs or hashes. Discount `FIXED` values and
+`capAtoms` remain atom strings; `BPS` values and discount ordering are unchanged.
+
+Composition submits nothing. Use `simulate_quote` / `SUBMIT_QUOTE`,
+`plan_payments` / `SUBMIT_PLAN` (with explicit `now`) and
+`propose_line_refund` / `SUBMIT_REFUND` separately. Mixed assets and aggregate
+overflow remain driver refusals after explicit submission. A free quote uses an
+explicit zero payment-leg count; a zero-valued payment leg is refused by the driver.
+Starting quote composition invalidates quote input, quote, plan, refund and line
+selections before prompting. Starting leg composition preserves the quote and
+invalidates legs, plan, refund and line selections. Historical exchanges cannot
+reactivate those selections; existing uncertainty fencing remains terminal.
+
+From the repository root:
+
+```bash
+python3.12 -B reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_decimal_journey.txt
+```
+
+Also run `commerce_console_decimal_precision.txt` (precision 6, exact
+`9007199254.740993` → `"9007199254740993"`), `commerce_console_decimal_free.txt`,
+`commerce_console_decimal_decline.txt` and `commerce_console_decimal_replacement.txt`
+(exit 0). `commerce_console_decimal_boundaries.txt` exits 1 for mixed quote assets,
+aggregate overflow, mismatched payment assets, a zero payment leg and a local
+exponent refusal. All amounts and references are synthetic caller inputs.
+
+This standalone console remains `CALCULATION_ONLY`, separate from booking quote
+entry and booking confirmation. Product policy remains **UNDETERMINED — Astra/User**;
+legal/accounting treatment remains **UNDETERMINED — User/designated advisers**.
+No FX, asset approval, new protocol command, SDK/catalogue change or execution
+authority is added. [Actual commands, coverage, transcripts and delivery limits](../../validation/2026-11-10-plan-local-commerce-decimal-entry/README.md).
+
 ## Recorded offers and presentations in the ticket console
 
 The resale and admission menus (standalone or delegated from
