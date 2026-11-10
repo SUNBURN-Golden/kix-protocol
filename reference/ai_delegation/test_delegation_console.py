@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 
 from ai_delegation_mock import AiDelegationError, FALSE_FLAGS, LIFECYCLE, PROVENANCE, _canonical
 from delegation_cli import dispatch_request
-from delegation_console import main, run_console
+from delegation_console import main, run_console, run_guided_subprocess_console
 from delegation_fixture import FixtureError, load_fixture
 
 
@@ -138,6 +138,85 @@ class FailingOutput(io.StringIO):
 
 
 class ConsoleTests(unittest.TestCase):
+    def test_guided_init_confirmation_precedes_launch(self):
+        prefix = "1\nhuman-a\n2\nagent-a\nagent-b\n"
+        for confirmation in ("no", "", " SUBMIT", "SUBMIT "):
+            with patch("delegation_console.DelegationClient.launch_from_fixture") as launched, patch(
+                    "delegation_fixture.DelegationSession") as constructor:
+                output, errors = io.StringIO(), io.StringIO()
+                status = run_guided_subprocess_console(cleanup_timeout=1,
+                    input_stream=io.StringIO(prefix + confirmation + "\n"),
+                    output_stream=output, error_stream=errors)
+                self.assertEqual((status, errors.getvalue()), (0, ""))
+                self.assertEqual(records(output.getvalue(), "proposed_init="), [{
+                    "fixture_version": 1, "provenance": PROVENANCE,
+                    "human_principals": ["human-a"], "ai_agents": ["agent-a", "agent-b"]}])
+                launched.assert_not_called()
+                constructor.assert_not_called()
+
+    def test_guided_init_eof_invalid_composition_interrupt_and_output_start_no_child(self):
+        text = "1\nhuman-a\n2\nagent-a\nagent-b\nSUBMIT\n"
+        sources = [io.StringIO("".join(text.splitlines(True)[:count])) for count in range(6)]
+        sources += [io.StringIO(value) for value in ("true\n", "-1\n", "1.0\n", "bad\n", "[]\n", "0\nnull\n")]
+        class Interrupted:
+            def readline(self):
+                raise KeyboardInterrupt("composition interrupted")
+        sources.append(Interrupted())
+        for source in sources:
+            with patch("delegation_console.DelegationClient.launch_from_fixture") as launched:
+                self.assertEqual(run_guided_subprocess_console(cleanup_timeout=1, input_stream=source,
+                    output_stream=io.StringIO(), error_stream=io.StringIO()), 2)
+                launched.assert_not_called()
+        for marker in ("Synthetic identities", "item count", "verbatim string", "proposed_init=", "Type literal"):
+            for mode in ("write", "short", "flush"):
+                with self.subTest(marker=marker, mode=mode), patch(
+                        "delegation_console.DelegationClient.launch_from_fixture") as launched:
+                    self.assertEqual(run_guided_subprocess_console(cleanup_timeout=1,
+                        input_stream=io.StringIO(text), output_stream=FailingOutput(marker, mode),
+                        error_stream=io.StringIO()), 2)
+                    launched.assert_not_called()
+
+    def test_guided_init_verbatim_empty_order_and_flushed_preview(self):
+        for text, humans, agents in (("0\n0\n", [], []),
+                                    ("3\n z \n😀\n z \n2\nb\na\n", [" z ", "😀", " z "], ["b", "a"])):
+            output = io.StringIO()
+            fixture = {"fixture_version": 1, "provenance": PROVENANCE,
+                       "human_principals": humans, "ai_agents": agents}
+            client = Mock(initialized_reply={"operation": None, "provenance": PROVENANCE, "initialized": fixture})
+            client.close.return_value = 0
+            state = {"flushed": False}
+            class Output(io.StringIO):
+                def flush(inner):
+                    output.seek(0)
+                    output.truncate()
+                    output.write(inner.getvalue())
+                    state["flushed"] = True
+            class Source(io.StringIO):
+                def readline(inner):
+                    if inner.tell() == len(text):
+                        self.assertTrue(state["flushed"])
+                        self.assertEqual(records(output.getvalue(), "proposed_init="), [fixture])
+                        launched.assert_not_called()
+                    return super().readline()
+            with patch("delegation_console.DelegationClient.launch_from_fixture", return_value=client) as launched:
+                status = run_guided_subprocess_console(cleanup_timeout=1,
+                    input_stream=Source(text + "SUBMIT\nquit\n"), output_stream=Output(), error_stream=io.StringIO())
+            self.assertEqual(status, 0)
+            launched.assert_called_once_with(fixture, cleanup_timeout=1)
+            client.request.assert_not_called()
+            client.close.assert_called_once()
+
+    def test_guided_init_cli_option_isolation(self):
+        for options in (["--guided-init"], ["--guided-init", "--mode", "in-process"],
+                        ["--guided-init", "--mode", "subprocess"],
+                        ["--guided-init", "--fixture", "file", "--mode", "subprocess", "--cleanup-timeout", "1"]):
+            with patch("sys.stderr", io.StringIO()), patch(
+                    "delegation_console.DelegationClient.launch_from_fixture") as launched:
+                with self.assertRaises(SystemExit) as caught:
+                    main(options)
+                self.assertEqual(caught.exception.code, 2)
+                launched.assert_not_called()
+
     def run_input(self, text, *, target=None, output=None, errors=None, source=None):
         output = output if output is not None else io.StringIO()
         errors = errors if errors is not None else io.StringIO()

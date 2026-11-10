@@ -13,7 +13,7 @@ import unittest
 from unittest.mock import patch
 
 from ai_delegation_mock import AiDelegationError, FALSE_FLAGS, LIFECYCLE, PROVENANCE, _canonical
-from delegation_cli import dispatch_request, run_requests
+from delegation_cli import dispatch_request, main, run_requests
 from delegation_fixture import decode_json, load_fixture
 from test_delegation_session import FIXTURES, OPERATIONS, requests
 
@@ -43,6 +43,88 @@ def proposal(identifier, **overrides):
 
 
 class DelegationCliTests(unittest.TestCase):
+    def test_fixture_and_stdin_init_reply_parity(self):
+        fixture = decode_json((FIXTURES / "delegation_session.json").read_text())
+        for name in ("lifecycle", "boundaries", "replay"):
+            operations = (FIXTURES / (name + ".jsonl")).read_text()
+            expected = self.invoke(text=operations)
+            actual = subprocess.run([sys.executable, str(CLI), "--init-stdin", "--requests", "-"],
+                input=_canonical(fixture) + "\n" + operations, text=True, capture_output=True, timeout=20)
+            acknowledgement, replies = actual.stdout.split("\n", 1)
+            self.assertEqual(decode_json(acknowledgement), {
+                "operation": None, "provenance": PROVENANCE, "initialized": fixture})
+            self.assertEqual((actual.returncode, replies, actual.stderr),
+                             (expected.returncode, expected.stdout, expected.stderr))
+
+    def test_stdin_init_rejection_consumes_no_operations(self):
+        valid = decode_json((FIXTURES / "delegation_session.json").read_text())
+        cases = [("", "FixtureError"), ("\n", "FixtureError"), ("{bad}\n", "FixtureError"),
+                 (_canonical(valid), "FixtureError"), ('{"x":1,"x":2}\n', "FixtureError"),
+                 (_canonical({**valid, "fixture_version": True}) + "\n", "FixtureError"),
+                 (_canonical({**valid, "ai_agents": None}) + "\n", "INVALID_ID"),
+                 (_canonical({**valid, "ai_agents": ["human-a"]}) + "\n", "MOCK_INVARIANT")]
+        for text, expected in cases:
+            source, output = io.StringIO(text), io.StringIO()
+            with patch("sys.stdin", source), redirect_stdout(output), patch("delegation_cli.run_requests") as run:
+                self.assertEqual(main(["--init-stdin", "--requests", "-"]), 2)
+                run.assert_not_called()
+            reply = decode_json(output.getvalue())
+            self.assertIsNone(reply["operation"])
+            self.assertEqual(reply["error"].get("type", reply["error"].get("code")), expected)
+        # Invalid UTF-8 at the real process boundary fails before an operation.
+        result = subprocess.run([sys.executable, str(CLI), "--init-stdin", "--requests", "-"],
+                                input=b'\xff\n', capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 2)
+        self.assertNotIn(b'initialized', result.stdout)
+
+    def test_stdin_init_ack_flushed_before_reading_requests_and_no_output_retry(self):
+        fixture = decode_json((FIXTURES / "delegation_session.json").read_text())
+        flushed = []
+        class Output(io.StringIO):
+            def flush(inner):
+                flushed.append(inner.getvalue())
+        output = Output()
+        class Source(io.StringIO):
+            def __next__(inner):
+                self.assertEqual(decode_json(output.getvalue())["initialized"], fixture)
+                self.assertEqual(flushed, [output.getvalue()])
+                return super().__next__()
+        source = Source(_canonical(fixture) + "\n")
+        with patch("sys.stdin", source), redirect_stdout(output):
+            self.assertEqual(main(["--init-stdin", "--requests", "-"]), 0)
+        for stage in ("write", "short", "flush"):
+            with patch("sys.stdin", io.StringIO(_canonical(fixture) + "\n")), patch(
+                    "sys.stdout") as target, patch("delegation_cli.run_requests") as run:
+                target.write.side_effect = lambda text: len(text)
+                if stage == "short":
+                    target.write.side_effect = lambda text: len(text) - 1
+                else:
+                    getattr(target, stage).side_effect = OSError("ack output failed")
+                self.assertEqual(main(["--init-stdin", "--requests", "-"]), 2)
+                run.assert_not_called()
+                self.assertEqual(target.write.call_count, 1)
+
+    def test_stdin_init_one_constructor_and_exact_empty_unicode_order_echo(self):
+        from delegation_fixture import session_from_fixture
+        for humans, agents in (([], []), (["z", "a"], ["😀", "한글"])):
+            fixture = {"fixture_version": 1, "provenance": PROVENANCE,
+                       "human_principals": humans, "ai_agents": agents}
+            output = io.StringIO()
+            with patch("sys.stdin", io.StringIO(_canonical(fixture) + "\n")), redirect_stdout(output), patch(
+                    "delegation_cli.session_from_fixture", wraps=session_from_fixture) as constructor:
+                self.assertEqual(main(["--init-stdin", "--requests", "-"]), 0)
+                constructor.assert_called_once_with(fixture)
+            self.assertEqual(decode_json(output.getvalue())["initialized"], fixture)
+
+    def test_stdin_init_requires_explicit_compatible_options(self):
+        for options in ([], ["--init-stdin", "--requests", "file"],
+                        ["--init-stdin", "--fixture", "file", "--requests", "-"]):
+            with patch("sys.stderr", io.StringIO()), patch("delegation_cli.session_from_fixture") as create:
+                with self.assertRaises(SystemExit) as caught:
+                    main(options)
+                self.assertEqual(caught.exception.code, 2)
+                create.assert_not_called()
+
     def invoke(self, text=None, path=None, fixture=None):
         return subprocess.run(
             [sys.executable, str(CLI), "--fixture", str(fixture or FIXTURES / "delegation_session.json"),

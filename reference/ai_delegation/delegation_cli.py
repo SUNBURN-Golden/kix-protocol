@@ -6,7 +6,8 @@ from pathlib import Path
 import sys
 
 from ai_delegation_mock import AiDelegationError, PROVENANCE, _canonical
-from delegation_fixture import FixtureError, decode_json, exact_fields, load_fixture, validate_json
+from delegation_fixture import (FixtureError, decode_json, exact_fields, load_fixture,
+                                session_from_fixture, validate_json)
 from delegation_session import DelegationSession
 
 
@@ -48,12 +49,23 @@ def _error(operation, error):
 
 
 def _emit(value):
-    print(_canonical(value), flush=True)
+    frame = _canonical(value) + "\n"
+    if sys.stdout.write(frame) != len(frame):
+        raise OSError("short JSON frame write")
+    sys.stdout.flush()
 
 
 def run_requests(session: DelegationSession, lines) -> int:
     rejected = False
-    for line in lines:
+    lines = iter(lines)
+    while True:
+        try:
+            line = next(lines)
+        except StopIteration:
+            return 1 if rejected else 0
+        except (OSError, UnicodeError) as error:
+            _emit(_error(None, error))
+            return 2
         operation = None
         try:
             request = decode_json(line)
@@ -68,22 +80,41 @@ def run_requests(session: DelegationSession, lines) -> int:
             result = _error(operation, error)
             rejected = True
         _emit(result)
-    return 1 if rejected else 0
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fixture", type=Path, required=True)
+    startup = parser.add_mutually_exclusive_group(required=True)
+    startup.add_argument("--fixture", type=Path)
+    startup.add_argument("--init-stdin", action="store_true")
     parser.add_argument("--requests", required=True, help="JSONL path, or - for stdin")
     args = parser.parse_args(argv)
+    if args.init_stdin and args.requests != "-":
+        parser.error("--init-stdin requires --requests -")
     try:
-        session = load_fixture(args.fixture)
+        if args.init_stdin:
+            line = sys.stdin.readline()
+            if not line.endswith("\n"):
+                raise FixtureError("initialization requires one newline-terminated JSON frame")
+            fixture = decode_json(line)
+            session = session_from_fixture(fixture)
+        else:
+            session = load_fixture(args.fixture)
         requests = (nullcontext(sys.stdin) if args.requests == "-"
                     else Path(args.requests).open(encoding="utf-8"))
-        with requests as lines:
-            return run_requests(session, lines)
     except (FixtureError, AiDelegationError, OSError, UnicodeError) as error:
-        _emit(_error(None, error))
+        try:
+            _emit(_error(None, error))
+        except (OSError, UnicodeError):
+            pass
+        return 2
+    # Do not retry output failures (including failure to flush the startup ack).
+    try:
+        with requests as lines:
+            if args.init_stdin:
+                _emit({"operation": None, "provenance": PROVENANCE, "initialized": fixture})
+            return run_requests(session, lines)
+    except (OSError, UnicodeError):
         return 2
 
 

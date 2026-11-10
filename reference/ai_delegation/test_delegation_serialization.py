@@ -7,14 +7,49 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from ai_delegation_mock import AiDelegationError, _canonical
+from ai_delegation_mock import AiDelegationError, AiDelegationMock, _canonical
 from delegation_cli import dispatch_request
-from delegation_fixture import FixtureError, decode_json, load_fixture
+from delegation_fixture import FixtureError, decode_json, load_fixture, session_from_fixture, validate_fixture
 from delegation_session import DelegationSession
 from test_delegation_session import FIXTURES, OPERATIONS, requests
 
 
 class DelegationSerializationTests(unittest.TestCase):
+    def test_registry_initialization_matches_constructor(self):
+        valid = decode_json((FIXTURES / "delegation_session.json").read_text())
+        registries = [[], ["a"], ["a", "b"], ["b", "a"], ["한글", "😀"], ["a" * 100],
+                      ["a" * 101], [" a"], ["a "], [""], ["a", "a"], [1], [False],
+                      [None], [{}], None, {}, "a", 1, True]
+        for humans in registries:
+            for agents in registries:
+                fixture = {**valid, "human_principals": humans, "ai_agents": agents}
+                with self.subTest(humans=humans, agents=agents):
+                    # Transport validation deliberately does not preflight the domain.
+                    validate_fixture(fixture)
+                    try:
+                        AiDelegationMock(humans, agents)
+                    except AiDelegationError as expected:
+                        with self.assertRaises(AiDelegationError) as caught:
+                            session_from_fixture(fixture)
+                        self.assertEqual(caught.exception.code, expected.code)
+                    else:
+                        session_from_fixture(fixture)
+
+    def test_fixture_object_shape_and_forwarding(self):
+        valid = decode_json((FIXTURES / "delegation_session.json").read_text())
+        for value in ({}, [], {**valid, "fixture_version": True}, {**valid, "fixture_version": 1.0},
+                      {**valid, "provenance": "REAL"}, {**valid, "extra": []},
+                      {**valid, "ai_agents": ("agent-a",)}, {**valid, "ai_agents": ["\ud800"]}):
+            with self.subTest(value=repr(value)), patch("delegation_fixture.DelegationSession") as constructor:
+                with self.assertRaises(FixtureError):
+                    session_from_fixture(value)
+                constructor.assert_not_called()
+        fixture = {**valid, "human_principals": ["z", "a"], "ai_agents": ["😀", "é"]}
+        with patch("delegation_fixture.DelegationSession") as constructor:
+            session_from_fixture(fixture)
+            constructor.assert_called_once_with(fixture["human_principals"], fixture["ai_agents"])
+            self.assertIs(constructor.call_args.args[0], fixture["human_principals"])
+
     def test_strict_json_decoder(self):
         for text in ('{"x":1,"x":2}', '{"x":{"a":1,"a":2}}', '[{"a":1,"a":2}]',
                      'NaN', 'Infinity', '-Infinity', '1e9999', '-1e9999', '', '[] trailing',

@@ -126,6 +126,82 @@ depths, non-finite numbers (including exponent overflow), invalid JSON/Unicode,
 unsupported selectors, invalid envelopes and missing/extra method arguments fail
 before dispatch. Nested domain validation remains the mock's responsibility.
 
+## Guided registry initialization
+
+Start without a fixture file by explicitly composing both synthetic actor registries:
+
+```bash
+python3 reference/ai_delegation/delegation_console.py --guided-init --mode subprocess --cleanup-timeout 1
+python3 reference/ai_delegation/delegation_console.py --guided-init --mode subprocess --cleanup-timeout 1 < reference/ai_delegation/fixtures/delegation_console_guided_init_journey.txt
+```
+
+`--guided-init` and `--fixture PATH` are mutually exclusive and one is required.
+Guided initialization requires explicit `--mode subprocess` and a finite positive
+`--cleanup-timeout`; it applies only to child cleanup, never response reads.
+Existing fixture-file in-process and subprocess modes keep their behavior.
+
+Enter `human_principals item count` as a nonnegative JSON integer, then each
+`human_principals item N` as a verbatim string. Do the same for `ai_agents`.
+The console prints and flushes `proposed_init=` followed by the complete canonical
+fixture-shaped JSON object (version, provenance and both registries). Only literal
+`SUBMIT` starts one child. Any other confirmation declines and exits 0. EOF,
+interruption, malformed composition or output failure before confirmation exits 2
+and starts no child. No defaults, trimming, normalization or deduplication apply.
+
+Registry acceptance is the existing `DelegationSession` → `AiDelegationMock`
+constructor: empty lists are accepted; non-list registries, invalid identifiers
+and duplicates produce `INVALID_ID`; overlap produces `MOCK_INVARIANT`. Entries
+remain synthetic identities, not authenticated humans or agents. Authority and
+identity policy remain **UNDETERMINED — Astra/User**.
+
+The opt-in CLI transport is `delegation_cli.py --init-stdin --requests -`.
+Its first stdin line must be one newline-terminated UTF-8 JSON fixture object:
+
+```json
+{"fixture_version":1,"provenance":"MOCK_AI_DELEGATION_ONLY","human_principals":["human-a"],"ai_agents":["agent-a","agent-b"]}
+```
+
+It constructs one session, writes and flushes this acknowledgement, then consumes
+operation lines from the same stream:
+
+```json
+{"operation":null,"provenance":"MOCK_AI_DELEGATION_ONLY","initialized":{"fixture_version":1,"provenance":"MOCK_AI_DELEGATION_ONLY","human_principals":["human-a"],"ai_agents":["agent-a","agent-b"]}}
+```
+
+`initialized` echoes the accepted input including registry order. This is startup
+framing outside the seven-operation dispatch table, not a new protocol command.
+Absent, blank, malformed or unterminated startup input fails with the existing
+null-operation error envelope and exit 2, without consuming operations. Failed
+acknowledgement output stops without retry. `--fixture` emits no startup ack.
+
+Importable callers can use
+`DelegationClient.launch_from_fixture(fixture, cleanup_timeout=1)`. It validates
+transport shape and serializes a detached snapshot before launch, without a
+parent domain-session preflight. It writes that snapshot once, validates the
+complete ack's exact fields, types, provenance and canonical equality (including
+list order), and only then returns a usable client. `initialized_reply` returns
+a detached copy; fixture-file clients return `None` for this property.
+
+Missing, malformed, mismatched or interrupted acknowledgements fence requests and
+raise `DelegationTransportUncertainty`, retaining the submitted snapshot,
+`request_bytes`, `reply_bytes`, any decoded reply in `last_reply`, and the cause.
+The owned child is closed and reaped on startup failure. A cleanup failure is
+retained as `cleanup_error` without replacing the primary cause. No replacement
+child, fallback, automatic retry or response timeout is added.
+
+After confirmation and successful acknowledgement, the console prints
+`initialized=` before entering the existing operation loop. A rendering failure
+fences before any request. Existing operation previews and confirmations still
+apply. Quit exits 0, or 1 if a supplied operation was refused; terminal failures
+exit 2. The fixture-free transcript above exits 1 because its final execution
+attempt is explicitly refused. It otherwise matches the existing lifecycle
+journey, including human approval as an inert memo, revocation and retained views.
+All eleven authority/effect flags and proposal `effects_executed` remain false.
+
+[Guided initialization builder evidence](../../validation/2026-11-10-plan-local-delegation-guided-init/README.md)
+records coverage, actual checks, preservation and pending A2/exact-head CI gates.
+The A5 discrepancy and non-claims below remain unchanged.
+
 ## A5 and non-claims
 
 The existing class-C **A5** check-order discrepancy remains attributed to

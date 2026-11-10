@@ -10,7 +10,7 @@ import subprocess
 import sys
 import threading
 
-from delegation_fixture import FixtureError, decode_json, exact_fields, validate_json
+from delegation_fixture import FixtureError, decode_json, exact_fields, validate_fixture, validate_json
 from delegation_cli import _DISPATCH
 from ai_delegation_mock import FALSE_FLAGS, LIFECYCLE, PROVENANCE, _canonical
 
@@ -45,17 +45,86 @@ class DelegationClient:
 
     @classmethod
     def launch(cls, fixture, *, cleanup_timeout):
+        cls._validate_cleanup_timeout(cleanup_timeout)
+        return cls._launch(["--fixture", str(Path(fixture).resolve())], cleanup_timeout)
+
+    @staticmethod
+    def _validate_cleanup_timeout(cleanup_timeout):
         if (isinstance(cleanup_timeout, bool)
                 or not isinstance(cleanup_timeout, (int, float))
                 or not math.isfinite(cleanup_timeout) or cleanup_timeout <= 0):
             raise ValueError("cleanup_timeout must be a finite positive number")
+
+    @classmethod
+    def _launch(cls, startup, cleanup_timeout):
         command = [sys.executable, str(Path(__file__).with_name("delegation_cli.py").resolve()),
-                   "--fixture", str(Path(fixture).resolve()), "--requests", "-"]
+                   *startup, "--requests", "-"]
         # Child buffering is ordinary Python buffering. stderr is inherited,
         # never mixed with JSONL stdout or left in an undrained pipe.
         process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                    bufsize=0, shell=False)
         return cls(process, cleanup_timeout)
+
+    @classmethod
+    def launch_from_fixture(cls, fixture, *, cleanup_timeout):
+        """Submit one explicit startup snapshot and require a correlated ack.
+
+        No domain-session preflight, replacement child, fallback or retry.
+        A failed launch retains wire evidence on the raised uncertainty and
+        closes/reaps its owned child before returning control to the caller.
+        """
+        cls._validate_cleanup_timeout(cleanup_timeout)
+        validate_fixture(fixture)
+        wire = (_canonical(fixture) + "\n").encode("utf-8")
+        submitted = decode_json(wire.decode("utf-8"))
+        client = cls._launch(["--init-stdin"], cleanup_timeout)
+        raw = bytearray()
+        try:
+            client._write_frame(wire)
+            client._read_frame(raw)
+            reply = cls._initialization_reply(bytes(raw), submitted)
+            client._initialized_reply = decode_json(_canonical(reply))
+            return client
+        except BaseException as error:
+            client._terminal = True
+            failure = DelegationTransportUncertainty(submitted, wire, bytes(raw))
+            failure.last_reply = client.last_reply
+            # A complete error is useful evidence, never an initialization ack.
+            try:
+                failure.last_reply = decode_json(bytes(raw).decode("utf-8"))
+            except (ValueError, UnicodeError):
+                pass
+            client.uncertainty = failure
+            try:
+                client.close()
+            except BaseException as cleanup_error:
+                failure.cleanup_error = cleanup_error
+                failure.add_note(f"startup cleanup failed: {type(cleanup_error).__name__}: {cleanup_error}")
+            raise failure from error
+
+    @property
+    def initialized_reply(self):
+        """Detached accepted startup envelope; None in fixture-file mode."""
+        if self._initialized_reply is None:
+            return None
+        return decode_json(_canonical(self._initialized_reply))
+
+    @staticmethod
+    def _initialization_reply(raw, submitted):
+        if not raw.endswith(b"\n") or b"\n" in raw[:-1]:
+            raise FixtureError("initialization response requires one newline-terminated JSON frame")
+        reply = decode_json(raw.decode("utf-8"))
+        exact_fields(reply, {"operation", "provenance", "initialized"}, "initialization response")
+        if reply["operation"] is not None or reply["provenance"] != PROVENANCE:
+            raise FixtureError("invalid initialization response operation/provenance")
+        validate_fixture(reply["initialized"])
+        for name in ("human_principals", "ai_agents"):
+            registry = reply["initialized"][name]
+            if type(registry) is not list or any(type(item) is not str for item in registry):
+                raise FixtureError("initialization response requires string registries")
+        if _canonical(reply["initialized"]) != _canonical(submitted):
+            raise FixtureError("initialization response does not match submitted fixture")
+        return reply
 
     def __init__(self, process, cleanup_timeout):
         self._process = process
@@ -66,6 +135,22 @@ class DelegationClient:
         self._returncode = None
         self.uncertainty = None
         self.last_reply = None
+        self._initialized_reply = None
+
+    def _write_frame(self, wire):
+        if self._process.stdin.write(wire) != len(wire):
+            raise OSError("short request write")
+        self._process.stdin.flush()
+
+    def _read_frame(self, raw):
+        # Retain every observed byte, including on caller interruption.
+        while True:
+            chunk = self._process.stdout.read(1)
+            if not chunk:
+                break
+            raw.extend(chunk)
+            if chunk == b"\n":
+                break
 
     @staticmethod
     def _validate_request(request):
@@ -226,18 +311,8 @@ class DelegationClient:
             submitted = decode_json(wire.decode("utf-8"))
             raw = bytearray()
             try:
-                written = self._process.stdin.write(wire)
-                if written != len(wire):
-                    raise OSError("short request write")
-                self._process.stdin.flush()
-                # Retain partial diagnostic bytes even on caller interruption.
-                while True:
-                    chunk = self._process.stdout.read(1)
-                    if not chunk:
-                        break
-                    raw.extend(chunk)
-                    if chunk == b"\n":
-                        break
+                self._write_frame(wire)
+                self._read_frame(raw)
                 reply, terminal = self._reply(bytes(raw), submitted)
                 self.last_reply = decode_json(_canonical(reply))
                 self._terminal = terminal
