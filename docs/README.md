@@ -711,3 +711,7 @@ Bounded selection: 정확히 PR #426–#435이며, #399–#425와 #435 이후 �
 - [audit #30 builder 검증 기록](../validation/2026-11-10-audit30-sync-nov10-location-tables/README.md) — 관측 SHA, first-parent merge mapping, 실제 로컬 checker 결과, locked blob 및 `reference/v0.3-rc1/**` 보존, 남은 전달 gate. 비작성자 검토·exact-head KTX/KIX CI·병합 승인이 아니다.
 
 SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate는 기존 조건과 소유자로 열린 채 남는다. 운영 capability 수 **0**, semantic consumers **HOLD**, unsupported bindings **NOT_BOUND**를 바꾸지 않는다.
+
+## 2026-11-10 commerce journey end-to-end conformance — 위치 안내만
+
+- [plan-commerce-journey-end-to-end-conformance builder evidence](../validation/2026-11-10-plan-commerce-journey-end-to-end-conformance/README.md) — one deterministic 44-step offline transcript through the published FSM catalogue on one show: reservation, primary payment observation, issuance, resale adoption/listing/transfer, admission, settlement distribution, cancellation/failure/refund and five adverse refusals. Command receipts are the only evidence; mock gate and mock settlement only, all funds/finality/production flags false, and the 13 read queries remain NOT_BOUND. Non-author exact-head review and KTX/KIX CI remain separate gates.
