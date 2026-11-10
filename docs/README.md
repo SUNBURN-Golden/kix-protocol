@@ -27,6 +27,18 @@ Pool references do not deduplicate accepted calls; synthetic observations are no
 authenticated facts. Unsupported bindings remain NOT_BOUND and semantic SDK
 consumers HOLD. [Builder validation and remaining delivery gates](../validation/2026-11-10-audit29-consumer-surface-boundary-map/README.md).
 
+## BOOTSTRAP producer-qualification tuple
+
+[Non-normative identity record](status/PRODUCER_QUALIFICATION_TUPLE_V1.md)
+pins the current 84-command contract-only OpenAPI tuple (40 core + 44 FSM),
+both OpenAPI documents, the generated SDK catalogue, generator, toolchain,
+`bootstrap-2` profile/manifest/sidecar and conformance vectors, and maps every
+command to its core/FSM source and gate route. The 13 owner-decided read names
+stay `NOT_BOUND` because `read-model-reference` is not merged; semantic SDK
+consumption stays `HOLD_SEMANTIC`; SD1 stays `OPEN` with the User. The record
+asserts identity only and makes no semantic, N/N-1, production, audit or User
+approval claim. [Builder evidence and actual local results](../validation/2026-11-10-plan-producer-qualification-tuple-bundle/README.md).
+
 ## Local supply reconciliation
 
 [Reusable subprocess client and explicit console mode](../reference/token_reward/README.md#reusable-supply-subprocess-client)
