@@ -36,6 +36,20 @@ P04를 저장 엔진이나 실 PG·은행 관찰로 구현하는 일은 프로�
 L0·W0·R0·S0·B0·P0의 관찰값은 이미 있는 시험이 고정한다. T0에서 세금·보류가 0이 아닌 경우는 그 시험에 없었다.
 `reference/settlement_f01_f03/test_adopted_policy.py`가 그 빈자리와, 일곱 자세의 관찰값을 한 자리에 묶는다.
 
+2026-11-11 개정 ID `SET-POLICY-DRAFT-0.4`.
+결정 출처: owner decision 2026-11-10 17:43 KST, 준태님(the User), node cr1110-refund-bearer-requester (CR-CAPITAL-1110 #3).
+소유자가 부분 환불은 그 부분 환불을 요청한 당사자가 부담한다고 결정했다.
+이 세션에서 확인한 `origin/main`(로컬 캐시, 페치 금지)과 작업 브랜치 HEAD는 `298bd52446f3bc5d949049daea7960be843fa0e5`다.
+이 개정은 §7.6에 B5 `REQUESTER`를 더하고 부분 환불에 대해 이 목의 자세로 채택한다. B5는 부분 환불의 유효 규칙으로 B0를 대체한다. B0 행은 역사로 남긴다. 나머지 여섯 자세 L0·W0·R0·S0·T0·P0는 그대로다.
+0.3과 달리 이 채택은 `mock_settlement.py`의 동작을 바꾼다. 부분 환불은 더 이상 `apply_distribution`을 멈추지 않고, `refund_bearer_policy`는 `REQUESTER`를 보고한다. `settlement_fsm.py`는 바꾸지 않는다.
+수취인의 이미 배정된 금액과 미지급 액면은 부분 환불 때문에 줄거나 `recovery_due`로 바뀌지 않는다. 부분 환불의 비용·부족분은 요청자 쪽에만 부담한다(예: 요청자에게 환불되는 금액에서 상계). 수취인이나 플랫폼에 부담하지 않는다. 상계 방식과 모든 숫자는 `UNDETERMINED`로 남긴다.
+법률상 환불채무자는 `UNDETERMINED`다(사용자 → 법무, I10 경로). B1–B4는 채택하지 않는다.
+전액 1회 재분류 `FIXTURE_FULL_GROSS_RECLASS`와, 부분 환불의 합이 `gross`가 되어도 재분류하지 않는 규칙은 그대로다.
+`DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED`는 §6 표에 남기되 B5 아래에서 도달할 수 없는 코드다. 새 오류 코드, 조회 키, 프로토콜 명령은 만들지 않는다.
+카탈로그, 게이트, 스키마, 영수증, manifest에 묶인 원본 바이트는 바꾸지 않는다. 모든 실행 플래그는 거짓이고 목 자금만 쓴다.
+이 개정은 Astra의 아키텍처 서명이 아니고, BOOTSTRAP이나 SEMANTIC_CONFORMANCE 적격이 아니다.
+B5의 관찰값은 `reference/settlement_f01_f03/test_adopted_policy.py`와 기존 부분 환불 시험들이 고정한다.
+
 2026-09-26 settlement depth가 §9의 수락 상태 기계를 앞에 둔다.
 그 세션에서 확인한 `origin/main`은 `a744b0a036d7e1edb48416871af20cd182f23df4`다.
 산술 술어와 Wave 3의 기준 SHA는 그대로다. 라벨도 그대로다.
@@ -222,8 +236,8 @@ gross = amount + fee + tax + held + adjustment
 
 - 한 청구의 환불 액면 합은 `gross`를 넘지 못한다(`REFUND_CEILING`).
 - 이미 기록된 상대 역할과 다른 상대는 `REFUND_BENEFICIARY_CONFLICT`.
-- 부분 환불(전액이 아닌 경우, 또는 여러 번에 나뉜 경우)은 의무만 쌓는다. 수취인 액면을 취소하거나 회수채권으로 바꾸지 않는다. `refund_bearer_policy = UNDEFINED`. 법률상 부담자는 미정이다. §7.6이 B0를 이 목의 자세로 채택한다. B0는 이 값을 `UNDEFINED`로 둔다.
-- 부담이 미정인 동안 `apply_distribution`은 `DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED`다. 이미 배정된 금액은 되돌리지 않고, 추가 배정도 하지 않는다. 부담 규칙을 만들어 자동 상계하지 않기 위한 목의 정지다.
+- 부분 환불(전액이 아닌 경우, 또는 여러 번에 나뉜 경우)은 의무만 쌓는다. 수취인 액면을 취소하거나 회수채권으로 바꾸지 않는다. `refund_bearer_policy = REQUESTER`. 법률상 부담자는 미정이다. §7.6이 B5를 이 목의 자세로 채택한다. B5는 부분 환불을 요청한 당사자가 부담한다고 두고, 이 값을 `REQUESTER`로 둔다.
+- 부분 환불이 있어도 `apply_distribution`은 계속된다. 이미 배정된 금액은 되돌리지 않고, 수취인의 미지급 액면도 부분 환불 때문에 줄거나 `recovery_due`로 바뀌지 않는다. 부분 환불의 비용·부족분은 요청자 쪽에만 부담하고(예: 요청자에게 환불되는 금액에서 상계), 수취인이나 플랫폼에 부담하지 않는다. 상계 방식과 숫자는 이 목이 정하지 않는다(`UNDETERMINED`). 자동 상계 실행은 만들지 않는다.
 - 환불 액면이 아직 0일 때 한 번에 `gross` 전액을 묶으면, 역사 `finance.reverse`의 전액 분류만 따라 간다.
   - 각 의무의 미배정 잔액은 `cancelled_unpaid`로 옮긴다.
   - 이미 배정한 금액은 그 수취인의 `recovery_due`가 된다.
@@ -260,7 +274,7 @@ gross = amount + fee + tax + held + adjustment
 | `STATEMENT_BINDING_CONFLICT` | 같은 `movement_id`, 다른 명세서 |
 | `ADJUSTMENT_REASON_REQUIRED` / `ADJUSTMENT_REASON_UNEXPECTED` | 조정 이유 |
 | `DISTRIBUTION_ORDER_TYPE` / `DISTRIBUTION_ORDER_DUPLICATE` / `DISTRIBUTION_ORDER_MISMATCH` / `DISTRIBUTION_ORDER_FROZEN` | 배정 순서 |
-| `DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED` | 부담 미정 환불이 있는 동안의 배정 |
+| `DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED` | 역사 코드. B0(부담 미정) 때의 배정 정지 조건이었고, 0.4의 B5 채택 뒤에는 도달할 수 없다. 표에서 지우지 않는다 |
 | `REFUND_CEILING` | 환불 합이 총액 초과 |
 | `REFUND_BINDING_CONFLICT` / `REFUND_BENEFICIARY_CONFLICT` | 환불 재전송·상대 불일치 |
 | `REFUND_OBLIGATION_REQUIRED` | 의무 없는 취소 수락 |
@@ -276,11 +290,12 @@ gross = amount + fee + tax + held + adjustment
 `MOCK_INVARIANT`는 목 내부 불변식이 깨진 구현 오류다. 호출자가 맞출 수 있는 입력 거절이 아니다.
 재생한 상태가 저널과 어긋날 때도 이 코드다.
 
-## 7. 정책 자세 — 개정 `SET-POLICY-DRAFT-0.3`
+## 7. 정책 자세 — 개정 `SET-POLICY-DRAFT-0.4`
 
-0.2의 표는 선택지로 남긴다. 0.3은 각 표의 권고 행만 이 목의 자세로 채택한다.
-채택된 행은 L0, W0, R0, S0, T0, B0, P0이다. 다른 행은 채택하지 않는다.
-채택은 새 산술이 아니다. `mock_settlement.py`와 `settlement_fsm.py`는 그대로다.
+0.2의 표는 선택지로 남긴다. 0.3은 각 표의 권고 행만 이 목의 자세로 채택했다.
+0.4는 §7.6의 부분 환불 부담자만 B5 `REQUESTER`로 바꾸어 채택한다.
+지금 채택된 행은 L0, W0, R0, S0, T0, B5, P0이다. 다른 행은 채택하지 않는다.
+0.3의 채택은 새 산술이 아니었고 `mock_settlement.py`와 `settlement_fsm.py`를 바꾸지 않았다. 0.4의 B5 채택은 `mock_settlement.py`의 부분 환불 동작을 바꾼다(배정 정지 해제, `REQUESTER` 보고). `settlement_fsm.py`는 그대로다.
 
 법률·세무·회계가 필요한 값은 `UNDETERMINED`로 남긴다. 권고가 숫자를 비운 항목도 `UNDETERMINED`다.
 비운 숫자는 세율, 준비율, 리셀 bps, waterfall의 상한·원가·구간·지급 시점, 잔여 단위의 수취인 지명이다.
@@ -294,7 +309,7 @@ gross = amount + fee + tax + held + adjustment
 | W0 | `test_f02_caller_order_selects_shortfall_and_then_freezes` |
 | R0 | `test_f01_fee_floor_zero_fee_and_rejected_policies` |
 | S0 | 같은 시험의 `POLICY_KIND` (`kind`가 `RESALE_BPS`) |
-| B0 | `test_f03_partial_refund_blocks_distribution_without_reclassifying`, `test_f03_partial_after_distribution_does_not_claw_back`, `test_refund_block_survives_replay_and_is_not_a_clawback` |
+| B5 | `test_f03_partial_refund_keeps_requester_bearer_without_reclassifying`, `test_f03_partial_after_distribution_does_not_claw_back`, `test_partial_refund_distribution_survives_replay_and_is_not_a_clawback` |
 | P0 | `test_happy_path_posts_mock_economics_without_external_execution`, `test_terminal_fail_and_cancel_are_immutable` |
 | T0 | 기존 명세서는 `tax`와 `held`가 0이다. `test_t0_tax_and_held_stay_non_cash`가 0이 아닌 경우를 고정한다 |
 
@@ -305,7 +320,7 @@ I10은 법정·대사·분쟁의 보존과 삭제 보류이고 상태는 미완�
 채무자 특정과 세금 분류는 I10의 보존 기간 질문 자체가 아니다. 같은 담당 경로에 두되, I10의 답을 채무자나 세율의 답으로 바꾸지 않는다.
 이 개정은 I10 문서를 고치지 않는다. 로드맵 D-E의 법률·회계·세무 검토 주체와 시점은 사용자 몫이다.
 
-아래 표의 「지금 효력」은 §0–§6과 §9의 목 동작이고, 0.3이 권고 행에서 그 동작을 자세로 채택한 것이다. 다른 선택지는 구현이 아니다.
+아래 표의 「지금 효력」은 §0–§6과 §9의 목 동작이다. 0.3이 권고 행에서 그 동작을 자세로 채택했고, 0.4는 §7.6만 B5로 바꾸어 채택했다. 다른 선택지는 구현이 아니다.
 
 ### 7.1 법적 채무자·채권자
 
@@ -397,20 +412,21 @@ I10은 법정·대사·분쟁의 보존과 삭제 보류이고 상태는 미완�
 
 | | |
 |---|---|
-| 지금 효력 | 부분 환불은 `refund_bearer_policy = UNDEFINED`다(§5). 액면을 취소하거나 회수채권으로 바꾸지 않는다. 그 동안 `apply_distribution`은 `DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED`다. 이미 배정한 금액은 되돌리지 않는다. 전액 1회는 `FIXTURE_FULL_GROSS_RECLASS`이고, 법적 부담자 확정이 아니다. 부분을 더해 합이 `gross`가 되어도 전액 재분류가 되지 않는다. |
-| 분류 | B0 채택(목). `refund_bearer_policy`는 `UNDEFINED`다. 법률상 환불채무자는 `UNDETERMINED`(사용자 → 법무, I10 경로). |
-| 담당 | 법률 당사자는 법무. 픽스처 줄의 이동은 그 법률 답 뒤에 남긴다. 이 개정은 B1–B4를 고르지 않는다. |
+| 지금 효력 | 부분 환불은 `refund_bearer_policy = REQUESTER`다(§5). 부분 환불을 요청한 당사자가 부담한다. 수취인 액면을 취소하거나 회수채권으로 바꾸지 않고, 이미 배정한 금액은 되돌리지 않는다. `apply_distribution`은 부분 환불이 있어도 계속된다. 부분 환불의 비용·부족분은 요청자 쪽에만 부담하고 수취인·플랫폼에 부담하지 않는다. 상계 방식과 숫자는 `UNDETERMINED`다. 전액 1회는 `FIXTURE_FULL_GROSS_RECLASS`이고, 법적 부담자 확정이 아니다. 부분을 더해 합이 `gross`가 되어도 전액 재분류가 되지 않는다. |
+| 분류 | B5 채택(목). `refund_bearer_policy`는 `REQUESTER`다. 법률상 환불채무자는 `UNDETERMINED`(사용자 → 법무, I10 경로). |
+| 담당 | 법률 당사자는 법무. 픽스처 줄의 이동은 그 법률 답 뒤에 남긴다. 상계 방식과 숫자는 사용자가 정한다. 이 개정은 B1–B4를 고르지 않는다. |
 
-| 선택지 | 내용 | 0.3에서의 위치 |
+| 선택지 | 내용 | 0.4에서의 위치 |
 |---|---|---|
-| B0 | `UNDEFINED`를 유지한다. 추가 배정을 멈추고 액면을 그대로 둔다. 자동 상계를 만들지 않는다. | 지금 효력. 0.3이 이 행을 채택한다. |
+| B0 | `UNDEFINED`를 유지한다. 추가 배정을 멈추고 액면을 그대로 둔다. 자동 상계를 만들지 않는다. | 0.3의 지금 효력이었다. 0.4가 부분 환불에 대해 B5로 대체했다. 역사로 남긴다. |
 | B1 | 미지급 액면을 비율로 줄이고, 이미 배정한 금액은 그 비율의 `recovery_due`로 둔다. | 전액 재분류를 부분으로 늘린 상품 규칙이다. 채택하지 않는다. |
 | B2 | 수수료 수취인이 먼저 부담한다. | 상품 규칙이다. 채택하지 않는다. |
 | B3 | 잔여 수취인이 먼저 부담한다. | 상품 규칙이다. 채택하지 않는다. |
 | B4 | 플랫폼이 전액 부담한다. | 플랫폼을 법률상 환불채무자로 두는 결론이 먼저다(§7.1 L2). 채택하지 않는다. |
+| B5 | 부분 환불을 요청한 당사자가 부담한다(`REQUESTER`). 수취인의 배정액·미지급 액면은 그대로 두고, 배정은 계속된다. 비용·부족분은 요청자 쪽에만 부담한다(예: 요청자 환불액에서 상계). 상계 방식과 숫자는 비운다. | 지금 효력. 0.4가 이 행을 채택한다(owner decision 2026-11-10 17:43 KST, 준태님(the User)). |
 
 할인 재계산과 복수 결제수단 배분은 이 표에 넣지 않는다. §7.8에 빈 항목으로 남긴다.
-채택은 B0이다. 법률상 환불채무자는 `UNDETERMINED`다. B1–B4는 채택하지 않는다.
+채택은 B5다. 법률상 환불채무자는 `UNDETERMINED`다. B0는 역사로 남고, B1–B4는 채택하지 않는다.
 
 ### 7.7 P04 영속 종결
 
@@ -447,7 +463,7 @@ I10은 법정·대사·분쟁의 보존과 삭제 보류이고 상태는 미완�
 
 이 문서와 목 시험의 통과는 F01–F03이 구현되었다는 뜻이 아니다.
 라벨은 설계중이다.
-개정 `SET-POLICY-DRAFT-0.2`의 선택지 표는 남아 있다. `SET-POLICY-DRAFT-0.3`은 그 표의 L0, W0, R0, S0, T0, B0, P0만 목의 자세로 채택한다. 그 채택은 법률·세무·회계의 답도, 비운 제품 숫자의 확정도 아니다.
+개정 `SET-POLICY-DRAFT-0.2`의 선택지 표는 남아 있다. `SET-POLICY-DRAFT-0.3`은 그 표의 L0, W0, R0, S0, T0, B0, P0만 목의 자세로 채택했다. `SET-POLICY-DRAFT-0.4`는 부분 환불 부담자만 B5 `REQUESTER`로 바꾸어 채택한다. 그 채택들은 법률·세무·회계의 답도, 비운 제품 숫자의 확정도 아니다.
 목 배정은 정산 입금이 아니고, 목 취소 수락은 환불 완료가 아니다.
 `reference/v0.3-rc1`의 금융 모형 전체를 대체하지 않으며 그 파일을 수정하지 않는다.
 상태 기계의 `matched: true`는 이 프로세스 저널의 재생 일치다. 은행 exactly-once, 토스 대사, 체인 최종성이 아니다.
@@ -511,7 +527,7 @@ INITIATED --authorize--> AUTHORIZED --capture--> CAPTURED --commit--> COMMITTED
 
 `commit`은 한 번이다. 다음 명세서는 `observe_statement`다.
 `distribute`는 `COMMITTED`에서만 된다. 현금 0인 순서 고정은 장부를 직접 부를 때의 술어로 남아 있고, 이 기계의 수락 경로에는 없다.
-부분 환불의 배정 정지, 전액 1회 재분류, 액면을 몰래 줄이지 않는 규칙은 §4·§5 그대로다.
+부분 환불 뒤의 계속 배정(B5), 전액 1회 재분류, 액면을 몰래 줄이지 않는 규칙은 §4·§5 그대로다.
 
 ### 9.3 멱등키
 

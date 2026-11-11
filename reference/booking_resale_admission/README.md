@@ -1555,8 +1555,10 @@ binding and observation after later acceptance, preserving historical receipts.
 
 Both CAPTURED and COMMITTED permit these existing operations. Fully accepting a
 partial obligation does not select a burden rule. Partial bindings, even when
-they sum to gross, keep `refund_bearer_policy = UNDEFINED` and the existing
-`DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED` refusal. A single initial gross
+they sum to gross, report `refund_bearer_policy = REQUESTER` and no longer
+refuse distribution (B5, owner decision 2026-11-10, `SET-POLICY-DRAFT-0.4`;
+the historical `DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED` refusal is
+unreachable under B5). A single initial gross
 binding retains `FIXTURE_FULL_GROSS_RECLASS`, a fixture reclassification without
 legal liability determination. Repeating an accepted source under a new explicit
 key retains the existing economically inert journal-entry characterization.
@@ -1646,10 +1648,10 @@ change distribution totals by themselves.
 
 `boundaries` exits **1**, continuing through explicit replay, conflicting keys,
 non-list/duplicate/missing/unknown order refusals, a changed frozen order and a
-partial-refund distribution refusal. Historical receipts remain first snapshots;
-accepted replay does not apply money again. Partial refunds retain
-`refund_bearer_policy: UNDEFINED`, block further distribution and preserve prior
-allocations. Repeating a movement under a fresh observation key remains the
+post-refund distribution that now succeeds under B5. Historical receipts remain first snapshots;
+accepted replay does not apply money again. Partial refunds report
+`refund_bearer_policy: REQUESTER`, preserve prior allocations and no longer
+block distribution (B5, owner decision 2026-11-10, `SET-POLICY-DRAFT-0.4`). Repeating a movement under a fresh observation key remains the
 existing economically inert journal-entry characterization.
 
 All amounts, rates and role labels are caller-supplied synthetic examples.
@@ -2896,7 +2898,7 @@ is followed by a caller-selected view. The transcript performs:
 | Commit `initial`, key `manual-commit`, gross 6000, amount 5500, fee 200, tax 100, held 100, adjustment 100, reason `"synthetic"` | Cash 5500; open receivable 4001; non-cash accounted 500 |
 | Observe `later`, key `later`, gross 4001, amount 3801, fee 200, tax/held/adjustment 0, reason `null` | Cash 9301; open receivable 0; non-cash accounted 700 |
 | Distribute, key `distribution`, order `["platform","organizer"]` | Distributed cash 9301; undistributed cash 0; obligation faces remain organizer 9501, platform 500 |
-| Bind refund `refund`, key `refund`, amount 4000, beneficiary `buyer-3`, reason `synthetic` | Refund face/outstanding 4000; accepted 0; bearer policy `UNDEFINED`; distribution blocked |
+| Bind refund `refund`, key `refund`, amount 4000, beneficiary `buyer-3`, reason `synthetic` | Refund face/outstanding 4000; accepted 0; bearer policy `REQUESTER`; distribution not blocked (B5) |
 | Observe synthetic cancellation acceptance `accept`, key `accept`, amount 1000 | Refund accepted 1000; outstanding 3000; PG adjustment outstanding 1000 |
 | Explicitly repeat the original commit and key | Historical action snapshot: cash 5500, open receivable 4001; duplicate true, applied null |
 | Explicit `view` | Current cash 9301; refund outstanding 3000; PG adjustment outstanding 1000 |
@@ -2908,7 +2910,7 @@ are also printed):
 synthetic cancellation acceptance; not real refund completion
 Current service observation Cash={"confirmed_cash": 9301, "distributed_cash": 9301, "undistributed_cash": 0}
 Current service observation Statement position={"non_cash_accounted": 700, "receivable_open": 0}
-Current service observation Refund={"distribution_blocked": true, "refund_accepted": 1000, "refund_bearer_policy": "UNDEFINED", "refund_face": 4000, "refund_outstanding": 3000}
+Current service observation Refund={"distribution_blocked": false, "refund_accepted": 1000, "refund_bearer_policy": "REQUESTER", "refund_face": 4000, "refund_outstanding": 3000}
 Current service observation PG adjustment={"pg_adjustment_outstanding": 1000}
 ```
 

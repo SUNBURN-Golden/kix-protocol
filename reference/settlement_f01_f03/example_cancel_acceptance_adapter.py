@@ -48,22 +48,18 @@ def run_example(*, policy: dict, order: list) -> dict:
         assert claim["confirmed_cash"] == 97_000
         assert claim["pg_adjustment_outstanding"] == adjustment
         assert claim["refund_outstanding"] == 40_000 - adjustment
-        assert claim["refund_bearer_policy"] == "UNDEFINED"
+        assert claim["refund_bearer_policy"] == "REQUESTER"
         for flag in ("funds_executed", "bank_debit_observed", "external_return_closed", "durable"):
             assert receipt["settlement"][flag] is False
     # Separate caller action; observations never select a distribution/burden.
-    try:
-        machine.distribute(sid, idempotency_key="fixture-distribute", order=order)
-    except SettlementError as error:
-        distribution_error = error.code
-    else:
-        raise AssertionError("partial-refund distribution must remain blocked")
-    assert distribution_error == "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED"
+    # B5 (SET-POLICY-DRAFT-0.4): an open partial refund reports REQUESTER and
+    # no longer blocks distribution.
+    distribution = machine.distribute(sid, idempotency_key="fixture-distribute", order=order)
     return dict(
         provenance=PROVENANCE, durable=False, funds_executed=False,
         bank_debit_observed=False, external_return_closed=False,
         initial=initial, refund=refund, first=first, later=later,
-        distribution_error=distribution_error, journal=machine.export_journal(),
+        distribution=distribution, journal=machine.export_journal(),
         statement_calls=statements.calls, source_calls=source.calls,
     )
 

@@ -849,13 +849,21 @@ class SettlementRejectionAtomicityTests(unittest.TestCase):
             self.later_distribute,
         )
 
-    def test_distribute_blocked_refund_bearer_undefined_leaves_no_trace(self):
-        # Raised after the order checks but before distribution_order is frozen.
+    def test_distribute_order_mismatch_with_open_refund_leaves_no_trace(self):
+        # B5 (SET-POLICY-DRAFT-0.4): an open partial refund reports REQUESTER
+        # and no longer blocks apply_distribution. The order checks still fire
+        # in that state, and the follow-up valid distribute succeeds on both
+        # sides of the pair.
+        pair = self.refunded_pair()
+        for side in pair:
+            claim = side.view(SID)["claim"]
+            self.assertEqual(claim["refund_bearer_policy"], "REQUESTER")
+            self.assertIs(claim["distribution_blocked"], False)
         self.check(
-            "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
-            self.refunded_pair(),
-            lambda m: self.distribute(m, idem="bad-1"),
-            self.later_refund,
+            "DISTRIBUTION_ORDER_MISMATCH",
+            pair,
+            lambda m: self.distribute(m, idem="bad-1", order=["organizer"]),
+            self.later_distribute,
         )
 
     # --- bind_refund -------------------------------------------------------------------------

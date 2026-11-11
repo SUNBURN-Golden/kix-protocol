@@ -145,7 +145,7 @@ class TicketSettlementFactInputsTests(FactInputEvidence, unittest.TestCase):
                 'pg_adjustment_outstanding')}, dict(confirmed_cash=9301, distributed_cash=9301,
                 non_cash_accounted=700, receivable_open=0, refund_outstanding=3000,
                 pg_adjustment_outstanding=1000))
-            self.assertEqual(claim['refund_bearer_policy'], 'UNDEFINED')
+            self.assertEqual(claim['refund_bearer_policy'], 'REQUESTER')
             # Completing the synthetic observation does not complete an external return.
             self.step(changed(rows()[6], idempotency_key='remaining', source_id='remaining', amount=3000))
             view = self.session.settlement.view('claim-2')

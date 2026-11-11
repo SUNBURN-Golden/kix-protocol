@@ -56,7 +56,7 @@ scope or stops; they close no open decision or UNDETERMINED value.
 
 | Map | Checker | Counts (verbatim) | Open-row owners | Contracts read |
 |---|---|---|---|---|
-| `docs/status/CONTRACT_ERROR_CODE_COVERAGE.md` | `scripts/check_contract_error_codes.py` | `Counts: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0` | no owner column | `docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md`<br>`docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md`<br>`docs/contracts/CREDIT_ADVANCE_F04.md`<br>`docs/contracts/AI_DELEGATION_AUTHORITY.md` |
+| `docs/status/CONTRACT_ERROR_CODE_COVERAGE.md` | `scripts/check_contract_error_codes.py` | `Counts: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=198 ASSERTED=198 COVERED=198 CLASS_B=1 CLASS_C=0` | no owner column | `docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md`<br>`docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md`<br>`docs/contracts/CREDIT_ADVANCE_F04.md`<br>`docs/contracts/AI_DELEGATION_AUTHORITY.md` |
 
 The error-code map's ten BRA-RES9 rows are in its earlier key table. The
 checker uses the documented row-scope override matching that map's own checker;
