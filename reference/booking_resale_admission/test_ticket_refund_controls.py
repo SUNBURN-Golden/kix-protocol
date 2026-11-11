@@ -152,7 +152,7 @@ class TicketRefundControlsTests(unittest.TestCase):
                 self.assertEqual(claim['pg_adjustment_outstanding'], accepted)
                 self.assertEqual(claim['confirmed_cash'], cash)
                 self.assertEqual(claim['refund_bearer_policy'],
-                                 'FIXTURE_FULL_GROSS_RECLASS' if name == 'full' else 'UNDEFINED')
+                                 'FIXTURE_FULL_GROSS_RECLASS' if name == 'full' else 'REQUESTER')
                 self.assertEqual(claim['fixture_reclassified'], name == 'full')
                 if name == 'replay':
                     self.assertEqual(results[3]['receipt'], results[0]['receipt'] |
@@ -314,24 +314,23 @@ class TicketRefundControlsTests(unittest.TestCase):
             self.assertEqual(self.control[0].view(sid)['claim'], before)
             self.assertEqual(len(self.control[0].export_journal()), length+1)
 
-    def test_partial_obligation_fully_accepted_and_summed_bindings_keep_burden_undefined(self):
+    def test_partial_obligation_fully_accepted_and_summed_bindings_keep_requester_burden(self):
         self.graph()
         self.step(bind(amount=1000))
         self.step(observe())
         claim = self.control[0].view(SID)['claim']
         self.assertEqual(claim['refund_outstanding'],0)
-        self.assertEqual(claim['refund_bearer_policy'],'UNDEFINED')
+        self.assertEqual(claim['refund_bearer_policy'],'REQUESTER')
         self.step(bind(amount=9001, refund_id='refund-2', idempotency_key='refund-bind-2'))
         claim = self.control[0].view(SID)['claim']
         self.assertEqual(claim['refund_face'], 10001)
         self.assertFalse(claim['fixture_reclassified'])
-        self.assertEqual(claim['refund_bearer_policy'],'UNDEFINED')
+        self.assertEqual(claim['refund_bearer_policy'],'REQUESTER')
+        # B5: the partial bindings no longer block distribution; the caller
+        # order allocates the confirmed cash on each graph identically.
         for graph in (machines(self.session), machines(self.api), self.control, self.raw):
-            before = snapshot(graph)
             self.assertEqual(outcome(lambda: graph[0].distribute(SID, idempotency_key='blocked',
-                order=['organizer'])),
-                {'error':{'code':'DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED'}})
-            self.assertEqual(snapshot(graph),before)
+                order=['organizer']))['effect'], {'organizer': 10001})
         self.step(observe())
 
     def test_invalid_bindings_and_phases_preserve_direct_fsm_errors(self):

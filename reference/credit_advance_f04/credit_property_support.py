@@ -199,7 +199,7 @@ def make_face(claim_id, faces, dists, variant, cash=None, recovery=None, refund=
     if variant == "reclass":
         refund_face, bearer = gross, "FIXTURE_FULL_GROSS_RECLASS"
     elif variant == "open-refund":
-        refund_face, bearer = min(refund, gross), "UNDEFINED"
+        refund_face, bearer = min(refund, gross), "REQUESTER"
     face = {
         "provenance": "MOCK_SETTLEMENT_ONLY",
         "claim_id": claim_id,

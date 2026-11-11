@@ -8,14 +8,15 @@ settlement_property_support.SEEDS.
 
 Oracles are re-derived from docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md
 sections 1-6 and 9 under the adopted section-7 postures (L0, W0, R0, S0, T0,
-B0, P0 of SET-POLICY-DRAFT-0.3). The coverage mapping and the section-8 class
+B5, P0 of SET-POLICY-DRAFT-0.4). The coverage mapping and the section-8 class
 table are in validation/2026-10-21-settlement-multi-payee-refund-corpus/README.md.
 
 This module narrows the fin-multi-payee-refund-proof register gap inside the
 MOCK bound; it does not implement or close that pending node. It asserts no
 waterfall numbers, no remainder-unit payee, no resale bps, no tax or reserve
-rate, no legal debtor and no partial-refund bearer (all UNDETERMINED), and no
-external return closure.
+rate and no legal debtor (all UNDETERMINED). The mock partial-refund bearer
+is the adopted B5 REQUESTER; the legal refund debtor stays UNDETERMINED. It
+asserts no external return closure.
 
 Properties:
   (f) original waterfall split conservation: per payee
@@ -129,7 +130,7 @@ class WaterfallConservationCorpusTests(unittest.TestCase):
         "REFUND_OBLIGATION_REQUIRED",
         "REFUND_ACCEPTANCE_EXCEEDS_OBLIGATION",
         "ACCEPTANCE_BINDING_CONFLICT",
-        "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
+        "DISTRIBUTION_ORDER_MISMATCH",
         "DISTRIBUTION_ORDER_FROZEN",
     )
 
@@ -168,8 +169,8 @@ class WaterfallConservationCorpusTests(unittest.TestCase):
                 view = book.view("c")
                 check_claim_view(view, mirror)
                 check_refund_view(view)
-                self.assertEqual(view["refund_bearer_policy"], "UNDEFINED")
-                self.assertIs(view["distribution_blocked"], True)
+                self.assertEqual(view["refund_bearer_policy"], "REQUESTER")
+                self.assertIs(view["distribution_blocked"], False)
                 # A second partial refund completes the gross sum without a reclass.
                 book.bind_refund(
                     "c",
@@ -320,16 +321,16 @@ class RefundReservationPerPayeeTests(unittest.TestCase):
         )["claim"]
         self.assertEqual(view["refund_face"], 100_000)
         self.assertIs(view["fixture_reclassified"], False)
-        self.assertEqual(view["refund_bearer_policy"], "UNDEFINED")
-        self.assertIs(view["distribution_blocked"], True)
+        self.assertEqual(view["refund_bearer_policy"], "REQUESTER")
+        self.assertIs(view["distribution_blocked"], False)
         for item in view["obligations"]:
             self.assertEqual(item["cancelled_unpaid"], 0)
             self.assertEqual(item["recovery_due"], 0)
         self.assertEqual(view["distributed_cash"], 60_000)
-        self.assertEqual(
-            code_of(lambda: book.apply_distribution("c", order=["res-c", "fee-c"])),
-            "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
-        )
+        # B5: distribution continues; the cash is already allocated, so the
+        # frozen order applies zero without touching faces.
+        again = book.apply_distribution("c", order=["res-c", "fee-c"])
+        self.assertEqual(again["applied"], {"res-c": 0, "fee-c": 0})
         self.assertEqual(
             code_of(
                 lambda: book.bind_refund(
@@ -398,8 +399,8 @@ class RefundRejectionAtomicityTests(unittest.TestCase):
                 "ACCEPTANCE_BINDING_CONFLICT",
             ),
             (
-                lambda: book.apply_distribution("c", order=["res-c", "fee-c"]),
-                "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
+                lambda: book.apply_distribution("c", order=["res-c"]),
+                "DISTRIBUTION_ORDER_MISMATCH",
             ),
             (
                 lambda: book.observe_mock_cancel_acceptance("c", source_id="a-3", amount=True),
@@ -482,8 +483,8 @@ class RefundRejectionAtomicityTests(unittest.TestCase):
                 "ACCEPTANCE_BINDING_CONFLICT",
             ),
             (
-                lambda key: machine.distribute("s", idempotency_key=key, order=["res-s", "fee-s"]),
-                "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
+                lambda key: machine.distribute("s", idempotency_key=key, order=["res-s"]),
+                "DISTRIBUTION_ORDER_MISMATCH",
             ),
             (
                 lambda key: machine.bind_refund(

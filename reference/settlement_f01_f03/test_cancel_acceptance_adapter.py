@@ -283,8 +283,13 @@ class CancelAcceptanceExampleTests(unittest.TestCase):
         self.assertEqual(report["statement_calls"], ((SID, "fixture-statement"),))
         self.assertEqual([entry["op"] for entry in report["journal"]], [
             "initiate", "authorize", "capture", "commit", "bind_refund",
-            "observe_mock_cancel_acceptance", "observe_mock_cancel_acceptance"])
-        self.assertEqual(report["distribution_error"], "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED")
+            "observe_mock_cancel_acceptance", "observe_mock_cancel_acceptance",
+            "distribute"])
+        # B5: the open partial refund no longer blocks distribution; the
+        # caller order allocates the confirmed cash and then freezes.
+        self.assertFalse(report["distribution"]["duplicate"])
+        self.assertEqual(report["distribution"]["effect"],
+                         {"fixture-host": 95_000, "fixture-operator": 2_000})
         for stage, accepted in (("initial", 0), ("refund", 0), ("first", 10_000), ("later", 15_000)):
             view = report[stage]["settlement"]
             claim = view["claim"]
@@ -300,7 +305,7 @@ class CancelAcceptanceExampleTests(unittest.TestCase):
             self.assertEqual(claim["distributed_cash"], 0)
             self.assertIsNone(claim["distribution_order"])
             self.assertFalse(claim["fixture_reclassified"])
-            self.assertEqual(claim["refund_bearer_policy"], "NONE" if stage == "initial" else "UNDEFINED")
+            self.assertEqual(claim["refund_bearer_policy"], "NONE" if stage == "initial" else "REQUESTER")
             self.assertEqual(sum(line["outstanding"] for line in claim["obligations"]), 100_000)
             self.assertTrue(all(line["cancelled_unpaid"] == line["recovery_due"] == 0
                                 for line in claim["obligations"]))
@@ -310,7 +315,8 @@ class CancelAcceptanceExampleTests(unittest.TestCase):
         for flag in ("funds_executed", "bank_debit_observed", "external_return_closed", "durable"):
             self.assertIs(report[flag], False)
         restored = SettlementMachine.restore(report["journal"])
-        self.assertEqual(restored.view(SID), report["later"]["settlement"])
-        with self.assertRaises(SettlementError) as caught:
-            restored.distribute(SID, idempotency_key="after-restore", order=order)
-        self.assertEqual(caught.exception.code, report["distribution_error"])
+        self.assertEqual(restored.view(SID), report["distribution"]["settlement"])
+        # A further distribute under a fresh key still succeeds under B5;
+        # no cash remains, so it applies zero and claws nothing back.
+        again = restored.distribute(SID, idempotency_key="after-restore", order=order)
+        self.assertEqual(again["effect"], {"fixture-host": 0, "fixture-operator": 0})

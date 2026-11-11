@@ -159,8 +159,8 @@ class SettlementConsoleTests(unittest.TestCase):
         self.assertEqual({k: current[k] for k in ('confirmed_cash', 'refund_outstanding',
             'pg_adjustment_outstanding')}, dict(confirmed_cash=9301, refund_outstanding=3000,
                                                pg_adjustment_outstanding=1000))
-        self.assertEqual(current['refund_bearer_policy'], 'UNDEFINED')
-        self.assertTrue(current['distribution_blocked'])
+        self.assertEqual(current['refund_bearer_policy'], 'REQUESTER')
+        self.assertFalse(current['distribution_blocked'])
         self.assertEqual(replies[10]['receipt'], replies[0]['receipt'] | dict(duplicate=True, applied=None))
         self.assertEqual(replies[10]['receipt']['settlement']['claim']['confirmed_cash'], 5500)
         self.assertEqual(replies[11]['view']['claim'], current)

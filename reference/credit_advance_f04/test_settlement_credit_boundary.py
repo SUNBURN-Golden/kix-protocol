@@ -352,8 +352,8 @@ class SettlementCreditBoundaryTests(unittest.TestCase):
         self.assertEqual(refund_claim["refund_face"], 40000)
         self.assertEqual(refund_claim["refund_accepted"], 0)
         self.assertEqual(refund_claim["refund_outstanding"], 40000)
-        self.assertEqual(refund_claim["refund_bearer_policy"], "UNDEFINED")
-        self.assertTrue(refund_claim["distribution_blocked"])
+        self.assertEqual(refund_claim["refund_bearer_policy"], "REQUESTER")
+        self.assertFalse(refund_claim["distribution_blocked"])
         self.assertFalse(refunded["funds_executed"])
         self.assertFalse(refund_claim["funds_executed"])
 
