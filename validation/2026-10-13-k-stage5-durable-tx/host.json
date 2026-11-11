@@ -1,0 +1,69 @@
+{
+  "architecture": "x86_64",
+  "chain_inventory_writer": false,
+  "cpu_model": "Intel(R) Xeon(R) Processor",
+  "disk": {
+    "df": {
+      "code": 0,
+      "stderr": "",
+      "stdout": "Filesystem        1B-blocks         Used   Available Use% Mounted on\n/dev/vdb       136793825280 118147846144 18629201920  87% /"
+    },
+    "flush_characteristic": "unverified: virtual disk, no equipment datasheet, rotational flag is not a hardware flush proof",
+    "lsblk": {
+      "code": 0,
+      "stderr": "",
+      "stdout": "NAME  SIZE ROTA TYPE MODEL\nvda   128G    1 disk \nvdb   128G    1 disk"
+    },
+    "model": "unreadable: [Errno 2] No such file or directory: '/sys/block/vda/device/model'",
+    "rotational_vda": "1"
+  },
+  "git_head": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "4813388b5bcde72c298c7392ff5230316da44470"
+  },
+  "localDurableData": true,
+  "locked_blobs": {
+    "runtime/crates/kix-kernel/src/lib.rs": {
+      "expected": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+      "match": true,
+      "observed": "69564b166f0c27f9af5d8422f0a466b18d74c20f"
+    },
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": {
+      "expected": "b607996c83a119c349f1cc90469ac1ba82764e20",
+      "match": true,
+      "observed": "b607996c83a119c349f1cc90469ac1ba82764e20"
+    }
+  },
+  "meminfo": {
+    "MemAvailable": "4109328 kB",
+    "MemTotal": "16386416 kB",
+    "SwapTotal": "0 kB"
+  },
+  "nproc": 8,
+  "origin_main": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "c0464f54bee6253e376b635103e698ef02b8f417"
+  },
+  "os_release": "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"13\"\nVERSION=\"13 (trixie)\"\nVERSION_CODENAME=trixie\nDEBIAN_VERSION_FULL=13.7\nID=debian\nHOME_URL=\"https://www.debian.org/\"\nSUPPORT_URL=\"https://www.debian.org/support\"\nBUG_REPORT_URL=\"https://bugs.debian.org/\"",
+  "packages": {
+    "code": 1,
+    "stderr": "dpkg-query: no packages found matching foundationdb-server\ndpkg-query: no packages found matching foundationdb-clients",
+    "stdout": "postgresql-17\t17.11-0+deb13u1\npostgresql-client-17\t17.11-0+deb13u1\npython3-psycopg\t3.2.6-1"
+  },
+  "postgres_version": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "postgres (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1)"
+  },
+  "public_endpoint": false,
+  "python": "3.13.5",
+  "recorded_before_candidate_start": true,
+  "recorded_before_suite_start": true,
+  "uname": {
+    "code": 0,
+    "stderr": "",
+    "stdout": "Linux 6.12.113+ #1 SMP PREEMPT_DYNAMIC Mon Nov  9 20:07:52 UTC 2026 x86_64"
+  }
+}

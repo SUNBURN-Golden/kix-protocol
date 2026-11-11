@@ -1,0 +1,68 @@
+{
+  "adoption": "option A of docs/decisions/BACKEND_ADOPTION_PROPOSAL_20261009.md \u00a76, local non-production PostgreSQL 17.11 (Debian 17.11-0+deb13u1)",
+  "backend": {
+    "observed_settings": {
+      "autovacuum": {
+        "setting": "off",
+        "unit": null
+      },
+      "data_checksums": {
+        "setting": "on",
+        "unit": null
+      },
+      "fsync": {
+        "setting": "on",
+        "unit": null
+      },
+      "full_page_writes": {
+        "setting": "on",
+        "unit": null
+      },
+      "listen_addresses": {
+        "setting": "",
+        "unit": null
+      },
+      "server_version": {
+        "setting": "17.11 (Debian 17.11-0+deb13u1)",
+        "unit": null
+      },
+      "shared_buffers": {
+        "setting": "8192",
+        "unit": "8kB"
+      },
+      "synchronous_commit": {
+        "setting": "on",
+        "unit": null
+      }
+    },
+    "observed_version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+    "pin": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1)",
+    "single_process": true,
+    "single_writer": true,
+    "transport": "unix socket only"
+  },
+  "chainWriter": false,
+  "fsmDurable": false,
+  "fundsExecuted": false,
+  "localDurableData": true,
+  "not_verified": {
+    "durability_equal_to_other_candidate": false,
+    "hardware_flush_verified": false,
+    "independent_failure_domain": false,
+    "power_os_crash_injected": false
+  },
+  "ok": true,
+  "productionConformance": false,
+  "productionEndpoint": false,
+  "productionReadiness": false,
+  "protocolTruth": false,
+  "ranking": null,
+  "slo": null,
+  "tests": {
+    "errors": 0,
+    "failures": 0,
+    "problems": [],
+    "ran": 88,
+    "skipped": 0
+  }
+}
