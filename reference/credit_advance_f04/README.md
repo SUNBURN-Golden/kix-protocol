@@ -313,6 +313,91 @@ policy value is added. Tolerance values stay caller-supplied; a future binding's
 owner is the User. Tests are reached by the existing credit-suite discovery
 (`test_settlement_variance_contract.py`), so no CI workflow change is needed.
 
+## Shared exposure observation (CR-CAPITAL-1110 #2)
+
+[`shared_exposure.py`](shared_exposure.py) defines the F04 §7.12 shared-exposure
+observation across claims or advances that the caller groups under one debtor
+or pool label:
+
+```text
+group_outstanding_exposure = sum(view["outstanding_exposure"])
+group_drawn_exposure       = sum(view["drawn_exposure"])
+group_repaid_exposure      = sum(view["repaid_exposure"])
+group_open_face            = sum(claim["open_face"])      # once per distinct claim_id
+group_reserved_open        = sum(claim["reserved_open"])  # once per distinct claim_id
+group_residual_unreserved  = group_open_face - group_reserved_open
+```
+
+It reads only a non-empty list of caller-supplied literal `CreditMachine.view`
+snapshots; it does not call any machine, recompute a frozen face, repair a gap
+or authorize exposure. Advance-level sums are per view; claim-level capacity is
+counted once per distinct `claim_id`, and views sharing a claim must agree on
+`trade_id`, `open_face`, `reserved_open` and `residual_unreserved`
+(`VIEW_BINDING_CONFLICT` otherwise). Views must be frozen
+(`snapshot_frozen: true`, phase `DRAWN`/`CLOSED`/`DEFAULTED`); pre-draw grouping
+is undefined in this revision and fails as `VIEW_NOT_FROZEN`. `group_id` is a
+caller label, not a legal party: `legal_debtor_bound` stays false.
+
+`limit` is a required keyword with no default: omission is `LIMIT_REQUIRED`,
+and a non-`int` (including `bool`) or negative value is `LIMIT_INVALID`.
+`within_limit` is `group_outstanding_exposure <= limit`, inclusive at the
+boundary, and is never an acceptance. The machine enforces only per-claim
+ceilings (`ADVANCE_EXCEEDS_OPEN_FACE`); it never enforces the caller's group
+limit. Product limit numbers stay `UNDETERMINED` with owner Astra; legal debtor
+identity stays `UNDETERMINED` with owner the User (roadmap D-E, I10).
+
+Frozen faces are not recomputed. After the face snapshot freezes, exposure
+moves only through the existing observable transitions: `draw` adds once,
+`repay` reduces outstanding but keeps the reservation, `close` releases the
+reservation only at zero exposure, and `default` retains both; a `DEFAULTED`
+advance still aggregates. Later settlement refunds or cancellations affect the
+observation only through those transitions; the refund component is
+`NOT_BOUND` and the per-claim settlement gap stays §7.11 territory. Every
+record is `fail_closed: true`, `authorizes_exposure: false`,
+`mutates_state: false`, and maps to `NOT_BOUND` with repair `NONE`
+(`SHARED_EXPOSURE_NOT_BOUND` is a reference-only label, not a protocol code).
+
+The canonical fixture
+[`fixtures/shared_exposure_v1.json`](fixtures/shared_exposure_v1.json)
+is pinned by `FIXTURE_SHA256`; its six scenarios are literal snapshots captured
+from `MockSettlement` recognition plus unbound `CreditMachine` draws:
+
+| Scenario | Covers |
+| --- | --- |
+| `E1_two_advances_one_claim_exact_limit` | two advances on one claim; claim capacity counted once; outstanding exactly at the caller limit |
+| `E2_two_claims_one_debtor_label_over_limit` | two claims under one caller debtor label; the sum exceeds the limit and is reported fail-closed, not rejected by the machine |
+| `E3_pool_three_claims_default_still_aggregates` | three claims under one pool label; a `DEFAULTED` advance keeps its reservation and still aggregates |
+| `E4_refund_after_freeze_face_unchanged` | a full settlement refund reclassification leaves the frozen face and exposure byte-equal; the §7.11 variance observes the gap separately |
+| `E5_exact_limit_boundary_within` | the same views as E2 at the exact sum boundary: `within_limit` is inclusive |
+| `E6_repay_then_close_reservation_released` | partial repay keeps the reservation; full repay then close releases it; exposure moves only via transitions |
+
+Existing coverage is cited, not duplicated:
+
+- Per-claim ceilings and the frozen snapshot:
+  `test_mock_credit.py::CreditAdvanceMockTests.test_claims_do_not_share_a_ceiling_and_the_snapshot_stays_frozen`.
+- Face stability across later settlement changes:
+  `test_credit_properties.py::MachinePropertyTests.test_the_face_snapshot_stays_frozen_after_later_settlement_changes`.
+- The boundary pack's `S5_shared_exposure_two_advances` and
+  `S6_reconciliation_gap_reported_no_repair` scenarios in
+  [`fixtures/settlement_credit_boundary_v1.json`](fixtures/settlement_credit_boundary_v1.json)
+  remain the per-claim ceiling and gap evidence; this module extends them with
+  the cross-claim group observation instead of re-testing them.
+
+Vendoring: `shared_exposure.py` and the fixture may be copied byte-for-byte.
+The module imports only the Python standard library and reads no other
+reference module. Replay with:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/credit_advance_f04/shared_exposure.py --check
+```
+
+No protocol command, FSM state, error-table entry, OpenAPI byte or product
+policy value is added. Limit values stay caller-supplied. Tests are reached by
+the existing credit-suite discovery (`test_shared_exposure_contract.py`), so no
+CI workflow change is needed. No claim of durability, finality, bank
+exactly-once, live funds, production readiness or product-policy adoption is
+made.
+
 ## Verification
 
 ```bash
