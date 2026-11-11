@@ -563,3 +563,69 @@ variance = sum(settlement_view["obligations"][i]["outstanding"])
 이 절은 정산 잔차의 뜻만 정의한다. 비청구: 통과는 F04·E06 또는 F01–F03의 구현·설계확정이 아니고,
 정산·회계·법률·은행·체인 최종성의 판단이 아니며, 실자금·내구성·분산 펜싱·정확히 한 번을 뜻하지 않는다.
 모든 실행 플래그는 거짓으로 남는다.
+
+### 7.12 공유 노출(shared exposure)
+
+이 절은 호출자가 같은 채무자 또는 풀 라벨로 묶은 여러 청구·선지급의 노출 합을 정의하는 관찰 전용 절이다.
+새 명령, 새 단계, 새 프로토콜 오류 코드, 새 OpenAPI 바이트, 새 정책 숫자를 만들지 않는다.
+관찰은 기계의 상태를 바꾸지 않고, 고정된 액면을 다시 계산하지 않으며, 노출 권한을 주지 않는다.
+
+묶음은 호출자가 넘긴다. `group_id`는 채무자 또는 풀의 라벨이지 법적 당사자가 아니다.
+목에는 법적 채무자 신원이 없고 `legal_debtor_bound`는 거짓으로 남는다.
+법적 당사자는 `UNDETERMINED`다. 담당은 사용자. 법률 검토의 주체와 시점은 로드맵 D-E. 당사자·관할·자료는 I10.
+
+관찰은 이미 캡처된 `CreditMachine.view` 스냅샷의 비어 있지 않은 목록만 읽는다.
+각 조회는 `provenance = MOCK_CREDIT_F04_ONLY`, `exposure_ledger = MOCK_EXPOSURE`, `currency = KRW`,
+`snapshot_frozen = True`여야 하고 `phase`는 `DRAWN`, `CLOSED`, `DEFAULTED` 중 하나여야 한다.
+인출 전 묶음은 이 개정에서 정의하지 않는다. 얼지 않은 조회는 호출 오류다(`VIEW_NOT_FROZEN`).
+정의는 이미 노출된 값만 쓴다:
+
+```text
+group_outstanding_exposure = sum(view["outstanding_exposure"])
+group_drawn_exposure       = sum(view["drawn_exposure"])
+group_repaid_exposure      = sum(view["repaid_exposure"])
+group_open_face            = sum(claim["open_face"])      # distinct claim_id마다 한 번
+group_reserved_open        = sum(claim["reserved_open"])  # distinct claim_id마다 한 번
+group_residual_unreserved  = group_open_face - group_reserved_open
+```
+
+선지급 수준 합은 조회마다 더한다. 청구 수준 용량(`open_face`, `reserved_open`, `residual_unreserved`)은
+청구에서 읽는 값이므로 서로 다른 `claim_id`마다 한 번만 센다.
+각 조회는 `outstanding_exposure == drawn_exposure - repaid_exposure`와
+`residual_unreserved == open_face - reserved_open`을 만족해야 한다.
+금액은 `bool`이 아닌 `int`이고 `0` 이상 `10**12` 이하의 범위를 쓴다. 그룹 합은 `10**12`를 넘을 수 있다.
+조회별 범위는 그룹 합을 제한하지 않는다.
+같은 `claim_id`를 공유하는 조회는 `trade_id`, `open_face`, `reserved_open`, `residual_unreserved`에서 일치해야 한다.
+어긋나면 호출자가 관찰 시점을 섞은 것이며 호출 오류다(`VIEW_BINDING_CONFLICT`).
+중복 `advance_id`는 `VIEW_INVALID`다.
+참조 전용 코드는 `LIMIT_REQUIRED`, `LIMIT_INVALID`, `VIEW_BINDING_CONFLICT`, `VIEW_NOT_FROZEN`, `VIEW_INVALID`이며 프로토콜 오류 코드가 아니다.
+
+한도는 호출자가 넘기는 필수 키워드 인자 `limit`다. 기본값은 없다(`no default`).
+타입은 `bool`이 아닌 `int`이고 `0 <= limit`다. 누락은 `LIMIT_REQUIRED`, 형식 위반은 `LIMIT_INVALID`다. 둘 다 참조 전용 코드다.
+판정은 `group_outstanding_exposure <= limit`이며 경계를 포함한다.
+제품 한도 숫자는 `UNDETERMINED`다. 담당은 Astra. 이 절은 기본 한도나 제품 숫자를 공급하지 않는다.
+기계는 청구별 천장(`ADVANCE_EXCEEDS_OPEN_FACE`, §3·§7.2)만 집행하고 호출자의 그룹 한도는 집행하지 않는다.
+한도 안에 들어와도 그것은 수락·승인·노출 권한이 아니다.
+모든 관찰은 `fail_closed: true`, `authorizes_exposure: false`, `mutates_state: false`로 남는다.
+
+고정된 액면은 다시 계산하지 않는다. FACE_SNAPSHOT이 고정된 뒤 노출은 기존 관찰 가능 전이로만 움직인다:
+`draw`는 노출을 한 번 늘리고, `repay`는 `outstanding_exposure`를 줄이되 예약은 유지하며,
+`close`는 노출이 0일 때만 예약을 풀고, `default`는 예약과 미지급 노출을 유지한다.
+`DEFAULTED` 선지급도 집계에 포함한다.
+이후의 정산 환불·취소는 그 자체로 고정 액면이나 노출을 바꾸지 않는다.
+그것은 위의 기존 전이를 통해서만 이 관찰에 영향을 준다.
+환불 구성 요소는 `NOT_BOUND`다. 이 절은 환불 때문에 생기는 노출을 계산하지 않는다. 수리 경로는 `NONE`이다.
+정산 조회와 고정 액면 사이의 청구별 간극은 §7.11의 영역이며 이 절은 그것을 수리하지 않는다.
+
+청구를 가로지르는 관찰은 기존 단계나 사유에 매핑하지 않는다. `NOT_BOUND`다.
+기존 F04 단계(`OFFERED` … `DEFAULTED`)와 오류 코드 중 어느 것도 청구를 가로지르는 순수 관찰을 뜻하지 않는다.
+`SHARED_EXPOSURE_NOT_BOUND`는 이 참조 모듈의 라벨이며 프로토콜 오류 코드가 아니다.
+매핑은 `{"code": "SHARED_EXPOSURE_NOT_BOUND", "contract_status": "NOT_BOUND", "repair": "NONE"}`이고,
+새 상태·새 명령·새 오류 코드·수리 경로를 만들지 않는다.
+
+관찰 시점은 호출자의 것이다. 이 절은 어느 스냅샷이 현재인지, 어느 쪽이 권위인지 정하지 않는다.
+관찰은 결정적이고 읽기 전용이다. 같은 입력은 같은 기록을 내고 입력 조회를 바꾸지 않는다.
+
+이 절은 공유 노출의 뜻만 정의한다. 비청구: 통과는 F04·E06의 구현·설계확정이 아니고,
+정산·회계·법률·은행·체인 최종성의 판단이 아니며, 실자금·내구성·분산 펜싱·정확히 한 번을 뜻하지 않는다.
+모든 실행 플래그는 거짓으로 남는다. F04·E06 라벨은 **설계중** 그대로다.
