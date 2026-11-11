@@ -241,6 +241,7 @@ and transport fencing. No policy decision, activation or independent review is i
 | [정산 분배 F01–F03 목 계약](contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) | Wave 3 정산 mock 술어와 §7 정책 선택지 | 목 계약. F01·F02·F03·P04는 설계중 그대로. §7 권고 0.3 |
 | [예매·리셀·검표 게이트 목 계약](contracts/BOOKING_RESALE_ADMISSION_GATES.md) | Wave 4 예매·리셀·검표 mock 술어와 수락 상태 기계 | 목 계약. B01–B05, R01–R05, P03은 설계중 그대로. §7 초안 0.2 |
 | [여신·신용 선지급 F04 목 계약](contracts/CREDIT_ADVANCE_F04.md) | Wave 5 F04 mock 술어 | 목 계약. mock/sim only. F04·E06은 설계중 그대로 |
+| [k-stage5-durable-tx 기록](../validation/2026-10-13-k-stage5-durable-tx/README.md) | 채택된 로컬·비운영 PostgreSQL 17.11 위 영속 거래·adapter inbox/outbox·항목별 webhook 정규화·예산의 `durable/` 계층 | 로컬 구현·acceptance 기록. 잠금 v4 밖, 운영 플래그 false 그대로. exact-head CI·비작성자 검토·사용자 병합 전이며 운영 준비를 주장하지 않음 |
 | [조회 원천 지도](contracts/READ_MODEL_SOURCE_MAP.md) | 승인된 13개 조회 이름의 소스 표면·보존 술어·카탈로그 기작 | 입력 자료. 결정·구현·카탈로그 변경 없음 |
 | [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | 절단 증명의 명제 P1–P4·가정 A1–A10별 기존 근거 대응표 | 빌더 작성 검토 자료 묶음. 독립 검토·수락·상태 변경 아님. I12는 미완결 |
 
