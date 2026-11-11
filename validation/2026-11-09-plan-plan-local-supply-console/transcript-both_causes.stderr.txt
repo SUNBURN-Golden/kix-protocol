@@ -1,0 +1,13 @@
+Local supply console — MOCK_TOKEN_REWARD_ONLY / CALCULATION_ONLY / SYNTHETIC_SUPPLY_FIGURE
+Synthetic inputs and results only. No mint, allocation, burn, chain query or payout control occurs. stop_payout is a reported model flag, not an executed action. Supply policy and operational responses remain UNDETERMINED — Astra/User.
+State is in memory. :cancel abandons the current action. show displays active selections; no calculation occurs on editing.
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: event count (zero explicitly selects []) (explicit decimal integer): event_id (verbatim string): op (MINT / ALLOCATE / BURN / HOLDER_BURN): amount (explicit decimal integer): approved (literal true / false; synthetic assertion): path_approved (literal true / false; synthetic assertion): program (explicit JSON string or null): Events selected. Active report and comparison cleared.
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: proposed={"arguments":{"events":[{"amount":3,"approved":false,"event_id":"mint-b","op":"MINT","path_approved":false,"program":"synthetic-program"}]},"operation":"supply_report"}
+Type literal CALCULATE to dispatch once; anything else declines: Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: chain_supply (SYNTHETIC_SUPPLY_FIGURE) (explicit decimal integer): proposed={"arguments":{"chain_supply":3,"offchain":{"allocated_total":0,"burned_total":0,"events":[{"amount":3,"approved":false,"event_id":"mint-b","op":"MINT","path_approved":false,"program":"synthetic-program"}],"figure":"SYNTHETIC_SUPPLY_FIGURE","holder_burn_outside_layer":0,"layer_supply":0,"minted_total":0,"unapproved_mint":3}},"operation":"reconcile_supply"}
+Type literal RECONCILE to dispatch once; anything else declines: Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: active={"comparison":{"alarm":"UNAPPROVED_PATH","chain_supply":3,"figure":"SYNTHETIC_SUPPLY_FIGURE","mismatch":true,"offchain_supply":0,"stop_payout":true},"events":[{"amount":3,"approved":false,"event_id":"mint-b","op":"MINT","path_approved":false,"program":"synthetic-program"}],"report":{"allocated_total":0,"burned_total":0,"events":[{"amount":3,"approved":false,"event_id":"mint-b","op":"MINT","path_approved":false,"program":"synthetic-program"}],"figure":"SYNTHETIC_SUPPLY_FIGURE","holder_burn_outside_layer":0,"layer_supply":0,"minted_total":0,"unapproved_mint":3}}
+Actions: add_event, replace_event, replace_events, show, calculate, reconcile, quit
+action: 

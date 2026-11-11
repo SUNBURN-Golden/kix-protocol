@@ -1,0 +1,167 @@
+"""Sequential synthetic booking/resale/admission sessions over one local graph."""
+
+from admission_fixture import _validate_setup
+from admission_fsm import AdmissionMachine
+from admission_session import AdmissionSession
+from booking_session import BookingSession
+from issued_ticket_adapter import IssuedTicketAdapter
+from presentation_source import PresentationSource
+from reservation_fsm import ReservationMachine
+from resale_fsm import ResaleMachine
+from resale_offer_source import ResaleOfferSource
+from resale_payment_source import ResalePaymentSource
+from resale_session import ResaleSession
+# admission_fixture installs the existing sibling settlement reference path.
+from settlement_fsm import SettlementMachine
+from cancel_acceptance_adapter import CancelAcceptanceAdapter
+from cancel_acceptance_source import CancelAcceptanceSource, CancelAcceptanceSourceError
+from statement_adapter import StatementAdapter
+from statement_source import StatementSource, StatementSourceError
+from settlement_input_adapter import SettlementInputAdapter
+
+
+class TicketSettlementSession:
+    """Explicit existing settlement operations on the shared ticket graph."""
+
+    def __init__(self, machine: SettlementMachine, *,
+                 cancel_acceptance_source: CancelAcceptanceSource | None = None,
+                 statement_source: StatementSource | None = None,
+                 booking_source=None, resale_source=None) -> None:
+        self._machine = machine
+        self._input_adapter = SettlementInputAdapter(
+            machine, booking_source=booking_source, resale_source=resale_source)
+        self._statement_adapter = (StatementAdapter(machine, statement_source)
+                                   if statement_source is not None else None)
+        self._cancel_acceptance_adapter = (
+            CancelAcceptanceAdapter(machine, cancel_acceptance_source)
+            if cancel_acceptance_source is not None else None)
+
+    def initiate(self, settlement_id, *, idempotency_key, trade_id, gross,
+                 debtor_role, policy, currency):
+        return self._machine.initiate(
+            settlement_id, idempotency_key=idempotency_key, trade_id=trade_id,
+            gross=gross, debtor_role=debtor_role, policy=policy, currency=currency)
+
+    def initiate_from_booking(self, settlement_id, *, reservation_id, idempotency_key,
+                              trade_id, debtor_role, policy):
+        return self._input_adapter.apply(
+            source_kind="booking", source_id=reservation_id, settlement_id=settlement_id,
+            idempotency_key=idempotency_key, trade_id=trade_id, debtor_role=debtor_role,
+            policy=policy)
+
+    def initiate_from_resale(self, settlement_id, *, listing_id, idempotency_key,
+                             trade_id, debtor_role, policy):
+        return self._input_adapter.apply(
+            source_kind="resale", source_id=listing_id, settlement_id=settlement_id,
+            idempotency_key=idempotency_key, trade_id=trade_id, debtor_role=debtor_role,
+            policy=policy)
+
+    def authorize(self, settlement_id, *, idempotency_key):
+        return self._machine.authorize(settlement_id, idempotency_key=idempotency_key)
+
+    def capture(self, settlement_id, *, idempotency_key):
+        return self._machine.capture(settlement_id, idempotency_key=idempotency_key)
+
+    def fail(self, settlement_id, *, idempotency_key, reason):
+        return self._machine.fail(
+            settlement_id, idempotency_key=idempotency_key, reason=reason)
+
+    def cancel(self, settlement_id, *, idempotency_key, reason):
+        return self._machine.cancel(
+            settlement_id, idempotency_key=idempotency_key, reason=reason)
+
+    def reconcile(self, settlement_id, *, idempotency_key):
+        return self._machine.reconcile(settlement_id, idempotency_key=idempotency_key)
+
+    def commit(self, settlement_id, *, idempotency_key, movement_id, gross, amount,
+               fee, tax, held, adjustment, adjustment_reason):
+        return self._machine.commit(
+            settlement_id, idempotency_key=idempotency_key, movement_id=movement_id,
+            gross=gross, amount=amount, fee=fee, tax=tax, held=held,
+            adjustment=adjustment, adjustment_reason=adjustment_reason)
+
+    def bind_refund(self, settlement_id, *, idempotency_key, refund_id, amount,
+                    beneficiary_role, reason):
+        return self._machine.bind_refund(
+            settlement_id, idempotency_key=idempotency_key, refund_id=refund_id,
+            amount=amount, beneficiary_role=beneficiary_role, reason=reason)
+
+    def observe_statement(self, settlement_id, *, idempotency_key, movement_id, gross,
+                          amount, fee, tax, held, adjustment, adjustment_reason):
+        return self._machine.observe_statement(
+            settlement_id, idempotency_key=idempotency_key, movement_id=movement_id,
+            gross=gross, amount=amount, fee=fee, tax=tax, held=held,
+            adjustment=adjustment, adjustment_reason=adjustment_reason)
+
+    def observe_mock_cancel_acceptance(self, settlement_id, *, idempotency_key,
+                                       source_id, amount):
+        return self._machine.observe_mock_cancel_acceptance(
+            settlement_id, idempotency_key=idempotency_key, source_id=source_id,
+            amount=amount)
+
+    def commit_recorded_statement(self, settlement_id, *, movement_id, idempotency_key):
+        if self._statement_adapter is None:
+            raise StatementSourceError("no synthetic statement source configured")
+        return self._statement_adapter.apply(
+            operation="commit", settlement_id=settlement_id,
+            movement_id=movement_id, idempotency_key=idempotency_key)
+
+    def observe_recorded_statement(self, settlement_id, *, movement_id, idempotency_key):
+        if self._statement_adapter is None:
+            raise StatementSourceError("no synthetic statement source configured")
+        return self._statement_adapter.apply(
+            operation="observe_statement", settlement_id=settlement_id,
+            movement_id=movement_id, idempotency_key=idempotency_key)
+
+    def distribute(self, settlement_id, *, idempotency_key, order):
+        return self._machine.distribute(
+            settlement_id, idempotency_key=idempotency_key, order=order)
+
+    def observe_recorded_cancel_acceptance(self, settlement_id, *, source_id, idempotency_key):
+        if self._cancel_acceptance_adapter is None:
+            raise CancelAcceptanceSourceError("no synthetic cancellation acceptance source configured")
+        return self._cancel_acceptance_adapter.apply(
+            settlement_id=settlement_id, source_id=source_id, idempotency_key=idempotency_key)
+
+    def view(self, settlement_id):
+        return self._machine.view(settlement_id)
+
+
+class TicketOperationsSession:
+    def __init__(self, *, setup: list, offer_source: ResaleOfferSource,
+                 presentation_source: PresentationSource,
+                 payment_source: ResalePaymentSource | None = None,
+                 cancel_acceptance_source: CancelAcceptanceSource | None = None,
+                 statement_source: StatementSource | None = None) -> None:
+        """Execute caller-supplied allowlisted setup through public FSM methods.
+
+        No clock, policy, issuance or settlement defaults are supplied. Structural
+        validation precedes construction; domain setup failures propagate unchanged.
+        Sessions are published only after setup succeeds. Discarding a failed
+        private construction does not provide cross-machine rollback.
+        """
+        _validate_setup(setup)
+        book = SettlementMachine()
+        tickets = ReservationMachine(settlement_source=book)
+        resale = ResaleMachine(ticket_source=tickets, settlement_source=book)
+        admission = AdmissionMachine(ticket_source=tickets, ownership_source=resale,
+                                     settlement_source=book)
+        machines = {"settlement": book, "reservation": tickets,
+                    "resale": resale, "admission": admission}
+        for entry in setup:
+            # _validate_setup enforces admission_fixture._SETUP's exact allowlist.
+            method = getattr(machines[entry["machine"]], entry["operation"])
+            method(entry["subject_id"], idempotency_key=entry["idempotency_key"], **entry["body"])
+        self.settlement = TicketSettlementSession(
+            book, cancel_acceptance_source=cancel_acceptance_source,
+            statement_source=statement_source, booking_source=tickets, resale_source=resale)
+        self.booking = BookingSession(tickets)
+        self.resale = ResaleSession(resale, offer_source, payment_source=payment_source)
+        self.admission = AdmissionSession(admission, presentation_source)
+        self._issued_ticket_adapter = IssuedTicketAdapter(
+            tickets, resale=self.resale, admission=self.admission)
+
+    def adopt_issued_from_booking(self, *, surface, reservation_id, right_id, idempotency_key):
+        return self._issued_ticket_adapter.apply(
+            surface=surface, reservation_id=reservation_id, right_id=right_id,
+            idempotency_key=idempotency_key)

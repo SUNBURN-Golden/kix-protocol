@@ -1,0 +1,11 @@
+{
+  "fixture_version": 1,
+  "provenance": "MOCK_AI_DELEGATION_ONLY",
+  "human_principals": [
+    "human-a"
+  ],
+  "ai_agents": [
+    "agent-a",
+    "agent-b"
+  ]
+}

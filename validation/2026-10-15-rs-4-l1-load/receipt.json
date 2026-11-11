@@ -1,0 +1,241 @@
+{
+ "version": "kix-rs4-l1-load-v1",
+ "status": "PASSED_MEASUREMENT",
+ "packageId": "0x8583ddbb3bc6c2e9bda938f3da9064dfeaf12e48a6580e12d575e3e345627965",
+ "chain": "CUJRbSWxatpHjaHxGQuLr5xbZYsn7KhibbqTmvnY7NUt",
+ "scenarioFingerprint": "556ac60b01fcfcaa5a7b46bcc1623b3eaa70ec8c577ffa1558a6ae41bed83785",
+ "settings": {
+  "seed": 20261014,
+  "show": {
+   "seated": 1024,
+   "ga": 0,
+   "page_size": 64
+  },
+  "shards": {
+   "public": 4,
+   "private": 1,
+   "delegated": 4
+  },
+  "zk": {
+   "depth": 10,
+   "root_history_k": 4,
+   "nullifier_shards": 4,
+   "challenge_shards": 4
+  },
+  "closed_loop": true,
+  "arrival_rate": 0,
+  "shield_count": 1024,
+  "consume_count": 32,
+  "invalidation_count": 8,
+  "transfers": 8,
+  "admissions": 8,
+  "refunds": 16,
+  "revokes": 16,
+  "reissues": 2,
+  "reservations": 2,
+  "concurrency_probes": [
+   {
+    "path": "public",
+    "name": "same_page_issues",
+    "k": 2,
+    "expect": "any"
+   },
+   {
+    "path": "public",
+    "name": "duplicate_slot_race",
+    "k": 2,
+    "expect": "one_wins"
+   },
+   {
+    "path": "public",
+    "name": "same_shard_attests",
+    "k": 2,
+    "expect": "any"
+   },
+   {
+    "path": "public",
+    "name": "cross_shard_attests",
+    "k": 2,
+    "expect": "any"
+   },
+   {
+    "path": "public",
+    "name": "bundle_race",
+    "k": 2,
+    "expect": "one_wins"
+   },
+   {
+    "path": "private",
+    "name": "concurrent_revokes",
+    "k": 2,
+    "expect": "one_wins"
+   },
+   {
+    "path": "delegated",
+    "name": "shared_grant_reads",
+    "k": 2,
+    "expect": "any"
+   }
+  ]
+ },
+ "requested": {
+  "seats_per_show": 1024,
+  "shield_count": 1024,
+  "consume_count": 32,
+  "invalidation_count": 8
+ },
+ "constants": {
+  "zk_depth": 10,
+  "localnet_root_history_k": 4,
+  "localnet_nullifier_shards": 4,
+  "localnet_challenge_shards": 4,
+  "max_bundle_chain": 8,
+  "profile_version": 1,
+  "localnet_show_slots": 1024,
+  "localnet_page_slots": 64
+ },
+ "verifiers": {
+  "v1": {
+   "id": "0x5e0e04b9b0c8feeeaa16dda4d14754ccdc577c379eaf38fc5ddfd6442d93f76d",
+   "manifestHash": "97b44886b9b7c0cbe7441da63d6ebe48aeccdf9d59b7d51acb3089cd30bd0547"
+  }
+ },
+ "manifest": {
+  "hash": "97b44886b9b7c0cbe7441da63d6ebe48aeccdf9d59b7d51acb3089cd30bd0547",
+  "format": "kix-zk-artifacts-v2",
+  "depth": 10,
+  "rootHistoryK": 4,
+  "constraints": {
+   "mint_scale": 912,
+   "spend_scale": 13439
+  },
+  "ptauPower": 14,
+  "phase1": "REUSED_CACHED_LOCAL_FIXTURE",
+  "setup": "INSECURE_SINGLE_PARTY_LOCAL_FIXTURE"
+ },
+ "startedAt": "2026-10-15T03:36:55.875Z",
+ "endedAt": "2026-10-15T04:12:34.568Z",
+ "timings": {
+  "public_ms": 521032,
+  "private_ms": 1505972,
+  "delegated_ms": 70719,
+  "total_ms": 2138693
+ },
+ "paths": {
+  "public": {
+   "status": "PASSED_MEASUREMENT",
+   "counts": {
+    "ok": 458,
+    "abort": 19,
+    "submission_rejected": 0,
+    "client_refused": 0,
+    "unknown": 0,
+    "driver_error": 0,
+    "probe": 5,
+    "expect_mismatches": 0,
+    "branch_unknowns": 0,
+    "branch_submission_rejected": 3,
+    "steps": 482
+   },
+   "totals": {
+    "free": 16,
+    "reserved": 0,
+    "issued": 991,
+    "retired": 17
+   },
+   "probes": 5,
+   "expect_mismatches": 0,
+   "failed_checks": []
+  },
+  "private": {
+   "status": "PASSED_MEASUREMENT",
+   "counts": {
+    "ok": 1206,
+    "abort": 12,
+    "submission_rejected": 0,
+    "client_refused": 2,
+    "unknown": 0,
+    "driver_error": 0,
+    "probe": 1,
+    "expect_mismatches": 0,
+    "branch_unknowns": 0,
+    "branch_submission_rejected": 1,
+    "steps": 1221
+   },
+   "totals": {
+    "free": 0,
+    "reserved": 0,
+    "issued": 1021,
+    "retired": 3
+   },
+   "probes": 1,
+   "expect_mismatches": 0,
+   "failed_checks": []
+  },
+  "delegated": {
+   "status": "PASSED_MEASUREMENT",
+   "counts": {
+    "ok": 59,
+    "abort": 12,
+    "submission_rejected": 0,
+    "client_refused": 0,
+    "unknown": 0,
+    "driver_error": 0,
+    "probe": 1,
+    "expect_mismatches": 0,
+    "branch_unknowns": 0,
+    "branch_submission_rejected": 0,
+    "steps": 72
+   },
+   "totals": {
+    "free": 937,
+    "reserved": 1,
+    "issued": 86,
+    "retired": 0
+   },
+   "probes": 1,
+   "expect_mismatches": 0,
+   "failed_checks": []
+  }
+ },
+ "exploration_data": true,
+ "limitation": "Localnet load exploration only. One-validator local chain on a shared virtual builder host; closed-loop baseline plus fixed-k probes; no arrival-rate claim, no SLO, no throughput, no production readiness, no durability or fault-tolerance claims. Fixture values (1,024/64/4/depth-10/K=4) are Astra-owned test values, not protocol values.",
+ "coverage": {
+  "requested": {
+   "seats_per_show": 1024,
+   "shield_count": 1024,
+   "consume_count": 32,
+   "invalidation_count": 8
+  },
+  "actual_samples": {
+   "public": {
+    "steps": 482,
+    "samples": 482,
+    "ok": 458,
+    "shielded": 0,
+    "notes": 0
+   },
+   "private": {
+    "steps": 1221,
+    "samples": 1221,
+    "ok": 1206,
+    "shielded": 1024,
+    "notes": 1024
+   },
+   "delegated": {
+    "steps": 72,
+    "samples": 72,
+    "ok": 59,
+    "shielded": 0,
+    "notes": 0
+   }
+  },
+  "shields_requested": 1024,
+  "shields_ok": 1024,
+  "shortfalls": []
+ },
+ "localCommitteeSize": 1,
+ "networkFaultToleranceTested": false,
+ "zkLoginBackgroundKeyFetchDisabled": true,
+ "runDir": ".local/localnet/rights-scale-l1-load-hotoh_gy"
+}

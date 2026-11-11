@@ -7,10 +7,49 @@ use std::fmt::Write as _;
 use std::time::{Duration, Instant};
 
 use kix_kernel::{
-    CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel, Limits,
-    ObservationOutcome, ProviderOperation, Reserve, ReserveOutcome, Selection,
+    AppliedReservation, CaptureObservation, CommandId, Context, ExecutionFence, Inventory, Kernel,
+    Limits, ObservationOutcome, ProviderOperation, Reserve, ReserveOutcome, Selection,
 };
 use kix_types::{AssetAmount, AssetId, Hash32, KixId, RegistryVersion};
+
+/// Phase completion hooks model work alongside the real operations. Ordinary
+/// runs use no-op hooks; virtual fixtures advance only at these hooks and waits.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProbePhase {
+    InputPreparation,
+    KernelInvocation,
+    Classification,
+    LoopBookkeeping,
+    ReportFormatting,
+}
+
+pub trait ProbeClock {
+    type Mark: Copy;
+    fn mark(&self) -> Self::Mark;
+    fn elapsed_ns(&self, mark: Self::Mark) -> u128;
+    fn wait(&mut self, duration: Duration);
+    fn phase(&mut self, phase: ProbePhase);
+}
+
+struct InstantClock;
+
+impl ProbeClock for InstantClock {
+    type Mark = Instant;
+
+    fn mark(&self) -> Instant {
+        Instant::now()
+    }
+
+    fn elapsed_ns(&self, mark: Instant) -> u128 {
+        mark.elapsed().as_nanos()
+    }
+
+    fn wait(&mut self, duration: Duration) {
+        std::thread::sleep(duration);
+    }
+
+    fn phase(&mut self, _: ProbePhase) {}
+}
 
 pub const INVENTORY_SEATS: usize = 4096;
 pub const ORDER_LIMIT: usize = 4096;
@@ -189,6 +228,18 @@ pub struct OutcomeSummary {
 
 pub struct Report {
     pub workload: &'static str,
+    /// Public segment ranges from the inventory moved into Kernel::new.
+    /// Read by the harness; the shared example does not export this diagnostic.
+    #[allow(dead_code)]
+    pub inventory_segments: Vec<(u16, u16)>,
+    /// Actual prepared reserve selections, in call order, copied before timing.
+    /// Read by the harness; the shared example does not export this diagnostic.
+    #[allow(dead_code)]
+    pub reserve_selections: Vec<Selection>,
+    /// Actual classified reserve replies, one entry per measured call; None for
+    /// reserve errors or capture calls. Excludes conflict prefill, not serialized.
+    #[allow(dead_code)] // Read by the harness; the shared example does not export it.
+    pub applied_reservations: Vec<Option<AppliedReservation>>,
     pub total: usize,
     pub held: usize,
     pub replay: usize,
@@ -202,6 +253,8 @@ pub struct Report {
     pub first_capacity: Option<usize>,
     pub samples_after_first_capacity: usize,
     pub command_limit_requested: usize,
+    /// Calls of construct_kernel in this run; exactly 1 when no reset occurred.
+    pub kernel_constructions: usize,
     pub remaining: u32,
     pub elapsed_ns: u128,
     pub mixed_p99_service_ns: u128,
@@ -215,39 +268,73 @@ fn percentile(values: &mut [u128], numerator: usize) -> u128 {
     values[(values.len() * numerator).div_ceil(100).saturating_sub(1)]
 }
 
-fn classify(kernel: &mut Kernel, index: usize, input: Input) -> OutcomeKind {
+#[cfg(test)]
+#[allow(dead_code)] // The shared example's test target does not call this seam.
+pub fn percentile_for_test(values: &mut [u128]) -> u128 {
+    percentile(values, 99)
+}
+
+fn classify(
+    kernel: &mut Kernel,
+    index: usize,
+    input: Input,
+    clock: &mut impl ProbeClock,
+) -> (OutcomeKind, Option<AppliedReservation>) {
     match input {
-        Input::Reserve(value) => match kernel.reserve(context(index as u64 + 10), value) {
-            Ok(applied) if applied.replayed => OutcomeKind::Replayed,
-            Ok(applied) => match applied.original {
-                ReserveOutcome::Held(_) => OutcomeKind::Held,
-                ReserveOutcome::Rejected(_) => OutcomeKind::BusinessRejected,
-            },
-            Err(kix_kernel::KernelError::Capacity) => OutcomeKind::Capacity,
-            Err(_) => OutcomeKind::OtherError,
-        },
-        Input::Capture(value) => match kernel.observe_capture(context(index as u64 + 10), value) {
-            Ok(ObservationOutcome::Conflict) => OutcomeKind::ConflictRetained,
-            Ok(_) => OutcomeKind::OtherObservation,
-            Err(kix_kernel::KernelError::Capacity) => OutcomeKind::Capacity,
-            Err(_) => OutcomeKind::OtherError,
-        },
+        Input::Reserve(value) => {
+            let result = kernel.reserve(context(index as u64 + 10), value);
+            clock.phase(ProbePhase::KernelInvocation);
+            match result {
+                Ok(applied) => {
+                    let kind = if applied.replayed {
+                        OutcomeKind::Replayed
+                    } else {
+                        match applied.original {
+                            ReserveOutcome::Held(_) => OutcomeKind::Held,
+                            ReserveOutcome::Rejected(_) => OutcomeKind::BusinessRejected,
+                        }
+                    };
+                    (kind, Some(applied))
+                }
+                Err(kix_kernel::KernelError::Capacity) => (OutcomeKind::Capacity, None),
+                Err(_) => (OutcomeKind::OtherError, None),
+            }
+        }
+        Input::Capture(value) => {
+            let result = kernel.observe_capture(context(index as u64 + 10), value);
+            clock.phase(ProbePhase::KernelInvocation);
+            (
+                match result {
+                    Ok(ObservationOutcome::Conflict) => OutcomeKind::ConflictRetained,
+                    Ok(_) => OutcomeKind::OtherObservation,
+                    Err(kix_kernel::KernelError::Capacity) => OutcomeKind::Capacity,
+                    Err(_) => OutcomeKind::OtherError,
+                },
+                None,
+            )
+        }
     }
 }
 
-/// rate=0 explicitly means a service-time microbenchmark, not an open-loop test.
-/// rate>0 uses deadlines relative to a fixed origin. A late driver never shifts
-/// the original deadline forward to hide queue delay (coordinated omission).
-pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) -> Report {
-    assert!(count > 0 && count <= 100_000);
-    assert!(command_limit > 0);
-    let commands_budget = command_limit.max(2);
-    let mut kernel = Kernel::new(
+/// Sole kernel construction site in this probe. Each call is counted so a
+/// reset cannot hide exhaustion; a correct run constructs exactly one kernel.
+fn construct_kernel(
+    commands_budget: usize,
+    constructions: &mut usize,
+) -> (Kernel, Vec<(u16, u16)>) {
+    let inventory =
+        Inventory::seats(&[u16::try_from(INVENTORY_SEATS).expect("seat segment fits u16")])
+            .unwrap();
+    let inventory_segments = match &inventory {
+        Inventory::Seats { segments, .. } => segments.clone(),
+        Inventory::GeneralAdmission { .. } => Vec::new(),
+    };
+    *constructions += 1;
+    let kernel = Kernel::new(
         id(80),
         context(0).fence,
         1,
-        Inventory::seats(&[u16::try_from(INVENTORY_SEATS).expect("seat segment fits u16")])
-            .unwrap(),
+        inventory,
         Limits {
             commands: commands_budget,
             orders: ORDER_LIMIT,
@@ -255,41 +342,181 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
         },
     )
     .unwrap();
+    (kernel, inventory_segments)
+}
+
+/// rate=0 explicitly means a service-time microbenchmark, not an open-loop test.
+/// rate>0 uses deadlines relative to a fixed origin. A late driver never shifts
+/// the original deadline forward to hide queue delay (coordinated omission).
+pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) -> Report {
+    run_probe(
+        workload,
+        count,
+        command_limit,
+        rate,
+        ProbeFixture::Ordinary,
+        &mut InstantClock,
+    )
+}
+
+enum ProbeFixture {
+    Ordinary,
+    ReconstructAt(usize),
+    #[cfg(test)]
+    OtherOutcomes,
+    #[cfg(test)]
+    Timing(TimingFault),
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy)]
+#[allow(dead_code)] // Shared example test target does not call this seam.
+pub enum TimingFault {
+    None,
+    IncludePreparation,
+}
+
+/// Uses the ordinary inputs, classifier and measurement loop; only time changes.
+#[cfg(test)]
+#[allow(dead_code)] // Shared example test target does not call this seam.
+pub fn run_with_clock_for_test(
+    workload: Workload,
+    count: usize,
+    command_limit: usize,
+    rate: u64,
+    clock: &mut impl ProbeClock,
+    fault: TimingFault,
+) -> Report {
+    run_probe(
+        workload,
+        count,
+        command_limit,
+        rate,
+        ProbeFixture::Timing(fault),
+        clock,
+    )
+}
+
+/// Drive a regressed-time reserve and an applied capture through the same
+/// classifier and reporting loop as ordinary workloads. Setup is not sampled.
+#[cfg(test)]
+#[allow(dead_code)] // The shared example's test target does not call this seam.
+pub fn run_with_injected_other_outcomes() -> Report {
+    run_probe(
+        Workload::Uniform,
+        2,
+        128,
+        0,
+        ProbeFixture::OtherOutcomes,
+        &mut InstantClock,
+    )
+}
+
+/// Harness sensitivity fixture: constructs a second kernel before call index
+/// `reconstruct_at`, outside the service and call windows. The report must count it.
+#[allow(dead_code)] // The example never calls it.
+pub fn run_with_injected_reconstruction(
+    workload: Workload,
+    count: usize,
+    command_limit: usize,
+    rate: u64,
+    reconstruct_at: usize,
+) -> Report {
+    run_probe(
+        workload,
+        count,
+        command_limit,
+        rate,
+        ProbeFixture::ReconstructAt(reconstruct_at),
+        &mut InstantClock,
+    )
+}
+
+fn run_probe(
+    workload: Workload,
+    count: usize,
+    command_limit: usize,
+    rate: u64,
+    fixture: ProbeFixture,
+    clock: &mut impl ProbeClock,
+) -> Report {
+    #[cfg(test)]
+    let preparation_origin = clock.mark();
+    assert!(count > 0 && count <= 100_000);
+    assert!(command_limit > 0);
+    let commands_budget = command_limit.max(2);
+    let mut kernel_constructions = 0;
+    let (mut kernel, inventory_segments) =
+        construct_kernel(commands_budget, &mut kernel_constructions);
     let mut inputs = Vec::with_capacity(count);
-    if matches!(workload, Workload::Conflict) {
-        let a = request(1, 0);
-        kernel.reserve(context(1), a.clone()).unwrap();
-        let original = CaptureObservation {
-            event_id: id(500),
-            operation: a.payment,
-            amount: a.amount,
-            evidence_hash: Hash32::from_bytes([60; 32]),
-        };
-        kernel
-            .observe_capture(context(2), original.clone())
-            .unwrap();
-        for i in 0..count {
-            let mut value = original.clone();
-            value.operation.operation = id(20_000 + i as u64);
-            inputs.push(Input::Capture(value));
+    let workload_name = match fixture {
+        #[cfg(test)]
+        ProbeFixture::OtherOutcomes => "injected-other-outcomes",
+        _ => workload.name(),
+    };
+    match fixture {
+        #[cfg(test)]
+        ProbeFixture::OtherOutcomes => {
+            let held = request(1, 0);
+            let applied = kernel.reserve(context(11), held.clone()).unwrap();
+            assert_eq!(applied.original, ReserveOutcome::Held(held.order_id));
+            assert!(!applied.replayed);
+            // Fresh identity avoids replay; index 0 uses time 10, below 11,
+            // and therefore reaches KernelError::ClockRegression.
+            inputs.push(Input::Reserve(request(2, 1)));
+            inputs.push(Input::Capture(CaptureObservation {
+                event_id: id(500),
+                operation: held.payment,
+                amount: held.amount,
+                evidence_hash: Hash32::from_bytes([60; 32]),
+            }));
         }
-    } else {
-        for i in 0..count {
-            let number = if matches!(workload, Workload::Retry) {
-                1
+        _ => {
+            if matches!(workload, Workload::Conflict) {
+                let a = request(1, 0);
+                kernel.reserve(context(1), a.clone()).unwrap();
+                let original = CaptureObservation {
+                    event_id: id(500),
+                    operation: a.payment,
+                    amount: a.amount,
+                    evidence_hash: Hash32::from_bytes([60; 32]),
+                };
+                kernel
+                    .observe_capture(context(2), original.clone())
+                    .unwrap();
+                for i in 0..count {
+                    let mut value = original.clone();
+                    value.operation.operation = id(20_000 + i as u64);
+                    inputs.push(Input::Capture(value));
+                }
             } else {
-                i as u64 + 1
-            };
-            let seat = if matches!(workload, Workload::Uniform) {
-                u16::try_from(i % INVENTORY_SEATS).expect("seat index fits u16")
-            } else {
-                0
-            };
-            inputs.push(Input::Reserve(request(number, seat)));
+                for i in 0..count {
+                    let number = if matches!(workload, Workload::Retry) {
+                        1
+                    } else {
+                        i as u64 + 1
+                    };
+                    let seat = if matches!(workload, Workload::Uniform) {
+                        u16::try_from(i % INVENTORY_SEATS).expect("seat index fits u16")
+                    } else {
+                        0
+                    };
+                    inputs.push(Input::Reserve(request(number, seat)));
+                }
+            }
         }
     }
     let mut report = Report {
-        workload: workload.name(),
+        workload: workload_name,
+        inventory_segments,
+        reserve_selections: inputs
+            .iter()
+            .filter_map(|input| match input {
+                Input::Reserve(value) => Some(value.selection),
+                Input::Capture(_) => None,
+            })
+            .collect(),
+        applied_reservations: Vec::with_capacity(count),
         total: count,
         held: 0,
         replay: 0,
@@ -302,6 +529,7 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
         first_capacity: None,
         samples_after_first_capacity: 0,
         command_limit_requested: command_limit,
+        kernel_constructions: 0,
         remaining: 0,
         elapsed_ns: 0,
         mixed_p99_service_ns: 0,
@@ -314,7 +542,17 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
     let mut latency = Vec::with_capacity(count);
     let mut service_by: [Vec<u128>; 7] = std::array::from_fn(|_| Vec::new());
     let mut latency_by: [Vec<u128>; 7] = std::array::from_fn(|_| Vec::new());
-    let origin = Instant::now();
+    clock.phase(ProbePhase::InputPreparation);
+    let origin = clock.mark();
+    #[cfg(test)]
+    let origin = if matches!(
+        fixture,
+        ProbeFixture::Timing(TimingFault::IncludePreparation)
+    ) {
+        preparation_origin
+    } else {
+        origin
+    };
     for (index, input) in inputs.into_iter().enumerate() {
         let scheduled = if rate == 0 {
             0
@@ -322,16 +560,19 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
             (index as u128 * 1_000_000_000) / u128::from(rate)
         };
         if rate > 0 {
-            let elapsed = origin.elapsed().as_nanos();
+            let elapsed = clock.elapsed_ns(origin);
             if scheduled > elapsed {
-                std::thread::sleep(Duration::from_nanos(
+                clock.wait(Duration::from_nanos(
                     (scheduled - elapsed).min(u128::from(u64::MAX)) as u64,
                 ));
             }
         }
-        let start = origin.elapsed().as_nanos();
-        let begin = Instant::now();
-        let kind = classify(&mut kernel, index, input);
+        if matches!(fixture, ProbeFixture::ReconstructAt(at) if at == index) {
+            kernel = construct_kernel(commands_budget, &mut kernel_constructions).0;
+        }
+        let start = clock.elapsed_ns(origin);
+        let begin = clock.mark();
+        let (kind, applied) = classify(&mut kernel, index, input, clock);
         match kind {
             OutcomeKind::Held => report.held += 1,
             OutcomeKind::Replayed => report.replay += 1,
@@ -341,8 +582,12 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
             OutcomeKind::OtherError => report.other_error += 1,
             OutcomeKind::OtherObservation => report.other_observation += 1,
         }
-        let duration = begin.elapsed().as_nanos();
-        let end = origin.elapsed().as_nanos();
+        clock.phase(ProbePhase::Classification);
+        let duration = clock.elapsed_ns(begin);
+        let end = clock.elapsed_ns(origin);
+        // Retain the same invocation's reply outside service and call windows.
+        // This diagnostic append still contributes to workload-loop elapsed_ns.
+        report.applied_reservations.push(applied);
         if kind.as_str() == "capacity" && report.first_capacity.is_none() {
             report.first_capacity = Some(index);
         }
@@ -364,8 +609,18 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
         latency.push(measured_latency);
         service_by[kind.index()].push(duration);
         latency_by[kind.index()].push(measured_latency);
+        clock.phase(ProbePhase::LoopBookkeeping);
     }
-    report.elapsed_ns = origin.elapsed().as_nanos();
+    report.elapsed_ns = clock.elapsed_ns(origin);
+    #[cfg(test)]
+    if matches!(fixture, ProbeFixture::OtherOutcomes) {
+        assert_eq!(
+            kernel.order(request(1, 0).order_id).unwrap().state,
+            kix_kernel::OrderState::PaymentConfirmed
+        );
+        assert!(kernel.order(request(2, 1).order_id).is_none());
+    }
+    report.kernel_constructions = kernel_constructions;
     report.remaining = kernel.remaining();
     report.other = report.other_error + report.other_observation;
     report.samples_after_first_capacity = report
@@ -408,6 +663,7 @@ pub fn run(workload: Workload, count: usize, command_limit: usize, rate: u64) ->
             + report.other,
         count
     );
+    clock.phase(ProbePhase::ReportFormatting);
     report
 }
 
@@ -467,6 +723,13 @@ impl Report {
             .checked_div(self.elapsed_ns)
     }
 
+    /// Derived from the construction count, so a reset during the workload is reported.
+    pub fn kernel_resets_during_workload(&self) -> usize {
+        self.kernel_constructions
+            .checked_sub(1)
+            .expect("probe constructs a kernel before the workload")
+    }
+
     pub fn json(&self, rate: u64, command_limit: usize) -> String {
         assert_eq!(command_limit, self.command_limit_requested);
         let mut outcomes = String::from("[");
@@ -487,7 +750,7 @@ impl Report {
         }
         outcomes.push(']');
         format!(
-            "{{\"workload\":\"{workload}\",\"workload_shape\":\"{workload}\",\"budget_phase\":\"{phase}\",\"low_load\":{low_load},\"hot_seat\":{hot_seat},\"same_command_retry\":{retry},\"history_growth\":{history},\"saturation\":{saturation},\"scope\":\"{scope}\",\"non_claims\":\"{non_claims}\",\"debug_assertions\":{debug},\"build_mode\":\"{build_mode}\",\"target_os\":\"{os}\",\"target_arch\":\"{arch}\",\"rate\":{rate},\"rate_meaning\":\"{rate_meaning}\",\"command_limit\":{command_limit},\"commands_budget\":{commands_budget},\"orders_limit\":{orders},\"observations_limit\":{observations},\"inventory_seats\":{seats},\"samples\":{samples},\"new_held\":{held},\"new_success_count\":{held},\"replayed\":{replay},\"business_rejected\":{rejected},\"capacity\":{capacity},\"conflict_retained\":{conflict},\"other_error\":{other_error},\"other_observation\":{other_observation},\"other\":{other},\"first_capacity_index\":{first_capacity},\"samples_after_first_capacity\":{after},\"remaining\":{remaining},\"elapsed_ns\":{elapsed},\"mixed_result_p99_service_ns\":{mixed_service},\"mixed_result_p99_scheduled_latency_ns\":{mixed_latency},\"p99_interpretation\":\"{p99}\",\"service_ns_meaning\":\"{service_meaning}\",\"scheduled_latency_ns_meaning\":\"{latency_meaning}\",\"memory_only_new_held_per_elapsed_s\":{goodput},\"goodput_interpretation\":\"{goodput_meaning}\",\"kernel_resets_during_workload\":0,\"outcomes\":{outcomes}}}\n",
+            "{{\"workload\":\"{workload}\",\"workload_shape\":\"{workload}\",\"budget_phase\":\"{phase}\",\"low_load\":{low_load},\"hot_seat\":{hot_seat},\"same_command_retry\":{retry},\"history_growth\":{history},\"saturation\":{saturation},\"scope\":\"{scope}\",\"non_claims\":\"{non_claims}\",\"debug_assertions\":{debug},\"build_mode\":\"{build_mode}\",\"target_os\":\"{os}\",\"target_arch\":\"{arch}\",\"rate\":{rate},\"rate_meaning\":\"{rate_meaning}\",\"command_limit\":{command_limit},\"commands_budget\":{commands_budget},\"orders_limit\":{orders},\"observations_limit\":{observations},\"inventory_seats\":{seats},\"samples\":{samples},\"new_held\":{held},\"new_success_count\":{held},\"replayed\":{replay},\"business_rejected\":{rejected},\"capacity\":{capacity},\"conflict_retained\":{conflict},\"other_error\":{other_error},\"other_observation\":{other_observation},\"other\":{other},\"first_capacity_index\":{first_capacity},\"samples_after_first_capacity\":{after},\"remaining\":{remaining},\"elapsed_ns\":{elapsed},\"mixed_result_p99_service_ns\":{mixed_service},\"mixed_result_p99_scheduled_latency_ns\":{mixed_latency},\"p99_interpretation\":\"{p99}\",\"service_ns_meaning\":\"{service_meaning}\",\"scheduled_latency_ns_meaning\":\"{latency_meaning}\",\"memory_only_new_held_per_elapsed_s\":{goodput},\"goodput_interpretation\":\"{goodput_meaning}\",\"kernel_resets_during_workload\":{resets},\"outcomes\":{outcomes}}}\n",
             workload = self.workload,
             phase = self.budget_phase(),
             low_load = json_bool(self.low_load()),
@@ -530,6 +793,7 @@ impl Report {
             latency_meaning = SCHEDULED_LATENCY_NS_MEANING,
             goodput = json_u128(self.memory_only_new_held_per_elapsed_s()),
             goodput_meaning = GOODPUT_INTERPRETATION,
+            resets = self.kernel_resets_during_workload(),
             outcomes = outcomes,
         )
     }

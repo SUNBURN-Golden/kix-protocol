@@ -1,0 +1,52 @@
+{
+  "cargo_home": "/home/box/.cargo",
+  "lock_sha256": "a948a1b687de2727ad717db0f7a0aa4159ecf5258e52e18eccf05cc08329d83e",
+  "missing": [
+    {
+      "name": "bcs",
+      "version": "0.2.1"
+    },
+    {
+      "name": "block-buffer",
+      "version": "0.12.1"
+    },
+    {
+      "name": "cfg-if",
+      "version": "1.0.4"
+    },
+    {
+      "name": "const-oid",
+      "version": "0.10.2"
+    },
+    {
+      "name": "cpufeatures",
+      "version": "0.3.1"
+    },
+    {
+      "name": "crypto-common",
+      "version": "0.2.2"
+    },
+    {
+      "name": "digest",
+      "version": "0.11.3"
+    },
+    {
+      "name": "hybrid-array",
+      "version": "0.4.15"
+    },
+    {
+      "name": "sha2",
+      "version": "0.11.0"
+    },
+    {
+      "name": "syn",
+      "version": "3.0.5"
+    },
+    {
+      "name": "unicode-ident",
+      "version": "1.0.24"
+    }
+  ],
+  "present": 7,
+  "total": 18
+}

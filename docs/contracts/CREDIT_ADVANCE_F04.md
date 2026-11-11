@@ -10,6 +10,13 @@ Task 005 Wave 5. 문서일: 2026-09-26.
 그 세션에서 확인한 `origin/main`은 `ef942b7713c7468e8851c6b372b64d42b5333ad8`다.
 Wave 5 목 술어와 그 기준 SHA는 그대로다. F04·E06 라벨도 그대로다.
 
+2026-11-11 개정 — 부분 환불 부담자 B5 미러.
+결정 출처: owner decision 2026-11-10 17:43 KST, 준태님(the User), node cr1110-refund-bearer-requester (CR-CAPITAL-1110 #3).
+이 세션에서 확인한 `origin/main`(로컬 캐시, 페치 금지)과 작업 브랜치 HEAD는 `298bd52446f3bc5d949049daea7960be843fa0e5`다.
+이 개정은 정산 계약 [SETTLEMENT_DISTRIBUTION_F01_F03.md](SETTLEMENT_DISTRIBUTION_F01_F03.md)의 `SET-POLICY-DRAFT-0.4`(부분 환불 부담자 B5 `REQUESTER` 채택)를 이 문서에 미러한다.
+열린 부분 환불 액면의 `refund_bearer_policy`는 `REQUESTER`다(§2). §3 단계 5와 §4의 `REFUND_OBLIGATION_OPEN` 게이트는 유지한다. 이유는 부담자 미정이 아니라, 환불과 메모의 상계 순서가 아직 묶이지 않았기 때문이다(§5 빈 항목).
+§5.1의 개정 ID `F04-MOCK-TERMS-DRAFT-0.2`, 채택된 목 경계(선택지 A)와 모든 `UNDETERMINED` 값은 그대로다. 새 프로토콜 명령이나 카탈로그 바이트는 만들지 않는다. 모든 실행 플래그는 거짓으로 남는다.
+
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 [PROTOCOL_MASTERPLAN_V2.md](../PROTOCOL_MASTERPLAN_V2.md) §7은 역사 계획이다.
 아래 문장은 그 계획을 여신 상품으로 다시 정한 것이 아니다.
@@ -26,7 +33,7 @@ Astra 결정 6 (2026-09-25, 개발총괄): 여신 / 신용 선지급 = **F04**, 
 
 | 항목 | 목에서 고정하는 것 | 고정하지 않는 것 |
 |---|---|---|
-| F04 담보 / 선지급 / 금융상품 | 한 프로세스 안에서, Wave 3 청구 조회의 미지급 액면 합을 넘지 않는 메모 예약. 같은 바인딩은 한 번. 부담 미정 환불이 열려 있으면 예약하지 않음 | 인허가, 이자·상환, 우선순위, 담보 완성, 처분, 실자금 |
+| F04 담보 / 선지급 / 금융상품 | 한 프로세스 안에서, Wave 3 청구 조회의 미지급 액면 합을 넘지 않는 메모 예약. 같은 바인딩은 한 번. 부분 환불이 열려 있으면 예약하지 않음(환불·메모 상계 순서 미정, §3·§5) | 인허가, 이자·상환, 우선순위, 담보 완성, 처분, 실자금 |
 | E06 규정 / 컴플라이언스 | 조회 플래그를 거짓으로 고정해 규제 상품·면허를 적지 않음 | 인허가 판단, 법적 책임, 개인정보 보존 |
 | 수락 상태 | offer부터 reconcile까지의 목 노출 전이, 멱등키, 종결 뒤 불변, 저널 재생. 정산이 묶여 있으면 `COMMITTED`를 읽은 뒤에만 노출을 늘림 | 실여신, 심사, 이자, 은행 상환, 티켓 소유권 이전 |
 
@@ -76,7 +83,7 @@ Wave 3 모듈을 import하지 않고, 그 장부에 쓰지 않는다.
 - `provenance`는 `MOCK_SETTLEMENT_ONLY`다. Wave 3이 항상 거짓으로 두는 플래그(`legal_debtor_bound`, `admission_granted`, `right_cancelled`, `bank_debit_observed`, `external_return_closed`, `funds_executed`)는 값 `False`다. 키가 없으면 `SETTLEMENT_FACE_FIELDS`다. 값이 `False`가 아니면 `SETTLEMENT_FACE_NOT_MOCK`이다.
 - `gross`와 의무 줄의 `face`·`distributed`·`cancelled_unpaid`·`outstanding`은 정수다. `outstanding`은 `face - distributed - cancelled_unpaid`와 같아야 하고, 그 값은 0 이상이다. 의무 `face`의 합은 `gross`다. 아니면 `SETTLEMENT_FACE_MISMATCH`.
 - `fixture_reclassified`가 참이면 `refund_face == gross`, `refund_bearer_policy`는 `FIXTURE_FULL_GROSS_RECLASS`, 미지급 액면 합은 0이다.
-- 재분류가 아니고 `refund_face > 0`이면 `refund_bearer_policy`는 `UNDEFINED`이고, 각 줄의 `cancelled_unpaid`는 0이다.
+- 재분류가 아니고 `refund_face > 0`이면 `refund_bearer_policy`는 `REQUESTER`이고, 각 줄의 `cancelled_unpaid`는 0이다.
 - 환불 액면이 0이면 `refund_bearer_policy`는 `NONE`이고, 각 줄의 `cancelled_unpaid`는 0이다.
 - 수취인 라벨은 한 조회 안에서 겹치지 않는다.
 
@@ -109,7 +116,7 @@ HTTP 서버는 없다. 아래는 목 함수다. `view` / `view_claim`은 상태�
 2. `advance_id`, `beneficiary_role`, `amount`의 형식.
 3. `face`의 구조·산술.
 4. 같은 `advance_id`가 있으면, 바인딩이 같을 때 중복이고 다를 때 `ADVANCE_BINDING_CONFLICT`. 중복은 아래 검사를 다시 하지 않으며, 해제된 노트를 다시 열지 않는다.
-5. `refund_face > 0`이고 전액 재분류가 아니면 `REFUND_OBLIGATION_OPEN`. Wave 3이 부담자를 `UNDEFINED`로 둔 동안, 환불과 메모 중 어느 쪽이 앞인지 정하지 않는다.
+5. `refund_face > 0`이고 전액 재분류가 아니면 `REFUND_OBLIGATION_OPEN`. 부분 환불의 부담자는 `REQUESTER`로 정해졌지만(B5 미러), 환불과 메모 중 어느 쪽이 앞인지, 어떻게 상계하는지는 정하지 않는다(§5 빈 항목). 그 순서가 묶이기 전까지 예약을 열지 않는다.
 6. 그 청구의 고정 조회와 다르면 `FACE_SNAPSHOT_FROZEN`.
 7. `amount`가 `open_face - reserved_open`보다 크면 `ADVANCE_EXCEEDS_OPEN_FACE`.
 8. 수락하면 상태를 `NOTED`로 둔다. `reserved_open`은 그 청구에서 `NOTED`인 금액의 합이다.
@@ -150,7 +157,7 @@ HTTP 서버는 없다. 아래는 목 함수다. `view` / `view_claim`은 상태�
 | `SETTLEMENT_FACE_MISMATCH` | 액면 산술, 환불 재분류, 수취인 중복이 조회와 맞지 않음 |
 | `CREDIT_PRODUCT_UNDEFINED` | `product`가 있거나, 상품·담보·면허로 분류한 집행 kind |
 | `REAL_FUNDS_FORBIDDEN` | 지급·상환·출금을 요청 |
-| `REFUND_OBLIGATION_OPEN` | 부담 미정 환불이 열린 조회 |
+| `REFUND_OBLIGATION_OPEN` | 부분 환불(`REQUESTER`)이 열린 조회. 환불·메모 상계 순서가 미정 |
 | `FACE_SNAPSHOT_FROZEN` | 같은 청구, 다른 조회 |
 | `ADVANCE_EXCEEDS_OPEN_FACE` | 미예약 액면을 넘는 금액 |
 | `ADVANCE_BINDING_CONFLICT` | 같은 `advance_id`, 다른 바인딩 |
@@ -173,7 +180,7 @@ HTTP 서버는 없다. 아래는 목 함수다. `view` / `view_claim`은 상태�
 - 은행 출금, PG, 고객 입금, 상환 관찰, 준비금
 - `confirmed_cash` 또는 `recovery_due`를 재원으로 쓰는 일
 - 스냅샷 이후 정산 변화에 맞춘 한도 재산정 (§5.1 `limit-recalculation`)
-- 부담 미정 환불과 메모의 상계
+- 부분 환불(`REQUESTER`)과 메모의 상계 순서
 - 관람권, 검표, 권리 폐기
 - 내구성, 은행 정확히 한 번, 체인 최종성, 규제 준수
 - 제품 TPS, p99, 실패율
@@ -262,7 +269,7 @@ BOOTSTRAP은 이 개정을 적격화하지 않는다. 이 개정은 카탈로그
 - 처분, 실행, 유질, 수익 귀속
 - 여신 인허가, 등록, 규제 상품 분류, 약관, 면허 번호
 - 은행 출금, PG, 고객 입금, 상환 관찰, 준비금
-- 부담 미정 환불과 메모의 상계
+- 부분 환불(`REQUESTER`)과 메모의 상계 순서
 - 관람권, 검표, 권리 폐기
 - 내구성, 은행 정확히 한 번, 체인 최종성, 규제 준수
 - 제품 TPS, p99, 실패율. SLO 숫자를 만들지 않는다
@@ -510,3 +517,122 @@ REJECTED                               DEFAULTED
 - §5.1의 선택지 A는 채택된 목 경계다. 정책 숫자의 승인이 아니다. 조회의 `open_terms`는 `decided_value`가 없다.
 - 라이브 HTTP, 언더라이팅, KYC-AML, PG·은행 레일, 실여신, commerce-apps 변경은 없다.
 - 새 `protocol_contract` 명령은 없다. OpenAPI에는 이 기계의 `REPLAYABLE`이 `credit_<op>`로 있다. 2026-10-09 소유자 결정(JunTae).
+
+### 7.11 정산 잔차(settlement variance)
+
+이 절은 F01–F03 정산 목의 스냅샷과 F04 목의 고정된 청구 조회 사이의 정산 잔차를 정의한다.
+새 명령, 새 단계, 새 프로토콜 오류 코드, 새 OpenAPI 바이트, 새 정책 숫자를 만들지 않는다.
+관찰은 두 목의 상태를 바꾸지 않는다.
+
+정의는 이미 노출된 값만 쓴다. 호출자가 넘긴 두 스냅샷에 대해:
+
+```text
+variance = sum(settlement_view["obligations"][i]["outstanding"])
+           - credit_view["open_face"]
+```
+
+`settlement_view`는 `MockSettlement.view`의 출력이고, `credit_view`는 `MockCredit.view_claim`의 출력이다.
+이 정의는 정산 산술을 다시 계산하지 않고 `outstanding`과 `open_face`만 읽는다.
+두 스냅샷은 같은 `claim_id`와 `trade_id`를 가리켜야 하고, `currency`는 `KRW`이며,
+`credit_view["snapshot_frozen"]`은 `True`여야 한다.
+어긋나면 잔차 값이 아니라 호출 오류다. 참조 전용 코드는 `VIEW_BINDING_CONFLICT`, `VIEW_NOT_FROZEN`, `VIEW_INVALID`이며 프로토콜 오류 코드가 아니다.
+
+부호 규칙:
+
+- `variance > 0`: 공급된 정산 스냅샷의 미지급 액면 합이 고정된 F04 액면보다 크다.
+- `variance < 0`: 고정된 F04 액면이 공급된 정산 스냅샷의 미지급 액면 합보다 크다.
+- `variance = 0`: 관측된 값에서만 일치한다. 최종성, 내구성, 수락, 은행 일치를 뜻하지 않는다.
+
+관찰 시점은 호출자의 것이다. 두 스냅샷이 서로 다른 시점의 기계 출력이면 잔차는 그 차이를 그대로 보고한다.
+이 절은 어느 쪽이 현재인지, 어느 쪽이 권위인지 정하지 않는다.
+
+허용 오차는 호출자가 넘기는 필수 키워드 인자 `tolerance`다.
+기본값은 없다(`no default`). 타입은 `bool`이 아닌 `int`이고 `0 <= tolerance`다.
+누락은 `TOLERANCE_REQUIRED`, 형식 위반은 `TOLERANCE_INVALID`다. 둘 다 참조 전용 코드다.
+판정은 `abs(variance) <= tolerance`이며 경계를 포함한다.
+
+`tolerance` 안에 들어와도 그것은 수락·승인·대사 완료·노출 권한이 아니다.
+모든 관찰은 `fail_closed: true`, `authorizes_exposure: false`, `mutates_state: false`로 남는다.
+
+0이 아니거나 허용 오차를 벗어난 관찰은 기존 상태나 사유에 매핑하지 않는다. `NOT_BOUND`다.
+기존 F04 단계(`OFFERED` … `DEFAULTED`), 정산 오류(`SETTLEMENT_*`), `FACE_SNAPSHOT_FROZEN`, `MOCK_INVARIANT` 중 어느 것도 두 계약을 가로지르는 순수 관찰을 뜻하지 않는다.
+`SETTLEMENT_VARIANCE_NOT_BOUND`는 이 참조 모듈의 라벨이며 프로토콜 오류 코드가 아니다.
+매핑은 `{"code": "SETTLEMENT_VARIANCE_NOT_BOUND", "contract_status": "NOT_BOUND", "repair": "NONE"}`이고,
+새 상태·새 명령·새 오류 코드·수리 경로를 만들지 않는다.
+
+`cash_delta`와 `recovery_delta`는 진단용 동반 값이다.
+각각 정산 스냅샷의 `confirmed_cash`·`recovery_due`에서 F04 스냅샷의 `confirmed_cash_on_face`·`recovery_due_on_face`를 뺀 값이다.
+공식과 허용 오차 판정에서 제외한다. 확인 현금이나 회수채권을 잔차의 구성 요소로 쓰지 않는다.
+
+환불 구성 요소는 `NOT_BOUND`다. F04 `view_claim`에는 환불 필드가 없으므로 환불 때문에 생기는 잔차를 이 절은 계산하지 않는다.
+수리 경로는 `NONE`이다. 향후 바인딩의 담당은 사용자다.
+
+이 절은 정산 잔차의 뜻만 정의한다. 비청구: 통과는 F04·E06 또는 F01–F03의 구현·설계확정이 아니고,
+정산·회계·법률·은행·체인 최종성의 판단이 아니며, 실자금·내구성·분산 펜싱·정확히 한 번을 뜻하지 않는다.
+모든 실행 플래그는 거짓으로 남는다.
+
+### 7.12 공유 노출(shared exposure)
+
+이 절은 호출자가 같은 채무자 또는 풀 라벨로 묶은 여러 청구·선지급의 노출 합을 정의하는 관찰 전용 절이다.
+새 명령, 새 단계, 새 프로토콜 오류 코드, 새 OpenAPI 바이트, 새 정책 숫자를 만들지 않는다.
+관찰은 기계의 상태를 바꾸지 않고, 고정된 액면을 다시 계산하지 않으며, 노출 권한을 주지 않는다.
+
+묶음은 호출자가 넘긴다. `group_id`는 채무자 또는 풀의 라벨이지 법적 당사자가 아니다.
+목에는 법적 채무자 신원이 없고 `legal_debtor_bound`는 거짓으로 남는다.
+법적 당사자는 `UNDETERMINED`다. 담당은 사용자. 법률 검토의 주체와 시점은 로드맵 D-E. 당사자·관할·자료는 I10.
+
+관찰은 이미 캡처된 `CreditMachine.view` 스냅샷의 비어 있지 않은 목록만 읽는다.
+각 조회는 `provenance = MOCK_CREDIT_F04_ONLY`, `exposure_ledger = MOCK_EXPOSURE`, `currency = KRW`,
+`snapshot_frozen = True`여야 하고 `phase`는 `DRAWN`, `CLOSED`, `DEFAULTED` 중 하나여야 한다.
+인출 전 묶음은 이 개정에서 정의하지 않는다. 얼지 않은 조회는 호출 오류다(`VIEW_NOT_FROZEN`).
+정의는 이미 노출된 값만 쓴다:
+
+```text
+group_outstanding_exposure = sum(view["outstanding_exposure"])
+group_drawn_exposure       = sum(view["drawn_exposure"])
+group_repaid_exposure      = sum(view["repaid_exposure"])
+group_open_face            = sum(claim["open_face"])      # distinct claim_id마다 한 번
+group_reserved_open        = sum(claim["reserved_open"])  # distinct claim_id마다 한 번
+group_residual_unreserved  = group_open_face - group_reserved_open
+```
+
+선지급 수준 합은 조회마다 더한다. 청구 수준 용량(`open_face`, `reserved_open`, `residual_unreserved`)은
+청구에서 읽는 값이므로 서로 다른 `claim_id`마다 한 번만 센다.
+각 조회는 `outstanding_exposure == drawn_exposure - repaid_exposure`와
+`residual_unreserved == open_face - reserved_open`을 만족해야 한다.
+금액은 `bool`이 아닌 `int`이고 `0` 이상 `10**12` 이하의 범위를 쓴다. 그룹 합은 `10**12`를 넘을 수 있다.
+조회별 범위는 그룹 합을 제한하지 않는다.
+같은 `claim_id`를 공유하는 조회는 `trade_id`, `open_face`, `reserved_open`, `residual_unreserved`에서 일치해야 한다.
+어긋나면 호출자가 관찰 시점을 섞은 것이며 호출 오류다(`VIEW_BINDING_CONFLICT`).
+중복 `advance_id`는 `VIEW_INVALID`다.
+참조 전용 코드는 `LIMIT_REQUIRED`, `LIMIT_INVALID`, `VIEW_BINDING_CONFLICT`, `VIEW_NOT_FROZEN`, `VIEW_INVALID`이며 프로토콜 오류 코드가 아니다.
+
+한도는 호출자가 넘기는 필수 키워드 인자 `limit`다. 기본값은 없다(`no default`).
+타입은 `bool`이 아닌 `int`이고 `0 <= limit`다. 누락은 `LIMIT_REQUIRED`, 형식 위반은 `LIMIT_INVALID`다. 둘 다 참조 전용 코드다.
+판정은 `group_outstanding_exposure <= limit`이며 경계를 포함한다.
+제품 한도 숫자는 `UNDETERMINED`다. 담당은 Astra. 이 절은 기본 한도나 제품 숫자를 공급하지 않는다.
+기계는 청구별 천장(`ADVANCE_EXCEEDS_OPEN_FACE`, §3·§7.2)만 집행하고 호출자의 그룹 한도는 집행하지 않는다.
+한도 안에 들어와도 그것은 수락·승인·노출 권한이 아니다.
+모든 관찰은 `fail_closed: true`, `authorizes_exposure: false`, `mutates_state: false`로 남는다.
+
+고정된 액면은 다시 계산하지 않는다. FACE_SNAPSHOT이 고정된 뒤 노출은 기존 관찰 가능 전이로만 움직인다:
+`draw`는 노출을 한 번 늘리고, `repay`는 `outstanding_exposure`를 줄이되 예약은 유지하며,
+`close`는 노출이 0일 때만 예약을 풀고, `default`는 예약과 미지급 노출을 유지한다.
+`DEFAULTED` 선지급도 집계에 포함한다.
+이후의 정산 환불·취소는 그 자체로 고정 액면이나 노출을 바꾸지 않는다.
+그것은 위의 기존 전이를 통해서만 이 관찰에 영향을 준다.
+환불 구성 요소는 `NOT_BOUND`다. 이 절은 환불 때문에 생기는 노출을 계산하지 않는다. 수리 경로는 `NONE`이다.
+정산 조회와 고정 액면 사이의 청구별 간극은 §7.11의 영역이며 이 절은 그것을 수리하지 않는다.
+
+청구를 가로지르는 관찰은 기존 단계나 사유에 매핑하지 않는다. `NOT_BOUND`다.
+기존 F04 단계(`OFFERED` … `DEFAULTED`)와 오류 코드 중 어느 것도 청구를 가로지르는 순수 관찰을 뜻하지 않는다.
+`SHARED_EXPOSURE_NOT_BOUND`는 이 참조 모듈의 라벨이며 프로토콜 오류 코드가 아니다.
+매핑은 `{"code": "SHARED_EXPOSURE_NOT_BOUND", "contract_status": "NOT_BOUND", "repair": "NONE"}`이고,
+새 상태·새 명령·새 오류 코드·수리 경로를 만들지 않는다.
+
+관찰 시점은 호출자의 것이다. 이 절은 어느 스냅샷이 현재인지, 어느 쪽이 권위인지 정하지 않는다.
+관찰은 결정적이고 읽기 전용이다. 같은 입력은 같은 기록을 내고 입력 조회를 바꾸지 않는다.
+
+이 절은 공유 노출의 뜻만 정의한다. 비청구: 통과는 F04·E06의 구현·설계확정이 아니고,
+정산·회계·법률·은행·체인 최종성의 판단이 아니며, 실자금·내구성·분산 펜싱·정확히 한 번을 뜻하지 않는다.
+모든 실행 플래그는 거짓으로 남는다. F04·E06 라벨은 **설계중** 그대로다.

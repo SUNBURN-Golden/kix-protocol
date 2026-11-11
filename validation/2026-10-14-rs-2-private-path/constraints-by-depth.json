@@ -1,0 +1,54 @@
+{
+  "tool": "measure-constraints.mjs",
+  "circom": "circom2 0.2.22",
+  "rows": [
+    {
+      "depth": 4,
+      "leaves": 16,
+      "mint_scale": 906,
+      "mint_scale_ptauPower": 10,
+      "spend_scale": 7193,
+      "spend_scale_ptauPower": 13
+    },
+    {
+      "depth": 6,
+      "leaves": 64,
+      "mint_scale": 908,
+      "mint_scale_ptauPower": 10,
+      "spend_scale": 9275,
+      "spend_scale_ptauPower": 14
+    },
+    {
+      "depth": 8,
+      "leaves": 256,
+      "mint_scale": 910,
+      "mint_scale_ptauPower": 10,
+      "spend_scale": 11357,
+      "spend_scale_ptauPower": 14
+    },
+    {
+      "depth": 10,
+      "leaves": 1024,
+      "mint_scale": 912,
+      "mint_scale_ptauPower": 10,
+      "spend_scale": 13439,
+      "spend_scale_ptauPower": 14
+    },
+    {
+      "depth": 12,
+      "leaves": 4096,
+      "mint_scale": 914,
+      "mint_scale_ptauPower": 10,
+      "spend_scale": 15521,
+      "spend_scale_ptauPower": 14
+    },
+    {
+      "depth": 14,
+      "leaves": 16384,
+      "mint_scale": 916,
+      "mint_scale_ptauPower": 10,
+      "spend_scale": 17603,
+      "spend_scale_ptauPower": 15
+    }
+  ]
+}

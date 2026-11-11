@@ -8,6 +8,8 @@
 - `kix-bcs1`: actual canonical codec and fixed S07-A golden vector.
 - `kix-feature-ir` / `kix-feature-semantics`: analytical-plan verification and reference semantics, not transaction authority.
 - `kix-kernel`: locked v4 deterministic in-memory transitions, bounded records, stable command identity, seat/GA reservations, minimal order, UNKNOWN, capture, promised observation slots and quarantine.
+- `kix-kernel-v5`: stage-2 in-memory semantics (termination, private conflict index, hold references, read-only reclamation report) on top of the locked v4 shape; not a durable service.
+- `kix-delegated-exec`: in-memory page→kernel mapping for the extended rights-scale profile (seat/GA pages over `kix-kernel-v5`, grant mirror and cut). Delegated execution stays disabled at runtime; see the crate README.
 - Separate tests/examples: source-informed differential model, contract-derived single-kernel predicates and a memory-only performance apparatus. Their success is not durable-operation or production-performance proof.
 
 ## Not implemented or not authorized

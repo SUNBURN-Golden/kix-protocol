@@ -1,0 +1,177 @@
+[
+  {
+    "name": "focused",
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3 -m unittest test_reward_model.SupplyTests test_tl4_model_properties.SupplyPropertyTests test_supply_reconciliation test_supply_cli",
+    "exit_status": 0,
+    "stdout": "focused-1.stdout.log",
+    "stderr": "focused-1.stderr.log"
+  },
+  {
+    "name": "full",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/token_reward -t reference/token_reward",
+    "exit_status": 0,
+    "stdout": "full-1.stdout.log",
+    "stderr": "full-1.stderr.log"
+  },
+  {
+    "name": "check_docs_index",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs_index.py",
+    "exit_status": 0,
+    "stdout": "check_docs_index-1.stdout.log",
+    "stderr": "check_docs_index-1.stderr.log"
+  },
+  {
+    "name": "check_docs_index-self-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs_index.py --self-test",
+    "exit_status": 0,
+    "stdout": "check_docs_index-self-test-1.stdout.log",
+    "stderr": "check_docs_index-self-test-1.stderr.log"
+  },
+  {
+    "name": "check_tl_predicate_evidence_map",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_tl_predicate_evidence_map.py",
+    "exit_status": 0,
+    "stdout": "check_tl_predicate_evidence_map-1.stdout.log",
+    "stderr": "check_tl_predicate_evidence_map-1.stderr.log"
+  },
+  {
+    "name": "check_tl_predicate_evidence_map-self-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_tl_predicate_evidence_map.py --self-test",
+    "exit_status": 0,
+    "stdout": "check_tl_predicate_evidence_map-self-test-1.stdout.log",
+    "stderr": "check_tl_predicate_evidence_map-self-test-1.stderr.log"
+  },
+  {
+    "name": "check_class_b_index",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_class_b_index.py",
+    "exit_status": 0,
+    "stdout": "check_class_b_index-1.stdout.log",
+    "stderr": "check_class_b_index-1.stderr.log"
+  },
+  {
+    "name": "check_class_b_index-self-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_class_b_index.py --self-test",
+    "exit_status": 0,
+    "stdout": "check_class_b_index-self-test-1.stdout.log",
+    "stderr": "check_class_b_index-self-test-1.stderr.log"
+  },
+  {
+    "name": "check_ci_checker_wiring",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_ci_checker_wiring.py",
+    "exit_status": 0,
+    "stdout": "check_ci_checker_wiring-1.stdout.log",
+    "stderr": "check_ci_checker_wiring-1.stderr.log"
+  },
+  {
+    "name": "check_ci_checker_wiring-self-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_ci_checker_wiring.py --self-test",
+    "exit_status": 0,
+    "stdout": "check_ci_checker_wiring-self-test-1.stdout.log",
+    "stderr": "check_ci_checker_wiring-self-test-1.stderr.log"
+  },
+  {
+    "name": "check_ci_test_discovery",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_ci_test_discovery.py",
+    "exit_status": 0,
+    "stdout": "check_ci_test_discovery-1.stdout.log",
+    "stderr": "check_ci_test_discovery-1.stderr.log"
+  },
+  {
+    "name": "check_ci_test_discovery-self-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_ci_test_discovery.py --self-test",
+    "exit_status": 0,
+    "stdout": "check_ci_test_discovery-self-test-1.stdout.log",
+    "stderr": "check_ci_test_discovery-self-test-1.stderr.log"
+  },
+  {
+    "name": "check_openapi_contract",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_openapi_contract.py",
+    "exit_status": 0,
+    "stdout": "check_openapi_contract-1.stdout.log",
+    "stderr": "check_openapi_contract-1.stderr.log"
+  },
+  {
+    "name": "check_openapi_contract-self-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_openapi_contract.py --self-test",
+    "exit_status": 0,
+    "stdout": "check_openapi_contract-self-test-1.stdout.log",
+    "stderr": "check_openapi_contract-self-test-1.stderr.log"
+  },
+  {
+    "name": "check_integration_gate_openapi",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_integration_gate_openapi.py",
+    "exit_status": 0,
+    "stdout": "check_integration_gate_openapi-1.stdout.log",
+    "stderr": "check_integration_gate_openapi-1.stderr.log"
+  },
+  {
+    "name": "check_integration_gate_openapi-self-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_integration_gate_openapi.py --self-test",
+    "exit_status": 0,
+    "stdout": "check_integration_gate_openapi-self-test-1.stdout.log",
+    "stderr": "check_integration_gate_openapi-self-test-1.stderr.log"
+  },
+  {
+    "name": "architecture",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/verify_runtime_architecture.py",
+    "exit_status": 0,
+    "stdout": "architecture-1.stdout.log",
+    "stderr": "architecture-1.stderr.log"
+  },
+  {
+    "name": "architecture-tests",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_runtime_architecture.py",
+    "exit_status": 0,
+    "stdout": "architecture-tests-1.stdout.log",
+    "stderr": "architecture-tests-1.stderr.log"
+  },
+  {
+    "name": "kernel-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline",
+    "exit_status": 101,
+    "stdout": "kernel-test-1.stdout.log",
+    "stderr": "kernel-test-1.stderr.log"
+  },
+  {
+    "name": "kernel-clippy",
+    "command": "PYTHONDONTWRITEBYTECODE=1 cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings",
+    "exit_status": 101,
+    "stdout": "kernel-clippy-1.stdout.log",
+    "stderr": "kernel-clippy-1.stderr.log"
+  },
+  {
+    "name": "rust-fmt",
+    "command": "PYTHONDONTWRITEBYTECODE=1 cargo fmt --manifest-path runtime/Cargo.toml --all -- --check",
+    "exit_status": 0,
+    "stdout": "rust-fmt-1.stdout.log",
+    "stderr": "rust-fmt-1.stderr.log"
+  },
+  {
+    "name": "focused-python312",
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3.12 -m unittest test_reward_model.SupplyTests test_tl4_model_properties.SupplyPropertyTests test_supply_reconciliation test_supply_cli",
+    "exit_status": 0,
+    "stdout": "focused-python312-1.stdout.log",
+    "stderr": "focused-python312-1.stderr.log"
+  },
+  {
+    "name": "full-python312",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward",
+    "exit_status": 0,
+    "stdout": "full-python312-1.stdout.log",
+    "stderr": "full-python312-1.stderr.log"
+  },
+  {
+    "name": "check_docs_index",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs_index.py",
+    "exit_status": 0,
+    "stdout": "check_docs_index-2.stdout.log",
+    "stderr": "check_docs_index-2.stderr.log"
+  },
+  {
+    "name": "check_docs_index-self-test",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs_index.py --self-test",
+    "exit_status": 0,
+    "stdout": "check_docs_index-self-test-2.stdout.log",
+    "stderr": "check_docs_index-self-test-2.stderr.log"
+  }
+]

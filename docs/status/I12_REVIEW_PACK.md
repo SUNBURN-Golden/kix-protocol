@@ -43,6 +43,7 @@ not execute the proof's recommendation.
   its §1 table, and that every `proof §N` reference in the pack resolves to a
   `## N.` heading in the proof. It is a convenience check, not a contract
   gate, and is not wired into CI.
+- Amendment 2026-10-26: `scripts/check_i12_proof_ids.py` is now wired, plain and `--self-test`, into the `Stdlib offline document checks` step of `.github/workflows/protocol.yml` by #199; the "not wired into CI" wording above records the state when this pack was written.
 
 ## 1. Coverage table — P1–P4 and A1–A10
 
@@ -206,6 +207,7 @@ None. The locked kernel not implementing fencing is the state that model 1
   headings, first-cell table keys and `proof §N` references. It does not
   judge semantics, is not wired into CI, and its pass is not a contract
   gate.
+- Amendment 2026-10-26: `scripts/check_i12_proof_ids.py` is now wired, plain and `--self-test`, into the `Stdlib offline document checks` step of `.github/workflows/protocol.yml` by #199; the "not wired into CI" wording above records the state when this pack was written.
 - The parked bounded-model node (`plan-i12-cut-proof-bounded-model`) is
   cited, not built; nothing under `reference/cut_proof_model/` exists.
 - Local command results are recorded in

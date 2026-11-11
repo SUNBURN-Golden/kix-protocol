@@ -1,10 +1,20 @@
-# 확장 권리 프로파일 — 계약 0.1 (초안)
+# 확장 권리 프로파일 — 계약 0.2 (초안)
 
-문서 버전 0.1 · 작성 2026-10-08 · 상태: **초안. 미검토. 미측정.**
+문서 버전 0.2 (초안) · 작성 2026-10-08 · 개정 2026-10-14 · 상태: **초안. 미검토. 미측정.**
 
 이 문서는 [권리 확장 청사진 v1](../blueprints/rights-scale-v1/README.md)의 §1–§8·§10과 RS-0 항목을 확장 프로파일의 계약으로 옮긴다. 채택 근거와 아직 고르지 않은 항목은 [RS-0 결정 기록](../decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md)에 있다. 청사진은 역사적 제안으로 그대로 둔다.
 
 이 버전은 구현, 배포, 운영 활성화, 측정 결과가 아니다. Astra 아키텍처 검토와 사용자 병합 전에는 확정이 아니다. 구조가 경합을 줄인다는 주장을 하지 않는다. 쓰기 집합이 페이지·샤드와 `cancel_show`로 나뉜다는 것은 구조 서술이다.
+
+## 0. 개정 이력
+
+| 개정 | 날짜 | 병합 | 변경 | 검증 기록 |
+|---|---|---|---|---|
+| 0.1 | 2026-10-08 | PR #125 `68a58ae` | 최초 초안(RS-0). [RS-1 착수 권한 기록](../decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md)이 인용하는 「초안 0.1 @ `9b12626b61765f8c8d1ee6ad07d528c4b7eb20c1`」는 이 버전이다(그 commit까지 본문은 아래 0.2 편집 전과 바이트가 같다) | [RS-0 결정 기록](../decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) |
+| 0.2 | 2026-10-14 | PR #183 `adcddc5` (RS-3a) | §3 객체 표 `GrantControl` 행, §3 연산 표 위임 연산 8행(`create_grant`, `revoke_grant`, `delegate_page`·`undelegate_page`, `issue_delegated`·`bundle_issue_delegated`, `attest_issuance_delegated`, `issue_paid_delegated`, `cancel_issuance_delegated`, `refund_delegated`), §10 서두·항목 2–5·항목 8(신규) | [rs-3a 기록](../../validation/2026-10-14-rs-3a-delegation-primitives/README.md) |
+| 0.2 | 2026-10-14 | PR #184 `ced0e2f` (RS-3b) | §5 두 불릿(지정석 페이지-커널 `Inventory` 구간 대응, GA 최저 빈 슬롯 결정론 배정), §10 항목 7, §13 두 행(페이지와 커널 구간의 대응, 온체인 GA의 빈 슬롯 선택과 커널 카운터 대응) | [rs-3b 기록](../../validation/2026-10-14-rs-3b-delegated-exec/README.md) |
+
+0.2는 위 표에 적은 RS-3a·RS-3b 편집 외에 0.1의 본문을 그대로 계승한다. 본문에 남은 「0.1」 서술(§4·§6·§7·§8·§9·§11·§13)은 0.1 시점의 기준 문장이지 이 개정이 그 규칙을 다시 정의한 것이 아니다. RS-C/IM/RR id, 상태 표기, 채택 문장은 바꾸지 않았다. 상태는 여전히 **초안. 미검토. 미측정.**이며 확정은 Astra 아키텍처 검토와 사용자 병합이다.
 
 ## 1. 기준과 비주장
 
@@ -25,7 +35,7 @@
 | 16슬롯 참조 프로파일 | `reference/v0.3-rc1/sui`의 `kix::rights`, 회로 깊이 4 산출물, 그 클라이언트와 시험 | 수정하지 않는다. 파일·시험·역사 문서의 "16개 슬롯" 문장을 확장된 것처럼 고치지 않는다 |
 | 확장 프로파일 | 새 패키지, 새 회로, manifest 스키마 v2, 도메인에 들어가는 `profile_version`과 회로 manifest 해시 | 경로와 모듈 이름의 최종 값은 RS-1·RS-2가 고른다. 이 계약은 그 경로가 `reference/v0.3-rc1/**` 밖일 것만 요구한다 |
 
-문서 버전 0.1과 온체인 `profile_version`은 다른 값이다. RS-1이 패키지에 넣을 상수는 참조 프로파일과 구분되어야 한다. 참조 프로파일의 domain은 show id이며 `profile_version`을 넣지 않는다. 확장 프로파일의 domain은 show id, `profile_version`, 회로 manifest 해시를 묶는다. 두 프로파일의 증명은 서로 재사용할 수 없다.
+문서 버전과 온체인 `profile_version`은 다른 값이다. RS-1이 패키지에 넣을 상수는 참조 프로파일과 구분되어야 한다. 참조 프로파일의 domain은 show id이며 `profile_version`을 넣지 않는다. 확장 프로파일의 domain은 show id, `profile_version`, 회로 manifest 해시를 묶는다. 두 프로파일의 증명은 서로 재사용할 수 없다.
 
 Wave 2가 `rights`를 제자리에서 확장한 기록이 있다. 이번 변경은 16 가정 자체이므로 제자리 수정이 아니라 새 패키지로 둔다. 새 패키지는 coin/TIX 모듈이 아니다. 프로그램 결정 §2.1의 `rights`·`zk_gate` 확장으로 읽는 해석은 결정 기록의 Astra 조건 (a)~(e)를 따른다.
 
@@ -47,7 +57,7 @@ Wave 2가 `rights`를 제자리에서 확장한 기록이 있다. 이번 변경�
 | `ChallengeShard` | 공유. challenge 바이트의 해시로만 라우팅. 초안 이름이며 RS-2가 모듈 이름을 맞출 수 있다 | `consume_private` | 없음 |
 | 노트 트리 | 공유. 공연당 하나. append-only | `shield` | `consume_private` (루트 비교) |
 | 폐기 트리 | 공유. 공연당 루트 하나. 체인은 루트만 저장한다 | `revoke` | `consume_private` (현재 루트 비교) |
-| `GrantControl` | 공유. grant마다 하나 | 회수 | 위임된 페이지의 소비·해제 경로. 읽기 전용 |
+| `GrantControl` | 공유. grant마다 하나. 동적이므로 `object::new`로 만든다 | `create_grant`(생성·공유), `revoke_grant`(cut) | 위임된 페이지의 소비·해제 경로와 `delegate_page`·`undelegate_page`의 현재성 확인. 읽기 전용 |
 | `Ticket` | 공유 | 이전, 허가, 검표, 환불, 폐기, `shield` | 그 함수들 |
 
 `ShowControl`이 담는 필드: show id, 발행자, `profile_version`, `open`, `cancel_generation`, verifier ID, domain, 게이트 목록, 결제확인자 목록, 불변 범위표(페이지 크기, 페이지 개수, 각 페이지의 반개구간, GA 범위). 페이지 ID 목록은 담지 않는다. 65,536개 ID는 객체 크기 한도를 넘긴다는 산술은 청사진 §3.5에 있다.
@@ -72,6 +82,14 @@ Wave 2가 `rights`를 제자리에서 확장한 기록이 있다. 이번 변경�
 | `cancel_show` | `ShowControl` | 없음 | `IssuerCap` 참조 |
 | `shield` | 노트 트리, `Ticket` | `ShowControl`, 페이지, `Verifier`, `Clock` | 없음 |
 | `consume_private` | `NullifierShard`, `ChallengeShard` | `ShowControl`, 노트 트리, 폐기 루트, `Verifier`, `Clock` | 없음. 발신자는 게이트 |
+| `create_grant` | 새 `GrantControl`(공유) | `ShowControl` | `IssuerCap` 참조 |
+| `revoke_grant` | `GrantControl`(cut) | 없음 | `IssuerCap` 참조. 발신자는 `g.issuer` |
+| `delegate_page`, `undelegate_page` | 페이지 | `ShowControl`, `GrantControl` | `IssuerCap` 참조 |
+| `issue_delegated`, `bundle_issue_delegated` | 페이지, 새 `Ticket` | `ShowControl`, `GrantControl` | 없음. 발신자는 `g.delegate` |
+| `attest_issuance_delegated` | 페이지, `PaymentRefShard`, 새 `IssuancePayment`(delegate 소유) | `ShowControl`, `GrantControl` | 없음. 발신자는 `g.delegate` |
+| `issue_paid_delegated` | 페이지, 새 `Ticket` | `ShowControl`, `PaymentRefShard`, `GrantControl` | `IssuancePayment` 값. 발신자는 `g.delegate` |
+| `cancel_issuance_delegated` | 페이지, `PaymentRefShard` | `ShowControl`, `GrantControl` | `IssuancePayment` 값. 발신자는 `g.delegate` |
+| `refund_delegated` | 페이지, `Ticket` | `ShowControl`, `GrantControl`, `Clock` | 없음. 발신자는 티켓 소유자 |
 
 `Verifier`는 공연 생성 때 한 번 고정하고 이후 바꾸는 함수가 없다. `Clock`은 프레임워크 시간 객체다.
 
@@ -95,8 +113,8 @@ Wave 2가 `rights`를 제자리에서 확장한 기록이 있다. 이번 변경�
 - 슬롯 번호는 반개구간 `[0, 정원)`의 정수다.
 - 각 `InventoryPage`는 범위표의 반개구간 `[start, end)` 하나를 소유한다. 구간은 서로 겹치지 않고, 지정석 구간들의 합은 지정석 정원과 같다. GA 구간도 서로 겹치지 않는다.
 - 번호 `i`와 `i+1`은 묶음 목적에서 인접하다. 페이지 경계를 넘는 묶음은 한 PTB에서 원자적으로 처리하거나 §6에 따라 거절한다. 부분 성공은 없다.
-- 공연장의 구획·행·열을 슬롯 번호로 보내는 대응, 그리고 페이지 구간을 커널 `Inventory::Seats` 구간으로 보내는 대응은 이 계약이 정하지 않는다. 담당은 RS-3b / Astra.
-- 체인 GA는 슬롯 범위다. 커널 GA는 수량 카운터다. 실행자가 빈 슬롯을 고르는 방법과 카운터 대응은 RS-3b / Astra가 정한다. 0.1은 그 알고리즘을 만들지 않는다.
+- 공연장의 구획·행·열을 슬롯 번호로 보내는 대응은 이 계약이 정하지 않는다. 담당은 RS-3b / Astra다. 페이지 구간을 커널 `Inventory` 구간으로 보내는 대응은 RS-3b가 초안 규칙으로 기록했다: 지정석 페이지 `[start, end)`는 커널 `Inventory::seats(&[end - start])` 한 구간이고 쇼 슬롯 `i`는 커널 좌석 `i - start`다. 페이지 경계를 넘는 묶음과 커널 `MAX_BUNDLE`을 넘는 묶음은 커널 호출 전에 거절한다. 확정은 Astra 아키텍처 검토와 사용자 병합이다.
+- 체인 GA는 슬롯 범위다. 커널 GA는 수량 카운터다. RS-3b의 초안 규칙: 실행자는 요청 하나를 서비스할 수 있는 가장 낮은 `start`의 GA 페이지로 보내고, 그 페이지 `[start, end)` 안의 가장 낮은 빈 슬롯 `count`개를 결정론적으로 배정한다. `order_id`와 슬롯 집합의 대응을 유지하고 성공한 만료는 그 집합을 반환한다. free+held의 합은 범위 크기로 유지하며 이는 RS-C02의 오프체인 거울이다. 어떤 GA 페이지 하나도 요청을 서비스하지 못하면 거절하고 한 요청을 페이지들에 나누지 않는다. 확정은 Astra 아키텍처 검토와 사용자 병합이다.
 
 ## 6. `MAX_BUNDLE_CHAIN` 유도
 
@@ -175,15 +193,16 @@ RR-2-T1이 확인할 관찰: 발급과 환불은 폐기 루트를 바꾸지 않�
 
 ## 10. 위임 경계
 
-모델 1은 승인되어 있다. grant와 비협조 회수는 미구현이고 위임 실행은 비활성이다. 이 절은 RS-3a·RS-3b가 쓸 초안이며, 그 구현을 이 노드가 하지 않는다. 회수 cut은 온체인 grant 무효화와 페이지 소비 차단으로 한정한다. 커널의 종결·회수·해제·색인·GC는 범위가 아니다.
+모델 1은 승인되어 있다. RS-3a가 이 절의 온체인 프리미티브를 `reference/rights_scale`에 구현했다: 페이지 단위 grant(`InventoryPage.delegated_to`), grant당 하나의 공유 `GrantControl`, `revoke_grant`의 한 번의 쓰기인 회수 cut, 그리고 그 뒤의 페이지별 `undelegate_page` 회수다. 위임 실행은 여전히 비활성이며 RS-3b가 담당한다. 커널의 종결·회수·해제·색인·GC는 범위가 아니다.
 
 1. 한 슬롯의 원권위는 그 슬롯을 소유한 페이지 하나다.
-2. 위임의 최소 단위는 페이지 또는 GA 샤드다. 페이지 안의 일부 슬롯만 위임하지 않는다. P가 그 단위의 크기다. P는 §4에서 UNDETERMINED다. 운영상 충분한지는 측정 전이다.
-3. 위임된 페이지는 `delegated_to`에 grant ID를 둔다. 위임 중 `issue`, `attest_issuance`, `issue_paid`, `cancel_issuance`, `refund`는 `GrantControl`을 읽기 전용으로 확인한 경로만 허용되고, 온체인 직접 호출은 거절된다. `refund`와 `cancel_issuance`를 포함한다.
-4. grant의 현재성은 `GrantControl` 한 곳에 둔다. 페이지는 grant ID만 가리킨다. 신규 약정 차단 cut은 `GrantControl`에 대한 한 번의 쓰기다. 페이지별 `delegated_to` 해제는 그 뒤 검증된 미사용 잔량을 회수하는 단계이며 페이지마다 별도 쓰기다.
-5. 회수 순서는 모델 1의 A-4(`docs/decisions/AUTHORITY_MODEL_1.md`)와 LC-CUT(`docs/contracts/STATE_LIFECYCLE.md` §4)를 청사진 §6이 제안한 순서로 구성하는 초안이다. 그 두 문서에는 이 다섯 단계가 순서대로 적혀 있지 않다. 회수 의사 기록, 신규 약정 차단 cut, 체인 경계 확정, cut 이전의 미발행 약정·늦은 capture·반환 의무 보존, 검증된 미사용 잔량만 회수. 시간 경과만으로 전량 회수하지 않는다. cut을 증명하지 못하면 해당 페이지의 새 소비와 재위임을 보류한다.
+2. 위임의 최소 단위는 페이지 또는 GA 샤드다. 페이지 안의 일부 슬롯만 위임하지 않는다. P가 그 단위의 크기다. P는 §4에서 UNDETERMINED다. 운영상 충분한지는 측정 전이다. 구현된 위임 단위는 페이지다(`delegate_page`/`undelegate_page`).
+3. 위임된 페이지는 `delegated_to`에 grant ID를 둔다. 위임 중 `issue`, `attest_issuance`, `issue_paid`, `cancel_issuance`, `refund`는 `GrantControl`을 읽기 전용으로 확인한 경로만 허용되고, 온체인 직접 호출은 `EDelegated`로 거절된다. `refund`와 `cancel_issuance`를 포함한다. 구현된 grant 확인 경로는 `issue_delegated`, `bundle_issue_delegated`, `attest_issuance_delegated`, `issue_paid_delegated`, `cancel_issuance_delegated`, `refund_delegated`다. 확인은 `check_grant` 한 곳이다: `g.show == id(c)`, `g.open`, `p.delegated_to == id(g)`. 발행자·결제확인 측 네 경로와 묶음은 발신자가 `g.delegate`여야 하고(`EAuthority`), `refund_delegated`의 발신자는 계속 티켓 소유자다. 위임 `attest_issuance`가 만드는 `IssuancePayment`는 delegate에게 돌아간다.
+4. grant의 현재성은 `GrantControl` 한 곳에 둔다. 페이지는 grant ID만 가리킨다. 신규 약정 차단 cut은 `GrantControl`에 대한 한 번의 쓰기다(`revoke_grant`: `open`을 false로, `generation`을 한 번 올린다; `GrantRevoked` 이벤트가 지속 기록이다). 페이지별 `delegated_to` 해제는 그 뒤 검증된 미사용 잔량을 회수하는 단계이며 페이지마다 별도 쓰기다. `undelegate_page`는 닫힌 grant와 `reserved == 0`을 요구한다.
+5. 회수 순서는 모델 1의 A-4(`docs/decisions/AUTHORITY_MODEL_1.md`)와 LC-CUT(`docs/contracts/STATE_LIFECYCLE.md` §4)를 청사진 §6이 제안한 순서로 구성하는 초안이다. 그 두 문서에는 이 다섯 단계가 순서대로 적혀 있지 않다. 회수 의사 기록, 신규 약정 차단 cut, 체인 경계 확정, cut 이전의 미발행 약정·늦은 capture·반환 의무 보존, 검증된 미사용 잔량만 회수. 시간 경과만으로 전량 회수하지 않는다. cut을 증명하지 못하면 해당 페이지의 새 소비와 재위임을 보류한다. cut 뒤 남은 미해소 예약은 delegate 소유 `IssuancePayment`를 어느 경로도 제시할 수 없으므로 그 페이지는 '검증된 미사용'이 아니며 회수가 거절된다.
 6. 응답 유실·timeout·NotFound는 미실행이 아니다. 새 거래를 만들지 않고 같은 서명 바이트로 조회·대사한다. 재전송은 현재 실행 허가와 fence가 확인된 경우의 같은 바이트로만 한다. 이것은 R2 fence의 구현이 아니다.
-7. 페이지 하나를 커널 인벤토리 하나에 대응시킬 수 있는지는 RS-3b가 확인한다. 이 계약은 대응이 가능하다고 하지 않는다. 4,096석을 넘는 지정석이나 64를 넘는 좌석 묶음의 위임 실행은 잠금 파일을 그대로 둔 새 crate이며 Track K v5의 별도 승인 뒤다.
+7. RS-3b는 페이지 하나를 커널 인벤토리 하나에 대응시키는 초안 규칙을 기록했다(§5). 한 공연의 여러 페이지는 각각의 커널 인벤토리로 동시에 동작한다. 위임은 페이지별로 실행 fence 소유자를 grant의 delegate로 옮기는 것으로 모델링하고, 회수 cut은 grant를 닫으면서 위임된 각 페이지의 fence를 grant ID 소유의 묘지(tombstone)로 옮긴다. 명령 정체는 `(공연 스코프, principal, request)`를 `(페이지 스코프, principal, request)`로 대응시키고, 같은 `(principal, request)`가 다른 페이지로 라우팅되면 거절한다. 4,096석을 넘는 지정석이나 64를 넘는 좌석 묶음의 위임 실행은 잠금 파일을 그대로 둔 새 crate이며 Track K v5의 별도 승인 뒤다. 확정은 Astra 아키텍처 검토와 사용자 병합이다.
+8. RS-3a 구현에서 관측된 특성. `cancel_show`는 grant를 자동으로 회수하지 않는다 — 위임 경로는 `c.open`을 별도로 확인하므로 취소된 공연은 거절된다. `revoke`는 §10.3의 다섯 경로 목록에 없으므로 위임된 페이지에서도 그대로 동작한다. `shield`·`consume_private`는 `occupied`를 쓰지 않아 위임 검사를 받지 않는다. 위임 경로는 `IssuerCap`을 받지 않는다(§13의 선택은 열린 채로 둔다). grant의 만료·TTL과 허용 연산 집합은 정의하지 않는다.
 
 ## 11. 이전과 공존
 
@@ -249,8 +268,8 @@ RR-2-T1이 확인할 관찰: 발급과 환불은 폐기 루트를 바꾸지 않�
 | `MAX_BUNDLE_CHAIN` 숫자 상수 | 공식만 채택. 이벤트 산술 천장 512는 상수가 아니다 | RS-1 / Astra |
 | 봉인 뒤 페이지 추가 | OPEN. 0.1 범위표는 불변 | Astra |
 | 구획·행·열과 슬롯 번호의 대응 | OPEN | RS-3b / Astra |
-| 페이지와 커널 구간의 대응 | OPEN | RS-3b / Astra |
-| 온체인 GA의 빈 슬롯 선택과 커널 카운터 대응 | OPEN. GA 범위 객체 자체는 §3에 포함 | RS-3b / Astra |
+| 페이지와 커널 구간의 대응 | RS-3b 초안 규칙 기록(§5). 확정은 Astra 검토·사용자 병합 | RS-3b / Astra |
+| 온체인 GA의 빈 슬롯 선택과 커널 카운터 대응 | RS-3b 초안 규칙 기록(§5): 가장 낮은 빈 슬롯의 결정론 배정. 확정은 Astra 검토·사용자 병합. GA 범위 객체 자체는 §3에 포함 | RS-3b / Astra |
 | `Claimed` 동적 필드가 더하는 새 ID 계수 | 미확인 | RS-1이 측정 |
 | `shield` 경합의 완화 연산 | OPEN. 새 명령 없음 | 측정은 RS-4. 새 명령은 DECISION_REQUIRED · Astra |
 | 폐기 저장 (b)의 충돌이 클 때의 대체 | OPEN. 임계 숫자 없음 | RS-4 보고 뒤 Astra |

@@ -1,0 +1,5 @@
+{"operation":"spend","arguments":{"pool":"CUSTOMER_DEPOSIT","amount":1,"program_ref":"synthetic-program"}}
+{"operation":"spend","arguments":{"pool":"ORGANIZER_SETTLEMENT","amount":1,"program_ref":"synthetic-program"}}
+{"operation":"spend","arguments":{"pool":"REFUND_RESERVE","amount":1,"program_ref":"synthetic-program"}}
+{"operation":"spend","arguments":{"pool":"PROTOCOL_REVENUE","amount":3,"program_ref":"synthetic-program"}}
+{"operation":"view","arguments":{}}

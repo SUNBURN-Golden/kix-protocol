@@ -815,7 +815,7 @@ class ReservationMachine:
             if replayed is not None:
                 return replayed
         try:
-            return execute(key, request)
+            return self._atomic(key, request, execute)
         except ReservationError as error:
             if (
                 request is not None
@@ -1041,3 +1041,28 @@ class ReservationMachine:
 
     def _show_envelope_time(self, show_id: str) -> int:
         return _lift(self._gates.view_show, show_id)["logical_time_ms"]
+
+    def _atomic(self, key: str, request: str, execute) -> dict:
+        from copy import deepcopy  # module-level import would move the READ_MODEL_SOURCE_MAP.md section 6 anchors
+
+        staged = (
+            "_now",
+            "_journal",
+            "_idempotency",
+            "_shows",
+            "_cases",
+            "_orders",
+            "_issuances",
+            "_admissions",
+            "_consumes",
+            "_gates",
+        )
+        committed = {name: getattr(self, name) for name in staged}
+        for name, value in committed.items():
+            setattr(self, name, deepcopy(value))
+        try:
+            return execute(key, request)
+        except BaseException:
+            for name, value in committed.items():
+                setattr(self, name, value)
+            raise

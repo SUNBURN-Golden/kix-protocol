@@ -229,7 +229,6 @@ class ResaleMachine:
                 _require(current["canon"] == canon, "ISSUANCE_BINDING_CONFLICT")
                 raise ResaleError("ILLEGAL_TRANSITION")
             self._match_authority(normalized)
-            self._materialize(normalized)
             ticket = {
                 "canon": canon,
                 "right_id": normalized["right_id"],
@@ -242,8 +241,9 @@ class ResaleMachine:
                 "last_transfer_id": None,
                 "subject_ids": [normalized["right_id"]],
             }
-            self._rights[normalized["right_id"]] = ticket
-            self._invariant()
+            # Gate steps, the right insert and the invariant check commit
+            # together; a rejection leaves no trace (contract 10.7).
+            self._commit_adopt(normalized, ticket)
             body = {name: normalized[name] for name in _ADOPT_FIELDS}
             return self._accept(
                 key,
@@ -1189,3 +1189,17 @@ class ResaleMachine:
             live = self._live_listing_id(ticket)
             _require(live == live_for_right.get(ticket["right_id"]), "MOCK_INVARIANT")
             _require(right["listing_id"] == live, "MOCK_INVARIANT")
+
+    def _commit_adopt(self, normalized: dict, ticket: dict) -> None:
+        from copy import deepcopy  # module-level import would move the READ_MODEL_SOURCE_MAP.md section 6 anchors
+
+        committed = self._gates
+        self._gates = deepcopy(committed)
+        try:
+            self._materialize(normalized)
+            self._rights[normalized["right_id"]] = ticket
+            self._invariant()
+        except BaseException:
+            self._gates = committed
+            self._rights.pop(normalized["right_id"], None)
+            raise

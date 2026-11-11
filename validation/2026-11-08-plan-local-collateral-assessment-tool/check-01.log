@@ -1,0 +1,6 @@
+$ python3 scripts/check_docs_index.py
+exit: 0
+stdout:
+docs index ok: scanned=375 indexed=340 allowlisted=35
+
+stderr:

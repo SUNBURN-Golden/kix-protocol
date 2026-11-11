@@ -39,7 +39,8 @@ from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.openapi_doc import self_test, validate
 from integration_gate.schema import problems
 from integration_gate.server import build_server, main
-from readiness.store import ReadinessStore
+from readiness.codec import receipt_digest
+from readiness.store import ReadinessStore, StoreError
 from readiness.conformance import assert_budget_rejection
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -119,6 +120,23 @@ def assert_no_cors(test, header_map):
     for key in header_map:
         test.assertFalse(key.startswith('access-control-'), key)
     test.assertNotIn('vary', header_map)
+
+
+def assert_journal_audit(test, captured, request_id, decision, body_marker):
+    text = captured.getvalue()
+    records = [json.loads(line) for line in text.splitlines()
+               if line.startswith('{')]
+    matches = [record for record in records
+               if record.get('requestId') == request_id]
+    test.assertEqual(len(matches), 1, text)
+    record = matches[0]
+    test.assertEqual(record['journalDecision'], decision)
+    for label in ('protocolTruth', 'productionConformance',
+                  'productionReadiness', 'productionEndpoint'):
+        test.assertIs(record[label], False)
+    test.assertNotIn('body', record)
+    test.assertNotIn('entry', record)
+    test.assertNotIn(body_marker, text)
 
 
 def raw_message(method, path, header_lines):
@@ -1101,6 +1119,162 @@ class TransportTests(unittest.TestCase):
                 self.assertEqual(payload['error'], 'EVENT_EXISTS')
             finally:
                 stop_process(second)
+
+    def test_core_receipt_replay_preserves_receipt_and_journal(self):
+        domain = load_catalogue(ROOT).domain
+        body = {'domain': domain, 'now': 731942}
+        captured = io.StringIO()
+        original = {}
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = Path(tmp) / 'journal.v1'
+
+            def commit(httpd, port):
+                status, receipt, headers = post_call(
+                    port, 'op-receipt-replay', 'operator', 'advance_clock', body,
+                    headers={'X-Request-Id': 'req-receipt-original'},
+                )
+                assert_gate_headers(self, headers)
+                self.assertEqual(status, 200, receipt)
+                self.assertEqual(receipt['result']['logicalTime'], body['now'])
+                self.assertEqual(len(httpd.store.records), 1)
+                record = httpd.store.records[0]
+                for key, value in envelope(
+                        'op-receipt-replay', 'operator', 'advance_clock', body).items():
+                    self.assertEqual(record[key], value)
+                self.assertEqual(record['kind'], 'core_commit')
+                self.assertEqual(record['machine'], 'integration_core')
+                self.assertEqual(record['receiptDigest'], receipt_digest(receipt))
+                original['receipt'] = receipt
+                original['bytes'] = journal.read_bytes()
+                original['records'] = list(httpd.store.records)
+
+            def replay(httpd, port):
+                self.assertEqual(httpd.store.records, original['records'])
+                status, receipt, headers = post_call(
+                    port, 'op-receipt-replay', 'operator', 'advance_clock', body,
+                    headers={'X-Request-Id': 'req-receipt-replay'},
+                )
+                assert_gate_headers(self, headers)
+                self.assertEqual(status, 200, receipt)
+                self.assertEqual(receipt, original['receipt'])
+                self.assertEqual(len(httpd.store.records), 1)
+                self.assertEqual(httpd.store.records, original['records'])
+                self.assertEqual(journal.read_bytes(), original['bytes'])
+
+            with redirect_stderr(captured):
+                run_with_server(commit, readiness_dir=tmp)
+                run_with_server(replay, readiness_dir=tmp)
+            self.assertEqual(journal.read_bytes(), original['bytes'])
+        assert_journal_audit(self, captured, 'req-receipt-replay',
+                             'replayed', domain)
+
+    def test_checksum_valid_receipt_mismatch_refuses_startup(self):
+        domain = load_catalogue(ROOT).domain
+        control = {}
+
+        def commit(httpd, port):
+            status, receipt, headers = post_call(
+                port, 'op-digest-control', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 27},
+            )
+            assert_gate_headers(self, headers)
+            self.assertEqual(status, 200, receipt)
+            self.assertEqual(len(httpd.store.records), 1)
+            control.update(httpd.store.records[0])
+            self.assertEqual(control['receiptDigest'], receipt_digest(receipt))
+
+        with tempfile.TemporaryDirectory() as good, tempfile.TemporaryDirectory() as bad:
+            run_with_server(commit, readiness_dir=good)
+            wrong_digest = ('0' if control['receiptDigest'][0] != '0' else '1')
+            wrong_digest += control['receiptDigest'][1:]
+            record = {key: value for key, value in control.items()
+                      if key not in ('schema', 'protocolTruth', 'productionConformance')}
+            record['receiptDigest'] = wrong_digest
+            store = ReadinessStore.open(bad)
+            try:
+                store.append(record)
+            finally:
+                store.close()
+            journal = Path(bad) / 'journal.v1'
+            before = journal.read_bytes()
+            # Successful reopening proves framing, schema and CRC are valid.
+            reopened = ReadinessStore.open(bad)
+            try:
+                self.assertEqual(reopened.records, [dict(control, receiptDigest=wrong_digest)])
+            finally:
+                reopened.close()
+            self.assertEqual(journal.read_bytes(), before)
+            failed = subprocess.run(
+                [sys.executable, '-m', 'integration_gate', '--port', '0',
+                 '--readiness-dir', bad],
+                cwd=ROOT, capture_output=True, text=True, timeout=5,
+            )
+            self.assertEqual(failed.returncode, 2, failed.stderr)
+            self.assertIn('RECEIPT_MISMATCH', failed.stderr)
+            self.assertNotIn('listening', failed.stdout + failed.stderr)
+            self.assertEqual(journal.read_bytes(), before)
+
+    def test_readiness_disabled_call_audits_inactive(self):
+        domain = load_catalogue(ROOT).domain
+        captured = io.StringIO()
+
+        def run(_httpd, port):
+            status, receipt, headers = post_call(
+                port, 'op-inactive-audit', 'operator', 'advance_clock',
+                {'domain': domain, 'now': 842173},
+                headers={'X-Request-Id': 'req-inactive-audit'},
+            )
+            assert_gate_headers(self, headers)
+            self.assertEqual(status, 200, receipt)
+            self.assertEqual(receipt['result']['logicalTime'], 842173)
+
+        with redirect_stderr(captured):
+            run_with_server(run)
+        assert_journal_audit(self, captured, 'req-inactive-audit', 'inactive', domain)
+
+    def test_append_failure_diverges_and_blocks_subsequent_commands(self):
+        domain = load_catalogue(ROOT).domain
+        captured = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = Path(tmp) / 'journal.v1'
+            original = {}
+
+            def run(httpd, port):
+                original['bytes'] = journal.read_bytes()
+                self.assertEqual(httpd.store.records, [])
+                with patch.object(httpd.store, 'append',
+                                  side_effect=StoreError('JOURNAL_WRITE')) as append:
+                    status, payload, headers = post_call(
+                        port, 'op-append-failure', 'operator', 'advance_clock',
+                        {'domain': domain, 'now': 953284},
+                        headers={'X-Request-Id': 'req-diverged-audit'},
+                    )
+                    append.assert_called_once()
+                assert_gate_headers(self, headers)
+                self.assertEqual(status, 503)
+                self.assertEqual(payload['error'], 'DURABILITY_DIVERGENCE')
+                self.assertNotIn('result', payload)
+                self.assertNotIn('sequence', payload)
+                # The failure injection has ended; the process must stay fenced.
+                for op, now in (('op-append-failure', 953284), ('op-after-failure', 953285)):
+                    status, payload, headers = post_call(
+                        port, op, 'operator', 'advance_clock',
+                        {'domain': domain, 'now': now},
+                    )
+                    assert_gate_headers(self, headers)
+                    self.assertEqual(status, 503)
+                    self.assertEqual(payload['error'], 'NOT_READY')
+                status, raw, headers = exchange(port, 'GET', READY_PATH)
+                assert_gate_headers(self, headers)
+                self.assertEqual(status, 503)
+                self.assertEqual(parse_json(raw)['error'], 'NOT_READY')
+                self.assertEqual(httpd.store.records, [])
+                self.assertEqual(journal.read_bytes(), original['bytes'])
+
+            with redirect_stderr(captured):
+                run_with_server(run, readiness_dir=tmp)
+            self.assertEqual(journal.read_bytes(), original['bytes'])
+        assert_journal_audit(self, captured, 'req-diverged-audit', 'diverged', domain)
 
     def test_corrupt_journal_and_unknown_schema_do_not_listen(self):
         with tempfile.TemporaryDirectory() as tmp:

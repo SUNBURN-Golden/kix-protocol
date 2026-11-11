@@ -1,0 +1,382 @@
+[
+  {
+    "command": "env PYTHONPATH=reference/ai_delegation python3 -m unittest test_delegation_console",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.355,
+    "stdout": "",
+    "stderr": ".............\n----------------------------------------------------------------------\nRan 13 tests in 0.268s\n\nOK\n"
+  },
+  {
+    "command": "env PYTHONPATH=reference/ai_delegation python3 -m unittest test_delegation_console",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.342,
+    "stdout": "",
+    "stderr": ".............\n----------------------------------------------------------------------\nRan 13 tests in 0.260s\n\nOK\n"
+  },
+  {
+    "command": "python3 -m unittest discover -s reference/ai_delegation -t reference/ai_delegation",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 4.327,
+    "stdout": "",
+    "stderr": ".....................................................................................................................\n----------------------------------------------------------------------\nRan 117 tests in 4.214s\n\nOK\n"
+  },
+  {
+    "command": "python3 scripts/check_ai_delegation_evidence_map.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.099,
+    "stdout": "ai delegation evidence map ok: rows=11 headings=11 codes=26 flags=11 items=8 dlg_refs=71 citations=91 COVERED=3 PARTIAL=6 NOT_COVERED=1 OPEN=1\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_ai_delegation_evidence_map.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 5.949,
+    "stdout": "self-test: detected missing clause\nself-test: detected duplicate clause\nself-test: detected invented clause\nself-test: detected clause row width\nself-test: detected missing code\nself-test: detected duplicate code\nself-test: detected invented code\nself-test: detected code row width\nself-test: detected code order\nself-test: detected missing flag\nself-test: detected duplicate flag\nself-test: detected invented flag\nself-test: detected flag row width\nself-test: detected flag order\nself-test: detected missing item\nself-test: detected duplicate item\nself-test: detected invented item\nself-test: detected item row width\nself-test: detected item order\nself-test: detected new contract heading\nself-test: detected removed heading\nself-test: detected duplicate contract heading\nself-test: detected title drift\nself-test: detected missing paraphrase\nself-test: detected dangling path\nself-test: detected protected path\nself-test: detected absolute path\nself-test: detected parent path\nself-test: detected backslash path\nself-test: detected noncanonical path\nself-test: detected nested path\nself-test: detected non-test file\nself-test: detected unapproved readiness file\nself-test: detected dangling symbol\nself-test: detected helper symbol\nself-test: detected non-test method\nself-test: detected bare citation\nself-test: detected ordinary class\nself-test: detected invalid Python\nself-test: detected orphan readiness mixin\nself-test: detected stale Counts:\nself-test: detected duplicate Counts:\nself-test: detected stale Codes:\nself-test: detected duplicate Codes:\nself-test: detected stale Flags:\nself-test: detected duplicate Flags:\nself-test: detected stale Open items:\nself-test: detected duplicate Open items:\nself-test: detected closed §9\nself-test: detected promoted §10\nself-test: detected clause owner drift\nself-test: detected unknown owner\nself-test: detected empty owner\nself-test: detected missing owner\nself-test: detected missing open marker\nself-test: detected §3 unknown status\nself-test: detected §1 COVERED needs a citation\nself-test: detected §3 PARTIAL needs a citation\nself-test: detected §1 COVERED gap must be none\nself-test: detected §3 PARTIAL needs a named gap\nself-test: detected §10 NOT_COVERED needs a named gap\nself-test: detected §10 NOT_COVERED evidence must be none\nself-test: detected §3 unknown DLG id\nself-test: detected §6 must point to all DLG\nself-test: detected §3 DLG pointer format\nself-test: detected §3 DLG pointer range\nself-test: detected §3 DLG pointer duplicate\nself-test: detected copied DLG row\nself-test: detected missing matrix id\nself-test: detected code absent from ECC\nself-test: detected constructor exclusion\nself-test: detected AID pointer drift\nself-test: detected contract flag drift\nself-test: detected mock flag drift\nself-test: detected execution enabled\nself-test: detected open item item title drift\nself-test: detected open item item status drift\nself-test: detected open item open-item evidence must be none\nself-test: detected open item item must remain OPEN\nself-test: detected open item OPEN needs an open marker\nself-test: detected open item OPEN needs an owner\nself-test: detected O8 owner drift\nself-test: detected O8 execution posture\nself-test: detected missing banner Builder-authored map, not a review or an acceptance\nself-test: detected missing banner no grade change\nself-test: detected missing banner `delegated_execution_enabled` stays `false`\nself-test: transitive TestCase selection and symlink fencing pass\nself-test: pass (86 negative controls)\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_delegation_layer_matrix.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.057,
+    "stdout": "delegation layer matrix ok: rows=36 expected=36 citations=79 MOCK_ONLY=15 ANALOGUE_NOT_BOUND=7 NO_LAYER=8 NOT_APPLICABLE_BY_DESIGN=6\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_delegation_layer_matrix.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.174,
+    "stdout": "self-test: detected removed DLG-17 row (missing in matrix: DLG-17)\nself-test: detected dangling path (DLG-06: chain citation reference/rights_scale/sui/sources/NO_SUCH_FILE.move does not exist)\nself-test: detected dangling symbol (DLG-06: chain citation reference/rights_scale/sui/sources/rights_scale.move::no_such_fn_9f3a is not defined in the file)\nself-test: detected duplicated DLG-17 row (duplicated in matrix: DLG-17 (2))\nself-test: detected unknown status (DLG-01: unknown status 'SUFFICIENT')\nself-test: detected mock test that does not cite the id (DLG-01: mock tests ['test_period_boundaries'] differ from docstring citations ['test_query_does_not_change_state_and_propose_is_a_memo'])\nself-test: detected MOCK_ONLY row with a chain citation (DLG-01: MOCK_ONLY needs none in chain and executor cells)\nself-test: detected id dropped from the Neither line (gap summary '- Neither:' lists ['DLG-02', 'DLG-03', 'DLG-04', 'DLG-05', 'DLG-07', 'DLG-08', 'DLG-09', 'DLG-10', 'DLG-11', 'DLG-12', 'DLG-14', 'DLG-15', 'DLG-16', 'DLG-17', 'DLG-18', 'DLG-19', 'DLG-21', 'DLG-24', 'DLG-25', 'DLG-27', 'DLG-28', 'DLG-29', 'DLG-30', 'DLG-31', 'DLG-33', 'DLG-34', 'DLG-35', 'DLG-36'] but the table gives ['DLG-01', 'DLG-02', 'DLG-03', 'DLG-04', 'DLG-05', 'DLG-07', 'DLG-08', 'DLG-09', 'DLG-10', 'DLG-11', 'DLG-12', 'DLG-14', 'DLG-15', 'DLG-16', 'DLG-17', 'DLG-18', 'DLG-19', 'DLG-21', 'DLG-24', 'DLG-25', 'DLG-27', 'DLG-28', 'DLG-29', 'DLG-30', 'DLG-31', 'DLG-33', 'DLG-34', 'DLG-35', 'DLG-36'])\nself-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_contract_error_codes.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 1.116,
+    "stdout": "contract error code coverage ok: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_contract_error_codes.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 33.173,
+    "stdout": "self-test: detected removed doc row (SET: INVALID_ID missing in doc)\nself-test: detected duplicated doc row (SET: INVALID_ID duplicated in doc (2))\nself-test: detected misspelled code (missing side) (SET: INVALID_ID missing in doc)\nself-test: detected misspelled code (extra side) (SET: INVALID_IDX is not in the contract table)\nself-test: detected stale counts line (counts line 'Counts: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=9199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0' differs from the table 'Counts: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0')\nself-test: detected wrong cell count (SET: expected 6 cells, found 7)\nself-test: detected unknown status (SET INVALID_ID: unknown status 'SUFFICIENT')\nself-test: detected MOCK_INVARIANT row (SET: MOCK_INVARIANT is excluded and must not have a row)\nself-test: detected removed raise site (SET INVALID_ID: Raised cites a site but none is derived)\nself-test: detected removed asserting test (SET INVALID_ID: Asserted cites a site but none is derived)\nself-test: detected Raised cell set to no (SET INVALID_ID: Raised is no but the sources have 2 site(s))\nself-test: detected dangling path (SET INVALID_ID: Raised citation reference/settlement_f01_f03/no_such.py::x: file does not exist)\nself-test: detected dangling symbol (SET INVALID_ID: Raised citation reference/settlement_f01_f03/mock_settlement.py::no_such_fn_9f3a: symbol is not defined in the file)\nself-test: detected citation outside the suite directory (SET INVALID_ID: Raised citation reference/ai_delegation/ai_delegation_mock.py::x is outside the suite directory reference/settlement_f01_f03)\nself-test: detected citation under reference/v0.3-rc1 (SET INVALID_ID: Raised citation reference/v0.3-rc1/x.py::y is under reference/v0.3-rc1)\nself-test: detected citation that is not a derived site (SET INVALID_ID: Raised citation reference/settlement_f01_f03/mock_settlement.py::MockSettlement.__init__ is not a derived site)\nself-test: detected contract table with an added code (SET: ADDED_PROBE_CODE missing in doc)\nself-test: detected contract table with a removed heading (SET: heading '## 6. 오류 코드' not found)\nself-test: detected COVERED row without an asserting test (SET INVALID_ID: COVERED needs both a raise site and an asserting test)\nself-test: detected added code in the BRA-RES contract table (BRA-RES: ADDED_PROBE_CODE missing in doc)\nself-test: detected removed raise site on a BRA-RES row (BRA-RES TICKET_NOT_ISSUED: Raised cites a site but none is derived)\nself-test: detected citation that is not a derived site on a BRA-RES row (BRA-RES TICKET_NOT_ISSUED: Raised citation reference/booking_resale_admission/resale_fsm.py::ResaleMachine._listing is not a derived site)\nself-test: detected missing section 9 raise citation (BRA-RES9 ALREADY_CONSUMED: Raised is no but the sources have 1 site(s))\nself-test: detected missing section 9 assertion citation (BRA-RES9 ALREADY_CONSUMED: Asserted is no but the sources have 14 site(s))\nself-test: detected added code in the section 9.2 effect column (BRA-RES9: ADDED_PROBE_CODE missing in doc)\nself-test: detected added code in the section 9.5 code column (BRA-RES9: ADDED_PROBE_CODE missing in doc)\nself-test: detected removed section 9.5 heading (BRA-RES9: heading '### 9.5 정산 게이트' not found)\nself-test: detected malformed section 9.5 row (BRA-RES9: heading '### 9.5 정산 게이트': expected 2 cells, found 3)\nself-test: detected CLASS_B status on an asserted code with a none note (SET INVALID_ID: CLASS_B row needs a reasoned note)\nself-test: detected CLASS_C status on an asserted code (SET INVALID_ID: CLASS_C row is asserted by a test, so it is COVERED)\nself-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_evidence_map_rollup.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.044,
+    "stdout": "evidence map roll-up ok: contracts=25; textual index only\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_evidence_map_rollup.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.027,
+    "stdout": "self-test: detected missing contract\nself-test: detected stale copied Counts line\nself-test: detected Counts disagree with table\nself-test: detected missing map path\nself-test: detected duplicate contract\nself-test: detected non-contract row\nself-test: detected missing checker\nself-test: detected unlisted status\nself-test: detected nonzero unexplained token\nself-test: detected duplicate Counts line\nself-test: detected owners mismatch\nself-test: detected arity mismatch\nself-test: detected no-map row without reason\nself-test: detected source owner has break\nself-test: detected Counts trailing whitespace\nself-test: detected missing Status table\nself-test: pass (16 negative controls)\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_class_b_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.079,
+    "stdout": "class B index ok: rows=218 sources=73 symbols=47; textual index only\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_class_b_index.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.026,
+    "stdout": "self-test: detected missing path\nself-test: detected missing test path\nself-test: detected altered quote\nself-test: detected short quote\nself-test: detected piped quote\nself-test: detected unknown symbol\nself-test: detected unknown dotted part\nself-test: detected unknown node:test name\nself-test: detected duplicate id\nself-test: detected bad id\nself-test: detected wrong count\nself-test: detected missing count token\nself-test: detected two counts lines\nself-test: detected invented owner\nself-test: detected invented contract\nself-test: detected out-of-scope source\nself-test: detected invented status\nself-test: detected superseded without supersession quote\nself-test: detected superseded with wrong PR\nself-test: detected wrong header\nself-test: pass (20 negative controls)\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_docs_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.03,
+    "stdout": "docs index ok: scanned=362 indexed=327 allowlisted=35\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_docs_index.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.045,
+    "stdout": "self-test: detected removed index link to docs/adr/0001-ktx-authority-commit-recovery.md (not indexed: docs/adr/0001-ktx-authority-commit-recovery.md)\nself-test: detected unindexed scanned file docs/status/SELFTEST_UNINDEXED.md (not indexed: docs/status/SELFTEST_UNINDEXED.md)\nself-test: detected unindexed validation record validation/SELFTEST_UNINDEXED/README.md (not indexed: validation/SELFTEST_UNINDEXED/README.md)\nself-test: detected dropped allowlist entry docs/contracts/openapi/fsm-command-contract.json (not indexed: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected removed scanned file docs/contracts/openapi/fsm-command-contract.json (allowlist names a file outside the scanned set: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected allowlisted entry also index-linked docs/contracts/openapi/fsm-command-contract.json (allowlisted but indexed: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected broken index link docs/status/SELFTEST_MISSING_TARGET.md (broken index link: docs/status/SELFTEST_MISSING_TARGET.md)\nself-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_status_register.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.172,
+    "stdout": "capability register ok: paths=575 ev_ids=15 original32=32\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_status_register.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.694,
+    "stdout": "self-test: detected missing path (path not found: docs/status/NO_SUCH_FILE_9f3a.md)\nself-test: detected undefined EV id (undefined evidence id referenced: EV-XXX)\nself-test: detected dropped original id (original id E01 appears 0 times as a row key (want 1))\nself-test: detected duplicated original id (original id E01 appears 2 times as a row key (want 1))\nself-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_ci_test_discovery.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.111,
+    "stdout": "reached: reference/ai_delegation files=10 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/booking_resale_admission files=59 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/credit_advance_f04 files=10 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/provider_facts files=14 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/rights_scale files=6 <- rights-scale/Rights-scale Move and model tests\nreached: reference/settlement_f01_f03 files=15 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/token_reward files=12 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/rights_scale/client/admission-packet.test.mjs <- rights-scale/Offline admission packet regressions\nreached: reference/rights_scale/client/mint-note.test.mjs <- rights-scale/Offline mint note regressions\nreached: reference/rights_scale/client/ptau-header.test.mjs <- rights-scale/Offline PTAU header parsing regressions\nreached: reference/rights_scale/client/spend-witness.test.mjs <- rights-scale/Offline spend witness regressions\nreached: reference/rights_scale/client/verifier-binding.test.mjs <- rights-scale/Offline verifier binding regressions\nreached: reference/rights_scale/client/witness-reconstruction.test.mjs <- rights-scale/Offline witness reconstruction regressions\nreached: reference/rights_scale/client/zk-helpers.test.mjs <- rights-scale/Offline public-byte encoding regressions\nreached: reference/rights_scale/client/zk-policy-v2.test.mjs <- rights-scale/Offline manifest validation regressions\nreached: integration_gate.test_http_gate <- protocol/Non-production HTTP integration gate\nreached: integration_gate.test_offline_limits <- protocol/Offline reference state machines and OpenAPI pins\nreached: readiness.test_conformance_sensitivity <- protocol/Non-production HTTP integration gate via readiness.test_faults\nreached: readiness.test_faults <- protocol/Non-production HTTP integration gate\nexcluded: reference/v0.1: historical v0.1 reference tree; no protocol.yml step runs its tests and this guard does not claim they run\nexcluded: reference/v0.2: historical v0.2 reference tree; no protocol.yml step runs its tests and this guard does not claim they run\nexcluded: reference/v0.3-rc1: historical v0.3-rc1 tree; its Python tests are invoked inside scripts/verify_runtime.py, which this guard does not parse, so no run is claimed here\nci test discovery ok: reference_suites=7 node_tests=8 modules=4 excluded=3\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_ci_test_discovery.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.076,
+    "stdout": "self-test: detected unwired suite directory\nself-test: detected unwired node test\nself-test: detected unreached top-level module\nself-test: detected unreached nested module\nself-test: detected unreached module outside a package\nself-test: detected exclusion without reason\nself-test: detected module reached only by import statement\nself-test: detected module reached only as a package attribute\nself-test: detected partial from-import\nself-test: detected reference test in a non-package subdirectory\nself-test: detected commented-out wiring line\nself-test: detected unexpanded loop variable\nself-test: detected unsupported discover option\nself-test: detected workflow names missing module\nself-test: detected workflow names missing node test\nself-test: detected exclusion of an absent tree\nself-test: detected excluded tree wired by discover\nself-test: detected empty workflow\nself-test: pass (18 negative controls)\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_ci_checker_wiring.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.039,
+    "stdout": "ci checker wiring ok: scripts=35 plain=34 self_test=35 self_test_only=1 docs=22 citations=99\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_ci_checker_wiring.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.024,
+    "stdout": "self-test: detected unwired checker\nself-test: detected plain-only wiring\nself-test: detected unlisted self-test-only checker\nself-test: detected missing cited checker\nself-test: detected document cites unrun checker\nself-test: detected allowlisted script wired plain\nself-test: detected allowlisted script missing self-test\nself-test: detected missing allowlisted script\nself-test: detected workflow invokes missing file\nself-test: detected commented-out invocation\nself-test: detected no scripts\nself-test: detected no invocations\nself-test: detected no documents\nself-test: pass (13 negative controls)\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/verify_runtime_architecture.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.072,
+    "stdout": "architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/test_runtime_architecture.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.264,
+    "stdout": "",
+    "stderr": "test_hidden_target_dependency (__main__.ArchitectureGateTests.test_hidden_target_dependency) ... ok\ntest_invalid_contract_values (__main__.ArchitectureGateTests.test_invalid_contract_values) ... ok\ntest_kernel_dependency_injection (__main__.ArchitectureGateTests.test_kernel_dependency_injection) ... ok\ntest_missing_lock_or_golden_vector (__main__.ArchitectureGateTests.test_missing_lock_or_golden_vector) ... ok\ntest_python_runtime_source_is_rejected (__main__.ArchitectureGateTests.test_python_runtime_source_is_rejected) ... ok\ntest_transitive_dependency_injection (__main__.ArchitectureGateTests.test_transitive_dependency_injection) ... ok\ntest_valid_contract (__main__.ArchitectureGateTests.test_valid_contract) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.184s\n\nOK\n"
+  },
+  {
+    "command": "env PYTHONPATH=reference/ai_delegation python3 -m unittest test_delegation_console",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.32,
+    "stdout": "",
+    "stderr": ".............\n----------------------------------------------------------------------\nRan 13 tests in 0.239s\n\nOK\n"
+  },
+  {
+    "command": "python3 -m unittest discover -s reference/ai_delegation -t reference/ai_delegation",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 4.687,
+    "stdout": "",
+    "stderr": ".....................................................................................................................\n----------------------------------------------------------------------\nRan 117 tests in 4.582s\n\nOK\n"
+  },
+  {
+    "command": "python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json < reference/ai_delegation/fixtures/delegation_console_journey.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.038,
+    "stdout_file": "transcript-journey.stdout.txt",
+    "stderr_file": "transcript-journey.stderr.txt"
+  },
+  {
+    "command": "python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json < reference/ai_delegation/fixtures/delegation_console_replay.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 1,
+    "seconds": 0.036,
+    "stdout_file": "transcript-replay.stdout.txt",
+    "stderr_file": "transcript-replay.stderr.txt"
+  },
+  {
+    "command": "python3 reference/ai_delegation/delegation_console.py --fixture reference/ai_delegation/fixtures/delegation_session.json < reference/ai_delegation/fixtures/delegation_console_boundaries.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 1,
+    "seconds": 0.048,
+    "stdout_file": "transcript-boundaries.stdout.txt",
+    "stderr_file": "transcript-boundaries.stderr.txt"
+  },
+  {
+    "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 101,
+    "seconds": 0.415,
+    "stdout": "",
+    "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-plan-local-delegation-console/runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\nhelp: if this error is too confusing you may wish to retry without `--offline`\n"
+  },
+  {
+    "command": "cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 101,
+    "seconds": 0.121,
+    "stdout": "",
+    "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-plan-local-delegation-console/runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\nhelp: if this error is too confusing you may wish to retry without `--offline`\n"
+  },
+  {
+    "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.368,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": "cargo tree --manifest-path runtime/Cargo.toml -p kix-kernel --edges normal --locked --offline",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 101,
+    "seconds": 0.052,
+    "stdout": "",
+    "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-plan-local-delegation-console/runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\nhelp: if this error is too confusing you may wish to retry without `--offline`\n"
+  },
+  {
+    "command": "python3 -c 'from pathlib import Path\nimport hashlib, json, subprocess\nout = Path(\"validation/2026-11-06-plan-plan-local-delegation-console\")\nbefore = json.loads((out / \"protected-before.json\").read_text())\ndef blob(path):\n    data = Path(path).read_bytes()\n    return hashlib.sha1(b\"blob \" + str(len(data)).encode() + b\"\\0\" + data).hexdigest()\nfiles = sorted(p for p in Path(\"reference/v0.3-rc1\").rglob(\"*\") if p.is_file())\nassert not any(p.is_symlink() for p in Path(\"reference/v0.3-rc1\").rglob(\"*\"))\nafter = {\"locks\": {p: blob(p) for p in before[\"locks\"]},\n         \"frozen\": {str(p): {\"bytes\": p.stat().st_size, \"sha256\": hashlib.sha256(p.read_bytes()).hexdigest()} for p in files}}\nassert after == before, \"protected bytes or complete path manifest changed\"\nrows = subprocess.check_output([\"git\", \"ls-tree\", \"-rz\", \"HEAD\", \"reference/v0.3-rc1\"]).decode().split(\"\\0\")\nassert {r.split(\"\\t\")[1]: r.split()[2] for r in rows if r} == {str(p): blob(p) for p in files}\n(out / \"protected-after.json\").write_text(json.dumps(after, indent=2, ensure_ascii=False) + \"\\n\")\nprint(\"PASS: both locked Git blobs match before/after; all\", len(files), \"frozen paths and bytes match before and HEAD\")\nprint(json.dumps(after[\"locks\"], sort_keys=True))\n'",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.055,
+    "stdout": "PASS: both locked Git blobs match before/after; all 108 frozen paths and bytes match before and HEAD\n{\"runtime/crates/kix-kernel/src/lib.rs\": \"69564b166f0c27f9af5d8422f0a466b18d74c20f\", \"runtime/crates/kix-kernel/tests/quarantine_capacity.rs\": \"b607996c83a119c349f1cc90469ac1ba82764e20\"}\n",
+    "stderr": ""
+  },
+  {
+    "command": "git diff --exit-code HEAD -- runtime reference/v0.3-rc1 .aiops docs/tasks .github reference/ai_delegation/ai_delegation_mock.py reference/ai_delegation/delegation_cli.py reference/ai_delegation/delegation_fixture.py reference/ai_delegation/delegation_session.py reference/ai_delegation/fixtures/delegation_session.json 'reference/ai_delegation/test_ai*' reference/ai_delegation/test_delegation_cli.py reference/ai_delegation/test_delegation_serialization.py reference/ai_delegation/test_delegation_session.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.005,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": "git diff --check",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.005,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": "git rev-parse HEAD origin/main",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.002,
+    "stdout": "4e04ac9158ae7b27170a80dd9042a4cddd82d8d0\n4e04ac9158ae7b27170a80dd9042a4cddd82d8d0\n",
+    "stderr": ""
+  },
+  {
+    "command": "python3 scripts/check_docs_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.031,
+    "stdout": "docs index ok: scanned=362 indexed=327 allowlisted=35\n",
+    "stderr": ""
+  },
+  {
+    "command": "git diff --check",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "seconds": 0.006,
+    "stdout": "",
+    "stderr": ""
+  }
+]

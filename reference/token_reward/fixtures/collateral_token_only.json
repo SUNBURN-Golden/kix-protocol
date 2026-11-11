@@ -1,0 +1,12 @@
+{
+  "operation": "collateral_recognized",
+  "arguments": {
+    "liability_krw": 100,
+    "collateral_items": [
+      {
+        "kind": "TOKEN",
+        "amount": 999
+      }
+    ]
+  }
+}

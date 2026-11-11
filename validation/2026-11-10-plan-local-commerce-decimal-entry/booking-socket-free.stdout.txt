@@ -1,0 +1,1 @@
+Excluded exactly one HTTP test: test_admission_fsm.AdmissionFsmTests.test_loopback_rejects_fsm_names_and_matches_published_admit

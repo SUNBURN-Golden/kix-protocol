@@ -235,7 +235,7 @@ class SettlementMockTests(unittest.TestCase):
         self.assertEqual(second["confirmed_cash"], 97_000)
         self.assertEqual(second["undistributed_cash"], 0)
 
-    def test_f03_partial_refund_blocks_distribution_without_reclassifying(self):
+    def test_f03_partial_refund_keeps_requester_bearer_without_reclassifying(self):
         self.open_claim()
         statement(self.book)
         first = self.book.bind_refund(
@@ -246,17 +246,18 @@ class SettlementMockTests(unittest.TestCase):
             reason="PARTIAL",
         )["claim"]
         self.assertEqual(first["refund_face"], 40_000)
-        self.assertEqual(first["refund_bearer_policy"], "UNDEFINED")
-        self.assertTrue(first["distribution_blocked"])
+        self.assertEqual(first["refund_bearer_policy"], "REQUESTER")
+        self.assertFalse(first["distribution_blocked"])
         self.assertEqual(line(first, "organizer")["face"], 95_000)
         self.assertEqual(line(first, "organizer")["cancelled_unpaid"], 0)
         self.assertEqual(first["recovery_due"], 0)
         self.assertIsNone(first["distribution_order"])
-        self.assertEqual(
-            codes(lambda: self.book.apply_distribution("claim-1", order=["platform", "organizer"])),
-            "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
-        )
-        self.assertIsNone(self.book.view("claim-1")["distribution_order"])
+        # B5: the partial refund does not block distribution; the caller order
+        # allocates the confirmed cash and then freezes.
+        distributed = self.book.apply_distribution("claim-1", order=["platform", "organizer"])
+        self.assertEqual(distributed["applied"], {"platform": 5_000, "organizer": 92_000})
+        self.assertEqual(distributed["claim"]["distribution_order"], ["platform", "organizer"])
+        self.assertEqual(self.book.view("claim-1")["distribution_order"], ["platform", "organizer"])
         self.assertEqual(
             codes(lambda: self.book.bind_refund(
                 "claim-1",
@@ -277,8 +278,8 @@ class SettlementMockTests(unittest.TestCase):
         )["claim"]
         self.assertEqual(rest["refund_face"], 100_000)
         self.assertFalse(rest["fixture_reclassified"])
-        self.assertEqual(rest["refund_bearer_policy"], "UNDEFINED")
-        self.assertEqual(line(rest, "platform")["outstanding"], 5_000)
+        self.assertEqual(rest["refund_bearer_policy"], "REQUESTER")
+        self.assertEqual(line(rest, "platform")["outstanding"], 0)
         self.assertEqual(
             codes(lambda: self.book.bind_refund(
                 "claim-1",
@@ -311,10 +312,12 @@ class SettlementMockTests(unittest.TestCase):
         self.assertEqual(claim["distributed_cash"], 97_000)
         self.assertEqual(line(claim, "organizer")["cancelled_unpaid"], 0)
         self.assertEqual(claim["recovery_due"], 0)
-        self.assertEqual(
-            codes(lambda: self.book.apply_distribution("claim-1", order=["platform", "organizer"])),
-            "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
-        )
+        self.assertEqual(claim["refund_bearer_policy"], "REQUESTER")
+        self.assertFalse(claim["distribution_blocked"])
+        # B5: a later distribution still succeeds; no cash remains, so it
+        # applies zero and claws nothing back.
+        again = self.book.apply_distribution("claim-1", order=["platform", "organizer"])
+        self.assertEqual(again["applied"], {"platform": 0, "organizer": 0})
         self.assertEqual(self.book.view("claim-1")["distributed_cash"], 97_000)
 
     def test_f03_full_refund_reclassifies_and_mock_acceptance_is_not_closure(self):

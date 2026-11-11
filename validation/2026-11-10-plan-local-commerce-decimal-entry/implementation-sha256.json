@@ -1,0 +1,12 @@
+{
+  "docs/README.md": "7a614932c6828c192ab060722e3e205bbe4b8b3a85202e626261395dca36afe9",
+  "reference/booking_resale_admission/README.md": "43060c4029b893b60d124f1850ea46e9030b1b4348b7be31a44903610b111709",
+  "reference/booking_resale_admission/commerce_calculation_console.py": "9f02afd22820173dc6419f5de3f48dfa01032c07476055d08c47a6434e070b82",
+  "reference/booking_resale_admission/test_commerce_calculation_console.py": "0ac4e2c1de1bd5778c9c48420d185847105ecad256c4256c9dfbcda6b6a9d370",
+  "reference/booking_resale_admission/fixtures/commerce_console_decimal_boundaries.txt": "651c0cd733b4a77ddf3c1b01f4a55587b6b30a9f60a18aa502f9b0cba0836972",
+  "reference/booking_resale_admission/fixtures/commerce_console_decimal_decline.txt": "760e8476f3ce1d385a6bd9e5c703b2824268b860d9339d38bf76e1c7b7fc680a",
+  "reference/booking_resale_admission/fixtures/commerce_console_decimal_free.txt": "a6156762fe65feee359b8a9d227c987c4fbd22f05fdc48fc8e8a95af72ac591d",
+  "reference/booking_resale_admission/fixtures/commerce_console_decimal_journey.txt": "53a0fe614de646cfd82568d1555a19443a5e3ba931fbb98070171284c077ea51",
+  "reference/booking_resale_admission/fixtures/commerce_console_decimal_precision.txt": "f70c74cf54077313c8e47de2e6484d8ed431ecf6a54ddbd9b3fcb27b9168e2bd",
+  "reference/booking_resale_admission/fixtures/commerce_console_decimal_replacement.txt": "159c03a9218bfec4d5f79b0032672046b2bad56e27dd34fc17294b9b98fd2877"
+}

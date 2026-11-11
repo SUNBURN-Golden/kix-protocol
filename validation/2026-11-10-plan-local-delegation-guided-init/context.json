@@ -1,0 +1,13 @@
+{
+  "node": "plan-local-delegation-guided-init",
+  "task_document": "Supervisor-supplied node specification and design plan; no issue or docs/tasks document",
+  "branch": "agent/kix-plan-local-delegation-guided-init",
+  "observed_local_origin_main": "a5f8192df8909451c875828839e8517facdbe289",
+  "base_and_unchanged_head": "a5f8192df8909451c875828839e8517facdbe289",
+  "remote_freshness_verified": false,
+  "implementation_commit": null,
+  "final_commit": null,
+  "merge_commit": null,
+  "exact_head_ci": "not run; supervisor publication prohibited",
+  "a2_review": "pending non-author exact-head review"
+}

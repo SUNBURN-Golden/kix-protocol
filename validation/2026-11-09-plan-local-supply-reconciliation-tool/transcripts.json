@@ -1,0 +1,110 @@
+[
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_both_causes.json",
+    "exit_status": 0,
+    "stdout": "supply_both_causes-file.stdout.json",
+    "stderr": "supply_both_causes-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_both_causes.json",
+    "exit_status": 0,
+    "stdout": "supply_both_causes-stdin.stdout.json",
+    "stderr": "supply_both_causes-stdin.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_duplicate.json",
+    "exit_status": 1,
+    "stdout": "supply_duplicate-file.stdout.json",
+    "stderr": "supply_duplicate-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_duplicate.json",
+    "exit_status": 1,
+    "stdout": "supply_duplicate-stdin.stdout.json",
+    "stderr": "supply_duplicate-stdin.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_holder_burn.json",
+    "exit_status": 0,
+    "stdout": "supply_holder_burn-file.stdout.json",
+    "stderr": "supply_holder_burn-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_holder_burn.json",
+    "exit_status": 0,
+    "stdout": "supply_holder_burn-stdin.stdout.json",
+    "stderr": "supply_holder_burn-stdin.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_match.json",
+    "exit_status": 0,
+    "stdout": "supply_match-file.stdout.json",
+    "stderr": "supply_match-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_match.json",
+    "exit_status": 0,
+    "stdout": "supply_match-stdin.stdout.json",
+    "stderr": "supply_match-stdin.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_report.json",
+    "exit_status": 0,
+    "stdout": "supply_report-file.stdout.json",
+    "stderr": "supply_report-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_report.json",
+    "exit_status": 0,
+    "stdout": "supply_report-stdin.stdout.json",
+    "stderr": "supply_report-stdin.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_tampered.json",
+    "exit_status": 1,
+    "stdout": "supply_tampered-file.stdout.json",
+    "stderr": "supply_tampered-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_tampered.json",
+    "exit_status": 1,
+    "stdout": "supply_tampered-stdin.stdout.json",
+    "stderr": "supply_tampered-stdin.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_unapproved_mint.json",
+    "exit_status": 0,
+    "stdout": "supply_unapproved_mint-file.stdout.json",
+    "stderr": "supply_unapproved_mint-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_unapproved_mint.json",
+    "exit_status": 0,
+    "stdout": "supply_unapproved_mint-stdin.stdout.json",
+    "stderr": "supply_unapproved_mint-stdin.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_unapproved_path.json",
+    "exit_status": 0,
+    "stdout": "supply_unapproved_path-file.stdout.json",
+    "stderr": "supply_unapproved_path-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_unapproved_path.json",
+    "exit_status": 0,
+    "stdout": "supply_unapproved_path-stdin.stdout.json",
+    "stderr": "supply_unapproved_path-stdin.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request reference/token_reward/fixtures/supply_unexplained.json",
+    "exit_status": 0,
+    "stdout": "supply_unexplained-file.stdout.json",
+    "stderr": "supply_unexplained-file.stderr.log"
+  },
+  {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/supply_cli.py --request - < reference/token_reward/fixtures/supply_unexplained.json",
+    "exit_status": 0,
+    "stdout": "supply_unexplained-stdin.stdout.json",
+    "stderr": "supply_unexplained-stdin.stderr.log"
+  }
+]

@@ -186,15 +186,26 @@ class JunkAndJournalTests(unittest.TestCase):
 
 
 class RepoBoundaryTests(unittest.TestCase):
-    def test_TL4_TK02_T1_only_the_locked_move_manifest_exists(self):
-        """TL1-TK02-T1 repo-state slice. No second Move manifest. Not a package proof."""
+    def test_TL4_TK02_T1_only_the_authorized_move_manifests_exist(self):
+        """TL1-TK02-T1 repo-state slice. Not a package proof.
 
-        found = []
-        for path in REPO.rglob("Move.toml"):
-            if any(part in SKIP_DIRS for part in path.parts):
-                continue
-            found.append(path.relative_to(REPO).as_posix())
-        self.assertEqual(found, ["reference/v0.3-rc1/sui/Move.toml"])
+        The authorized manifests are the locked 16-slot reference manifest
+        and the RS-1 rights_scale package manifest. Any further Move.toml
+        is a boundary violation.
+        """
+
+        found = sorted(
+            path.relative_to(REPO).as_posix()
+            for path in REPO.rglob("Move.toml")
+            if not any(part in SKIP_DIRS for part in path.parts)
+        )
+        self.assertEqual(
+            found,
+            [
+                "reference/rights_scale/sui/Move.toml",
+                "reference/v0.3-rc1/sui/Move.toml",
+            ],
+        )
 
     def test_TL4_reference_import_graph_does_not_couple_token_reward(self):
         """Product modules import stdlib and the sibling model only.

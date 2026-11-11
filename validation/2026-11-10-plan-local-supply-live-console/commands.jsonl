@@ -1,0 +1,38 @@
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward -p test_supply_client.py", "exit": 0, "log": "check-01.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3.12 -m unittest test_reward_model.SupplyTests test_tl4_model_properties.SupplyPropertyTests test_supply_reconciliation test_supply_cli test_supply_client test_supply_console test_supply_console_subprocess", "exit": 0, "log": "check-02.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3.12 -m unittest test_reward_model.SupplyTests test_tl4_model_properties.SupplyPropertyTests test_supply_reconciliation test_supply_cli test_supply_client test_supply_console test_supply_console_subprocess", "exit": 0, "log": "check-03.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_docs_index.py", "exit": 0, "log": null, "capture_note": "Initial log filename collision; exit 0 observed, mixed capture discarded. Clean final captures: check-24.log (full suite), check-29.log (docs index)."}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_docs_index.py --self-test", "exit": 0, "log": "check-05.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_tl_predicate_evidence_map.py", "exit": 0, "log": "check-06.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_tl_predicate_evidence_map.py --self-test", "exit": 0, "log": "check-07.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_class_b_index.py", "exit": 0, "log": "check-08.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_class_b_index.py --self-test", "exit": 0, "log": "check-09.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_ci_checker_wiring.py", "exit": 0, "log": "check-10.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_ci_checker_wiring.py --self-test", "exit": 0, "log": "check-11.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_ci_test_discovery.py", "exit": 0, "log": "check-12.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_ci_test_discovery.py --self-test", "exit": 0, "log": "check-13.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward", "exit": 0, "log": null, "capture_note": "Initial log filename collision; exit 0 observed, mixed capture discarded. Clean final captures: check-24.log (full suite), check-29.log (docs index)."}
+{"command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3.12 -m unittest test_reward_model.SupplyTests test_tl4_model_properties.SupplyPropertyTests test_supply_reconciliation test_supply_cli test_supply_client test_supply_console test_supply_console_subprocess", "exit": 0, "log": "check-14.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_openapi_contract.py", "exit": 0, "log": "check-15.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_openapi_contract.py --self-test", "exit": 0, "log": "check-16.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_integration_gate_openapi.py", "exit": 0, "log": "check-17.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_integration_gate_openapi.py --self-test", "exit": 0, "log": "check-18.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/verify_runtime_architecture.py", "exit": 0, "log": "check-19.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/test_runtime_architecture.py", "exit": 0, "log": "check-20.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline", "exit": 101, "log": "check-21.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings", "exit": 101, "log": "check-22.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 cargo fmt --manifest-path runtime/Cargo.toml --all -- --check", "exit": 0, "log": "check-23.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 validation/2026-11-10-plan-local-supply-live-console/capture_transcripts.py", "exit": 0, "log": "check-25.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward", "exit": 0, "log": "check-24.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 git diff --check", "exit": 0, "log": "check-26.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 git rev-parse origin/main HEAD", "exit": 0, "log": "check-27.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs", "exit": 0, "log": "check-28.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_docs_index.py", "exit": 0, "log": "check-29.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 validation/2026-11-10-plan-local-supply-live-console/verify_preservation.py", "exit": 0, "log": "check-04.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3.12 -m unittest test_reward_model.SupplyTests test_tl4_model_properties.SupplyPropertyTests test_supply_reconciliation test_supply_cli test_supply_client test_supply_console test_supply_console_subprocess", "exit": 0, "log": "check-30.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward", "exit": 0, "log": "check-31.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 validation/2026-11-10-plan-local-supply-live-console/capture_transcripts.py", "exit": 0, "log": "check-32.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 validation/2026-11-10-plan-local-supply-live-console/verify_preservation.py", "exit": 0, "log": "check-33.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 git diff --check", "exit": 0, "log": "check-34.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 python3.12 scripts/check_docs_index.py", "exit": 0, "log": "check-35.log"}
+{"command": "PYTHONDONTWRITEBYTECODE=1 git diff --check", "exit": 0, "log": "check-36.log"}

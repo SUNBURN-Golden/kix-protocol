@@ -1,0 +1,7 @@
+{"operation":"view","arguments":{}}
+{"operation":"credit","arguments":{"pool":"PROTOCOL_REVENUE","amount":5,"source_ref":"synthetic-source"}}
+{"operation":"spend","arguments":{"pool":"PROTOCOL_REVENUE","amount":3,"program_ref":"synthetic-program"}}
+{"operation":"spend","arguments":{"pool":"TOKEN_TREASURY_REWARD","amount":2,"program_ref":"synthetic-program"}}
+{"operation":"credit","arguments":{"pool":"PROTOCOL_REVENUE","amount":5,"source_ref":"synthetic-source"}}
+{"operation":"spend","arguments":{"pool":"PROTOCOL_REVENUE","amount":3,"program_ref":"synthetic-program"}}
+{"operation":"view","arguments":{}}

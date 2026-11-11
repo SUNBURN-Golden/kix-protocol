@@ -1,0 +1,6 @@
+cargo 1.98.1 (797e8a9bc 2026-08-05)
+1.98.1-x86_64-unknown-linux-gnu (active, default)
+3fa90881c1803a76f72ad1e0a9052862ddf655e2
+3fa90881c1803a76f72ad1e0a9052862ddf655e2
+agent/kix-plan-local-reward-approval-composer
+3.12.15 (main, Oct  3 2026, 01:03:07) [Clang 22.1.3 ]

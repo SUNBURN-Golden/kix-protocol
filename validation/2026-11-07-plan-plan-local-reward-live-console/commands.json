@@ -1,0 +1,699 @@
+[
+  {
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward",
+      "-p",
+      "test_reward_console*.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.693,
+    "stdout": "",
+    "stderr": "..............\n----------------------------------------------------------------------\nRan 14 tests in 0.540s\n\nOK\n"
+  },
+  {
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward",
+      "-p",
+      "test_reward_console*.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 1,
+    "elapsed_seconds": 2.36,
+    "stdout": "Local synthetic reward console — MOCK_TOKEN_REWARD_ONLY, POINT_F4, in-memory.\nReceipts are historical action snapshots; explicit reads are current observations.\nNon-transferable; token_issued, onchain_recorded, funds_executed, krw_paid,\nchain_finality, durable, legal_authority remain false.\nAmounts, caps, budgets, durations and approval policy: UNDETERMINED — Astra/User.\nActual approver designation: User-owned; caller inputs are synthetic assertions.\nUNKNOWN requires a separate explicit action; no automatic reads or retries.\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: ",
+    "stderr": ".......................F..\n======================================================================\nFAIL: test_subprocess_options_and_mode_isolation (test_reward_console_subprocess.RewardConsoleSubprocessTests.test_subprocess_options_and_mode_isolation)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/workspace/kix-run/wt/plan-plan-local-reward-live-console/reference/token_reward/test_reward_console_subprocess.py\", line 261, in test_subprocess_options_and_mode_isolation\n    with self.assertRaises(SystemExit) as error:\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^\nAssertionError: SystemExit not raised\n\n----------------------------------------------------------------------\nRan 26 tests in 2.163s\n\nFAILED (failures=1)\n"
+  },
+  {
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward",
+      "-p",
+      "test_reward_console*.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 2.207,
+    "stdout": "",
+    "stderr": "............................\n----------------------------------------------------------------------\nRan 28 tests in 2.109s\n\nOK\n"
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_docs_index.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.038,
+    "stdout": "docs index ok: scanned=368 indexed=333 allowlisted=35\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.041,
+    "stdout": "self-test: detected removed index link to docs/adr/0001-ktx-authority-commit-recovery.md (not indexed: docs/adr/0001-ktx-authority-commit-recovery.md)\nself-test: detected unindexed scanned file docs/status/SELFTEST_UNINDEXED.md (not indexed: docs/status/SELFTEST_UNINDEXED.md)\nself-test: detected unindexed validation record validation/SELFTEST_UNINDEXED/README.md (not indexed: validation/SELFTEST_UNINDEXED/README.md)\nself-test: detected dropped allowlist entry docs/contracts/openapi/fsm-command-contract.json (not indexed: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected removed scanned file docs/contracts/openapi/fsm-command-contract.json (allowlist names a file outside the scanned set: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected allowlisted entry also index-linked docs/contracts/openapi/fsm-command-contract.json (allowlisted but indexed: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected broken index link docs/status/SELFTEST_MISSING_TARGET.md (broken index link: docs/status/SELFTEST_MISSING_TARGET.md)\nself-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_status_register.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.195,
+    "stdout": "capability register ok: paths=575 ev_ids=15 original32=32\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_status_register.py",
+      "--self-test"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.852,
+    "stdout": "self-test: detected missing path (path not found: docs/status/NO_SUCH_FILE_9f3a.md)\nself-test: detected undefined EV id (undefined evidence id referenced: EV-XXX)\nself-test: detected dropped original id (original id E01 appears 0 times as a row key (want 1))\nself-test: detected duplicated original id (original id E01 appears 2 times as a row key (want 1))\nself-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_tl_predicate_evidence_map.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.037,
+    "stdout": "tl predicate evidence map ok: rows=49 expected=49 citations=58 HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=24 PARTIAL=7\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_tl_predicate_evidence_map.py",
+      "--self-test"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.081,
+    "stdout": "self-test: detected removed TK-4 row (missing in map: TK-4)\nself-test: detected duplicated TK-4 row (duplicated in map: TK-4 (2))\nself-test: detected invented id (invented id: TK-99)\nself-test: detected dangling path (TK-4: citation reference/token_reward/no_such_file.py is not an allowed evidence path)\nself-test: detected dangling symbol (TK-4: citation reference/token_reward/test_reward_model.py::no_such_fn_9f3a is not defined in the file)\nself-test: detected unknown status (TK-4: unknown status 'SUFFICIENT')\nself-test: detected uncited row that is not NOT_VERIFIABLE_NO_PACKAGE (V1: HARNESS_AUTHOR_SIDE row has no citation)\nself-test: detected empty missing cell (V1: empty missing-or-open cell)\nself-test: detected owner not in source (V1: owner 'Nobody Else' not found in docs/blueprints/optional-native-token-v1/README.md)\nself-test: detected stale counts line (counts line 'Counts: HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=9924 PARTIAL=7' differs from 'Counts: HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=24 PARTIAL=7')\nself-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_class_b_index.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.131,
+    "stdout": "class B index ok: rows=218 sources=73 symbols=47; textual index only\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_class_b_index.py",
+      "--self-test"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.027,
+    "stdout": "self-test: detected missing path\nself-test: detected missing test path\nself-test: detected altered quote\nself-test: detected short quote\nself-test: detected piped quote\nself-test: detected unknown symbol\nself-test: detected unknown dotted part\nself-test: detected unknown node:test name\nself-test: detected duplicate id\nself-test: detected bad id\nself-test: detected wrong count\nself-test: detected missing count token\nself-test: detected two counts lines\nself-test: detected invented owner\nself-test: detected invented contract\nself-test: detected out-of-scope source\nself-test: detected invented status\nself-test: detected superseded without supersession quote\nself-test: detected superseded with wrong PR\nself-test: detected wrong header\nself-test: pass (20 negative controls)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_ci_test_discovery.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.124,
+    "stdout": "reached: reference/ai_delegation files=10 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/booking_resale_admission files=60 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/credit_advance_f04 files=11 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/provider_facts files=15 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/rights_scale files=6 <- rights-scale/Rights-scale Move and model tests\nreached: reference/settlement_f01_f03 files=15 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/token_reward files=14 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/rights_scale/client/admission-packet.test.mjs <- rights-scale/Offline admission packet regressions\nreached: reference/rights_scale/client/mint-note.test.mjs <- rights-scale/Offline mint note regressions\nreached: reference/rights_scale/client/ptau-header.test.mjs <- rights-scale/Offline PTAU header parsing regressions\nreached: reference/rights_scale/client/spend-witness.test.mjs <- rights-scale/Offline spend witness regressions\nreached: reference/rights_scale/client/verifier-binding.test.mjs <- rights-scale/Offline verifier binding regressions\nreached: reference/rights_scale/client/witness-reconstruction.test.mjs <- rights-scale/Offline witness reconstruction regressions\nreached: reference/rights_scale/client/zk-helpers.test.mjs <- rights-scale/Offline public-byte encoding regressions\nreached: reference/rights_scale/client/zk-policy-v2.test.mjs <- rights-scale/Offline manifest validation regressions\nreached: integration_gate.test_http_gate <- protocol/Non-production HTTP integration gate\nreached: integration_gate.test_offline_limits <- protocol/Offline reference state machines and OpenAPI pins\nreached: readiness.test_conformance_sensitivity <- protocol/Non-production HTTP integration gate via readiness.test_faults\nreached: readiness.test_faults <- protocol/Non-production HTTP integration gate\nexcluded: reference/v0.1: historical v0.1 reference tree; no protocol.yml step runs its tests and this guard does not claim they run\nexcluded: reference/v0.2: historical v0.2 reference tree; no protocol.yml step runs its tests and this guard does not claim they run\nexcluded: reference/v0.3-rc1: historical v0.3-rc1 tree; its Python tests are invoked inside scripts/verify_runtime.py, which this guard does not parse, so no run is claimed here\nci test discovery ok: reference_suites=7 node_tests=8 modules=4 excluded=3\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_ci_test_discovery.py",
+      "--self-test"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.077,
+    "stdout": "self-test: detected unwired suite directory\nself-test: detected unwired node test\nself-test: detected unreached top-level module\nself-test: detected unreached nested module\nself-test: detected unreached module outside a package\nself-test: detected exclusion without reason\nself-test: detected module reached only by import statement\nself-test: detected module reached only as a package attribute\nself-test: detected partial from-import\nself-test: detected reference test in a non-package subdirectory\nself-test: detected commented-out wiring line\nself-test: detected unexpanded loop variable\nself-test: detected unsupported discover option\nself-test: detected workflow names missing module\nself-test: detected workflow names missing node test\nself-test: detected exclusion of an absent tree\nself-test: detected excluded tree wired by discover\nself-test: detected empty workflow\nself-test: pass (18 negative controls)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_ci_checker_wiring.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.044,
+    "stdout": "ci checker wiring ok: scripts=35 plain=34 self_test=35 self_test_only=1 docs=22 citations=99\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_ci_checker_wiring.py",
+      "--self-test"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.034,
+    "stdout": "self-test: detected unwired checker\nself-test: detected plain-only wiring\nself-test: detected unlisted self-test-only checker\nself-test: detected missing cited checker\nself-test: detected document cites unrun checker\nself-test: detected allowlisted script wired plain\nself-test: detected allowlisted script missing self-test\nself-test: detected missing allowlisted script\nself-test: detected workflow invokes missing file\nself-test: detected commented-out invocation\nself-test: detected no scripts\nself-test: detected no invocations\nself-test: detected no documents\nself-test: pass (13 negative controls)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_openapi_contract.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.129,
+    "stdout": "openapi contract pin ok: commands=84 core=40 fsm=44 sha256=ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e gitBlob=619ae21c82ca3df5661bd3831613f15fa65225ff\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_openapi_contract.py",
+      "--self-test"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.191,
+    "stdout": "self-test: detected ident bound: reference-observed: operationId.rule must match ident bound 100 and whitespace rule\nself-test: detected ident error: reference-observed: operationId.error must be INVALID_ID\nself-test: detected actor observed block removed: reference-observed: actor.check must be ident\nself-test: detected source ident bound drift: reference-observed: operationId.rule must match ident bound 64 and whitespace rule\nself-test: detected specification field added to local envelope: envelope-domain: protocolDomain must not be a local envelope field\nself-test: detected body-domain specification conflation: envelope-domain: body-domain specificationField must be protocolDomain\nself-test: detected body-domain separate argument: envelope-domain: body-domain notASeparatePythonArgument must be True\nself-test: detected body-domain pin drift: envelope-domain: body-domain pinnedDomain must be kix:fixture:lifecycle:0.3\nself-test: detected source trim removed: reference-observed: ident source must require string/length/whitespace with an error code\nself-test: detected source actor validation removed: reference-observed: Core.execute must call ident(actor)\nself-test: detected source conflict changed: reference-observed: Core.execute must retain OPERATION_ID_CONFLICT check\nself-test: detected source domain comparison changed: envelope-domain: Core.execute must compare body.domain with self.DOMAIN using DOMAIN_MISMATCH\nself-test: detected source extra envelope argument: envelope-domain: Core.execute must keep the fixed local parameters plus keyword-only options\nself-test: detected added command: schema names drifted from protocol_contract.json commands\nself-test: detected security scheme: forbidden transport or auth field: securitySchemes\nself-test: detected contract-only OPTIONS: OPTIONS operation forbidden: contract-only /x-kix-contract-only/local-call\nself-test: detected gate OPTIONS: OPTIONS operation forbidden: integration-gate /x-kix-contract-only/local-call\nself-test: detected gate publicHost: integration-gate publicHost must be false\nself-test: detected gate liveHttpServer.publicHost: integration-gate liveHttpServer.publicHost must be false\nself-test: detected gate productionEndpoint: integration-gate productionEndpoint must be false\nself-test: detected README sha256: README pin table mismatch: sha256 != contract-only sha256\nself-test: detected README row removed: README pin table missing row: FSM domain\nself-test: detected README row duplicated: README pin table duplicated row: git blob\nself-test: detected gate pin drift: README pin table mismatch: sha256 != integration-gate sha256\nself-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_integration_gate_openapi.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.073,
+    "stdout": "integration-gate openapi ok: commands=84 productionEndpoint=false publicHost=false\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_integration_gate_openapi.py",
+      "--self-test"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.097,
+    "stdout": "self-test: pass\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/verify_runtime_architecture.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.038,
+    "stdout": "architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/test_runtime_architecture.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.291,
+    "stdout": "",
+    "stderr": "test_hidden_target_dependency (__main__.ArchitectureGateTests.test_hidden_target_dependency) ... ok\ntest_invalid_contract_values (__main__.ArchitectureGateTests.test_invalid_contract_values) ... ok\ntest_kernel_dependency_injection (__main__.ArchitectureGateTests.test_kernel_dependency_injection) ... ok\ntest_missing_lock_or_golden_vector (__main__.ArchitectureGateTests.test_missing_lock_or_golden_vector) ... ok\ntest_python_runtime_source_is_rejected (__main__.ArchitectureGateTests.test_python_runtime_source_is_rejected) ... ok\ntest_transitive_dependency_injection (__main__.ArchitectureGateTests.test_transitive_dependency_injection) ... ok\ntest_valid_contract (__main__.ArchitectureGateTests.test_valid_contract) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.210s\n\nOK\n"
+  },
+  {
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 8.218,
+    "stdout": "",
+    "stderr": "...................................................................................................................................................................................................................................\n----------------------------------------------------------------------\nRan 227 tests in 8.083s\n\nOK\n"
+  },
+  {
+    "argv": [
+      "python3",
+      "reference/token_reward/reward_console.py",
+      "--fixture",
+      "reference/token_reward/fixtures/reward_session.json",
+      "--mode",
+      "subprocess",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin_path": "reference/token_reward/fixtures/reward_console_journey.txt",
+    "capture_prefix": "journey",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.092,
+    "stdout": "Local synthetic reward console — MOCK_TOKEN_REWARD_ONLY, POINT_F4, in-memory.\nReceipts are historical action snapshots; explicit reads are current observations.\nNon-transferable; token_issued, onchain_recorded, funds_executed, krw_paid,\nchain_finality, durable, legal_authority remain false.\nAmounts, caps, budgets, durations and approval policy: UNDETERMINED — Astra/User.\nActual approver designation: User-owned; caller inputs are synthetic assertions.\nUNKNOWN requires a separate explicit action; no automatic reads or retries.\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_key (JSON object: program, source_op_id, recipient, kind): source_view (JSON object; complete caller snapshot, no defaults): rule_version: amount (explicit decimal integer in synthetic POINT_F4): source_kind (SETTLEMENT, RESALE, RESERVATION): idempotency_key: proposed={\"arguments\":{\"amount\":25,\"idempotency_key\":\"participation-observe\",\"reward_key\":{\"kind\":\"participation\",\"program\":\"synthetic-program\",\"recipient\":\"synthetic-recipient\",\"source_op_id\":\"participation\"},\"rule_version\":\"synthetic-rule-v1\",\"source_kind\":\"RESERVATION\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"}},\"operation\":\"observe\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"observe\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":\"observe\",\"chain_finality\":false,\"duplicate\":false,\"durable\":false,\"effect\":null,\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":null,\"abuse_kind\":null,\"accepted_entries\":1,\"amount\":25,\"approval_ref\":null,\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"OBSERVED\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":null,\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":null,\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":null,\"token_effect_ids\":[],\"token_issued\":false,\"token_outcome\":\"NONE\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: idempotency_key: proposed={\"arguments\":{\"idempotency_key\":\"participation-hold\",\"reward_id_value\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\"},\"operation\":\"hold\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"hold\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":\"hold\",\"chain_finality\":false,\"duplicate\":false,\"durable\":false,\"effect\":null,\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":null,\"abuse_kind\":null,\"accepted_entries\":2,\"amount\":25,\"approval_ref\":null,\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"HELD\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":null,\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":null,\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":null,\"token_effect_ids\":[],\"token_issued\":false,\"token_outcome\":\"NONE\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: window_closed (JSON boolean: true or false; caller assertion): source_view (JSON object; complete caller snapshot, no defaults): abuse_clear (JSON boolean: true or false): optional arguments (JSON object; {} omits all; allowed: abuse_kind, program_cap, recipient_cap): idempotency_key: proposed={\"arguments\":{\"abuse_clear\":true,\"idempotency_key\":\"participation-eligible\",\"program_cap\":200,\"recipient_cap\":100,\"reward_id_value\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"window_closed\":true},\"operation\":\"mark_eligible\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"mark_eligible\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":\"mark_eligible\",\"chain_finality\":false,\"duplicate\":false,\"durable\":false,\"effect\":null,\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":true,\"abuse_kind\":null,\"accepted_entries\":3,\"amount\":25,\"approval_ref\":null,\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"ELIGIBLE\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":null,\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":null,\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":null,\"token_effect_ids\":[],\"token_issued\":false,\"token_outcome\":\"NONE\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: approval_ref (JSON object; caller synthetic approval record): signed_bytes_digest: spend_pool (PROTOCOL_REVENUE, TOKEN_TREASURY_REWARD; FSM checks caller value): optional arguments (JSON object; {} omits all; allowed: budget_ceiling, execution_permit): idempotency_key: proposed={\"arguments\":{\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"record_id\":\"participation-approval\",\"scope_ref\":\"synthetic-program\"},\"budget_ceiling\":50,\"idempotency_key\":\"participation-submit\",\"reward_id_value\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"spend_pool\":\"TOKEN_TREASURY_REWARD\"},\"operation\":\"submit\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"submit\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":\"submit\",\"chain_finality\":false,\"duplicate\":false,\"durable\":false,\"effect\":{\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"token_effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\"},\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":true,\"abuse_kind\":null,\"accepted_entries\":4,\"amount\":25,\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"prior_record\":null,\"record_id\":\"participation-approval\",\"scope_ref\":\"synthetic-program\"},\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"ISSUING\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":\"TOKEN_TREASURY_REWARD\",\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"token_effect_ids\":[\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\"],\"token_issued\":false,\"token_outcome\":\"PENDING\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: effects_digest: outcome (SUCCESS, FAILED, UNKNOWN): idempotency_key: proposed={\"arguments\":{\"effects_digest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"idempotency_key\":\"participation-effect\",\"outcome\":\"SUCCESS\",\"reward_id_value\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\"},\"operation\":\"observe_transfer_effects\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"observe_transfer_effects\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":\"observe_transfer_effects\",\"chain_finality\":false,\"duplicate\":false,\"durable\":false,\"effect\":{\"effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"outcome\":\"SUCCESS\",\"rule_version\":\"synthetic-rule-v1\",\"supersession\":false},\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":true,\"abuse_kind\":null,\"accepted_entries\":5,\"amount\":25,\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"prior_record\":null,\"record_id\":\"participation-approval\",\"scope_ref\":\"synthetic-program\"},\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":1,\"payout_effects\":[{\"effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"outcome\":\"SUCCESS\",\"rule_version\":\"synthetic-rule-v1\",\"supersession\":false}],\"phase\":\"ISSUED\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":\"TOKEN_TREASURY_REWARD\",\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"token_effect_ids\":[\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\"],\"token_issued\":false,\"token_outcome\":\"SUCCESS\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_key (JSON object: program, source_op_id, recipient, kind): source_view (JSON object; complete caller snapshot, no defaults): rule_version: amount (explicit decimal integer in synthetic POINT_F4): source_kind (SETTLEMENT, RESALE, RESERVATION): idempotency_key: proposed={\"arguments\":{\"amount\":25,\"idempotency_key\":\"participation-observe\",\"reward_key\":{\"kind\":\"participation\",\"program\":\"synthetic-program\",\"recipient\":\"synthetic-recipient\",\"source_op_id\":\"participation\"},\"rule_version\":\"synthetic-rule-v1\",\"source_kind\":\"RESERVATION\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"}},\"operation\":\"observe\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"observe\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":null,\"chain_finality\":false,\"duplicate\":true,\"durable\":false,\"effect\":null,\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":null,\"abuse_kind\":null,\"accepted_entries\":1,\"amount\":25,\"approval_ref\":null,\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"OBSERVED\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":null,\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":null,\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":null,\"token_effect_ids\":[],\"token_issued\":false,\"token_outcome\":\"NONE\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: approval_ref (JSON object; caller synthetic approval record): signed_bytes_digest: spend_pool (PROTOCOL_REVENUE, TOKEN_TREASURY_REWARD; FSM checks caller value): optional arguments (JSON object; {} omits all; allowed: budget_ceiling, execution_permit): idempotency_key: proposed={\"arguments\":{\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"record_id\":\"participation-approval\",\"scope_ref\":\"synthetic-program\"},\"budget_ceiling\":50,\"idempotency_key\":\"participation-submit\",\"reward_id_value\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"spend_pool\":\"TOKEN_TREASURY_REWARD\"},\"operation\":\"submit\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"submit\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":null,\"chain_finality\":false,\"duplicate\":true,\"durable\":false,\"effect\":{\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"token_effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\"},\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":true,\"abuse_kind\":null,\"accepted_entries\":4,\"amount\":25,\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"prior_record\":null,\"record_id\":\"participation-approval\",\"scope_ref\":\"synthetic-program\"},\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"ISSUING\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":\"TOKEN_TREASURY_REWARD\",\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"token_effect_ids\":[\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\"],\"token_issued\":false,\"token_outcome\":\"PENDING\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: effects_digest: outcome (SUCCESS, FAILED, UNKNOWN): idempotency_key: proposed={\"arguments\":{\"effects_digest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"idempotency_key\":\"participation-effect\",\"outcome\":\"SUCCESS\",\"reward_id_value\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\"},\"operation\":\"observe_transfer_effects\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"observe_transfer_effects\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":null,\"chain_finality\":false,\"duplicate\":true,\"durable\":false,\"effect\":{\"effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"outcome\":\"SUCCESS\",\"rule_version\":\"synthetic-rule-v1\",\"supersession\":false},\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":true,\"abuse_kind\":null,\"accepted_entries\":5,\"amount\":25,\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"prior_record\":null,\"record_id\":\"participation-approval\",\"scope_ref\":\"synthetic-program\"},\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":1,\"payout_effects\":[{\"effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"outcome\":\"SUCCESS\",\"rule_version\":\"synthetic-rule-v1\",\"supersession\":false}],\"phase\":\"ISSUED\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":\"TOKEN_TREASURY_REWARD\",\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"token_effect_ids\":[\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\"],\"token_issued\":false,\"token_outcome\":\"SUCCESS\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: desk={\"operation\":\"view\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"view\":{\"abuse_clear\":true,\"abuse_kind\":null,\"accepted_entries\":5,\"amount\":25,\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"prior_record\":null,\"record_id\":\"participation-approval\",\"scope_ref\":\"synthetic-program\"},\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-ebf46d87878aecf06d74f7262ea6111c38b525a1\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":1,\"payout_effects\":[{\"effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"outcome\":\"SUCCESS\",\"rule_version\":\"synthetic-rule-v1\",\"supersession\":false}],\"phase\":\"ISSUED\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"source_kind\":\"RESERVATION\",\"source_op_id\":\"participation\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":\"TOKEN_TREASURY_REWARD\",\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\",\"token_effect_ids\":[\"token-effect-3c3aa4dfb6cbc6f5350c7a219ee870f97cd2b78f\"],\"token_issued\":false,\"token_outcome\":\"SUCCESS\",\"unit\":\"POINT_F4\"}}\nCurrent session observation (explicit read).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: desk={\"operation\":\"reward_ids\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward_ids\":[\"reward-id-v1:16c970c8c9e7681acddfb77543be00b12d80dd37584aad67974cfe7975c1db75\"]}\nCurrent session observation (explicit read).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: desk={\"operation\":\"pool_view\",\"pool_view\":{\"balances\":{\"CUSTOMER_DEPOSIT\":0,\"ORGANIZER_SETTLEMENT\":0,\"PROTOCOL_REVENUE\":500,\"REFUND_RESERVE\":0,\"TOKEN_TREASURY_REWARD\":475},\"credits\":[{\"amount\":0,\"pool\":\"CUSTOMER_DEPOSIT\",\"source_ref\":\"OPENING\"},{\"amount\":0,\"pool\":\"ORGANIZER_SETTLEMENT\",\"source_ref\":\"OPENING\"},{\"amount\":0,\"pool\":\"REFUND_RESERVE\",\"source_ref\":\"OPENING\"},{\"amount\":500,\"pool\":\"PROTOCOL_REVENUE\",\"source_ref\":\"OPENING\"},{\"amount\":500,\"pool\":\"TOKEN_TREASURY_REWARD\",\"source_ref\":\"OPENING\"}],\"spends\":[{\"amount\":25,\"pool\":\"TOKEN_TREASURY_REWARD\",\"program_ref\":\"synthetic-program\"}]},\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\"}\nCurrent session observation (explicit read).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: ",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--locked",
+      "--offline"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.627,
+    "stdout": "",
+    "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-plan-local-reward-live-console/runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\nhelp: if this error is too confusing you may wish to retry without `--offline`\n"
+  },
+  {
+    "argv": [
+      "python3",
+      "reference/token_reward/reward_console.py",
+      "--fixture",
+      "reference/token_reward/fixtures/reward_session.json",
+      "--mode",
+      "subprocess",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin_path": "reference/token_reward/fixtures/reward_console_boundaries.txt",
+    "capture_prefix": "boundaries",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 1,
+    "elapsed_seconds": 0.09,
+    "stdout": "Local synthetic reward console — MOCK_TOKEN_REWARD_ONLY, POINT_F4, in-memory.\nReceipts are historical action snapshots; explicit reads are current observations.\nNon-transferable; token_issued, onchain_recorded, funds_executed, krw_paid,\nchain_finality, durable, legal_authority remain false.\nAmounts, caps, budgets, durations and approval policy: UNDETERMINED — Astra/User.\nActual approver designation: User-owned; caller inputs are synthetic assertions.\nUNKNOWN requires a separate explicit action; no automatic reads or retries.\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_key (JSON object: program, source_op_id, recipient, kind): source_view (JSON object; complete caller snapshot, no defaults): rule_version: amount (explicit decimal integer in synthetic POINT_F4): source_kind (SETTLEMENT, RESALE, RESERVATION): idempotency_key: proposed={\"arguments\":{\"amount\":25,\"idempotency_key\":\"boundaries-observe\",\"reward_key\":{\"kind\":\"participation\",\"program\":\"synthetic-program\",\"recipient\":\"synthetic-recipient\",\"source_op_id\":\"boundaries\"},\"rule_version\":\"synthetic-rule-v1\",\"source_kind\":\"RESERVATION\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"}},\"operation\":\"observe\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"observe\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":\"observe\",\"chain_finality\":false,\"duplicate\":false,\"durable\":false,\"effect\":null,\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":null,\"abuse_kind\":null,\"accepted_entries\":1,\"amount\":25,\"approval_ref\":null,\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-e105839b4c72725f6454cbc6ec149287c603e3ca\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"OBSERVED\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":null,\"source_kind\":\"RESERVATION\",\"source_op_id\":\"boundaries\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":null,\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":null,\"token_effect_ids\":[],\"token_issued\":false,\"token_outcome\":\"NONE\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: idempotency_key: proposed={\"arguments\":{\"idempotency_key\":\"boundaries-hold\",\"reward_id_value\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\"},\"operation\":\"hold\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"hold\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":\"hold\",\"chain_finality\":false,\"duplicate\":false,\"durable\":false,\"effect\":null,\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":null,\"abuse_kind\":null,\"accepted_entries\":2,\"amount\":25,\"approval_ref\":null,\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-e105839b4c72725f6454cbc6ec149287c603e3ca\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"HELD\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":null,\"source_kind\":\"RESERVATION\",\"source_op_id\":\"boundaries\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":null,\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":null,\"token_effect_ids\":[],\"token_issued\":false,\"token_outcome\":\"NONE\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: window_closed (JSON boolean: true or false; caller assertion): source_view (JSON object; complete caller snapshot, no defaults): abuse_clear (JSON boolean: true or false): optional arguments (JSON object; {} omits all; allowed: abuse_kind, program_cap, recipient_cap): idempotency_key: proposed={\"arguments\":{\"abuse_clear\":true,\"idempotency_key\":\"boundaries-window-open\",\"reward_id_value\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"window_closed\":false},\"operation\":\"mark_eligible\"}\nType literal SUBMIT to send once; anything else declines: desk={\"error\":{\"code\":\"WINDOW_OPEN\"},\"operation\":\"mark_eligible\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\"}\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: window_closed (JSON boolean: true or false; caller assertion): source_view (JSON object; complete caller snapshot, no defaults): abuse_clear (JSON boolean: true or false): optional arguments (JSON object; {} omits all; allowed: abuse_kind, program_cap, recipient_cap): idempotency_key: proposed={\"arguments\":{\"abuse_clear\":true,\"idempotency_key\":\"boundaries-eligible\",\"reward_id_value\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"window_closed\":true},\"operation\":\"mark_eligible\"}\nType literal SUBMIT to send once; anything else declines: desk={\"operation\":\"mark_eligible\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"receipt\":{\"applied\":\"mark_eligible\",\"chain_finality\":false,\"duplicate\":false,\"durable\":false,\"effect\":null,\"external_execution\":\"UNSUPPORTED\",\"funds_executed\":false,\"krw_paid\":false,\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"onchain_recorded\":false,\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"reward\":{\"abuse_clear\":true,\"abuse_kind\":null,\"accepted_entries\":3,\"amount\":25,\"approval_ref\":null,\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-e105839b4c72725f6454cbc6ec149287c603e3ca\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"ELIGIBLE\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":null,\"source_kind\":\"RESERVATION\",\"source_op_id\":\"boundaries\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":null,\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":null,\"token_effect_ids\":[],\"token_issued\":false,\"token_outcome\":\"NONE\",\"unit\":\"POINT_F4\"},\"token_issued\":false,\"unit\":\"POINT_F4\"}}\nHistorical action snapshot (including duplicate receipts).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: approval_ref (JSON object; caller synthetic approval record): signed_bytes_digest: spend_pool (PROTOCOL_REVENUE, TOKEN_TREASURY_REWARD; FSM checks caller value): optional arguments (JSON object; {} omits all; allowed: budget_ceiling, execution_permit): idempotency_key: proposed={\"arguments\":{\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"record_id\":\"boundaries-approval\",\"scope_ref\":\"synthetic-program\"},\"budget_ceiling\":50,\"idempotency_key\":\"forbidden-CUSTOMER_DEPOSIT\",\"reward_id_value\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"spend_pool\":\"CUSTOMER_DEPOSIT\"},\"operation\":\"submit\"}\nType literal SUBMIT to send once; anything else declines: desk={\"error\":{\"code\":\"POOL_FORBIDDEN_FOR_TOKEN_SPEND\"},\"operation\":\"submit\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\"}\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: approval_ref (JSON object; caller synthetic approval record): signed_bytes_digest: spend_pool (PROTOCOL_REVENUE, TOKEN_TREASURY_REWARD; FSM checks caller value): optional arguments (JSON object; {} omits all; allowed: budget_ceiling, execution_permit): idempotency_key: proposed={\"arguments\":{\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"record_id\":\"boundaries-approval\",\"scope_ref\":\"synthetic-program\"},\"budget_ceiling\":50,\"idempotency_key\":\"forbidden-ORGANIZER_SETTLEMENT\",\"reward_id_value\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"spend_pool\":\"ORGANIZER_SETTLEMENT\"},\"operation\":\"submit\"}\nType literal SUBMIT to send once; anything else declines: desk={\"error\":{\"code\":\"POOL_FORBIDDEN_FOR_TOKEN_SPEND\"},\"operation\":\"submit\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\"}\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: approval_ref (JSON object; caller synthetic approval record): signed_bytes_digest: spend_pool (PROTOCOL_REVENUE, TOKEN_TREASURY_REWARD; FSM checks caller value): optional arguments (JSON object; {} omits all; allowed: budget_ceiling, execution_permit): idempotency_key: proposed={\"arguments\":{\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"HUMAN\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"record_id\":\"boundaries-approval\",\"scope_ref\":\"synthetic-program\"},\"budget_ceiling\":50,\"idempotency_key\":\"forbidden-REFUND_RESERVE\",\"reward_id_value\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"spend_pool\":\"REFUND_RESERVE\"},\"operation\":\"submit\"}\nType literal SUBMIT to send once; anything else declines: desk={\"error\":{\"code\":\"POOL_FORBIDDEN_FOR_TOKEN_SPEND\"},\"operation\":\"submit\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\"}\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: approval_ref (JSON object; caller synthetic approval record): signed_bytes_digest: spend_pool (PROTOCOL_REVENUE, TOKEN_TREASURY_REWARD; FSM checks caller value): optional arguments (JSON object; {} omits all; allowed: budget_ceiling, execution_permit): idempotency_key: proposed={\"arguments\":{\"approval_ref\":{\"action\":\"point-payout\",\"actor_type\":\"AI\",\"authority_id\":\"synthetic-human-slot\",\"evidence_refs\":[\"synthetic-evidence\"],\"generation\":1,\"record_id\":\"boundaries-approval\",\"scope_ref\":\"synthetic-program\"},\"budget_ceiling\":50,\"idempotency_key\":\"ai-rejection\",\"reward_id_value\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"signed_bytes_digest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"spend_pool\":\"TOKEN_TREASURY_REWARD\"},\"operation\":\"submit\"}\nType literal SUBMIT to send once; anything else declines: desk={\"error\":{\"code\":\"AI_APPROVAL_REJECTED\"},\"operation\":\"submit\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\"}\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_id_value: desk={\"operation\":\"view\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"view\":{\"abuse_clear\":true,\"abuse_kind\":null,\"accepted_entries\":3,\"amount\":25,\"approval_ref\":null,\"chain_finality\":false,\"clawback_claim\":false,\"durable\":false,\"effects_digest\":null,\"funds_executed\":false,\"kind\":\"participation\",\"krw_effect_id\":\"krw-effect-e105839b4c72725f6454cbc6ec149287c603e3ca\",\"krw_paid\":false,\"krw_phase\":\"KRW_UNPAID\",\"legal_authority\":false,\"lifecycle\":\"IN_MEMORY_FSM\",\"non_transferable_until_chargeback_end\":true,\"onchain_recorded\":false,\"payout_effect_count\":0,\"payout_effects\":[],\"phase\":\"ELIGIBLE\",\"program\":\"synthetic-program\",\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\",\"recipient\":\"synthetic-recipient\",\"resend_count\":0,\"reward_id\":\"reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662\",\"rule_version\":\"synthetic-rule-v1\",\"signed_bytes_digest\":null,\"source_kind\":\"RESERVATION\",\"source_op_id\":\"boundaries\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"},\"spend_pool\":null,\"supersession_count\":0,\"supersessions\":[],\"token_effect_id\":null,\"token_effect_ids\":[],\"token_issued\":false,\"token_outcome\":\"NONE\",\"unit\":\"POINT_F4\"}}\nCurrent session observation (explicit read).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: desk={\"operation\":\"pool_view\",\"pool_view\":{\"balances\":{\"CUSTOMER_DEPOSIT\":0,\"ORGANIZER_SETTLEMENT\":0,\"PROTOCOL_REVENUE\":500,\"REFUND_RESERVE\":0,\"TOKEN_TREASURY_REWARD\":500},\"credits\":[{\"amount\":0,\"pool\":\"CUSTOMER_DEPOSIT\",\"source_ref\":\"OPENING\"},{\"amount\":0,\"pool\":\"ORGANIZER_SETTLEMENT\",\"source_ref\":\"OPENING\"},{\"amount\":0,\"pool\":\"REFUND_RESERVE\",\"source_ref\":\"OPENING\"},{\"amount\":500,\"pool\":\"PROTOCOL_REVENUE\",\"source_ref\":\"OPENING\"},{\"amount\":500,\"pool\":\"TOKEN_TREASURY_REWARD\",\"source_ref\":\"OPENING\"}],\"spends\":[]},\"provenance\":\"MOCK_TOKEN_REWARD_ONLY\"}\nCurrent session observation (explicit read).\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: ",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.136,
+    "stdout": "",
+    "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-plan-local-reward-live-console/runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\nhelp: if this error is too confusing you may wish to retry without `--offline`\n"
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--locked",
+      "--offline"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.051,
+    "stdout": "",
+    "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-plan-local-reward-live-console/runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\nhelp: if this error is too confusing you may wish to retry without `--offline`\n"
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.066,
+    "stdout": "",
+    "stderr": "error: no matching package named `bcs` found\nlocation searched: crates.io index\nrequired by package `kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-plan-local-reward-live-console/runtime/crates/kix-bcs1)`\nnote: offline mode (via `--offline`) can sometimes cause surprising resolution failures\nhelp: if this error is too confusing you may wish to retry without `--offline`\n"
+  },
+  {
+    "argv": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.348,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3.12",
+      "/tmp/kix-live-console-uncertainty.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": "uncertainty",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 2,
+    "elapsed_seconds": 0.09,
+    "stdout": "Local synthetic reward console — MOCK_TOKEN_REWARD_ONLY, POINT_F4, in-memory.\nReceipts are historical action snapshots; explicit reads are current observations.\nNon-transferable; token_issued, onchain_recorded, funds_executed, krw_paid,\nchain_finality, durable, legal_authority remain false.\nAmounts, caps, budgets, durations and approval policy: UNDETERMINED — Astra/User.\nActual approver designation: User-owned; caller inputs are synthetic assertions.\nUNKNOWN requires a separate explicit action; no automatic reads or retries.\nActions: observe, hold, mark_eligible, submit, observe_transfer_effects, reconcile_unknown, observe_source_cancel, observe_krw_refund, supersede, view, reward_ids, pool_view, quit\naction: reward_key (JSON object: program, source_op_id, recipient, kind): source_view (JSON object; complete caller snapshot, no defaults): rule_version: amount (explicit decimal integer in synthetic POINT_F4): source_kind (SETTLEMENT, RESALE, RESERVATION): idempotency_key: proposed={\"arguments\":{\"amount\":25,\"idempotency_key\":\"participation-observe\",\"reward_key\":{\"kind\":\"participation\",\"program\":\"synthetic-program\",\"recipient\":\"synthetic-recipient\",\"source_op_id\":\"participation\"},\"rule_version\":\"synthetic-rule-v1\",\"source_kind\":\"RESERVATION\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"}},\"operation\":\"observe\"}\nType literal SUBMIT to send once; anything else declines: ",
+    "stderr": "FENCED: {\"exceptions\":[{\"message\":\"local reward desk exchange uncertain; client fenced\",\"type\":\"RewardTransportUncertainty\"},{\"message\":\"response ended without a newline\",\"type\":\"FixtureError\"}],\"last_reply\":null,\"reply_bytes_hex\":\"7bff\",\"request\":{\"arguments\":{\"amount\":25,\"idempotency_key\":\"participation-observe\",\"reward_key\":{\"kind\":\"participation\",\"program\":\"synthetic-program\",\"recipient\":\"synthetic-recipient\",\"source_op_id\":\"participation\"},\"rule_version\":\"synthetic-rule-v1\",\"source_kind\":\"RESERVATION\",\"source_view\":{\"bank_debit_observed\":false,\"currency\":\"KRW\",\"durable\":false,\"external_return_closed\":false,\"funds_executed\":false,\"legal_debtor_bound\":false,\"metadata\":{\"label\":\"참여\",\"opaque\":[null,1.25,{\"snapshot_ref\":\"synthetic-snapshot\"}],\"synthetic_only\":true},\"phase\":\"COMMITTED\"}},\"operation\":\"observe\"},\"request_bytes_hex\":\"7b22617267756d656e7473223a7b22616d6f756e74223a32352c226964656d706f74656e63795f6b6579223a2270617274696369706174696f6e2d6f627365727665222c227265776172645f6b6579223a7b226b696e64223a2270617274696369706174696f6e222c2270726f6772616d223a2273796e7468657469632d70726f6772616d222c22726563697069656e74223a2273796e7468657469632d726563697069656e74222c22736f757263655f6f705f6964223a2270617274696369706174696f6e227d2c2272756c655f76657273696f6e223a2273796e7468657469632d72756c652d7631222c22736f757263655f6b696e64223a225245534552564154494f4e222c22736f757263655f76696577223a7b2262616e6b5f64656269745f6f62736572766564223a66616c73652c2263757272656e6379223a224b5257222c2264757261626c65223a66616c73652c2265787465726e616c5f72657475726e5f636c6f736564223a66616c73652c2266756e64735f6578656375746564223a66616c73652c226c6567616c5f646562746f725f626f756e64223a66616c73652c226d65746164617461223a7b226c6162656c223a22ecb0b8ec97ac222c226f7061717565223a5b6e756c6c2c312e32352c7b22736e617073686f745f726566223a2273796e7468657469632d736e617073686f74227d5d2c2273796e7468657469635f6f6e6c79223a747275657d2c227068617365223a22434f4d4d4954544544227d7d2c226f7065726174696f6e223a226f627365727665227d0a\"}\n",
+    "script_source": "import sys, tempfile\nfrom pathlib import Path\nfrom unittest.mock import patch\nsys.path.insert(0, str(Path('reference/token_reward').resolve()))\nfrom reward_client import RewardClient\nfrom reward_console import run_subprocess_console\nfrom test_reward_console import FIXTURE, answers, script\nfrom test_reward_session import requests\n\nwith tempfile.TemporaryDirectory() as temporary:\n    worker = Path(temporary) / 'worker.py'\n    worker.write_text('import sys\\nsys.stdin.buffer.readline()\\nsys.stdout.buffer.write(b\"{\\\\xff\")\\nsys.stdout.buffer.flush()\\n')\n    import subprocess\n    popen = subprocess.Popen\n    def launch_fault(command, **kwargs):\n        return popen([sys.executable, str(worker)], **kwargs)\n    with patch('reward_client.subprocess.Popen', side_effect=launch_fault):\n        status = run_subprocess_console(FIXTURE, cleanup_timeout=1,\n            input_stream=script(answers(requests('participation')[0]) + ['reward_ids', 'quit']),\n            output_stream=sys.stdout, error_stream=sys.stderr)\nraise SystemExit(status)\n"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward",
+      "-p",
+      "test_reward_console*.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 2.053,
+    "stdout": "",
+    "stderr": ".............................\n----------------------------------------------------------------------\nRan 29 tests in 1.939s\n\nOK\n"
+  },
+  {
+    "argv": [
+      "python3",
+      "--version"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.002,
+    "stdout": "Python 3.13.5\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3.12",
+      "--version"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.002,
+    "stdout": "Python 3.12.15\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "rustc",
+      "--version"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.031,
+    "stdout": "rustc 1.98.1 (48a229cea 2026-09-01)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "rustup",
+      "toolchain",
+      "list"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.028,
+    "stdout": "1.98.1-x86_64-unknown-linux-gnu (active, default)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 7.421,
+    "stdout": "",
+    "stderr": "....................................................................................................................................................................................................................................\n----------------------------------------------------------------------\nRan 228 tests in 7.299s\n\nOK\n"
+  },
+  {
+    "argv": [
+      "python3.12",
+      "/tmp/kix-live-console-preservation.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.078,
+    "stdout": "runtime/crates/kix-kernel/src/lib.rs 69564b166f0c27f9af5d8422f0a466b18d74c20f MATCH\nruntime/crates/kix-kernel/tests/quarantine_capacity.rs b607996c83a119c349f1cc90469ac1ba82764e20 MATCH\nMembership and SHA-256 bytes match: 153 files; 108 protected reference files\nHEAD c3c5c001dd46c581b3414b98fc2f1c196baf9a3e\norigin/main c3c5c001dd46c581b3414b98fc2f1c196baf9a3e\nHEAD:reference/v0.3-rc1 a6ecb124dc2b2267ca6be19e39fbe2aef143074b\nProtected path diff: none\n",
+    "stderr": "",
+    "script_source": "import hashlib, json, subprocess\nfrom pathlib import Path\nout=Path('validation/2026-11-07-plan-plan-local-reward-live-console')\nbefore=json.loads((out/'preservation-before.json').read_text())\nroots=['reference/v0.3-rc1','.aiops','.github','docs/tasks']\npaths=[p for root in roots for p in Path(root).rglob('*') if p.is_file()]\npaths += [Path('runtime/crates/kix-kernel/src/lib.rs'),Path('runtime/crates/kix-kernel/tests/quarantine_capacity.rs')]\nallowed={'reward_console.py','test_reward_console.py','test_reward_console_subprocess.py','README.md'}\npaths += [p for p in Path('reference/token_reward').rglob('*') if p.is_file() and p.name not in allowed]\nafter={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(set(paths))}\nassert after == before, {'added':sorted(set(after)-set(before)),'removed':sorted(set(before)-set(after)), 'changed':[p for p in before if after.get(p)!=before[p]]}\nlocked={'runtime/crates/kix-kernel/src/lib.rs':'69564b166f0c27f9af5d8422f0a466b18d74c20f','runtime/crates/kix-kernel/tests/quarantine_capacity.rs':'b607996c83a119c349f1cc90469ac1ba82764e20'}\nfor path, expected in locked.items():\n    actual=subprocess.check_output(['git','hash-object',path],text=True).strip()\n    assert actual == expected, (path,actual)\n    print(path,actual,'MATCH')\nprint('Membership and SHA-256 bytes match:',len(after),'files;',sum(p.startswith('reference/v0.3-rc1/') for p in after),'protected reference files')\nfor ref in ('HEAD','origin/main','HEAD:reference/v0.3-rc1'):\n    print(ref,subprocess.check_output(['git','rev-parse',ref],text=True).strip())\nprint('Protected path diff:',subprocess.check_output(['git','diff','--name-only','--','runtime','reference/v0.3-rc1','.aiops','.github','docs/tasks'],text=True).strip() or 'none')\n"
+  },
+  {
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.01,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_docs_index.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.034,
+    "stdout": "docs index ok: scanned=368 indexed=333 allowlisted=35\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "python3",
+      "scripts/check_ci_checker_wiring.py"
+    ],
+    "stdin_path": null,
+    "capture_prefix": null,
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.05,
+    "stdout": "ci checker wiring ok: scripts=35 plain=34 self_test=35 self_test_only=1 docs=22 citations=99\n",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,6 @@
+$ python3 scripts/check_integration_gate_openapi.py --self-test
+exit: 0
+stdout:
+self-test: pass
+
+stderr:

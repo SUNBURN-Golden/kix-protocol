@@ -1,0 +1,6 @@
+/home/box/.local/bin/python3.12 /workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/pool_console.py --guided-init --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/pool_console_opening_journey.txt -> exit 0
+/home/box/.local/bin/python3.12 /workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/pool_console.py --fixture /workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/fixtures/pool_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/pool_console_journey.txt -> exit 0
+journey: 8 complete envelopes MATCH
+/home/box/.local/bin/python3.12 /workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/pool_console.py --guided-init --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/pool_console_opening_boundaries.txt -> exit 1
+/home/box/.local/bin/python3.12 /workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/pool_console.py --fixture /workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/fixtures/pool_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/pool_console_boundaries.txt -> exit 1
+boundaries: 6 complete envelopes MATCH

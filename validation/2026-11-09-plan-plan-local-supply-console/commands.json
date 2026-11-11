@@ -1,0 +1,493 @@
+[
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "test_supply_console",
+      "test_supply_console_subprocess",
+      "test_supply_reconciliation",
+      "test_supply_cli",
+      "test_reward_model.SupplyTests",
+      "test_tl4_model_properties.SupplyPropertyTests"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "01.stdout.txt",
+    "stderr": "01.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "test_supply_console",
+      "test_supply_console_subprocess",
+      "test_supply_reconciliation",
+      "test_supply_cli",
+      "test_reward_model.SupplyTests",
+      "test_tl4_model_properties.SupplyPropertyTests"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "02.stdout.txt",
+    "stderr": "02.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "03.stdout.txt",
+    "stderr": "03.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_docs_index.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "04.stdout.txt",
+    "stderr": "04.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "05.stdout.txt",
+    "stderr": "05.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_tl_predicate_evidence_map.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "06.stdout.txt",
+    "stderr": "06.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_tl_predicate_evidence_map.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "07.stdout.txt",
+    "stderr": "07.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_class_b_index.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "08.stdout.txt",
+    "stderr": "08.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_class_b_index.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "09.stdout.txt",
+    "stderr": "09.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ci_checker_wiring.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "10.stdout.txt",
+    "stderr": "10.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ci_checker_wiring.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "11.stdout.txt",
+    "stderr": "11.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ci_test_discovery.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "12.stdout.txt",
+    "stderr": "12.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ci_test_discovery.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "13.stdout.txt",
+    "stderr": "13.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_openapi_contract.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "14.stdout.txt",
+    "stderr": "14.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_openapi_contract.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "15.stdout.txt",
+    "stderr": "15.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_integration_gate_openapi.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "16.stdout.txt",
+    "stderr": "16.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_integration_gate_openapi.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "17.stdout.txt",
+    "stderr": "17.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/verify_runtime_architecture.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "18.stdout.txt",
+    "stderr": "18.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/test_runtime_architecture.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "19.stdout.txt",
+    "stderr": "19.stderr.txt"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--locked",
+      "--offline"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 101,
+    "stdout": "20.stdout.txt",
+    "stderr": "20.stderr.txt"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--locked",
+      "--offline"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 101,
+    "stdout": "21.stdout.txt",
+    "stderr": "21.stderr.txt"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 101,
+    "stdout": "22.stdout.txt",
+    "stderr": "22.stderr.txt"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 101,
+    "stdout": "23.stdout.txt",
+    "stderr": "23.stderr.txt"
+  },
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "24.stdout.txt",
+    "stderr": "24.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "test_supply_console",
+      "test_supply_console_subprocess",
+      "test_supply_reconciliation",
+      "test_supply_cli",
+      "test_reward_model.SupplyTests",
+      "test_tl4_model_properties.SupplyPropertyTests"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "25.stdout.txt",
+    "stderr": "25.stderr.txt"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "26.stdout.txt",
+    "stderr": "26.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "validation/2026-11-09-plan-plan-local-supply-console/verify_preservation.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "27.stdout.txt",
+    "stderr": "27.stderr.txt"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "28.stdout.txt",
+    "stderr": "28.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_docs_index.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "29.stdout.txt",
+    "stderr": "29.stderr.txt"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "30.stdout.txt",
+    "stderr": "30.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "-"
+    ],
+    "stdin": "import pathlib, subprocess\nroot = pathlib.Path('validation/2026-11-09-plan-plan-local-supply-console')\npaths = set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())\npaths.update(subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).splitlines())\npaths.add(str(root/'changed-paths.txt'))\n(root/'changed-paths.txt').write_text('\\n'.join(sorted(paths))+'\\n')\nfor path in paths:\n    text=pathlib.Path(path).read_text(encoding='utf-8')\n    assert all(line == line.rstrip() for line in text.splitlines()), f'trailing whitespace: {path}'\nprint(f'Changed-path inventory complete: {len(paths)} files; trailing whitespace absent.')\n",
+    "exit_status": 1,
+    "stdout": "inventory-first.stdout.txt",
+    "stderr": "inventory-first.stderr.txt",
+    "note": "Overbroad whitespace scan included verbatim terminal captures. Expected prompt-ending spaces; product/source not defective. Corrected scanner excludes actual captures."
+  },
+  {
+    "command": [
+      "python3",
+      "validation/2026-11-09-plan-plan-local-supply-console/record_changed_paths.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/token_reward"
+    },
+    "exit_status": 0,
+    "stdout": "32.stdout.txt",
+    "stderr": "32.stderr.txt"
+  }
+]

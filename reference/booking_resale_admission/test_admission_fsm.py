@@ -739,3 +739,91 @@ class AdmissionFsmTests(unittest.TestCase):
             self.assertIs(payload["rejected"], True)
 
         run_with_server(run)
+
+    def test_adopt_with_a_reservation_but_no_ticket_source_is_required(self):
+        gate = AdmissionMachine()
+        gate.set_clock("clock", idempotency_key="gate-clock", now_ms=T0)
+        self.assertEqual(
+            codes(lambda: gate.adopt_issued("issue-1", idempotency_key="adopt-1", **self.adopt_body())),
+            "TICKET_SOURCE_REQUIRED",
+        )
+        self.assertEqual(
+            gate.export_journal(),
+            [{"op": "set_clock", "idempotency_key": "gate-clock", "subject_id": "clock", "body": {"now_ms": T0}}],
+        )
+
+    def test_ticket_source_that_breaks_is_unavailable_not_silent(self):
+        class Down:
+            def set_clock(self, *_args, **_kwargs):
+                raise RuntimeError("ticket source down")
+
+            def view(self, _reservation_id):
+                raise RuntimeError("ticket source down")
+
+        gate = AdmissionMachine(ticket_source=Down())
+        self.assertEqual(
+            codes(lambda: gate.set_clock("clock", idempotency_key="gate-clock", now_ms=T0)),
+            "TICKET_SOURCE_UNAVAILABLE",
+        )
+        self.assertEqual(
+            codes(lambda: gate.adopt_issued("issue-1", idempotency_key="adopt-1", **self.adopt_body())),
+            "TICKET_SOURCE_UNAVAILABLE",
+        )
+        self.assertEqual(gate.export_journal(), [])
+
+    def test_stale_presentation_answer_is_credential_stale(self):
+        class StalePresentation:
+            def view_right(self, _right_id):
+                return {"right": {"state": "ACTIVE", "version": 1, "holder_role": "buyer-1", "listing_id": None}}
+
+            def view_presentation(self, *_args, **_kwargs):
+                return {"presentation": {"matches_current_right": False}}
+
+        gate = AdmissionMachine(ticket_source=self.tickets, ownership_source=StalePresentation())
+        gate.set_clock("clock", idempotency_key="gate-clock-stale", now_ms=T0)
+        gate.adopt_issued("issue-1", idempotency_key="adopt-stale", **self.adopt_body())
+        self.assertEqual(
+            codes(lambda: gate.authorize_admission(
+                "admit-stale",
+                idempotency_key="admit-stale",
+                right_id="issue-1",
+                version=1,
+                holder_role="buyer-1",
+                gate_role="gate-a",
+                request=REQ,
+                expires_ms=T0 + ADMISSION_WINDOW_MS,
+            )),
+            "CREDENTIAL_STALE",
+        )
+        observed = gate.view_credential("issue-1", version=1, holder_role="buyer-1")
+        self.assertIs(observed["presentation"]["fresh"], False)
+        self.assertEqual(observed["presentation"]["decision"], "CREDENTIAL_STALE")
+        self.assertEqual(gate.view("issue-1")["phase"], ELIGIBLE)
+        self.assertEqual(self.tickets.view("reserve-1")["phase"], "ISSUED")
+
+    def test_settlement_source_that_breaks_fails_closed(self):
+        class SettlementDown:
+            def view(self, _settlement_id):
+                raise RuntimeError("settlement down")
+
+        book = settlement_at("COMMITTED")
+        tickets = self.reservation("issued", book=book, settlement_id="claim-1")
+        gate = AdmissionMachine(ticket_source=tickets, settlement_source=SettlementDown())
+        gate.set_clock("clock", idempotency_key="gate-clock-down", now_ms=T0)
+        gate.adopt_issued("issue-1", idempotency_key="adopt-down", **self.adopt_body())
+        journal = tickets.export_journal()
+        self.assertEqual(
+            codes(lambda: gate.authorize_admission(
+                "admit-down",
+                idempotency_key="admit-down",
+                right_id="issue-1",
+                version=1,
+                holder_role="buyer-1",
+                gate_role="gate-a",
+                request=REQ,
+                expires_ms=T0 + ADMISSION_WINDOW_MS,
+            )),
+            "SETTLEMENT_SOURCE_UNAVAILABLE",
+        )
+        self.assertEqual(tickets.export_journal(), journal)
+        self.assertEqual(gate.view("issue-1")["phase"], ELIGIBLE)

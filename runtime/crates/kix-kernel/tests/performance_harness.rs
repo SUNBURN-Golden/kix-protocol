@@ -138,6 +138,87 @@ fn low_load_uniform_is_distinct_from_hot_seat_retry_and_saturation() {
 }
 
 #[test]
+fn retry_replays_complete_first_result() {
+    let report = probe::run(probe::Workload::Retry, 512, 128, 0);
+    assert_eq!(report.applied_reservations.len(), 512);
+    assert_eq!(
+        check_retry_original_results(&report.applied_reservations),
+        Ok(())
+    );
+    assert_eq!(
+        (report.held, report.replay, report.remaining),
+        (1, 511, 4095)
+    );
+    assert_eq!(
+        (
+            report.rejected,
+            report.capacity,
+            report.conflict_retained,
+            report.other
+        ),
+        (0, 0, 0, 0)
+    );
+    assert_separated(&report, 0, 128);
+    let json = report.json(0, 128);
+    for (key, expected) in [
+        ("new_success_count", "1"),
+        ("new_held", "1"),
+        ("replayed", "511"),
+        ("remaining", "4095"),
+    ] {
+        assert_eq!(top_level(&json, key), expected);
+    }
+}
+
+#[test]
+fn retry_comparison_rejects_corrupted_captured_original() {
+    let report = probe::run(probe::Workload::Retry, 512, 128, 0);
+    assert_eq!(
+        check_retry_original_results(&report.applied_reservations),
+        Ok(())
+    );
+    let mut corrupted = report.applied_reservations.clone();
+    let replay = corrupted[1].as_mut().unwrap();
+    assert!(replay.replayed);
+    let replacement = kix_kernel::ReserveOutcome::Held(kix_types::KixId::from_bytes([0xff; 16]));
+    assert_ne!(replay.original, replacement);
+    replay.original = replacement;
+    assert!(replay.replayed);
+    assert_eq!(
+        check_retry_original_results(&corrupted),
+        Err("replay original differs from first result")
+    );
+    // Only a captured copy was corrupted; the report and kernel are untouched.
+    assert_eq!(
+        check_retry_original_results(&report.applied_reservations),
+        Ok(())
+    );
+}
+
+fn check_retry_original_results(
+    replies: &[Option<kix_kernel::AppliedReservation>],
+) -> Result<(), &'static str> {
+    let first = replies
+        .first()
+        .ok_or("missing first reply")?
+        .as_ref()
+        .ok_or("first reserve failed")?;
+    if first.replayed || !matches!(first.original, kix_kernel::ReserveOutcome::Held(_)) {
+        return Err("first reply must be a new Held result");
+    }
+    for reply in &replies[1..] {
+        let replay = reply.as_ref().ok_or("replay reserve failed")?;
+        if !replay.replayed {
+            return Err("subsequent reply must be replayed");
+        }
+        if replay.original != first.original {
+            return Err("replay original differs from first result");
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn outcome_summaries_do_not_label_mixed_p99_as_success() {
     let hot = probe::run(probe::Workload::HotSeat, 512, 128, 0);
     assert_eq!(hot.outcome("held").unwrap().role, "new-success");
@@ -181,6 +262,209 @@ fn outcome_summaries_do_not_label_mixed_p99_as_success() {
     assert!(low_json.contains(probe::MIXED_P99_INTERPRETATION));
     assert!(low_json.contains("\"new_success_count\":32"));
     assert!(!low_json.contains("\"p99_service_ns\""));
+}
+
+#[test]
+fn nearest_rank_p99_matches_fixed_expectations() {
+    // Literal expectations; no percentile helper computes the expected rank.
+    for (mut values, expected) in [
+        (vec![42], 42),
+        (vec![30, 10, 40, 20], 40),
+        (vec![7; 101], 7),
+        (vec![u128::MAX, u128::MAX - 2, u128::MAX - 1], u128::MAX),
+        ((1..=99).rev().collect(), 99),
+        ((1..=100).rev().collect(), 99),
+        ((1..=101).rev().collect(), 100),
+        ((1..=199).rev().collect(), 198),
+        ((1..=200).rev().collect(), 198),
+        ((1..=201).rev().collect(), 199),
+        ((0..100).map(|n| u128::MAX - n).collect(), u128::MAX - 1),
+    ] {
+        assert_eq!(probe::percentile_for_test(&mut values), expected);
+    }
+}
+
+// Independently select the first sorted value with at least 99% of samples at
+// or below its position. This does not use the probe's rounded index expression.
+fn csv_p99(samples: &[u128]) -> Option<u128> {
+    let mut sorted = samples.to_vec();
+    sorted.sort_unstable();
+    sorted
+        .iter()
+        .enumerate()
+        .find(|(position, _)| 100 * (position + 1) >= 99 * samples.len())
+        .map(|(_, value)| *value)
+}
+
+// Parse only the existing flat outcome objects. Scope each field lookup to its
+// object, and reject duplicate fields rather than matching a different outcome.
+fn json_outcome_objects(json: &str) -> Vec<std::collections::BTreeMap<&str, &str>> {
+    let (_, array) = json.split_once(",\"outcomes\":[").unwrap();
+    let objects = array
+        .strip_suffix("]}\n")
+        .unwrap()
+        .strip_prefix('{')
+        .unwrap()
+        .strip_suffix('}')
+        .unwrap();
+    objects
+        .split("},{")
+        .map(|object| {
+            let mut fields = std::collections::BTreeMap::new();
+            for field in object.split(',') {
+                let (key, value) = field.split_once(':').unwrap();
+                assert!(fields.insert(key, value).is_none(), "duplicate {key}");
+            }
+            assert_eq!(fields.len(), 5);
+            fields
+        })
+        .collect()
+}
+
+#[test]
+fn summary_p99_matches_raw_csv_by_outcome() {
+    for (workload, count, rate) in [
+        (probe::Workload::Uniform, 512, 0),
+        (probe::Workload::HotSeat, 512, 0),
+        (probe::Workload::Retry, 512, 0),
+        (probe::Workload::Conflict, 512, 0),
+        (probe::Workload::Uniform, 32, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+        (probe::Workload::Conflict, 8, 0),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        let rows = csv_rows(&report);
+        assert_separated(&report, rate, 128);
+        let json = report.json(rate, 128);
+        for (column, actual, key) in [
+            (
+                4,
+                report.mixed_p99_service_ns,
+                "mixed_result_p99_service_ns",
+            ),
+            (
+                5,
+                report.mixed_p99_scheduled_latency_ns,
+                "mixed_result_p99_scheduled_latency_ns",
+            ),
+        ] {
+            let samples: Vec<_> = rows.iter().map(|(values, _)| values[column]).collect();
+            let expected = csv_p99(&samples).unwrap();
+            assert_eq!(actual, expected);
+            assert_eq!(top_level(&json, key), expected.to_string());
+        }
+
+        let objects = json_outcome_objects(&json);
+        assert_eq!(objects.len(), 7);
+        assert_eq!(report.outcomes.len(), 7);
+        for name in [
+            "held",
+            "replayed",
+            "business_rejected",
+            "capacity",
+            "conflict_retained",
+            "other_error",
+            "other_observation",
+        ] {
+            let partition: Vec<_> = rows.iter().filter(|(_, kind)| kind == name).collect();
+            let summary = report.outcome(name).unwrap();
+            assert_eq!(summary.count, partition.len());
+            assert_eq!(
+                report.outcomes.iter().filter(|s| s.outcome == name).count(),
+                1
+            );
+            let matches: Vec<_> = objects
+                .iter()
+                .filter(|object| object["\"outcome\""] == format!("\"{name}\""))
+                .collect();
+            assert_eq!(matches.len(), 1, "{name}");
+            let object = matches[0];
+            assert_eq!(object["\"count\""], partition.len().to_string());
+            assert_eq!(object["\"role\""], format!("\"{}\"", summary.role));
+            for (column, actual, key) in [
+                (4, summary.service_p99_ns, "\"service_p99_ns\""),
+                (
+                    5,
+                    summary.scheduled_latency_p99_ns,
+                    "\"scheduled_latency_p99_ns\"",
+                ),
+            ] {
+                let samples: Vec<_> = partition.iter().map(|(v, _)| v[column]).collect();
+                let expected = csv_p99(&samples);
+                assert_eq!(actual, expected, "{name} {key}");
+                let expected_json = expected.map_or_else(|| "null".to_string(), |v| v.to_string());
+                assert_eq!(object[key], expected_json, "{name} {key}");
+            }
+        }
+    }
+}
+
+#[test]
+fn goodput_matches_fixed_integer_expectations() {
+    // Synthetic arithmetic inputs, with positive elapsed time. Replay, rejection
+    // and Capacity stay nonzero to catch using total calls as the numerator.
+    for (held, elapsed_ns, expected) in [
+        (0, 7, 0),
+        (1, 1_000_000_000, 1),
+        (3, 2_000_000_000, 1),
+        (1, 3, 333_333_333),
+        (1, 2_000_000_000, 0),
+    ] {
+        let report = probe::Report {
+            workload: "synthetic-goodput-arithmetic",
+            inventory_segments: Vec::new(),
+            reserve_selections: Vec::new(),
+            applied_reservations: Vec::new(),
+            total: held + 9,
+            held,
+            replay: 3,
+            rejected: 2,
+            capacity: 4,
+            conflict_retained: 0,
+            other_error: 0,
+            other_observation: 0,
+            other: 0,
+            first_capacity: Some(held + 5),
+            samples_after_first_capacity: 3,
+            command_limit_requested: 128,
+            kernel_constructions: 1,
+            remaining: 0,
+            elapsed_ns,
+            mixed_p99_service_ns: 1,
+            mixed_p99_scheduled_latency_ns: 1,
+            outcomes: [
+                ("held", "new-success", held),
+                ("replayed", "same-command-retry", 3),
+                ("business_rejected", "business-reject", 2),
+                ("capacity", "capacity", 4),
+                ("conflict_retained", "retained-conflict", 0),
+                ("other_error", "unclassified", 0),
+                ("other_observation", "unclassified", 0),
+            ]
+            .into_iter()
+            .map(|(outcome, role, count)| probe::OutcomeSummary {
+                outcome,
+                role,
+                count,
+                service_p99_ns: (count > 0).then_some(1),
+                scheduled_latency_p99_ns: (count > 0).then_some(1),
+            })
+            .collect(),
+            raw_csv: String::new(),
+        };
+        assert_eq!(
+            report.outcomes.iter().map(|s| s.count).sum::<usize>(),
+            report.total
+        );
+        assert_eq!(report.memory_only_new_held_per_elapsed_s(), Some(expected));
+        let json = report.json(0, 128);
+        assert_eq!(
+            top_level(&json, "memory_only_new_held_per_elapsed_s"),
+            expected.to_string()
+        );
+        assert_eq!(top_level(&json, "new_held"), held.to_string());
+        assert_eq!(top_level(&json, "new_success_count"), held.to_string());
+    }
 }
 
 #[test]
@@ -228,6 +512,853 @@ fn evidence_binding_records_budgets_toolchain_and_non_claims() {
     assert!(json.contains(probe::NON_CLAIMS));
     assert!(json.contains("not a product performance result"));
     assert!(json.contains("\"kernel_resets_during_workload\":0"));
+}
+
+#[test]
+fn capacity_json_is_top_level_and_separate_from_business_reject() {
+    for (workload, count, rate, expected) in [
+        (probe::Workload::Uniform, 512, 0, 384),
+        (probe::Workload::HotSeat, 512, 0, 384),
+        (probe::Workload::Retry, 512, 0, 0),
+        (probe::Workload::Conflict, 512, 0, 385),
+        (probe::Workload::Uniform, 32, 0, 0),
+        (probe::Workload::HotSeat, 16, 10_000, 0),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        assert_eq!(report.capacity, expected);
+        let json = report.json(rate, 128);
+        assert_eq!(top_level(&json, "capacity"), expected.to_string());
+        assert_eq!(json.matches("\"capacity\":").count(), 1);
+        if matches!(workload, probe::Workload::HotSeat) && count == 512 {
+            assert_eq!(top_level(&json, "business_rejected"), "127");
+        }
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn first_capacity_index_json_is_zero_based_or_null() {
+    for (workload, index, previous) in [
+        (probe::Workload::Uniform, 128, ",held"),
+        (probe::Workload::Conflict, 127, ",conflict_retained"),
+    ] {
+        let report = probe::run(workload, 512, 128, 0);
+        assert_eq!(report.first_capacity, Some(index));
+        assert_eq!(
+            top_level(&report.json(0, 128), "first_capacity_index"),
+            index.to_string()
+        );
+        let rows: Vec<_> = report.raw_csv.lines().skip(1).collect();
+        assert!(rows[index - 1].ends_with(previous));
+        assert!(rows[index].starts_with(&format!("{index},")));
+        assert!(rows[index].ends_with(",capacity"));
+    }
+    for (workload, count, rate) in [
+        (probe::Workload::Retry, 512, 0),
+        (probe::Workload::Uniform, 32, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        assert!(report.first_capacity.is_none());
+        assert_eq!(
+            top_level(&report.json(rate, 128), "first_capacity_index"),
+            "null"
+        );
+    }
+}
+
+#[test]
+fn other_stays_zero_for_every_reachable_probe_input() {
+    // Exercise all four ordinary generated workloads and budget/rate boundaries.
+    // This finite matrix does not exhaust every accepted numeric argument.
+    for (workload, count, command_limit, rate) in [
+        (probe::Workload::Uniform, 512, 128, 0),
+        (probe::Workload::HotSeat, 512, 128, 0),
+        (probe::Workload::Retry, 512, 128, 0),
+        (probe::Workload::Conflict, 512, 128, 0),
+        (probe::Workload::Uniform, 32, 128, 0),
+        (probe::Workload::HotSeat, 16, 128, 10_000),
+        (probe::Workload::Conflict, 512, 4096, 0),
+        (probe::Workload::Uniform, 4097, 8192, 0),
+    ] {
+        let report = probe::run(workload, count, command_limit, rate);
+        assert_eq!(
+            (report.other, report.other_error, report.other_observation),
+            (0, 0, 0)
+        );
+        let json = report.json(rate, command_limit);
+        for key in ["other", "other_error", "other_observation"] {
+            assert_eq!(top_level(&json, key), "0");
+        }
+        assert!(
+            report
+                .outcome("other_error")
+                .unwrap()
+                .service_p99_ns
+                .is_none()
+        );
+    }
+}
+
+#[test]
+fn other_outcomes_count_real_reserve_error_and_applied_capture() {
+    let report = probe::run_with_injected_other_outcomes();
+    assert_eq!(report.workload, "injected-other-outcomes");
+    assert_eq!(report.total, 2);
+    assert_eq!(
+        (report.other_error, report.other_observation, report.other),
+        (1, 1, 2)
+    );
+    assert_eq!(report.other, report.other_error + report.other_observation);
+    assert_eq!(
+        (
+            report.held,
+            report.replay,
+            report.rejected,
+            report.capacity,
+            report.conflict_retained
+        ),
+        (0, 0, 0, 0, 0)
+    );
+    assert_eq!(report.applied_reservations, vec![None, None]);
+    assert_eq!(report.remaining, 4095); // Only the untimed prefill holds a seat.
+    assert_eq!(report.first_capacity, None);
+    assert_eq!(report.samples_after_first_capacity, 0);
+    let rows = csv_rows(&report);
+    assert_eq!(
+        rows.iter()
+            .map(|(_, kind)| kind.as_str())
+            .collect::<Vec<_>>(),
+        ["other_error", "other_observation"]
+    );
+    assert_separated(&report, 0, 128);
+}
+
+#[test]
+fn other_outcomes_json_matches_measured_calls() {
+    let report = probe::run_with_injected_other_outcomes();
+    let json = report.json(0, 128);
+    for (key, expected) in [
+        ("samples", "2"),
+        ("other_error", "1"),
+        ("other_observation", "1"),
+        ("other", "2"),
+        ("new_held", "0"),
+        ("new_success_count", "0"),
+        ("capacity", "0"),
+        ("conflict_retained", "0"),
+    ] {
+        assert_eq!(top_level(&json, key), expected);
+    }
+    let objects = json_outcome_objects(&json);
+    assert_eq!(objects.len(), 7);
+    let rows = csv_rows(&report);
+    for name in ["other_error", "other_observation", "held"] {
+        let matches: Vec<_> = objects
+            .iter()
+            .filter(|object| object["\"outcome\""] == format!("\"{name}\""))
+            .collect();
+        assert_eq!(matches.len(), 1);
+        let object = matches[0];
+        let summary = report.outcome(name).unwrap();
+        let count = usize::from(name != "held");
+        assert_eq!(summary.count, count);
+        assert_eq!(object["\"count\""], count.to_string());
+        assert_eq!(
+            object["\"role\""],
+            if name == "held" {
+                "\"new-success\""
+            } else {
+                "\"unclassified\""
+            }
+        );
+        for (column, actual, key) in [
+            (4, summary.service_p99_ns, "\"service_p99_ns\""),
+            (
+                5,
+                summary.scheduled_latency_p99_ns,
+                "\"scheduled_latency_p99_ns\"",
+            ),
+        ] {
+            let samples: Vec<_> = rows
+                .iter()
+                .filter(|(_, kind)| kind == name)
+                .map(|(values, _)| values[column])
+                .collect();
+            let expected = csv_p99(&samples);
+            assert_eq!(actual, expected);
+            assert_eq!(
+                object[key],
+                expected.map_or_else(|| "null".to_string(), |v| v.to_string())
+            );
+        }
+    }
+    assert_separated(&report, 0, 128);
+}
+
+#[test]
+fn uniform_selections_wrap_past_4096_despite_order_saturation() {
+    let report = probe::run(probe::Workload::Uniform, 4098, 8192, 0);
+    assert_eq!(report.reserve_selections.len(), 4098);
+    for (selection, expected) in report.reserve_selections[..4096].iter().zip(0..4096) {
+        assert_eq!(
+            *selection,
+            kix_kernel::Selection::Seats {
+                first: expected,
+                count: 1
+            }
+        );
+    }
+    assert_eq!(
+        &report.reserve_selections[4095..],
+        &[
+            kix_kernel::Selection::Seats {
+                first: 4095,
+                count: 1
+            },
+            kix_kernel::Selection::Seats { first: 0, count: 1 },
+            kix_kernel::Selection::Seats { first: 1, count: 1 },
+        ]
+    );
+    assert_eq!(probe::ORDER_LIMIT, 4096);
+    assert_eq!(
+        (report.held, report.rejected, report.capacity),
+        (4096, 0, 2)
+    );
+    assert_eq!(report.first_capacity, Some(4096));
+    assert_eq!(report.remaining, 0);
+    assert_eq!(
+        report.budget_phase(),
+        "includes-samples-after-first-capacity"
+    );
+    let json = report.json(0, 8192);
+    assert_eq!(top_level(&json, "commands_budget"), "8192");
+    assert_eq!(top_level(&json, "orders_limit"), "4096");
+    assert_separated(&report, 0, 8192);
+    // Capacity precedes inventory validation at the order limit; the recorded
+    // requests above verify wrapping even when the kernel returns Capacity.
+}
+
+#[test]
+fn inventory_is_4096_seats_all_reservable_by_uniform() {
+    assert_eq!(probe::INVENTORY_SEATS, 4096);
+    assert_eq!(
+        probe::run(probe::Workload::Uniform, 1, 128, 0).remaining,
+        4095
+    );
+    let report = probe::run(probe::Workload::Uniform, 4096, 4096, 0);
+    assert_eq!(report.inventory_segments, vec![(0, 4096)]);
+    assert_eq!(
+        (report.held, report.rejected, report.capacity),
+        (4096, 0, 0)
+    );
+    assert_eq!(report.remaining, 0);
+    let json = report.json(0, 4096);
+    assert_eq!(top_level(&json, "inventory_seats"), "4096");
+    assert_eq!(top_level(&json, "remaining"), "0");
+}
+
+#[test]
+fn conflict_saturation_ignores_command_limit() {
+    for command_limit in [1, 128, 512, 4096] {
+        let report = probe::run(probe::Workload::Conflict, 256, command_limit, 0);
+        assert_eq!(report.conflict_retained, 127);
+        assert_eq!(report.capacity, 129);
+        assert_eq!(report.first_capacity, Some(127));
+        assert_eq!(report.samples_after_first_capacity, 128);
+        let json = report.json(0, command_limit);
+        assert_eq!(top_level(&json, "observations_limit"), "128");
+        assert_eq!(top_level(&json, "command_limit"), command_limit.to_string());
+        assert_separated(&report, 0, command_limit);
+    }
+}
+
+#[test]
+fn smoke_final_remaining_matches_v4_smoke_signature() {
+    // PERFORMANCE_BASELINE_V4.md §3 logical signature only; no latency targets.
+    for (workload, count, rate, outcomes, remaining) in [
+        (probe::Workload::Uniform, 512, 0, (128, 0, 0, 0, 384), 3968),
+        (probe::Workload::HotSeat, 512, 0, (1, 127, 0, 0, 384), 4095),
+        (probe::Workload::Retry, 512, 0, (1, 0, 511, 0, 0), 4095),
+        (probe::Workload::Conflict, 512, 0, (0, 0, 0, 127, 385), 4095),
+        (probe::Workload::HotSeat, 16, 10_000, (1, 15, 0, 0, 0), 4095),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        assert_eq!(
+            (
+                report.held,
+                report.rejected,
+                report.replay,
+                report.conflict_retained,
+                report.capacity
+            ),
+            outcomes
+        );
+        assert_eq!(report.remaining, remaining);
+        assert_eq!(
+            top_level(&report.json(rate, 128), "remaining"),
+            remaining.to_string()
+        );
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn outcome_count_json_keys_are_top_level_per_workload() {
+    // Contract JSON keys; counts from the V4-SMOKE-001 logical signature and controls.
+    for (workload, count, rate, (held, replayed, rejected, conflict)) in [
+        (probe::Workload::Uniform, 512, 0, (128, 0, 0, 0)),
+        (probe::Workload::HotSeat, 512, 0, (1, 0, 127, 0)),
+        (probe::Workload::Retry, 512, 0, (1, 511, 0, 0)),
+        (probe::Workload::Conflict, 512, 0, (0, 0, 0, 127)),
+        (probe::Workload::HotSeat, 16, 10_000, (1, 0, 15, 0)),
+        (probe::Workload::Uniform, 32, 0, (32, 0, 0, 0)),
+        (probe::Workload::Conflict, 8, 0, (0, 0, 0, 8)),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        let json = report.json(rate, 128);
+        let rows = csv_rows(&report);
+        for (key, outcome, expected) in [
+            ("new_held", "held", held),
+            ("new_success_count", "held", held),
+            ("replayed", "replayed", replayed),
+            ("business_rejected", "business_rejected", rejected),
+            ("conflict_retained", "conflict_retained", conflict),
+        ] {
+            assert_eq!(top_level(&json, key), expected.to_string());
+            assert_eq!(report.outcome(outcome).unwrap().count, expected);
+            let csv_count = rows.iter().filter(|(_, name)| name == outcome).count();
+            assert_eq!(csv_count, expected);
+        }
+        assert_eq!(top_level(&json, "other"), "0");
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn csv_rows_keep_service_inside_call_window_and_latency_arithmetic() {
+    // Ordering and exact arithmetic only; no duration is compared with a constant.
+    for (workload, count, rate) in [
+        (probe::Workload::Uniform, 512, 0),
+        (probe::Workload::HotSeat, 512, 0),
+        (probe::Workload::Retry, 512, 0),
+        (probe::Workload::Conflict, 512, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+        (probe::Workload::Uniform, 32, 250_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        let rows = csv_rows(&report);
+        assert_eq!(rows.len(), count);
+        let mut previous_end = 0;
+        for ([_, scheduled, start, end, service, latency], _) in rows {
+            assert!(start <= end);
+            assert!(service <= end - start);
+            assert!(start >= previous_end);
+            if rate == 0 {
+                assert_eq!(scheduled, 0);
+                assert_eq!(latency, end - start);
+            } else {
+                assert!(scheduled <= start);
+                assert_eq!(latency, end - scheduled);
+            }
+            previous_end = end;
+        }
+    }
+}
+
+#[test]
+fn scheduled_csv_uses_fixed_origin_i_over_rate() {
+    // Rates divide 1e9 exactly, so no rounding rule is assumed.
+    for (workload, count, rate) in [
+        (probe::Workload::HotSeat, 16, 10_000),
+        (probe::Workload::Uniform, 32, 250_000),
+        (probe::Workload::Retry, 8, 1_000_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        for (i, ([index, scheduled, ..], _)) in csv_rows(&report).into_iter().enumerate() {
+            assert_eq!(index, i as u128);
+            assert_eq!(scheduled, i as u128 * 1_000_000_000 / u128::from(rate));
+        }
+        let json = report.json(rate, 128);
+        assert_eq!(top_level(&json, "rate"), rate.to_string());
+        assert!(json.contains(probe::rate_meaning(rate)));
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn workload_report_json_names_budgets_samples_and_rate() {
+    for (workload, count, command_limit, rate) in [
+        (probe::Workload::Uniform, 32, 128, 0),
+        (probe::Workload::HotSeat, 16, 128, 10_000),
+        (probe::Workload::Retry, 64, 512, 0),
+        (probe::Workload::Conflict, 8, 4096, 0),
+    ] {
+        let report = probe::run(workload, count, command_limit, rate);
+        let json = report.json(rate, command_limit);
+        for (key, expected) in [
+            ("command_limit", command_limit.to_string()),
+            ("commands_budget", command_limit.to_string()),
+            ("orders_limit", "4096".to_string()),
+            ("observations_limit", "128".to_string()),
+            ("inventory_seats", "4096".to_string()),
+            ("samples", count.to_string()),
+            ("rate", rate.to_string()),
+        ] {
+            assert_eq!(top_level(&json, key), expected);
+        }
+        assert_separated(&report, rate, command_limit);
+    }
+}
+
+#[test]
+fn evidence_binding_serializes_tree_probe_toolchain_host_and_files() {
+    let files = ["uniform.csv", "uniform.json", "binding.json"];
+    let mut binding = probe::EvidenceBinding {
+        commit: Some("commit-sha"),
+        tree: Some("tree-sha"),
+        kernel_blob: "kernel-sha",
+        quarantine_blob: "quarantine-sha",
+        contract_edge_blob: "edge-sha",
+        model_v4_blob: "model-sha",
+        probe_blob: Some("probe-sha"),
+        harness_blob: Some("harness-sha"),
+        example_blob: Some("example-sha"),
+        toolchain: "rustc 1.0.0 (test)",
+        host_uname: Some("Linux t 1 x86_64"),
+        os: "linux",
+        arch: "x86_64",
+        build_mode: "release",
+        debug_assertions: false,
+        samples: 512,
+        low_load_samples: 32,
+        command_limit: 128,
+        rate: 1_000,
+        output_files: &files,
+    };
+    let json = probe::evidence_binding_json(&binding);
+    for fragment in [
+        "\"commit\":\"commit-sha\"",
+        "\"tree\":\"tree-sha\"",
+        "\"locked_blobs\":{\"kernel\":\"kernel-sha\",\"quarantine_capacity\":\"quarantine-sha\",\"contract_edge_cases\":\"edge-sha\",\"model_v4\":\"model-sha\"}",
+        "\"probe_blob\":\"probe-sha\"",
+        "\"harness_blob\":\"harness-sha\"",
+        "\"example_blob\":\"example-sha\"",
+        "\"toolchain\":\"rustc 1.0.0 (test)\"",
+        "\"host_uname\":\"Linux t 1 x86_64\"",
+        "\"target_os\":\"linux\"",
+        "\"target_arch\":\"x86_64\"",
+        "\"build_mode\":\"release\"",
+        "\"samples\":512",
+        "\"command_limit\":128",
+        "\"inventory_seats\":4096",
+        "\"rate\":1000",
+        "\"output_files\":[\"uniform.csv\",\"uniform.json\",\"binding.json\"]",
+    ] {
+        assert_eq!(json.matches(fragment).count(), 1, "{fragment}");
+    }
+    assert!(json.contains(probe::rate_meaning(1_000)));
+    binding.tree = None;
+    binding.host_uname = None;
+    let json = probe::evidence_binding_json(&binding);
+    assert!(json.contains("\"tree\":null"));
+    assert!(json.contains("\"host_uname\":null"));
+}
+
+#[test]
+fn elapsed_ns_covers_every_row_and_scheduled_wait() {
+    // Ordering only: elapsed_ns is not compared with any constant duration.
+    for (workload, count, rate) in [
+        (probe::Workload::Uniform, 512, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        let ([_, scheduled, _, end, ..], _) = csv_rows(&report).pop().unwrap();
+        assert!(report.elapsed_ns >= end);
+        assert!(report.elapsed_ns >= scheduled);
+        assert_eq!(
+            top_level(&report.json(rate, 128), "elapsed_ns"),
+            report.elapsed_ns.to_string()
+        );
+    }
+}
+
+#[test]
+fn each_workload_and_low_load_run_constructs_exactly_one_kernel() {
+    // Four smoke workloads, the low-load control and the scheduled control.
+    let low_count = probe::low_load_sample_count(128);
+    let position = format!(
+        "\"goodput_interpretation\":\"{}\",\"kernel_resets_during_workload\":0,\"outcomes\":[",
+        probe::GOODPUT_INTERPRETATION
+    );
+    for (workload, count, rate) in [
+        (probe::Workload::Uniform, 512, 0),
+        (probe::Workload::HotSeat, 512, 0),
+        (probe::Workload::Retry, 512, 0),
+        (probe::Workload::Conflict, 512, 0),
+        (probe::Workload::Uniform, low_count, 0),
+        (probe::Workload::HotSeat, 16, 10_000),
+    ] {
+        let report = probe::run(workload, count, 128, rate);
+        if count == low_count {
+            assert!(report.low_load());
+        }
+        assert_single_kernel(&report, rate, 128);
+        let json = report.json(rate, 128);
+        assert_eq!(json.matches(&position).count(), 1);
+        assert!(report.raw_csv.starts_with(
+            "index,scheduled_ns,start_ns,end_ns,service_ns,scheduled_latency_ns,outcome\n"
+        ));
+        assert_separated(&report, rate, 128);
+    }
+}
+
+#[test]
+fn injected_kernel_reconstruction_is_counted_and_reported() {
+    // Negative sensitivity: a second construction at the correct run's first
+    // Capacity index must be counted, reported and rejected by the guard.
+    let correct = probe::run(probe::Workload::Uniform, 512, 128, 0);
+    assert_eq!(
+        (correct.held, correct.capacity, correct.first_capacity),
+        (128, 384, Some(128))
+    );
+    let report =
+        probe::run_with_injected_reconstruction(probe::Workload::Uniform, 512, 128, 0, 128);
+    assert_eq!(report.kernel_constructions, 2);
+    assert_eq!(report.kernel_resets_during_workload(), 1);
+    let json = report.json(0, 128);
+    assert_eq!(top_level(&json, "kernel_resets_during_workload"), "1");
+    assert!(!json.contains("\"kernel_resets_during_workload\":0"));
+    // The reset hides exhaustion: a fresh command budget admits 128 more Held.
+    assert_eq!(
+        (report.held, report.capacity, report.first_capacity),
+        (256, 256, Some(256))
+    );
+    assert!(std::panic::catch_unwind(|| assert_single_kernel(&report, 0, 128)).is_err());
+}
+
+#[test]
+fn perf_probe_routes_kernel_new_through_one_helper() {
+    // Source characterization: the probe has one construction site, inside the
+    // counting helper, and never clones a kernel. Textual, not a semantic proof.
+    let src = include_str!("support/perf_probe.rs");
+    assert_eq!(src.matches("Kernel::new(").count(), 1);
+    assert_eq!(src.matches("fn construct_kernel(").count(), 1);
+    assert!(!src.contains("kernel.clone()"));
+}
+
+// Synthetic costs are independent fixture inputs, never host measurements or
+// performance targets. Reading the clock does not advance it; waits never sleep.
+struct VirtualClock {
+    now_ns: u128,
+    preparation_ns: u128,
+    invocation_ns: u128,
+    classification_ns: u128,
+    bookkeeping_ns: u128,
+    formatting_ns: u128,
+    phases: Vec<probe::ProbePhase>,
+    waits: Vec<u128>,
+}
+
+impl VirtualClock {
+    fn new(invocation_ns: u128, classification_ns: u128) -> Self {
+        Self {
+            now_ns: 0,
+            preparation_ns: 1000,
+            invocation_ns,
+            classification_ns,
+            bookkeeping_ns: 13,
+            formatting_ns: 2000,
+            phases: Vec::new(),
+            waits: Vec::new(),
+        }
+    }
+}
+
+impl probe::ProbeClock for VirtualClock {
+    type Mark = u128;
+
+    fn mark(&self) -> u128 {
+        self.now_ns
+    }
+
+    fn elapsed_ns(&self, mark: u128) -> u128 {
+        self.now_ns - mark
+    }
+
+    fn wait(&mut self, duration: std::time::Duration) {
+        let ns = duration.as_nanos();
+        assert!(ns > 0);
+        self.waits.push(ns);
+        self.now_ns += ns;
+    }
+
+    fn phase(&mut self, phase: probe::ProbePhase) {
+        use probe::ProbePhase;
+        self.phases.push(phase);
+        self.now_ns += match phase {
+            ProbePhase::InputPreparation => self.preparation_ns,
+            ProbePhase::KernelInvocation => self.invocation_ns,
+            ProbePhase::Classification => self.classification_ns,
+            ProbePhase::LoopBookkeeping => self.bookkeeping_ns,
+            ProbePhase::ReportFormatting => self.formatting_ns,
+        };
+    }
+}
+
+struct TimingExpectation {
+    rate: u64,
+    invocation_ns: u128,
+    classification_ns: u128,
+    csv: &'static str,
+    elapsed: u128,
+    service_p99: u128,
+    latency_p99: u128,
+    waits: &'static [u128],
+}
+
+// Literal expected rows and totals, specified independently of probe arithmetic.
+const RATE_ZERO_TIMING: TimingExpectation = TimingExpectation {
+    rate: 0,
+    invocation_ns: 7,
+    classification_ns: 11,
+    csv: "index,scheduled_ns,start_ns,end_ns,service_ns,scheduled_latency_ns,outcome\n\
+0,0,0,18,18,18,held\n\
+1,0,31,49,18,18,held\n\
+2,0,62,80,18,18,held\n",
+    elapsed: 93,
+    service_p99: 18,
+    latency_p99: 18,
+    waits: &[],
+};
+
+const SCHEDULED_TIMING: TimingExpectation = TimingExpectation {
+    rate: 10_000_000,
+    invocation_ns: 7,
+    classification_ns: 11,
+    csv: "index,scheduled_ns,start_ns,end_ns,service_ns,scheduled_latency_ns,outcome\n\
+0,0,0,18,18,18,held\n\
+1,100,100,118,18,18,held\n\
+2,200,200,218,18,18,held\n",
+    elapsed: 231,
+    service_p99: 18,
+    latency_p99: 18,
+    waits: &[69, 69],
+};
+
+const LATE_DRIVER_TIMING: TimingExpectation = TimingExpectation {
+    rate: 10_000_000,
+    invocation_ns: 70,
+    classification_ns: 50,
+    csv: "index,scheduled_ns,start_ns,end_ns,service_ns,scheduled_latency_ns,outcome\n\
+0,0,0,120,120,120,held\n\
+1,100,133,253,120,153,held\n\
+2,200,266,386,120,186,held\n",
+    elapsed: 399,
+    service_p99: 120,
+    latency_p99: 186,
+    waits: &[],
+};
+
+fn run_timing(clock: &mut VirtualClock, expected: &TimingExpectation) -> probe::Report {
+    probe::run_with_clock_for_test(
+        probe::Workload::Uniform,
+        3,
+        128,
+        expected.rate,
+        clock,
+        probe::TimingFault::None,
+    )
+}
+
+fn assert_timing_report(report: &probe::Report, expected: &TimingExpectation) {
+    assert_eq!(report.elapsed_ns, expected.elapsed);
+    assert_eq!(report.raw_csv, expected.csv);
+    let rows = csv_rows(report);
+    assert_eq!(rows.len(), 3);
+    assert!(rows.iter().all(|(_, kind)| kind == "held"));
+    assert_eq!(report.held, 3);
+    assert_eq!(report.remaining, 4093);
+    assert_eq!(report.mixed_p99_service_ns, expected.service_p99);
+    assert_eq!(report.mixed_p99_scheduled_latency_ns, expected.latency_p99);
+    let json = report.json(expected.rate, 128);
+    for (key, value) in [
+        ("elapsed_ns", expected.elapsed),
+        ("mixed_result_p99_service_ns", expected.service_p99),
+        (
+            "mixed_result_p99_scheduled_latency_ns",
+            expected.latency_p99,
+        ),
+    ] {
+        assert_eq!(top_level(&json, key), value.to_string());
+    }
+    let objects = json_outcome_objects(&json);
+    assert_eq!(objects.len(), 7);
+    for object in objects {
+        let held = object["\"outcome\""] == "\"held\"";
+        assert_eq!(object["\"count\""], if held { "3" } else { "0" });
+        for (key, value) in [
+            ("\"service_p99_ns\"", expected.service_p99),
+            ("\"scheduled_latency_p99_ns\"", expected.latency_p99),
+        ] {
+            assert_eq!(
+                object[key],
+                if held {
+                    value.to_string()
+                } else {
+                    "null".into()
+                }
+            );
+        }
+    }
+    assert_single_kernel(report, expected.rate, 128);
+    assert_separated(report, expected.rate, 128);
+}
+
+fn assert_timing_clock(clock: &VirtualClock, expected: &TimingExpectation) {
+    use probe::ProbePhase::*;
+    assert_eq!(clock.waits, expected.waits);
+    assert_eq!(
+        clock.phases,
+        [
+            InputPreparation,
+            KernelInvocation,
+            Classification,
+            LoopBookkeeping,
+            KernelInvocation,
+            Classification,
+            LoopBookkeeping,
+            KernelInvocation,
+            Classification,
+            LoopBookkeeping,
+            ReportFormatting,
+        ]
+    );
+    assert_eq!(
+        clock.now_ns,
+        clock.preparation_ns + expected.elapsed + clock.formatting_ns
+    );
+}
+
+#[test]
+fn timing_boundaries_rate_zero() {
+    let mut clock = VirtualClock::new(7, 11);
+    let report = run_timing(&mut clock, &RATE_ZERO_TIMING);
+    assert_timing_report(&report, &RATE_ZERO_TIMING);
+    assert_timing_clock(&clock, &RATE_ZERO_TIMING);
+    assert_eq!(clock.now_ns, 3093);
+}
+
+#[test]
+fn timing_boundaries_scheduled() {
+    let mut clock = VirtualClock::new(7, 11);
+    let report = run_timing(&mut clock, &SCHEDULED_TIMING);
+    assert_timing_report(&report, &SCHEDULED_TIMING);
+    assert_timing_clock(&clock, &SCHEDULED_TIMING);
+    assert_eq!(clock.now_ns, 3231);
+}
+
+#[test]
+fn timing_boundaries_late_driver() {
+    let mut clock = VirtualClock::new(70, 50);
+    let report = run_timing(&mut clock, &LATE_DRIVER_TIMING);
+    assert_timing_report(&report, &LATE_DRIVER_TIMING);
+    assert_timing_clock(&clock, &LATE_DRIVER_TIMING);
+    assert_eq!(clock.now_ns, 3399);
+}
+
+#[test]
+fn timing_boundaries_exclude_setup_and_formatting() {
+    for expected in [&RATE_ZERO_TIMING, &SCHEDULED_TIMING, &LATE_DRIVER_TIMING] {
+        let mut baseline_clock =
+            VirtualClock::new(expected.invocation_ns, expected.classification_ns);
+        let baseline = run_timing(&mut baseline_clock, expected);
+        assert_timing_report(&baseline, expected);
+        assert_timing_clock(&baseline_clock, expected);
+        for (preparation_ns, formatting_ns) in [(0, 2000), (9000, 2000), (1000, 0), (1000, 8000)] {
+            let mut clock = VirtualClock::new(expected.invocation_ns, expected.classification_ns);
+            clock.preparation_ns = preparation_ns;
+            clock.formatting_ns = formatting_ns;
+            let report = run_timing(&mut clock, expected);
+            assert_timing_report(&report, expected);
+            assert_timing_clock(&clock, expected);
+            assert_eq!(report.raw_csv, baseline.raw_csv);
+            let final_time = clock.now_ns;
+            let json = report.json(expected.rate, 128);
+            assert_eq!(json, baseline.json(expected.rate, 128));
+            assert_eq!(report.json(expected.rate, 128), json);
+            assert_eq!(clock.now_ns, final_time);
+            assert_timing_report(&report, expected);
+        }
+    }
+}
+
+#[test]
+fn timing_boundaries_reject_included_preparation() {
+    let mut correct_clock = VirtualClock::new(7, 11);
+    let correct = run_timing(&mut correct_clock, &RATE_ZERO_TIMING);
+    assert_timing_report(&correct, &RATE_ZERO_TIMING);
+    let mut clock = VirtualClock::new(7, 11);
+    let faulty = probe::run_with_clock_for_test(
+        probe::Workload::Uniform,
+        3,
+        128,
+        0,
+        &mut clock,
+        probe::TimingFault::IncludePreparation,
+    );
+    assert_eq!(faulty.elapsed_ns, 1093);
+    assert_eq!(top_level(&faulty.json(0, 128), "elapsed_ns"), "1093");
+    assert_eq!(clock.now_ns, 3093);
+    assert_eq!(faulty.held, correct.held);
+    assert_eq!(faulty.remaining, correct.remaining);
+    assert!(std::panic::catch_unwind(|| assert_timing_report(&faulty, &RATE_ZERO_TIMING)).is_err());
+}
+
+// CSV columns: index, scheduled_ns, start_ns, end_ns, service_ns,
+// scheduled_latency_ns as integers, then the outcome name.
+fn csv_rows(report: &probe::Report) -> Vec<([u128; 6], String)> {
+    report
+        .raw_csv
+        .lines()
+        .skip(1)
+        .enumerate()
+        .map(|(position, line)| {
+            let fields: Vec<&str> = line.split(',').collect();
+            assert_eq!(fields.len(), 7);
+            let values: [u128; 6] = std::array::from_fn(|n| fields[n].parse().unwrap());
+            assert_eq!(values[0], position as u128);
+            (values, fields[6].to_string())
+        })
+        .collect()
+}
+
+// Report JSON has a flat scalar prefix followed by the nested outcomes array.
+// Restrict lookup to that prefix so a nested outcome cannot satisfy an assertion.
+fn top_level(json: &str, key: &str) -> String {
+    let prefix = json.split_once(",\"outcomes\":").unwrap().0;
+    let marker = format!(",\"{key}\":");
+    assert_eq!(prefix.matches(&marker).count(), 1);
+    prefix
+        .split_once(&marker)
+        .unwrap()
+        .1
+        .split([',', '}'])
+        .next()
+        .unwrap()
+        .to_string()
+}
+
+fn assert_single_kernel(report: &probe::Report, rate: u64, command_limit: usize) {
+    assert_eq!(report.kernel_constructions, 1);
+    assert_eq!(report.kernel_resets_during_workload(), 0);
+    assert_eq!(
+        top_level(
+            &report.json(rate, command_limit),
+            "kernel_resets_during_workload"
+        ),
+        "0"
+    );
 }
 
 fn assert_separated(report: &probe::Report, rate: u64, command_limit: usize) {
@@ -282,6 +1413,7 @@ fn assert_separated(report: &probe::Report, rate: u64, command_limit: usize) {
     assert!(json.contains(probe::MIXED_P99_INTERPRETATION));
     assert!(json.contains(probe::NON_CLAIMS));
     assert!(json.contains("\"kernel_resets_during_workload\":0"));
+    assert_single_kernel(report, rate, command_limit);
     assert!(!json.contains("\"p99_service_ns\""));
     assert!(!json.contains("success_p99"));
     assert!(!json.contains("purchase_p99"));

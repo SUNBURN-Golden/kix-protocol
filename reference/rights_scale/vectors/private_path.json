@@ -1,0 +1,885 @@
+{
+ "comment": "Operation scripts for the private path of the extended profile (RS-2), replayed by reference/rights_scale/test_private_model.py against model.py and by client/private-localnet.mjs against the published package; compare_private.py then compares the two. Fixture values only: none is an operational default. expect.abort is a Move abort code of kix_rights_scale::rights_scale, \"zk_gate:2\" for a proof the Groth16 verifier rejects, or EObjectAlreadyExists; expect.client is a refusal by the prover before any transaction. Note roots are named by the number of leaves the tree had; K is 4 in this package.",
+ "verifiers": {
+  "v1": {
+   "manifest": "m1",
+   "real": true
+  },
+  "v2": {
+   "manifest": "m2",
+   "real": false
+  }
+ },
+ "gates": [
+  "gate",
+  "gate2"
+ ],
+ "scenarios": [
+  {
+   "name": "l1_1024_private_path",
+   "shows": {
+    "S1": {
+     "seated": 1024,
+     "ga": 0,
+     "page_size": 64,
+     "shards": 2,
+     "verifier": "v1"
+    }
+   },
+   "steps": [
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 8,
+     "show": "S1"
+    },
+    {
+     "op": "claim_pages",
+     "from": 8,
+     "count": 8,
+     "show": "S1"
+    },
+    {
+     "op": "claim_shards",
+     "from": 0,
+     "count": 2,
+     "show": "S1"
+    },
+    {
+     "op": "claim_zk",
+     "verifier": "v2",
+     "expect": {
+      "abort": 22
+     }
+    },
+    {
+     "op": "claim_zk"
+    },
+    {
+     "op": "claim_zk",
+     "expect": {
+      "abort": 18
+     }
+    },
+    {
+     "op": "seal"
+    },
+    {
+     "op": "claim_zk",
+     "expect": {
+      "abort": 13
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "label": "t0"
+    },
+    {
+     "op": "issue",
+     "slot": 1,
+     "gen": 0,
+     "holder": "a",
+     "label": "t1"
+    },
+    {
+     "op": "issue",
+     "slot": 63,
+     "gen": 0,
+     "holder": "a",
+     "label": "t2"
+    },
+    {
+     "op": "issue",
+     "slot": 64,
+     "gen": 0,
+     "holder": "a",
+     "label": "t3"
+    },
+    {
+     "op": "issue",
+     "slot": 1023,
+     "gen": 0,
+     "holder": "a",
+     "label": "t4"
+    },
+    {
+     "op": "issue",
+     "slot": 5,
+     "gen": 0,
+     "holder": "a",
+     "label": "t5"
+    },
+    {
+     "op": "issue",
+     "slot": 6,
+     "gen": 0,
+     "holder": "a",
+     "label": "t6"
+    },
+    {
+     "op": "issue",
+     "slot": 7,
+     "gen": 0,
+     "holder": "a",
+     "label": "t7"
+    },
+    {
+     "op": "issue",
+     "slot": 8,
+     "gen": 0,
+     "holder": "a",
+     "label": "t8"
+    },
+    {
+     "op": "revoke_plain",
+     "ticket": "t7",
+     "expect": {
+      "abort": 21
+     }
+    },
+    {
+     "op": "shield",
+     "ticket": "t0",
+     "note": "n0",
+     "sender": "b",
+     "version": 1,
+     "expect": {
+      "abort": 2
+     }
+    },
+    {
+     "op": "shield",
+     "ticket": "t0",
+     "note": "n0",
+     "sender": "a",
+     "version": 1,
+     "bad": "foreign_domain",
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "shield",
+     "ticket": "t0",
+     "note": "n0",
+     "sender": "a",
+     "version": 1,
+     "bad": "wrong_commitment",
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "shield",
+     "ticket": "t0",
+     "note": "n0",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t0",
+     "note": "n0again",
+     "sender": "a",
+     "version": 2,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "authorize",
+     "ticket": "t0",
+     "sender": "a",
+     "version": 2,
+     "ttl_ms": 60000,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "offer",
+     "ticket": "t0",
+     "sender": "a",
+     "version": 2,
+     "recipient": "b",
+     "amount": 0,
+     "ttl_ms": 600000,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "refund",
+     "ticket": "t0",
+     "sender": "a",
+     "version": 2,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 1,
+     "holder": "b",
+     "expect": {
+      "abort": 9
+     }
+    },
+    {
+     "op": "shield",
+     "ticket": "t1",
+     "note": "n1",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t2",
+     "note": "n2",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t3",
+     "note": "n3",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t4",
+     "note": "n4",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "prove",
+     "label": "p_old",
+     "note": "n0",
+     "root": {
+      "count": 1
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_old",
+     "expect": {
+      "abort": 19
+     }
+    },
+    {
+     "op": "prove",
+     "label": "p_edge",
+     "note": "n1",
+     "root": {
+      "count": 2
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_edge"
+    },
+    {
+     "op": "prove",
+     "label": "p_cur",
+     "note": "n2"
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_cur"
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_cur",
+     "expect": {
+      "abort": 8
+     }
+    },
+    {
+     "op": "prove",
+     "label": "p_cur2",
+     "note": "n2"
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_cur2",
+     "expect": {
+      "abort": 8
+     }
+    },
+    {
+     "op": "prove",
+     "label": "p_c3",
+     "note": "n3",
+     "challenge": 424242
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_c3"
+    },
+    {
+     "op": "prove",
+     "label": "p_c4",
+     "note": "n4",
+     "challenge": 424242
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_c4",
+     "expect": {
+      "abort": 8
+     }
+    },
+    {
+     "op": "prove",
+     "label": "p_w",
+     "note": "n4",
+     "source": "events"
+    },
+    {
+     "op": "reconstruct"
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "sender": "gate2",
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "sender": "a",
+     "expect": {
+      "abort": 4
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "wrong_shard": "nullifier",
+     "expect": {
+      "abort": 16
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "wrong_shard": "challenge",
+     "expect": {
+      "abort": 16
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "ttl_ms": -1000,
+     "expect": {
+      "abort": 6
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "ttl_ms": 130000,
+     "expect": {
+      "abort": 6
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "ttl_ms": 60000,
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "note_root": {
+      "count": 3
+     },
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w",
+     "verifier": "v2",
+     "expect": {
+      "abort": 4
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_w"
+    },
+    {
+     "op": "shield",
+     "ticket": "t5",
+     "note": "n5",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t6",
+     "note": "n6",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t8",
+     "note": "n8",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "prove",
+     "label": "p5",
+     "note": "n5"
+    },
+    {
+     "op": "prove",
+     "label": "p6",
+     "note": "n6"
+    },
+    {
+     "op": "prove",
+     "label": "p8",
+     "note": "n8"
+    },
+    {
+     "op": "issue",
+     "slot": 9,
+     "gen": 0,
+     "holder": "b",
+     "label": "t9"
+    },
+    {
+     "op": "refund",
+     "ticket": "t9",
+     "sender": "b",
+     "version": 1
+    },
+    {
+     "op": "issue",
+     "slot": 10,
+     "gen": 0,
+     "holder": "b",
+     "label": "t10"
+    },
+    {
+     "op": "consume_private",
+     "proof": "p5"
+    },
+    {
+     "op": "revoke",
+     "ticket": "t7"
+    },
+    {
+     "op": "revoke",
+     "ticket": "t10",
+     "witness": "stale",
+     "expect": {
+      "abort": 19
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "p6",
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "revoke",
+     "ticket": "t8"
+    },
+    {
+     "op": "consume_private",
+     "proof": "p8",
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "prove",
+     "label": "p8b",
+     "note": "n8",
+     "expect": {
+      "client": "PRIVATE_NOTE_REVOKED"
+     }
+    },
+    {
+     "op": "prove",
+     "label": "p6b",
+     "note": "n6"
+    },
+    {
+     "op": "consume_private",
+     "proof": "p6b"
+    },
+    {
+     "op": "revoke",
+     "ticket": "t7",
+     "expect": {
+      "abort": 19
+     }
+    },
+    {
+     "op": "prove",
+     "label": "p_late",
+     "note": "n0",
+     "source": "events"
+    },
+    {
+     "op": "cancel_show"
+    },
+    {
+     "op": "consume_private",
+     "proof": "p_late",
+     "expect": {
+      "abort": 4
+     }
+    },
+    {
+     "op": "shield",
+     "ticket": "t10",
+     "note": "n10",
+     "sender": "b",
+     "version": 1,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 11,
+     "gen": 0,
+     "holder": "a",
+     "expect": {
+      "abort": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "cross_show_and_cross_manifest_proofs",
+   "shows": {
+    "S1": {
+     "seated": 8,
+     "ga": 0,
+     "page_size": 4,
+     "shards": 1,
+     "verifier": "v1"
+    },
+    "S2": {
+     "seated": 8,
+     "ga": 0,
+     "page_size": 4,
+     "shards": 1,
+     "verifier": "v1"
+    },
+    "S3": {
+     "seated": 8,
+     "ga": 0,
+     "page_size": 4,
+     "shards": 1,
+     "verifier": "v2"
+    },
+    "S4": {
+     "seated": 1025,
+     "ga": 0,
+     "page_size": 64,
+     "shards": 1,
+     "verifier": "v1"
+    }
+   },
+   "steps": [
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 2,
+     "show": "S1"
+    },
+    {
+     "op": "claim_shards",
+     "from": 0,
+     "count": 1,
+     "show": "S1"
+    },
+    {
+     "op": "claim_zk",
+     "show": "S1"
+    },
+    {
+     "op": "seal",
+     "show": "S1"
+    },
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 2,
+     "show": "S2"
+    },
+    {
+     "op": "claim_shards",
+     "from": 0,
+     "count": 1,
+     "show": "S2"
+    },
+    {
+     "op": "claim_zk",
+     "show": "S2"
+    },
+    {
+     "op": "seal",
+     "show": "S2"
+    },
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 2,
+     "show": "S3"
+    },
+    {
+     "op": "claim_shards",
+     "from": 0,
+     "count": 1,
+     "show": "S3"
+    },
+    {
+     "op": "claim_zk",
+     "show": "S3"
+    },
+    {
+     "op": "seal",
+     "show": "S3"
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "label": "a0",
+     "show": "S1"
+    },
+    {
+     "op": "shield",
+     "ticket": "a0",
+     "note": "na",
+     "sender": "a",
+     "version": 1,
+     "show": "S1"
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "label": "b0",
+     "show": "S2"
+    },
+    {
+     "op": "shield",
+     "ticket": "b0",
+     "note": "nb",
+     "sender": "a",
+     "version": 1,
+     "show": "S2"
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "label": "c0",
+     "show": "S3"
+    },
+    {
+     "op": "shield",
+     "ticket": "c0",
+     "note": "nc",
+     "sender": "a",
+     "version": 1,
+     "show": "S3"
+    },
+    {
+     "op": "claim_zk",
+     "show": "S4",
+     "expect": {
+      "abort": 17
+     }
+    },
+    {
+     "op": "prove",
+     "label": "pa",
+     "note": "na"
+    },
+    {
+     "op": "prove",
+     "label": "pb",
+     "note": "nb"
+    },
+    {
+     "op": "consume_private",
+     "proof": "pa",
+     "show": "S2",
+     "note_root": {
+      "current": true
+     },
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "pa",
+     "show": "S3",
+     "note_root": {
+      "current": true
+     },
+     "expect": {
+      "abort": "zk_gate:2"
+     }
+    },
+    {
+     "op": "consume_private",
+     "proof": "pa",
+     "show": "S1"
+    },
+    {
+     "op": "consume_private",
+     "proof": "pb",
+     "show": "S2"
+    }
+   ]
+  },
+  {
+   "name": "shield_conserves_the_right_count",
+   "shows": {
+    "S1": {
+     "seated": 4,
+     "ga": 0,
+     "page_size": 4,
+     "shards": 1,
+     "verifier": "v1"
+    }
+   },
+   "steps": [
+    {
+     "op": "claim_pages",
+     "from": 0,
+     "count": 1,
+     "show": "S1"
+    },
+    {
+     "op": "claim_shards",
+     "from": 0,
+     "count": 1,
+     "show": "S1"
+    },
+    {
+     "op": "claim_zk"
+    },
+    {
+     "op": "seal"
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 0,
+     "holder": "a",
+     "label": "t0"
+    },
+    {
+     "op": "issue",
+     "slot": 1,
+     "gen": 0,
+     "holder": "a",
+     "label": "t1"
+    },
+    {
+     "op": "issue",
+     "slot": 2,
+     "gen": 0,
+     "holder": "a",
+     "label": "t2"
+    },
+    {
+     "op": "issue",
+     "slot": 3,
+     "gen": 0,
+     "holder": "a",
+     "label": "t3"
+    },
+    {
+     "op": "shield",
+     "ticket": "t0",
+     "note": "n0",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t1",
+     "note": "n1",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t2",
+     "note": "n2",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t3",
+     "note": "n3",
+     "sender": "a",
+     "version": 1
+    },
+    {
+     "op": "shield",
+     "ticket": "t0",
+     "note": "extra",
+     "sender": "a",
+     "version": 2,
+     "expect": {
+      "abort": 1
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 0,
+     "gen": 1,
+     "holder": "b",
+     "expect": {
+      "abort": 9
+     }
+    },
+    {
+     "op": "issue",
+     "slot": 4,
+     "gen": 0,
+     "holder": "b",
+     "expect": {
+      "abort": 9
+     }
+    }
+   ]
+  }
+ ]
+}

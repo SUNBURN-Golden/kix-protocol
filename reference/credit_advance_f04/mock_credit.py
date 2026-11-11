@@ -160,7 +160,7 @@ def _parse_face(face: object) -> dict:
         _require(bearer == "FIXTURE_FULL_GROSS_RECLASS", "SETTLEMENT_FACE_MISMATCH")
         _require(all(line["outstanding"] == 0 for line in lines), "SETTLEMENT_FACE_MISMATCH")
     elif refund_face:
-        _require(bearer == "UNDEFINED", "SETTLEMENT_FACE_MISMATCH")
+        _require(bearer == "REQUESTER", "SETTLEMENT_FACE_MISMATCH")
         _require(all(line["cancelled_unpaid"] == 0 for line in lines), "SETTLEMENT_FACE_MISMATCH")
     else:
         _require(bearer == "NONE", "SETTLEMENT_FACE_MISMATCH")

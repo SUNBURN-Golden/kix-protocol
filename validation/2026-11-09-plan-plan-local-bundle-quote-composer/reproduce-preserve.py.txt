@@ -1,0 +1,39 @@
+from pathlib import Path
+import ast, hashlib, json, os, subprocess
+out=Path('validation/2026-11-09-plan-plan-local-bundle-quote-composer')
+allowed={'docs/README.md','reference/booking_resale_admission/README.md',
+         'reference/booking_resale_admission/commerce_calculation_console.py',
+         'reference/booking_resale_admission/test_commerce_calculation_console.py'}
+base='0afb7c199acb880ed7a1972d261f92ff9244d8d7'
+assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==base
+assert subprocess.check_output(['git','rev-parse','origin/main'],text=True).strip()==base
+assert set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())==allowed
+verified=0
+for row in subprocess.check_output(['git','ls-files','--stage','-z']).split(b'\0'):
+    if not row: continue
+    meta, raw_path=row.split(b'\t',1)
+    mode, blob, stage=meta.decode().split()
+    name=raw_path.decode()
+    assert stage=='0'
+    if name in allowed: continue
+    path=Path(name)
+    data=os.readlink(path).encode() if path.is_symlink() else path.read_bytes()
+    actual=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+    assert actual==blob,(name,actual,blob)
+    verified+=1
+before=json.loads((out/'preservation-before.json').read_text())
+paths=[Path('runtime/crates/kix-kernel/src/lib.rs'),Path('runtime/crates/kix-kernel/tests/quarantine_capacity.rs')]
+paths+=sorted(p for p in Path('reference/v0.3-rc1').rglob('*') if p.is_file())
+after={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+assert after==before
+(out/'preservation-after.json').write_text(json.dumps(after,indent=2,sort_keys=True)+'\n')
+locks=dict(zip([str(p) for p in paths[:2]],subprocess.check_output(['git','hash-object',*[str(p) for p in paths[:2]]],text=True).splitlines()))
+assert list(locks.values())==['69564b166f0c27f9af5d8422f0a466b18d74c20f','b607996c83a119c349f1cc90469ac1ba82764e20']
+for name in allowed:
+    if name.endswith('.py'): ast.parse(Path(name).read_text())
+result=dict(base=base,head=base,cachedOriginMain=base,remoteFreshness='UNVERIFIED_NO_NETWORK',
+            implementationHead='UNCOMMITTED',finalTaskHead='PENDING_SUPERVISOR',
+            nonTaskTrackedFilesUnchanged=verified,frozenReferenceFilesUnchanged=len(after)-2,
+            lockedBlobs=locks,mergeSha=None)
+(out/'preservation.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+print(json.dumps(result,sort_keys=True))

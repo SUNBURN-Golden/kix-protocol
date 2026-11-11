@@ -1,0 +1,188 @@
+Local delegation console — MOCK_AI_DELEGATION_ONLY; one synthetic in-memory session.
+All execution/effect flags remain false. Human approval is an inert memo.
+Product limits/surfaces: UNDETERMINED — Astra; identity: Astra/User; legal: User/legal.
+Duplicate grants/proposals return CURRENT records; revocation keeps its first reason.
+Replay by explicitly re-entering and confirming; no automatic retries or model service.
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: agent_id: authority (JSON array of strings; QUERY / PROPOSE; EXECUTE is refused): scope (JSON object: surfaces array, optional subjects array): limits (JSON object: per_action_max, cumulative_max, count_max integers, currency string): period (JSON object: not_before, not_after logical integers): 
+proposed={"arguments":{"actor":"human-a","agent_id":"agent-a","authority":["QUERY","PROPOSE"],"grant_id":"g-1","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"period":{"not_after":20,"not_before":10},"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]}},"operation":"issue_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"issue_grant","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":false,"grant":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"ACTIVE","provenance":"MOCK_AI_DELEGATION_ONLY","reason":null,"refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":null,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: agent_id: authority (JSON array of strings; QUERY / PROPOSE; EXECUTE is refused): scope (JSON object: surfaces array, optional subjects array): limits (JSON object: per_action_max, cumulative_max, count_max integers, currency string): period (JSON object: not_before, not_after logical integers): 
+proposed={"arguments":{"actor":"human-a","agent_id":"agent-a","authority":["QUERY","PROPOSE"],"grant_id":"g-1","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"period":{"not_after":20,"not_before":10},"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]}},"operation":"issue_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"issue_grant","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"grant":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"ACTIVE","provenance":"MOCK_AI_DELEGATION_ONLY","reason":null,"refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":null,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-approved","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":false,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"PROPOSED","proposal_id":"p-approved","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-approved","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"PROPOSED","proposal_id":"p-approved","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: proposal_id: decision (APPROVE / REJECT; approval records an inert memo only): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"human-a","decision":"APPROVE","now":15,"proposal_id":"p-approved"},"operation":"decide_proposal"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"decide_proposal","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":false,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":"APPROVE","durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"HUMAN_APPROVED","proposal_id":"p-approved","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: proposal_id: decision (APPROVE / REJECT; approval records an inert memo only): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"human-a","decision":"APPROVE","now":21,"proposal_id":"p-approved"},"operation":"decide_proposal"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"decide_proposal","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":"APPROVE","durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"HUMAN_APPROVED","proposal_id":"p-approved","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-approved","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":"APPROVE","durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"HUMAN_APPROVED","proposal_id":"p-approved","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: proposal_id: decision (APPROVE / REJECT; approval records an inert memo only): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"human-a","decision":"REJECT","now":15,"proposal_id":"p-approved"},"operation":"decide_proposal"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"error":{"code":"PROPOSAL_BINDING_CONFLICT"},"operation":"decide_proposal","provenance":"MOCK_AI_DELEGATION_ONLY"}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":26,"kind":"synthetic-kind","proposal_id":"p-approved","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"error":{"code":"PROPOSAL_BINDING_CONFLICT"},"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY"}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: agent_id: authority (JSON array of strings; QUERY / PROPOSE; EXECUTE is refused): scope (JSON object: surfaces array, optional subjects array): limits (JSON object: per_action_max, cumulative_max, count_max integers, currency string): period (JSON object: not_before, not_after logical integers): 
+proposed={"arguments":{"actor":"human-a","agent_id":"agent-a","authority":["QUERY","PROPOSE"],"grant_id":"g-1","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"period":{"not_after":21,"not_before":10},"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]}},"operation":"issue_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"error":{"code":"GRANT_BINDING_CONFLICT"},"operation":"issue_grant","provenance":"MOCK_AI_DELEGATION_ONLY"}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-withdrawn","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":false,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"PROPOSED","proposal_id":"p-withdrawn","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"proposal_id":"p-withdrawn"},"grant_id":"g-1","now":15,"tool":"withdraw_proposal"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":false,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"WITHDRAWN","proposal_id":"p-withdrawn","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"proposal_id":"p-withdrawn"},"grant_id":"g-1","now":21,"tool":"withdraw_proposal"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"WITHDRAWN","proposal_id":"p-withdrawn","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-withdrawn","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"WITHDRAWN","proposal_id":"p-withdrawn","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-void","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":false,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"PROPOSED","proposal_id":"p-void","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: reason: 
+proposed={"arguments":{"actor":"human-a","grant_id":"g-1","reason":"first-reason"},"operation":"revoke_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"revoke_grant","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":false,"grant":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"REVOKED","provenance":"MOCK_AI_DELEGATION_ONLY","reason":"first-reason","refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":1,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: reason: 
+proposed={"arguments":{"actor":"human-a","grant_id":"g-1","reason":"changed-reason"},"operation":"revoke_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"revoke_grant","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"grant":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"REVOKED","provenance":"MOCK_AI_DELEGATION_ONLY","reason":"first-reason","refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":1,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: agent_id: authority (JSON array of strings; QUERY / PROPOSE; EXECUTE is refused): scope (JSON object: surfaces array, optional subjects array): limits (JSON object: per_action_max, cumulative_max, count_max integers, currency string): period (JSON object: not_before, not_after logical integers): 
+proposed={"arguments":{"actor":"human-a","agent_id":"agent-a","authority":["QUERY","PROPOSE"],"grant_id":"g-1","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"period":{"not_after":20,"not_before":10},"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]}},"operation":"issue_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"issue_grant","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"grant":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"REVOKED","provenance":"MOCK_AI_DELEGATION_ONLY","reason":"first-reason","refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":1,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-void","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"VOIDED_BY_REVOCATION","proposal_id":"p-void","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: proposal_id: 
+proposed={"arguments":{"proposal_id":"p-void"},"operation":"view_proposal"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"view_proposal","provenance":"MOCK_AI_DELEGATION_ONLY","view":{"amount":25,"chain_grant_confirmed":false,"decision":null,"durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"VOIDED_BY_REVOCATION","proposal_id":"p-void","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-approved","subject":"subject-a","surface":"surface-a"},"grant_id":"g-1","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":"APPROVE","durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"HUMAN_APPROVED","proposal_id":"p-approved","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: proposal_id: decision (APPROVE / REJECT; approval records an inert memo only): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"human-a","decision":"APPROVE","now":21,"proposal_id":"p-approved"},"operation":"decide_proposal"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"decide_proposal","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"proposal":{"amount":25,"chain_grant_confirmed":false,"decision":"APPROVE","durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"HUMAN_APPROVED","proposal_id":"p-approved","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: grant_id: 
+proposed={"arguments":{"grant_id":"g-1"},"operation":"view_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"view_grant","provenance":"MOCK_AI_DELEGATION_ONLY","view":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"REVOKED","provenance":"MOCK_AI_DELEGATION_ONLY","reason":"first-reason","refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":1,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: agent_id: authority (JSON array of strings; QUERY / PROPOSE; EXECUTE is refused): scope (JSON object: surfaces array, optional subjects array): limits (JSON object: per_action_max, cumulative_max, count_max integers, currency string): period (JSON object: not_before, not_after logical integers): 
+proposed={"arguments":{"actor":"human-a","agent_id":"agent-a","authority":["QUERY","PROPOSE"],"grant_id":"g-2","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"period":{"not_after":20,"not_before":10},"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]}},"operation":"issue_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"issue_grant","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":false,"grant":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":2,"grant_id":"g-2","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"ACTIVE","provenance":"MOCK_AI_DELEGATION_ONLY","reason":null,"refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":null,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: agent_id: authority (JSON array of strings; QUERY / PROPOSE; EXECUTE is refused): scope (JSON object: surfaces array, optional subjects array): limits (JSON object: per_action_max, cumulative_max, count_max integers, currency string): period (JSON object: not_before, not_after logical integers): 
+proposed={"arguments":{"actor":"human-a","agent_id":"agent-a","authority":["QUERY","PROPOSE"],"grant_id":"g-2","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"period":{"not_after":20,"not_before":10},"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]}},"operation":"issue_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"issue_grant","provenance":"MOCK_AI_DELEGATION_ONLY","receipt":{"duplicate":true,"grant":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":2,"grant_id":"g-2","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"ACTIVE","provenance":"MOCK_AI_DELEGATION_ONLY","reason":null,"refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":null,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: actor: grant_id: Supported tools: query_grant, query_subject, propose_action, withdraw_proposal, propose_grant_change
+tool: args (JSON object matching the selected tool; see README schemas): now (JSON integer; caller logical time, no wall clock): 
+proposed={"arguments":{"actor":"agent-a","args":{"amount":25,"kind":"synthetic-kind","proposal_id":"p-void","subject":"subject-a","surface":"surface-a"},"grant_id":"g-2","now":15,"tool":"propose_action"},"operation":"call_tool"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"error":{"code":"PROPOSAL_BINDING_CONFLICT"},"operation":"call_tool","provenance":"MOCK_AI_DELEGATION_ONLY"}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: proposal_id: 
+proposed={"arguments":{"proposal_id":"p-approved"},"operation":"view_proposal"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"view_proposal","provenance":"MOCK_AI_DELEGATION_ONLY","view":{"amount":25,"chain_grant_confirmed":false,"decision":"APPROVE","durable":false,"effects_executed":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"kind":"synthetic-kind","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","memo":null,"paid":false,"phase":"HUMAN_APPROVED","proposal_id":"p-approved","provenance":"MOCK_AI_DELEGATION_ONLY","refund_executed":false,"revocation_cut_confirmed":false,"signed":false,"subject":"subject-a","surface":"surface-a","tool":"propose_action","transferred":false}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: grant_id: 
+proposed={"arguments":{"grant_id":"g-1"},"operation":"view_grant"}
+Type literal SUBMIT to send once; anything else declines: 
+desk={"operation":"view_grant","provenance":"MOCK_AI_DELEGATION_ONLY","view":{"agent_id":"agent-a","authority":["PROPOSE","QUERY"],"chain_grant_confirmed":false,"durable":false,"execution_enabled":false,"funds_executed":false,"generation":1,"grant_id":"g-1","issued":false,"issuer":"human-a","legal_authority":false,"lifecycle_authority":"IN_MEMORY_FSM","limits":{"count_max":2,"cumulative_max":150,"currency":"KRW","per_action_max":100},"paid":false,"period":{"not_after":20,"not_before":10},"phase":"REVOKED","provenance":"MOCK_AI_DELEGATION_ONLY","reason":"first-reason","refund_executed":false,"revocation_cut_confirmed":false,"revoked_at_seq":1,"scope":{"subjects":["subject-a"],"surfaces":["surface-a"]},"signed":false,"transferred":false}}
+Actions: issue_grant, call_tool, decide_proposal, revoke_grant, view_grant, view_proposal, attempt_execution, quit
+attempt_execution is always refused; views also require confirmation.
+action: 

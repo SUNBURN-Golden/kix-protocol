@@ -1,0 +1,25 @@
+{
+  "protected_file_count": 110,
+  "sha256_matches_before": true,
+  "locked_git_blobs": {
+    "runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20"
+  },
+  "unchanged_against_HEAD": [
+    "runtime/crates/kix-kernel/src/lib.rs",
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs",
+    "reference/v0.3-rc1",
+    ".aiops",
+    "docs/tasks",
+    ".github",
+    "docs/contracts",
+    "reference/token_reward/token_reward_model.py",
+    "reference/token_reward/supply_cli.py",
+    "reference/token_reward/supply_reconciliation.py",
+    "reference/token_reward/test_supply_cli.py",
+    "reference/token_reward/test_supply_reconciliation.py",
+    "reference/token_reward/test_reward_model.py",
+    "reference/token_reward/test_tl4_model_properties.py"
+  ],
+  "post_merge": "not applicable; no merge"
+}

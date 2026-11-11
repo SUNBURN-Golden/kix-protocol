@@ -10,13 +10,130 @@
 1. [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) — 현재 계획·승인 범위.
 2. [기준 commit·태그 표](status/BASELINES.md) — 현재 main, 고정 R1 태그, PR 검토 SHA, #11 실험을 구분. [main 상태 정합 기록](status/MAIN_STATE_20260928.md) — 2026-09-25~27 병합 범위, hosted CI 공백, D-1~D-3 결정 전 사실. [프로그램 결정 D-1~D-3](decisions/PROGRAM_DECISIONS_20260928.md) — 2026-09-28 #73 병합으로 승인. Track K/P, Wave 게이트, readiness 저널 한도, 유지되는 잠금과 해제 조건.
 3. [모델 1 결정](decisions/AUTHORITY_MODEL_1.md) — 체인 권위 / 오프체인 위임 실행. R2·(a) 착수 승인이 아님.
-4. [수명 계약 초안](contracts/STATE_LIFECYCLE.md), [열린 입력·답할 주체](contracts/FIRST_BATCH_OPEN_INPUTS.md), [담당자 질문서](status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md)(위치만. 회신·정책 결정이 아니다), [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md)(위치만. 결정·채택·회신이 아니다).
+4. [수명 계약 초안](contracts/STATE_LIFECYCLE.md), [열린 입력·답할 주체](contracts/FIRST_BATCH_OPEN_INPUTS.md), [담당자 질문서](status/FIRST_BATCH_OWNER_QUESTION_SHEETS_KO.md)(위치만. 회신·정책 결정이 아니다), [세 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_KO.md)(위치만. 결정·채택·회신이 아니다), [두 번째 묶음 결정 시트](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md)(위치만. 결정·채택·회신이 아니다), [열린 사용자 결정 원장(2026-10-22)](status/OPEN_USER_DECISIONS_20261022.md)(위치만. 결정·채택·회신이 아니다), [10월 23일 소유자 정지 보충 기록](status/OPEN_USER_DECISIONS_20261023_ADDENDUM.md)(네 정지의 출처·질문·인계 근거만. 선택·처분·재개 결정이 아니다), [10월 23일 열린 결정 마감 보충 기록](status/OPEN_USER_DECISIONS_20261023_CLOSURE.md)(#269 기준 병합으로 해소된 네 정지와 남은 다섯 항목. 선택·노드 상태 변경이 아니다), [10월 25일 열린 결정 마감 후속 기록](status/OPEN_USER_DECISIONS_20261025_CLOSURE.md)(#282 기준. #274로 해소된 A3 포함 다섯 해소, 남은 네 항목. 선택·노드 상태 변경이 아니다), [10월 26일 AI 위임 검사 순서 정지 보충 기록](status/OPEN_USER_DECISIONS_20261026_ADDENDUM.md)(출처·소유자·선택지별 영향 목록만. 선택·수정·노드 상태 변경이 아니다), [RS-4 L2 결정 선택지별 영향 목록](status/RS4_L2_DECISION_IMPACT_INVENTORY.md)(선택지별 사실만. 선택·값·노드 상태 변경이 아니다).
 5. [계약 불변식·비교 모델의 한계](contracts/CONTRACT_INVARIANTS.md), [첫 묶음 실행 근거](../validation/2026-09-16-first-batch/README.md).
 6. [측정 계약](contracts/PERFORMANCE_MEASUREMENT.md), [고정 smoke 조건](contracts/PERFORMANCE_BASELINE_V4.md)(역사적 debug 논리 서명, 제품 p99 아님), [Task 004 장치 메모](../validation/2026-09-25-task-004-perf-measurement/README.md).
 7. [잠금의 실제 CI 경로](status/LOCK_ENFORCEMENT.md), [위생 목록 — 실행 금지](CODE_HYGIENE_BACKLOG.md).
 8. [원래 32개 항목](status/ORIGINAL_32_STATUS.md), [M 제외 부분 앵커](status/PARTIAL_ANCHOR_COUNTS.md), [#11 태그 보존](status/PR11_PRESERVATION.md).
 9. [범위 편입 결정 기록(2026-09-29)](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) — #79 사용자 병합(`5cf4168`)으로 승인. 선택적 자체 토큰 계층과 확장형 권리·재고·검표 계층. 당시 설계·계획 문서화 한정이며 후속 조건부 범위는 [프로그램 로드맵 R-1~R-11](decisions/PROGRAM_ROADMAP_20260930.md)을 따른다. D-1~D-3의 잠금·해제 조건은 유지하며 범위 승인과 실행 시작을 분리한다. [개발계획 §18](DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입).
 10. [.aiops/program.json](../.aiops/program.json) — 현재 노드 입력·canonical 의존성. [감사·병합 판정 표](aiops/PROGRAM_ASTRA_DELEGATION.md), [pending catalogue](decisions/PROGRAM_ROADMAP_20260930_PENDING.json), [확대 후보](aiops/PROGRAM_EXPANSION_20261002_KO.md) — 외부 선행·별도 채택·release 결정을 완료로 간주하지 않는다. 후보 집계 반영은 별도 채택 뒤 개발계획 §17에 따른다.
+
+## Consumer surface boundaries
+
+[Non-normative consumer surface inventory](status/CONSUMER_SURFACE_BOUNDARY_MAP.md)
+distinguishes HTTP/SDK, commerce calculations, ticket sessions and reward/pool/
+supply/collateral tools, with source citations, prerequisites and replay limits.
+Pool references do not deduplicate accepted calls; synthetic observations are not
+authenticated facts. Unsupported bindings remain NOT_BOUND and semantic SDK
+consumers HOLD. [Builder validation and remaining delivery gates](../validation/2026-11-10-audit29-consumer-surface-boundary-map/README.md).
+
+The [machine-readable consumer binding
+index](status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json) binds all 84 published
+commands and the 13 read names to their pins, statuses and offline journey
+evidence. BOOTSTRAP is not consumer acceptance; reads stay `NOT_BOUND`,
+semantic SDK consumption stays `HOLD_SEMANTIC`, external `kix-commerce-apps`
+expectations are `UNVERIFIED` and SD1 stays User-owned and `OPEN`.
+[Builder validation and actual local results](../validation/2026-11-10-plan-commerce-consumer-binding-index/README.md).
+
+## BOOTSTRAP producer-qualification tuple
+
+[Non-normative identity record](status/PRODUCER_QUALIFICATION_TUPLE_V1.md)
+pins the current 84-command contract-only OpenAPI tuple (40 core + 44 FSM),
+both OpenAPI documents, the generated SDK catalogue, generator, toolchain,
+`bootstrap-2` profile/manifest/sidecar and conformance vectors, and maps every
+command to its core/FSM source and gate route. The 13 owner-decided read names
+stay `NOT_BOUND` because `read-model-reference` is not merged; semantic SDK
+consumption stays `HOLD_SEMANTIC`; SD1 stays `OPEN` with the User. The record
+asserts identity only and makes no semantic, N/N-1, production, audit or User
+approval claim. [Builder evidence and actual local results](../validation/2026-11-10-plan-producer-qualification-tuple-bundle/README.md).
+
+## Local supply reconciliation
+
+[Reusable subprocess client and explicit console mode](../reference/token_reward/README.md#reusable-supply-subprocess-client)
+and [both-mode transcripts and builder validation](../validation/2026-11-10-plan-local-supply-live-console/README.md)
+connect confirmed local requests to one CLI child per calculation, preserving
+complete replies and fencing transport uncertainty. Synthetic calculation only;
+policy remains UNDETERMINED — Astra/User. No runtime or capability-grade change.
+
+[Terminal console usage](../reference/token_reward/README.md#local-supply-console)
+and [file-free console transcripts and builder evidence](../validation/2026-11-09-plan-plan-local-supply-console/README.md)
+cover explicit event composition, separately confirmed reporting and comparison
+against the returned report. Synthetic calculation only; policy remains
+UNDETERMINED — Astra/User, with non-author exact-head review and KTX/KIX CI pending.
+
+[Usage](../reference/token_reward/README.md#local-supply-reconciliation) and
+[builder evidence with file/stdin transcripts](../validation/2026-11-09-plan-local-supply-reconciliation-tool/README.md)
+expose synthetic event reporting and supplied-report reconciliation through the
+unchanged model. Reported alarms and `stop_payout` execute no action. Supply
+policy and operational responses remain UNDETERMINED — Astra/User; no protocol
+command, capability-grade change or runtime activation is implied.
+
+## Local collateral assessment
+
+[Calculator usage](../reference/token_reward/README.md#local-collateral-assessment)
+and [builder evidence with CLI transcripts](../validation/2026-11-08-plan-local-collateral-assessment-tool/README.md)
+cover the existing synthetic U2/TK-12 recognition calculation through JSON and
+guided local input. No collateral adequacy, loan or legal approval is determined.
+Asset selection, collateral ratios and legal enforceability remain unresolved;
+capability grades, protocol commands and runtime activation are unchanged.
+
+## Local commerce calculation console
+
+[Bundle/leg structure guide](../reference/booking_resale_admission/README.md#revising-bundle-structure-and-payment-legs)
+and [builder evidence](../validation/2026-11-10-plan-local-cart-structure-editor/README.md)
+cover ordered insertion/removal/moves, complete leg replacement and separate
+confirmed repricing/replanning/refund proposals. CALCULATION_ONLY;
+executionAuthorized=false. Product policy remains UNDETERMINED — Astra/User;
+legal/accounting treatment UNDETERMINED — User/designated advisers. Independent
+review and exact-head CI remain required; no capability or stage-6 promotion.
+
+[Draft editor evidence](../validation/2026-11-10-plan-local-commerce-draft-editor/README.md)
+and the [draft editing guide](../reference/booking_resale_admission/README.md#editing-a-quote-request-draft)
+cover ordered positional replacement, explicit version/expiry and separate
+recalculation through the frozen driver. CALCULATION_ONLY; product policy remains
+UNDETERMINED — Astra/User; no execution authority or stage-6 scope change.
+
+[Exact decimal-entry evidence](../validation/2026-11-10-plan-local-commerce-decimal-entry/README.md)
+and the [console guide](../reference/booking_resale_admission/README.md#exact-decimal-entry)
+cover explicitly selected decimal quote and payment-leg inputs, caller-supplied
+asset metadata, exact atom previews and separate calculation consent. Calculation-only;
+product policy remains UNDETERMINED — Astra/User and capability grades are unchanged.
+
+[Guided refund line picker evidence](../validation/2026-11-09-plan-local-refund-line-picker/README.md)
+and the [console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+cover returned quote rows, exact atom strings, literal ID selection and separate
+refund calculation confirmation. Explicit JSON selection remains available.
+Calculation-only; refund policy remains UNDETERMINED — Astra/User and
+legal/accounting treatment UNDETERMINED — User/designated advisers; grades unchanged.
+
+[Guided bundle quote composition evidence](../validation/2026-11-09-plan-plan-local-bundle-quote-composer/README.md)
+and the [console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+cover explicit multi-line synthetic quotes with ordered discounts, guided payment
+legs and original-route refund proposals. Calculation-only; policy remains
+UNDETERMINED and capability grades are unchanged.
+
+[Guided split-payment entry evidence](../validation/2026-11-08-plan-local-split-payment-entry/README.md)
+and the [extended console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+cover explicit synthetic leg composition, preview and separate submission.
+Calculation usability only; capability grades and policy decisions are unchanged.
+
+[Console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+and [builder evidence](../validation/2026-11-08-plan-plan-local-commerce-calculation-console/README.md)
+cover explicit synthetic quote, payment-plan and selected-line reversal calculations
+through the unchanged local driver. No booking, settlement or execution authority.
+
+## Local reward subprocess client
+
+[Fixture-free guided opening balances](../reference/token_reward/README.md#fixture-free-guided-reward-initialization)
+and [builder coverage, transcripts and offline checks](../validation/2026-11-10-plan-local-reward-guided-init/README.md)
+cover explicit five-pool input, complete preview/confirmation and a startup-only
+input acknowledgement before business requests. Synthetic scenarios only; no
+funding, token issuance or policy values. Review and exact-head CI remain pending.
+
+[Reward client guide](../reference/token_reward/README.md#live-subprocess-client)
+and [2026-11-06 builder evidence](../validation/2026-11-06-plan-local-reward-stdio-client/README.md)
+cover one explicitly launched synthetic in-memory child, response-derived reads
+and transport fencing. No policy decision, activation or independent review is implied.
 
 ## 계약 전용 OpenAPI
 
@@ -47,16 +164,18 @@
 | [조회·목록 쿼리](contracts/READ_MODEL_QUERIES.md) | 상거래 표면의 조회·목록 의미 | 초안 0.1. 와이어 본문·카탈로그 삽입 없음 |
 | [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md) | 조회·제안·실행 권한. 오프라인 목의 술어 | 초안 0.1. 실행을 켜지 않음. 목은 `reference/ai_delegation/` |
 | [1차 발행 가격·수수료](contracts/MOVE_PRIMARY_ISSUANCE_PRICE_FEE.md) | 1차 발행의 구조·바인딩·산술·사건 의미 | 초안 0.1. 가격·수수료 값은 정하지 않음 |
-| [확장 권리 프로파일](contracts/RIGHTS_SCALE_PROFILE.md) | 확장 프로파일 계약 | 초안 0.1. 미검토·미측정 |
+| [확장 권리 프로파일](contracts/RIGHTS_SCALE_PROFILE.md) | 확장 프로파일 계약 | 0.2 (초안). 미검토·미측정 |
 | [RS-0 결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) | 권리 확장의 객체·재고 권위 | 결정 초안. 확정 조건은 그 문서가 정한다 |
+| [RS-1 착수 권한 기록](decisions/RIGHTS_SCALE_RS1_AUTHORIZATION_20261013.md) | RS-1 공개 경로의 초안 0.1 기준 구현 착수 | owner 결정 기록. 구현 착수 권한만 적으며 프로파일 초안 상태는 바꾸지 않음 |
+| [RS-1 owner 답변 원문](decisions/archive/rs-1.decision_answer.md) | RS-1 착수 권한 기록 §4가 보존하는 owner 답변 원문 | 그 문서가 스스로 적은 대로: "Appended verbatim from the task input." RS-1 병합(#180) 후 이동; Astra 게이트 기록은 이 트리에 없음. 보존 규칙(§2)에 따라 아카이브에 있으며 내용 불변 |
 | [루프백 관문의 브라우저 접근](decisions/GATE_BROWSER_ACCESS_DECISION_20261008.md) | 브라우저가 루프백 관문에 닿는 방식의 비교 | "채택 제안"(그 문서의 표현). 관문 코드 변경 없음 |
 | [I12 절단 증명](decisions/CUT_PROOF_I12_20261008.md) | C_g/H_g 절단, 옛 작성자 차단, 미발행 약정 보존 | 증명 초안, 사용자 병합 때에만 효력. I12는 미완결 |
 | [ADR-0002](adr/0002-token-layer-scope-and-limits.md) | 선택적 자체 토큰 계층의 범위·한계 | ADR (제안 기록). 범위·한계 기록이며 잠금 해제 아님 |
 | [토스 수단 확장 검토](reviews/TOSS_METHOD_EXPANSION_REVIEW.md) | 토스 내 간편결제·가상계좌의 차이 | 문서 전용 검토 (2026-10-05) |
 | [공개 엔드포인트 준비 계획](operations/PUBLIC_ENDPOINT_READINESS_PLAN.md) | 공개 운영 엔드포인트를 열기 전의 조건 | 문서 전용 계획. 공개 엔드포인트 잠금 닫힘 유지 |
-| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | TL-3 onchain·TL-4 행은 2026-10-09 위치 동기화 기준 `5e20a467160148ad5c2debfe357dfb8da084a30a`. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`. 비-TL 잔여 행은 2026-10-12 `3ce6e4975b7f439d67482451bb47a22c940add26` 기준. 그 외 행은 2026-10-06 `2554173` 스냅샷 |
+| [현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md) | 경로별 근거 색인 | 행별 위치 동기화 기준: TL·catalogue·SDK `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b·EV-V5/EV-DELEG/EV-RS `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14), RS-4 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16), RS-0·RS-5 / testnet keys·P AI delegation `aca49f6e5498291c1f221185df1ee5cdbf333342`(2026-10-16), EV-SET·EV-CREDIT·EV-IR·EV-BRA·F04·P Wave5 credit `244595db1524cbb1a01148baa07d6d28cd1b8dc6`(2026-10-17), EV-READY `08b317e5096893432116e41c8312697793500cfe`(2026-10-18), EV-BRA·EV-V5·EV-READY·RS-0·RS-3a·RS-3b·RS-4·TL-3 offchain·TL-4와 RS/TL evidence-map 안내·checker 목록 `01a86f66f1a2a0de98ae00f89e49d45ec07ec8da`(2026-10-20), EV-SET·EV-READY·EV-V5·K1·K2·K5·P AI delegation·RS-4·TL-3 offchain·protocol read projection evidence와 evidence-map 안내·checker 목록 `a114b5bd67164dd1264bc4ad838566809b5bc0b4`(2026-10-21), EV-RS·EV-READY·EV-V5·EV-BCS와 evidence-map 안내·checker 목록 `f6558996c611f74b88c60928f5b285c553303c14`(2026-10-22), RS-4·K5·EV-RS와 evidence-map 안내·checker 목록 `2393988eeca984f12f0819ac56b6870be1a5832f`(2026-10-23), EV-READY·EV-BRA·EV-SET·EV-CREDIT·RS-4와 checker 목록 `c7b470fc39ad6f6aa6ad59c18b5595cde41a7200`(2026-10-23), EV-RS·TL-3 offchain `7327a00a68ef6efa81a795173af5e4572ccd90ef`(2026-10-24), EV-BRA·EV-SET·EV-CREDIT·TL-3 offchain·P AI delegation `d6a6a10f3f5fbaf31f54ad676a9b5e36c0e3d313`(2026-10-25). 그 외 행은 2026-10-06 `2554173` 스냅샷 |
 
-[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a` 기준으로 맞췄다. 그 이전에 맞춘 TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`다. 비-TL 잔여 행은 2026-10-12에 `3ce6e4975b7f439d67482451bb47a22c940add26` 기준으로 다시 맞췄다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
+[현재 capability register](status/CURRENT_CAPABILITY_REGISTER.md)의 위치 동기화 기준은 행별로 다르다. TL·catalogue·SDK 행은 `eb14da2a6c5b5366cd4aed855bd453dcb4d79a42`(2026-10-09), TL-3 onchain·TL-4 행은 `5e20a467160148ad5c2debfe357dfb8da084a30a`(2026-10-09), 비-TL 잔여 행은 `3ce6e4975b7f439d67482451bb47a22c940add26`(2026-10-12), TL-L/TL-5 행은 `aba875635f682bb9914e0dee016ced58e130cc04`(2026-10-13), K2·RS-1·RS-2·RS-3a·RS-3b와 새 EV-V5·EV-DELEG·EV-RS 행은 `ced0e2f42c0491753db91acf87bd61574eb37ce4`(2026-10-14) 기준이고, RS-4 L1→L2→L3 행은 `ea867668696d6b1114a443d0fe4e840d96b948f6`(2026-10-16) 기준이고, RS-0·RS-5 / testnet keys·P AI delegation 행은 `aca49f6e5498291c1f221185df1ee5cdbf333342`(2026-10-16) 기준이고, EV-SET·EV-CREDIT·EV-IR·EV-BRA·F04·P Wave5 credit 행은 `244595db1524cbb1a01148baa07d6d28cd1b8dc6`(2026-10-17) 기준이고, EV-READY 행은 `08b317e5096893432116e41c8312697793500cfe`(2026-10-18) 기준이고, EV-BRA·EV-V5·EV-READY·RS-0·RS-3a·RS-3b·RS-4·TL-3 offchain·TL-4 행과 RS/TL evidence-map 안내·checker 목록은 `01a86f66f1a2a0de98ae00f89e49d45ec07ec8da`(2026-10-20) 기준이고, EV-SET·EV-READY·EV-V5·K1·K2·K5·P AI delegation·RS-4·TL-3 offchain·protocol read projection evidence 행과 evidence-map 안내·checker 목록은 `a114b5bd67164dd1264bc4ad838566809b5bc0b4`(2026-10-21) 기준이고, EV-RS·EV-READY·EV-V5·EV-BCS 행과 evidence-map 안내·checker 목록은 `f6558996c611f74b88c60928f5b285c553303c14`(2026-10-22) 기준이고, RS-4·K5·EV-RS 행과 evidence-map 안내·checker 목록은 `2393988eeca984f12f0819ac56b6870be1a5832f`(2026-10-23) 기준이고, EV-READY·EV-BRA·EV-SET·EV-CREDIT·RS-4와 checker 목록은 `c7b470fc39ad6f6aa6ad59c18b5595cde41a7200`(2026-10-23) 기준이고, EV-RS·TL-3 offchain 행은 `7327a00a68ef6efa81a795173af5e4572ccd90ef`(2026-10-24) 기준이다. EV-BRA·EV-SET·EV-CREDIT·TL-3 offchain·P AI delegation 행은 `d6a6a10f3f5fbaf31f54ad676a9b5e36c0e3d313`(2026-10-25) 기준이다. 나머지는 2026-10-06 `2554173` 스냅샷이다.
 
 같은 날짜의 검증 기록:
 
@@ -126,6 +245,299 @@
 | [조회 원천 지도](contracts/READ_MODEL_SOURCE_MAP.md) | 승인된 13개 조회 이름의 소스 표면·보존 술어·카탈로그 기작 | 입력 자료. 결정·구현·카탈로그 변경 없음 |
 | [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | 절단 증명의 명제 P1–P4·가정 A1–A10별 기존 근거 대응표 | 빌더 작성 검토 자료 묶음. 독립 검토·수락·상태 변경 아님. I12는 미완결 |
 
+## 2026-10-13~15 병합 기록 색인 — 위치 안내만
+
+이 절은 문서·기록의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 기록 | 다루는 것 | 상태(기록이 스스로 적은 대로) |
+|---|---|---|
+| [k-stage2-v5-impl 기록](../validation/2026-10-13-k-stage2-v5-impl/README.md) | 잠금 v4 밖 새 in-memory v5 커널 slice | This record claims `merge-ready` for nothing; the node state is implementation complete locally, awaiting exact-head CI, non-author review, Astra's architecture audit and the user merge. |
+| [rs-1-public-path 기록](../validation/2026-10-14-rs-1-public-path/README.md) | 확장 프로파일 공개 경로 Move 패키지·모델·localnet | `docs/contracts/RIGHTS_SCALE_PROFILE.md` stays draft (`초안`) until Astra review at the RS-1 ARCHITECTURE gate. |
+| [rs-1-issuercap-probe 기록](../validation/2026-10-14-rs-1-issuercap-probe/README.md) | `IssuerCap` 동시 사용 직렬화 localnet 프로브 | This node records the measured fact; it does not pick an option, and the cap-split RS-C01 test remains closed until that choice is made. |
+| [rs-2-private-path 기록](../validation/2026-10-14-rs-2-private-path/README.md) | 루트 규칙·depth-10 회로·Verifier·manifest v2 | **Everything here is a localnet fixture.** |
+| [rs-3a-delegation-primitives 기록](../validation/2026-10-14-rs-3a-delegation-primitives/README.md) | 페이지 단위 grant·GrantControl·회수 cut | **Everything here is a localnet fixture.** |
+| [rs-3b-delegated-exec 기록](../validation/2026-10-14-rs-3b-delegated-exec/README.md) | 페이지↔커널·GA 카운터 대응 in-memory crate | No delegated execution is enabled (`runtime/ARCHITECTURE.toml` keeps `delegated_execution_enabled = false` and the architecture verifier still passes). |
+| [docs-index-check-validation-records 기록](../validation/2026-10-15-docs-index-check-validation-records/README.md) | `validation/*/README.md`의 색인 연결 검사 추가 | This record extends a checker and its allowlist only; it retroactively indexes no historical record, raises no evidence grade, and marks nothing reviewed or operational. |
+| [rs-4-l1-load 기록](../validation/2026-10-15-rs-4-l1-load/README.md) | 1,024-slot 단계 부하 localnet 측정 — 공개·비공개·위임 경로 분리 | **Everything here is exploration data.** |
+| [kix-kernel-v5](../runtime/crates/kix-kernel-v5/README.md) | 새 in-memory v5 커널 crate | It is not a durable service, a storage engine, or a production runtime. |
+| [kix-delegated-exec](../runtime/crates/kix-delegated-exec/README.md) | 위임 실행 map crate | It is not a service, not a chain client, not a storage engine, and not a production runtime. |
+
+## 2026-10-16 결정 제안 색인 — 위치 안내만
+
+이 절은 문서의 위치만 안내한다. 승인 문서가 아니며, 확정 조건은 그 문서가 정한다.
+
+| 문서 | 다루는 것 | 상태(문서가 스스로 적은 대로) |
+|---|---|---|
+| [Sui testnet 키 관리 결정 제안](decisions/TESTNET_KEY_MANAGEMENT_DECISION_PROPOSAL_20261016.md) | 장래 testnet 배포가 필요로 할 키 보관, 교체, 사고 대응, 운영 주체의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 키도 비밀도 만들지 않고 배포하지 않으며 testnet 잠금은 잠긴 채로 남는다. |
+| [위임 실행 활성화 결정 제안](decisions/AI_DELEGATION_EXECUTION_DECISION_PROPOSAL_20261016.md) | 위임 실행을 언제, 어떤 선행조건·I11 한도·회수 보장으로 켤 수 있는지의 형태 | Status: proposed. This is a User decision document. It takes effect only when the User merges it. 위임 실행은 꺼진 채로 남고 한도·이름·기간 값은 비어 있다. |
+| [AI 위임 계층 매트릭스](status/AI_DELEGATION_LAYER_MATRIX.md) | AI 위임 계약 §6의 DLG-01..DLG-36 각각에 대해 목 시험, 체인 grant, executor map, readiness wrap이 담은 것 | Builder-authored map, not a review or acceptance. 어느 계층도 충분하다고 평가하지 않으며 인용된 소스 밖의 실행·한도·회수 보장을 주장하지 않는다. |
+| [RS 술어 증거 지도](status/RS_PREDICATE_EVIDENCE_MAP.md) ([검증 기록](../validation/2026-10-16-rs-predicate-evidence-map/README.md)) | 권리 확장 프로파일 §8의 RS-C01..RS-C17과 §9의 RR-1..RR-6 각각에 대해 지금 있는 Move 시험, Python 모델 시험, Rust 메모리 시험, localnet 기록 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 어떤 간극도 닫지 않는다. |
+| [RS 영향표 증거 지도](status/RS_IM_EVIDENCE_MAP.md) ([검증 기록](../validation/2026-10-17-rs-im-evidence-map/README.md)) | 권리 확장 프로파일 §12의 영향표 IM-01..IM-30 각각에 대해 처리 단어(유지·변경·새 프로파일·손대지 않음)와 지금 있는 Move 시험, Python 모델 시험, Rust 시험, localnet 기록, 손대지 않은 파일의 증거 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 어떤 간극도 닫지 않는다. |
+| [계약 오류 코드 커버리지](status/CONTRACT_ERROR_CODE_COVERAGE.md) ([검증 기록](../validation/2026-10-18-contract-error-code-coverage/README.md), [FSM 확장 기록](../validation/2026-10-19-bra-fsm-error-code-coverage/README.md), [예약 §9 기록](../validation/2026-10-23-bra-section9-error-code-coverage/README.md)) | 정산·예매/리셀/입장·F04·AI 위임 계약의 오류 코드 표 일곱 개(세 FSM 추가 표 포함)와 예약 §9 인라인 표의 승인된 10개 코드 각각에 대해 목·FSM이 던지는 자리와 그 코드를 이름으로 대는 시험 | Builder-authored map, not a review or acceptance. Astra 아키텍처 검토가 아니며 등급을 올리지 않고 운영 수는 0으로 남는다. 이름이 시험 본문에 있다는 것만 보이고 시험이 무엇을 단언하는지는 보이지 않는다. |
+
+같은 날짜의 검증 기록:
+
+- [testnet-key-management-decision](../validation/2026-10-16-testnet-key-management-decision/README.md) — Document only. No code, no new tests, no policy numbers, no new protocol command, no key. The recommendation is not acted on.
+- [ai-delegation-execution-decision](../validation/2026-10-16-ai-delegation-execution-decision/README.md) — Document only. No code, no new tests, no policy values, no new protocol command. `delegated_execution_enabled` stays `false`. The recommendation is not acted on.
+- [plan-register-index-sync-20261016](../validation/2026-10-16-plan-register-index-sync-20261016/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [feature-ir-plan-limit-edge-tests](../validation/2026-10-16-feature-ir-plan-limit-edge-tests/README.md) — Characterization of the stated FeatureIR plan limits (1,024 stages, depth 64, 100,000 nodes): in-memory validator tests, not a wire, exporter, Polars/DuckDB or GPU result, and not a new budget or policy value.
+- [audit7-plan-register-index-sync-20261016b](../validation/2026-10-16-audit7-plan-register-index-sync-20261016b/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [audit7-docs-index-allowlist-prune](../validation/2026-10-16-audit7-docs-index-allowlist-prune/README.md) — This record removes four allowlist entries and adds one checker rule; it retroactively indexes nothing, raises no evidence grade, and marks nothing reviewed or operational.
+- [ci-wire-i12-proof-ids-check](../validation/2026-10-16-ci-wire-i12-proof-ids-check/README.md) — This record raises no evidence grade, marks nothing reviewed or operational, and does not close I12.
+- [delegation-layer-gap-matrix](../validation/2026-10-16-delegation-layer-gap-matrix/README.md) — Builder-authored map and stdlib checker; no binding designed, no command, flag, limit or value added, no layer graded sufficient, nothing enabled.
+- [settlement-seeded-property-suite](../validation/2026-10-16-settlement-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F01-F03 settlement mock and FSM; no mock or contract change, no grade change, no real payment.
+
+## 2026-10-17 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [booking-resale-admission-seeded-property](../validation/2026-10-17-booking-resale-admission-seeded-property/README.md) — Builder-authored seeded suite and owner-authorized legacy atomicity characterization (MOCK only; resumed 2026-10-23). No grade change or independent review.
+- [credit-f04-seeded-property-suite](../validation/2026-10-17-credit-f04-seeded-property-suite/README.md) — Builder-authored seeded property tests for the F04 credit mock and FSM; MOCK only, no mock or contract change, no grade change, no real funds, not a regulated credit product.
+- [feature-semantics-v1-edge-fixtures](../validation/2026-10-17-feature-semantics-v1-edge-fixtures/README.md) — Builder-authored scalar edge tests for kix-feature-semantics with a section-to-test map; in-memory helpers only, no src change, no grade change, no tolerance policy chosen.
+- [readiness-journal-byte-sweep](../validation/2026-10-17-readiness-journal-byte-sweep/README.md) — Builder-authored byte-level tear and flip sweep of the local readiness journal; tests only, no store or contract change, no grade change, no durability or production claim.
+- [booking-resale-adopt-issued-atomicity-fix](../validation/2026-10-17-booking-resale-adopt-issued-atomicity-fix/README.md) — Builder-authored all-or-nothing fix for adopt_issued in the resale and admission machines; no command, error code, field or policy change, no accepted-path change, no grade change, no durability or production claim.
+- [audit8-plan-register-index-sync-20261017](../validation/2026-10-17-audit8-plan-register-index-sync-20261017/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [ai-delegation-seeded-property-suite](../validation/2026-10-17-ai-delegation-seeded-property-suite/README.md) — Builder-authored seeded property tests for the AI delegation mock; MOCK only, no mock or contract change, no grade change, no AI service, no grant on chain, no execution.
+- [delegated-exec-seeded-differential](../validation/2026-10-17-delegated-exec-seeded-differential/README.md) — Builder-authored seeded differential and invariant test for the in-memory delegated-execution map against bare page kernels; tests and record only, no src change, no grade change, in-memory only, delegated execution stays disabled.
+
+## 2026-10-18 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [readiness-crash-point-sweep](../validation/2026-10-18-readiness-crash-point-sweep/README.md) — Builder-authored command-level crash-point sweep (40 cases) of the readiness-wrapped FSM machines; tests and record only, no readiness source, format or contract change, no grade change, no power-loss, fsync or production claim.
+- [audit8-rs-map-rs-c01-issuercap-open-cell](../validation/2026-10-18-audit8-rs-map-rs-c01-issuercap-open-cell/README.md) — Builder-authored wording fix in one cell of the RS predicate evidence map; no test, option choice, profile/register/checker change, no grade change.
+- [audit8-readiness-conformance-sweep-limit-note](../validation/2026-10-18-audit8-readiness-conformance-sweep-limit-note/README.md) — Builder-authored wording in the readiness conformance doc and one register cell; no test, store, format or contract change, no classification decision, no grade change.
+- [audit8-loop-node-canonical-crosswalk](../validation/2026-10-18-audit8-loop-node-canonical-crosswalk/README.md) — Builder-authored textual crosswalk of merged loop-proposed nodes to overlapping canonical `.aiops/program.json` nodes ([표](status/LOOP_NODE_CROSSWALK.md)); no counting decision, no test or code change, no grade change.
+
+## 2026-10-19 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [v5-lifecycle-seeded-model-test](../validation/2026-10-19-v5-lifecycle-seeded-model-test/README.md) — Builder-authored seeded model test for the v5-only lifecycle surface (terminate, holds, reclaim report); tests and record only, no src or contract change, no grade change, oracle not independent.
+- [rs-model-gap-closure](../validation/2026-10-19-rs-model-gap-closure/README.md) — Builder-authored in-memory tests closing the Python/Rust-closable PARTIAL gaps of the RS predicate and IM evidence maps ([술어 지도](status/RS_PREDICATE_EVIDENCE_MAP.md), [영향표 지도](status/RS_IM_EVIDENCE_MAP.md)); tests, row/status/counts updates and record only, no profile/Move/vector/contract change, no grade change, operational count stays 0.
+- [tl-predicate-evidence-map](../validation/2026-10-19-tl-predicate-evidence-map/README.md) — Builder-authored, checker-backed token-layer predicate evidence map ([TL predicate evidence map](status/TL_PREDICATE_EVIDENCE_MAP.md)); no independent verification, no package, no testnet/mainnet, no real funds, operational count stays 0.
+- [bra-fsm-error-code-coverage](../validation/2026-10-19-bra-fsm-error-code-coverage/README.md) — Builder-authored extension of the contract error-code coverage map and checker to the three FSM-added tables (booking sections 10.8 and 11.6, F04 section 7.8) plus six tests for seven unasserted codes; no contract, mock, FSM or command change, no grade change.
+
+## 2026-10-20 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [plan-rs-grant-cut-order-tests](../validation/2026-10-20-plan-rs-grant-cut-order-tests/README.md) — Builder-authored Move tests ordering the grant cut against delegated paid issue and delegated-page admission consume in both serial orders ([술어 지도](status/RS_PREDICATE_EVIDENCE_MAP.md) rows RS-C06/RS-C07); tests, row text updates and record only, no profile/Move-source/vector/contract change, no grade change, operational count stays 0.
+- [plan-register-index-sync-20261020](../validation/2026-10-20-plan-register-index-sync-20261020/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [adapter-identity-evidence-map](../validation/2026-10-20-adapter-identity-evidence-map/README.md) — Builder-authored evidence map for [어댑터 정체성 계약](contracts/ADAPTER_EVENT_IDENTITY.md) §§2–4 ([지도](status/ADAPTER_IDENTITY_EVIDENCE_MAP.md)); map, checker and record only, no adapter code, no schema/domain id, no contract change, every open input stays UNDETERMINED.
+- [token-reward-readiness-wrap](../validation/2026-10-20-token-reward-readiness-wrap/README.md) — Builder-authored local readiness journal wrap for the token-reward FSM plus restart/fault tests; wrap, registration, tests and record only, no FSM/contract/command change, `durable` and the truth/production labels stay false, `MOCK_TOKEN_REWARD_ONLY` provenance and no-real-payout non-claims unchanged.
+- [v5-transition-evidence-map](../validation/2026-10-20-v5-transition-evidence-map/README.md) — Builder-authored per-transition evidence map from the lifecycle contract §§5–6 to the `kix-kernel-v5` test tree ([지도](status/V5_TRANSITION_EVIDENCE_MAP.md)); map, checker and record only, no src or contract change, stopped transitions stay STOPPED, no open input resolved, no grade change.
+
+- [ai-delegation-wrap-conformance](../validation/2026-10-20-ai-delegation-wrap-conformance/README.md) — Builder-authored adapter conformance scenarios and six AI delegation crash-point cells; tests and record only, no wrap, journal or contract change, execution disabled and durable false, no grade change.
+- [stage5-host-preflight-checker](../validation/2026-10-20-stage5-preflight/README.md) — Builder-authored stdlib-only read-only preflight checker (`scripts/check_stage5_host.py`) for the stage-5 pinned-host prerequisites named in the `k-stage5-durable-tx` DECISION_REQUIRED record; checker and record only, evidence preparation for option 1, no provisioning, no option selected, no acceptance run, no grade change.
+- [token-reward-rejection-atomicity](../validation/2026-10-20-token-reward-rejection-atomicity/README.md) — Builder-authored rejection-atomicity audit for the token-reward FSM repeating the #219 reservation pattern; test module and record only, no FSM/contract/command change, deterministic rejections leave no trace against a control machine, late-fault seams recorded as class B characterizations, no grade change.
+- [read-model-contract-fixture-prep](../validation/2026-10-20-read-model-contract-fixture-prep/README.md) — Builder-authored candidate fixture vectors for the 13 approved read-model queries ([fixture dir](../reference/read_model/)); generator, vectors, self-check and record only, no query implementation, no wire binding, no catalogue change — candidate evidence pending the `read-model-reference` merge, not conformance evidence.
+
+## 2026-10-21 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [v5-evidence-citation-guard](../validation/2026-10-21-v5-evidence-citation-guard/README.md) — Builder-authored checker regression fix for incomplete test citations in both v5 fixture columns; citation validity only, map statuses unchanged, no semantic coverage, independent review or lifecycle approval claim.
+- [plan-rs-ptau-header-tests](../validation/2026-10-21-plan-rs-ptau-header-tests/README.md) — Source-informed phase-1 header parsing characterizations with synthetic buffers and dependency-free CI invocation; no complete PTAU validation, ceremony, cryptographic-verification or policy-value claim.
+- [plan-rs-zk-encoding-regressions](../validation/2026-10-21-plan-rs-zk-encoding-regressions/README.md) — Source-informed public-byte encoder characterizations with fabricated coordinates and dependency-free CI invocation; no curve-membership, proof-validity, independent cryptographic-verification or policy-value claim.
+- [plan-rs-manifest-offline-regressions](../validation/2026-10-21-plan-rs-manifest-offline-regressions/README.md) — Source-informed synthetic metadata regressions for existing manifest/key guards, with dependency-free CI invocation; no cryptographic verification, policy value, grade or operational-readiness claim.
+
+- [settlement-multi-payee-refund-corpus](../validation/2026-10-21-settlement-multi-payee-refund-corpus/README.md) — Builder-authored seeded multi-payee refund corpus for the F01-F03 settlement mock and FSM; tests and record only, no mock, FSM or contract change, no grade change, no real payment.
+- [plan-register-index-sync-20261021](../validation/2026-10-21-plan-register-index-sync-20261021/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [reward-wrap-conformance](../validation/2026-10-21-reward-wrap-conformance/README.md) — Builder-authored adapter conformance scenarios and twelve reward crash-point cells; tests and record only, no wrap, journal or contract change, `durable` and the truth/production labels stay false, no grade change.
+- [readiness-runtime-evidence-map](../validation/2026-10-21-readiness-runtime-evidence-map/README.md) — Builder-authored clause-to-fixture evidence map for [준비 런타임 경계](contracts/READINESS_RUNTIME.md) ([지도](status/READINESS_RUNTIME_EVIDENCE_MAP.md)); map, checker and record only, no readiness/gate/contract change, the three class-B items and six `보류` stay OPEN with their owners, no grade change, operational count stays 0.
+- [readiness-checker-partial-fixture](../validation/2026-10-21-readiness-checker-partial-fixture/README.md) — Builder-authored checker regression correction: validated synthetic PARTIAL ownership fixture and complete self-tests on a zero-PARTIAL in-memory map; real map and all nine OPEN rows unchanged, at that record's base the receipt/audit node required owner-approved input revision, no grade change.
+- [kix-types-boundary-fixtures](../validation/2026-10-21-kix-types-boundary-fixtures/README.md) — Builder-authored boundary fixtures for the kix-types constructors and edges; tests and record only, no src or contract change, no grade change, source-informed and not independent, no completeness claim.
+- [astra-decision-sheets-rs-stage5](../validation/2026-10-21-astra-decision-sheets-rs-stage5/README.md) — Builder-authored second decision sheet ([시트](status/ASTRA_DECISION_SHEETS_RS_STAGE5_KO.md)) collecting the RS profile's named-but-unsheeted open items (IssuerCap choice, test-only fixture operational values, RS-C02 sentence 2, the stage-5 record's Astra items); document and record only, no value chosen, no contract, decision, program or source change, every cited value stays UNDETERMINED/DECISION_REQUIRED with its named owner, no grade change.
+- [plan-rs-witness-offline-regressions](../validation/2026-10-21-plan-rs-witness-offline-regressions/README.md) — Synthetic public-event reconstruction regressions with injected object reads for RR-4 / IM-19; passes locally under Node 24 and, at that record's head, no workflow ran it (wired since; see the next entry), no new localnet/ZK result, no grade or operational-value change.
+- [plan-rs-witness-ci-wiring](../validation/2026-10-21-plan-rs-witness-ci-wiring/README.md) — Subsequent CI-wiring record: the protocol rights-scale job explicitly invokes the existing offline witness-reconstruction suite under Node 24; local execution is recorded separately from pending exact-head CI, with no grade, gap, owner or operational-value change. The preceding entry describes the earlier snapshot.
+- [plan-rs-spend-witness-offline-tests (2026-10-21)](../validation/2026-10-21-plan-rs-spend-witness-offline-tests/README.md) — Synthetic offline spendWitness construction regressions for IM-14/IM-15 and additive CI invocation within EV-RS; shared Poseidon, no circuit verification, independent cryptographic proof, RS-4 measurement or operational-value change.
+
+## 2026-10-22 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [plan-rs-offline-test-entrypoint](../validation/2026-10-22-plan-rs-offline-test-entrypoint/README.md) — Repair the offline package entry point to invoke all five existing suites; file-level and named-case results recorded separately, no tests, dependencies, workflows, policy values or qualification claims added.
+- [plan-rs-admission-packet-offline-tests](../validation/2026-10-22-plan-rs-admission-packet-offline-tests/README.md) — Synthetic offline packet-construction and proof-wrapper rejection regressions through the unchanged admissionProof implementation; test-only dependency mocks, no cryptographic privacy, gate transport, localnet or complete IM-19 closure claim. Operational parameters remain UNDETERMINED with Astra as owner.
+- [plan-rs-mint-wrapper-offline-tests](../validation/2026-10-22-plan-rs-mint-wrapper-offline-tests/README.md) — Synthetic offline mintNote construction and public-signal binding regressions for IM-14 and the mint-specific portion of IM-27; source-informed with shared Poseidon, no circuit validity, cryptographic independence or operational-readiness claim. Owner policy values remain UNDETERMINED with their existing owners.
+- [plan-rs-verifier-binding-offline-tests](../validation/2026-10-22-plan-rs-verifier-binding-offline-tests/README.md) — Synthetic offline artifact-hash/pin and verifier-object binding regressions through the unchanged artifacts and checkVerifier (IM-17 / IM-27 evidence); in-memory file map, fake RPC and explicit Verifier.parse stub, so no decoder, actual-chain or operational-qualification claim. Operational parameters and the Verifier ID pin remain UNDETERMINED with their existing owners.
+- [plan-register-index-sync-20261022](../validation/2026-10-22-plan-register-index-sync-20261022/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+- [ci-wire-stage5-host-preflight-selftest](../validation/2026-10-22-ci-wire-stage5-host-preflight-selftest/README.md) — CI wiring of the stage-5 host preflight checker's `--self-test` into the unguarded stdlib step; the plain invocation is deliberately not wired because it would report the CI runner's host, which is not the pinned stage-5 host; workflow line, comment, register sentence and record only, no acceptance run, no provisioning, no option selected, no grade change.
+- [rs4-load-host-conditions-recorder](../validation/2026-10-22-rs4-load-host-conditions-recorder/README.md) — Stdlib sampler and summarizer of dynamic host conditions (load average, MemAvailable, uptime, wall-clock gaps) for future RS-4 load runs, with synthetic-input tests and the procedure for attaching the summary to a record; not wired into the runner, no threshold or verdict, the acceptable load level stays UNDETERMINED (User); not a measurement, not an L2 attempt, not an option choice, no grade change.
+- [rs-offline-suite-evidence-sync](../validation/2026-10-22-rs-offline-suite-evidence-sync/README.md) — Builder-authored citation sync: the eight CI-run offline Node suites cited by `.test.mjs::<node:test name>` in the [RS predicate map](status/RS_PREDICATE_EVIDENCE_MAP.md) and [RS impact-table map](status/RS_IM_EVIDENCE_MAP.md), both checkers extended to resolve such names (existence only); wording corrected where a sentence became false, no status change, no test, CI, contract or source change, no exact-head CI claim, no grade change.
+- [open-user-decisions-ledger](../validation/2026-10-22-open-user-decisions-ledger/README.md) — Builder-authored in-repo ledger ([원장](status/OPEN_USER_DECISIONS_20261022.md)) of the five open `DECISION_REQUIRED` records (`k-stage5-durable-tx` host, `rs-4-l2` host, readiness negative-controls option A/B, readiness receipt/audit checker prerequisite, BRA seeded-property class C stop), one row each with owner, options and recommendation as its record states them plus HEAD-verified repo facts since; chooses no option, assigns no value, marks nothing reviewed, the owner must re-trigger a node outside the builder session; document and record only, no node state change, no grade change.
+
+## 2026-10-23 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [readiness-receipt-audit-tests](../validation/2026-10-23-readiness-receipt-audit-tests/README.md) — Deterministic loopback receipt replay, checksum-valid receipt mismatch, append-failure fencing and actual replayed/inactive/diverged audit tests; [readiness map](status/READINESS_RUNTIME_EVIDENCE_MAP.md) updates only REC-CORE-COMMIT and OBS-AUDIT, nine OPEN rows/owners preserved. Retains main's merged synthetic-PARTIAL checker self-test correction; no production-durability claim.
+
+- [settlement-credit-rejection-atomicity](../validation/2026-10-23-settlement-credit-rejection-atomicity/README.md) — Builder-authored rejection-atomicity audit for the settlement and credit machines repeating the #219/#228 pattern; two test modules and a record only, no FSM/mock/contract/command change, deterministic rejections leave no trace against a control machine, late-fault seams recorded as class B characterizations, no grade change.
+
+- [plan-register-index-sync-20261023](../validation/2026-10-23-plan-register-index-sync-20261023/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+
+- [plan-rs-summary-arithmetic-tests](../validation/2026-10-23-plan-rs-summary-arithmetic-tests/README.md) — Synthetic offline RS-4 summary arithmetic and CSV regressions with fixed expected values; source-informed characterization only, no measurement, L2/L3 execution, performance claim or policy value change.
+
+- [plan-readiness-migration-edge-tests](../validation/2026-10-23-plan-readiness-migration-edge-tests/README.md) — Offline explicit-migration predicate regressions: individual missing fields, strict false labels, invalid batch suffixes, nested preservation and copy isolation; tests and record only, no migration/contract/map/CI change, no grade or operational-readiness claim.
+
+- [owner-stop-handoff-addendum](../validation/2026-10-23-owner-stop-handoff-addendum/README.md) — Document-only supplement for exactly four October 23 owner stops; attributed source reports and citation/preservation checks, no option selection, node disposition, provisioning or status change.
+
+- [fsm-returned-data-isolation](../validation/2026-10-23-fsm-returned-data-isolation/README.md) — Builder-authored deterministic offline settlement/credit first-result replay regressions and source-informed view/journal copy-isolation characterizations; MOCK-only tests and record, no implementation or contract change, no grade increase.
+
+- [bra-section9-error-code-coverage](../validation/2026-10-23-bra-section9-error-code-coverage/README.md) — Builder-authored BRA-RES9 coverage for ten reservation §9 inline codes under owner-approved Option (c); fixed exclusions for six pass-through codes already mapped under BRA/SET, existing tests cited, no contract/mock/FSM or checker taxonomy change, no grade change.
+
+- [audit14-plan-register-index-sync](../validation/2026-10-23-audit14-plan-register-index-sync/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+
+- #266 readiness negative controls — [CONFORMANCE.md §Negative controls (fault sensitivity)](../readiness/CONFORMANCE.md), [test_conformance_sensitivity.py](../readiness/test_conformance_sensitivity.py); no validation record exists for this merge.
+
+- [audit14-open-decisions-closure](../validation/2026-10-23-audit14-open-decisions-closure/README.md) — Dated closure note at #269 for all nine ledger/supplement items: four resolved by merges #266–#269, five still open with unchanged owners/options by reference; no option selection or node state change.
+
+- [audit14-loop-node-crosswalk-refresh](../validation/2026-10-23-audit14-loop-node-crosswalk-refresh/README.md) — [Loop-node crosswalk](status/LOOP_NODE_CROSSWALK.md) refreshed through #269 using its existing selection rule: 30 added rows and individual range accounting; canonical counting remains `DECISION_REQUIRED · Astra`, no node status change.
+
+- [rs-map-gap-closure-batch-2](../validation/2026-10-23-rs-map-gap-closure-batch-2/README.md) — RS-C09 public-then-shield and IM-18 verifier continuity Move regressions; IM-19 source-informed gate-signature characterization. IM-18 becomes COVERED_MODEL_OR_MEMORY; no register grade or operational-value change.
+
+## 2026-10-24 검증 기록 색인 — 위치 안내만
+
+이 절은 기록의 위치만 안내한다. 승인 문서가 아니며, 각 기록의 효력은 그 기록이 스스로 적은 대로다.
+
+- [resale-admission-rejection-atomicity](../validation/2026-10-24-resale-admission-rejection-atomicity/README.md) — Builder-authored offline per-code rejection/control/source comparisons and labeled fault/clock-skew characterizations; no FSM, contract, policy or grade change.
+
+- [reward-snapshot-isolation](../validation/2026-10-24-reward-snapshot-isolation/README.md) — Builder-authored deterministic offline reward nested snapshot isolation and historical replay evidence; MOCK-only tests and record, no FSM/contract/register change, no grade increase.
+
+- [plan-register-index-sync-20261024](../validation/2026-10-24-plan-register-index-sync/README.md) — Location pointers only: no new approval, no decision text, no grade raise.
+
+- [plan-register-index-sync-20261025](../validation/2026-10-25-plan-register-index-sync-20261025/README.md) — Location pointers only: no new approval, no decision text, no grade raise; crosswalk refreshed through #280, canonical counting remains `DECISION_REQUIRED · Astra`.
+
+- [bra-aid-returned-data-isolation](../validation/2026-10-24-bra-aid-returned-data-isolation/README.md) — Builder-authored offline BRA first-result replay and AI delegation current-record replay isolation tests; copy characterization only, no FSM/contract/policy change or grade increase.
+
+- [aid-rejection-atomicity](../validation/2026-10-25-aid-rejection-atomicity/README.md) — Builder-authored offline per-code AI delegation full-state rejection, readiness journal restore and control-progress regressions; no mock, contract, execution or grade change.
+
+- [restore-fingerprint-equivalence](../validation/2026-10-25-restore-fingerprint-equivalence/README.md) — Builder-authored offline omitted/default replay comparisons across journal restore in five reference suites; class A predicates and class B reward fingerprint characterization, no FSM/contract/policy change or grade increase.
+
+- [plan-section5-quote-completeness](../validation/2026-10-25-plan-section5-quote-completeness/README.md) — Builder-authored re-quote of negation-stripped §5 adoption-quote cells as complete one-line clauses plus one preamble rule sentence; no status/effect column, register, crosswalk or record change, no grade change.
+
+- [audit15-open-decisions-closure](../validation/2026-10-25-audit15-open-decisions-closure/README.md) — Dated follow-up closure at #282: A3 resolved by #274, A4 still open (no #276 disposition), no new stops in #274–#280; no option selection or node state change.
+
+- [audit15-reference-test-sibling-path-guard](../validation/2026-10-25-audit15-reference-test-sibling-path-guard/README.md) — Sibling sys.path insertion moved to index 1 in three reference test modules plus stdlib import-origin guards; no FSM/mock/contract/CI change, no grade change.
+
+- [settlement-contract-clause-evidence-map](../validation/2026-10-25-settlement-contract-clause-evidence-map/README.md) — Builder-authored clause-to-test map ([지도](status/SETTLEMENT_CONTRACT_EVIDENCE_MAP.md)) and stdlib citation checker; open policy values and owners preserved, no contract/mock/FSM or grade change.
+
+- [bra-contract-clause-evidence-map](../validation/2026-10-25-bra-contract-clause-evidence-map/README.md) — Builder-authored clause-to-test map ([지도](status/BRA_CONTRACT_EVIDENCE_MAP.md)) and local stdlib citation checker; nine adopted open items keep UNDETERMINED values and named owners, currentness/routing gaps stay NOT_COVERED, no grade change.
+
+- [credit-f04-contract-clause-evidence-map](../validation/2026-10-25-credit-f04-contract-clause-evidence-map/README.md) — Builder-authored clause-to-test map ([지도](status/CREDIT_F04_CONTRACT_EVIDENCE_MAP.md)) and local stdlib checker; five adopted open terms retain UNDETERMINED values and named owners, real-credit lock unchanged, no grade change.
+
+- [plan-primary-fee-split-offline-differential](../validation/2026-10-25-plan-primary-fee-split-offline-differential/README.md) — Builder-authored PF-C01 price boundaries and PF-C02 golden/seeded offline split tests; frozen core comparison NOT_MADE, on-chain enforcement NOT_COVERED, policy values and enforcement location remain DECISION_REQUIRED · Astra, no grade change.
+
+- [ci-wire-product-contract-evidence-checkers](../validation/2026-10-25-ci-wire-product-contract-evidence-checkers/README.md) — CI wiring of the settlement, BRA and credit F04 evidence-map checkers (plain and --self-test) into the unguarded stdlib step; workflow lines, register sentence and record only, no checker/map/contract change, no grade change.
+
+- [plan-primary-price-fee-contract-clause-eviden](../validation/2026-10-25-plan-primary-price-fee-contract-clause-eviden/README.md) — Builder-authored clause-to-test map ([지도](status/PRIMARY_PRICE_FEE_CONTRACT_EVIDENCE_MAP.md)) with a CI-wired stdlib citation checker; on-chain gaps and all nine open items retain their owners, no policy or grade change.
+
+- [plan-primary-fee-pf-c05-isolation-tests](../validation/2026-10-26-plan-primary-fee-pf-c05-isolation-tests/README.md) — Builder-authored offline primary/resale bps isolation tests; PF-C05 Python-only PARTIAL, on-chain NOT_COVERED, enforcement location remains DECISION_REQUIRED · Astra; no mock, FSM, contract, policy or grade change.
+
+## 2026-10-25 병합 위치 — #281–#289 (위치 안내만)
+
+이 표는 병합 커밋과 기록의 위치만 안내한다. 승인·등급 변경이 아니다.
+
+| PR | 병합 커밋 | 기록 |
+|---|---|---|
+| #281 | `0db660a1085ca179c341c89129eeda763977b1fb` | [plan-register-index-sync-20261025](../validation/2026-10-25-plan-register-index-sync-20261025/README.md) |
+| #282 | `ff88c441f36cde5b581ba29ce4c46ac47f22b218` | [plan-section5-quote-completeness](../validation/2026-10-25-plan-section5-quote-completeness/README.md) |
+| #283 | `fe08e4134b2f2e58f48b636bdae7440d8cdb70dc` | [audit15-open-decisions-closure](../validation/2026-10-25-audit15-open-decisions-closure/README.md) · [마감 후속](status/OPEN_USER_DECISIONS_20261025_CLOSURE.md) |
+| #284 | `590e544b3d097ba3de2fc573deae43b15bc39773` | [audit15-reference-test-sibling-path-guard](../validation/2026-10-25-audit15-reference-test-sibling-path-guard/README.md) |
+| #285 | `c0fc5b4aed4da32284d9879ad21ef6b584db01d2` | [settlement-contract-clause-evidence-map](../validation/2026-10-25-settlement-contract-clause-evidence-map/README.md) · [지도](status/SETTLEMENT_CONTRACT_EVIDENCE_MAP.md) · `scripts/check_settlement_evidence_map.py` |
+| #286 | `a329ec07ac52ec15bff6c48079115d81ace5ab67` | [bra-contract-clause-evidence-map](../validation/2026-10-25-bra-contract-clause-evidence-map/README.md) · [지도](status/BRA_CONTRACT_EVIDENCE_MAP.md) · `scripts/check_bra_evidence_map.py` |
+| #287 | `53c16b226346f2df824f93a5756a080acd489ec1` | [credit-f04-contract-clause-evidence-map](../validation/2026-10-25-credit-f04-contract-clause-evidence-map/README.md) · [지도](status/CREDIT_F04_CONTRACT_EVIDENCE_MAP.md) · `scripts/check_credit_evidence_map.py` |
+| #288 | `c7762c2724d5d28fd2e5e4f00cc5aae4f1f7908f` | [plan-primary-fee-split-offline-differential](../validation/2026-10-25-plan-primary-fee-split-offline-differential/README.md) · `reference/settlement_f01_f03/test_primary_fee_split.py` · `reference/booking_resale_admission/test_primary_price_binding.py` |
+| #289 | `22df2e96d1a7de4d0de371a1f64776e80af9d999` | [ci-wire-product-contract-evidence-checkers](../validation/2026-10-25-ci-wire-product-contract-evidence-checkers/README.md) · [protocol.yml](../.github/workflows/protocol.yml) |
+
+- [plan-register-index-crosswalk-sync](../validation/2026-10-25-plan-register-index-crosswalk-sync/README.md) — Location pointers only: no new approval, no decision text, no grade raise; crosswalk refreshed through #289, canonical counting remains `DECISION_REQUIRED · Astra`.
+
+- [plan-product-contract-map-partial-closure](../validation/2026-10-25-product-contract-map-partial-closure/README.md) — Offline test-only gap closure in the settlement, BRA and F04 evidence maps; no policy or grade change.
+
+## 2026-10-26 검증 기록 색인 — 위치 안내만
+
+- [plan-plan-integration-gate-contract-clause-ev](../validation/2026-10-26-plan-integration-gate-contract-clause-ev/README.md) — Builder-authored integration-gate contract clause-to-test map ([지도](status/INTEGRATION_GATE_CONTRACT_EVIDENCE_MAP.md)) and CI-wired static stdlib checker; seeded journey differential stays an owned open gap, no HTTP tests, gate behavior, contract or grade change.
+
+- [plan-plan-feature-semantics-v1-evidence-map](../validation/2026-10-26-plan-feature-semantics-v1-evidence-map/README.md) — Builder-authored Feature Semantics v1 §§1–10 clause-to-test map ([지도](status/FEATURE_SEMANTICS_V1_EVIDENCE_MAP.md)) and stdlib citation checker; execution/backend conformance stays NOT_COVERED, class-B characterizations retained, no runtime, contract or grade change.
+
+- [plan-plan-feature-ir-money-profile-precedence](../validation/2026-10-26-plan-feature-ir-money-profile-precedence-tests/README.md) — Public-API Fast64 identity-before-range, claimed-range boundary and cross-version non-inheritance regressions; S6-EXPORT-BOUNDARY and G9-4 remain PARTIAL, authentication stays open, no grade change.
+
+- [plan-plan-feature-ir-validator-matrix-closure](../validation/2026-10-26-plan-feature-ir-validator-matrix-closure/README.md) — Public-API join-right identity/version, signed/unsigned division and aggregate empty-policy regression matrices; two maintainer-owned §10 rows covered, execution/conformance and other owners unchanged.
+
+- [plan-plan-rs4-l2-option-impact-inventory](../validation/2026-10-26-plan-rs4-l2-option-impact-inventory/README.md) — [RS-4 L2 결정 선택지별 영향 목록](status/RS4_L2_DECISION_IMPACT_INVENTORY.md): 트리 내 수락 문구·지도 행·L1 분모와 L2 미정 입력·후속 의존성만. 선택·값·측정·노드 상태 변경이 아니다.
+
+- [plan-plan-bcs1-contract-clause-evidence-map](../validation/2026-10-26-plan-bcs1-contract-clause-evidence-map/README.md) — Builder-authored KIX-BCS1 clause-to-test map ([지도](status/BCS1_CONTRACT_EVIDENCE_MAP.md)) and stdlib citation/golden checker; existing tests only, S08 equality and boundary-corpus remain deferred, no contract or grade change.
+
+- [plan-plan-contract-invariants-evidence-map](../validation/2026-10-26-plan-contract-invariants-evidence-map/README.md) — Builder-authored CONTRACT_INVARIANTS §§1–5 clause-to-test map ([지도](status/CONTRACT_INVARIANTS_EVIDENCE_MAP.md)), corpus/sensitivity boundaries and stdlib checker; source-informed and contract-path evidence separated, no new Rust tests, contract or grade change.
+
+- [plan-plan-contract-invariants-inv3-sensitivit](../validation/2026-10-26-plan-contract-invariants-inv3-sensitivity/README.md) — Source-informed INV-3 corrupted-observer sensitivity and local negative control; F-B2 narrowed, INV-3 stays PARTIAL, no kernel, contract or grade change.
+
+- [plan-plan-contract-invariants-f-b3-reply-asse](../validation/2026-10-27-plan-contract-invariants-f-b3-reply-assertions/README.md) — Source-informed expected replies for every non-reserve call in the unchanged kernel-only corpus and an in-memory negative control; S4-PROBES stays PARTIAL, no kernel, contract or grade change.
+
+- [plan-plan-contract-invariants-s5-availability](../validation/2026-10-27-plan-contract-invariants-s5-availability/README.md) — Seven deterministic public-API availability examples for CONTRACT_INVARIANTS §5 safe-but-incorrect rejection; S5-SAFE-REJECT and S5-FINITE stay PARTIAL, class B boundary F-B5 recorded, no kernel, contract or grade change.
+- [plan-plan-contract-invariants-s5-precedence-m](../validation/2026-10-27-plan-contract-invariants-s5-precedence/README.md) — Guard-pair error-precedence matrix and nineteen deterministic public-API pair tests for CONTRACT_INVARIANTS §5 wrong error precedence; S5-PRECEDENCE stays PARTIAL, class B pairs recorded as F-B6, no kernel, contract or grade change.
+
+- [plan-plan-lifecycle-adr-clause-evidence-map](../validation/2026-10-26-plan-lifecycle-adr-clause-evidence-map/README.md) — Builder-authored lifecycle/ADR clause-to-test map ([지도](status/LIFECYCLE_ADR_CLAUSE_EVIDENCE_MAP.md)) and stdlib checker; source-informed and contract-path evidence separated, I09–I13 stay open, no new Rust tests or grade change.
+
+- [plan-ai-delegation-contract-clause-evidence-m](../validation/2026-10-26-plan-ai-delegation-contract-clause-evidence-m/README.md) — Builder-authored clause-to-test map ([지도](status/AI_DELEGATION_CONTRACT_EVIDENCE_MAP.md)) with `scripts/check_ai_delegation_evidence_map.py` wired into the stdlib CI step; DLG evidence stays in the layer matrix, all eight open items retain their owners, execution stays disabled, no policy or grade change.
+
+- [plan-plan-toss-card-profile-evidence-map](../validation/2026-10-26-plan-toss-card-profile-evidence-map/README.md) — Builder-authored Toss card profile §§1–9 clause-to-test map ([지도](status/PG_TOSS_CARD_PROFILE_EVIDENCE_MAP.md)) and stdlib checker; provider evidence remains open, no sandbox calls, contract or grade change.
+
+- [plan-plan-performance-measurement-clause-evid](../validation/2026-10-26-plan-performance-measurement-clause-evid/README.md) — Builder-authored v4 performance clause-to-test map ([지도](status/PERFORMANCE_MEASUREMENT_EVIDENCE_MAP.md)) and stdlib checker; historical smoke counts remain historical, release probe NOT_RUN, product TPS/p99/failure-rate values UNDETERMINED (owner: User), no benchmark or grade change.
+
+- [plan-plan-perf-harness-map-partial-closure](../validation/2026-10-26-plan-perf-harness-map-partial-closure/README.md) — Builder-authored public-API perf harness assertions and evidence-map updates; remaining observability gaps stay PARTIAL, release probe NOT_RUN, no benchmark or production claim.
+
+- [plan-plan-open-decisions-addendum-20261026-ai](../validation/2026-10-26-plan-open-decisions-addendum-20261026-ai/README.md) — [AI 위임 검사 순서 정지 보충 기록](status/OPEN_USER_DECISIONS_20261026_ADDENDUM.md): 출처·소유자·선택지별 기계 수집 영향 목록만. 선택·수정·노드 상태 변경이 아니다.
+
+- [plan-plan-ci-checker-wiring-guard](../validation/2026-10-26-plan-ci-checker-wiring-guard/README.md) — Stdlib guard that every checker is wired plain and `--self-test` (stage-5 self-test-only allowlisted) and every map-cited checker exists and runs; seven dated wiring amendments, no grade change.
+
+- [plan-plan-open-decisions-addendum-bcs1-checke](../validation/2026-10-26-plan-open-decisions-addendum-bcs1-checke/README.md) — [BCS1 checker-scope stop addendum](status/OPEN_USER_DECISIONS_20261026_BCS1_ADDENDUM.md): attributed conflict facts and A/B/C impact inventory; no option selected, checker/map/test/source or node-state change.
+
+- [plan-plan-open-decisions-addendum-20261026-sd](../validation/2026-10-26-plan-open-decisions-addendum-20261026-sd/README.md) — [SDK compatibility-manifest check-order stop addendum](status/OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md): attributed class C finding, User owner and per-option artifact inventory; no option selected, SDK/contract/checker/test or node-state change.
+
+- [plan-plan-integration-gate-map-offline-checke](../validation/2026-10-26-plan-integration-gate-map-offline-checke/README.md) — Offline README pin mirror, added-command/security/OPTIONS/public-host negatives and four integration-gate map row updates; no gate behavior, OpenAPI bytes or grade change.
+
+- [plan-plan-integration-gate-map-offline-closur](../validation/2026-10-26-plan-integration-gate-map-offline-closur/README.md) — Offline default limits/port and pinned-source envelope/identifier assertions; two map gaps closed, limits/bind remain PARTIAL, no listener or gate behavior change.
+
+- [plan-plan-evidence-map-rollup-check](../validation/2026-10-26-plan-evidence-map-rollup-check/README.md) — [증거 지도 롤업](status/EVIDENCE_MAP_ROLLUP.md) and stdlib consistency checker; index only, not a review, acceptance or grade; no map status, owner or grade change.
+
+## 2026-10-27 검증 기록 색인 — 위치 안내만
+
+- [plan-plan-cargo-offline-cache-preflight](../validation/2026-10-27-plan-cargo-offline-cache-preflight/README.md) — Stdlib read-only [Cargo archive cache report](../scripts/check_cargo_offline_cache.py), plain and synthetic self-test CI wiring; no provisioning, Cargo invocation, network access or offline-build guarantee.
+
+- [plan-plan-loop-node-crosswalk-refresh-2026102](../validation/2026-10-27-plan-loop-node-crosswalk-refresh/README.md) — Append-only crosswalk through #323: nine selected records, 25 accounted merges, no absent PR numbers; canonical counting remains DECISION_REQUIRED · Astra.
+
+- [plan-plan-plan-register-sync-20261027](../validation/2026-10-27-plan-register-sync-20261027/README.md) — DEVELOPMENT_PLAN §5의 #290–#322 first-parent 병합 위치와 register 열한 행·checker 목록 동기화; 완결 인용·전후 보존 대조, 등급·상태·소유자·열린 정지 변경 없음.
+
+- [plan-plan-open-decisions-addendum-perf-probe-](../validation/2026-10-27-plan-open-decisions-addendum-perf-probe-pin/README.md) — [Perf-probe pin addendum](status/OPEN_USER_DECISIONS_20261027_PERF_PROBE_ADDENDUM.md): attributed LOCKED_EDGE stop/options, read-only blob inventory and #314–#321 facts; no option selected or node state changed.
+
+- [plan-plan-open-decisions-closure-20261027](../validation/2026-10-27-plan-open-decisions-closure-20261027/README.md) — [열린 결정 마감 후속 기록](status/OPEN_USER_DECISIONS_20261027_CLOSURE.md): #290–#313의 저장소 사실과 열린 일곱 정지의 출처·소유자·선택지만. 선택·값·노드 상태 변경이 아니다.
+
+- [plan-plan-perf-harness-map-json-csv-closure-2](../validation/2026-10-27-plan-perf-harness-map-json-csv-closure-2/README.md) — Builder-authored public-API perf harness assertions for top-level outcome JSON, CSV latency arithmetic, fixed-origin schedule, workload-report parameters and binding fields; six rows COVERED, M-REPLAYED/M-SERVICE-NS/M-ELAPSED/BD-FIELDS PARTIAL, release probe NOT_RUN, no benchmark or timing claim.
+
+- [plan-plan-perf-harness-kernel-construction-co](../validation/2026-10-27-plan-perf-harness-kernel-construction-co/README.md) — Builder-authored perf probe kernel-construction counter; report JSON resets derived from the count with schema unchanged; B-ZERO-KERNEL-REBUILD COVERED, release probe NOT_RUN, no benchmark or timing claim.
+
+- [plan-v5-kernel-only-contract-invariant-histor](../validation/2026-10-27-v5-kernel-only-contract-invariant-histories/README.md) — Source-informed seeded INV-1..INV-5 histories over kix-kernel-v5 public APIs, including terminate, hold and reclaim report, with no model or oracle and with per-predicate corrupted-view sensitivity; class B characterization, no class C found, no v5 source, contract, map status or grade change.
+
+- [plan-ci-test-suite-discovery-guard](../validation/2026-10-27-plan-ci-test-suite-discovery-guard/README.md) — Stdlib guard that every offline reference suite, rights-scale node test and readiness/integration_gate test module is reached by a protocol.yml step directly, through a unittest discover suite list or through a TestCase import chain; v0.1, v0.2 and v0.3-rc1 excluded by name with written reasons; no workflow step, suite or test changed.
+
+- [plan-plan-loopback-host-preflight](../validation/2026-10-27-plan-loopback-host-preflight/README.md) — Stdlib read-only [loopback host preflight](../scripts/check_loopback_host.py) (127.0.0.1 port 0, in-process and `-I -c` child) wired plain and `--self-test`; host-context evidence for the gate seeded-journey stop and CHK-HTTP-SUITE only — no host chosen, permission granted, gate test run or map status change.
+
+- [plan-plan-class-b-characterization-index](../validation/2026-10-27-plan-class-b-characterization-index/README.md) — Builder-authored [class B characterization index](status/CLASS_B_CHARACTERIZATION_INDEX.md): one row per contract-undefined (AGENTS §8 B) characterization recorded in validation records and evidence maps, with verbatim quote, cited test, contract, owner and status, checked by a stdlib citation checker; not a review, decision, classification or recommendation.
+
+- [plan-feature-ir-api-boundary-tests](../validation/2026-10-28-plan-feature-ir-api-boundary-tests/README.md) — External-consumer Fast64 privacy and typed-export compilation fixtures; S6-EXPORT-BOUNDARY remains PARTIAL, registry authentication open, no exporter or backend conformance claim.
+
+- [plan-plan-validated-plan-borrow-tests](../validation/2026-10-28-plan-validated-plan-borrow-tests/README.md) — Source-informed ValidatedFeaturePlan construction, shared-accessor and borrow-boundary compilation fixtures; S10-CATALOG-AUTH remains PARTIAL, catalog authentication and backend admission open.
+
+- [plan-feature-ir-empty-stage-tests](../validation/2026-10-28-plan-feature-ir-empty-stage-tests/README.md) — Public-API empty Project, GroupBy and Sort rejection characterizations with nonempty controls; source-informed class B evidence only, no validator, contract, backend or grade change.
+
+- [plan-rs-profile-arithmetic-regressions](../validation/2026-10-28-plan-rs-profile-arithmetic-regressions/README.md) — Stdlib model creation-bps boundaries and recorded event-budget arithmetic; IM-01/IM-29 statuses and owners unchanged, operational MAX_BUNDLE_CHAIN UNDETERMINED, no PTB feasibility or policy selection.
+
+- [plan-perf-replay-result-evidence](../validation/2026-10-28-plan-perf-replay-result-evidence/README.md) — Actual classified reserve replies retained outside service/call timing; complete Retry first-result equality and captured-result corruption sensitivity; M-REPLAYED COVERED, schemas unchanged, release probe NOT_RUN, no timing or independent-proof claim.
+
+- [plan-perf-summary-arithmetic](../validation/2026-10-28-plan-perf-summary-arithmetic/README.md) — Builder-authored fixed p99 vectors, raw-CSV mixed/outcome summary reconciliation and synthetic integer goodput expectations; only M-MIXED-P99/M-OUTCOMES/M-GOODPUT become COVERED, apparatus scope only, release probe NOT_RUN, no benchmark, SLO or production claim.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
@@ -133,3 +545,198 @@
 [ADR-0001](adr/0001-ktx-authority-commit-recovery.md)의 안전 관계와 [보안 보완](PROTOCOL_HARDENING.md)·[저장 조사](STORAGE_INVESTIGATION.md)·[회귀 검증](RUNTIME_VALIDATION.md)은 근거별 범위로 읽습니다. 옛 계획의 승인 효력을 폐기했다고 안전 규칙이나 사건 기록을 삭제하지 않습니다.
 
 모델 1·첫 묶음 승인은 backend 채택·커널 전환 완료·실금전 운영 승인과 다릅니다. 미정 항목, 두 잠금 blob, R2 금지, (a) 보류, 위생 일괄 금지는 유지합니다.
+
+- [plan-plan-integration-gate-offline-gap-closur](../validation/2026-10-28-plan-integration-gate-offline-gap-closur/README.md) — Socket-guarded current OpenAPI byte pin/browser isolation, actor/action replay conflicts in Core and excluded wire-name dispatch regressions; three rows remain PARTIAL with HTTP/historical gaps, no gate behavior or grade change.
+
+- [plan-plan-provider-fact-normalization-offlin](../validation/2026-10-28-plan-provider-fact-normalization-offline/README.md) — Dependency-free offline `reference/provider_facts/` normalization harness over synthetic Toss-shaped recorded documents: five-field PaymentRef, integer-KRW no-f64 parsing, ambiguous-timezone preservation, verified-only normalization, per-item SHA-256 evidence hash, one-payment cancels[] history and operation→payment conflict binding; MOCK/synthetic evidence only, four Toss-map and five adapter-map rows updated, all UNDETERMINED cells/owners unchanged.
+
+- [plan-provider-evidence-summary-sync](../validation/2026-10-28-plan-provider-evidence-summary-sync/README.md) — Adapter §§3–4 summary and E01 pointer correction for the existing synthetic/offline provider harness (Analog, NOT Toss); no map-cell, count, owner, open-decision or capability-grade change.
+
+- [plan-provider-cancel-boundary-tests](../validation/2026-10-28-plan-provider-cancel-boundary-tests/README.md) — Synthetic offline cancellation amount/status boundaries through document and JSON-text entry points, mixed-history rejection and retained valid facts/hashes; technical representation checks only (Analog, NOT Toss), no implementation, policy or evidence-grade change.
+
+- [plan-provider-normalization-golden-vectors](../validation/2026-10-28-plan-provider-normalization-golden-vectors/README.md) — Source-informed literal synthetic facts, canonical UTF-8 bytes and SHA-256 vectors for payment/cancel, Korean text, raw timestamps and u128; formatting invariance and included-field sensitivity (Analog, NOT Toss), no operational encoding, contract or grade change.
+
+- [plan-provider-structural-rejection-tests](../validation/2026-10-28-plan-provider-structural-rejection-tests/README.md) — Offline synthetic provider structural rejection regressions through public parsing/normalization entry points, unchanged inputs and retained valid histories/facts/hashes; source-informed characterizations (Analog, NOT Toss), no implementation, contract, policy or evidence-grade change.
+
+- [plan-provider-binding-boundaries](../validation/2026-10-28-plan-provider-binding-boundaries/README.md) — Offline operation scope isolation and capture/reference rejection atomicity, preserving complete public binding/review/capture state; source-informed synthetic characterization (Analog, NOT Toss), no implementation, contract, policy or evidence-grade change.
+
+- [plan-plan-contract-invariants-s5-residual-cha](../validation/2026-10-28-plan-contract-invariants-s5-residual-cha/README.md) — Five public-API class B residual characterizations for F-B5/F-B6 and a raw-byte F-B1 provenance pin; PARTIAL statuses/owners retained, LOCKED_EDGE owner decision unresolved, no availability or precedence-completeness claim.
+
+- [plan-plan-perf-probe-other-outcome-tests](../validation/2026-10-28-plan-plan-perf-probe-other-outcome-tests/README.md) — Builder-authored nonzero other_error/other_observation probe fixtures, CSV/JSON reconciliation and M-OTHER coverage; ordinary workloads unchanged, release probe NOT_RUN, no timing, product SLO or A2 review claim.
+- [plan-perf-timing-boundaries](../validation/2026-10-28-plan-perf-timing-boundaries/README.md) — Deterministic virtual-clock service/elapsed boundary fixtures, exact CSV/JSON and included-preparation negative control; both timing rows remain PARTIAL with host/I/O caveats, release probe NOT_RUN, no benchmark or product target claim.
+
+- [plan-plan-readiness-mutation-guard-tests](../validation/2026-10-29-plan-plan-readiness-mutation-guard-tests/README.md) — Source-informed injected local-wrapper journal-rewrite and unjournaled-mutation guard characterizations, exception identity, fencing and committed-prefix recovery; no rollback, production-durability or backend-conformance proof, no grade change.
+
+- [plan-readiness-writer-lock-lifecycle](../validation/2026-10-29-plan-readiness-writer-lock-lifecycle/README.md) — Offline cross-process writer refusal and explicit-close/failed-initialization lock cleanup regressions; supplemental JRN-SINGLE-WRITER citations only, statuses and open decisions unchanged.
+
+- [plan-readiness-record-byte-boundaries](../validation/2026-10-29-plan-readiness-record-byte-boundaries/README.md) — Source-informed characterization of stamped JSON UTF-8 byte boundaries and oversized rejection atomicity/same-handle reuse; no implementation, product policy, evidence grade or recovery-decision change.
+
+- [plan-plan-readiness-json-codec-regressions](../validation/2026-10-29-plan-plan-readiness-json-codec-regressions/README.md) — Source-informed complete-frame JSON rejection, serialization-error atomicity and literal canonical Unicode receipt-digest regressions; no implementation, contract, evidence grade or open-decision change.
+
+- [plan-readiness-wrap-fault-sensitivity](../validation/2026-10-29-plan-readiness-wrap-fault-sensitivity/README.md) — Six persistent AI-delegation/reward recovery negative controls through unchanged conformance cases; intentional inner assertion failures with passing controls, no backend acceptance, independent verification or durability claim, no grade change.
+
+- [plan-readiness-wrap-restore-rejections](../validation/2026-10-29-plan-readiness-wrap-restore-rejections/README.md) — Public-API malformed AI-delegation/reward wrapper journal rejection characterizations with exact errors, unchanged caller input and paired valid controls; class B only, no implementation, contract, grade or open-decision change.
+
+- [plan-readiness-record-envelope-tests](../validation/2026-10-29-plan-readiness-record-envelope-tests/README.md) — Offline store envelope rejection with append preservation/reuse and complete checksum-valid frame refusal without rewriting; source-informed class B characterizations, no runtime, contract, grade or open-decision change.
+
+- [plan-readiness-post-append-ack-loss](../validation/2026-10-29-plan-readiness-post-append-ack-loss/README.md) — Seven controlled in-process completed-append acknowledgement-loss regressions with retained-result replay and no extra append; no OS-crash, power-loss, external exactly-once, production durability or grade claim.
+
+- [plan-local-payment-lookup-adapter](../validation/2026-10-30-plan-local-payment-lookup-adapter/README.md) — Internal operation-bound synthetic lookup service and deterministic fake; one-call normalization, zero-call scope rejection and unresolved failures with preserved evidence (Analog, NOT Toss); no authentication, provider conformance, durability, finality, payment-completion or grade change.
+
+- [plan-local-payment-scope-router](../validation/2026-10-30-plan-local-payment-scope-router/README.md) — Internal immutable synthetic scope routing through existing operation/payment bindings; exact provider/account/environment selection, no fallback, retained normalized outputs and capture/review state (Analog, NOT Toss); no authentication, merchant authorization, persistence or runtime activation.
+
+- [plan-local-payment-lookup-cli](../validation/2026-10-30-plan-local-payment-lookup-cli/README.md) — Reusable standard-library offline CLI for one operation-bound synthetic lookup from a fully validated local fixture; complete references, unchanged normalized facts/hashes, unresolved reasons and actual fake-call snapshots; no provider authentication, persistence, policy decision or runtime activation.
+
+- [plan-local-settlement-statement-adapter](../validation/2026-10-31-plan-local-settlement-statement-adapter/README.md) — Internal synthetic statement source, immutable local recordings and explicit caller-selected commit/observe adapter over the unchanged settlement FSM; offline example requires fixture policy/order and separate distribution, with MOCK provenance and false execution/durability/finality flags. No product policy, protocol command or runtime activation.
+- [plan-local-refund-acceptance-source](../validation/2026-10-31-plan-local-refund-acceptance-source/README.md) — Internal synthetic cancellation-acceptance source, immutable recordings and thin adapter over the unchanged settlement FSM; explicit refund obligation and separate observations preserve cash, open adjustment and partial-refund distribution blocking. No provider-history translation, product policy, new protocol command or runtime activation.
+
+- [plan-local-admission-presentation-adapter](../validation/2026-10-31-plan-local-admission-presentation-adapter/README.md) — Internal synthetic presentation inputs, immutable recordings and separate explicit authorization/consume delegation to the existing bound admission FSM; mock-only replay and refusal evidence. No identity/currentness authority, reissuance, product policy, new protocol command or runtime activation.
+
+- [Local admission session and CLI](../reference/booking_resale_admission/README.md#reusable-admission-session-and-jsonl-cli) · [plan-local-admission-session-cli evidence](../validation/2026-11-02-plan-local-admission-session-cli/README.md) — Explicit synthetic setup and JSONL requests through the actual local FSM graph; separate authorization/consume, first receipts/current views and unchanged refusal codes. Mock-only; no production policy or activation.
+
+- [plan-local-resale-offer-source](../validation/2026-11-02-plan-local-resale-offer-source/README.md) — Synthetic immutable resale recordings and an explicit one-fetch listing adapter to the existing FSM, with actual-machine example and source-informed parity tests; R01/R05 remain partial/설계중, policy UNDETERMINED with existing owners, no payment/transfer handoff or production claim.
+
+- [Local resale session and CLI](../reference/booking_resale_admission/README.md#reusable-resale-session-and-jsonl-cli) · [plan-local-resale-session-cli evidence](../validation/2026-11-02-plan-local-resale-session-cli/README.md) — Explicit synthetic setup and JSONL resale lifecycle through actual local FSMs; separate payment/binding/transfer, first receipts/current views and strict parsing, preserving UNBOUND and mock limitations. No policy, protocol command or runtime activation.
+
+- [Shared local ticket operations desk](../reference/booking_resale_admission/README.md#shared-local-ticket-operations-desk) · [plan-local-ticket-operations-desk evidence](../validation/2026-11-02-plan-local-ticket-operations-desk/README.md) — One in-memory graph for explicit resale/admission operations, strict combined fixtures and ordering/replay transcripts. Mock-only; timing, authentication and reissuance remain UNDETERMINED; no runtime activation.
+
+- [Local booking desk session and CLI](../reference/booking_resale_admission/README.md#local-booking-desk-session-and-jsonl-cli) · [plan-local-booking-desk-cli evidence](../validation/2026-11-02-plan-local-booking-desk-cli/README.md) — Explicit show registration and pre-payment holds/confirmation/cancellation through the unchanged reservation FSM; strict JSONL and synthetic transcripts, no payment/issuance handoff, policy decision or activation.
+
+## 2026-11-02 로컬 보상 데스크 — 위치 안내만
+
+- [F4 local reward desk usage](../reference/token_reward/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged reward FSM; no policy, approval or runtime activation.
+- [plan-local-reward-desk evidence](../validation/2026-11-02-plan-local-reward-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
+- [Guided local reward console](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-05 builder evidence](../validation/2026-11-05-plan-local-reward-console/README.md) — Fresh in-process F4 session, complete proposals and literal single-use confirmation, historical snapshots and explicit reads; no policy or FSM change, A2 non-author review and exact-head KTX/KIX CI pending.
+
+- [Recorded payments in both local ticket desks](../reference/booking_resale_admission/README.md#recorded-payments-in-both-local-ticket-desks) · [plan-local-resale-payment-desk evidence](../validation/2026-11-02-plan-local-resale-payment-desk/README.md) — Strict synthetic payment recordings and explicit one-observation requests through standalone/shared desks; separate transfer/admission and unchanged STALE_VERSION refusals. No policy, provider authority, real funds or runtime activation.
+
+- [Explicit reconciliation in local ticket desks](../reference/booking_resale_admission/README.md#explicit-reconciliation-in-local-ticket-desks) · [plan-local-ticket-desk-reconciliation evidence](../validation/2026-11-03-plan-local-ticket-desk-reconciliation/README.md) — Caller-directed delegation to existing FSM reconciliation, historical replay/current views and shared ownership-change refusals; process-local bookkeeping, no repair, durable recovery or activation.
+- [Explicit local ticket fulfillment](../reference/booking_resale_admission/README.md#explicit-ticket-fulfillment-on-the-shared-desk) · [plan-local-ticket-fulfillment-desk evidence](../validation/2026-11-03-plan-local-ticket-fulfillment-desk/README.md) — Explicit synthetic binding, issuance and separate resale/admission adoption; source-informed local evidence with pending review/CI gates.
+- [Source-backed issued ticket handoff](../reference/booking_resale_admission/README.md#source-backed-issued-ticket-handoff-on-the-shared-desk) · [plan-local-issued-ticket-handoff evidence](../validation/2026-11-03-plan-local-issued-ticket-handoff/README.md) — One caller-selected adoption from the same local booking/show records; separate explicit issuance and lifecycle requests, original buyer inputs, unchanged mock semantics; policy/legal effects UNDETERMINED, review and CI pending.
+- [Booking on the shared local ticket desk](../reference/booking_resale_admission/README.md#booking-on-the-shared-desk) · [plan-plan-local-ticket-desk-booking-surface evidence](../validation/2026-11-03-plan-plan-local-ticket-desk-booking-surface/README.md) — Existing booking dispatcher over the shared reservation machine, explicit clock prerequisites, historical/current views and admission visibility; synthetic local evidence, no policy or capability-grade change.
+- [Synthetic local resale payment source](../reference/booking_resale_admission/README.md#synthetic-local-resale-payment-source) · [plan-local-resale-payment-source evidence](../validation/2026-11-02-plan-local-resale-payment-source/README.md) — Immutable synthetic recordings, one-fetch payment observation adapter and explicit session payment/transfer requests; unchanged FSM semantics and mock flags. No provider authority, product policy, reservation handoff or runtime activation.
+
+- [plan-plan-local-booking-quote-source](../validation/2026-11-03-plan-plan-local-booking-quote-source/README.md) — Builder-authored synthetic recorded-quote source, adapter and standalone booking CLI confirmation evidence; [interface and fixture guide](../reference/booking_resale_admission/README.md#synthetic-recorded-booking-quotes). No authenticated pricing, discount policy, payment handoff, protocol command, grade change or runtime activation.
+- [Recorded booking quotes on the shared desk](../reference/booking_resale_admission/README.md#recorded-booking-quotes-on-the-shared-desk) · [plan-local-ticket-desk-quotes evidence](../validation/2026-11-03-plan-local-ticket-desk-quotes/README.md) — Optional recorded-quote adapter on the existing shared booking graph, explicit Python/JSONL composition and source refusal/replay evidence; synthetic in-memory only, pricing/discount/quote authority UNDETERMINED — Astra/User, no payment handoff or activation.
+- [Locally calculated booking quotes](../reference/booking_resale_admission/README.md#locally-calculated-booking-quotes) · [plan-local-calculated-booking-quotes evidence](../validation/2026-11-03-plan-local-calculated-booking-quotes/README.md) — Opt-in single-line undiscounted KRW calculation source on both local desks; CALCULATION_ONLY, no authenticated quote authority, payment handoff or activation; pricing/discount/quote policy remains UNDETERMINED — Astra/User.
+- [Request-time calculated booking confirmation](../reference/booking_resale_admission/README.md#request-time-calculated-booking-confirmation) · [plan-local-booking-calculation-inputs evidence](../validation/2026-11-04-plan-local-booking-calculation-inputs/README.md) — Complete request text on both local booking desks without startup quote recordings; calculator/confirmation composition only, CALCULATION_ONLY and MOCK_GATE_ONLY remain distinct; no authority decision, payment handoff or activation.
+- [Calculation-only booking quote preview](../reference/booking_resale_admission/README.md#calculation-only-booking-quote-preview) · [plan-local-booking-quote-preview evidence](../validation/2026-11-04-plan-local-booking-quote-preview/README.md) — Complete unchanged quote on both local booking desks before explicit confirmation; no reservation access, mutation clock, key binding or source fetch; B03/B05 stay partial and quote authority remains undetermined.
+
+- [Shared local ticket settlement controls](../reference/booking_resale_admission/README.md#explicit-settlement-controls-on-the-shared-ticket-desk) · [plan-local-ticket-settlement-controls evidence](../validation/2026-11-03-plan-local-ticket-settlement-controls/README.md) — Five explicit existing settlement selectors on the shared ticket graph; synthetic in-memory evidence, policy/legal treatment UNDETERMINED, pending review and CI.
+
+- [Shared local ticket refund controls](../reference/booking_resale_admission/README.md#explicit-refund-controls-on-the-shared-ticket-desk) · [plan-plan-local-ticket-refund-controls evidence](../validation/2026-11-03-plan-plan-local-ticket-refund-controls/README.md) — Explicit refund obligations and synthetic recorded cancellation acceptance on the shared settlement machine; policy and liability UNDETERMINED, no automatic ticket effects or external return closure; pending review and CI.
+- [Shared local ticket recorded statements and distribution](../reference/booking_resale_admission/README.md#recorded-statements-and-explicit-distribution-on-the-shared-ticket-desk) · [plan-local-ticket-statement-distribution evidence](../validation/2026-11-03-plan-local-ticket-statement-distribution/README.md) — Explicit recorded commit/later observation and caller-ordered distribution on the shared settlement; synthetic only, policy UNDETERMINED, independent review and exact-head CI pending.
+- [Shared local settlement failure, cancellation and reconciliation](../reference/booking_resale_admission/README.md#settlement-failure-cancellation-and-reconciliation-on-the-shared-ticket-desk) · [plan-local-ticket-settlement-exceptions evidence](../validation/2026-11-03-plan-local-ticket-settlement-exceptions/README.md) — Explicit existing FSM controls with strict JSONL selectors; process-local reconciliation, no automatic ticket or external money effects; legal effects UNDETERMINED — User/legal; independent review and exact-head CI pending.
+- [Initiating settlement from local ticket records](../reference/booking_resale_admission/README.md#initiating-settlement-from-local-ticket-records) · [plan-local-ticket-settlement-inputs evidence](../validation/2026-11-04-plan-local-ticket-settlement-inputs/README.md) — Explicit booking/resale source selection on the same in-memory graph; single source read and existing initiation call, manual/source replay parity and separate lifecycle requests; synthetic only, policy/legal treatment UNDETERMINED, non-author review and exact-head CI pending.
+- [Request-time synthetic settlement facts](../reference/booking_resale_admission/README.md#request-time-synthetic-settlement-facts) · [plan-local-settlement-fact-inputs evidence](../validation/2026-11-04-plan-local-settlement-fact-inputs/README.md) — Complete local statement and cancellation acceptance fields without startup recordings; unchanged FSM replay/refusals, explicit distribution/refund steps, synthetic flags preserved; non-author review and exact-head CI pending.
+- [Live local ticket subprocess client](../reference/booking_resale_admission/README.md#live-local-subprocess-client) · [plan-local-ticket-stdio-client evidence](../validation/2026-11-04-plan-local-ticket-stdio-client/README.md) — Explicit single-child JSONL exchanges, caller-directed requests and transport uncertainty fencing; synthetic/non-production only, review and exact-head CI pending.
+- [Request-time local resale inputs](../reference/booking_resale_admission/README.md#request-time-resale-inputs) · [plan-local-resale-request-inputs evidence](../validation/2026-11-04-plan-local-resale-request-inputs/README.md) — Complete caller inputs through one existing FSM listing call, empty-offer file/stdin transcripts and explicit continuation; synthetic only, policy/legal effects UNDETERMINED, non-author review and exact-head CI pending.
+
+- [Request-time local admission inputs](../reference/booking_resale_admission/README.md#request-time-admission-inputs) · [plan-local-admission-request-inputs evidence](../validation/2026-11-04-plan-local-admission-request-inputs/README.md) — Separate complete caller-input authorization/consumption on standalone and shared desks, empty-recording file/stdin transcripts and existing FSM checks/replay semantics; synthetic only, policy/legal effects UNDETERMINED, non-author review and exact-head CI pending.
+
+## Guided local booking console evidence
+
+- [Source-backed booking console usage](../reference/booking_resale_admission/README.md#source-backed-booking-confirmation-in-the-live-consoles) · [2026-11-10 builder evidence](../validation/2026-11-10-plan-plan-local-source-quote-console/README.md) — Optional recorded/calculated sources on one live local child, explicit confirmation/current views, historical replay, original refusals and terminal fencing. Policy UNDETERMINED — Astra/User; legal effects UNDETERMINED — User/legal; independent exact-head A2 review and KTX/KIX CI remain pending.
+
+- [Guided local booking console usage](../reference/booking_resale_admission/README.md#guided-local-booking-console) — standard-library prompts over one local synthetic desk; calculation-only preview and explicit mock reservation confirmation.
+- [2026-11-05 console builder validation](../validation/2026-11-05-plan-plan-local-booking-console/README.md) — coverage mapping, executed commands, protected-byte checks and pending non-author exact-head review/CI. This index grants no production or merge authority.
+
+- [Guided local resale console usage](../reference/booking_resale_admission/README.md#guided-local-resale-console) · [2026-11-05 resale console builder evidence](../validation/2026-11-05-plan-plan-local-resale-console/README.md) — Standard-library prompts over one live synthetic ticket desk; separate listing/payment/ownership outcomes, explicit replay/current views and terminal uncertainty fencing. No policy or capability-grade change; independent exact-head review/CI pending.
+
+- [Guided local admission console usage](../reference/booking_resale_admission/README.md#guided-local-admission-console) · [2026-11-05 admission console builder evidence](../validation/2026-11-05-plan-plan-local-admission-console/README.md) — One socket-free synthetic desk, separate explicit authorization/consumption, receipt snapshots versus current local observations, decline and terminal fencing. Timing/identity/legal policy remain UNDETERMINED; no grade change, independent exact-head review/CI pending.
+
+- [Guided local settlement console usage](../reference/booking_resale_admission/README.md#guided-local-settlement-console) · [2026-11-05 settlement console builder evidence](../validation/2026-11-05-plan-plan-local-settlement-console/README.md) — One local synthetic desk, explicit statement/distribution/refund/acceptance selections, separate service cash/allocation/refund/PG-adjustment fields and historical/current views; policy/legal effects UNDETERMINED, independent exact-head review/CI pending.
+- [Caller-entered settlement policy and distribution order](../reference/booking_resale_admission/README.md#caller-entered-policy-and-distribution-order) · [2026-11-08 composer builder evidence](../validation/2026-11-08-plan-local-settlement-input-composer/README.md) — Additive guided policy fields and ordered payees, raw-JSON parity and one request per explicit confirmation; synthetic P04/F01–F03 only, policy/legal treatment UNDETERMINED, exact-head review/CI pending.
+- [Start synthetic settlements from booking/resale](../reference/booking_resale_admission/README.md#guided-local-settlement-console) · [2026-11-05 start-flow builder evidence](../validation/2026-11-05-plan-local-settlement-console-start/README.md) — Explicit source, identifiers, debtor, synthetic policy and keys; separate initiation/authorization/capture confirmations, source-owned amount/currency and continued statement/distribution/refund controls. No automatic ticket binding or payment observation; no capability grade change, policy/legal effects UNDETERMINED, exact-head review/CI pending.
+
+- [Recorded offer/presentation console usage](../reference/booking_resale_admission/README.md#recorded-offers-and-presentations-in-the-ticket-console) · [2026-11-09 builder evidence](../validation/2026-11-09-plan-local-recorded-ticket-console/README.md) — Existing local recorded selectors with separate literal confirmation, explicit replay/current views and terminal fencing. Synthetic only; policy/legal effects remain UNDETERMINED, non-author exact-HEAD review and KTX/KIX checks pending.
+- [Shared local ticket console usage](../reference/booking_resale_admission/README.md#shared-local-ticket-console) · [2026-11-05 shared console builder evidence](../validation/2026-11-05-plan-local-shared-ticket-console/README.md) — Booking/resale/admission/settlement navigation over one live synthetic desk, explicit current views, fresh booking previews on re-entry and session-wide terminal fencing. No policy or capability-grade change; non-author exact-head review and KTX/KIX CI pending.
+- [Caller-entered synthetic resale console payments](../reference/booking_resale_admission/README.md#caller-entered-synthetic-resale-payments-in-the-shared-console) · [2026-11-06 payment input builder evidence](../validation/2026-11-06-plan-plan-local-resale-payment-console-inputs/README.md) — Explicit buyer/null, integer amount, reference and key over one shared child; separately selected settlement/transfer, original refusals/replay and terminal fencing. Policy UNDETERMINED — Astra/User; provider authentication UNDETERMINED — Toss/User; non-author exact-head review and CI pending.
+- [Guided local ticket exception actions](../reference/booking_resale_admission/README.md#guided-local-ticket-exception-actions) · [2026-11-06 builder evidence](../validation/2026-11-06-plan-plan-local-ticket-exception-console/README.md) — Confirmed reconciliation on all four surfaces plus existing settlement fail/cancel; historical receipts, explicit current views and session fencing. Policy UNDETERMINED — Astra/User; legal/accounting effects UNDETERMINED — User/designated advisers; non-author exact-head A2 review and KTX/KIX CI pending.
+- [Guided local fulfillment console](../reference/booking_resale_admission/README.md#guided-local-fulfillment-in-the-shared-console) · [2026-11-05 builder evidence](../validation/2026-11-05-plan-local-fulfillment-console/README.md) — Explicit synthetic paid-order binding/issuance, separate source-backed admission/resale adoptions, authorization and independently confirmed consumption on one local graph; historical receipts versus current views and session-wide fencing. No policy/capability-grade change; non-author exact-head review and KTX/KIX CI pending.
+
+## 2026-11-05 로컬 신용 데스크 — 위치 안내만
+
+- [F04 local credit desk usage](../reference/credit_advance_f04/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged credit FSM; optional real local settlement replay for the bound-draw COMMITTED gate; no policy, approval or runtime activation.
+- [plan-local-credit-desk evidence](../validation/2026-11-05-plan-local-credit-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
+- [Live local credit subprocess client](../reference/credit_advance_f04/README.md#live-local-subprocess-client) · [runnable example](../reference/credit_advance_f04/example_credit_client.py) · [plan-local-credit-stdio-client evidence](../validation/2026-11-06-plan-local-credit-stdio-client/README.md) — Explicit single-child JSONL exchanges, caller-directed requests and transport uncertainty fencing; synthetic/non-production only, non-author review and exact-head CI remain separate gates.
+
+## 2026-11-05 로컬 AI 위임 데스크 — 위치 안내만
+
+- [Local AI delegation desk usage](../reference/ai_delegation/README.md) — seven explicit session methods and a strict JSONL CLI over the unchanged synthetic mock; execution disabled, A5 check-order discrepancy retained with its owners, no policy or runtime activation.
+- [plan-local-ai-delegation-desk evidence](../validation/2026-11-05-plan-local-ai-delegation-desk/README.md) — builder-authored coverage, executed commands and deterministic transcripts; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-05 위치 동기화 — observed main #398
+
+고정 기준 cached `origin/main` `bca90b865442ba287b4aecf5ca6b5bde5d767a3a`; 원격 최신성은 fetch NOT_RUN으로 미검증이다. #290–#398의 104개 first-parent 병합 위치는 [개발계획 §5](DEVELOPMENT_PLAN.md#5-전체-단계), [capability register](status/CURRENT_CAPABILITY_REGISTER.md), [loop-node crosswalk](status/LOOP_NODE_CROSSWALK.md)에 연결한다. 기존 날짜별 집계·등급·소유자·열린 정지는 그대로다. 서로 다른 coverage 등급은 합산하지 않는다. 현재 source-map별 집계는 [roll-up](status/EVIDENCE_MAP_ROLLUP.md)과 아래 검증 기록의 실제 checker 출력으로 확인한다.
+
+- [plan-register-index-sync-20261105](../validation/2026-11-05-plan-register-index-sync-20261105/README.md) — §5 추가 71행, register 16행의 fixture 위치·근거, crosswalk 추가 14행·56 nonmatch·5 absent 번호 및 실제 로컬 검증. 등급·상태·소유자·canonical 완료 변경 없음.
+
+현재 index checker 집계(새 검증 기록 포함): **scanned=361, indexed=326, allowlisted=35**. 과거 집계는 당시 기준이며 바꾸지 않는다. 25개 계약의 roll-up은 textual index이며 다른 coverage 등급을 하나의 완료 수로 더하지 않는다.
+
+## 2026-11-06 로컬 AI 위임 console — 위치 안내만
+
+- [Console 사용법](../reference/ai_delegation/README.md#interactive-console) — 명시적 입력·preview·SUBMIT, 합성 grant/query/proposal/결정/회수와 현재 기록 replay. 실행·효과 플래그는 false다.
+- [Console builder 검증 기록](../validation/2026-11-06-plan-plan-local-delegation-console/README.md) — 기존 coverage mapping, 실제 로컬 명령과 한계. 독립 A2 검토·exact-head CI·병합 승인이 아니며 A5의 class-C check-order 및 missing-grant 해석은 Astra/User 미해결 상태다.
+
+이 기록 추가 후 로컬 index checker 집계: **scanned=362, indexed=327, allowlisted=35**. 위 집계는 각 기록 당시 기준으로 보존한다.
+
+- [Guided local payment lookup console](../reference/provider_facts/README.md#guided-local-payment-lookup-console) · [2026-11-07 builder evidence](../validation/2026-11-07-plan-local-payment-lookup-console/README.md) — Explicit synthetic fixture, complete OperationRef preview and one confirmed local router lookup; no payment-completion decision or economic application. Provider authentication UNDETERMINED — Toss/User; non-author A2 exact-head review and KTX/KIX CI remain required.
+
+- [Guided reward console subprocess mode](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-07 builder evidence](../validation/2026-11-07-plan-plan-local-reward-live-console/README.md) — One live synthetic local reward desk across confirmed actions and explicit reads; uncertainty stops submission, no retry/fallback, no policy, FSM or capability-grade change.
+- [Reward identity and synthetic approval composer](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-08 builder evidence](../validation/2026-11-08-plan-local-reward-approval-composer/README.md) — Optional `:guided` entry with explicit evidence and prior-record omission; raw JSON and live local desk operations remain available. Caller assertions only; no approver provisioning, policy value or capability-grade change. Non-author exact-head review and required CI remain pending.
+- [Reward source snapshot composer](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-09 builder evidence](../validation/2026-11-09-plan-local-reward-source-composer/README.md) — Explicit synthetic source phase, currency and finality flags with opaque additional JSON fields for observation, eligibility, cancellation and refund; no source-machine connection, policy default, FSM or capability-grade change. A2 non-author exact-head review and required KTX/KIX CI remain pending.
+
+- [Reusable local delegation client and subprocess console](../reference/ai_delegation/README.md#reusable-local-subprocess-client) — standard-library JSONL child ownership, explicit confirmations, terminal transport fencing; execution disabled, A5 and policy/identity/legal owners unchanged.
+- [Local delegation live console builder evidence](../validation/2026-11-07-plan-plan-local-delegation-live-console/README.md) — source-informed coverage, actual local checks, preservation and transcripts; no status promotion, A2 review or exact-head CI claim.
+
+- [Guided delegation input composer builder evidence](../validation/2026-11-08-plan-local-delegation-input-composer/README.md) — optional guided composition, unchanged envelopes, local child parity and failure fencing; A5, policy owners, A2 review and exact-head CI gates remain unchanged.
+- [Guided delegation registry initialization builder evidence](../validation/2026-11-10-plan-local-delegation-guided-init/README.md) — fixture-free confirmed startup, correlated acknowledgement and failure fencing; synthetic identities only, authority UNDETERMINED — Astra/User, A5 and exact-head review/CI gates unchanged.
+
+- [Synthetic local pool accounting workbench](../reference/token_reward/README.md#local-pool-accounting-workbench) · [2026-11-09 pool workbench builder evidence](../validation/2026-11-09-plan-plan-local-pool-accounting-workbench/README.md) — Explicit five-pool initialization, direct model credit/spend/view, confirmed guided mutations and original refusals. Separate POINT_F4 process-local simulation; pool/funding/approval values UNDETERMINED — Astra/User, accounting/legal treatment UNDETERMINED — User/designated advisers; A2 non-author exact-head review and KTX/KIX CI pending.
+
+- [Guided synthetic pool opening composer](../reference/token_reward/README.md#local-pool-accounting-workbench) · [2026-11-09 opening composer builder evidence](../validation/2026-11-09-plan-local-pool-opening-composer/README.md) — Optional explicit five-balance entry, shared initialization confirmation and unchanged process-local accounting; no funding or policy defaults. A2 non-author exact-final-head review and KTX/KIX CI remain pending.
+
+- [Live synthetic pool client and subprocess console](../reference/token_reward/README.md#live-pool-subprocess-client) · [2026-11-09 live pool builder evidence](../validation/2026-11-09-plan-local-pool-live-console/README.md) — One persistent caller-initialized local child, confirmed mutations and explicit reads; complete synthetic envelopes, terminal uncertainty fencing and child cleanup. Pool/funding policy UNDETERMINED — Astra/User; accounting UNDETERMINED — User/designated advisers. A2 non-author exact-final-head review and KTX/KIX CI remain pending.
+
+- [Guided live pool initialization](../reference/token_reward/README.md#live-pool-subprocess-client) · [2026-11-10 guided live builder evidence](../validation/2026-11-10-plan-local-pool-guided-live-init/README.md) — Confirmed five-balance initialization over stdin to one local child without an initialization fixture file; complete envelope parity and terminal initialization uncertainty cleanup. Funding policy UNDETERMINED — Astra/User; accounting UNDETERMINED — User/designated advisers. A2 non-author exact-final-head review and KTX/KIX CI remain delivery gates.
+
+## 2026-11-10 로컬 결제 효과 데스크 — 위치 안내만
+
+- [Synthetic local payment effect desk](../reference/payment_effects/README.md) — explicit synthetic fixture initialization of one private in-memory Core, the four already-published effect commands and detached selected views. `send_effect` is a local intent only; no provider, bank, chain or network transmission, pending Finance projection or new protocol command.
+- [plan-plan-local-payment-effect-desk builder evidence](../validation/2026-11-10-plan-plan-local-payment-effect-desk/README.md) — real JSONL subprocess journeys, direct-Core parity, existing coverage mapping, actual local commands and protected-file preservation. Product values UNDETERMINED — Astra/User; provider facts UNDETERMINED — provider/User; legal/accounting treatment UNDETERMINED — User/designated advisers. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-10 Manifest-v1 verifier negative vectors — 위치 안내만
+
+- [plan-manifest-verifier-negative-vector-comple builder evidence](../validation/2026-11-10-plan-manifest-verifier-negative-vector-comple/README.md) — a 56-case companion single-fault matrix over the manifest, `bootstrap-2` profile and sidecar, run by the SDK conformance harness against a temporary verifier root. Every case asserts the exact error set without ordering. Positive manifest/profile/sidecar/vector bytes and `verify_compat.mjs` are unchanged; SD1 stays OPEN, scope stays BOOTSTRAP, and no semantic or N/N-1 claim is added.
+
+## 2026-11-10 audit #30 위치 동기화 — 위치 안내만
+
+Bounded selection: 정확히 PR #426–#435이며, #399–#425와 #435 이후 범위는 이 절의 대상이 아니다. 이 절은 위치 안내만이며 canonical node 수락·완료·등급·상태·소유자·집계 변경이 아니다. 관측 base와 `origin/main`은 `bee3fc18281ca38204930d80a0e665b9575985d4`(merge #435)이다. Canonical counting은 계속 `DECISION_REQUIRED · Astra`다.
+
+- [개발계획 §5 audit #30 보충](DEVELOPMENT_PLAN.md#2026-11-10-audit-30--bounded-current-tree-location-supplement)
+- [capability register — Audit30 supplement](status/CURRENT_CAPABILITY_REGISTER.md#audit30-current-tree-supplement)
+- [loop-node crosswalk §8](status/LOOP_NODE_CROSSWALK.md#8-audit30-current-tree-supplement)
+- [audit #30 builder 검증 기록](../validation/2026-11-10-audit30-sync-nov10-location-tables/README.md) — 관측 SHA, first-parent merge mapping, 실제 로컬 checker 결과, locked blob 및 `reference/v0.3-rc1/**` 보존, 남은 전달 gate. 비작성자 검토·exact-head KTX/KIX CI·병합 승인이 아니다.
+
+SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate는 기존 조건과 소유자로 열린 채 남는다. 운영 capability 수 **0**, semantic consumers **HOLD**, unsupported bindings **NOT_BOUND**를 바꾸지 않는다.
+
+## 2026-11-10 commerce journey end-to-end conformance — 위치 안내만
+
+- [plan-commerce-journey-end-to-end-conformance builder evidence](../validation/2026-11-10-plan-commerce-journey-end-to-end-conformance/README.md) — one deterministic 44-step offline transcript through the published FSM catalogue on one show: reservation, primary payment observation, issuance, resale adoption/listing/transfer, admission, settlement distribution, cancellation/failure/refund and five adverse refusals. Command receipts are the only evidence; mock gate and mock settlement only, all funds/finality/production flags false, and the 13 read queries remain NOT_BOUND. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-10 settlement-to-credit boundary vectors — 위치 안내만
+
+- [Cross-boundary settlement-to-credit vector pack](../reference/credit_advance_f04/README.md#cross-boundary-settlement-to-credit-vector-pack) · [builder evidence](../validation/2026-11-10-plan-settlement-credit-boundary-vectors/README.md) — six synthetic consumer-replay scenarios across the F01-F03 settlement to F04 credit boundary: literal captured/committed claim snapshots as the face with no derivation, frozen face and stable `view_claim`, refund obligation and partial acceptance with `funds_executed: false`, two advances sharing one exposure ledger with caller-supplied limits, and a reported reconciliation gap with no repair. Exact JSON vectors replay with a stdlib driver; no adapter, command, product policy, Finance design, funds or funds-finality claim. A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-10 settlement variance contract — 위치 안내만
+
+- [Settlement variance observation](../reference/credit_advance_f04/README.md#settlement-variance-observation-cr-capital-1110-1) · [builder evidence](../validation/2026-11-10-cr1110-settlement-variance-contract/README.md) — F04 §7.11 defines `variance = Σ settlement obligations[].outstanding − credit view_claim.open_face` over literal mock snapshots, with a required caller-supplied `tolerance` and no default. Non-zero or out-of-tolerance observations map to `NOT_BOUND` with repair `NONE`, fail-closed and without exposure authority; `cash_delta`/`recovery_delta` are diagnostic-only and the refund component is `NOT_BOUND`. Six canonical fixture scenarios plus a stdlib replay driver; no protocol command, FSM state, error-table entry, OpenAPI byte, product policy, funds or finality claim. A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-11 shared exposure contract — 위치 안내만
+
+- [Shared exposure observation](../reference/credit_advance_f04/README.md#shared-exposure-observation-cr-capital-1110-2) · [builder evidence](../validation/2026-11-11-cr1110-shared-exposure-contract/README.md) — F04 §7.12 defines the caller-grouped, observation-only aggregation of frozen `CreditMachine.view` snapshots sharing a debtor or pool label: advance-level exposure sums plus claim-level capacity counted once per distinct `claim_id`, with a required caller-supplied `limit` and no default. `within_limit` is inclusive and never an acceptance; the machine enforces only per-claim ceilings. Frozen faces are not recomputed and exposure moves only via the existing `draw`/`repay`/`close`/`default` transitions; the refund component is `NOT_BOUND`. Every observation maps to `NOT_BOUND` with repair `NONE`, fail-closed and without exposure authority; `group_id` is a label, not a legal party. Six canonical fixture scenarios plus a stdlib replay driver extend the boundary-vectors pack without duplicating it; no protocol command, FSM state, error-table entry, OpenAPI byte, product policy, funds or finality claim. A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-11 partial-refund bearer REQUESTER (B5) — 위치 안내만
+
+- [builder evidence](../validation/2026-11-11-cr1110-refund-bearer-requester/README.md) — owner decision 2026-11-10 adopts SET option B5 `REQUESTER` for partial refunds: the mock reports `refund_bearer_policy = "REQUESTER"`, `distribution_blocked` stays `false`, distribution continues without reducing payee faces or creating `recovery_due`, and the retained `REFUND_OBLIGATION_OPEN` gate in F04 is unchanged. The historical `DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED` code stays in the SET §6 table as unreachable. All netting mechanics and numbers remain `UNDETERMINED`; the legal refund debtor is unchanged. Mock funds only, all execution flags false, no new protocol command. A2 non-author exact-head review and KTX/KIX CI remain separate gates.

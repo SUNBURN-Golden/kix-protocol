@@ -1,0 +1,7 @@
+Synthetic calculation only. No collateral adequacy, eligibility, loan or legal approval is determined. Asset selection and collateral ratios remain UNDETERMINED — Astra/User; legal enforceability remains UNDETERMINED — User/legal. No custody or F04 connection.
+Synthetic KRW liability (integer; required):
+Collateral item count (nonnegative integer; 0 means empty):
+Item 1 kind (KRW_GUARANTEE, ESCROW, TOKEN):
+Item 1 amount (integer; required):
+Proposal: {"arguments":{"collateral_items":[{"amount":25,"kind":"ESCROW"}],"liability_krw":100},"operation":"collateral_recognized"}
+Type CALCULATE to calculate once; anything else discards:

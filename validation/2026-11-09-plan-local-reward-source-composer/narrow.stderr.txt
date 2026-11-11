@@ -1,0 +1,25 @@
+.....................F.........................
+======================================================================
+FAIL: test_source_transcripts (test_reward_console.RewardConsoleTests.test_source_transcripts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-reward-source-composer/reference/token_reward/test_reward_console.py", line 216, in test_source_transcripts
+    self.parity(calls, output)
+  File "/workspace/kix-run/wt/plan-local-reward-source-composer/reference/token_reward/test_reward_console.py", line 361, in parity
+    self.assertEqual(printed('proposed', output), [r for r in calls if r['operation'] not in READS])
+AssertionError: Lists differ: [{'arguments': {'amount': 25, 'idempotency_k[4717 chars]it'}] != [{'operation': 'observe', 'arguments': {'rew[4105 chars]n'}}]
+
+First differing element 1:
+{'arguments': {'amount': 25, 'idempotency_k[562 chars]rve'}
+{'operation': 'hold', 'arguments': {'reward[126 chars]ld'}}
+
+First list contains 1 additional elements.
+First extra element 8:
+{'arguments': {'approval_ref': {'action': 'point-payout', 'actor_type': 'AI', 'authority_id': 'synthetic-human-slot', 'evidence_refs': ['synthetic-evidence'], 'generation': 1, 'record_id': 'boundaries-approval', 'scope_ref': 'synthetic-program'}, 'budget_ceiling': 50, 'idempotency_key': 'ai-rejection', 'reward_id_value': 'reward-id-v1:407ca95e39932b5adad86b051c71d5131ec3a696037f8ff45cab298164b94662', 'signed_bytes_digest': '1111111111111111111111111111111111111111111111111111111111111111', 'spend_pool': 'TOKEN_TREASURY_REWARD'}, 'operation': 'submit'}
+
+Diff is 8361 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 47 tests in 34.499s
+
+FAILED (failures=1)

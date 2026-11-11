@@ -1,0 +1,3815 @@
+# Synthetic local admission presentations
+
+`PresentationAdapter` connects synthetic command inputs to an existing,
+caller-configured `AdmissionMachine`. The machine retains its reservation,
+ownership and settlement checks from
+[BOOKING_RESALE_ADMISSION_GATES.md §11](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#11-검표-자격-수락-상태-기계).
+No FSM, contract, protocol command, HTTP, SDK or catalogue changes are involved.
+
+## Interfaces
+
+`PresentationSource.fetch(presentation_id, *, operation)` returns a dictionary
+or `None`. `operation` is `authorize_admission` or `consume`, naming existing
+Python methods, not new wire commands. Exact record fields are:
+
+| Operation | Fields |
+|---|---|
+| authorize_admission | right_id, version, holder_role, request |
+| consume | right_id, version, request |
+
+`PresentationAdapter(machine, source)` provides two separate explicit methods:
+
+```python
+adapter.authorize_admission(
+    presentation_id, admission_id=admission_id, idempotency_key=authorization_key,
+    gate_role=gate_role, expires_ms=expires_ms,
+)
+adapter.consume(
+    presentation_id, consume_id=consume_id, idempotency_key=consumption_key,
+    gate_role=gate_role,
+)
+```
+
+All caller parameters are mandatory. Each invocation fetches exactly once,
+including replay. Missing input raises `PresentationNotFound`; malformed input
+or caller scalar shapes raise `InvalidPresentationRecord`; source faults raise
+`PresentationSourceError`. These are local exceptions with no protocol codes.
+Validation finishes before accessing the FSM or binding its idempotency key.
+Fetch exceptions are caught only around fetch. Delegation returns the FSM's
+receipt and propagates its errors unchanged. The presentation selector never
+enters FSM arguments or fingerprints. There is no retry, fallback, receipt cache,
+automatic consume, clock setting or credential adoption in the adapter.
+
+`FakePresentationSource(recordings=...)` copies a mapping keyed by
+`(operation, presentation_id)` with JSON-text or `SyntheticPresentationFault`
+values. Its recordings are read-only; calls are tuple snapshots; each fetch
+parses a detached object. Malformed JSON, duplicate keys, non-JSON constants and
+non-object roots are rejected. ERROR and TIMEOUT markers fail immediately with
+no sleeping, I/O or external calls.
+
+## Coverage before adding tests
+
+The following mapping was recorded before adding adapter/source tests. Existing
+coverage was inspected in `test_admission_fsm.py`, `test_returned_data_isolation.py`,
+`test_admission_rejection_atomicity.py` and the
+[clause map](../../docs/status/BRA_CONTRACT_EVIDENCE_MAP.md).
+
+| Requirement | Existing coverage classification | Gap addressed by new evidence |
+|---|---|---|
+| Explicit authorize then one consume; duplicate has no effect | Sufficient FSM coverage: `AdmissionFsmTests.test_issued_credential_is_consumed_once_and_replay_does_not_bump_version` | Partial overall: adapter delegation and runnable journey |
+| Receipts, errors, first-result replay and key conflicts | Sufficient FSM coverage: same test, `test_returned_data_isolation.py` and rejection atomicity tests | Partial overall: adapter/direct equivalence and exception identity |
+| Stale holder/version, transferred credentials | Sufficient FSM coverage: `test_transfer_then_entry_rejects_both_presentations`, refusal/atomicity cases | Partial overall: same refusals through source inputs |
+| Live listing and expired authorization | Sufficient FSM coverage: `test_listing_and_cancel_order_against_entry`, `test_expired_authorization_is_replaced_once` | Partial overall: adapter path |
+| Configured authorities and mock-only false flags | Sufficient scoped FSM coverage: `test_external_sources_fail_closed_without_being_read`, `test_settlement_commit_is_not_entry_and_a_granted_flag_rejects`, `test_open_items.py` | Partial overall: delegation preserves bindings/flags |
+| Exactly one fetch, no retry/fallback/cache | Not covered | Source call counts for both operations and every outcome |
+| Immutable recordings and detached fetch/history | Not covered | Constructor mutation, fetched mutation, read-only mapping and history snapshots |
+| Missing/malformed/fault rejection before FSM access/key binding | Not covered | Zero-call spy, unchanged real-machine states/journals and same-key valid acceptance |
+| Discovery and documentation wiring | Existing checkers cover repository structure | New test modules discovered and documentation indexed |
+
+New `test_presentation_source.py` and `test_presentation_adapter.py` are
+source-informed local regression evidence, not independent verification.
+
+## Example and verification
+
+From repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 reference/booking_resale_admission/example_presentation_adapter.py
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$PWD/reference/booking_resale_admission" \
+  python3 -m unittest test_presentation_source test_presentation_adapter
+```
+
+The example constructs actual local settlement, reservation, resale and admission
+machines, injects clocks, records synthetic payment, commits mock settlement,
+issues and adopts a ticket. It explicitly authorizes, checks that consumption has
+not happened, consumes and repeats the consume. Fixture amounts, fee policy,
+gate labels and expiry are illustrative choices, not product defaults.
+
+The [execution record](../../validation/2026-10-31-plan-local-admission-presentation-adapter/README.md)
+records selected socket-free admission regressions and applicable CI equivalents.
+Workflow discovery includes `test_*.py`; the unchanged HTTP suite remains required
+in normal exact-final-head CI. No local full-suite success is claimed.
+
+## Limitations
+
+P03 remains **설계중**. Production policy, identity, revocation, independent
+currentness and approved admission timing remain **UNDETERMINED**, with
+Astra/User and existing contract owners. The source only supplies synthetic
+command inputs; it cannot authorize venue identity, revocation or currentness.
+Old and transferred credentials are both refused without reissuance. Receipts
+retain `MOCK_GATE_ONLY`, `IN_MEMORY_FSM`, `NON_CLAIMS`, false offline/reissue/
+production flags and `external_admission="UNSUPPORTED"`.
+
+Existing class-B clock-skew and post-mutation fault characterizations remain;
+pre-delegation validation does not establish general cross-machine atomicity.
+This is in-memory, sequential mock evidence: no persistence, hardware, credentials,
+external calls, production runtime, funds, chain finality, venue exactly-once or
+runtime activation. Non-author exact-head review and KTX/KIX checks are separate
+supervisor steps, not builder self-assessments.
+
+## Reusable admission session and JSONL CLI
+
+`AdmissionSession(machine, source)` is importable with this directory on
+`PYTHONPATH`. It delegates to the merged adapter and the caller's actual
+`AdmissionMachine`, preserving its configured sources, exceptions and receipts.
+It has no receipt cache or independent lifecycle. Each call performs only the
+requested operation. This is a sequential local session, not a delegated venue
+credential or a protocol session command.
+
+```python
+from admission_fixture import load_fixture
+
+session = load_fixture("reference/booking_resale_admission/fixtures/admission_session.json")
+receipt = session.authorize_admission(
+    "ticket-1", admission_id="entry-1", idempotency_key="entry-key-1",
+    gate_role="gate-a", expires_ms=1_060_000,
+)
+assert session.view("issue-1")["version"] == 1
+# A separate caller request is necessary to consume.
+consumed = session.consume(
+    "ticket-1", consume_id="consume-1", idempotency_key="consume-key-1", gate_role="gate-a",
+)
+```
+
+The nine public methods and all required arguments are:
+
+| Local method selector | Arguments |
+|---|---|
+| `adopt_issued` | Complete explicit adoption input listed in [fulfillment](#explicit-ticket-fulfillment-on-the-shared-desk), including `idempotency_key` |
+| `authorize_admission` | `presentation_id`, `admission_id`, `idempotency_key`, `gate_role`, `expires_ms` |
+| `consume` | `presentation_id`, `consume_id`, `idempotency_key`, `gate_role` |
+| `authorize_admission_inputs` | `admission_id`, `idempotency_key`, `right_id`, `version`, `holder_role`, `gate_role`, `request`, `expires_ms` |
+| `consume_inputs` | `consume_id`, `idempotency_key`, `right_id`, `version`, `gate_role`, `request` |
+| `view` | `right_id` |
+| `view_credential` | `right_id`, `version`, `holder_role` |
+| `reconcile` | `right_id`, `idempotency_key` |
+| `set_clock` | `subject_id`, `idempotency_key`, `now_ms` |
+
+Recorded Python authorization/consumption accept a positional presentation ID and the
+remaining arguments as keyword-only, matching the adapter. Views, reconciliation and clock
+changes delegate directly to the existing machine. `set_clock` retains the
+machine's reservation clock delegation and does not advance the resale clock.
+No wall clock is consulted. A duplicate first-result receipt may still say
+`AUTHORIZED` after a fresh `view` says `CONSUMED`; the session does not replace
+one with the other.
+
+### Fixture input
+
+`admission_fixture.load_fixture(path)` strictly decodes the caller's JSON and
+constructs fresh `SettlementMachine()`, `ReservationMachine(settlement_source=book)`,
+`ResaleMachine(ticket_source=tickets)` and
+`AdmissionMachine(ticket_source=tickets, ownership_source=resale, settlement_source=book)`.
+It returns the session only after every explicit setup operation succeeds.
+The fixture is synthetic setup input, not saved session state or persistence.
+
+The top-level object requires exactly `fixture_version: 1`,
+`provenance: "MOCK_GATE_ONLY"`, `setup` and `presentations`. Unknown fields,
+duplicate JSON keys, non-finite numbers, wrong shapes and unsupported versions
+are rejected with `FixtureError`, a local exception without a protocol code.
+The [complete fixture](fixtures/admission_session.json) supplies every value;
+none is an approved product default.
+
+`setup` is a nonempty ordered array of objects with exactly `machine`,
+`operation`, `subject_id`, `idempotency_key` and `body`. Each body must include
+exactly the existing method's keyword parameters other than `idempotency_key`,
+including normally optional `currency`, `adjustment_reason`, `reservation_id`
+and `quote_ref`. The subject ID is passed as the method's first argument.
+Only these explicit setup operations are accepted:
+
+| Machine | Setup operations |
+|---|---|
+| settlement | `initiate`, `authorize`, `capture`, `commit` |
+| reservation | `set_clock`, `register_show`, `hold`, `confirm`, `observe_payment`, `bind_settlement`, `issue` |
+| resale | `set_clock`, `adopt_issued` |
+| admission | `set_clock`, `adopt_issued` |
+
+Every timed machine requires its own explicit initial clock before its other
+setup operations. Every issued right requires both resale and admission
+adoption, a confirmed reservation and an explicit settlement binding.
+Adoption and confirmation require non-null reservation and quote identifiers
+for this fixture interface. The FSMs validate the actual setup order, bindings,
+amounts, clocks and policies; their rejections propagate unchanged. Invalid
+setup discards the local graph without exposing a partial session. This does
+not add cross-machine rollback semantics.
+
+`presentations` is an array of objects with `operation`, `presentation_id` and
+exactly one of `recorded_text` or `fault`. The first two fields form the unique
+recording identity. `operation` is `authorize_admission` or `consume`.
+`recorded_text` is JSON **text** using the adapter's record fields above; it is
+preserved for source validation at fetch time. `fault` is one of
+`synthetic_presentation_error` or `synthetic_presentation_timeout`, the existing
+immediate synthetic fault markers. Missing recordings remain missing. The
+loader never manufactures presentations, identifiers, keys, policy or clocks.
+
+### Runnable transcript
+
+From repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="$PWD/reference/booking_resale_admission"
+python3.12 reference/booking_resale_admission/admission_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/admission_session.json \
+  --requests reference/booking_resale_admission/fixtures/admission_requests.jsonl
+# Expected exit: 1, because the transcript contains three explicit rejections.
+```
+
+`--requests -` reads JSONL from stdin in the same process. Each line requires
+exactly `{"operation": METHOD, "arguments": {...}}`, with all arguments in the
+table above. These are local method selectors, not wire commands or a read
+catalogue. Blank lines, unknown fields/methods and missing arguments are
+malformed input. No request or key is generated implicitly.
+
+One JSON object is emitted per supplied request, containing `operation` and
+`receipt`, `view` or `error`. Domain errors retain `error.code`; local exceptions
+use `error.type` and `error.message`, without an invented protocol code.
+A domain or presentation rejection permits processing the next explicitly
+supplied line, with no retry or follow-up request. Malformed JSON/schema stops
+processing immediately; earlier explicit operations in that process may
+already have occurred. Setup failures produce one error and process no requests.
+Exit codes are 0 for all-success input, 1 for request rejections, and 2 for
+malformed input/setup or input-file errors. Unexpected programming failures
+remain visible as exceptions.
+
+The fixture transcript produces these observable results:
+
+| Line | Request | Expected result |
+|---|---|---|
+| 1 | view ticket 1 | `ELIGIBLE`, version 1 |
+| 2–4 | authorize; view; view credential | `AUTHORIZED`, version 1; fresh presentation, no consumption |
+| 5 | explicit consume | `CONSUMED_ONCE`, version 2 |
+| 6 | same consume and key | duplicate receipt, no new journal entry/effect |
+| 7–8 | same authorization; current view | first `AUTHORIZED` receipt versus current `CONSUMED` view |
+| 9 | authorization key with a different gate | `IDEMPOTENCY_CONFLICT` |
+| 10 | ticket 2 stale version | `STALE_VERSION` |
+| 11–12 | authorize ticket 2; explicitly advance admission clock | authorization then its expiry boundary |
+| 13–14 | consume ticket 2; view | `ADMISSION_EXPIRED`; version 1, still unconsumed |
+
+### Session coverage and validation
+
+The [execution record](../../validation/2026-11-02-plan-local-admission-session-cli/README.md)
+contains the requirement-by-requirement coverage mapping recorded before new
+tests, commands/results and the exact socket-free admission selection.
+`test_admission_session.py` fills session delegation, source-failure/no-follow-up,
+clock forwarding, first-receipt/current-view and retained flag gaps.
+`test_admission_cli.py` fills strict fixture/input validation, reusable loading,
+CLI subprocess/stdin, transcript/replay and exit-status gaps. These tests use
+actual configured local FSMs, plus boundary spies and immediate synthetic faults.
+
+```bash
+python3.12 -m unittest test_admission_session test_admission_cli
+python3.12 -m unittest test_presentation_source test_presentation_adapter
+```
+
+Normal non-author exact-final-head review/A2 and completed/success KTX and KIX
+workflows, including the unchanged HTTP suite, remain necessary before merge.
+Local results do not claim full booking-suite success. The limitations above
+remain: P03 is **설계중**; production timing, identity, revocation and independent
+currentness remain **UNDETERMINED**, owned by Astra/User and contract owners.
+No automatic consume, retry, polling, reissue, persistence, HTTP, frontend,
+protocol command, read catalogue, runtime activation or policy decision is added.
+
+## Request-time admission inputs
+
+A running `AdmissionSession` also accepts synthetic presentation data directly,
+without a startup recording. These two local Python selectors call the existing
+public FSM once each; they add no protocol commands. Recorded
+`authorize_admission` / `consume` keep their adapter and source-fetch behavior.
+
+```python
+from admission_fixture import load_fixture
+
+session = load_fixture("reference/booking_resale_admission/fixtures/admission_request_inputs_session.json")
+authorized = session.authorize_admission_inputs(
+    "entry-1", idempotency_key="entry-key", right_id="issue-1", version=1,
+    holder_role="buyer-1", gate_role="gate-a", request="11" * 32, expires_ms=1060000,
+)
+# Authorization leaves version 1; consuming requires this separate call.
+consumed = session.consume_inputs(
+    "consume-1", idempotency_key="consume-key", right_id="issue-1", version=1,
+    gate_role="gate-a", request="11" * 32,
+)
+```
+
+The signatures take `admission_id` or `consume_id` first, followed by mandatory
+keyword-only fields listed in the admission method table. All values are
+forwarded unchanged. The FSM validates identifiers/roles, integer version/expiry
+(excluding bool) and the opaque lowercase 64-hex-character `request`; there is
+no credential issuance or cryptographic verification here. No `presentation_id`
+or `external_dependency` is accepted by these selectors.
+
+Each standalone JSONL line has exactly `operation` and `arguments`:
+
+```json
+{"operation":"authorize_admission_inputs","arguments":{"admission_id":"entry-1","idempotency_key":"entry-key","right_id":"issue-1","version":1,"holder_role":"buyer-1","gate_role":"gate-a","request":"1111111111111111111111111111111111111111111111111111111111111111","expires_ms":1060000}}
+{"operation":"consume_inputs","arguments":{"consume_id":"consume-1","idempotency_key":"consume-key","right_id":"issue-1","version":1,"gate_role":"gate-a","request":"1111111111111111111111111111111111111111111111111111111111111111"}}
+```
+
+The shared desk accepts the same lines with exactly one extra envelope field,
+`"surface":"admission"`; its Python methods are
+`desk.admission.authorize_admission_inputs(...)` and
+`desk.admission.consume_inputs(...)`. Both selectors emit `receipt` and retain
+the supplied selector in `operation`. Domain errors retain their existing
+`error.code`, including malformed semantic input; they are not adapter
+`InvalidPresentationRecord` errors. Unknown/missing fields, wrong shapes,
+duplicate keys and nonfinite JSON stop with exit 2. Domain refusals continue
+only on supplied lines and yield exit 1; all-success streams yield exit 0.
+
+The [standalone fixture](fixtures/admission_request_inputs_session.json) and
+[shared fixture](fixtures/ticket_operations_admission_inputs_session.json) use
+fixture version 1, `MOCK_GATE_ONLY`, complete bound setup and `presentations: []`.
+The shared fixture also has `offers: []`. The clocks, amounts and expiry values
+are synthetic examples, never product defaults. From repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+for pair in admission:admission_request_inputs ticket_operations:ticket_operations_admission_inputs; do
+  desk="${pair%%:*}"
+  transcript="${pair#*:}"
+  python3.12 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${transcript}_session.json" \
+    --requests "reference/booking_resale_admission/fixtures/${transcript}.jsonl"
+  python3.12 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${transcript}_session.json" \
+    --requests - < "reference/booking_resale_admission/fixtures/${transcript}.jsonl"
+done
+```
+
+Both transcripts intentionally exit 1. The standalone 15-line stream includes
+consume-before-authorization, wrong gate/request, separate consumption, replay
+of both first receipts, a changed-input conflict, fresh competing consumption,
+and explicit clock advancement followed by expired consumption. The shared
+19-line stream lists and cancels explicitly, retains the first `LISTING_LOCKED`
+refusal, authorizes with a fresh key, consumes separately and replays. It then
+transfers the second right through explicit resale operations and refuses old
+version/holder and moved-credential admission inputs without reissuance.
+
+No presentation is fetched, identity/version inferred or refreshed, clock
+changed, view treated as admission authority, or next operation invoked by the
+direct methods. Bound reservation, ownership and settlement checks remain in
+the FSM. Replay shares the recorded path's first-result identity and returns
+historical receipts; views remain observations. Product policy stays
+**UNDETERMINED — Astra/User**; legal effects stay **UNDETERMINED — User/legal**.
+P03 remains design-stage. No network, hardware, credentials, persistence or
+activation is added. See the [validation record](../../validation/2026-11-04-plan-local-admission-request-inputs/README.md)
+for source-informed coverage, local results and outstanding review/CI gates.
+
+## Synthetic local resale offers
+
+`ResaleOfferSource.fetch(offer_id)` supplies one dictionary or `None`.
+`ResaleOfferAdapter(machine, source)` accepts a caller-configured
+`ResaleMachine` and exposes only this explicit listing operation:
+
+```python
+adapter.list_resale(offer_id, listing_id="list-1", idempotency_key="list-key")
+```
+
+The exact `ResaleOfferRecord` schema is:
+
+| Field | Shape |
+|---|---|
+| `offer_id` | Required identifier equal to the requested selector |
+| `right_id`, `seller_role`, `recipient_role` | Required identifiers |
+| `version` | Required nonnegative integer, excluding bool |
+| `amount` | Required positive integer within existing `_money` bounds |
+| `expires_ms` | Required integer within existing `_ms` bounds |
+| `reservation_id` | Optional identifier or null; omission forwards `None` |
+
+Identifiers use the existing `_ident` bounds. Unknown fields are refused,
+including listing IDs, idempotency keys, payment fields and authority flags.
+Listing identity and key always come from the caller. The offer selector is
+local metadata and never enters FSM arguments or fingerprints.
+
+Each explicit invocation fetches exactly once, including replay and malformed
+caller arguments. Missing input raises `ResaleOfferNotFound`; malformed records,
+mismatched selectors and invalid caller shapes raise `InvalidResaleOfferRecord`;
+source faults raise `ResaleOfferSourceError`. These local exceptions carry no
+protocol codes. Validation finishes before accessing any FSM method or binding
+its key. Fetch exceptions are caught only around fetch; FSM receipts are returned
+directly and FSM exceptions propagate unchanged. There is no retry, polling,
+cache or fallback. A source failure on replay remains a source failure.
+
+The adapter checks scalar shape, not ownership, version currency, price cap,
+expiry against a clock, live listings or admission locks. Those decisions and
+retained first-result semantics belong to the existing FSM
+([contract §10](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#10-리셀-수락-상태-기계)).
+A valid record can therefore be refused by the FSM and retain a rejection key;
+a malformed record never reaches that boundary. Omitted and null reservation
+bindings both forward `None`, leaving authority resolution to the FSM.
+
+`FakeResaleOfferSource(recordings=...)` copies a mapping from offer IDs to
+immutable JSON strings or `SyntheticResaleOfferFault.ERROR/TIMEOUT` markers.
+The mapping is read-only; each fetch decodes a detached object; `calls` returns
+a tuple snapshot. Duplicate JSON keys, non-finite constants, malformed JSON and
+non-object roots are refused. Synthetic faults raise immediately without I/O.
+
+### Resale coverage and example
+
+Coverage was mapped before adding the new tests:
+
+| Requirement | Existing coverage | New gap evidence |
+|---|---|---|
+| Ownership/version/price/expiry and competing listing | Sufficient scoped FSM behavior: `test_resale_fsm.py::ResaleFsmTests.test_stale_listing_policy_and_expiry_do_not_transfer`, `test_buy_hold_is_optional_and_cancel_order_decides_the_race` | Partial overall: `test_resale_offer_adapter.py` compares direct and adapted receipts/errors, states, digests and journals |
+| Replay, rejection atomicity, admission locks and mock flags | Sufficient scoped FSM behavior: `test_restore_replays_one_transfer_and_omits_rejections`, `test_external_attempts_do_not_journal`, generated `ResaleRejectionAtomicityTests.test_list_resale_*_leaves_no_trace` | Partial overall: exact forwarding, exception identity, replay after expiry and retained rejections through the adapter |
+| Single fetch, immutable recordings, detached outputs | Not covered for resale source | `test_resale_offer_source.py` and adapter call-count/fault tests |
+| Missing/malformed/mismatched/fault inputs touch no FSM or key | Not covered for resale source | No-access guard, real-machine snapshots/journals, zero method calls and valid acceptance with the same key |
+| Runnable listing boundary | Not covered | `example_resale_offer_adapter.py` and its regression test |
+
+From repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/example_resale_offer_adapter.py
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$PWD/reference/booking_resale_admission" \
+  python3.12 -m unittest test_resale_offer_source test_resale_offer_adapter
+```
+
+The example constructs actual `ReservationMachine` and `ResaleMachine`
+instances, registers a synthetic show, issues and adopts a ticket, then explicitly
+lists and separately attempts a competing listing, displaying `RIGHT_SALE_LOCKED`.
+Setup injects an already-observed primary-payment fact; it initiates no payment.
+After setup the journey performs no hold, resale-payment or transfer command,
+and leaves holder/version unchanged. All amounts, expiry and role labels are
+synthetic fixture choices, not approved policy. Actual checks and limitations
+are in the [resale execution record](../../validation/2026-11-02-plan-local-resale-offer-source/README.md).
+
+R01/R05 remain partial and **설계중**. Product policy stays **UNDETERMINED** with
+Astra/User; legal/privacy inputs retain User and legal/privacy owners, tax and
+accounting retain User and tax/accounting owners, and Toss inputs retain User
+and the named Toss technical/sales owners in
+[§7.1](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#71-이-노드가-분류하는-항목).
+This source-informed single-process mock adds no payment lookup handoff,
+automatic hold/payment/transfer, seller payout, marketplace authentication,
+external calls or persistence. Existing Class B internal-fault and clock-skew
+characterizations remain; no general rollback guarantee is added. No real funds,
+provider/chain verification, independent currentness, cross-channel exclusion,
+legal compliance or production readiness is claimed. Non-author exact-final-head
+review and successful KTX/KIX CI remain required before merge.
+
+## Reusable resale session and JSONL CLI
+
+`ResaleSession(machine, source)` is importable with this directory on
+`PYTHONPATH`. Supply an existing configured `ResaleMachine` and
+`ResaleOfferSource`. Only `list_resale` calls the existing offer adapter, once
+per explicit invocation, including replay. Every other method forwards to the
+configured machine and returns its receipts/views unchanged. No session receipt
+cache, generated identifiers, automatic retries or implicit lifecycle actions
+are added. The caller explicitly chooses every mutation's idempotency key.
+
+| Session method / local CLI selector | Arguments besides mandatory `idempotency_key` on mutations |
+|---|---|
+| `adopt_issued` | Complete explicit adoption input listed in [fulfillment](#explicit-ticket-fulfillment-on-the-shared-desk) |
+| `list_resale` | `offer_id`, `listing_id` |
+| `list_resale_inputs` | `listing_id`, `right_id`, `version`, `seller_role`, `recipient_role`, `amount`, `expires_ms`, `reservation_id` (explicit value or `None` / JSON `null`) |
+| `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
+| `release_hold` | `hold_id`, `buyer_role` |
+| `cancel_listing` | `listing_id`, `seller_role` |
+| `observe_recorded_payment` | `recording_id`, `listing_id` (optional configured synthetic payment source required) |
+| `observe_resale_payment` | `listing_id`, `payment_ref`, `amount`; optional `buyer_role` (default `None`) |
+| `bind_settlement` | `listing_id`, `settlement_id` |
+| `accept_resale` | `transfer_id`, `listing_id` |
+| `close` | `listing_id` |
+| `reconcile` | `listing_id`; mandatory caller key, process-local receipt bookkeeping |
+| `set_clock` | `subject_id` (`"clock"`), `now_ms`; advances resale only |
+| `view` | `listing_id`; no key |
+| `view_right` | `right_id`; no key |
+| `view_presentation` | `right_id`, `version`, `holder_role`; no key |
+
+These are existing Python method selectors, not new protocol commands or a
+read catalogue. FSM scalar validation and existing errors remain authoritative.
+In Python the first identity may be positional, and the remaining arguments
+are keyword-only. For example:
+
+```python
+from resale_fixture import load_fixture
+
+session = load_fixture("reference/booking_resale_admission/fixtures/resale_session.json")
+receipt = session.list_resale("offer-1", listing_id="list-1", idempotency_key="list-key")
+current = session.view("list-1")
+```
+
+### Request-time resale inputs
+
+`session.list_resale_inputs(listing_id, *, right_id, version, seller_role,
+recipient_role, amount, expires_ms, idempotency_key, reservation_id)` lists an
+already-adopted right using the caller's complete inputs. All nine fields are
+mandatory, including `reservation_id`: supply an explicit binding or `None`
+(`null` in JSON). The method forwards values unchanged in exactly one
+`ResaleMachine.list_resale` call. It fetches no offer or payment recording and
+performs no preflight, coercion, clock advancement, retry or follow-up.
+Ownership, version, reservation authority, price limits, expiry, admission/sale
+locks and retained first-result replay stay FSM-owned. A null binding is passed
+literally; any authority resolution belongs to the FSM.
+
+Standalone JSONL uses exactly this envelope and these argument fields:
+
+```json
+{"operation":"list_resale_inputs","arguments":{"listing_id":"request-list-1","right_id":"issue-1","version":1,"seller_role":"buyer-1","recipient_role":"buyer-2","amount":8000,"expires_ms":1120000,"idempotency_key":"request-list-key","reservation_id":null}}
+```
+
+For `ticket_operations_cli.py`, add exactly `"surface":"resale"` to the outer
+object. Missing/extra fields (including `offer_id`) and non-object envelopes or
+arguments are rejected before dispatch. Scalar semantics remain FSM-owned.
+Results contain `operation` and `receipt`; the shared desk also returns
+`surface`. Errors and exit conventions are unchanged: **0** for all success,
+**1** for domain/source refusals (only supplied later lines continue), **2** for
+structural/input failures (stop immediately). The existing recorded-offer
+`list_resale(offer_id, ...)` method remains available; identical FSM inputs and
+keys share its replay identity. This local selector adds no protocol command.
+
+The new fixtures contain `offers: []` and explicit synthetic issuance/adoption.
+Each transcript lists, replays, explicitly holds/releases/cancels, replays the
+original listing receipt and reads current state. From the repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+for desk in resale ticket_operations; do
+  python3 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${desk}_request_inputs_session.json" \
+    --requests "reference/booking_resale_admission/fixtures/${desk}_request_inputs.jsonl"
+  python3 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${desk}_request_inputs_session.json" \
+    --requests - < "reference/booking_resale_admission/fixtures/${desk}_request_inputs.jsonl"
+done
+```
+
+Both journeys exit **0**. Every subsequent payment, transfer, settlement or close
+requires its own explicit request. There are no services, credentials,
+persistence, authentication, external execution, activation or policy defaults.
+Fixture amounts/times/roles are synthetic examples, not product policy.
+Product policy remains **UNDETERMINED — Astra/User**; legal effects remain
+**UNDETERMINED — User/legal**. The [validation record](../../validation/2026-11-04-plan-local-resale-request-inputs/README.md)
+maps existing coverage and records local evidence, limitations and pending review/CI.
+
+### Synthetic resale fixture schema
+
+`resale_fixture.load_fixture(path)` accepts exactly `fixture_version: 1`,
+`provenance: "MOCK_GATE_ONLY"`, `setup`, and `offers`, plus optional `payments`
+(documented below). No policy values or clocks
+are defaulted. Setup entries have exactly `machine`, `operation`, `subject_id`,
+`idempotency_key`, `body`. The setup allowlist is:
+
+- `settlement`: `initiate`, `authorize`, `capture`, `commit`.
+- `reservation`: `set_clock`, `register_show`, `hold`, `confirm`,
+  `observe_payment`, `bind_settlement`, `issue`.
+- `resale`: `set_clock`, `adopt_issued`.
+
+Body fields exactly match the corresponding `admission_fixture._SETUP` schema
+for those three machines; no admission setup is accepted. The complete
+[synthetic fixture](fixtures/resale_session.json) shows every field. Both
+reservation and resale clocks must be explicitly set before their other setup
+operations. Each issued right needs matching prior confirmation/issuance and
+resale adoption with non-null reservation/quote identifiers; the actual FSM
+checks show, slot, price, payment and issuance equality. Settlement binding is
+optional for issuance and resale. No settlement setup is required for UNBOUND
+flows. `PRIMARY_FEE_BPS` (`kind`, `fee_bps`, `residual_payee`, `fee_payee`) is
+caller-supplied synthetic settlement policy, never derived from resale allocation.
+
+Each offer entry has `offer_id` plus exactly one of `recorded_text` or `fault`.
+Duplicate offer identities are refused. `recorded_text` is JSON text with the
+existing offer fields documented above; validation on fetch belongs to the
+existing source/adapter. Supported immediate fault values are
+`synthetic_resale_offer_error` and `synthetic_resale_offer_timeout`.
+
+Structure is validated before construction. The loader builds fresh actual
+`SettlementMachine`, `ReservationMachine(settlement_source=book)` and
+`ResaleMachine(ticket_source=tickets, settlement_source=book)` instances and
+executes setup sequentially through public APIs. It publishes a session only
+after setup succeeds. This private construction is not cross-machine rollback.
+It does not change existing rejection behavior or clock-skew characterizations.
+
+### Runnable resale transcript
+
+From repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="$PWD/reference/booking_resale_admission"
+python3 reference/booking_resale_admission/resale_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/resale_session.json \
+  --requests reference/booking_resale_admission/fixtures/resale_requests.jsonl
+python3 -m unittest test_resale_session test_resale_cli
+```
+
+Use `--requests -` for stdin. Each line has exactly this shape:
+
+```json
+{"operation":"hold_buy","arguments":{"hold_id":"buy-hold","listing_id":"list-1","buyer_role":"buyer-2","idempotency_key":"buy-key"}}
+```
+
+The included transcript emits twelve rows, exits 0 and explicitly lists, holds,
+records synthetic payment, binds the preconfigured committed mock settlement,
+transfers, repeats transfer, closes, repeats transfer again and reads all three
+views. Only one transfer is journaled; current version is 2, generation stays 1.
+Replay after closure still returns the first `TRANSFERRED` snapshot with
+`duplicate: true`, `applied: null`; current `view` says `CLOSED`. The old holder's
+presentation no longer matches; the new holder/version matches the local right.
+That match does not reissue a venue credential.
+
+Payment observation never binds or commits settlement and never transfers.
+Binding never observes payment, calls settlement commands or transfers. Transfer
+never closes. UNBOUND transfer remains supported with
+`mock_settlement_commit_observed: false`. Bound uncommitted settlement fails with
+`SETTLEMENT_NOT_COMMITTED`, leaving settlement and ownership unchanged. To
+exercise it, omit only the `settlement` `commit` setup entry in a separate caller
+fixture, then supply the transcript through its first transfer. Competing
+listings, stale holder/version, expiry and cancellation after payment retain
+`RIGHT_SALE_LOCKED`, `NOT_HOLDER`, `STALE_VERSION`, `LISTING_NOT_OPEN` and
+`COMPENSATION_UNDEFINED` respectively.
+
+Output is one JSON object per request: `{"operation": ..., "receipt": ...}`,
+`{"operation": ..., "view": ...}` or `{"operation": ..., "error": ...}`.
+Domain errors preserve `{"code": error.code}`; fixture/source failures use
+`{"type": ..., "message": ...}`. Exit 0 means all requests succeeded; exit 1
+means a domain/source rejection occurred, with later operations possible only
+from later explicit input lines. Structural/fixture/file/usage failure exits 2;
+a malformed request stops the stream immediately. Unknown selectors, extra or
+missing arguments, invalid roots, duplicate keys at every depth, malformed JSON,
+nonfinite constants and exponent overflow are refused. Optional payment
+`buyer_role` may be omitted or null; all other documented arguments are required.
+Unexpected programming exceptions surface as failures. Views neither fetch offers
+nor change any machine.
+
+### Resale session coverage and limits
+
+The [validation record](../../validation/2026-11-02-plan-local-resale-session-cli/README.md)
+maps existing coverage before the new suites, gives actual commands/results and
+records remaining exact-head gates. `test_resale_session.py` covers delegation,
+explicit effects, source faults, historical/current views and isolation.
+`test_resale_cli.py` covers strict fixtures and requests, fresh actual graphs,
+importability, stdin/file execution, error continuation and uncommitted settlement.
+Existing resale FSM/source/adapter and HTTP tests remain unchanged.
+
+All values are synthetic. R01–R04 remain **설계중** and retain their existing
+status. Product TTLs, authentication, compensation, seller payout, legal treatment
+and provider authority remain **UNDETERMINED**, owned by Astra/User and the
+User/legal/privacy/tax/accounting/Toss owners in contract §7.1. Provenance remains
+`MOCK_GATE_ONLY`; every existing mock/non-claim flag is preserved. No persistence,
+sockets, HTTP, SDK, external service, credential, real money, provider/chain call,
+runtime activation or new protocol command is added. No durability, economic
+finality, bank exactly-once, independent currentness, legal compliance or
+production readiness is claimed. Non-author A2 exact-final-head review and both
+required workflows, including unchanged HTTP coverage, remain gates before merge.
+
+## Shared local ticket operations desk
+
+`ticket_operations_session.TicketOperationsSession` constructs one settlement,
+reservation, resale and admission machine. Reservation, resale and admission
+share the settlement source; resale and admission share the reservation source;
+admission reads that same resale machine as its ownership source. Its `.booking`
+is the existing `BookingSession` over that exact reservation machine. Its `.resale`
+and `.admission` offer both recorded adapters and explicit request-input methods. Each construction is a fresh sequential in-memory graph.
+
+With this directory on `PYTHONPATH`, callers can supply their own synthetic setup
+and sources:
+
+```python
+import json
+from pathlib import Path
+from fake_presentation_source import FakePresentationSource
+from fake_resale_offer_source import FakeResaleOfferSource
+from ticket_operations_session import TicketOperationsSession
+
+value = json.loads(Path("reference/booking_resale_admission/fixtures/ticket_operations_session.json").read_text())
+desk = TicketOperationsSession(
+    setup=value["setup"],
+    offer_source=FakeResaleOfferSource(recordings={e["offer_id"]: e["recorded_text"] for e in value["offers"]}),
+    presentation_source=FakePresentationSource(recordings={
+        (e["operation"], e["presentation_id"]): e["recorded_text"] for e in value["presentations"]}),
+)
+desk.resale.list_resale("offer-1", listing_id="list-1", idempotency_key="my-list")
+desk.resale.cancel_listing("list-1", seller_role="buyer-1", idempotency_key="my-cancel")
+desk.admission.authorize_admission("ticket-1", admission_id="entry-1",
+    idempotency_key="my-entry", gate_role="gate-a", expires_ms=1060000)
+```
+
+Alternatively `ticket_operations_fixture.load_fixture(path)` returns a configured
+desk. Its JSON object requires exactly `fixture_version` (integer `1`),
+`provenance` (`"MOCK_GATE_ONLY"`), `setup`, `offers` and `presentations`, plus
+optional `payments`, `cancel_acceptances` and `statements` (documented below).
+Every setup row requires exactly `machine`, `operation`, `subject_id`,
+`idempotency_key`, `body`, using the existing admission fixture's exact schemas:
+
+| Machine | Setup selectors |
+| --- | --- |
+| `settlement` | `initiate`, `authorize`, `capture`, `commit` |
+| `reservation` | `set_clock`, `register_show`, `hold`, `confirm`, `observe_payment`, `bind_settlement`, `issue` |
+| `resale`, `admission` | `set_clock`, `adopt_issued` |
+
+Explicit initial clocks, confirmed/issued rights, primary settlement binding and
+adoption into both surfaces are required by this fixture format. All policy,
+time, identity, quote, payment and settlement values are caller-supplied synthetic
+inputs. Resale settlement binding remains optional and explicit. Setup runs
+sequentially through public methods; only successful construction exposes the
+sessions. Discarding failed construction provides no cross-machine rollback.
+
+Offer rows require `offer_id` and exactly one of `recorded_text` or `fault`.
+Presentation rows require `operation`, `presentation_id` and exactly one payload.
+Their schemas and synthetic faults are unchanged from the individual fixtures;
+duplicate identities are refused. Record text is validated on fetch, including
+on replay, rather than during construction.
+
+The CLI accepts requests with exactly `surface`, `operation`, `arguments`:
+
+```json
+{"surface":"resale","operation":"view","arguments":{"listing_id":"list-1"}}
+{"surface":"admission","operation":"view","arguments":{"right_id":"issue-1"}}
+```
+
+`surface` is exactly `booking`, `resale`, `admission` or `settlement`. The eleven booking selectors
+and exact required arguments are listed in [the booking table](#local-booking-desk-session-and-jsonl-cli).
+All sixteen resale selectors and nine admission selectors documented above retain
+their exact arguments, including
+optional resale payment `buyer_role`. The existing dispatchers validate them;
+Only each surface's documented selectors are accepted. Primary payment observation remains
+setup-only. The settlement selectors and their required arguments are documented
+[below](#explicit-settlement-controls-on-the-shared-ticket-desk); other settlement operations are refused. Booking retains its existing `register_show` selector without adding
+organizer lifecycle operations. Output adds
+`surface` to the existing `operation` plus `receipt`, `view` or `error` envelope.
+Domain errors retain `{code}`; local errors retain `{type,message}`. Exit 0 means
+all supplied requests succeeded, exit 1 records domain/source refusals, and exit
+2 means structural/setup/file/usage or booking prerequisite failure. Structural
+request errors and `BookingInputError` stop input; other refusals allow only the next explicitly supplied line. Duplicate JSON keys,
+nonfinite numbers and exponent overflow are refused. Unexpected programming errors
+propagate. Earlier accepted operations stay applied if a later request fails.
+
+From the repository root, run each scenario against a fresh fixture:
+
+```bash
+for scenario in cancel admission transfer; do
+  python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+done
+```
+
+Use `--requests -` for stdin. Each supplied scenario deliberately exits **1**:
+
+| Scenario | Expected rows and behavior |
+| --- | --- |
+| `cancel` | 6 rows: listing blocks entry with `LISTING_LOCKED`; explicit cancellation succeeds; same admission key retains `LISTING_LOCKED`; fresh key authorizes admission. |
+| `admission` | 7 rows: authorization blocks listing with `ADMISSION_LOCKED`; explicit consumption blocks a fresh listing with `ALREADY_CONSUMED`; replay returns first authorization/consume receipts while current view is `CONSUMED`. |
+| `transfer` | 16 rows: explicit listing, hold, synthetic payment, binding and transfer, then replay/close/current views; old and unreissued recipient authorization both return `STALE_VERSION`. Reservation remains version 1 while resale is version 2; venue credential reissuance stays false. |
+
+No request triggers an implicit follow-up, retry, key rewrite, clock synchronization
+or settlement orchestration. Admission `set_clock` keeps its existing reservation
+delegation; resale time remains independent. First-result semantics, current views,
+refusal codes, source failures and all mock-only flags belong to the existing FSMs
+and adapters. The existing Class B clock-skew partial effects remain unchanged.
+
+Product timing, authentication, independent currentness and credential reissuance
+remain **UNDETERMINED**, owned by Astra/User and the existing contract owners.
+This adds no payment lookup handoff, reissuance, HTTP, persistence, frontend,
+protocol commands, SDK/catalogue changes or runtime activation. No rollback,
+economic finality, bank exactly-once, legal compliance or production readiness is
+claimed. See the [validation record](../../validation/2026-11-02-plan-local-ticket-operations-desk/README.md)
+for coverage, actual commands/results and remaining non-author A2 review and
+exact-final-head CI gates. Existing HTTP coverage is preserved for normal CI.
+
+### Booking on the shared desk
+
+Fixture clocks do **not** initialize `.booking`. Call `.booking.set_clock`
+explicitly before registration, hold, release, confirm or cancel; a successful
+replay of a fixture clock counts. A failed initialization does not count. Views
+and reconciliation need no session clock. Confirm requires an explicit valid
+`quote_ref`. Missing clock or invalid quote emits local `BookingInputError`, stops
+at that line with exit 2 and binds no FSM key. Earlier accepted effects remain.
+Booking calls fetch no recordings and perform no payment observation,
+settlement orchestration or automatic admission operation. Issuance requires the
+separate explicit `booking.issue` request described below.
+
+For example, after loading the existing fixture:
+
+```python
+desk.booking.view("reserve-1")  # ISSUED on the same reservation graph
+desk.booking.set_clock("clock", now_ms=1000000, idempotency_key="ticket-clock")
+desk.booking.hold("reserve-2", show_id="show-1", slot=1, buyer_role="buyer-2",
+                  expires_ms=1120000, idempotency_key="booking-hold")
+```
+
+Run both shared booking journeys through file input and stdin from repository root:
+
+```bash
+for scenario in booking booking_admission; do
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+done
+```
+
+Both journeys intentionally exit **1**. `booking` has 21 lines: an already-issued
+slot refuses a competing hold with `SLOT_OCCUPIED`; a second slot is explicitly
+held, confirmed and cancelled, returning to `FREE`. Replayed confirmation and
+reconciliation retain historical `CONFIRMED` snapshots while current views show
+`CANCELLED`. Changed arguments/subjects, cross-operation keys and fixture-key
+collisions conflict; a retained missing-reservation refusal replays unchanged.
+`booking_admission` has 13 lines: booking views observe the original reservation
+as `ISSUED` → `ADMISSION_AUTHORIZED` → `CONSUMED` only after explicit admission
+calls. Its right version advances to 2; the slot stays `ISSUED`. Historical
+booking reconciliation stays `ISSUED`; fresh reconciliation sees current state.
+Delegated admission keys collide in the shared reservation namespace.
+
+This advances local B02/B05/P03 composition evidence without changing capability
+grades. Product timing and authority remain **UNDETERMINED — Astra/User**; legal
+effects remain **UNDETERMINED — User/legal**. Shared keys and clocks are passed
+unchanged: no namespacing, clock synchronization, retries or rollback guarantee.
+See the [booking composition evidence](../../validation/2026-11-03-plan-plan-local-ticket-desk-booking-surface/README.md)
+for coverage and actual local results, the exact HTTP exclusion, preservation
+checks and pending non-author A2/exact-head KTX and KIX gates.
+
+## Local booking desk session and JSONL CLI
+
+`booking_session.BookingSession(machine)` exposes the existing §9 reservation
+operations through the caller's actual `ReservationMachine`. Construction makes
+no calls. Import it with this directory on `PYTHONPATH`:
+
+```python
+from booking_session import BookingSession
+from reservation_fsm import ReservationMachine
+session = BookingSession(ReservationMachine())
+session.set_clock("clock", now_ms=1000000, idempotency_key="my-clock-1")
+```
+
+All numbers and identities here and in the transcripts are **synthetic caller
+inputs**, never product defaults. Supply every policy field, identity, key,
+expiry, amount and quote explicitly. For a complete runnable organizer and buyer
+journey, from the repository root:
+
+```bash
+python3 reference/booking_resale_admission/booking_cli.py --requests reference/booking_resale_admission/fixtures/booking_confirm.jsonl
+python3 reference/booking_resale_admission/booking_cli.py --requests reference/booking_resale_admission/fixtures/booking_cancel.jsonl
+python3 reference/booking_resale_admission/booking_cli.py --requests - < reference/booking_resale_admission/fixtures/booking_boundaries.jsonl
+```
+
+Each invocation creates a fresh sequential in-memory `ReservationMachine()` with
+no settlement source. All setup is ordinary explicit JSONL; the desk does not
+load admission/resale fixtures or initialize payment, issuance or other machines.
+For example:
+
+```json
+{"operation":"set_clock","arguments":{"subject_id":"clock","idempotency_key":"clock-1","now_ms":1000000}}
+```
+
+Every line must be an object with **exactly** `operation` and `arguments`.
+Without a quote adapter, the following are the only local selectors. Python methods take the first
+identity argument positionally or by keyword and the rest by keyword only.
+All listed arguments are required; extra arguments are rejected.
+
+| Operation | Exact arguments |
+| --- | --- |
+| `register_show` | `show_id`, `organizer_role`, `capacity`, `gate_roles`, `primary_price`, `resale_cap`, `resale_allowed`, `organizer_bps`, `platform_bps`, `idempotency_key` |
+| `set_clock` | `subject_id`, `now_ms`, `idempotency_key` (subject must be `"clock"`) |
+| `hold` | `reservation_id`, `show_id`, `slot`, `buyer_role`, `expires_ms`, `idempotency_key` |
+| `release` | `reservation_id`, `idempotency_key` |
+| `confirm` | `order_id`, `reservation_id`, `amount`, `quote_ref`, `idempotency_key` |
+| `preview_calculated_quote` | `request_text` only; returns `quote`, requires no clock or reservation |
+| `cancel` | `reservation_id`, `idempotency_key` |
+| `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key` |
+| `issue` | `issuance_id`, `order_id`, `idempotency_key` |
+| `reconcile` | `reservation_id`, `idempotency_key` |
+| `view` | `reservation_id` |
+| `view_show` | `show_id` |
+
+A successful explicit `set_clock` **through this session** is required before
+registration, hold, release, confirm, cancel, settlement binding and issuance, even when the supplied machine
+already has a clock. A successful
+replay counts as explicit initialization; it does not change current time.
+Views require no clock initialization and do not mutate state. Reconciliation
+also requires no session clock initialization, preserving direct FSM parity,
+but retains process-local receipt or rejection bookkeeping. The desk requires
+`quote_ref` to be a non-null valid existing identifier (opaque text, not a
+validated external quote). Missing clock or invalid quote raises local
+`BookingInputError` without calling the FSM or retaining the key. Other validation
+is delegated unchanged: identifier length 1..100, capacity and gate-role limits
+16, reservation window at most the existing synthetic 900000 ms limit, integer
+money and bps checks. These fixture bounds are not approved product TTLs or policy.
+
+Success output contains `operation` and unchanged `receipt` (business operations or reconciliation) or `view`.
+FSM rejection contains `error: {"code": "..."}`; local input/file errors contain
+`error.type` and `error.message`, introducing no protocol codes. Domain rejection
+continues only with subsequent supplied lines. Malformed JSON, duplicate keys at
+any depth, nonfinite numbers, blank lines, invalid roots, unsupported selectors,
+missing/extra fields or local prerequisite failure stop input immediately.
+Earlier accepted calls remain applied in memory. Exit status is 0 if all supplied
+requests succeed (including empty input), 1 if any FSM rejection occurs, and 2
+for input/structural/file failure (which takes precedence). Argument-parser usage
+errors use stderr; request responses use JSONL stdout. No keys, IDs, clock changes,
+retries, releases or follow-up operations are generated.
+
+Expected transcript outcomes:
+
+| Transcript | Outcome |
+| --- | --- |
+| `booking_confirm.jsonl` | 6 successes, exit 0; organizer registration, buyer hold and `CONFIRMED`, then current views. Payment, issuance, settlement and right remain null. |
+| `booking_cancel.jsonl` | 8 successes, exit 0; explicit pre-payment cancellation frees the slot. Replaying the confirmation key returns the historical `CONFIRMED` receipt; current view is `CANCELLED`. |
+| `booking_boundaries.jsonl` | 23 responses, exit 1; errors in order: `SLOT_OCCUPIED`, `SLOT_OCCUPIED`, `IDEMPOTENCY_CONFLICT`, `PRIMARY_PRICE_MISMATCH`, `RESERVATION_EXPIRED`, `SLOT_OCCUPIED`. Explicit release permits buyer 2's fresh-key hold; rejected key stays rejected. At exact expiry, buyer 3 remains `HELD` with `expired: true` and slot `RESERVED` until caller-directed release; buyer 4 then succeeds with an explicit fresh key. |
+
+Confirmation is a reservation agreement, separate from payment and issuance.
+This desk is a local service, not an authenticated organizer interface. It exposes
+no payment lookup/observation, admission, persistence, external calls or runtime activation.
+Settlement binding and issuance are explicit forwarding calls; they require caller-prepared
+synthetic payment/settlement facts. The standalone CLI has no payment setup interface
+and no settlement source; a configured Python session or the shared fixture supplies those facts. The payment–reservation handoff remains
+blocked. `MOCK_GATE_ONLY`, `IN_MEMORY_FSM`, false non-claim flags and B01/B02/B04
+status remain unchanged. Authentication, approved product TTLs, discounts, provider
+authority and compensation remain `UNDETERMINED` under the existing
+[§7.1 owners](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md).
+See the [builder validation record](../../validation/2026-11-02-plan-local-booking-desk-cli/README.md)
+for coverage, commands and outstanding review/CI gates.
+
+## Synthetic local resale payment source
+
+`ResalePaymentSource.fetch(recording_id)` returns one caller-selected synthetic
+record or `None`. `ResalePaymentRecord` requires exactly these four fields:
+
+| Field | Shape |
+|---|---|
+| `listing_id` | Existing identifier shape, equal to the caller's listing ID |
+| `payment_ref` | Existing opaque mock reference: 64 lowercase hexadecimal characters |
+| `amount` | Existing `_money` positive integer range; bool is invalid |
+| `buyer_role` | Explicit non-null role identifier; a label without authentication |
+
+`FakeResalePaymentSource(recordings=...)` copies JSON-text recordings into a
+read-only mapping keyed by local recording ID. Fetch parses a detached object
+anew; duplicate JSON keys, non-finite constants, malformed JSON and non-object
+roots are refused. `SyntheticResalePaymentFault.ERROR` and `.TIMEOUT` fail
+immediately without I/O or sleeping. `calls` exposes immutable tuple snapshots.
+The fake only decodes; the adapter checks the four-field observation schema.
+
+```python
+adapter = ResalePaymentAdapter(machine, payment_source)
+receipt = adapter.observe_resale_payment(
+    recording_id, listing_id=listing_id, idempotency_key=payment_key,
+)
+# Or inject the source into the existing session:
+session = ResaleSession(machine, offer_source, payment_source=payment_source)
+session.observe_recorded_payment(
+    recording_id, listing_id=listing_id, idempotency_key=payment_key,
+)
+# Separate caller request, if desired:
+session.accept_resale(transfer_id, listing_id=listing_id, idempotency_key=transfer_key)
+```
+
+Import from `resale_payment_source`, `fake_resale_payment_source`,
+`resale_payment_adapter` and `resale_session` using this directory on `PYTHONPATH`,
+following the existing sibling-module convention. Existing direct session
+`observe_resale_payment` is unchanged. The helper is also exposed by the local
+CLI selector and optional fixture field documented below; it adds no catalogue
+entry, protocol command or `REPLAYABLE` operation. A session without a payment source raises `ResalePaymentSourceError`
+before FSM access when this helper is invoked.
+
+Each adapter request fetches exactly once, including replay and invalid caller
+inputs. Missing records raise `ResalePaymentNotFound`; malformed records/callers
+or mismatched listing bindings raise `InvalidResalePaymentRecord`; fetch faults
+raise `ResalePaymentSourceError`. These are local exceptions without protocol
+codes. Validation completes before FSM access or key binding. The adapter then
+forwards the recorded `payment_ref`, `amount`, explicit `buyer_role` and caller's
+listing ID/key unchanged to `ResaleMachine.observe_resale_payment`. The recording
+selector never enters FSM arguments, fingerprints or journals. FSM receipts and
+exceptions propagate unchanged; valid-shaped wrong buyers/amounts reach its
+existing refusal and retained-key semantics. There is no state precheck, retry,
+fallback, cached receipt, automatic hold, settlement, transfer, admission or payout.
+
+The [coverage and execution record](../../validation/2026-11-02-plan-local-resale-payment-source/README.md)
+maps existing coverage before the new tests: FSM payment/transfer/replay and
+false-flag coverage is sufficient; adapter parity and actual-session sequencing
+were partial overall; immutable payment recordings, one-fetch behavior and
+pre-delegation refusal were uncovered at this boundary. New
+`test_resale_payment_source.py`, `test_resale_payment_adapter.py` and source-backed
+cases in `test_resale_session.py` address those gaps. They are source-informed
+regression evidence, not independent verification.
+
+From repository root:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH="$PWD/reference/booking_resale_admission"
+python3 -m unittest test_resale_payment_source test_resale_payment_adapter
+python3 -m unittest test_resale_fsm test_resale_session test_resale_cli
+python3 reference/booking_resale_admission/example_resale_payment_adapter.py
+```
+
+The runnable example uses actual local machines and `ResaleSession`, lists
+through the existing offer source, optionally holds, and records payment. Its
+`paused` output shows `PAYMENT_NOTED`, unchanged holder/version and UNBOUND
+settlement before a separate explicit transfer request. `run_example(hold=False)`
+also demonstrates observation directly from LISTED. All amounts, labels, times,
+references and keys are synthetic fixture choices. MOCK provenance and false
+funds/authority/durability/finality flags remain unchanged.
+
+[BOOKING_RESALE_ADMISSION_GATES.md §§7 and 10](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#10-리셀-수락-상태-기계)
+remain authoritative. Product values remain **UNDETERMINED — Astra/User**;
+provider authority remains with User/Toss technical owners, resale merchant
+eligibility with User/Toss sales, and compensation/payout obligations with their
+existing legal/accounting/tax owners. This code derives no reference from
+provider tuples or evidence hashes, interprets no cancellation history, and
+implements no reservation handoff. It supplies no external authority, live
+payment, funds execution, persistence, admission or production readiness.
+Full exact-head KTX/KIX CI and non-author A2 review remain required before merge.
+
+
+## Recorded payments in both local ticket desks
+
+The standalone resale CLI and the shared ticket operations CLI expose the existing
+`ResaleSession.observe_recorded_payment` helper as a local selector. It uses the
+same resale machine that the shared admission desk reads as its ownership source.
+No FSM, protocol, contract, OpenAPI, SDK or HTTP binding changes are involved.
+
+Both version-1 fixture formats accept one optional top-level `payments` array.
+All existing required fields remain required and all other extra fields are
+rejected. Omission leaves the source unconfigured; `[]` configures an empty fake
+source. Each entry contains exactly `recording_id` and one payload:
+
+```json
+{"recording_id":"payment-1","recorded_text":"{\"listing_id\":\"list-1\",\"payment_ref\":\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\",\"amount\":8000,\"buyer_role\":\"buyer-2\"}"}
+{"recording_id":"timeout-1","fault":"synthetic_resale_payment_timeout"}
+```
+
+Identities must pass the existing identifier validator and be unique. Text must
+be a string; its JSON and existing four-field observation schema are validated
+only on fetch. The other supported immediate fault is
+`synthetic_resale_payment_error`. Unknown faults, duplicate identities, absent or
+both payloads, extra fields and non-array payment lists fail before any machine
+is constructed. These are synthetic observations without provider authority.
+
+Standalone requests contain exactly `operation` and `arguments`; shared requests
+add `surface: "resale"`:
+
+```json
+{"operation":"observe_recorded_payment","arguments":{"recording_id":"payment-1","listing_id":"list-1","idempotency_key":"payment-key"}}
+{"surface":"resale","operation":"observe_recorded_payment","arguments":{"recording_id":"payment-1","listing_id":"list-1","idempotency_key":"payment-key"}}
+```
+
+Those three arguments are exact and required. The record supplies explicit
+`buyer_role`; direct `observe_resale_payment` still accepts its optional
+`buyer_role`. Each structurally valid dispatched observation fetches once,
+including replay, and invokes the existing adapter once. Structural request
+errors fetch zero times. There is no retry, automatic next step or cached fallback.
+The recording ID does not enter FSM operation identities or journals.
+
+The [standalone fixture](fixtures/resale_payment_session.json) and
+[shared fixture](fixtures/ticket_operations_payment_session.json) preserve explicit
+setup and clocks. Run both LISTED and BUY_HELD paths from repository root:
+
+```bash
+for phase in listed held; do
+  python3 reference/booking_resale_admission/resale_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/resale_payment_session.json \
+    --requests "reference/booking_resale_admission/fixtures/resale_payment_${phase}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_payment_${phase}.jsonl"
+done
+```
+
+Use `--requests -` for stdin. Standalone transcripts exit 0; shared transcripts
+exit 1 because both separately requested admission authorizations return
+`STALE_VERSION`: the former holder/version 1 and unreissued recipient/version 2.
+Observation ends at `PAYMENT_NOTED`, with holder/version unchanged and no
+settlement command or transfer. The next view exposes this pause. Alias replay
+and replay after separate transfer/close retain the first observation receipt;
+transfer itself is another explicit request. Admission remains separate and no
+credential is reissued.
+
+Output retains `operation`, `receipt` (or `error`) and shared `surface`. Missing
+configuration/recordings, malformed or mismatched recordings and synthetic faults
+produce local `{type,message}` errors, exit 1, with no FSM mutation or key binding.
+A subsequent explicit line can use the same key with a valid recording. Valid
+records that reach an FSM semantic refusal retain its existing `{code}` error and
+key behavior. Structural/setup errors exit 2; a malformed request stops input.
+Unexpected programming errors propagate as before.
+
+The [payment-desk validation record](../../validation/2026-11-02-plan-local-resale-payment-desk/README.md)
+maps existing coverage and records socket-denied source, adapter, session,
+fixture/CLI tests, file/stdin subprocess transcripts and local verification limits.
+All authority, funds, durability and finality flags remain false. This is local
+source-informed regression evidence, not provider authenticity, real funds,
+production durability or chain finality evidence. No compensation, settlement
+execution, reservation-payment handoff, reissuance or runtime activation is added.
+Product values remain **UNDETERMINED — Astra/User**; provider authority remains
+with User/Toss technical owners, merchant eligibility with User/Toss sales,
+and payout obligations with the existing legal/accounting/tax owners.
+
+
+## Explicit reconciliation in local ticket desks
+
+Booking, resale and admission sessions now expose their existing FSM `reconcile`
+method directly, once per explicit request. The caller supplies the subject
+identity and idempotency key unchanged. There is no source recording fetch,
+pre-read, generated key, clock update or automatic follow-up. The shared ticket
+operations desk uses its existing resale/admission routing; booking remains its
+separate desk. These selectors add no protocol command, read catalogue or export.
+
+Standalone JSONL requests have exactly `operation` and `arguments`; shared
+requests add exactly `surface`:
+
+```json
+{"operation":"reconcile","arguments":{"reservation_id":"reserve-1","idempotency_key":"booking-recon"}}
+{"operation":"reconcile","arguments":{"listing_id":"list-1","idempotency_key":"resale-recon"}}
+{"operation":"reconcile","arguments":{"right_id":"issue-1","idempotency_key":"admission-recon"}}
+{"surface":"resale","operation":"reconcile","arguments":{"listing_id":"list-1","idempotency_key":"resale-recon"}}
+{"surface":"admission","operation":"reconcile","arguments":{"right_id":"issue-1","idempotency_key":"admission-recon"}}
+```
+
+Results contain `operation`, unchanged `receipt` and shared `surface` where
+applicable. `matched`, `state_digest`, `entry_count`, subject snapshots,
+provenance and false non-claim flags remain those of the FSM. Domain errors keep
+`{code}`; local input errors keep `{type,message}`. Existing exit codes 0/1/2
+and stream continuation/stopping rules still apply.
+
+Reconciliation compares replayed accepted journals with local business state.
+It preserves those journals and ticket/payment state, while retaining the FSM's
+process-local receipt or rejection under the supplied key. It is a stateful
+operation, not a read-only query. Same-key replay returns the original snapshot
+with `duplicate: true`, `applied: null`; the current `view` may differ. Changed
+subjects or cross-operation key reuse retain `IDEMPOTENCY_CONFLICT`. Reconcile
+receipts and rejected calls are absent from accepted journals and are not
+restored as durable evidence. A digest is not a signature or authenticated audit.
+`matched` does not establish independent currentness or grant permission to act.
+
+Bound-source checks retain their existing failure semantics. The shared journey
+explicitly authorizes admission, reconciles successfully, advances the admission
+clock to that authorization's synthetic expiry, and separately lists, pays,
+binds, transfers and closes through resale. Replaying the old reconciliation key
+still returns its historical success; a fresh admission reconciliation key
+returns `STALE_VERSION` when authorization replay encounters the moved ownership.
+The failed key repeats that refusal. No credential is repaired or reissued.
+All clock values, prices, roles and keys are synthetic caller inputs.
+
+Run each transcript from repository root (each intentionally exits **1** because
+it contains explicit domain refusals):
+
+```bash
+python3 reference/booking_resale_admission/booking_cli.py --requests reference/booking_resale_admission/fixtures/booking_reconcile.jsonl
+for desk in resale admission ticket_operations; do
+  python3 "reference/booking_resale_admission/${desk}_cli.py" \
+    --fixture "reference/booking_resale_admission/fixtures/${desk}_session.json" \
+    --requests "reference/booking_resale_admission/fixtures/${desk}_reconcile.jsonl"
+done
+```
+
+Use `--requests -` with the same transcript on stdin. Booking shows historical
+`CONFIRMED` versus current `CANCELLED`; resale shows historical `LISTED` versus
+current `CLOSED`; admission shows historical `AUTHORIZED` versus current
+`CONSUMED`. Existing transcripts remain compatible.
+
+P03, R01–R05 and P06 retain their existing status. Currentness, operational policy
+and retention values remain **UNDETERMINED** with existing Astra/User and contract
+owners. This is no durable recovery, authenticated audit, payment lookup, retry,
+automatic repair, transfer, consumption, funds execution or production activation.
+The [builder evidence](../../validation/2026-11-03-plan-local-ticket-desk-reconciliation/README.md)
+records coverage, actual commands and local limits. Normal CI still requires the
+unchanged HTTP suite; non-author exact-head A2 review and completed/success KTX
+and KIX workflows remain required before merge.
+
+## Synthetic recorded booking quotes
+
+`BookingQuoteSource.fetch(recording_id)` supplies caller-selected, unauthenticated
+synthetic inputs. `FakeBookingQuoteSource(recordings=...)` copies a map of JSON
+strings or `SyntheticBookingQuoteFault.ERROR/TIMEOUT`, exposes a read-only
+`recordings` map and tuple snapshot `calls`, and decodes a detached dictionary on
+each fetch. Missing recordings return `None`; faults raise immediately without
+sleep or retry. Construction and import do not fetch or initialize a clock.
+
+`BookingQuoteAdapter(session, source).confirm_recorded_quote(recording_id,
+reservation_id=..., order_id=..., idempotency_key=...)` validates all four caller
+identifiers before fetching once, including every replay invocation. A record
+must be an ordinary dictionary with exactly `reservation_id`, positive integer
+`amount` (the existing mock money bound), and nonempty identifier `quote_ref`.
+Booleans, floats, nulls, containers, missing fields and unknown fields are refused.
+Recorded reservation must equal the caller's expected reservation. The adapter
+copies the record and delegates once to the existing `BookingSession.confirm`,
+returning its receipt unchanged. The selector never enters the FSM fingerprint
+or journal; two selectors containing identical inputs replay the same key.
+
+Missing, malformed, mismatched or failed fetches cause no session/FSM call or key
+binding. `BookingQuoteNotFound` and `InvalidBookingQuoteRecord` derive from local
+`BookingQuoteSourceError`; unexpected fetch exceptions are wrapped in that base
+error. Session/FSM exceptions propagate unchanged. There is no state inspection,
+receipt cache, fallback, retry, discount calculation or quote generation. Missing
+session clock, primary-price mismatch, expiry, order binding and immutable
+first-result behavior remain governed by the existing session and FSM. Even after
+a successful confirmation, a subsequent source failure returns a local error,
+never a cached success.
+
+`booking_quote_fixture.load_fixture(path)` builds only a source. Its exact schema:
+
+```json
+{"fixture_version":1,"provenance":"MOCK_GATE_ONLY","quotes":[{"recording_id":"record-1","recorded_text":"{\"reservation_id\":\"reserve-1\",\"amount\":10001,\"quote_ref\":\"quote-1\"}"}]}
+```
+
+Each entry requires `recording_id` and exactly one of `recorded_text` (string) or
+`fault` (`synthetic_booking_quote_error` / `synthetic_booking_quote_timeout`).
+Duplicate selectors, duplicate JSON keys at any depth, unknown fields, unsupported
+versions/faults and invalid scalar shapes are rejected. Embedded record text is
+validated on fetch, including duplicate keys and nonfinite numbers. An empty
+`quotes` array is allowed and supplies no recordings. Loading does no FSM setup.
+
+The standalone booking CLI opts in using `--quotes PATH` and accepts this additional
+local selector only when a source is supplied:
+
+```json
+{"operation":"confirm_recorded_quote","arguments":{"recording_id":"record-1","reservation_id":"reserve-1","order_id":"order-1","idempotency_key":"confirm-1"}}
+```
+
+All four arguments are required, with no extra fields. `dispatch_request` and
+`run_requests` also accept keyword-only `quote_adapter=None` for explicit local
+injection. Existing CLI operations and behavior without a source are preserved.
+The [shared ticket desk](#recorded-booking-quotes-on-the-shared-desk) supports the
+same explicit composition through `--quotes` or Python injection. This
+helper is not a new protocol command or an HTTP/OpenAPI operation.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/booking_cli.py --quotes reference/booking_resale_admission/fixtures/booking_quotes.json --requests reference/booking_resale_admission/fixtures/booking_recorded_confirm.jsonl
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/booking_cli.py --quotes reference/booking_resale_admission/fixtures/booking_quotes.json --requests - < reference/booking_resale_admission/fixtures/booking_recorded_boundaries.jsonl
+```
+
+The confirmation transcript has 7 successes, exit 0: explicit clock, registration,
+hold, confirmation, replay through an alias and two views. The boundary transcript
+has 20 responses, exit 1, exercising absence, malformed/mismatched recordings,
+both immediate faults, price mismatch and retained refusal, success, source
+failure after success, conflicting replay, explicit cancellation, historical
+confirmation replay and expiry of a second hold. Source errors use
+`error.type/message`, contribute exit 1 and continue only through subsequent
+explicit lines. FSM errors retain `error.code`. Structural/setup/file failures
+and `BookingInputError` stop with exit 2. Invalid caller identifier scalars are
+local `InvalidBookingQuoteRecord` errors (exit 1), rejected before fetching.
+
+Both transcripts reach `CONFIRMED`; payment, settlement, issuance and right remain
+absent. No payment handoff or automatic follow-up occurs. All existing false
+non-claim flags remain false. B03/B04 remain partial mock capabilities; price,
+discount and quote-authority policy remain **UNDETERMINED — Astra/User**. There
+is no authenticated quote, pricing engine, persistence, network, paid dependency,
+credentials or production activation. See the [coverage and execution record](../../validation/2026-11-03-plan-plan-local-booking-quote-source/README.md)
+for existing coverage reuse, new boundary tests and outstanding review/CI gates.
+
+### Recorded booking quotes on the shared desk
+
+The shared `ticket_operations_cli.py` accepts optional `--quotes PATH` alongside
+required `--fixture PATH` and `--requests PATH|-`. It reuses
+`booking_quote_fixture.load_fixture` and its exact source-only schema above,
+then binds `BookingQuoteAdapter` to the shared session's existing `.booking`.
+The shared setup fixture has no additional fields. It still contains synthetic
+issued inventory; the new examples register a separate show and reservation.
+No additional reservation machine, clock initialization or quote fetch occurs
+when composing the adapter.
+
+Both shared Python entry points accept keyword-only `quote_adapter=None`:
+`dispatch_request(session, request, *, quote_adapter=None)` returns one result;
+`run_requests(session, lines, *, quote_adapter=None)` prints JSONL and returns
+the exit status. Only the booking surface receives this adapter. Explicit Python
+composition from the repository root (with `reference/booking_resale_admission`
+on `PYTHONPATH`) is:
+
+```python
+import json
+from pathlib import Path
+from booking_quote_adapter import BookingQuoteAdapter
+from booking_quote_fixture import load_fixture as load_quotes
+from ticket_operations_fixture import load_fixture
+from ticket_operations_cli import dispatch_request, run_requests
+
+fixtures = Path("reference/booking_resale_admission/fixtures")
+desk = load_fixture(fixtures / "ticket_operations_session.json")
+quotes = load_quotes(fixtures / "ticket_operations_booking_quotes.json")
+adapter = BookingQuoteAdapter(desk.booking, quotes)
+rows = (fixtures / "ticket_operations_recorded_confirm.jsonl").read_text().splitlines()
+# Explicit clock, separate show registration, hold and recorded confirmation.
+for line in rows[:4]:
+    result = dispatch_request(desk, json.loads(line), quote_adapter=adapter)
+    print(json.dumps(result, sort_keys=True))
+status = run_requests(desk, rows[4:], quote_adapter=adapter)
+assert status == 0
+assert quotes.calls == ("desk-record-1", "desk-alias")
+```
+
+The existing selector keeps all four required arguments and the shared envelope:
+
+```json
+{"surface":"booking","operation":"confirm_recorded_quote","arguments":{"recording_id":"desk-record-1","reservation_id":"desk-reserve-1","order_id":"desk-order-1","idempotency_key":"desk-confirm-1"}}
+```
+
+Without `--quotes` or an injected adapter, this selector remains unsupported
+(`FixtureError`, exit 2); every existing booking/resale/admission operation keeps
+its prior behavior. Results retain `surface`, `operation` and unchanged `receipt`
+or `view`. Domain refusals use `error.code`; source failures use
+`error.type/message`, contribute exit 1 and allow only explicitly supplied later
+lines to run. Malformed input, fixture/file errors and `BookingInputError` stop
+with exit 2, including after earlier exit-1 refusals. All-success input exits 0.
+Unexpected programming exceptions propagate.
+
+Run both examples through files and stdin from the repository root:
+
+```bash
+for scenario in recorded_confirm recorded_boundaries; do
+  PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --quotes reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+  echo "file exit: $?"
+  PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+    --quotes reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_${scenario}.jsonl"
+  echo "stdin exit: $?"
+done
+```
+
+`recorded_confirm` emits 7 rows and exits 0: explicit clock, registration, hold,
+confirmation, alias replay and current reservation/show views. `recorded_boundaries`
+emits 20 rows and exits 1: missing/malformed/mismatched records, both source faults,
+price refusal, conflicting replay of that refusal, confirmation, source failure
+after success, conflicting quote replay, cancellation, historical confirmation
+replay and a second hold's expiry. That historical receipt remains `CONFIRMED`
+with `duplicate: true` and `applied: null`; the current view is `CANCELLED`.
+The confirmation example's current view is `CONFIRMED`. Both show zero payments
+for the new show and null payment, settlement, issuance and right fields for the
+new reservation. Existing settlement/resale/admission state stays unchanged.
+
+Every identifier-valid confirmation invocation fetches exactly once, including
+replay. Invalid callers never fetch; rejected source data never reaches the
+session or binds the key. There is no retry, fallback to an earlier receipt,
+payment-reservation handoff or automatic settlement/issuance. The scope remains
+synthetic, in-memory Track P service composition. Pricing, discounts and
+quote-authority policy remain **UNDETERMINED — Astra/User**. No catalogue/SDK,
+protocol command, persistence, network or runtime activation is added.
+
+`test_ticket_operations_quotes.py` compares shared dispatch with direct adapter
+execution on an independently constructed equivalent graph after every step,
+including errors, digests and journals. It checks source rejection/key reuse,
+shared key collisions, fetch accounting, file/stdin outputs and exits 0/1/2,
+and compatibility of all existing shared journeys. This is source-informed local
+evidence; full HTTP coverage, non-author A2 exact-head review and exact-final-head
+KTX/KIX workflow success remain delivery gates. See the
+[coverage and actual command record](../../validation/2026-11-03-plan-local-ticket-desk-quotes/README.md).
+
+
+## Explicit ticket fulfillment on the shared desk
+
+Four explicit local selectors expose existing FSM methods (§§9–11); they add no
+protocol commands. `booking.bind_settlement(reservation_id, *, settlement_id,
+idempotency_key)` records a binding without running any settlement operation.
+`booking.issue(issuance_id, *, order_id, idempotency_key)` returns the FSM's
+issuance receipt. Both require a successful session `set_clock`, including a
+successful replay; fixture initialization alone is insufficient. Unbound issuance
+still returns memory evidence with `settlement_gate: UNBOUND`. Bound issuance
+requires the existing synthetic committed settlement view and matching amount.
+
+`resale.adopt_issued` and `admission.adopt_issued` each take `right_id` as the
+positional-or-keyword subject and all these keyword-only required arguments:
+`idempotency_key`, `show_id`, `organizer_role`, `capacity`, `gate_roles`,
+`primary_price`, `resale_cap`, `resale_allowed`, `organizer_bps`, `platform_bps`,
+`slot`, `buyer_role`, `expires_ms`, `order_id`, `amount`, `payment_ref`,
+`reservation_id`, `quote_ref`. The CLI requires exactly the same complete input.
+Explicit nulls are forwarded unchanged where the FSM permits them; the desk adds
+no policy defaults or values inferred from views. Each call returns the original
+receipt or raises the original error. Neither issuance nor either adoption
+performs another action, fetches a recording, lists a ticket or admits anyone.
+
+The new fixture retains the existing already-issued anchor, clocks, binding and
+both adoptions. Its second reservation uses slot 1, separate IDs and a distinct
+synthetic payment reference. Its hold, confirmation, payment observation and
+settlement initiate/authorize/capture/commit are explicit existing setup entries.
+Its binding, issuance and adoptions are deliberately absent from setup. Existing
+fixture validation still requires at least one issued anchor and both adoptions
+for every ticket issued during setup.
+
+From repository root (each command intentionally exits **1**):
+
+```bash
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --requests reference/booking_resale_admission/fixtures/ticket_operations_fulfillment.jsonl
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_fulfillment.jsonl
+```
+
+The 18 requests explicitly initialize booking time, bind the prepared settlement,
+issue the second ticket, separately adopt it into resale and admission, list it,
+and attempt admission (`LISTING_LOCKED`). Cancellation is explicit. Replaying the
+refused authorization still returns `LISTING_LOCKED`; an explicitly supplied fresh
+key authorizes, then a separate consume advances reservation/admission version
+to 2. Replayed issuance/adoption receipts retain their original snapshots
+(issuance version 1); final views show current state. Resale's local version stays
+1; no synchronization is introduced. Exit codes remain 0 for successes, 1 for
+continued domain/source refusals and 2 for stopping input/setup failures.
+
+`test_ticket_fulfillment.py` compares each request's receipts/errors, canonical
+states, digests and journals against a separately constructed direct-FSM graph,
+checks unrelated journals and fetch histories, and covers strict arguments,
+retained refusals, conflicts, expiry and bound/unbound issuance. This is
+source-informed local composition evidence, not clean-room verification or full
+HTTP-suite success. See [actual validation and limits](../../validation/2026-11-03-plan-local-ticket-fulfillment-desk/README.md).
+
+Policy values remain **UNDETERMINED — Astra/User**; legal and provider facts retain
+their existing named owners. No payment lookup/handoff, automatic actions,
+persistence, frontend, funds execution, chain issuance/finality, production
+runtime, legal compliance or production readiness is claimed. Non-author A2
+exact-head review and successful exact-head KTX/KIX workflows remain delivery gates.
+
+
+### Explicit settlement controls on the shared ticket desk
+
+`desk.settlement` wraps the exact settlement machine shared by booking, resale and
+admission. These five local selectors expose existing FSM operations only. Each
+forwards once, returning the original receipt/view or raising the original FSM
+error. Construction performs no settlement call beyond caller-supplied setup.
+Each method accepts `settlement_id` positionally or by keyword; every other
+argument is required and keyword-only. There are no generated keys or defaults.
+
+| Operation | Exact required `arguments` fields |
+| --- | --- |
+| `initiate` | `settlement_id`, `idempotency_key`, `trade_id`, `gross`, `debtor_role`, `policy`, `currency` |
+| `authorize` | `settlement_id`, `idempotency_key` |
+| `capture` | `settlement_id`, `idempotency_key` |
+| `commit` | `settlement_id`, `idempotency_key`, `movement_id`, `gross`, `amount`, `fee`, `tax`, `held`, `adjustment`, `adjustment_reason` |
+| `view` | `settlement_id` |
+
+Supply currency explicitly (`KRW` is the existing FSM's accepted currency).
+Supply policy unchanged with its existing `kind`, `fee_bps`, `residual_payee` and
+`fee_payee` fields; the FSM owns policy validation and domain errors. Resale
+allocations do not supply settlement policy. Every statement component is
+explicit, including `adjustment_reason: null` for zero adjustment. Example:
+
+```json
+{"surface":"settlement","operation":"authorize","arguments":{"settlement_id":"claim-2","idempotency_key":"authorize-2"}}
+```
+
+Output is `{surface, operation, receipt}` or `{surface, operation, view}`. Domain
+refusals retain `{error:{code}}` and continue only to the next supplied line,
+producing exit 1. Structural errors (missing/extra/duplicate fields, unsupported
+selectors or nonfinite numbers) stop with exit 2. All-success input exits 0.
+
+From repository root, each complete journey deliberately exits **1**:
+
+```bash
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_session.json \
+  --requests reference/booking_resale_admission/fixtures/ticket_operations_settlement_booking.jsonl
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_session.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_settlement_resale.jsonl
+```
+
+Both transcripts work as files or stdin. The version-1 fixture retains the issued
+anchor, committed settlement, both adoptions and explicit clocks. A separately
+prepared paid reservation occupies slot 1 without issuance. The 13-line booking
+journey explicitly initializes the booking clock, initiates and binds settlement,
+then issuance refuses `SETTLEMENT_NOT_COMMITTED`. Explicit authorize, capture and
+commit permit a separately requested issuance with the caller's fresh key. Replay
+of the earlier refused key still refuses. The 16-line resale journey explicitly
+lists the anchor and observes the merged synthetic recorded-payment source before
+initiating/binding settlement. Acceptance pauses, retains its refusal after commit,
+and transfers only on the separately supplied fresh acceptance key. Historical
+initiate receipts remain `INITIATED` while current settlement views are `COMMITTED`.
+
+The base settlement actions above never observe payments, issue, adopt,
+transfer or consume rights, fetch recordings or advance ticket journals. Refund
+controls, recorded statements and explicit distribution are documented below. F04,
+reward coupling, primary-payment handoff and standalone finance tooling remain
+excluded. Existing false funds/finality/durability/
+production flags remain false. No network, persistence, chain execution, credentials
+or runtime activation is added. Product policy remains **UNDETERMINED — Astra/User**;
+legal/accounting treatment remains **UNDETERMINED — User/designated external reviewers**.
+See the [coverage and actual validation record](../../validation/2026-11-03-plan-local-ticket-settlement-controls/README.md).
+
+
+### Explicit refund controls on the shared ticket desk
+
+Two additional local selectors and importable methods use the same shared
+`SettlementMachine`. `bind_refund` forwards once to its existing FSM operation;
+`observe_recorded_cancel_acceptance` calls the unchanged `CancelAcceptanceAdapter`
+once. This selector observes an existing synthetic fact through
+`observe_mock_cancel_acceptance`; it is not a new protocol command or an execution
+of cancellation. Construction never fetches. All fields below are required;
+`settlement_id` can be positional in Python and the other fields are keyword-only.
+
+| Operation | Exact required `arguments` fields |
+| --- | --- |
+| `bind_refund` | `settlement_id`, `idempotency_key`, `refund_id`, `amount`, `beneficiary_role`, `reason` |
+| `observe_recorded_cancel_acceptance` | `settlement_id`, `source_id`, `idempotency_key` |
+
+```python
+desk.settlement.bind_refund(
+    "claim-1", idempotency_key="refund-bind-1", refund_id="refund-1",
+    amount=4000, beneficiary_role="fixture-buyer-1", reason="fixture-caller-request")
+desk.settlement.observe_recorded_cancel_acceptance(
+    "claim-1", source_id="acceptance-1", idempotency_key="accept-1")
+```
+
+`TicketOperationsSession(..., cancel_acceptance_source=source)` and
+`TicketSettlementSession(machine, cancel_acceptance_source=source)` accept an
+optional caller-supplied source. Old fixtures and callers remain compatible.
+Without a configured source, explicit observation raises
+`CancelAcceptanceSourceError`. Version-1 fixture files optionally contain
+`cancel_acceptances`, an array of exact entries:
+
+```json
+{"settlement_id":"claim-1","source_id":"acceptance-1","recorded_text":"{\"settlement_id\":\"claim-1\",\"source_id\":\"acceptance-1\",\"amount\":1000}"}
+```
+
+Each entry requires both identities and exactly one of `recorded_text` or `fault`.
+Both identifiers use the existing fixture identifier rules; duplicate identity
+pairs, unknown fields, wrong containers and unsupported faults are structural
+errors. The only fault strings are `synthetic_cancel_acceptance_error` and
+`synthetic_cancel_acceptance_timeout`, both immediate synthetic exceptions.
+Recording text is kept raw until fetch. The unchanged source/adapter decodes and
+checks a payload with exactly `settlement_id`, `source_id`, `amount`; identities
+must match the explicit request and the FSM validates economic amounts.
+
+Each explicit observation fetches exactly once, including replay. Missing,
+malformed or mismatched recordings and synthetic faults preserve source error
+`{type,message}` diagnostics; domain refusals preserve `{code}`. Source failures
+never reach the FSM or consume an idempotency key. No retry, follow-up or new key
+is generated. The CLI continues to the next explicit line and exits **1** after
+source/domain refusals. Structural failures stop with **2**; success exits **0**.
+FSM refusals such as `REFUND_OBLIGATION_REQUIRED` and
+`REFUND_ACCEPTANCE_EXCEEDS_OBLIGATION` remain unchanged. Accepted replays return
+historical first receipts with `duplicate: true`, `applied: null`; refused keys
+retain their first refusal even after later progress.
+
+From repository root, run each example through files and stdin (all exit **0**):
+
+```bash
+for scenario in partial full replay; do
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_refund_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_refund_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_refund_session.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_refund_${scenario}.jsonl"
+done
+```
+
+The fixture preserves explicit issuance, both adoptions and clocks. Its amounts,
+identities, beneficiary, reason and keys are examples supplied by the caller,
+not product defaults. `partial` binds 4000 and observes 1000 then 500; outstanding
+refund becomes 2500 and open PG adjustment 1500. `full` binds one initial gross
+refund of 10001, then records its full acceptance: refund outstanding becomes 0
+and adjustment outstanding 10001. Confirmed cash remains 10001 throughout both
+journeys, and `external_return_closed` remains false. `replay` repeats the first
+binding and observation after later acceptance, preserving historical receipts.
+
+Both CAPTURED and COMMITTED permit these existing operations. Fully accepting a
+partial obligation does not select a burden rule. Partial bindings, even when
+they sum to gross, report `refund_bearer_policy = REQUESTER` and no longer
+refuse distribution (B5, owner decision 2026-11-10, `SET-POLICY-DRAFT-0.4`;
+the historical `DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED` refusal is
+unreachable under B5). A single initial gross
+binding retains `FIXTURE_FULL_GROSS_RECLASS`, a fixture reclassification without
+legal liability determination. Repeating an accepted source under a new explicit
+key retains the existing economically inert journal-entry characterization.
+
+Refund actions do not cancel bookings, revoke tickets, transfer ownership,
+consume admission, synchronize views or execute a return. Existing mock-only
+flags remain unchanged. Product policy remains **UNDETERMINED — Astra/User**;
+legal refund liability remains **UNDETERMINED — User/legal through I10**. There
+is no HTTP/SDK/catalogue change, persistence, external service, F04, reward
+coupling, primary-payment handoff, standalone finance tool or runtime activation.
+See the [coverage and actual validation record](../../validation/2026-11-03-plan-plan-local-ticket-refund-controls/README.md).
+
+
+### Recorded statements and explicit distribution on the shared ticket desk
+
+Both `TicketOperationsSession` and `TicketSettlementSession` accept optional
+`statement_source: StatementSource | None = None`. The existing `StatementAdapter`
+uses the same settlement instance shared with booking, resale and admission.
+Construction never fetches. Old fixtures work without a source; an explicit
+recorded request then raises `StatementSourceError` before calling the FSM.
+
+| Operation / Python method | Exact required `arguments` fields | Existing delegation |
+| --- | --- | --- |
+| `commit_recorded_statement` | `settlement_id`, `movement_id`, `idempotency_key` | `StatementAdapter.apply(operation="commit", ...)` |
+| `observe_recorded_statement` | `settlement_id`, `movement_id`, `idempotency_key` | `StatementAdapter.apply(operation="observe_statement", ...)` |
+| `distribute` | `settlement_id`, `idempotency_key`, `order` | `SettlementMachine.distribute` |
+
+These are local selectors for existing operations. Python permits positional
+`settlement_id`; all other arguments are required keyword-only. Direct `commit`
+and both refund controls remain available. The caller selects commit or later
+observation explicitly and supplies every request key and distribution order.
+No phase inference, sorting, default order, generated key, automatic distribution,
+receipt caching or retry occurs. Every recorded request, including replay,
+fetches once. Distribution fetches nothing.
+
+The shared version-1 `MOCK_GATE_ONLY` fixture accepts optional `statements`:
+
+```json
+"statements": [
+  {"settlement_id":"claim-2","movement_id":"statement-1","recorded_text":"{\"settlement_id\":\"claim-2\", ...}"},
+  {"settlement_id":"claim-2","movement_id":"timeout","fault":"synthetic_statement_timeout"}
+]
+```
+
+Every entry has exactly the two identities and one of `recorded_text` or `fault`.
+Identity pairs must be unique, using the existing 1–100 character, unpadded
+identifier rules. Both `synthetic_statement_error` and
+`synthetic_statement_timeout` are supported immediate synthetic failures; neither
+waits for a clock or observes an external provider. Raw recorded text stays
+undecoded until requested. The ellipsis above abbreviates a record; runnable
+complete records are in `fixtures/ticket_operations_statement_session.json`.
+
+A fetched document has exactly `settlement_id`, `movement_id`, `gross`, `amount`,
+`fee`, `tax`, `held`, `adjustment`, `adjustment_reason`. Missing recordings,
+malformed documents, missing/extra fields, mismatched identities and source
+faults make no FSM call and bind no key. Properly shaped records with invalid
+economic components reach unchanged FSM validation and retain its refusal keys.
+Source failures produce `{error:{type,message}}`; domain refusals produce
+`{error:{code}}`. Both continue to the next explicit line and exit 1. Structural
+fixture/request errors stop with exit 2; all-success transcripts exit 0.
+
+From repository root, run each transcript using files and stdin:
+
+```bash
+for scenario in distribution boundaries; do
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_statement_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_statement_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_statement_session.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_statement_${scenario}.jsonl"
+done
+```
+
+`distribution` exits **0**. Its fixture preserves the issued anchor, both
+adoptions and explicit clocks, and prepares a separate paid ticket bound to
+`claim-2`. The transcript commits statement 1, explicitly issues that ticket,
+distributes, observes statement 2, then distributes again. Synthetic gross 10001
+and 500 fee bps give obligation faces 500 platform / 9501 organizer. Statement 1
+has gross 6000, cash 5500, fee 200, tax 100, held 100 and adjustment 100 with an
+explicit reason. Statement 2 has gross 4001, cash 3801, fee 200 and zero other
+components. Both distributions explicitly supply `["platform", "organizer"]`.
+The first allocates 500 / 5000; the second allocates 0 / 3801. Final confirmed and
+distributed cash is 9301, non-cash accounting and outstanding obligations are
+700, and open receivable is zero. Tax and held stay non-cash. Statements never
+change distribution totals by themselves.
+
+`boundaries` exits **1**, continuing through explicit replay, conflicting keys,
+non-list/duplicate/missing/unknown order refusals, a changed frozen order and a
+post-refund distribution that now succeeds under B5. Historical receipts remain first snapshots;
+accepted replay does not apply money again. Partial refunds report
+`refund_bearer_policy: REQUESTER`, preserve prior allocations and no longer
+block distribution (B5, owner decision 2026-11-10, `SET-POLICY-DRAFT-0.4`). Repeating a movement under a fresh observation key remains the
+existing economically inert journal-entry characterization.
+
+All amounts, rates and role labels are caller-supplied synthetic examples.
+Waterfall values remain **UNDETERMINED — User/accounting**; recipient-priority
+policy remains **UNDETERMINED — Astra**; refund liability remains
+**UNDETERMINED — User/legal**. No policy, protocol command, catalogue/SDK, F04,
+persistence, external service or production runtime is added. Mock provenance
+and false funds/finality/durability flags remain. In-memory replay does not prove
+durability, bank exactly-once, chain finality or cross-machine rollback.
+See the [coverage and actual verification record](../../validation/2026-11-03-plan-local-ticket-statement-distribution/README.md).
+
+### Settlement failure, cancellation and reconciliation on the shared ticket desk
+
+`desk.settlement` also exposes three direct, single-call forwards to the existing
+`SettlementMachine`. No wrapper validation, defaults, cache, source fetch, retry
+or inferred compensation is added. Receipts and exceptions propagate unchanged.
+In Python, `settlement_id` may be positional; every other parameter is required
+and keyword-only. The JSONL envelope remains exactly `surface`, `operation`,
+`arguments`, with `surface: "settlement"` and these exact argument fields:
+
+| Operation | Required arguments | Output |
+|---|---|---|
+| `fail` | `settlement_id`, `idempotency_key`, `reason` | `receipt` |
+| `cancel` | `settlement_id`, `idempotency_key`, `reason` | `receipt` |
+| `reconcile` | `settlement_id`, `idempotency_key` | `receipt` |
+
+```python
+desk.settlement.fail("claim", idempotency_key="decline", reason="synthetic-decline")
+desk.settlement.reconcile("claim", idempotency_key="local-check")
+```
+
+Failure and cancellation accept `INITIATED` and `AUTHORIZED`, refuse after
+`CAPTURED` or `COMMITTED` with `ILLEGAL_TRANSITION`, and produce terminal
+`FAILED` or `CANCELLED` respectively. Fresh-key terminal mutation refuses with
+`TERMINAL_IMMUTABLE`. An exact accepted replay returns the first snapshot with
+`duplicate: true`, `applied: null`; changed operation, settlement identity or
+body under a bound key yields `IDEMPOTENCY_CONFLICT`. Historical receipts do
+not become current views. The FSM's validation order and retained refusals apply.
+
+Reconciliation works in every existing phase, including terminal phases. Its
+receipt includes `matched`, `state_digest`, `entry_count`, `settlement` and
+existing provenance/execution flags. It compares this process's journal replay
+with its state, adds no economic journal entry and performs no repair. The same
+key returns the historical reconciliation snapshot; an explicit fresh key sees
+current state. In-memory journal restoration forgets reconciliation receipts
+and retained refusals; this is process-local idempotency, not durable closure
+or bank reconciliation. These are local selectors, with no new protocol command.
+
+Run either transcript as a file or stdin from the repository root:
+
+```sh
+for scenario in exceptions reconciliation; do
+  PYTHONDONTWRITEBYTECODE=1 python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json \
+    --requests "reference/booking_resale_admission/fixtures/ticket_operations_settlement_${scenario}.jsonl"
+  PYTHONDONTWRITEBYTECODE=1 python3 reference/booking_resale_admission/ticket_operations_cli.py \
+    --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json \
+    --requests - < "reference/booking_resale_admission/fixtures/ticket_operations_settlement_${scenario}.jsonl"
+done
+```
+
+The exception journey exits 1 after explicit successes/refusals and continues
+through every line. The reconciliation journey exits 0, explicitly capturing,
+committing/observing recorded statements, distributing, binding a refund and
+observing synthetic acceptance between historical and fresh reports. Structural
+JSON/schema errors exit 2 immediately; domain refusals exit 1 and continue.
+Fixture version 1 is unchanged. The issued anchor, both adoptions and explicit
+clocks are retained; `reserve-2` is bound to a pre-capture `claim-2`.
+
+These controls never automatically cancel reservations, release inventory,
+change ownership, refund money or close external returns. Legal termination
+and refund effects remain **UNDETERMINED — User/legal**. No real PG/bank/KYC,
+network, funds, chain execution, persistence or runtime activation is involved.
+See the [coverage and actual verification record](../../validation/2026-11-03-plan-local-ticket-settlement-exceptions/README.md).
+
+## Locally calculated booking quotes
+
+`--calculated-quotes PATH` opts either booking desk into a synthetic calculation
+source. It is mutually exclusive with the unchanged `--quotes PATH` recorded
+source. Both feed the existing `BookingQuoteAdapter` and
+`confirm_recorded_quote` selector; the shared selector keeps `surface="booking"`.
+No source is enabled by default.
+
+The source-only fixture has exactly these fields (the complete runnable requests
+are in [calculated_booking_quotes.json](fixtures/calculated_booking_quotes.json)):
+
+```json
+{
+  "fixture_version": 1,
+  "provenance": "CALCULATION_ONLY",
+  "calculations": [
+    {
+      "recording_id": "calc-1",
+      "reservation_id": "reserve-1",
+      "request_text": "<complete kix:commerce:2 request JSON text>"
+    }
+  ]
+}
+```
+
+Version is integer `1`; recording IDs must be unique and all booking identifiers
+must be explicit and valid. An empty `calculations` array provides no requests.
+Loading checks structure only: it does not calculate, fetch, initialize a clock,
+register a show or hold inventory. Embedded text is decoded afresh on fetch using
+unchanged bounded CE1 decoding, preserving number tokens (including rejection of
+fractions, exponents, negative zero, duplicate fields and nonfinite numbers).
+
+The complete commerce request requires `schemaVersion`, `orderId`, `orderVersion`,
+`scope`, `policyRef`, `expiresAt`, `lines`, `discounts`. Scope requires `issuerId`,
+`eventId`, `performanceId`. The single line requires `lineId`, `inventoryId`,
+`gross`; gross requires `asset`, `atoms`. The only accepted asset is the complete
+existing KRW specification: `namespace="fiat"`, `reference="KRW"`, integer
+`decimals=0`, `maxAtoms="340282366920938463463374607431768211455"`.
+Atoms are canonical unsigned decimal strings, with booking amount `1..10**12`.
+`discounts` must be `[]`, including rejection of zero-effect rules; zero or
+multiple lines and alternate asset metadata are refused. There is no asset
+conversion, rounding, line selection or price adjustment.
+
+`calculate_booking_quote(request_text)` returns the complete detached unchanged
+`commerce.build_quote` calculation with `evidenceClass="CALCULATION_ONLY"`.
+`CalculatedBookingQuoteSource(requests={recording_id: {"reservation_id": ...,
+"request_text": ...}})` copies entries into immutable storage and exposes detached
+fetch results and tuple call snapshots. Fetch returns exactly `reservation_id`,
+`amount=int(totals.payableAtoms)` and opaque `quote_ref=quoteHash`, or `None` for
+absence. The calculator loads lazily from the repository without adding a
+calculator import path. Only modules are retained, never calculation successes.
+
+Run from the repository root with supported Python 3.12 and no bytecode writes:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+python3.12 reference/booking_resale_admission/booking_cli.py \
+  --calculated-quotes reference/booking_resale_admission/fixtures/calculated_booking_quotes.json \
+  --requests reference/booking_resale_admission/fixtures/booking_calculated_confirm.jsonl
+python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --calculated-quotes reference/booking_resale_admission/fixtures/calculated_booking_quotes.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_calculated_confirm.jsonl
+```
+
+The [booking](fixtures/booking_calculated_confirm.jsonl) and
+[shared](fixtures/ticket_operations_calculated_confirm.jsonl) confirm journeys
+explicitly set the clock, register a show, hold a slot and confirm using the
+calculated amount/hash, then replay and view. The separate
+[booking boundaries](fixtures/booking_calculated_boundaries.jsonl) and
+[shared boundaries](fixtures/ticket_operations_calculated_boundaries.jsonl)
+exercise refusals, changed-input conflicts, cancellation/historical replay and
+reservation expiry. Expected exits are `0` for confirm and `1` for boundaries;
+structural/file/session-prerequisite failures exit `2`. Source refusals continue.
+The shared fixture already contains unrelated synthetic issued inventory; these
+journeys use a separate show/reservation and leave other surfaces unchanged.
+
+Every identifier-valid explicit selector fetches once, including replay. Invalid
+caller identifiers fetch zero times. No retry, polling, cached-success fallback
+or FSM/key mutation occurs on source rejection. Reservation primary-price
+equality, expiry and immutable first results remain FSM-owned. Calculation
+`orderId`, scope, policy reference and `expiresAt` are hash-bound caller metadata,
+not authenticated booking order/show/expiry authority. The sample intentionally
+uses calculation expiry `1` separately from the explicit reservation clock/expiry;
+this adapter is not the commerce payment-planning expiry gate.
+
+Calculation provenance does not replace booking receipts' unchanged
+`MOCK_GATE_ONLY` provenance or false `quote_policy_approved` / `discount_applied`
+flags. Pricing, discounts and quote authority remain **UNDETERMINED — Astra/User**;
+tax/accounting treatment remains **UNDETERMINED — User and designated advisers**.
+This supplies no authenticated quote authority, payment handoff, settlement,
+issuance, persistence, network call, protocol/catalogue/SDK change or runtime
+activation. See the [builder evidence and remaining delivery gates](../../validation/2026-11-03-plan-local-calculated-booking-quotes/README.md).
+
+## Source-backed issued ticket handoff on the shared desk
+
+`issued_ticket_adapter.IssuedTicketAdapter(source, *, resale, admission)` reads
+`source.view(reservation_id)` and `source.view_show(show_id)` on each explicit
+`apply(*, surface, reservation_id, right_id, idempotency_key)` invocation. The
+shared `TicketOperationsSession.adopt_issued_from_booking` uses the same
+reservation machine as booking, resale and admission. Construction adds no reads
+or mutations. Only `resale` and `admission` are accepted targets.
+
+After a separate explicit booking `issue` request, adopt on each desired surface
+with separate requests. No show, booking, policy or payment fields are resupplied:
+
+```json
+{"surface":"resale","operation":"adopt_issued_from_booking","arguments":{"reservation_id":"reserve-2","right_id":"issue-2","idempotency_key":"second-resale-adopt"}}
+{"surface":"admission","operation":"adopt_issued_from_booking","arguments":{"reservation_id":"reserve-2","right_id":"issue-2","idempotency_key":"second-admission-adopt"}}
+```
+
+Each invocation forwards exactly once to the selected session's existing
+`adopt_issued`, returning its receipt unchanged. The explicit expected right must
+match the recorded issuance and right; reservation/show/slot identities must
+agree. Unrelated view fields are allowed. Required source fields and scalar
+bounds are checked without coercion or defaults. Explicit `quote_ref: null` is
+preserved; `gate_roles` is copied in its recorded order.
+
+| Read | Forwarded fields |
+|---|---|
+| Reservation view | `reservation_id`, `show_id`, `slot`, `buyer_role`, `expires_ms`, `order_id`, `amount`, `quote_ref`, `payment_ref` |
+| Show snapshot | `organizer_role`, `capacity`, `gate_roles`, `primary_price`, `resale_cap`, `resale_allowed`, `organizer_bps`, `platform_bps` |
+| Caller | `right_id`, `idempotency_key` |
+
+The buyer and payment are the original booking values. Current ownership, right
+version, listing state and later payment/amount fields never replace them.
+Missing issuance is a local extraction refusal. Phase, consumption, eligibility,
+expiry and existing target key semantics remain the FSM's decisions; there is no
+`ISSUED` phase precheck that could suppress historical replay after consumption.
+
+`IssuedTicketSourceError` wraps read failures and
+`InvalidIssuedTicketRecord` identifies missing/malformed/mismatched source data
+or invalid adapter selectors/identifiers. These local exceptions are not protocol
+error codes. Extraction failures invoke no target mutation and bind no target
+key, so a later explicit corrected request can use that key. Target refusals pass
+through unchanged, including retained refusals and changed-body key conflicts.
+Every invocation rereads the source; no cache, retry or fallback is added.
+
+The selector exists only in the shared local desk. Standalone CLIs and manual
+`adopt_issued` retain their existing complete schemas. Structural JSON/schema
+errors stop the stream with exit 2; source/domain refusals continue and yield
+exit 1; an all-success stream exits 0.
+
+Run either transcript with file input or stdin (both intentionally exit 1):
+
+```bash
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --requests reference/booking_resale_admission/fixtures/ticket_operations_issued_handoff.jsonl
+python3 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_issued_handoff_boundaries.jsonl
+```
+
+The lifecycle transcript keeps issuance, both adoptions, listing, authorization
+and consumption separate and replays historical receipts after consumption. The
+boundary transcript demonstrates missing/unissued/mismatched sources, explicit
+issuance and recovery using the same keys, then target refusals and key conflicts.
+No automatic second adoption, listing, payment observation, authorization,
+consumption, clock change or credential reissuance occurs. Mock-only flags and
+fixture prerequisites remain unchanged. This is in-memory synthetic input
+plumbing, without persistence, network/provider integration, funds, chain or
+runtime activation. Product policy remains **UNDETERMINED — Astra/User**; legal
+effects remain **UNDETERMINED — User/legal**. See the
+[validation record](../../validation/2026-11-03-plan-local-issued-ticket-handoff/README.md)
+for source-informed coverage, actual commands and pending delivery gates.
+# Initiating settlement from local ticket records
+
+The shared `TicketOperationsSession` exposes two explicit Python methods and
+matching `surface: "settlement"` JSONL selectors:
+
+| Selector | Required arguments |
+|---|---|
+| `initiate_from_booking` | `settlement_id`, `reservation_id`, `idempotency_key`, `trade_id`, `debtor_role`, `policy` |
+| `initiate_from_resale` | `settlement_id`, `listing_id`, `idempotency_key`, `trade_id`, `debtor_role`, `policy` |
+
+`settlement_id` may be positional in Python; all other arguments are required
+keywords. `policy` is the existing complete object with `kind`, `fee_bps`,
+`residual_payee` and `fee_payee`. Values below are synthetic caller inputs,
+not product policy or inferred legal roles:
+
+```python
+from ticket_operations_fixture import load_fixture
+
+desk = load_fixture("reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json")
+desk.settlement.initiate_from_booking(
+    "claim-2", reservation_id="reserve-2", idempotency_key="booking-input",
+    trade_id="explicit-booking-trade", debtor_role="explicit-debtor",
+    policy={"kind": "PRIMARY_FEE_BPS", "fee_bps": 500,
+            "residual_payee": "organizer", "fee_payee": "platform"})
+# Binding, authorization, capture, statements and distribution are separate calls.
+```
+
+```json
+{"surface":"settlement","operation":"initiate_from_resale","arguments":{"settlement_id":"resale-claim","listing_id":"list-1","idempotency_key":"resale-input","trade_id":"explicit-resale-trade","debtor_role":"explicit-debtor","policy":{"kind":"PRIMARY_FEE_BPS","fee_bps":500,"residual_payee":"organizer","fee_payee":"platform"}}}
+```
+
+The resale example requires an existing listing (see the runnable transcript).
+Each request, including replay, reads the selected reservation/listing `view`
+once from the same session graph. It requires matching valid source identity,
+positive non-boolean integer `amount` in `1..10**12` and exact `"KRW"` currency.
+Booking also requires a valid recorded `order_id`; its current phase need not
+be `CONFIRMED`. Other source view fields are allowed. No auxiliary show/right
+lookup, coercion, fallback, cache, polling or retry is added by the adapter.
+After source validation it calls the unchanged `SettlementMachine.initiate`
+once, copying amount/currency and forwarding all caller target inputs unchanged.
+The target validates settlement/trade identities, debtor role and complete policy.
+
+Unavailable/faulting source reads raise local `SettlementInputSourceError`;
+malformed/mismatched records raise its `InvalidSettlementInputRecord` subclass.
+These failures perform zero settlement mutations and leave the target key free.
+Target errors and first receipts propagate unchanged. Source identity is absent
+from the existing target fingerprint/journal: identical extracted target bodies,
+even from different sources, retain manual/source replay equivalence. Changed
+target bodies keep the existing `IDEMPOTENCY_CONFLICT` behavior. No source-to-trade
+binding or source eligibility rule is established. Manual `initiate` remains available.
+
+CLI arguments must match exactly; `gross`/`currency` overrides are structural
+errors. Output retains `{surface,operation,receipt}` or `error:{type,message}`
+for local source errors and `error:{code}` for FSM refusals. Exit 0 means all
+requests succeeded, 1 means source/domain refusal with explicit-line continuation,
+and 2 means a structural error that stops input. No follow-up is automatic.
+
+Runnable file and stdin transcripts, from repository root:
+
+```bash
+fixture=reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json
+for scenario in booking resale boundaries; do
+  requests="reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests "$requests"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests - < "$requests"
+done
+```
+
+Booking and resale exit 0; boundaries exits 1. Each begins with fresh synthetic
+setup, preserving the issued anchor. Booking uses its existing setup-only payment
+observation. Resale explicitly lists, initiates before payment, binds, authorizes,
+captures, commits one recorded statement, distributes, observes a later statement,
+distributes again, observes recorded payment and transfers. Booking separately
+binds and issues. Replay returns the initial receipt after those later operations.
+Boundaries demonstrates absent sources, same-key repair, exact replay, changed
+trade and retained invalid-policy conflicts. See [builder evidence](../../validation/2026-11-04-plan-local-ticket-settlement-inputs/README.md).
+
+Initiation does not bind tickets, observe payment, authorize, capture, distribute,
+issue or transfer. Mock provenance and false execution/durability flags remain.
+Product policy is **UNDETERMINED — Astra/User**; legal debtor and accounting
+treatment are **UNDETERMINED — User/legal/accounting**. This is sequential,
+in-memory synthetic integration; it establishes no authority, production runtime,
+cross-machine rollback, durable funds execution or bank/chain finality.
+
+## Request-time calculated booking confirmation
+
+A running `BookingSession` accepts complete calculation text directly, without
+preloading a quote recording:
+
+```python
+receipt = session.confirm_calculated_quote(
+    request_text, reservation_id="reserve-1", order_id="order-1",
+    idempotency_key="confirm-1",
+)
+# On the shared graph: desk.booking.confirm_calculated_quote(...)
+```
+
+The caller must explicitly set the session clock, register the show and hold the
+reservation first. The three booking identifiers are validated before calculation.
+Every valid invocation, including replay, calls `calculate_booking_quote` once,
+then `self.confirm` once with the exact integer payable amount and opaque quote
+hash. Its receipt is returned unchanged. No calculation result is cached; no
+recording ID, source construction/fetch, clock advance, retry, payment,
+settlement binding or issuance is introduced.
+
+Both JSONL desks accept the strict local selector below without `--quotes` or
+`--calculated-quotes`. Shared requests additionally require `"surface":"booking"`.
+This is local composition of existing confirmation, not a new protocol command.
+
+```json
+{"operation":"confirm_calculated_quote","arguments":{"request_text":"<complete kix:commerce:2 request JSON text>","reservation_id":"reserve-1","order_id":"order-1","idempotency_key":"confirm-1"}}
+```
+
+No extra or missing envelope/argument fields are accepted. The full inner text
+uses the [unchanged calculation schema and limits](#locally-calculated-booking-quotes):
+`schemaVersion="kix:commerce:2"`, `orderId`, `orderVersion`, `scope` (`issuerId`,
+`eventId`, `performanceId`), `policyRef`, `expiresAt`, exactly one `lines` entry
+(`lineId`, `inventoryId`, `gross` with complete KRW `asset` and canonical decimal
+string `atoms`), and `discounts=[]`. Booking amounts remain `1..10**12`, with exact
+arithmetic and primary-price equality. Bounded CE1 decoding rejects malformed
+text, duplicate fields and unsupported numeric forms/assets/discount rules.
+
+Calculation `orderId`, scope and `expiresAt` are hash-bound metadata; they are
+not equated with booking identities or the reservation expiry clock. Equivalent
+JSON formatting preserves the hash and replay binding. Existing confirmation
+owns price equality, reservation expiry, key conflicts, retained refusals and
+immutable first results. Replay can return a historical confirmed receipt while
+the current view shows cancellation.
+
+Calculation/input failures use `InvalidBookingQuoteRecord` (or existing
+`BookingQuoteSourceError` normalization for an unexpected calculator exception).
+They never invoke confirmation or bind its key, even after an earlier success.
+Source/domain refusals emit existing error shapes, continue through subsequent
+lines and exit 1. Structural errors and missing explicit session prerequisites
+stop immediately with exit 2; successful transcripts exit 0. Confirmation
+exceptions retain their existing identity/classification. Results keep
+`{operation, receipt}` and shared `surface` envelopes.
+
+From the repository root, run the complete file and stdin examples without a
+startup quote source:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/booking_cli.py \
+  --requests reference/booking_resale_admission/fixtures/booking_calculation_inputs_confirm.jsonl
+PYTHONDONTWRITEBYTECODE=1 python3.12 reference/booking_resale_admission/ticket_operations_cli.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --requests - < reference/booking_resale_admission/fixtures/ticket_operations_calculation_inputs_confirm.jsonl
+```
+
+The [booking confirm](fixtures/booking_calculation_inputs_confirm.jsonl) and
+[shared confirm](fixtures/ticket_operations_calculation_inputs_confirm.jsonl)
+journeys explicitly clock/show/hold, calculate/confirm, replay and view. The
+[booking boundaries](fixtures/booking_calculation_inputs_boundaries.jsonl) and
+[shared boundaries](fixtures/ticket_operations_calculation_inputs_boundaries.jsonl)
+journeys reject malformed text/assets/discounts/multiple lines, retain price and
+expiry refusals, reject changed-input keys, cancel and replay historical results.
+They intentionally exit 1. Shared identities are separate from fixture history.
+
+`test_booking_calculation_inputs.py` covers method call counts, source rejection
+atomicity/key reuse, invalid identifiers, error identity, changed-input conflicts,
+price endpoints and opaque metadata. `test_booking_calculation_inputs_cli.py`
+compares each journey step's receipts/errors/state/digests/journals with the
+existing calculated-source/adapter path; it also covers strict envelopes,
+file/stdin exits, source-free startup and unchanged other shared machines/source
+calls. Existing calculator/FSM/adapter regressions supply the underlying
+coverage; see the [coverage map and actual evidence](../../validation/2026-11-04-plan-local-booking-calculation-inputs/README.md).
+
+Calculation `evidenceClass="CALCULATION_ONLY"` remains distinct from receipt
+`provenance="MOCK_GATE_ONLY"`. All authority, finality and durability flags remain
+false. Pricing and quote authority remain **UNDETERMINED — Astra/User**;
+tax/accounting treatment remains **UNDETERMINED — User/designated advisers**.
+B03/B05 remain partial mock capabilities; this is no operational activation or
+production durability, distributed fencing, bank exactly-once or chain-finality
+evidence.
+
+## Calculation-only booking quote preview
+
+`BookingSession.preview_calculated_quote(request_text)` returns the complete,
+unchanged `calculate_booking_quote` result. The shared graph exposes the same
+method as `desk.booking.preview_calculated_quote(request_text)`. Each invocation
+calculates once and returns a fresh result; modifying a returned quote does not
+affect later previews or confirmation.
+
+Both local JSONL booking desks accept:
+
+```json
+{"operation":"preview_calculated_quote","arguments":{"request_text":"<complete kix:commerce:2 request JSON text>"}}
+```
+
+Shared requests additionally require `"surface":"booking"`. Standalone responses
+contain exactly `{operation, quote}`; shared responses contain
+`{surface, operation, quote}`. No startup quote-source flag is required. This is a
+local calculation selector, with no new protocol command or catalogue query.
+
+The inner request uses the existing strict CE1 schema:
+
+```json
+{
+  "schemaVersion": "kix:commerce:2",
+  "orderId": "calculation-order",
+  "orderVersion": 1,
+  "scope": {"issuerId": "fixture-issuer", "eventId": "fixture-event", "performanceId": "fixture-performance"},
+  "policyRef": "fixture-policy",
+  "expiresAt": 1,
+  "lines": [{"lineId": "L1", "inventoryId": "fixture-inventory", "gross": {
+    "asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"},
+    "atoms": "10001"
+  }}],
+  "discounts": []
+}
+```
+
+The result `quote` has exactly `schemaVersion`, `evidenceClass`, `request`, `asset`,
+`lines`, `totals` and `quoteHash`. `evidenceClass` is `"CALCULATION_ONLY"`.
+`request` contains the complete calculation input, and `asset` retains the complete
+KRW metadata above. Each result line has `lineId`, `inventoryId`, `grossAtoms`,
+`discountAtoms`, `payableAtoms` and `discounts`. `totals` has `grossAtoms`,
+`discountAtoms` and `payableAtoms`. Every atom amount remains an exact decimal
+string. For this example those three amounts are `"10001"`, `"0"`, `"10001"`,
+respectively, in both the line and totals; `quoteHash` is the unchanged
+calculator's hash. No receipt flags or integer conversions are added to preview.
+
+The boundary remains exactly one line, the complete existing KRW asset,
+`discounts=[]` (even zero-valued discount rules are refused), and payable amount
+`1..10**12`. Preview uses the existing calculator's bounded decoding and rejection
+rules without an additional inner parser. Calculation `orderId`, scope and
+`expiresAt` remain hash-bound metadata. Preview establishes no reservation
+validity, quote currentness, price approval or authenticated quote authority.
+
+Preview neither accesses reservation state nor changes any shared FSM, journal,
+clock or source-call history. It needs no session mutation clock, reservation ID
+or idempotency key. Extra arguments including those fields are structural errors.
+Confirmation remains a separate explicit operation:
+
+```python
+quote = session.preview_calculated_quote(request_text)  # works before setup
+# Explicitly set_clock, register_show and hold before confirming.
+receipt = session.confirm_calculated_quote(
+    request_text, reservation_id="reserve-1", order_id="order-1",
+    idempotency_key="confirm-1",
+)
+# receipt["reservation"]["amount"] == int(quote["totals"]["payableAtoms"])
+# receipt["reservation"]["quote_ref"] == quote["quoteHash"]
+```
+
+Confirmation recalculates the supplied text and retains existing primary-price,
+reservation-expiry, key-conflict, retained-refusal and historical-replay checks.
+Preview does not reserve inventory or automatically confirm, pay, bind settlement
+or issue a right. Source/calculation exceptions retain their existing classes;
+unexpected calculator exceptions use the existing `BookingQuoteSourceError`
+normalization. Success exits 0; calculation/domain refusals continue and exit 1;
+malformed envelopes (including duplicate keys) stop immediately with exit 2.
+Invalid inner calculation text is a calculation refusal, not an outer-envelope
+error. A later explicit confirmation still needs its session clock.
+
+Run the file and stdin examples from the repository root:
+
+```bash
+for scenario in confirm boundaries; do
+  requests="reference/booking_resale_admission/fixtures/booking_quote_preview_${scenario}.jsonl"
+  python3.12 -B reference/booking_resale_admission/booking_cli.py --requests "$requests"
+  python3.12 -B reference/booking_resale_admission/booking_cli.py --requests - < "$requests"
+  requests="reference/booking_resale_admission/fixtures/ticket_operations_quote_preview_${scenario}.jsonl"
+  fixture=reference/booking_resale_admission/fixtures/ticket_operations_session.json
+  python3.12 -B reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests "$requests"
+  python3.12 -B reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests - < "$requests"
+done
+```
+
+The [booking](fixtures/booking_quote_preview_confirm.jsonl) and
+[shared](fixtures/ticket_operations_quote_preview_confirm.jsonl) confirmation
+transcripts preview before any session clock, then explicitly set up, preview,
+confirm, replay and view. The [booking boundary](fixtures/booking_quote_preview_boundaries.jsonl)
+and [shared boundary](fixtures/ticket_operations_quote_preview_boundaries.jsonl)
+transcripts preserve calculator and confirmation refusals, cancellation and
+historical replay. Confirmation transcripts exit 0; boundary transcripts exit 1.
+Shared booking identities remain separate from the existing fixture history.
+
+`test_booking_quote_preview.py` and `test_booking_quote_preview_cli.py` cover the
+preview integration gaps; see the [coverage map and actual validation evidence](../../validation/2026-11-04-plan-local-booking-quote-preview/README.md).
+These are source-informed local tests. B03/B05 remain partial mock capabilities.
+Pricing/quote authority remains **UNDETERMINED — Astra/User**; tax/accounting
+remains **UNDETERMINED — User/designated advisers**. No production, durability,
+bank exactly-once, distributed fencing, legal-compliance or chain-finality claim
+is made.
+
+## Request-time synthetic settlement facts
+
+`TicketSettlementSession` on the shared desk accepts these complete caller inputs:
+
+```python
+desk.settlement.observe_statement(
+    settlement_id, idempotency_key=key, movement_id=movement_id,
+    gross=gross, amount=amount, fee=fee, tax=tax, held=held,
+    adjustment=adjustment, adjustment_reason=adjustment_reason,
+)
+desk.settlement.observe_mock_cancel_acceptance(
+    settlement_id, idempotency_key=key, source_id=source_id, amount=amount,
+)
+```
+
+Every parameter is required; parameters after `settlement_id` are keyword-only.
+Each call forwards once to the identically named existing public settlement FSM
+method and returns its receipt or raises its error unchanged. No recording source
+is required or fetched. Manual `commit`, recorded observations, distribution,
+refund binding, exception controls and reconciliation remain available.
+
+The shared JSONL envelope is exactly `{surface, operation, arguments}` with
+`surface: "settlement"`. Required argument fields are:
+
+| Operation | Exact arguments |
+|---|---|
+| `observe_statement` | `settlement_id`, `idempotency_key`, `movement_id`, `gross`, `amount`, `fee`, `tax`, `held`, `adjustment`, `adjustment_reason` |
+| `observe_mock_cancel_acceptance` | `settlement_id`, `idempotency_key`, `source_id`, `amount` |
+
+For example, after an explicit partial commit on `claim-2`:
+
+```json
+{"surface":"settlement","operation":"observe_statement","arguments":{"settlement_id":"claim-2","idempotency_key":"later","movement_id":"later","gross":4001,"amount":3801,"fee":200,"tax":0,"held":0,"adjustment":0,"adjustment_reason":null}}
+{"surface":"settlement","operation":"observe_mock_cancel_acceptance","arguments":{"settlement_id":"claim-2","idempotency_key":"accept","source_id":"accept","amount":1000}}
+```
+
+Include `adjustment_reason: null` explicitly when adjustment is zero. Malformed
+JSON, duplicate keys, nonfinite numbers, wrong containers and missing/extra fields
+stop before delegation. Well-shaped domain-invalid values reach the unchanged
+FSM; its retained refusal and idempotency semantics apply. Identical direct and
+recorded facts share one key space and replay the first receipt even after later
+state changes. Changed bodies, settlement IDs or operations with a used key
+conflict; fresh keys do not bypass movement/source binding. Responses retain
+`{surface, operation, receipt}` or the existing error envelope. Exit 0 means all
+requests succeeded; exit 1 means domain refusals occurred and subsequent explicit
+lines ran; exit 2 means structural failure stopped processing.
+
+From repository root, run both file and stdin journeys:
+
+```bash
+fixture=reference/booking_resale_admission/fixtures/ticket_operations_settlement_fact_inputs_session.json
+for scenario in journey boundaries; do
+  requests="reference/booking_resale_admission/fixtures/ticket_operations_settlement_fact_inputs_${scenario}.jsonl"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests "$requests"
+  python3 reference/booking_resale_admission/ticket_operations_cli.py --fixture "$fixture" --requests - < "$requests"
+done
+```
+
+The version-1 `MOCK_GATE_ONLY` fixture retains the issued anchor and explicit
+clock/adoption setup; all five recording arrays are empty. Optional `statements`
+and `cancel_acceptances` may also be omitted. The journey (exit 0) explicitly
+commits `6000 = 5500 + 200 + 100 + 100 + 100`, observes the later
+`4001 = 3801 + 200`, distributes in caller order, binds a 4000 refund and observes
+1000 synthetic acceptance. Cash stays 9301, refund outstanding becomes 3000 and
+PG adjustment outstanding becomes 1000. These values and distribution order are
+synthetic examples, not policy. Boundaries (exit 1) demonstrates retained phase
+and refund refusals, replay, changed bodies, identity conflicts and overflows.
+
+Observation performs no automatic distribution, refund binding/completion, ticket
+mutation, retry or clock adjustment. `MOCK_SETTLEMENT_ONLY`, `IN_MEMORY_FSM`,
+unsupported external payment and false funds/bank/return-closure/right-cancellation/
+durability flags remain, even after full synthetic acceptance. Distribution
+priorities and refund-burden policy remain **UNDETERMINED — Astra/User**;
+legal/accounting effects remain **UNDETERMINED — User/designated advisers**.
+No persistence, provider calls or production capability is delivered. See the
+[coverage and actual builder evidence](../../validation/2026-11-04-plan-local-settlement-fact-inputs/README.md).
+
+## Live local subprocess client
+
+[`ticket_operations_client.py`](ticket_operations_client.py) is an importable,
+standard-library client for the existing shared JSONL desk. Importing it launches
+nothing. `TicketOperationsClient.launch(fixture, *, quotes=None,
+calculated_quotes=None, cleanup_timeout=...)` explicitly starts one child using
+`sys.executable`; quote fixture options are mutually exclusive. The child uses
+ordinary Python buffering and flushes every complete response. Its in-memory
+service graph stays alive until closed; it does not persist across launches.
+
+Set `PYTHONPATH` to `reference/booking_resale_admission` when importing from the
+repository root. For example, using the repository's synthetic fixtures:
+
+```python
+from ticket_operations_client import TicketOperationsClient
+
+with TicketOperationsClient.launch(
+    "reference/booking_resale_admission/fixtures/ticket_operations_session.json",
+    cleanup_timeout=1,  # caller's cleanup budget, not a response deadline
+) as desk:
+    listed = desk.request({
+        "surface": "resale", "operation": "list_resale",
+        "arguments": {"offer_id": "offer-1", "listing_id": "list-1",
+                      "idempotency_key": "caller-list"},
+    })
+    # Inspect the returned envelope before explicitly deciding the next request.
+    if "receipt" in listed:
+        listing = listed["receipt"]["listing"]
+        current = desk.request({
+            "surface": "resale", "operation": "view",
+            "arguments": {"listing_id": listing["listing_id"]},
+        })
+```
+
+Run the complete listing → view → cancellation → view example:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 reference/booking_resale_admission/example_ticket_operations_client.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --offer-id offer-1 --listing-id list-1 --list-key caller-list --cancel-key caller-cancel \
+  --cleanup-timeout 1
+```
+
+All identities and the cleanup budget above are synthetic caller choices, not
+policy defaults. The example derives the listing identity and seller from the
+first receipt, stops on errors, and prints unmodified envelopes with all mock
+labels. Example exits: 0 for the completed journey, 1 for a desk error, 2 for
+local transport uncertainty. Desk batch exits remain 0/1/2 as before.
+
+`request(dict)` submits one UTF-8 JSONL line once and blocks for one complete
+response before returning its decoded envelope. Only one request may be
+outstanding. Concurrent/reentrant calls and concurrent cleanup fail locally with
+`TicketDeskClientStateError` before writing. Serialization failures also occur
+before writing. Arguments are still validated by the existing desk dispatchers;
+no selectors, protocol commands or SDK/catalogue entries are added.
+
+Domain `{code}` and source `{type,message}` errors return unchanged and allow
+another explicit caller request. `FixtureError`, `BookingInputError` and startup
+error envelopes are terminal: they return unchanged and fence further requests.
+A startup error may race a broken pipe; only a fully received valid error
+envelope is a known desk result.
+
+Once submission begins, EOF, short writes, broken pipes, truncated lines,
+malformed UTF-8/JSON/envelopes, selector mismatches or caller interruption raise
+`TicketDeskTransportUncertainty` and permanently fence the client. Its `request`,
+`request_bytes` and `reply_bytes` retain the submitted snapshot and observed
+reply bytes in memory; `client.uncertainty` retains that same exception after
+cleanup. No business failure, rollback or permission to resend follows from
+uncertainty. There is no automatic retry, replay, restart or replacement child.
+
+Reads have no response timeout. Caller interruption fences an interrupted
+exchange; it does not establish what the desk accepted. Finish or interrupt the
+requesting caller before cleanup. `close()` closes stdin, waits for the owned
+child and returns its actual exit code; repeated calls return the retained code.
+The required finite positive `cleanup_timeout` bounds each graceful/termination
+wait during cleanup only. Cleanup terminates then kills/reaps if needed, closes
+descriptors, preserves uncertainty and cannot undo accepted operations. Context
+manager exit runs the same cleanup, including on caller exceptions.
+
+This remains **MOCK_GATE_ONLY**, in-memory, local and non-production. No sockets,
+frontend, storage, external providers or funds are used. Product timing,
+authentication, pricing, distribution and refund policy remain
+**UNDETERMINED — Astra/User**. Source-informed parity is not independent review,
+durability, chain finality or production readiness evidence. See the
+[coverage and actual builder evidence](../../validation/2026-11-04-plan-local-ticket-stdio-client/README.md).
+
+## Guided local booking console
+
+[`booking_console.py`](booking_console.py) provides a standard-library terminal
+interface to one explicitly launched `TicketOperationsClient` subprocess. Import
+launches nothing. Run from the repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/booking_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1
+```
+
+`--fixture` and `--cleanup-timeout` are required. The cleanup budget `1` is an explicit caller example,
+not a response deadline or product default. Select a local fixture deliberately:
+show configuration is fixture-owned, with no console registration or organizer
+lifecycle. The supplied fixture is reused unchanged and has synthetic settlement,
+payment, reservation confirmation, settlement binding, issuance and matching
+resale/admission adoptions already in its history. `show-1` has capacity 2:
+slot 0 is occupied/issued, and slot 1 supports this example. Console actions in
+the transcript below do not perform those setup payment/issuance operations.
+For separate binding and issuance actions, see
+[guided fulfillment](#guided-local-fulfillment-in-the-shared-console).
+Every launch starts a fresh
+in-memory service; quitting loses its state.
+
+For a reproducible guided interaction (view show → clock → hold → preview →
+explicit confirmation → view reservation):
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/booking_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/booking_console_confirm.txt
+```
+
+The plain-text answers in [`booking_console_confirm.txt`](fixtures/booking_console_confirm.txt)
+enter synthetic identities and keys, clock `1000000`, expiry `1120000`, slot `1`
+and the caller-selected [`booking_console_quote.json`](fixtures/booking_console_quote.json).
+These are fixture examples, not product timing, price, seat-selection or TTL policy.
+The amount is `10001` KRW atoms with 0 decimals. Calculation request `expiresAt`
+and scope are calculator inputs; preview does not validate reservation currentness
+or bind those fields to booking identifiers. The existing service validates the
+actual confirmation and hold against its explicit session clock and show price.
+
+Type one action per prompt. Every field is explicitly entered; there are no
+inferred identities, generated keys, wall-clock reads or automatic expiries.
+
+| Action | Prompt fields / behavior |
+|---|---|
+| `view_show` | Known `show_id`; no catalogue lookup |
+| `set_clock` | `subject_id` (existing selector requires literal `clock`), `now_ms`, `idempotency_key`; required successfully through this session before booking mutation |
+| `hold` | `reservation_id`, `show_id`, `slot`, `buyer_role`, `expires_ms`, `idempotency_key` |
+| `load_quote` | Caller-selected UTF-8 file path; also used for explicit reload; clears preview even on identical text or load failure |
+| `target` | Synthetic `reservation_id`, `order_id`, confirmation `idempotency_key`; entering/editing clears preview |
+| `preview` | Requires loaded text and target; calls `preview_calculated_quote`, stores successful immutable snapshot |
+| `confirm` | Redisplays target and quote; literal `CONFIRM` submits `confirm_calculated_quote` once; any other answer declines without a request |
+| `confirm_recorded_quote` | `recording_id`, `reservation_id`, `order_id`, `idempotency_key`; displays the complete proposal and requires literal `CONFIRM_RECORDED_QUOTE`; [optional source flags and examples](#source-backed-booking-confirmation-in-the-live-consoles) |
+| `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key`; literal `BIND_SETTLEMENT` |
+| `issue` | `issuance_id`, `order_id`, `idempotency_key`; literal `ISSUE` |
+| `reconcile` | `reservation_id`, `idempotency_key`; literal `RECONCILE` |
+| `view` | Explicit `reservation_id`; enter the identity returned in the receipt |
+| `release` / `cancel` | Explicit `reservation_id` and `idempotency_key`; each selected action submits once |
+| `quit` | Closes the owned child; sends no release/cancel/compensation |
+
+`load_quote` reads UTF-8 bytes without newline normalization and never parses or
+reconstructs the request text. Use the existing supported complete commerce schema:
+one undiscounted KRW line, full asset fields, caller scope/policy/expiry and
+`discounts=[]`. Calculation and domain validation remain service-owned. `preview`
+prints quote lines, `grossAtoms`, `discountAtoms`, `payableAtoms`, exact decimal
+amounts, asset and `quoteHash`, plus the original quote. The pending target is
+explicit. Confirmation sends exactly the successful preview's text and identifiers
+without rereading the file. External file edits affect the next explicit load
+only. Reloading, editing identifiers, a failed preview, declining or attempting
+confirmation requires another successful preview before any further confirmation.
+
+Every original desk envelope is printed with reversible JSON escaping, including
+reservation phase/amount/quote reference, mock labels and false authority/finality
+flags. Confirmation is **MOCK_GATE_ONLY** reservation confirmation. Quotes remain
+**CALCULATION_ONLY**. Reservation confirmation, payment and chain issuance are
+separate facts. Preview alone does not establish availability, approval, entitlement,
+expiry validity, payment or issuance.
+
+Known domain/source errors preserve exact `{code}` or `{type,message}` details
+and allow another explicitly selected action. Startup errors, `FixtureError`,
+`BookingInputError`, transport uncertainty, EOF, interruption and terminal I/O
+errors fence the console and close the same child. Diagnostics preserve the last
+available reply, exception/cause details and available request/reply bytes as
+lossless escaped representations. A failed diagnostic output stream cannot
+permit further submissions. No retry, restart, polling or automatic compensation
+occurs. Cleanup cannot undo accepted work; uncertainty remains uncertainty.
+The cleanup budget applies only to the client's shutdown waits; requests block
+without a response deadline. Exit 0 means clean quit, 1 means a known refusal or
+nonzero child exit, and 2 means terminal/uncertain failure (invalid arguments also
+exit 2 before launch).
+
+For embedding, `run_console(client, *, input_stream, output_stream, error_stream)`
+is synchronous and takes an already launched client; its caller owns `close()`
+in `finally`, as `main()` does. It must not be invoked again on a failed session.
+No persistence, sockets, external calls, payment observation, issuance, catalogue,
+read-model, organizer lifecycle or new protocol command is added. Product policy
+remains **UNDETERMINED — Astra/User**; legal effects remain
+**UNDETERMINED — User/legal**. See the
+[indexed console validation record](../../validation/2026-11-05-plan-plan-local-booking-console/README.md)
+for coverage, actual checks and outstanding review/CI gates.
+
+### Guided local resale console
+
+`resale_console.py` provides standard-library terminal prompts over one live
+local `TicketOperationsClient` child. Importing starts nothing. Supply both a
+caller-selected combined desk fixture and a finite positive cleanup budget:
+
+```bash
+python3 -B reference/booking_resale_admission/resale_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1
+```
+
+The budget applies to child cleanup, not response reads; reads have no deadline.
+Setup comes entirely from the selected fixture. The example fixture already
+contains synthetic issuance/adoption, recorded `payment-1` for `list-1` and
+committed `resale-claim` for 8000 KRW. Fixture prices, allocations and timing are
+examples. Caller-entered payment observations are synthetic inputs; settlement
+creation remains a separately selected action on the settlement console.
+
+At `action`, select an exact selector below. Enter one value per subsequent
+prompt in the listed order. Every mutation then prompts for `idempotency_key`,
+prints the entire proposed `{surface, operation, arguments}` request, and requires
+literal uppercase `SUBMIT`. Anything else declines with zero submissions.
+Approval is consumed once; explicit replay requires selecting the action again,
+entering all identifiers/arguments and its key, and approving again. There are no
+implicit identifiers, keys, prices, expiry or clock values. In `list_resale_inputs`,
+`reservation_id` requires a JSON string (for example `"reserve-1"`) or explicit JSON `null`;
+`observe_resale_payment.buyer_role` also requires a JSON string (for example
+`"buyer-2"`) or literal `null`. Blank, non-string JSON and empty or whitespace-padded
+strings are refused without submission. Other buyer prompts and identifiers/labels
+remain plain text. Integers require decimal digits, with
+no float conversion, fractional values or scientific notation. The unchanged
+service validates supported ranges, ownership and timing.
+
+| Action | Prompt order before the mutation key/approval |
+|---|---|
+| `adopt_issued_from_booking` | Plain-text `reservation_id`, `right_id`; see [guided fulfillment](#guided-local-fulfillment-in-the-shared-console) |
+| `list_resale` | Plain-text `offer_id`, `listing_id`; see [recorded ticket actions](#recorded-offers-and-presentations-in-the-ticket-console) |
+| `list_resale_inputs` | `listing_id`, `right_id`, `version`, `seller_role`, `recipient_role`, `amount`, `expires_ms`, `reservation_id` |
+| `hold_buy` | `hold_id`, `listing_id`, `buyer_role` |
+| `release_hold` | `hold_id`, `buyer_role` |
+| `cancel_listing` | `listing_id`, `seller_role` |
+| `observe_recorded_payment` | `recording_id`, `listing_id` |
+| `observe_resale_payment` | `listing_id`, `payment_ref`, integer `amount`, JSON `buyer_role` or explicit `null` |
+| `bind_settlement` | `listing_id`, `settlement_id` |
+| `accept_resale` | `transfer_id`, `listing_id` |
+| `close` | `listing_id` |
+| `reconcile` | `listing_id`; then explicit key and literal `SUBMIT` |
+| `set_clock` | `subject_id` (existing subject `clock`), `now_ms` |
+| `view` | `listing_id`; no key/approval |
+| `view_right` | `right_id`; no key/approval |
+| `view_presentation` | `right_id`, `version`, `holder_role`; no key/approval |
+| `quit` | None; exits locally |
+
+Each selected action submits once to surface `resale`; views have no automatic
+follow-up reads. The full `desk=<JSON>` reply preserves selectors, error details,
+mock labels and false finality flags. Additional `Listing`, `Payment` and
+`Ownership` lines summarize only returned fields, with exact integer KRW amounts.
+Receipts are labeled `Action snapshot`, including `duplicate` and `applied`;
+explicit views are labeled `Current service observation`. A replayed receipt
+remains historical even when its listing or ownership has since changed.
+
+Run these reproducible terminal answer transcripts from the repository root:
+
+```bash
+python3 -B reference/booking_resale_admission/resale_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/resale_console_transfer.txt
+python3 -B reference/booking_resale_admission/resale_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/resale_console_cancel.txt
+```
+
+The [transfer answers](fixtures/resale_console_transfer.txt) use one desk child
+and exit 0. The following transcript guide separates the returned outcomes:
+
+| Explicit action | Returned observation |
+|---|---|
+| `set_clock clock 1000000` | Synthetic clock receipt |
+| List `list-1`, `issue-1`, version 1, buyer-1 → buyer-2, 8000, expiry 1120000, `"reserve-1"` | `LISTED`; no payment, ownership unchanged |
+| Hold `console-hold`, then `view list-1` | `BUY_HELD`; buyer-2 |
+| Observe `payment-1`; `view_right issue-1` | `PAYMENT_NOTED`; right still buyer-1, version 1 |
+| Bind `resale-claim` | Payment remains separate; settlement gate `BOUND` |
+| Accept `console-transfer` | `TRANSFERRED`; `MOCK_COMMIT_OBSERVED`; buyer-2, version 2 |
+| `view_presentation issue-1 1 buyer-1` | `matches_current_right: false`; no venue credential reissue |
+| Close `list-1` | `CLOSED` |
+| Explicitly repeat `console-transfer` with original key | Historical `TRANSFERRED`, `duplicate: true`, `applied: null` |
+| `view list-1`; `view_right issue-1` | Current `CLOSED`; buyer-2, version 2 |
+
+The [cancellation answers](fixtures/resale_console_cancel.txt) start another
+single child and exit 0. They list with explicit `null` reservation binding, hold
+`console-hold`, release it, and cancel `list-1`. Repeating the original listing
+with its original key returns the historical `LISTED` receipt with
+`duplicate: true`, `applied: null`. The separate current view is `CANCELLED`,
+with no payment or ownership transfer; the right stays buyer-1, version 1, and
+its original presentation matches again. Both answer files contain every key
+and every required `SUBMIT`, without hidden setup requests from the console.
+
+Settlement binding is optional under the existing contract: unbound transfer is
+allowed after payment observation; a bound transfer must pass the existing
+settlement source/commit/amount checks. Missing payment, missing recordings,
+unknown/uncommitted settlements, price and ownership refusals retain the desk's
+original errors. No automatic correction or binding occurs. Recorded-payment
+replay fetches the recording again and may fail; no cached fallback is added.
+
+For a caller-created listing absent from payment recordings, select
+`observe_resale_payment`. Enter the listing ID, caller-chosen synthetic lowercase
+64-hex payment reference, integer amount, explicit buyer JSON string or `null`,
+and key, then inspect the complete `proposed=` request before `SUBMIT`. No payment
+source is fetched. In `LISTED`, null or the matching recipient is accepted; in
+`BUY_HELD`, the explicit matching buyer is required. The desk owns buyer, amount,
+reference, range and lifecycle validation. Observation alone records
+`PAYMENT_NOTED`; settlement, binding and transfer each require another selection
+and confirmation. Unbound transfer keeps its existing semantics. A bound transfer
+requires the existing committed settlement checks. Replay returns the first
+historical receipt even after transfer; it does not refresh ownership.
+Provider authentication remains **UNDETERMINED — Toss/User**; entered synthetic
+references are not authenticated provider evidence.
+
+Exit 0 is clean, 1 records known service refusals, and 2 fences terminal failure.
+Known refusals allow only another explicit action. Transport uncertainty,
+terminal envelopes, EOF, interruption and terminal I/O failure stop submissions;
+received replies and uncertainty diagnostics are retained when output permits.
+`main` closes its one child in `finally`; cleanup never retries, restarts or
+compensates business actions. Interruption/EOF cannot undo an accepted request.
+
+This is synthetic, in-memory tooling. Product policy remains
+**UNDETERMINED — Astra/User**; legal effects remain
+**UNDETERMINED — User/legal**. R01–R04 keep their existing capability grades.
+Mock payment/commit and version changes establish neither real funds nor chain
+finality, legal effects, distributed fencing, durability or venue reissuance.
+No sockets, providers, real money, production runtime or protocol commands are
+added. See [builder evidence](../../validation/2026-11-05-plan-plan-local-resale-console/README.md)
+for coverage, executed verification, limitations and pending independent
+exact-head review/CI gates.
+
+## Guided local admission console
+
+[admission_console.py](admission_console.py) provides standard-library terminal
+prompts over one `TicketOperationsClient` and one local ticket-desk subprocess.
+Importing launches nothing. It exposes only the existing admission session
+selectors below. Authorization and consumption are separate actions, with
+separate confirmations; selecting consumption never invokes authorization.
+
+Run from the repository root with a **caller-selected** fixture containing
+already-issued and adopted synthetic tickets:
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1
+python3 reference/booking_resale_admission/admission_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_admission_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/admission_console_consume.txt
+# Expected exit: 0. Omit the redirect for interactive prompts.
+python3 reference/booking_resale_admission/admission_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_admission_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/admission_console_decline.txt
+# Expected exit: 0; declining consumption submits nothing.
+```
+
+Both flags are required. `--cleanup-timeout` must be finite and positive; it
+budgets child cleanup only, with no response deadline. `main(argv=None)` launches
+once and closes in `finally`. `run_console(client, *, input_stream,
+output_stream, error_stream)` runs synchronous prompts with caller-owned cleanup.
+There are no sockets, polling, automatic requests or replacement children.
+
+The unchanged [shared fixture loader](ticket_operations_fixture.py) uses
+`fixture_version`, `provenance`, `setup`, `offers` and `presentations`. Each setup
+entry retains `machine`, `operation`, `subject_id`, `idempotency_key` and `body`;
+see [fixture input](#fixture-input). The reused
+[fixture](fixtures/ticket_operations_admission_inputs_session.json) contains two
+issued tickets, matching resale/admission adoptions, explicit clocks and empty
+presentation recordings. The console introduces no schema extension, setup,
+issuance or reissuance operation. All example identities, keys, times and policy
+fields are synthetic caller inputs, never product defaults.
+
+Each field occupies one terminal line, in this order. The idempotency key comes
+last for mutations; no value is copied from a view or earlier reply.
+
+| Action | Prompt order | Required confirmation |
+|---|---|---|
+| `adopt_issued_from_booking` | `reservation_id`, `right_id`, `idempotency_key`; see [guided fulfillment](#guided-local-fulfillment-in-the-shared-console) | literal `ADOPT` |
+| `authorize_admission` | `presentation_id`, `admission_id`, `gate_role`, integer `expires_ms`, `idempotency_key` | literal `AUTHORIZE` |
+| `consume` | `presentation_id`, `consume_id`, `gate_role`, `idempotency_key` | literal `CONSUME` |
+| `authorize_admission_inputs` | `admission_id`, `right_id`, `version`, `holder_role`, `gate_role`, `request`, `expires_ms`, `idempotency_key` | literal `AUTHORIZE` |
+| `consume_inputs` | `consume_id`, `right_id`, `version`, `gate_role`, `request`, `idempotency_key` | literal `CONSUME` |
+| `reconcile` | `right_id`, `idempotency_key` | literal `RECONCILE` |
+| `set_clock` | `subject_id`, `now_ms`, `idempotency_key` | literal `SET_CLOCK` |
+| `view` | `right_id` | none |
+| `view_credential` | `right_id`, `version`, `holder_role` | none |
+| `quit` | local exit, no request | none |
+
+Mutation proposals are printed completely as `proposed=<JSON>`. Any other
+confirmation declines and discards that proposal; replay needs a new action,
+complete inputs and another confirmation. Integers accept ASCII decimal digits
+only, parsed directly without floats. Empty text or surrounding whitespace is
+rejected locally without submission. Accepted text is preserved exactly, with
+no trimming, case conversion or generated keys. Semantic checks remain at the
+desk: for example `BAD` request text is submitted unchanged and refused with
+its original `ADMISSION_REQUEST` error. `request` means the existing opaque
+lowercase 64-hex representation, not authentication. For a clock change, enter
+`clock` explicitly; the console never calculates expiry or synchronizes clocks.
+
+Every request has exactly `surface`, `operation`, `arguments`, with
+`surface="admission"`. Replies appear completely as `desk=<JSON>` before
+summaries: original surface/operation, receipt/view/error fields, codes, messages,
+flags and evidence remain intact. Receipts are labeled **Action snapshot**;
+explicit views are labeled **Current local observation**. Stored credential
+phase/version/holder, authorization, consumption and caller presentation
+`version/holder_role/fresh/decision` remain separate. A historical authorization
+or `fresh: true` does not establish current admission authority.
+
+The socket-free [consume answers](fixtures/admission_console_consume.txt) run
+this complete interaction in **one real desk subprocess**:
+
+| Explicit action | Observable outcome |
+|---|---|
+| `view issue-1`; `view_credential issue-1/1/buyer-1` | `ELIGIBLE`, version 1; presentation separate from stored credential |
+| `set_clock clock/1000000/console-clock`, `SET_CLOCK` | Caller-selected clock, no inferred time |
+| Authorize `entry-1/issue-1/1/buyer-1/gate-a/11×32/1060000/entry-key`, `AUTHORIZE` | Action snapshot `AUTHORIZED`, no consumption |
+| `view issue-1` | Current `AUTHORIZED`, version 1, `consume_id: null` |
+| Consume `consume-1/issue-1/1/gate-a/11×32/consume-key`, `CONSUME` | Separate action snapshot `CONSUMED`, version 2 |
+| Repeat complete authorization and `AUTHORIZE` | Historical `AUTHORIZED`, `duplicate: true`, `applied: null` |
+| `view issue-1`; `view_credential issue-1/1/buyer-1` | Current `CONSUMED`, version 2; caller version 1 remains visible, `fresh: false` |
+
+`11×32` above abbreviates the literal 64-character request in the answer file;
+enter all characters. The [decline answers](fixtures/admission_console_decline.txt)
+authorize then answer `no` to consumption, followed by an explicit unchanged-state
+view (`AUTHORIZED`, version 1, no consumption). No follow-up view is automatic.
+
+Exit codes are 0 clean, 1 after known refusals, 2 terminal failure. A known refusal
+allows another explicit action only. Terminal desk envelopes, transport
+uncertainty, EOF, interruption or terminal input/output failure fence the loop
+and stop submissions. Received replies are saved before rendering and retained
+in diagnostics where output permits. Partial transport bytes and original causes
+are preserved; there is no retry, replay, clock change, compensation or recovery.
+Cleanup/EOF does not undo an accepted operation. Broken output may prevent display.
+
+This is `MOCK_GATE_ONLY` / `IN_MEMORY_FSM`; `external_admission: UNSUPPORTED` and
+all false production/finality flags remain unchanged. Admission timing and
+identity policy: **UNDETERMINED — Astra/User**. Legal effects:
+**UNDETERMINED — User/legal**. P03 remains design-stage (설계중). No scanner,
+hardware, authentication, new protocol command, persistence, external service,
+production runtime or capability-grade change is introduced. Existing Class-B
+clock-skew characterization is retained without a cross-machine rollback claim.
+
+See [builder coverage, commands and limits](../../validation/2026-11-05-plan-plan-local-admission-console/README.md).
+
+## Guided local settlement console
+
+[`settlement_console.py`](settlement_console.py) supplies standard-library terminal
+prompts over one `TicketOperationsClient` child and the existing shared ticket
+desk. Importing launches nothing. The caller selects a fixture and either an existing
+settlement ID or a new settlement ID plus an existing local reservation/listing.
+Source setup belongs to that fixture or explicit earlier desk actions. Every confirmed mutation sends
+one request, and `main()` closes that same child in `finally`. `run_console(client,
+*, input_stream, output_stream, error_stream)` leaves cleanup to its caller.
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_fact_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_journey.txt
+```
+
+Both options are required. The finite positive cleanup timeout bounds shutdown
+waits only; it is not a response deadline. Requests block synchronously. There
+are no sockets, credentials, downloads or provider calls.
+
+After `action`, the fields below are prompted in order. Every operation except
+`view` then prompts for an explicit `idempotency_key`, prints the complete
+`proposed=` request and requires literal `SUBMIT`. Every other answer discards
+that action. Approval is consumed by that selection. `quit` exits locally and
+sends nothing. The console exposes no other selectors.
+
+| Action | Fields in prompt order, before the mutation key |
+|---|---|
+| `initiate_from_booking` | `settlement_id`, `reservation_id`, `trade_id`, `debtor_role`, `policy` |
+| `initiate_from_resale` | `settlement_id`, `listing_id`, `trade_id`, `debtor_role`, `policy` |
+| `authorize`, `capture`, `reconcile` | `settlement_id` |
+| `fail`, `cancel` | `settlement_id`, `reason` |
+| `commit`, `observe_statement` | `settlement_id`, `movement_id`, `gross`, `amount`, `fee`, `tax`, `held`, `adjustment`, `adjustment_reason` |
+| `commit_recorded_statement`, `observe_recorded_statement` | `settlement_id`, `movement_id` |
+| `distribute` | `settlement_id`, `order` |
+| `bind_refund` | `settlement_id`, `refund_id`, `amount`, `beneficiary_role`, `reason` |
+| `observe_mock_cancel_acceptance` | `settlement_id`, `source_id`, `amount` |
+| `observe_recorded_cancel_acceptance` | `settlement_id`, `source_id` |
+| `view` | `settlement_id` |
+
+Amounts require explicit decimal integers, never floats, exponent notation or
+implicit zeros. Signed negative integers are forwarded for service validation.
+`order` accepts a JSON array of strings or the exact terminal token `guided`;
+its order and duplicates are preserved
+for service validation. `adjustment_reason` requires a JSON string or explicit
+`null`. Other fields require explicit nonempty text without surrounding
+whitespace. No identity, key, reason, amount or ordering defaults are supplied.
+Malformed local input discards the pending selection and returns to `action`.
+Economic validation and allocation calculations belong to the unchanged service.
+
+`policy` accepts an explicit JSON object or the exact terminal token `guided`.
+For raw JSON, the existing strict fixture decoder
+rejects malformed JSON, duplicate keys (including nested keys), nonfinite constants
+and overflowing float exponents before any request is sent. Object contents pass
+through unchanged: missing/extra fields, unsupported kind, invalid basis points
+and payee collisions remain service validation. For example, `{}` is submitted
+and receives `POLICY_FIELDS`; that refusal retains its key, so a corrected body
+requires a separately supplied fresh key. No policy or identity is inferred.
+
+Initiation supplies neither `gross` nor `currency`; `SettlementInputAdapter` reads
+both from the selected source. The caller explicitly supplies every identifier,
+debtor role, synthetic policy and key. A complete example proposal is:
+
+```json
+{"surface":"settlement","operation":"initiate_from_booking","arguments":{"settlement_id":"claim-2","reservation_id":"reserve-2","trade_id":"explicit-booking-trade","debtor_role":"explicit-debtor","policy":{"kind":"PRIMARY_FEE_BPS","fee_bps":500,"residual_payee":"organizer","fee_payee":"platform"},"idempotency_key":"booking-input"}}
+```
+
+The 500 basis points, payee labels and identifiers here are synthetic caller
+inputs, never defaults or a resale economics decision. Initiation, authorization
+and capture each require their own literal `SUBMIT`. INITIATED and AUTHORIZED
+have `claim=null`; capture opens a claim with zero confirmed cash. Capturing
+before authorization receives `ILLEGAL_TRANSITION`; it never authorizes first.
+Missing sources return the full `SettlementInputSourceError` envelope, leave the
+target and key untouched, and allow another explicit selection.
+
+Two additional answer files start settlements that are absent from the unchanged
+input fixture. Run from the repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_start_booking.txt
+
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_start_resale.txt
+```
+
+The [booking answers](fixtures/settlement_console_start_booking.txt) create
+`claim-2` from `reserve-2` at source-owned 10001/KRW, explicitly authorize and
+capture, commit `statement-1`, observe `statement-2`, distribute, bind a 4000
+refund and accept a synthetic 1000 cancellation. Current cash/distributed cash
+is 9301, refund outstanding 3000 and PG adjustment outstanding 1000. Each step
+has an explicit view. The [resale answers](fixtures/settlement_console_start_resale.txt)
+first create `list-1` for `issue-1` through `resale.list_resale_inputs`, then
+navigate to settlement on the same child. They create `resale-claim` at
+source-owned 8000/KRW, authorize, capture, commit/observe the two recorded resale
+statements and distribute 8000. The fixture's `claim-1` remains an issuance
+anchor; neither target is preconstructed.
+
+Both journeys explicitly replay their original initiation key after later phases:
+the historical INITIATED receipt has `duplicate=true`, `applied=null`, and a null
+claim; the separately selected current view retains the later state. Changing
+`trade_id` with that retained key returns `IDEMPOTENCY_CONFLICT`. No settlement
+action binds the originating ticket, observes payment, issues/transfers a right,
+grants admission or advances another phase automatically. The resale listing
+remains LISTED, unbound and unpaid, with holder/version unchanged. See the
+[start-flow coverage and actual results](../../validation/2026-11-05-plan-local-settlement-console-start/README.md).
+
+### Caller-entered policy and distribution order
+
+At `policy (JSON object or guided; explicit synthetic policy)`, enter `guided`
+to answer `kind`, `fee_bps`, `residual_payee`, then `fee_payee`. Every field is
+required. `PRIMARY_FEE_BPS` is the existing service policy kind. `fee_bps`
+uses explicit decimal integer syntax, including an explicitly entered `0`.
+There is no prefilled or recommended fee, policy kind, payee, debtor, transaction
+identifier or idempotency key. Negative and out-of-range integers, unsupported
+kinds and colliding payees are forwarded unchanged for service validation.
+The console composes exactly these four policy fields; it computes no split.
+
+At `order (JSON array of strings or guided; explicit order)`, enter `guided`,
+then an explicit nonnegative decimal integer at `payee_count`. Enter each payee
+at `payee_1`, `payee_2`, and so on, in the exact desired sequence. The count is
+terminal-only and has no default or two-payee ceiling. Zero composes `[]` for
+service validation. Labels must be nonempty and have no surrounding whitespace.
+Order and duplicates reach the service unchanged; there is no inferred membership,
+sorting, deduplication, allocation or frozen-order precheck. For endpoint fees,
+the caller must explicitly enter the payee sequence for the nonzero obligations.
+
+`guided` and `payee_count` never become protocol operations or request fields.
+Guided and equivalent raw-JSON entry produce identical existing request envelopes
+and service results. Both paths show the complete `proposed=` request and require
+literal `SUBMIT` for each mutation. Decline or malformed input discards the pending
+composition. EOF or transport uncertainty fences the console and closes the child
+without consuming queued actions, automatic reads or retries. Source-owned gross
+and currency, arithmetic, policy validation and retained order remain in the service.
+
+Run the additive synthetic answer files from the repository root:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_guided_booking.txt
+
+PYTHONDONTWRITEBYTECODE=1 python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_guided_resale.txt
+```
+
+The [guided booking answers](fixtures/settlement_console_guided_booking.txt) and
+[guided resale answers](fixtures/settlement_console_guided_resale.txt) select the
+same explicit actions, synthetic inputs and service observations as the raw start
+journeys above. They initiate from populated booking/resale sources, authorize,
+capture, commit and observe recorded statements, then distribute in caller-entered
+order. The resale path explicitly lists first on the same shared-console child.
+The numbers in these answer files are caller-supplied synthetic examples, never
+product policy. Product policy remains **UNDETERMINED — Astra/User**; legal/accounting
+treatment remains **UNDETERMINED — User/designated advisers**. This advances synthetic
+P04/F01–F03 interaction only, with no capability grade change or durable settlement
+closure claim. See [composer coverage, transcripts and actual checks](../../validation/2026-11-08-plan-local-settlement-input-composer/README.md).
+
+The existing wire envelope is preserved, for example:
+
+```json
+{"surface":"settlement","operation":"observe_statement","arguments":{"settlement_id":"claim-2","movement_id":"later","gross":4001,"amount":3801,"fee":200,"tax":0,"held":0,"adjustment":0,"adjustment_reason":null,"idempotency_key":"later"}}
+{"surface":"settlement","operation":"distribute","arguments":{"settlement_id":"claim-2","order":["platform","organizer"],"idempotency_key":"distribution"}}
+{"surface":"settlement","operation":"view","arguments":{"settlement_id":"claim-2"}}
+```
+
+Each reply is saved before display and printed in full as `desk=` JSON, including
+its original `receipt`, `view` or `error` envelope, provenance and false flags.
+Summaries copy service-provided integers directly and separately show Cash
+(`confirmed_cash`, `distributed_cash`, `undistributed_cash`), Statement position
+(`receivable_open`, `non_cash_accounted`), each Allocation (`payee`, `face`,
+`distributed`, `cancelled_unpaid`, `recovery_due`, `outstanding`), Refund
+(`refund_face`, `refund_accepted`, `refund_outstanding`, `refund_bearer_policy`,
+`distribution_blocked`), PG adjustment (`pg_adjustment_outstanding`) and
+`distribution_order`. Phase, provenance and flags are retained in the Settlement
+summary too. A null claim displays unavailable claim data, without invented zeros.
+
+**Action snapshot** means `receipt.settlement.claim`, including historical first
+results on replay with `duplicate: true`, `applied: null`. **Current service
+observation** means `view.claim` from a separately selected `view`. A receipt
+never triggers an automatic read. No sequencing, calculations, retry,
+compensation or automatic distribution is performed by the console.
+
+The [explicit answers](fixtures/settlement_console_journey.txt) run against one
+real local desk subprocess, using the unchanged fact-input fixture. Each mutation
+is followed by a caller-selected view. The transcript performs:
+
+| Explicit action on `claim-2` | Service result, integer synthetic units |
+|---|---|
+| Commit `initial`, key `manual-commit`, gross 6000, amount 5500, fee 200, tax 100, held 100, adjustment 100, reason `"synthetic"` | Cash 5500; open receivable 4001; non-cash accounted 500 |
+| Observe `later`, key `later`, gross 4001, amount 3801, fee 200, tax/held/adjustment 0, reason `null` | Cash 9301; open receivable 0; non-cash accounted 700 |
+| Distribute, key `distribution`, order `["platform","organizer"]` | Distributed cash 9301; undistributed cash 0; obligation faces remain organizer 9501, platform 500 |
+| Bind refund `refund`, key `refund`, amount 4000, beneficiary `buyer-3`, reason `synthetic` | Refund face/outstanding 4000; accepted 0; bearer policy `REQUESTER`; distribution not blocked (B5) |
+| Observe synthetic cancellation acceptance `accept`, key `accept`, amount 1000 | Refund accepted 1000; outstanding 3000; PG adjustment outstanding 1000 |
+| Explicitly repeat the original commit and key | Historical action snapshot: cash 5500, open receivable 4001; duplicate true, applied null |
+| Explicit `view` | Current cash 9301; refund outstanding 3000; PG adjustment outstanding 1000 |
+
+The final current display includes these separate lines (the full desk envelopes
+are also printed):
+
+```text
+synthetic cancellation acceptance; not real refund completion
+Current service observation Cash={"confirmed_cash": 9301, "distributed_cash": 9301, "undistributed_cash": 0}
+Current service observation Statement position={"non_cash_accounted": 700, "receivable_open": 0}
+Current service observation Refund={"distribution_blocked": false, "refund_accepted": 1000, "refund_bearer_policy": "REQUESTER", "refund_face": 4000, "refund_outstanding": 3000}
+Current service observation PG adjustment={"pg_adjustment_outstanding": 1000}
+```
+
+Acceptance is always labelled **synthetic cancellation acceptance; not real
+refund completion**. `funds_executed`, `bank_debit_observed`,
+`external_return_closed` and `durable` remain false. Insufficient cash can leave
+residual obligations after explicit distribution; a shortfall is not itself a
+refusal and never shrinks obligation faces in the display.
+
+Known domain/source refusals preserve the desk error and allow another explicit
+selection. Startup/structural errors, uncertain transport, EOF, interruption or
+terminal I/O failure fence the console immediately. Diagnostics retain exception
+causes, observed request/reply bytes and the last complete reply; no queued action
+is submitted, child replaced, rollback inferred or request resubmitted. Exit 0
+means clean quit, 1 means known refusal or nonzero child exit, and 2 means terminal
+failure/uncertainty (including cleanup failure). Cleanup cannot undo accepted work.
+
+Distribution/refund policy remains **UNDETERMINED — Astra/User**; accounting/legal
+effects remain **UNDETERMINED — User/designated advisers**. The existing class-B
+zero-cash distribution uncertainty is preserved; the console neither selects a
+policy nor forbids an otherwise valid explicit request. This remains synthetic,
+local and in-memory. P04 durable closure, F04, reward coupling, persistence,
+new ledgers/read models, contracts/FSMs/catalogue/SDK changes and production
+runtime are outside scope. See [coverage and actual builder evidence](../../validation/2026-11-05-plan-plan-local-settlement-console/README.md);
+non-author exact-head review and both required CI workflows remain separate gates.
+These are source-informed composition tests; non-author A2 exact-final-head
+review and both exact-head KTX/KIX workflows remain required separately.
+
+## Shared local ticket console
+
+The [non-normative consumer surface map](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#ticket-sessions-and-consoles)
+records this desk's setup/source requirements, local selectors and historical
+replay/current-view distinction. These selectors are not HTTP catalogue aliases.
+
+Run all four existing consoles against **one** explicitly launched local ticket
+operations client and its single in-memory service graph, from the repository root:
+
+```bash
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1
+```
+
+Select `booking`, `resale`, `admission` or `settlement`. Each surface's `quit`
+returns to the shared menu; menu `quit` closes the desk once. Navigation and
+unknown menu input send no business requests. Surface actions and confirmations
+are those of the individual consoles, including [guided fulfillment](#guided-local-fulfillment-in-the-shared-console). There are no automatic views, clock changes, retries, child
+replacements or compensation. `--fixture` and a finite positive
+`--cleanup-timeout` are required; that budget bounds cleanup, not response time.
+
+Every booking entry starts with empty quote text, confirmation identifiers and
+pending preview. Returning to the menu invalidates the previous preview even
+when no business state changed. Re-entering requires explicit `load_quote`,
+`target`, successful `preview` and literal `CONFIRM` before confirmation can be
+sent. The graph retains earlier business mutations until the desk is closed;
+leaving booking does not release or cancel a reservation.
+
+Known business refusals keep their complete `desk=` error envelope and allow
+another explicit action or surface selection. The final exit status remembers
+these refusals: `0` is clean completion, `1` means a known refusal or nonzero
+child exit, and `2` means terminal failure. Malformed replies, transport
+uncertainty, terminal desk errors, EOF, interruption and terminal I/O failures
+end the entire session before any subsequent selection. Cleanup failure yields
+`2`, and a nonzero child exit cannot downgrade an existing terminal status.
+Complete diagnostic causes and available wire bytes remain in `FENCED:` output.
+
+For embedding, `shared_ticket_console.run_console(client, *, input_stream,
+output_stream, error_stream)` delegates synchronously and leaves cleanup to its
+caller. On status `2`, the caller must close and retire the session even if a
+terminal I/O failure left the transport usable. The command-line `main()` owns
+one launch and one close in `finally`; it never invokes surface `main()`.
+
+The checked-in [synthetic answer transcript](fixtures/shared_ticket_console_journey.txt)
+runs the real entry point and child without sockets:
+
+```bash
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_payment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_journey.txt
+```
+
+Its 18 explicitly selected requests span all four surfaces, then revisit booking,
+resale and settlement. Caller inputs select clock `1000000`, hold free slot `1`
+as `shared-reservation`, preview the existing calculation fixture and confirm
+`shared-order` for synthetic `10001` KRW. Independently, the fixture's already
+issued `issue-1` is listed for synthetic `8000` KRW, held, observed against
+recorded `payment-1`, bound to preconfigured `resale-claim` and transferred to
+`buyer-2` at version `2`. Admission `view` still shows stored venue credential
+`buyer-1` / version `1`; explicit `view_credential` for that old presentation
+reports `STALE_VERSION` and `fresh=false`. Transfer does not reissue the credential.
+Settlement distributes the existing fixture cash using explicit order
+`["organizer"]`. The order reflects that fixture's single obligation, not a new
+product distribution policy. The two settlement views both report distributed
+cash `8000`. Later booking `view` still reports `CONFIRMED`; resale `view` and
+`view_right` still report `TRANSFERRED` and `buyer-2` / version `2`.
+
+Receipts are historical action snapshots. Only the transcript's explicitly
+requested views establish the reported current local observations; merely
+switching surfaces makes no observation. The new booking confirmation does not
+pay or issue a new ticket, and this journey does not automatically link that
+reservation to the fixture's existing resale/settlement records.
+
+All envelopes retain `MOCK_GATE_ONLY`, `MOCK_SETTLEMENT_ONLY`, `CALCULATION_ONLY`,
+`IN_MEMORY_FSM` and the existing false authority, execution, finality and
+durability flags. Product/admission/distribution policy remains
+**UNDETERMINED — Astra/User**; legal effects remain **UNDETERMINED — User/legal**;
+accounting/legal settlement effects remain **UNDETERMINED — User/designated advisers**.
+This is synthetic composition evidence for B04/B05, R01–R04 and P03/P04 with no
+capability-grade promotion. Persistence, real payment, issuance, production
+admission, legal/accounting effects and durable settlement closure remain open.
+See [coverage and actual builder validation](../../validation/2026-11-05-plan-local-shared-ticket-console/README.md);
+non-author exact-head review and required KTX/KIX CI remain delivery gates.
+
+### Caller-entered synthetic resale payments in the shared console
+
+The [LISTED answers](fixtures/shared_ticket_console_payment_inputs_listed.txt)
+and [HELD answers](fixtures/shared_ticket_console_payment_inputs_held.txt) use
+`ticket_operations_settlement_inputs_session.json`. Each creates a distinct
+`caller-listed` or `caller-held` listing absent from that fixture's payment
+recordings. From the repository root:
+
+```bash
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_payment_inputs_listed.txt
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_inputs_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_payment_inputs_held.txt
+```
+
+Both journeys exit 0. LISTED enters literal `null`; HELD first selects `hold_buy`
+with plain-text `buyer-2`, then enters JSON `"buyer-2"` for the payment buyer.
+Each explicitly observes synthetic `8000` KRW under a caller-supplied reference
+and key, views the unchanged holder/version and existing `claim-1`, then switches
+to settlement. Separate confirmed selections initiate `resale-claim`, authorize,
+capture, commit one recorded statement and observe another. Only after returning
+to resale do explicit binding and transfer change ownership to buyer-2/version 2.
+The final payment replay still describes the earlier `PAYMENT_NOTED` snapshot;
+the following current view stays `TRANSFERRED`.
+
+The 500 basis point example policy, roles, prices, references, clocks, keys and
+statement IDs are synthetic caller inputs reused from existing examples, never
+approved product defaults. Payment entry does not execute funds, authenticate a
+provider, settle, transfer, infer a buyer or generate a key. Product policy stays
+**UNDETERMINED — Astra/User**; provider authentication stays
+**UNDETERMINED — Toss/User**. The
+[payment input validation record](../../validation/2026-11-06-plan-plan-local-resale-payment-console-inputs/README.md)
+maps composition coverage, actual local results and pending review/CI gates.
+
+## Guided local fulfillment in the shared console
+
+The shared console now exposes the existing booking fulfillment and issued-ticket
+handoff operations. It retains one `TicketOperationsClient`, child and service
+graph while switching surfaces. Booking uses `BookingSession`; target adoption
+uses the existing `IssuedTicketAdapter` through shared dispatch. The UI copies
+no issuance checks, original booking fields, show policy or adoption payload.
+
+Select `booking`, `resale` or `admission` at the shared menu, then enter an action.
+Each new mutation prints the complete `proposed=` request before its literal
+confirmation. Any other answer declines and discards that proposal. A later
+action requires entering all caller fields again. Confirmation sends exactly one
+request; there are no automatic reads, retries or downstream actions.
+
+| Surface / action | Fields in prompt order | Literal confirmation |
+|---|---|---|
+| booking / `bind_settlement` | `reservation_id`, `settlement_id`, `idempotency_key` | `BIND_SETTLEMENT` |
+| booking / `issue` | `issuance_id`, `order_id`, `idempotency_key` | `ISSUE` |
+| admission / `adopt_issued_from_booking` | `reservation_id`, `right_id`, `idempotency_key` | `ADOPT` |
+| resale / `adopt_issued_from_booking` | `reservation_id`, `right_id`, `idempotency_key` | `SUBMIT` |
+
+All new fields are explicit nonempty strings without surrounding whitespace;
+adoption reservation IDs are plain text. Resale `list_resale_inputs` retains its
+existing JSON string or explicit `null` reservation prompt. Booking must first
+receive a successful explicit `set_clock`: enter `subject_id`, `now_ms`, then
+`idempotency_key`. Fixture clock initialization alone does not satisfy this
+session requirement; the service returns its original terminal `BookingInputError`
+if it is omitted. The console supplies no clock or identifier defaults.
+
+The caller selects issuance, each target adoption, resale listing/transfer,
+admission authorization and consumption independently. Binding does not issue;
+issuance does not adopt; adoption does not list, authorize or consume. Admission
+still uses `authorize_admission_inputs` (`admission_id`, `right_id`, `version`,
+`holder_role`, `gate_role`, `request`, `expires_ms`, `idempotency_key`, then
+`AUTHORIZE`) and a separate `consume_inputs` (`consume_id`, `right_id`, `version`,
+`gate_role`, `request`, `idempotency_key`, then `CONSUME`).
+
+The unchanged [fulfillment fixture](fixtures/ticket_operations_fulfillment_session.json)
+contains an explicitly synthetic `reserve-2` / `order-2` for `buyer-3`, slot 1 of
+`show-1`, amount `10001` KRW, quote `quote-2`, payment reference `cd` repeated 32
+times, and expiry `1120000`. Its setup has already reached `PAYMENT_NOTED` and
+committed synthetic settlement `claim-2`. It has **not** bound, issued or adopted
+that second ticket. `issue-2` is a caller-selected issuance ID in the examples.
+Clock `1000000`, all keys, roles, request hashes and times are example inputs,
+never defaults. The fixture's earlier `reserve-1` / `issue-1` is independent
+prepared inventory used only for boundary examples. No payment-reservation
+handoff has been added or unblocked.
+
+Run from repository root with Python 3.12, without sockets or new dependencies:
+
+```bash
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_fulfillment.txt
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_fulfillment_consume.txt
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_fulfillment_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_fulfillment_boundaries.txt
+```
+
+The first transcript exits 0: view prepared payment, set the booking clock,
+confirm binding, observe still `PAYMENT_NOTED`, confirm issuance, observe
+`ISSUED`, separately adopt into admission and resale, then request current views
+without restarting the child. Admission is `ELIGIBLE`; resale observes holder
+`buyer-3` / version 1. The second exits 0 and continues through `AUTHORIZED`,
+declined consumption and an unchanged authorized view, then independently
+confirmed consumption. Current admission and booking observe version 2;
+resale independently retains version 1. It explicitly replays issuance and both
+adoptions after consumption: historical receipts have `duplicate: true`,
+`applied: null` and their original version 1. A receipt is an action snapshot;
+only an explicitly requested view observes current local state. Booking labels
+this distinction alongside the complete original `desk=` envelope; resale and
+admission retain their existing receipt/view renderers.
+
+The boundaries transcript intentionally exits 1. It preserves source refusals
+before issuance, missing reservation/read failures and crossed reservation/right
+identities; declines binding and issuance without sending; explicitly issues and
+recovers using the previously source-refused adoption keys; then demonstrates
+exact replay and changed-body `IDEMPOTENCY_CONFLICT` for all four new actions.
+Adoption conflicts use the other valid `reserve-1` / `issue-1` pair, so they reach
+target idempotency rather than failing extraction first. Tests also derive an
+unpaid fixture by removing only `order-2`'s synthetic `observe_payment` entry;
+issuance returns retained `ILLEGAL_TRANSITION`, with current booking still
+`CONFIRMED` and no payment or right. No new unpaid fixture schema is introduced.
+
+Full `{error:{code}}` and `{error:{type,message}}` envelopes remain visible.
+Known source/domain refusals permit explicit continuation and make exit 1
+sticky. Terminal errors, transport uncertainty, interruption and output failure
+fence the entire shared console with exit 2 and one child cleanup. Later queued
+surface actions are not read or sent. Clean exit is 0.
+
+Product/admission policy remains **UNDETERMINED — Astra/User**; legal effects
+remain **UNDETERMINED — User/legal**. These source-informed synthetic examples
+retain false finality/durability/production flags. They add no chain execution,
+credential reissuance, organizer lifecycle, new protocol command, payment handoff,
+production runtime or persistence. See the [builder evidence and remaining
+review/CI gates](../../validation/2026-11-05-plan-local-fulfillment-console/README.md).
+
+
+## Guided local ticket exception actions
+
+The four standalone consoles and the shared console expose existing desk
+reconciliation; settlement also exposes pre-capture failure and cancellation.
+They use the same `TicketOperationsClient`, dispatcher and service graph.
+There are no automatic views, clock updates, retries, worker restarts, repairs
+or compensation actions. Each submission requires newly entered fields and its
+own confirmation, including replay of an earlier key.
+
+| Surface / action | Explicit fields in order | Confirmation |
+|---|---|---|
+| booking / `reconcile` | `reservation_id`, `idempotency_key` | `RECONCILE` |
+| resale / `reconcile` | `listing_id`, `idempotency_key` | `SUBMIT` |
+| admission / `reconcile` | `right_id`, `idempotency_key` | `RECONCILE` |
+| settlement / `reconcile` | `settlement_id`, `idempotency_key` | `SUBMIT` |
+| settlement / `fail`, `cancel` | `settlement_id`, `reason`, `idempotency_key` | `SUBMIT` |
+
+Each field requires nonempty text without surrounding whitespace. No subject,
+key or reason is inferred. The complete `proposed=` envelope is displayed before
+confirmation. Any other confirmation declines with zero requests. EOF,
+interruption, transport uncertainty or display failure ends the session; queued
+navigation is not consumed. A fenced client refuses reconciliation before any
+write; the console never launches a replacement worker.
+
+For example, `settlement`, `fail`, `fail-init`, `synthetic-decline`,
+`caller-key`, `SUBMIT` in the shared console submits exactly:
+
+```json
+{"surface":"settlement","operation":"fail","arguments":{"settlement_id":"fail-init","reason":"synthetic-decline","idempotency_key":"caller-key"}}
+```
+
+Receipts are labeled **Historical action snapshot**, including a newly requested
+reconciliation receipt. Repeating a key returns the original snapshot with
+`duplicate: true`, `applied: null`. Only a separately selected `view` is a current
+observation. Full `desk=` JSON retains `matched`, `state_digest`, `entry_count`,
+subject snapshots, provenance and all false execution/finality flags. A digest
+match is process-local replay comparison, not authenticated operator evidence or
+permission to act. Original domain `{code}` and local `{type,message}` errors
+are printed unchanged. Same-key changed subject, reason or operation remains
+`IDEMPOTENCY_CONFLICT`; refusals stay retained without corrective submissions.
+
+`fail` and `cancel` accept only INITIATED/AUTHORIZED, with terminal FAILED or
+CANCELLED and `claim=null`. CAPTURED/COMMITTED refuse both with
+`ILLEGAL_TRANSITION`; new mutations after terminal state refuse with
+`TERMINAL_IMMUTABLE`. Reconciliation and views remain available after terminal
+state. Admission reconciliation with a fresh key can return `STALE_VERSION`
+after ownership transfer, even when an old reconciliation key still replays its
+historical success. These are existing service rules, not recovery controls.
+
+Run the checked-in answers from the repository root (omit redirection for
+interactive use). Every launch starts a fresh in-memory desk:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_reconcile.txt
+# Expected exit 1: selected conflicts and STALE_VERSION are retained.
+
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_exceptions.txt
+# Expected exit 1: pre-capture terminal actions, replays and post-capture refusals.
+
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B reference/booking_resale_admission/settlement_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/settlement_console_reconcile.txt
+# Expected exit 0: explicit statement/distribution/refund observations and reconciliation.
+```
+
+Exit 0 is clean completion, 1 a known refusal/nonzero child exit, 2 a terminal
+failure. The examples use synthetic identifiers, amounts, reasons and policies.
+Synthetic cancellation acceptance is **not real refund completion**. No queued
+authenticated operator-evidence work, durable recovery, reconciliation semantics,
+compensation/refund rules, terminal behavior, SDK/OpenAPI or runtime activation is
+changed. Product policy remains **UNDETERMINED — Astra/User**; legal/accounting
+effects remain **UNDETERMINED — User/designated advisers**. These results do not
+establish external execution, chain finality, legal compliance or production
+readiness. See the [coverage and actual validation record](../../validation/2026-11-06-plan-plan-local-ticket-exception-console/README.md)
+for results and pending non-author exact-head A2 review/KTX/KIX CI gates.
+
+
+## Commerce calculation console
+
+The [non-normative consumer surface map](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#commerce-calculator)
+distinguishes the calculator's `{action,args}` envelope and calculation hashes
+from ticket requests, HTTP identity and execution authority.
+
+`commerce_calculation_client.py` is a reusable synchronous, single-writer client
+for the unchanged `../v0.3-rc1/commerce_driver.py`. Construction launches nothing;
+each explicit `request({"action": ..., "args": ...})` launches one fixed driver
+with the current Python interpreter, sends one CE1 request, closes stdin, retains
+one complete reply, and reaps the child. No shell, socket, retry, restart,
+fallback, persistence or arithmetic is added. Use Python 3.12 or newer (CE1 needs
+Unicode 15 normalization tables). Example from this directory:
+
+```python
+from pathlib import Path
+from commerce_calculation_client import CommerceCalculationClient, decode_input
+client = CommerceCalculationClient(cleanup_timeout=2)
+request = decode_input(Path("fixtures/commerce_console_quote.json").read_bytes())
+exchange = client.request({"action": "simulate_quote", "args": request})
+quote = exchange.response["result"]
+# Explicit separate calls may pass this full quote and its exact quoteHash.
+```
+
+`CalculationExchange` is frozen and retains `request_bytes`, `reply_bytes` and
+`returncode`; `response` returns a fresh detached decode. `client.history` retains
+all successful exchanges, and `last_exchange` also retains known refusals.
+Malformed replies, process failure, interruption, schema/hash/binding mismatch
+raise `CalculationUncertainty`, preserve diagnostic bytes and permanently fence
+the client. A shaped driver rejection (exit 2) is retained without promoting a
+success and allows a separately submitted corrected request. Cleanup timeout is
+only a positive cleanup budget; there is no automatic clock or response deadline.
+
+The guided console is calculation-only and separate from the booking console,
+restricted calculated-booking bridge and settlement. Run from the repository root:
+
+```bash
+env -u PYTHONPATH PYTHONDONTWRITEBYTECODE=1 python3.12 \
+  reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_journey.txt
+```
+
+Omit redirection for interactive use. Local controls:
+
+| Action | Explicit caller input / effect |
+|---|---|
+| `load_quote` | Path to a complete quote request JSON object; loads only |
+| `compose_quote` | Explicit order, scope, lines, assets and ordered discounts; previews the request, submits nothing |
+| `simulate_quote` | Shows full request, requires literal `SUBMIT_QUOTE` |
+| `load_legs` | Path to JSON array of existing payment legs; loads only |
+| `compose_legs` | Explicit count and every leg field; previews the complete array, submits nothing |
+| `plan_payments` | Explicit synthetic integer `now`, retained quote/hash, literal `SUBMIT_PLAN` |
+| `select_lines` | Explicit JSON array of line IDs; selects only |
+| `pick_lines` | Displays active returned quote rows; collects an explicit count and literal line IDs, submits nothing |
+| `propose_line_refund` | Retained full quote/plan and hashes, selected IDs, literal `SUBMIT_REFUND` |
+| `show`, `quit` | Local display/exit; no subprocess calculation |
+
+These are terminal controls, not new protocol commands. Every quote load or composition attempt
+(even identical or failed) clears active quote, plan, refund and line selection.
+Every legs load, composition or plan-input attempt clears plan, refund and line selection.
+Every new quote calculation clears the prior quote and dependents; every line
+selection attempt clears the prior selection and refund. Decline/EOF submits nothing further.
+Failed replacement calculations cannot restore history as active state. `show`
+labels active hashes separately from historical successful exchanges. No implicit
+split, policy value, clock, file reload or allocation is supplied. Quote/plan
+outputs and arrays/atom strings pass unchanged into subsequent driver calls.
+
+To select refund lines without a JSON array, choose `pick_lines` after a successful
+`simulate_quote`. It displays the returned `quoteHash`, full `asset`, and every
+returned row's `lineId`, `inventoryId`, `grossAtoms`, `discountAtoms`, `payableAtoms`.
+Amounts are the original exact integer strings; the picker computes no totals,
+discounts, allocations or refund amounts. Enter `Explicit selected line count`
+as a CE1 integer from `0` through the existing `MAX_LINES` bound (300), then enter
+each `line_ids[0]`, `line_ids[1]`, etc. as literal text, without JSON quotes.
+Only line terminators are removed. Order, duplicates, spaces, empty strings and
+unknown IDs are preserved; there is no default, trimming or silent deduplication.
+Zero explicitly selects `[]`, which the driver refuses only after submission.
+
+Entering `pick_lines` immediately clears the old selection and refund, even if
+the quote is missing, a count/encoding fails, or EOF interrupts collection.
+Only a complete CE1-encoded candidate is published as `selected_lines=<array>`.
+The quote, plan and historical exchanges remain available. `select_lines`
+continues to accept an explicit JSON array. Both paths require a successful
+active quote and payment plan for `propose_line_refund`; inspect its full envelope
+and separately type literal `SUBMIT_REFUND` to calculate once. Selection, preview,
+decline and EOF send no refund request. Driver identifier, duplicate and membership
+errors remain visible without input repair or retry. Transport failure fences the
+client and exits 2; a known refusal exits 1; a clean quit/decline/EOF exits 0 unless
+there was an earlier refusal. No refund execution is authorized.
+
+Run a guided quote, split plan and multiple-line selection from the repository root:
+
+```bash
+env -u PYTHONPATH PYTHONDONTWRITEBYTECODE=1 python3.12 -B \
+  reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_picker_journey.txt
+```
+
+Use the same command with `commerce_console_picker_precision.txt`,
+`commerce_console_picker_free.txt`, `commerce_console_picker_decline.txt` or
+`commerce_console_picker_replacement.txt` (exit 0). `commerce_console_picker_boundaries.txt`
+exits 1 for explicit empty, duplicate, unknown and malformed-ID selections.
+[Picker parity, failure evidence and pending delivery gates](../../validation/2026-11-09-plan-local-refund-line-picker/README.md)
+cover unchanged requests, complete results and hashes against explicit JSON selection.
+Refund policy remains **UNDETERMINED — Astra/User**; legal/accounting treatment
+remains **UNDETERMINED — User/designated advisers**. Capability grades are unchanged.
+
+To enter a quote without a JSON file, choose `compose_quote`. Enter these fields
+in order, using caller-supplied synthetic values:
+
+1. `orderId`, `orderVersion`, `scope.issuerId`, `scope.eventId`,
+   `scope.performanceId`, `policyRef`, `expiresAt` (Unix milliseconds).
+2. Explicit line count, `1` through the existing `MAX_LINES` bound (300).
+   For each line: `lineId`, `inventoryId`, `gross.asset.namespace`,
+   `gross.asset.reference`, `gross.asset.decimals`, `gross.asset.maxAtoms`,
+   `gross.atoms`. Supply the full asset specification for every line.
+3. Explicit discount count, `0` through the existing `MAX_RULES` bound (64).
+   For each rule in application order: `ruleId`, `bearerRef`, `kind` (`FIXED`
+   or `BPS`), `value`, `eligibleLineIds`, `capAtoms`.
+
+Version, expiry, counts and decimals use explicit CE1 integer tokens; booleans,
+fractions, exponents, negative zero and unsafe JSON integers are refused.
+`eligibleLineIds` is an explicit JSON string array, such as `["L2","L1"]`.
+`capAtoms` is a JSON string, such as `"5000"`, or the literal `null`; blank input
+supplies no default. Other fields are literal text with only line terminators
+removed. Enter atom and discount value strings without JSON quotes; BPS uses
+the existing basis-point string (for example `1000`), without conversion.
+Zero discounts explicitly produces `discounts=[]`. Schema version comes from
+the existing calculator (`kix:commerce:2`). Array order, duplicate identities,
+eligibility, asset compatibility and discount limits pass to driver validation;
+the console does not repair or retry a refused request.
+
+Composition immediately clears quote input, active quote, plan, refund and line
+selection, even on invalid input or EOF. Stored legs and historical exchanges
+remain process-local. Only a complete CE1-encoded candidate becomes quote input.
+The console prints `composed_quote=<complete request>` and returns to the menu.
+Choose `simulate_quote`, inspect the envelope, and type `SUBMIT_QUOTE` to
+calculate once. Payment planning and refund proposals still require their own
+`SUBMIT_PLAN` and `SUBMIT_REFUND` confirmations.
+
+Run a complete file-free quote, guided split plan and selected-line refund:
+
+```bash
+env -u PYTHONPATH PYTHONDONTWRITEBYTECODE=1 python3.12 -B \
+  reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_bundle_journey.txt
+```
+
+Other bundle transcripts use the same command: `commerce_console_bundle_precision.txt`
+(exact `9007199254740993` atoms), `commerce_console_bundle_free.txt` (explicit zero
+discounts/legs), `commerce_console_bundle_decline.txt` and
+`commerce_console_bundle_replacement.txt` exit 0.
+`commerce_console_bundle_boundaries.txt` exits 1 for seven explicit driver refusals
+covering duplicate identities, eligibility, mixed assets and excessive discounts.
+Equivalent guided/file requests produce identical request bytes, results, hashes
+and original refund routes. [Bundle composition evidence and pending delivery gates](../../validation/2026-11-09-plan-plan-local-bundle-quote-composer/README.md).
+This advances B03 pricing/discount and F03 refund calculation usability; capability
+grades remain unchanged. Product policy remains **UNDETERMINED — Astra/User**;
+tax/accounting treatment remains **UNDETERMINED — User/designated advisers**.
+
+To enter legs without a JSON file, choose `compose_legs`. Supply the explicit
+CE1 integer count from `0` through the existing driver's `MAX_LEGS` bound (16).
+For each leg, enter these fields in order: `legId`, `providerRef`, `routeRef`,
+`amount.asset.namespace`, `amount.asset.reference`, `amount.asset.decimals`,
+`amount.asset.maxAtoms`, `amount.atoms`. Decimals must be a CE1 integer;
+all other fields are literal text with only line terminators removed. Atom
+strings are never converted to numbers. No metadata, split, route or amount
+is inferred from the quote; blank input supplies no default. Use synthetic
+provider and route references. Identifiers, assets and amounts are validated
+by the unchanged driver when submitted.
+
+Count `0` explicitly composes `[]`, including for a free order; the driver decides
+whether it matches the quote. The console prints `composed_legs=<complete array>`
+and returns to the menu. Choose `plan_payments` separately, enter synthetic `now`,
+inspect the full envelope, then type `SUBMIT_PLAN` to calculate once. Starting
+composition immediately clears the old legs, plan, refund and line selections,
+while preserving the active quote and historical successful exchanges. Malformed
+or incomplete input cannot restore the previous legs or selections. Refusals
+remain visible; correction needs another explicit input and submission.
+
+Run the command above with `commerce_console_guided_journey.txt` for an explicitly
+entered two-leg plan and selected-line refund. Additional guided answer files:
+`commerce_console_guided_free.txt` (explicit empty array),
+`commerce_console_guided_precision.txt` (exact atoms above JavaScript's safe range),
+`commerce_console_guided_replacement.txt`, `commerce_console_guided_decline.txt`
+(exit 0), and `commerce_console_guided_boundaries.txt` (expected exit 1 for duplicate
+legs, asset mismatch, incorrect totals and expiry). Equivalent guided/file arrays
+produce identical calculation requests and replies. [Guided-entry evidence and
+pending gates](../../validation/2026-11-08-plan-local-split-payment-entry/README.md).
+This advances B03/B04 and F03 calculation usability only; capability grades remain
+unchanged. Booking quote entry, payment execution and booking/payment handoff
+are outside this console's scope.
+
+All JSON files are decoded from original bytes with bounded CE1 before any
+reserialization: duplicate keys, fractions/exponents, negative zero and unsafe
+JSON number tokens are rejected. Amounts remain decimal atom strings, including
+`"9007199254740993"`. JSON file schemas are existing schema 2 inputs:
+
+- Quote: exactly `schemaVersion="kix:commerce:2"`, `orderId`, `orderVersion`,
+  `scope={issuerId,eventId,performanceId}`, `policyRef`, `expiresAt`, `lines`, `discounts`.
+- Lines: `lineId`, `inventoryId`, `gross={asset,atoms}`. Asset:
+  `namespace`, `reference`, `decimals`, `maxAtoms` (string).
+- Ordered discounts: `ruleId`, `bearerRef`, `kind`, `value` (string),
+  `eligibleLineIds`, `capAtoms` (string or null). No rules supplied by the tool.
+- Legs: `legId`, `providerRef`, `routeRef`, `amount={asset,atoms}`; use `[]` for
+  a free order. The driver validates exact totals, expiry and selected lines.
+
+Full results, original routes, hashes and required evidence are rendered.
+Quotes/plans retain their existing schemas; refund proposals retain
+`executionAuthorized=false`. Refund calculations use the plan's existing
+`checkedAt`; no new expiry rule. Retained hashes are not authenticated authority.
+
+Additional runnable answer files use the same command/redirection:
+`commerce_console_decline.txt`, `commerce_console_replacement.txt`,
+`commerce_console_free.txt`, `commerce_console_precision.txt` (exit 0), and
+`commerce_console_boundaries.txt` (exit 1 for explicit expiry, total and line
+refusals). Exit 2 means terminal failure. Fixtures contain caller-authored
+synthetic product values only. Product policy remains **UNDETERMINED — Astra/User**;
+legal/accounting treatment remains **UNDETERMINED — User/designated advisers**.
+No real payments/refunds, booking confirmation, settlement, public endpoint or
+production readiness. [Actual results, coverage and pending review/CI gates](../../validation/2026-11-08-plan-plan-local-commerce-calculation-console/README.md).
+
+
+### Exact decimal entry
+
+Select `compose_quote_decimal` for quote-line gross amounts or `compose_legs_decimal`
+for split-payment leg amounts. Existing `compose_quote`, `compose_legs` and JSON
+file input continue to accept atom strings. Decimal and atom controls can be
+combined independently; equivalent inputs produce identical driver requests,
+results and hashes.
+
+Every decimal amount requires explicit `asset.namespace`, `asset.reference`,
+`asset.decimals` (a CE1 integer) and `asset.maxAtoms` (a canonical unsigned integer
+string), followed by `lines[i].gross.decimal` or `legs[i].amount.decimal`. No metadata
+is inferred or approved. The unchanged isolated `AssetSpec` / `Amount.from_decimal`
+parser accepts unsigned plain decimal text at precision 0 through 38 with a positive
+limit at most `2**128-1`. It rejects exponents, signs, whitespace, non-ASCII digits,
+overflow and excess fractional digits, including extra zeroes. Input never passes
+through float, trimming or rounding; only line terminators are removed.
+
+Once the entire candidate encodes successfully, each `decimal_conversion=` record
+shows `field`, original `decimalInput`, complete `asset` and resulting canonical
+`atoms`, followed by `composed_quote=` or `composed_legs=`. Failed or interrupted
+composition publishes no partial preview or candidate. Preview records are console
+output only and never enter driver inputs or hashes. Discount `FIXED` values and
+`capAtoms` remain atom strings; `BPS` values and discount ordering are unchanged.
+
+Composition submits nothing. Use `simulate_quote` / `SUBMIT_QUOTE`,
+`plan_payments` / `SUBMIT_PLAN` (with explicit `now`) and
+`propose_line_refund` / `SUBMIT_REFUND` separately. Mixed assets and aggregate
+overflow remain driver refusals after explicit submission. A free quote uses an
+explicit zero payment-leg count; a zero-valued payment leg is refused by the driver.
+Starting quote composition invalidates quote input, quote, plan, refund and line
+selections before prompting. Starting leg composition preserves the quote and
+invalidates legs, plan, refund and line selections. Historical exchanges cannot
+reactivate those selections; existing uncertainty fencing remains terminal.
+
+From the repository root:
+
+```bash
+python3.12 -B reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_decimal_journey.txt
+```
+
+Also run `commerce_console_decimal_precision.txt` (precision 6, exact
+`9007199254.740993` → `"9007199254740993"`), `commerce_console_decimal_free.txt`,
+`commerce_console_decimal_decline.txt` and `commerce_console_decimal_replacement.txt`
+(exit 0). `commerce_console_decimal_boundaries.txt` exits 1 for mixed quote assets,
+aggregate overflow, mismatched payment assets, a zero payment leg and a local
+exponent refusal. All amounts and references are synthetic caller inputs.
+
+This standalone console remains `CALCULATION_ONLY`, separate from booking quote
+entry and booking confirmation. Product policy remains **UNDETERMINED — Astra/User**;
+legal/accounting treatment remains **UNDETERMINED — User/designated advisers**.
+No FX, asset approval, new protocol command, SDK/catalogue change or execution
+authority is added. [Actual commands, coverage, transcripts and delivery limits](../../validation/2026-11-10-plan-local-commerce-decimal-entry/README.md).
+
+### Editing a quote request draft
+
+Use `show_draft` to inspect complete metadata and the original ordered arrays.
+Each `draft_line=` and `draft_discount=` record contains a zero-based `position`
+and the complete `entry`. Display submits nothing and preserves active selections.
+These controls edit process-local request inputs; returned quote bytes remain
+immutable historical calculation evidence.
+
+| Local control | Explicit replacement input |
+| --- | --- |
+| `edit_line` | Line position, `lineId`, `inventoryId`, complete gross asset metadata, gross atom string |
+| `edit_line_decimal` | Same fields, with exact decimal text instead of atoms using the existing converter |
+| `edit_discount` | Discount position, `ruleId`, `bearerRef`, `kind`, `value`, JSON `eligibleLineIds` string array, JSON string or null `capAtoms` |
+| `edit_quote_metadata` | Both `orderVersion` and `expiresAt (Unix milliseconds)` as explicit CE1 integers |
+
+Positions must be explicit CE1 integers within the displayed array; IDs are never
+used to locate an entry, even when duplicated. Empty arrays have no replaceable
+entry. Replacement prompts reuse the composition fields and require every value;
+there is no blank-to-keep behavior. Structural controls below add insertion,
+removal and reordering. Untouched
+fields, array order, atom strings and discount caps remain exactly as supplied.
+Changing a line ID does not repair discount eligibility. Version and expiry are
+never incremented, inferred from a clock, extended or defaulted. Business bounds
+and eligibility remain the frozen driver's responsibility.
+
+Every edit attempt clears the draft input, active quote, plan, refund and line
+selection **before display or input collection**. A detached complete candidate
+becomes the new draft only after canonical encoding succeeds, printed as
+`edited_quote=`. Decimal edits buffer `decimal_conversion=` until that success.
+Invalid positions, malformed input, encoding refusals and EOF publish no partial
+draft, restore no prior active state and send no request. Stored payment legs and
+historical request/reply bytes remain available; history cannot reactivate line
+selections. Missing structural arrays are local input refusals.
+
+Editing alone calculates nothing. Recalculate explicitly with `simulate_quote`
+and `SUBMIT_QUOTE`, then `plan_payments` with explicit `now` and `SUBMIT_PLAN`.
+Select refund lines again, then use `propose_line_refund` and `SUBMIT_REFUND`.
+Decline sends nothing; driver refusal envelopes are preserved. Transport
+uncertainty fences the client permanently without automatic retry.
+
+From the repository root:
+
+```bash
+python3.12 -B reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_edit_journey.txt
+```
+
+The synthetic journey composes and calculates a bundle, replaces a line and
+discount, explicitly sets version/expiry, recalculates, plans split payments and
+proposes a line refund. `commerce_console_edit_precision.txt` demonstrates exact
+`9007199254.740993` → `"9007199254740993"` at precision 6.
+`commerce_console_edit_replacement.txt` shows invalidation and abandoned metadata
+input (exit 0). `commerce_console_edit_boundaries.txt` exits 1 for four intentional
+driver refusals: duplicate line, stale eligibility, mixed assets and excessive
+discount. These examples choose synthetic caller values, not product policy.
+
+`CALCULATION_ONLY` and refund `executionAuthorized=false` remain unchanged.
+Product policy remains **UNDETERMINED — Astra/User**; legal/accounting treatment
+remains **UNDETERMINED — User/designated advisers**. No booking confirmation,
+protocol command, execution authority or stage-6 scope changes.
+[Builder coverage, commands and delivery limits](../../validation/2026-11-10-plan-local-commerce-draft-editor/README.md).
+
+### Revising bundle structure and payment legs
+
+These local controls edit stored request drafts. They launch no calculation.
+They reuse the same complete entry fields and exact amount converter as composition.
+
+| Local control | Explicit input |
+| --- | --- |
+| `insert_line`, `insert_line_decimal` | Insertion position, complete line fields (atoms or exact decimal text) |
+| `remove_line`, `move_line` | Existing position; move also asks for final destination position |
+| `insert_discount` | Insertion position, complete discount fields including literal eligibility and cap |
+| `remove_discount`, `move_discount` | Existing position; move also asks for final destination position |
+| `show_legs` | Displays each stored leg as `draft_leg={"position":…,"entry":…}` in array order; empty is `draft_legs=[]` |
+| `edit_leg`, `edit_leg_decimal` | Existing position, complete `legId`, `providerRef`, `routeRef`, amount asset metadata and atoms or decimal text |
+| `insert_leg`, `insert_leg_decimal` | Insertion position and the same complete leg fields |
+| `remove_leg`, `move_leg` | Existing position; move also asks for final destination position |
+
+All positions are zero-based CE1 integers. Insert accepts `0..n`, including append.
+Replace/remove accept `0..n-1`. Move removes the source then inserts at the
+**final destination index** in `0..n-1`: moving `0` to `2` in `[A,B,C]` produces
+`[B,C,A]`; moving `2` to `0` produces `[C,A,B]`. Identity duplicates do not change
+positional addressing. A same-position move still invalidates dependents.
+Structural results must retain 1–300 lines, 0–64 discounts and 0–16 legs.
+The final line cannot be removed; discounts and legs may become empty.
+Arrays are never truncated or sorted by the editor.
+
+Every quote mutation, including a failed or abandoned attempt, clears the quote
+draft, active quote, plan, refund and selected lines **before display, validation
+or prompts**, retaining stored legs. Every leg mutation clears stored legs, plan,
+refund and selected lines at the same point, retaining the quote draft and active
+quote. Detached candidates publish as `edited_quote=` or `edited_legs=` only after
+complete canonical encoding. Decimal conversion records are buffered until then.
+Malformed input, invalid positions, bounds, encoding failure and EOF never restore
+old selections. `show_legs` preserves selections. Historical successful exchanges
+remain immutable and cannot reactivate selections.
+
+Edits preserve caller identities, literal atom strings (including amounts above
+2^53), explicit asset metadata and discount array order. Discount order can change
+the calculated result. Removing a line never repairs dangling eligibility;
+duplicate identities are never deduplicated. Leg amounts are never rebalanced.
+Explicitly recalculate with `simulate_quote` / `SUBMIT_QUOTE`, then replan with
+`plan_payments`, caller-supplied `now` and `SUBMIT_PLAN`. Select refund lines again
+and use `propose_line_refund` / `SUBMIT_REFUND`. Each submission requires its own
+confirmation; decline or EOF submits nothing. The unchanged driver owns business
+refusals, including dangling references, duplicate identities, mixed assets and
+payment-total mismatch. Output failure stops the console; transport uncertainty
+fences it without retry.
+
+From the repository root:
+
+```bash
+python3.12 -B reference/booking_resale_admission/commerce_calculation_console.py \
+  --cleanup-timeout 2 \
+  < reference/booking_resale_admission/fixtures/commerce_console_structure_journey.txt
+```
+
+The journey inserts/removes bundle entries, reorders discounts, explicitly reprices,
+edits/inserts/removes/reorders split legs, replans and proposes a selected-line
+refund. Run the same command with `commerce_console_structure_precision.txt`
+(exact `9007199254.740993` → `"9007199254740993"`), `commerce_console_structure_free.txt`
+(empty discounts/legs), `commerce_console_structure_replacement.txt` (invalidation
+and abandoned edit) or `commerce_console_structure_decline.txt` (separate declines).
+These exit 0. `commerce_console_structure_boundaries.txt` exits 1 for eight explicit
+driver refusals. These are synthetic caller inputs, not product policy values.
+
+`CALCULATION_ONLY`; refund `executionAuthorized=false`. Product policy remains
+**UNDETERMINED — Astra/User**; legal/accounting treatment remains
+**UNDETERMINED — User/designated advisers**. No booking handoff, new protocol
+commands, SDK/catalogue, persistence, external services or runtime activation.
+This does not complete canonical stage-6 economics or raise capability grades.
+[Coverage, actual local evidence and pending independent review/exact-head CI](../../validation/2026-11-10-plan-local-cart-structure-editor/README.md).
+
+## Recorded offers and presentations in the ticket console
+
+The resale and admission menus (standalone or delegated from
+`shared_ticket_console.py`) expose the existing local service selectors
+`resale.list_resale`, `admission.authorize_admission` and `admission.consume`.
+These are local Python selectors, with no new protocol command or query.
+All three use the existing `TicketOperationsClient.request()` transport.
+
+| Action | Caller fields in prompt order | Confirmation |
+|---|---|---|
+| Resale `list_resale` | `offer_id`, `listing_id`, `idempotency_key` | `SUBMIT` |
+| Admission `authorize_admission` | `presentation_id`, `admission_id`, `gate_role`, `expires_ms`, `idempotency_key` | `AUTHORIZE` |
+| Admission `consume` | `presentation_id`, `consume_id`, `gate_role`, `idempotency_key` | `CONSUME` |
+
+Every field is required. Identifiers/roles/keys are plain text without surrounding
+whitespace; `expires_ms` uses decimal integer digits. No IDs, key, gate role or
+expiry is inferred or defaulted. The entire `proposed=` request contains caller
+inputs only and appears before literal confirmation. Decline or incomplete input
+sends nothing. A confirmation sends exactly one request; consumption requires a
+separate selection and `CONSUME`, even after `AUTHORIZE`. Manual `_inputs` actions
+remain available with their existing prompt order.
+
+Explicitly select a synthetic combined desk fixture at launch. The runnable
+examples below reuse the populated
+[fixture](fixtures/ticket_operations_session.json) unchanged: `fixture_version: 1`,
+`provenance: MOCK_GATE_ONLY`, `setup`, `offers`, and `presentations`. Offer
+`offer-1` supplies `issue-1` listing inputs. Presentation `ticket-1` has separately
+keyed `authorize_admission` and `consume` records; `recipient-1` is a recorded
+recipient authorization input. Each source entry retains its selector and exactly
+one `recorded_text` or `fault` payload. Fixture structure is checked by the loader;
+source parsing and adapter validation occur on explicit invocation. The console
+does no source discovery, lookup preview or automatic read.
+
+Run from the repository root (each exits 0):
+
+```bash
+python3 -B reference/booking_resale_admission/resale_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/resale_console_recorded.txt
+python3 -B reference/booking_resale_admission/admission_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/admission_console_recorded.txt
+python3 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_recorded.txt
+```
+
+The [resale answers](fixtures/resale_console_recorded.txt) list, explicitly view,
+cancel, then explicitly reconfirm the original listing key. The replay receipt
+retains `LISTED`, `duplicate: true`, `applied: null`; the selected current view
+remains `CANCELLED`. The [admission answers](fixtures/admission_console_recorded.txt)
+authorize, view, decline consumption and view the unchanged authorization, then
+separately select and confirm consumption. Reconfirming both original actions
+returns their historical receipts; the final explicit view remains `CONSUMED`.
+The [shared answers](fixtures/shared_ticket_console_recorded.txt) combine those
+actions and booking/settlement views using one child across navigation. It
+explicitly cancels the listing before authorization; navigation sends no requests.
+
+The complete `desk=` envelope remains primary. Missing/source-fault and stale
+presentation errors retain their service selectors and details. Replay fetches
+again through the configured source, without a console cache. Transport
+uncertainty or terminal/display failure fences the session with no retry or
+replacement child. These are source-informed synthetic in-memory composition
+examples, not evidence of identity, current authority, chain finality, provider
+verification or production readiness. Product policy remains **UNDETERMINED —
+Astra/User**; legal effects remain **UNDETERMINED — User/legal**. No runtime is
+activated. See the [builder validation record](../../validation/2026-11-09-plan-local-recorded-ticket-console/README.md)
+for coverage, actual local results and remaining non-author exact-HEAD review and
+KTX/KIX CI gates.
+
+## Source-backed booking confirmation in the live consoles
+
+`booking_console.py` and `shared_ticket_console.py` accept one optional source:
+`--quotes PATH` for the existing `MOCK_GATE_ONLY` recorded fixture, or
+`--calculated-quotes PATH` for the existing `CALCULATION_ONLY` fixture. Both
+options together exit 2 before launching a child. With neither, the existing
+console flows remain available. The shared console passes the source to its
+single child once; switching surfaces never launches another desk.
+
+Choose `confirm_recorded_quote` in booking. Enter `recording_id`, `reservation_id`,
+`order_id`, then `idempotency_key`, each explicitly and without surrounding
+whitespace. The console displays `proposed=` with the complete escaped request.
+Only literal `CONFIRM_RECORDED_QUOTE` submits it, once. Any other answer declines;
+blank/invalid fields submit nothing. The proposal identifies the requested
+operation and source selector; it does not preview the source amount or hash.
+Source loading, lookup, calculation and validation remain service-owned. Selecting
+this action immediately discards any pending calculated confirmation, even on
+decline, invalid input or interruption. Loaded calculation text and target remain
+available; calculated `confirm` requires another successful `preview`. Leaving
+booking still discards all its local quote/target/preview state.
+
+Run these synthetic answer files from the repository root:
+
+```bash
+python3.12 -B reference/booking_resale_admission/booking_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --quotes reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/booking_console_source_recorded.txt
+python3.12 -B reference/booking_resale_admission/booking_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --calculated-quotes reference/booking_resale_admission/fixtures/calculated_booking_quotes.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/booking_console_source_calculated.txt
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --quotes reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_source_recorded.txt
+python3.12 -B reference/booking_resale_admission/shared_ticket_console.py \
+  --fixture reference/booking_resale_admission/fixtures/ticket_operations_session.json \
+  --calculated-quotes reference/booking_resale_admission/fixtures/calculated_booking_quotes.json \
+  --cleanup-timeout 1 \
+  < reference/booking_resale_admission/fixtures/shared_ticket_console_source_calculated.txt
+```
+
+All four boundary transcripts intentionally exit **1** after known refusals.
+They use the unchanged populated fixture: `show-1`, free slot `1`, explicit
+clock `1000000`, expiry `1120000`, and reservation `desk-reserve-1`. The initial
+issued/payment history belongs to fixture setup. No show registration or new
+setup occurs. `desk-record-1` and `desk-calc-1` confirm the synthetic amount
+`10001`. Missing/malformed/mismatched records and source faults keep their
+existing errors; synthetic source timeout is a known refusal, distinct from
+transport uncertainty. Off-price refusal binds its key as the service already
+defines. Explicit cancellation is followed by historical confirmation replay
+(`CONFIRMED`, duplicate true, applied null) and a separate current view
+(`CANCELLED`); changed order/hash under the same key is rejected. A second hold
+and explicit clock advance demonstrate reservation expiry. Calculation
+`expiresAt` remains hash-bound metadata, with no new expiration semantics.
+The shared transcripts additionally select explicit resale/admission reads and
+re-enter booking on the same graph.
+
+Clean success exits 0; terminal fixture/input/transport failures exit 2.
+Submitting this action without a source retains the service's terminal
+`FixtureError`. Interruption, terminal output failure and transport uncertainty
+fence the entire session, retaining diagnostics; no retry, automatic view,
+compensation or replacement child occurs. Use a new explicitly chosen session
+only outside this fenced interaction; no recovery outcome is inferred.
+
+These are local in-memory mock reservation actions; payment and chain issuance
+remain separate. Product policy: **UNDETERMINED — Astra/User**. Legal effects:
+**UNDETERMINED — User/legal**. No SDK, external service, persistence, protocol
+command or runtime activation was added. See the [coverage, full transcripts,
+actual local results and pending review/CI gates](../../validation/2026-11-10-plan-plan-local-source-quote-console/README.md).

@@ -1,0 +1,255 @@
+{
+  "checks": [
+    {
+      "check": "v1 manifest refused",
+      "rejected": true
+    },
+    {
+      "check": "depth-4 manifest refused",
+      "rejected": true
+    },
+    {
+      "check": "slotBits mismatch refused",
+      "rejected": true
+    },
+    {
+      "check": "other profile version refused",
+      "rejected": true
+    },
+    {
+      "check": "missing K refused",
+      "rejected": true
+    },
+    {
+      "check": "missing phase-1 record refused",
+      "rejected": true
+    },
+    {
+      "check": "missing phase-2 contribution refused",
+      "rejected": true
+    },
+    {
+      "check": "ptau too small for the circuit refused",
+      "rejected": true
+    },
+    {
+      "check": "missing artifact hash refused",
+      "rejected": true
+    },
+    {
+      "check": "K pin mismatch refused",
+      "rejected": true
+    },
+    {
+      "check": "uncontributed phase-2 key refused",
+      "rejected": true
+    },
+    {
+      "check": "uncontributed mint original",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "check": "uncontributed mint input-only forgery",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "uncontributed mint compensated forgery ACCEPTED (the vulnerability)",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "check": "contributed mint_scale original",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "check": "contributed mint_scale input-only 0",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed mint_scale compensated 0",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed mint_scale input-only 1",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed mint_scale compensated 1",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed mint_scale input-only 2",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed mint_scale compensated 2",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed mint_scale input-only 3",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed mint_scale compensated 3",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale original",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "check": "contributed spend_scale input-only 0",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale compensated 0",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale input-only 1",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale compensated 1",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale input-only 2",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale compensated 2",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale input-only 3",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale compensated 3",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale input-only 4",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale compensated 4",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale input-only 5",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "contributed spend_scale compensated 5",
+      "expected": false,
+      "actual": false
+    },
+    {
+      "check": "RR-2 revoked generation == note generation",
+      "rejected": true
+    },
+    {
+      "check": "RR-2 client refuses a revoked note first",
+      "rejected": true
+    },
+    {
+      "check": "RR-2 a newer generation on a revoked slot is provable",
+      "expected": true,
+      "actual": true
+    },
+    {
+      "check": "RR-2 revoked leaf lowered without changing the root",
+      "rejected": true
+    },
+    {
+      "check": "RR-2 revocation path of another slot",
+      "rejected": true
+    },
+    {
+      "check": "RR-1 note not in the tree (wrong note root)",
+      "rejected": true
+    },
+    {
+      "check": "RR-1 note path with a wrong sibling",
+      "rejected": true
+    },
+    {
+      "check": "RR-3 revocation root other than the tree root",
+      "rejected": true
+    },
+    {
+      "check": "action other than admission",
+      "rejected": true
+    },
+    {
+      "check": "nullifier not derived from the note",
+      "rejected": true
+    },
+    {
+      "check": "context not bound to the gate and challenge",
+      "rejected": true
+    },
+    {
+      "check": "domain of another show or profile",
+      "rejected": true
+    },
+    {
+      "check": "slot outside the 10-bit range",
+      "rejected": true
+    },
+    {
+      "check": "generation outside 64 bits",
+      "rejected": true
+    },
+    {
+      "check": "zero secret",
+      "rejected": true
+    },
+    {
+      "check": "note bit that is not binary",
+      "rejected": true
+    },
+    {
+      "check": "mint: slot outside the 10-bit range",
+      "rejected": true
+    },
+    {
+      "check": "mint: commitment of another domain",
+      "rejected": true
+    }
+  ],
+  "artifactManifestHash": "cac889c003888e5fa06e64aa06dbafc65b703bcc23fe63728f30aeb96dd27411",
+  "constraints": {
+    "mint_scale": 912,
+    "spend_scale": 13439
+  },
+  "ptauPower": 14,
+  "phase1": "FRESH_SINGLE_PARTY_LOCAL_FIXTURE",
+  "status": "PASSED",
+  "scope": "MANIFEST_V2_POLICY_UNCONTRIBUTED_REPRODUCTION_FRESH_KEYS_AND_ROOT_RULE_WITNESSES"
+}
