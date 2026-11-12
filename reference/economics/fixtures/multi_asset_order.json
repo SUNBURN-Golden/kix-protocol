@@ -1,0 +1,50 @@
+{
+  "fixtureVersion": 1,
+  "evidenceClass": "SYNTHETIC_REFERENCE",
+  "provenance": "synthetic",
+  "comment": "Synthetic multi-asset order: a KRW group binds the money journey; a synthetic-token group composes calculation and capture admission only (fixture money layers are KRW-only, no FX). Not product policy.",
+  "orderId": "order-multi",
+  "orderVersion": 1,
+  "nowMs": 1000,
+  "scope": {"issuerId": "issuer-1", "eventId": "event-scope-1", "performanceId": "perf-1"},
+  "assets": [
+    {"namespace": "synthetic", "reference": "fixture-token", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}
+  ],
+  "groups": [
+    {
+      "groupId": "group-krw",
+      "policyRef": "pricing-1",
+      "expiresAt": 9999999999999,
+      "lines": [
+        {"lineId": "line-1", "inventoryId": "inv-1", "gross": {"asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "10000"}}
+      ],
+      "discounts": [],
+      "legs": [
+        {"legId": "leg-1", "providerRef": "provider-1", "routeRef": "route-card", "amount": {"asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "10000"}}
+      ],
+      "settlementPolicyRef": "fee-1",
+      "eventPolicy": {"organizerRole": "organizer-1", "resaleCap": 20000, "resaleFeeBps": 300, "resaleOrganizerBps": 500, "resaleAllowed": true, "refundProfile": "FULL_CHAIN_UNWIND_FIXTURE"},
+      "buyer": "buyer-1",
+      "debtorRole": "buyer-1",
+      "paymentId": "pay-group-krw"
+    },
+    {
+      "groupId": "group-token",
+      "policyRef": "pricing-1",
+      "expiresAt": 9999999999999,
+      "lines": [
+        {"lineId": "line-1", "inventoryId": "inv-1", "gross": {"asset": {"namespace": "synthetic", "reference": "fixture-token", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "500"}}
+      ],
+      "discounts": [],
+      "legs": [
+        {"legId": "leg-1", "providerRef": "provider-1", "routeRef": "route-token", "amount": {"asset": {"namespace": "synthetic", "reference": "fixture-token", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "500"}}
+      ],
+      "settlementPolicyRef": null,
+      "eventPolicy": null,
+      "buyer": "buyer-1",
+      "debtorRole": null,
+      "paymentId": null
+    }
+  ],
+  "expected": {"krwExecutable": {"group-krw": true, "group-token": false}, "tokenPayableAtoms": "500"}
+}
