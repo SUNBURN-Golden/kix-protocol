@@ -1,0 +1,36 @@
+{
+  "fixtureVersion": 1,
+  "evidenceClass": "SYNTHETIC_REFERENCE",
+  "provenance": "synthetic",
+  "comment": "Synthetic bundle: three OrderLines, a FIXED sponsor discount and a capped BPS platform discount, two payment legs. Not product policy.",
+  "orderId": "order-bundle",
+  "orderVersion": 1,
+  "nowMs": 1000,
+  "scope": {"issuerId": "issuer-1", "eventId": "event-scope-1", "performanceId": "perf-1"},
+  "groups": [
+    {
+      "groupId": "group-1",
+      "policyRef": "pricing-1",
+      "expiresAt": 9999999999999,
+      "lines": [
+        {"lineId": "line-a", "inventoryId": "inv-a", "gross": {"asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "5000"}},
+        {"lineId": "line-b", "inventoryId": "inv-b", "gross": {"asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "3000"}},
+        {"lineId": "line-c", "inventoryId": "inv-c", "gross": {"asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "2000"}}
+      ],
+      "discounts": [
+        {"ruleId": "rule-fixed", "bearerRef": "sponsor-1", "kind": "FIXED", "value": "1000", "eligibleLineIds": ["line-a", "line-b"], "capAtoms": null},
+        {"ruleId": "rule-bps", "bearerRef": "platform", "kind": "BPS", "value": "500", "eligibleLineIds": ["line-c"], "capAtoms": "500"}
+      ],
+      "legs": [
+        {"legId": "leg-1", "providerRef": "provider-1", "routeRef": "route-card", "amount": {"asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "4900"}},
+        {"legId": "leg-2", "providerRef": "provider-1", "routeRef": "route-card", "amount": {"asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "4000"}}
+      ],
+      "settlementPolicyRef": "fee-1",
+      "eventPolicy": {"organizerRole": "organizer-1", "resaleCap": 20000, "resaleFeeBps": 300, "resaleOrganizerBps": 500, "resaleAllowed": true, "refundProfile": "FULL_CHAIN_UNWIND_FIXTURE"},
+      "buyer": "buyer-1",
+      "debtorRole": "buyer-1",
+      "paymentId": "pay-group-1"
+    }
+  ],
+  "expected": {"grossAtoms": "10000", "discountAtoms": "1100", "payableAtoms": "8900", "linePayable": {"line-a": "4375", "line-b": "2625", "line-c": "1900"}}
+}

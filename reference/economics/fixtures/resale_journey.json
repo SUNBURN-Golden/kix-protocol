@@ -1,0 +1,20 @@
+{
+  "fixtureVersion": 1,
+  "evidenceClass": "SYNTHETIC_REFERENCE",
+  "provenance": "synthetic",
+  "comment": "Synthetic resale seller-payout journey. Faces are the BRA option-A split (organizer 500 bps, platform 300 bps, seller residual); expiries sit inside the BRA offer window relative to nowMs. Not product policy.",
+  "nowMs": 1000,
+  "journey": {
+    "journeyId": "journey-1",
+    "refundProfile": "FULL_CHAIN_UNWIND_FIXTURE",
+    "show": {"showId": "show-1", "organizerRole": "organizer-1", "capacity": 10, "gateRoles": ["gate-1"], "primaryPrice": 10000, "resaleCap": 20000, "resaleAllowed": true, "primaryFeeBps": 300, "organizerBps": 500, "platformBps": 300},
+    "primary": {"rightId": "right-1", "slot": 0, "sellerRole": "seller-1", "paymentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    "resale": {"listingId": "listing-1", "transferId": "transfer-1", "buyerRole": "buyer-2", "amount": 15000, "paymentRef": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "expiresMs": 500000, "rightExpiresMs": 500000},
+    "payouts": [
+      {"effectId": "eff-seller", "payee": "seller-1", "amount": 13800},
+      {"effectId": "eff-org", "payee": "organizer-1", "amount": 750},
+      {"effectId": "eff-plat", "payee": "platform", "amount": 450}
+    ]
+  },
+  "expected": {"faces": {"seller-1": 13800, "organizer-1": 750, "platform": 450}}
+}
