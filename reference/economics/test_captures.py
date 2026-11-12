@@ -120,6 +120,21 @@ class CaptureLedgerTest(unittest.TestCase):
             submit(self.ledger, 'c1', 100, now_ms=-1)
         self.assertEqual(str(ctx.exception), 'CAPTURE_TIME_INVALID')
 
+    def test_over_capture_checked_before_admission(self):
+        # The leg remainder is a readable precondition checked before the
+        # admission decision (on the durable path, before the admission
+        # transaction), so it takes precedence over a capacity refusal.
+        limit = ClassLimit(1, 1_000_000, 3_600_000)
+        ledger = CaptureLedger(BudgetSpec(inflow=limit, observation=limit,
+                                          completion=limit, cancel=limit, recovery=limit))
+        ledger.add_leg('o', 'g', 'l', 10000)
+        self.assertEqual(submit(ledger, 'c1', 10000)['outcome'], 'new_success')
+        # Both refusals apply: inflow exhausted and leg full.
+        with self.assertRaises(EconomicsLocalError) as ctx:
+            submit(ledger, 'c2', 1)
+        self.assertEqual(str(ctx.exception), 'OVER_CAPTURE')
+        self.assertNotIn('c2', ledger.view()['captures'])
+
     def test_capacity_writes_nothing(self):
         limit = ClassLimit(1, 1_000_000, 3_600_000)
         ledger = CaptureLedger(BudgetSpec(inflow=limit, observation=limit,

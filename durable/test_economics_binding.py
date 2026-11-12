@@ -5,10 +5,12 @@ psycopg. Unlike the stage-5 conformance run, this composition test skips
 gracefully when the backend is absent so it can live alongside the offline
 suite without requiring a database. It is NOT wired into CI.
 
-It proves two things about ``DurableCaptureLedger`` / ``EconomicsSession.
+It proves three things about ``DurableCaptureLedger`` / ``EconomicsSession.
 over_durable``: admission outcomes match the in-memory pure-decision ledger
-(differential), and a replay after reopen returns the stored first result from
-the database. Budget numbers are synthetic fixtures, not product policy.
+(differential, including atomic over-capture refusal and fresh retry), a
+refused over-capture writes nothing to the database, and a replay after
+reopen returns the stored first result from the database. Budget numbers are
+synthetic fixtures, not product policy.
 """
 from __future__ import annotations
 
@@ -39,7 +41,7 @@ if HAVE_BACKEND:
     from durable.budgets import BudgetSpec, ClassLimit
     from durable.cluster import PinnedPostgresCluster
     from reference.economics import (
-        CaptureLedger, DurableCaptureLedger, EconomicsSession,
+        CaptureLedger, DurableCaptureLedger, EconomicsLocalError, EconomicsSession,
     )
     from reference.economics import support
 
@@ -76,23 +78,91 @@ class EconomicsDurableBindingTest(unittest.TestCase):
                 durable = DurableCaptureLedger(unit)
                 for ledger in (memory, durable):
                     ledger.add_leg('o', 'g', 'l', 10000)
+                def run_step(capture_id, amount, nonce, expected):
+                    outcomes = []
+                    for ledger in (memory, durable):
+                        try:
+                            result = ledger.submit(order_id='o', group_id='g', leg_id='l',
+                                                   capture_id=capture_id, amount=amount,
+                                                   buyer='buyer-1', nonce=nonce, now_ms=1000)
+                        except EconomicsLocalError as exc:
+                            outcomes.append(('refused', str(exc)))
+                        else:
+                            outcomes.append(('returned', result['outcome'],
+                                             result['first_result']))
+                    self.assertEqual(outcomes[0], outcomes[1], capture_id)
+                    self.assertEqual(outcomes[0][1], expected, capture_id)
+
                 sequence = [
                     ('c1', 4000, 'n1', 'new_success'),
                     ('c1', 4000, 'n1', 'replayed'),
                     ('c1', 4000, 'other', 'conflict_retained'),
                     ('c1', 4000, 'other', 'conflict_retained'),
                     ('c2', 6000, 'n2', 'new_success'),
+                    # The leg is full (4000 + 6000 open): a new capture must
+                    # be refused atomically on both paths, before any write,
+                    # and the identical retry must be refused again.
+                    ('c3', 1, 'n3', 'OVER_CAPTURE'),
+                    ('c3', 1, 'n3', 'OVER_CAPTURE'),
                 ]
                 for capture_id, amount, nonce, expected in sequence:
-                    results = []
-                    for ledger in (memory, durable):
-                        result = ledger.submit(order_id='o', group_id='g', leg_id='l',
-                                               capture_id=capture_id, amount=amount,
-                                               buyer='buyer-1', nonce=nonce, now_ms=1000)
-                        results.append(result)
-                    self.assertEqual(results[0]['outcome'], expected, capture_id)
-                    self.assertEqual(results[1]['outcome'], expected, capture_id)
-                    self.assertEqual(results[0]['first_result'], results[1]['first_result'], capture_id)
+                    run_step(capture_id, amount, nonce, expected)
+                # Confirmed amounts block too; a FAILED release frees the leg
+                # and the refused capture id retries as a fresh attempt —
+                # never a replay of a durable admission written by mistake.
+                for ledger in (memory, durable):
+                    ledger.complete('c1', outcome='CONFIRMED', source_id='s1', now_ms=1100)
+                run_step('c3', 1, 'n3', 'OVER_CAPTURE')
+                for ledger in (memory, durable):
+                    ledger.complete('c2', outcome='FAILED', source_id='s2', now_ms=1200)
+                run_step('c3', 6000, 'n3', 'new_success')
+            finally:
+                unit.close()
+
+    def test_over_capture_writes_nothing_durable_and_retry_is_fresh(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            unit = self._unit(tmp)
+            try:
+                ledger = DurableCaptureLedger(unit)
+                ledger.add_leg('o', 'g', 'l', 10000)
+                ledger.add_leg('o', 'g', 'l2', 10000)
+                first = ledger.submit(order_id='o', group_id='g', leg_id='l',
+                                      capture_id='c1', amount=10000, buyer='buyer-1',
+                                      nonce='n1', now_ms=1000)
+                self.assertEqual(first['outcome'], 'new_success')
+                ledger.complete('c1', outcome='CONFIRMED', source_id='s1', now_ms=1100)
+                # Leg fully confirmed: a 1-atom capture must be refused
+                # before the admission transaction, not after it.
+                before = unit.table_counts()
+                for _ in range(2):
+                    with self.assertRaises(EconomicsLocalError) as ctx:
+                        ledger.submit(order_id='o', group_id='g', leg_id='l',
+                                      capture_id='c2', amount=1, buyer='buyer-1',
+                                      nonce='n2', now_ms=1200)
+                    self.assertEqual(str(ctx.exception), 'OVER_CAPTURE')
+                    self.assertEqual(unit.table_counts(), before)
+                self.assertNotIn('c2', ledger.view()['captures'])
+                # Open reservations block too; after a FAILED release the
+                # same capture id is a fresh success and can complete.
+                open_cap = ledger.submit(order_id='o', group_id='g', leg_id='l2',
+                                         capture_id='c3', amount=10000, buyer='buyer-1',
+                                         nonce='n3', now_ms=1300)
+                self.assertEqual(open_cap['outcome'], 'new_success')
+                before = unit.table_counts()
+                with self.assertRaises(EconomicsLocalError) as ctx:
+                    ledger.submit(order_id='o', group_id='g', leg_id='l2',
+                                  capture_id='c4', amount=1, buyer='buyer-1',
+                                  nonce='n4', now_ms=1400)
+                self.assertEqual(str(ctx.exception), 'OVER_CAPTURE')
+                self.assertEqual(unit.table_counts(), before)
+                ledger.complete('c3', outcome='FAILED', source_id='s3', now_ms=1500)
+                retry = ledger.submit(order_id='o', group_id='g', leg_id='l2',
+                                      capture_id='c4', amount=1, buyer='buyer-1',
+                                      nonce='n4', now_ms=1600)
+                self.assertEqual(retry['outcome'], 'new_success')
+                done = ledger.complete('c4', outcome='CONFIRMED', source_id='s4', now_ms=1700)
+                self.assertEqual(done['outcome'], 'completed')
+                self.assertEqual(ledger.leg_view('o', 'g', 'l2')['confirmed'], 1)
             finally:
                 unit.close()
 
@@ -112,6 +182,13 @@ class EconomicsDurableBindingTest(unittest.TestCase):
             reopened = self._unit(tmp)
             try:
                 ledger = DurableCaptureLedger(reopened)
+                # Replay resolves from the database before any availability
+                # check, even before the process-local leg is re-added.
+                early = ledger.submit(order_id='o', group_id='g', leg_id='l',
+                                      capture_id='c1', amount=4000, buyer='buyer-1',
+                                      nonce='n1', now_ms=1000)
+                self.assertEqual(early['outcome'], 'replayed')
+                self.assertEqual(early['first_result'], first['first_result'])
                 ledger.add_leg('o', 'g', 'l', 10000)
                 again = ledger.submit(order_id='o', group_id='g', leg_id='l',
                                       capture_id='c1', amount=4000, buyer='buyer-1',

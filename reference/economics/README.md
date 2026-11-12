@@ -89,6 +89,11 @@ resale (`reference/booking_resale_admission/test_*`). The tests below cover the
   leg but never one slot; the stage-5 `business_rejected` (slot-collision)
   outcome is therefore not reachable through this API. Leg accounting and
   completion records are process-local fixture bookkeeping in this revision.
+  For a new attempt the leg existence and remainder are checked **before** the
+  admission decision — in the optional durable binding, before the admission
+  transaction — so an `OVER_CAPTURE` refusal writes nothing and takes
+  precedence over an inflow-capacity refusal; replay/conflict resolves first
+  through a read-only stored-row probe (database-backed after a reopen).
 - The resale journey's `primary.slot` is a 0-based integer (BRA gate seat
   index); the Core seat string is `str(slot)`. Caller expiries must fall inside
   the unchanged BRA offer window (`now < expires <= now + 900000` ms).

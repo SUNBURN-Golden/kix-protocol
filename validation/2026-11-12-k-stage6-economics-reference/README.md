@@ -6,13 +6,18 @@ model only). Not an ASTRA program-mode session. No issue. No commit, push, pull
 request, or comment in this session (the supervisor does git/GitHub). Record
 opened 2026-11-12. Branch: `agent/kix-k-stage6-economics-reference`.
 
-**State: acceptance covered locally — `merge-ready` candidate pending
-supervisor commit/push and exact-head CI.** The new offline suite
-`reference/economics` runs green (98 tests, OK) and the full local CI-equivalent
-battery below passed, including the durable binding against the pinned local
-PostgreSQL 17.11. Nothing here is exact-head CI; both workflows must still run
-on the final head after the supervisor pushes. No production readiness is
-claimed; all money is synthetic and every execution flag is false.
+**State: fix round 1 applied — acceptance covered locally, `merge-ready`
+candidate pending supervisor commit/push and exact-head CI.** The independent
+review's one blocking finding (over-capture refusal not atomic on the durable
+capture path) is fixed and regression-tested; see "Fix round 1" at the end.
+The offline suite `reference/economics` runs green (99 tests, OK) and the
+CI-equivalent checks re-run after the fix passed, including the durable
+binding (4 tests, OK) against the pinned local PostgreSQL 17.11. The round-0
+sections below remain the record of the first full local run (98 economics
+tests, 3 binding tests at that point). Nothing here is exact-head CI; both
+workflows must still run on the final head after the supervisor pushes. No
+production readiness is claimed; all money is synthetic and every execution
+flag is false.
 
 ## Decision applicability guard (CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md §5.1)
 
@@ -241,3 +246,95 @@ the model accepts caller fixtures only and invents none of them.
   a durable binding for them is a possible later revision.
 - Astra decisions on the open values (S0/W0/R0/T0/I02/I04/I10) before any
   production-facing use.
+
+## Fix round 1 (2026-11-12, same worktree, before the supervisor's fix commit)
+
+Independent review verdict: one blocking finding —
+`reference/economics/captures.py` checked the leg remainder **after**
+`self._admit(...)`. On the durable path `_admit` is `DurableUnit.apply`, one
+committed serializable transaction, so `OVER_CAPTURE` was raised after a
+durable write: the refused capture id then replayed as `replayed` on retry
+while the process-local ledger never recorded it, and completion raised
+`CAPTURE_NOT_ADMITTED` permanently. The in-memory path was correct (the pure
+decision writes nothing). The finding is confirmed, not rebutted.
+
+**Reproduction first (AGENTS §8).** The extended/new binding tests were run
+against the unfixed code: `Ran 4 tests … FAILED (failures=2, errors=1)` —
+
+- differential: `('refused', 'OVER_CAPTURE') != ('returned', 'replayed', …)`
+  — the durable ledger replayed the refused attempt's mistakenly written row;
+- atomicity: `table_counts()` grew by one `command_result`, `slot_hold`,
+  `minimal_order`, `outbox_intent` and `ledger` row despite the refusal;
+- reopen: `EconomicsLocalError: UNKNOWN_LEG` on replay before the
+  process-local leg was re-added (secondary replay-before-availability
+  inconsistency of the same local-only `known` gate).
+
+**Fix** (`reference/economics/captures.py` only; the stage-5 `durable/`
+modules stay byte-identical):
+
+- New-attempt preconditions (`UNKNOWN_LEG`, `OVER_CAPTURE`) now run before
+  `_admit`, gated by a new read-only stored-row probe `_has_admission`
+  (in-memory: the local command map; durable: the unchanged unit's public
+  `read_amount`, which is already covered by `durable/test_durable.py`).
+  Replay/conflict still resolve before any availability check, including
+  after a reopen when the local mirror is empty.
+- The post-decision leg check is removed: a refused new attempt never starts
+  a writing admission transaction. Single-process sequential use means no
+  row can appear between the probe and the decision.
+- Ordering characterization (class B, recorded not invented; identical on
+  both ledgers): for a new attempt that is both over-capture and
+  over-budget, `OVER_CAPTURE` now precedes the inflow-capacity refusal
+  (previously capacity won in memory). Both refusals write nothing; no
+  published contract orders them. Pinned by
+  `test_over_capture_checked_before_admission`.
+- The same probe fixes the secondary inconsistency: after a durable reopen,
+  replay of a stored capture no longer requires the process-local leg to be
+  re-added first. Pinned in the extended reopen test.
+
+**New/extended tests** (composition gaps only; no layer-internal duplication):
+
+- `durable/test_economics_binding.py` — differential sequence now covers
+  over-capture refusal, identical retry refusal, confirmed-still-blocks, and
+  fresh-retry success after a `FAILED` release; new
+  `test_over_capture_writes_nothing_durable_and_retry_is_fresh` asserts
+  `unit.table_counts()` unchanged across refusals (confirmed and open legs)
+  and a completable fresh retry; the reopen test asserts replay before the
+  leg is re-added. 3 → 4 tests.
+- `reference/economics/test_captures.py` —
+  `test_over_capture_checked_before_admission` (ordering characterization
+  above). 98 → 99 economics tests.
+
+**Commands re-run after the fix (foreground, this worktree, actual results):**
+
+| Command | Result |
+|---|---|
+| `python3 -m unittest durable.test_economics_binding` (unfixed code, reproduction) | 4 tests, FAILED (failures=2, errors=1), as above |
+| `python3 -m unittest durable.test_economics_binding` (fixed code) | 4 tests, OK (pinned local PostgreSQL 17.11, unix socket) |
+| `python3 -m unittest discover -s reference/economics -t reference/economics` | 99 tests, OK |
+| `python3 -m unittest durable.test_pure durable.test_durable` | 94 tests, OK (composed layer regression) |
+| Reference suite loop (protocol.yml): `settlement_f01_f03` 224, `booking_resale_admission` 954, `credit_advance_f04` 230, `ai_delegation` 169, `token_reward` 397, `provider_facts` 86, `payment_effects` 28, `economics` 99 | 2187 tests, all OK |
+| `check_ci_test_discovery.py` (+`--self-test`) | ok; self-test pass (18 negative controls) |
+| `check_docs_index.py` | ok: scanned=409 indexed=374 allowlisted=35 |
+
+Not re-run in this round, and why: the Rust workspace/Clippy/fmt battery,
+SDK/npm pins, OpenAPI checkers, commerce/canonical verifiers and the
+storage/paid probes — no Rust, SDK, OpenAPI, commerce or readiness input
+changed (the fix touches only the five files below); their round-0 results
+above apply to byte-identical inputs, and exact-head CI re-runs everything on
+the final head regardless. No CI definition was edited in this round.
+
+**Fix-round changed paths** (subset of the round-0 list; no new paths):
+`reference/economics/captures.py`, `reference/economics/test_captures.py`,
+`reference/economics/README.md`, `durable/test_economics_binding.py`,
+`validation/2026-11-12-k-stage6-economics-reference/README.md`.
+
+Locked blobs re-verified after the fix, identical to round 0:
+
+- `runtime/crates/kix-kernel/src/lib.rs` `69564b166f0c27f9af5d8422f0a466b18d74c20f`
+- `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` `b607996c83a119c349f1cc90469ac1ba82764e20`
+
+`reference/v0.3-rc1/**`, `runtime/**`, `.aiops/**`, `docs/tasks/**` and
+`.github/**` are untouched by this round (`git status` shows only the five
+files above). No commit/push/comment in this session; the supervisor owns
+git/GitHub. Exact-head KTX/KIX CI on the supervisor's final head remains
+required; no CI run ID is claimed.

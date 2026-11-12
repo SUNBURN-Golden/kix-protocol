@@ -15,10 +15,14 @@ The external intent is ``FIXTURE_NOT_DISPATCHED``: no money moves here.
 Semantics preserved from stage 5 / the locked kernel:
 
 - replay returns the stored immutable first result before any availability
-  check; a conflicting payload is retained once as observation evidence;
-  capacity writes nothing;
+  check (a read-only stored-row probe decides this, so it also holds after a
+  durable reopen when the process-local mirror is empty); a conflicting
+  payload is retained once as observation evidence; capacity writes nothing;
 - an over-capture attempt (confirmed + open + new > leg amount) is refused
-  atomically with no writes, like capacity; a later retry is a fresh attempt;
+  atomically with no writes, like capacity; for a new attempt the leg
+  remainder is checked before the admission decision — on the durable path
+  before the admission transaction — so it takes precedence over an
+  inflow-capacity refusal; a later retry is a fresh attempt;
 - a ``CONFIRMED`` completion moves the amount from open to confirmed; a
   ``FAILED`` completion releases the open reservation but retains the record;
   an ``UNKNOWN`` completion is retained and never releases the reservation;
@@ -94,6 +98,11 @@ class CaptureLedger:
         return view['confirmed'] == view['amount']
 
     # -- admission ----------------------------------------------------------
+    def _has_admission(self, capture_id):
+        """Read-only probe for a stored admission row. Replay and conflict
+        resolution must see it before any availability check runs."""
+        return capture_id in self._commands
+
     def _admit(self, command, snapshot, now_ms):
         return decide(snapshot, command, self._budgets, now_ms)
 
@@ -122,21 +131,24 @@ class CaptureLedger:
                               buyer=buyer, payload_nonce=nonce)
         except ValueError:
             raise EconomicsLocalError('CAPTURE_COMMAND_INVALID') from None
-        known = capture_id in self._commands
-        if not known:
-            # New-attempt availability checks never run before replay (below).
+        if not self._has_admission(capture_id):
+            # New-attempt availability checks never run before replay: a
+            # stored admission row means the decision below is a replay or
+            # conflict, never a new admission.
             if key not in self._legs:
                 raise EconomicsLocalError('UNKNOWN_LEG')
+            state = self._leg_state[key]
+            if amount + state['confirmed'] + state['open'] > self._legs[key]:
+                # Atomic refusal before any write, exactly like capacity.
+                # This must precede _admit: on the durable path admission
+                # is a committed transaction, so checking afterwards would
+                # refuse after a write and poison the capture id's retry.
+                raise EconomicsLocalError('OVER_CAPTURE')
         snapshot = self._snapshot(command)
         decision = self._admit(command, snapshot, now_ms)
         if decision.outcome in ('unknown', 'error'):
             return _result(decision.outcome, captureId=capture_id,
                            error=getattr(decision, 'capacity_reason', None))
-        if decision.outcome == 'new_success':
-            state = self._leg_state[key]
-            if amount + state['confirmed'] + state['open'] > self._legs[key]:
-                # Atomic refusal: nothing is stored, exactly like capacity.
-                raise EconomicsLocalError('OVER_CAPTURE')
         self._apply(command, decision, key, amount, now_ms)
         return _result(decision.outcome, captureId=capture_id,
                        first_result=decision.first_result,
@@ -245,12 +257,21 @@ class DurableCaptureLedger(CaptureLedger):
     budget ledger in one serializable transaction on the pinned local
     PostgreSQL. Leg accounting and completion records stay process-local in
     this revision; after a reopen, admission replay still returns the stored
-    first result from the database.
+    first result from the database. New-attempt preconditions (leg existence
+    and remainder) are checked before the unit's admission transaction; the
+    stored-row probe is read-only, so a refused attempt starts no transaction
+    that writes.
     """
 
     def __init__(self, unit):
         super().__init__(unit.spec)
         self._unit = unit
+
+    def _has_admission(self, capture_id):
+        # The database is authoritative: after a reopen the process-local
+        # mirror is empty, but a stored admission still replays before any
+        # availability check. read_amount is the unit's read-only probe.
+        return self._unit.read_amount(capture_id) is not None
 
     def _admit(self, command, snapshot, now_ms):
         result = self._unit.apply(command, now_ms)
