@@ -412,3 +412,27 @@ exact-final-head CI. No merge authorization is implied.
 
 The [client evidence record](../../validation/2026-11-06-plan-local-credit-stdio-client/README.md)
 adds live-child parity, transport failure/fencing, import and cleanup coverage.
+
+## Economics refund consumer vectors
+
+The [economics consumer field guide](../../docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md)
+connects public `EconomicsSession` snapshots to the unchanged F04 machine and
+variance/shared-exposure observers. The canonical
+[input histories](fixtures/economics_credit_consumer_v1.json) and
+[public result vectors](fixtures/economics_credit_consumer_vectors_v1.json)
+cover separate partial REQUESTER, full-before-distribution and
+full-after-distribution refunds after two draws freeze the original face.
+Explicit distribution and mock cancellation acceptance leave the complete
+credit views, claim, journal and digest unchanged. Arithmetic expectations are
+separate literals; input/vector/source bytes are pinned. The captured snapshot
+reader and replay code exist only in the test module.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_economics_credit_consumer_vectors.py
+```
+
+This is offline synthetic evidence for kix-capital, with no external consumer
+acceptance or published reads. Observations remain `NOT_BOUND`, repair `NONE`,
+without exposure authority. Product values stay `UNDETERMINED` under existing
+owners. See the [builder validation record](../../validation/2026-11-13-plan-economics-credit-consumer-vectors/README.md)
+for actual checks and remaining review/CI gates.
