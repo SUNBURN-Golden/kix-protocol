@@ -35,6 +35,11 @@ semantic SDK consumption stays `HOLD_SEMANTIC`, external `kix-commerce-apps`
 expectations are `UNVERIFIED` and SD1 stays User-owned and `OPEN`.
 [Builder validation and actual local results](../validation/2026-11-10-plan-commerce-consumer-binding-index/README.md).
 
+[Consumer-binding CI wiring and local verification](../validation/2026-11-13-plan-consumer-binding-ci-guard/README.md)
+records the existing checker's plain and self-test invocations in the unguarded
+stdlib document-check step, including documentation-only and same-tree skips.
+This identity guard does not qualify semantic consumption or close SD1.
+
 ## BOOTSTRAP producer-qualification tuple
 
 [Non-normative identity record](status/PRODUCER_QUALIFICATION_TUPLE_V1.md)
