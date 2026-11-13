@@ -233,3 +233,182 @@ KTX/KIX CI remain supervisor delivery gates.
 | `reference/credit_advance_f04/shared_exposure.py` | `d2cb1411d1d8e68dcde7d70eec8891b64e6e999ae98228fc017625bf8a07e955` |
 | `docs/contracts/CREDIT_ADVANCE_F04.md` | `e262f185a251a97d3387f2d39df9939c2f51bc589e5251515cb009a621fc5d6a` |
 | `docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md` | `5c783a3f74985aa3c9bdda89163a1cef02aa41816d3a319b6ef8752aab6f0ff3` |
+
+## Capital companion rejection vectors
+
+The synthetic [capital refusal pack](../../reference/credit_advance_f04/fixtures/capital_refusal_vectors_v1.json)
+transcribes **18 variance and 33 shared-exposure rejection inputs** from the
+existing observer suites. It complements the successful observation packs;
+those packs and both observer/FSM implementations are unchanged. External
+Capital acceptance remains **UNVERIFIED**.
+
+Pre-change coverage mapping (AGENTS.md §7):
+
+| Requirement | Existing evidence | Classification before this pack |
+| --- | --- | --- |
+| Missing/invalid tolerance, identity/currency mismatch, unfrozen and malformed variance views | `test_settlement_variance_contract.py::SettlementVarianceContractTests.test_tolerance_is_required_with_no_default`, `test_tolerance_rejects_bool_negative_float_string_and_none`, `test_view_binding_conflict_is_rejected`, `test_view_must_be_frozen`, `test_malformed_and_non_mock_views_are_rejected` | sufficiently covered behavior |
+| Missing/invalid limit, inconsistent same-claim snapshots, currency, unfrozen/pre-draw views, duplicate advances, malformed amounts/group labels/lists | corresponding methods on `test_shared_exposure_contract.py::SharedExposureContractTests` (full inventory below) | sufficiently covered behavior |
+| Successful observations and non-authority | both suites' `test_all_scenarios_replay_to_expected`, mapping/flags tests and V1–V6/E1–E6 positive fixtures | sufficiently covered; reused as controls |
+| Portable rejection JSON with exact input/error/test/predicate citations | no prior rejection artifact | not covered |
+| Rejection-wide non-mutation, artifact/source integrity and sensitivity | successful-observation read-only tests and positive-fixture pin checks only | partially covered |
+
+The new `test_capital_refusal_vectors.py` closes the last two transport/evidence
+gaps. It is source-informed evidence, not clean-room or independent acceptance.
+It adds no observer validation rule or new rejection combination.
+
+### Rejection schema and replay
+
+The root fields are exactly `fixture_version` (`"capital-refusal/1"`),
+`fixture_kind` (`"SYNTHETIC_OBSERVER_REJECTION_VECTORS"`), `synthetic_only`
+(`true`), `provenance` (`{"settlement":"MOCK_SETTLEMENT_ONLY","credit":"MOCK_CREDIT_F04_ONLY"}`),
+`source_pins` (array of `{path, sha256}`) and `cases` (ordered array).
+
+Each case has exactly these fields:
+
+| Field | Meaning |
+| --- | --- |
+| `case_id` | unique stable source-case identifier; all 51 IDs are explicitly enumerated by the verifier |
+| `observer` | fixed selector `observe_settlement_variance` or `observe_shared_exposure` |
+| `source_test` | repository-relative `path::Class.test_method` from the original suite |
+| `source_case` | precise original parameter or mutation, including missing fields |
+| `contract` | `docs/contracts/CREDIT_ADVANCE_F04.md#7.11` or `#7.12` |
+| `predicate` | cited contract requirement; implementation-specific details are labeled source-informed characterizations |
+| `arguments` | two positional inputs: `[settlement_view, credit_view]` or `[group_id, credit_views]` |
+| `keywords` | object containing only the relevant `tolerance`/`limit` key, or `{}` for omission |
+| `expected_error` | exact reference-only exception `{type, code}`; no protocol error-table addition |
+
+`{}` means omitted, while `{"tolerance":null}` and `{"limit":null}` mean
+explicit null. Omission yields `TOLERANCE_REQUIRED`/`LIMIT_REQUIRED`; null yields
+`TOLERANCE_INVALID`/`LIMIT_INVALID`. Booleans remain booleans, `1.0` remains a
+JSON floating number, `"10"` remains a string, and missing view fields stay
+missing. Malformed observer inputs pass unchanged through the wrapper; wrapper
+validation does not stand in for the observer's exception. Consumers must
+preserve those types and key presence when decoding in another language.
+
+All JSON uses sorted keys, compact separators, UTF-8, finite numbers and one
+trailing newline. The artifact SHA-256 is
+`1b0b82f2fba57a1fafe911a5416faa71131a1e871ac1eb0ca97391d37b9f3331`,
+pinned in the test module. Its ten `source_pins` enumerate both observers,
+both original suites, `credit_fixture.py`,
+`settlement_credit_boundary_vectors.py`, both contracts cited by this guide,
+and both positive observer fixtures. The verifier checks the exact path
+inventory and each digest, with no self-hash. Do not refresh positive pins to
+accommodate drift.
+
+Run offline from the repository root with the Python standard library:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_capital_refusal_vectors.py
+```
+
+For an explicit test-only replay example, with the module directory on the
+Python import path:
+
+```python
+from test_capital_refusal_vectors import FIXTURE, _load, _replay
+
+pack = _load(FIXTURE.read_bytes())  # strict JSON, artifact, inventory and source pins
+for case in pack["cases"]:
+    _replay(case)  # fixed dispatch, exact exception type/code, canonical non-mutation
+```
+
+The helpers remain inside the test module. This command needs a local checkout
+of the pinned source paths; it starts no service, publishes no query and
+performs no external calls. The JSON itself is portable to an offline consumer.
+The existing positive loaders/drivers replay all V1–V6/E1–E6 controls unchanged;
+each stays `fail_closed=true`, `mutates_state=false`,
+`authorizes_exposure=false`, mapping `NOT_BOUND`, repair `NONE` and refund
+component `NOT_BOUND`. Exposure also retains `legal_debtor_bound=false`.
+
+`test_verifier_sensitivity` separately exercises inventory, replay, artifact
+hash and source checks. Removing cases, duplicating IDs, changing expected
+classes/codes or citations, corrupting/removing pins, and altering source bytes
+in memory fail verification. Semantic sensitivity runs without the outer
+artifact hash, so a hash failure cannot mask an ineffective replay check.
+
+### Rejection case inventory
+
+All `V` rows cite
+[`test_settlement_variance_contract.py::SettlementVarianceContractTests`](../../reference/credit_advance_f04/test_settlement_variance_contract.py)
+and F04 §7.11. All `E` rows cite
+[`test_shared_exposure_contract.py::SharedExposureContractTests`](../../reference/credit_advance_f04/test_shared_exposure_contract.py)
+and F04 §7.12. The method and mutation below select the exact source case;
+the pack carries the full citation for every row. V errors are exactly
+`VarianceObservationError`; E errors are exactly `SharedExposureError`.
+The `phase="OFFERED"` mutation retains the other original view fields; it is
+an existing source-test characterization, not a precedence decision for a
+new combination. Identifier whitespace rules and detailed variance malformed
+amount checks are likewise source-informed characterizations of existing
+mock view requirements.
+
+| Case | Source method | Source parameter/mutation | Predicate | Code |
+| --- | --- | --- | --- | --- |
+| `V01_tolerance_omitted` | `test_tolerance_is_required_with_no_default` | `tolerance omitted` | tolerance is a required keyword with no default | `TOLERANCE_REQUIRED` |
+| `V02_tolerance_true` | `test_tolerance_rejects_bool_negative_float_string_and_none` | `tolerance=true` | tolerance must be a non-bool int >= 0 | `TOLERANCE_INVALID` |
+| `V03_tolerance_false` | `test_tolerance_rejects_bool_negative_float_string_and_none` | `tolerance=false` | tolerance must be a non-bool int >= 0 | `TOLERANCE_INVALID` |
+| `V04_tolerance_negative` | `test_tolerance_rejects_bool_negative_float_string_and_none` | `tolerance=-1` | tolerance must be a non-bool int >= 0 | `TOLERANCE_INVALID` |
+| `V05_tolerance_integer_float` | `test_tolerance_rejects_bool_negative_float_string_and_none` | `tolerance=1.0` | tolerance must be a non-bool int >= 0 | `TOLERANCE_INVALID` |
+| `V06_tolerance_fraction` | `test_tolerance_rejects_bool_negative_float_string_and_none` | `tolerance=0.5` | tolerance must be a non-bool int >= 0 | `TOLERANCE_INVALID` |
+| `V07_tolerance_string` | `test_tolerance_rejects_bool_negative_float_string_and_none` | `tolerance="10"` | tolerance must be a non-bool int >= 0 | `TOLERANCE_INVALID` |
+| `V08_tolerance_null` | `test_tolerance_rejects_bool_negative_float_string_and_none` | `tolerance=null` | tolerance must be a non-bool int >= 0 | `TOLERANCE_INVALID` |
+| `V09_claim_mismatch` | `test_view_binding_conflict_is_rejected` | `credit_view.claim_id="claim-other"` | views must share claim_id and trade_id; currency must be KRW | `VIEW_BINDING_CONFLICT` |
+| `V10_trade_mismatch` | `test_view_binding_conflict_is_rejected` | `credit_view.trade_id="trade-other"` | views must share claim_id and trade_id; currency must be KRW | `VIEW_BINDING_CONFLICT` |
+| `V11_currency_mismatch` | `test_view_binding_conflict_is_rejected` | `settlement_view.currency="USD"` | views must share claim_id and trade_id; currency must be KRW | `VIEW_BINDING_CONFLICT` |
+| `V12_unfrozen` | `test_view_must_be_frozen` | `credit_view.snapshot_frozen=false` | credit view must have snapshot_frozen=true | `VIEW_NOT_FROZEN` |
+| `V13_missing_obligations` | `test_malformed_and_non_mock_views_are_rejected` | `settlement_view.obligations omitted` | source-informed characterization: required mock view fields and bounded non-bool integer amounts | `VIEW_INVALID` |
+| `V14_settlement_provenance` | `test_malformed_and_non_mock_views_are_rejected` | `settlement_view.provenance="SOME_OTHER_PROVENANCE"` | source-informed characterization: required mock view fields and bounded non-bool integer amounts | `VIEW_INVALID` |
+| `V15_cash_float` | `test_malformed_and_non_mock_views_are_rejected` | `settlement_view.confirmed_cash=0.0` | source-informed characterization: required mock view fields and bounded non-bool integer amounts | `VIEW_INVALID` |
+| `V16_outstanding_bool` | `test_malformed_and_non_mock_views_are_rejected` | `settlement_view.obligations[0].outstanding=true` | source-informed characterization: required mock view fields and bounded non-bool integer amounts | `VIEW_INVALID` |
+| `V17_credit_provenance` | `test_malformed_and_non_mock_views_are_rejected` | `credit_view.provenance="SOME_OTHER_PROVENANCE"` | source-informed characterization: required mock view fields and bounded non-bool integer amounts | `VIEW_INVALID` |
+| `V18_negative_face` | `test_malformed_and_non_mock_views_are_rejected` | `credit_view.open_face=-1` | source-informed characterization: required mock view fields and bounded non-bool integer amounts | `VIEW_INVALID` |
+| `E01_limit_omitted` | `test_limit_is_required_with_no_default` | `limit omitted` | limit is a required keyword with no default | `LIMIT_REQUIRED` |
+| `E02_limit_true` | `test_limit_rejects_bool_negative_float_string_and_none` | `limit=true` | limit must be a non-bool int >= 0 | `LIMIT_INVALID` |
+| `E03_limit_false` | `test_limit_rejects_bool_negative_float_string_and_none` | `limit=false` | limit must be a non-bool int >= 0 | `LIMIT_INVALID` |
+| `E04_limit_negative` | `test_limit_rejects_bool_negative_float_string_and_none` | `limit=-1` | limit must be a non-bool int >= 0 | `LIMIT_INVALID` |
+| `E05_limit_integer_float` | `test_limit_rejects_bool_negative_float_string_and_none` | `limit=1.0` | limit must be a non-bool int >= 0 | `LIMIT_INVALID` |
+| `E06_limit_fraction` | `test_limit_rejects_bool_negative_float_string_and_none` | `limit=0.5` | limit must be a non-bool int >= 0 | `LIMIT_INVALID` |
+| `E07_limit_string` | `test_limit_rejects_bool_negative_float_string_and_none` | `limit="10"` | limit must be a non-bool int >= 0 | `LIMIT_INVALID` |
+| `E08_limit_null` | `test_limit_rejects_bool_negative_float_string_and_none` | `limit=null` | limit must be a non-bool int >= 0 | `LIMIT_INVALID` |
+| `E09_reserved_conflict` | `test_view_binding_conflict_is_rejected` | `views[1].reserved_open+=1; residual_unreserved-=1` | same-claim trade_id and capacity snapshots must agree; currency must be KRW | `VIEW_BINDING_CONFLICT` |
+| `E10_trade_conflict` | `test_view_binding_conflict_is_rejected` | `views[1].trade_id="trade-other"` | same-claim trade_id and capacity snapshots must agree; currency must be KRW | `VIEW_BINDING_CONFLICT` |
+| `E11_face_conflict` | `test_view_binding_conflict_is_rejected` | `views[1].open_face+=1; residual_unreserved+=1` | same-claim trade_id and capacity snapshots must agree; currency must be KRW | `VIEW_BINDING_CONFLICT` |
+| `E12_currency_conflict` | `test_view_binding_conflict_is_rejected` | `views[0].currency="USD"` | same-claim trade_id and capacity snapshots must agree; currency must be KRW | `VIEW_BINDING_CONFLICT` |
+| `E13_unfrozen` | `test_view_must_be_frozen` | `views[0].snapshot_frozen=false` | views must be frozen; pre-draw grouping is undefined | `VIEW_NOT_FROZEN` |
+| `E14_pre_draw` | `test_view_must_be_frozen` | `approved adv-pre actual CreditMachine.view before draw` | views must be frozen; pre-draw grouping is undefined | `VIEW_NOT_FROZEN` |
+| `E15_missing_outstanding` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].outstanding_exposure omitted` | required view fields | `VIEW_INVALID` |
+| `E16_provenance` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].provenance="SOME_OTHER_PROVENANCE"` | mock provenance | `VIEW_INVALID` |
+| `E17_ledger` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].exposure_ledger="SOME_OTHER_LEDGER"` | mock exposure ledger | `VIEW_INVALID` |
+| `E18_outstanding_bool` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].outstanding_exposure=true` | non-bool integer amounts | `VIEW_INVALID` |
+| `E19_negative_drawn` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].drawn_exposure=-1` | amounts >= 0 | `VIEW_INVALID` |
+| `E20_repaid_float` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].repaid_exposure=1.0` | integer amounts | `VIEW_INVALID` |
+| `E21_face_overflow` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].open_face=1000000000001` | amounts <= 10**12 | `VIEW_INVALID` |
+| `E22_exposure_arithmetic` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].outstanding_exposure+=1` | outstanding_exposure = drawn_exposure - repaid_exposure | `VIEW_INVALID` |
+| `E23_capacity_arithmetic` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].residual_unreserved+=1` | residual_unreserved = open_face - reserved_open | `VIEW_INVALID` |
+| `E24_phase` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].phase="OFFERED" (other fields unchanged)` | phase must be DRAWN, CLOSED or DEFAULTED | `VIEW_INVALID` |
+| `E25_advance_label` | `test_malformed_and_non_mock_views_are_rejected` | `views[0].advance_id=" x"` | source-informed characterization: advance_id must be a nonempty trimmed string | `VIEW_INVALID` |
+| `E26_duplicate_advance` | `test_malformed_and_non_mock_views_are_rejected` | `[copy(base[0]), copy(base[0])]` | duplicate advance_id is invalid | `VIEW_INVALID` |
+| `E27_empty_views` | `test_malformed_and_non_mock_views_are_rejected` | `credit_views=[]` | nonempty list of credit views | `VIEW_INVALID` |
+| `E28_group_empty` | `test_malformed_and_non_mock_views_are_rejected` | `group_id=""` | source-informed characterization: group_id must be a nonempty trimmed string caller label | `VIEW_INVALID` |
+| `E29_group_space` | `test_malformed_and_non_mock_views_are_rejected` | `group_id=" x"` | source-informed characterization: group_id must be a nonempty trimmed string caller label | `VIEW_INVALID` |
+| `E30_group_integer` | `test_malformed_and_non_mock_views_are_rejected` | `group_id=123` | source-informed characterization: group_id must be a nonempty trimmed string caller label | `VIEW_INVALID` |
+| `E31_group_bool` | `test_malformed_and_non_mock_views_are_rejected` | `group_id=true` | source-informed characterization: group_id must be a nonempty trimmed string caller label | `VIEW_INVALID` |
+| `E32_group_null` | `test_malformed_and_non_mock_views_are_rejected` | `group_id=null` | source-informed characterization: group_id must be a nonempty trimmed string caller label | `VIEW_INVALID` |
+| `E33_non_list` | `test_malformed_and_non_mock_views_are_rejected` | `credit_views={"not":"a list"}` | nonempty list of credit views | `VIEW_INVALID` |
+
+### Rejection pack boundaries
+
+These vectors establish no new error precedence, default tolerance/limit,
+refund-credit netting, reconciliation completion, release transition or
+execution authority. Product tolerance/limit values remain **UNDETERMINED —
+Astra**; future observation binding remains **User-owned**. Legal parties,
+refund debtor, accounting/tax treatment and other external determinations
+retain the User/I10/roadmap D-E and named specialist owners above. No policy
+value is selected by the synthetic numbers. No new protocol command, service,
+FSM or observer semantics, live funds/provider/Sui calls, runtime, storage
+engine, legal compliance, finality or production-readiness claim is added.
+External Capital acceptance stays **UNVERIFIED**. A2 non-author exact-head
+review, exact-head KTX/KIX CI and human merge authorization remain separate
+supervisor delivery gates; local green tests do not satisfy them.
+
+See the [builder evidence](../../validation/2026-11-13-plan-capital-refusal-vectors/README.md)
+for actual commands, protected-byte verification and remaining delivery gates.

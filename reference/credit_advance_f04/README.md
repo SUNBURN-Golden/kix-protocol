@@ -436,3 +436,26 @@ acceptance or published reads. Observations remain `NOT_BOUND`, repair `NONE`,
 without exposure authority. Product values stay `UNDETERMINED` under existing
 owners. See the [builder validation record](../../validation/2026-11-13-plan-economics-credit-consumer-vectors/README.md)
 for actual checks and remaining review/CI gates.
+
+## Capital companion rejection vectors
+
+The canonical [refusal pack](fixtures/capital_refusal_vectors_v1.json) publishes
+51 literal input/error vectors from the existing variance/exposure contract
+suites under F04 §§7.11–7.12. Every case cites its source method, exact
+parameter/mutation and contract predicate. JSON types and omitted versus null
+keywords are preserved. The test-only replay verifies exact reference-only
+exception classes/codes, non-mutation, artifact/source pins, verifier
+sensitivity and all twelve unchanged positive observation controls.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_capital_refusal_vectors.py
+```
+
+The [field guide](../../docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-companion-rejection-vectors)
+contains the schema, full case/predicate inventory, coverage mapping, replay
+example and owner boundaries. The [builder record](../../validation/2026-11-13-plan-capital-refusal-vectors/README.md)
+records actual local verification. These are synthetic companion observations:
+`NOT_BOUND`, repair `NONE`, no exposure authority. No observer/FSM changes,
+error precedence, policy default, netting or reconciliation completion are
+inferred. External Capital acceptance remains **UNVERIFIED**; A2 non-author
+exact-head review and exact-head KTX/KIX CI remain delivery gates.
