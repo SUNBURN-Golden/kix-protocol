@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_evidence_map_rollup.py
+evidence map roll-up ok: contracts=25; textual index only
+
+EXIT: 0

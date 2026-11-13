@@ -1,0 +1,20 @@
+$ python3.12 -B scripts/check_evidence_map_rollup.py --self-test
+self-test: detected missing contract
+self-test: detected stale copied Counts line
+self-test: detected Counts disagree with table
+self-test: detected missing map path
+self-test: detected duplicate contract
+self-test: detected non-contract row
+self-test: detected missing checker
+self-test: detected unlisted status
+self-test: detected nonzero unexplained token
+self-test: detected duplicate Counts line
+self-test: detected owners mismatch
+self-test: detected arity mismatch
+self-test: detected no-map row without reason
+self-test: detected source owner has break
+self-test: detected Counts trailing whitespace
+self-test: detected missing Status table
+self-test: pass (16 negative controls)
+
+EXIT: 0

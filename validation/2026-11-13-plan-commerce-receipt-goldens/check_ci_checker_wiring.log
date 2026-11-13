@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_ci_checker_wiring.py
+ci checker wiring ok: scripts=36 plain=35 self_test=36 self_test_only=1 docs=22 citations=99
+
+EXIT: 0

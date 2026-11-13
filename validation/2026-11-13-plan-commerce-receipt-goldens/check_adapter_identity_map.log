@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_adapter_identity_map.py
+adapter identity evidence map ok: rows=17 expected=17 citations=71 CARRIED=2 PARTIAL=7 NO_SURFACE=0 UNDETERMINED=8
+
+EXIT: 0

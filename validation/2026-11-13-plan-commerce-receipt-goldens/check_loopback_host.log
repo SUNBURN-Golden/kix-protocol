@@ -1,0 +1,80 @@
+$ python3.12 -B scripts/check_loopback_host.py
+{
+  "all_ok": true,
+  "bind_host": "127.0.0.1",
+  "bind_port_requested": 0,
+  "child": {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-I",
+      "-c",
+      "<CHILD_PROGRAM>"
+    ],
+    "error": null,
+    "ok": true,
+    "port": 53625,
+    "returncode": 0,
+    "stderr": "",
+    "steps": {
+      "bind": {
+        "error": null,
+        "ok": true
+      },
+      "connect": {
+        "error": null,
+        "ok": true
+      },
+      "create": {
+        "error": null,
+        "ok": true
+      },
+      "listen": {
+        "error": null,
+        "ok": true
+      }
+    }
+  },
+  "evidence_prep": true,
+  "gate_suite_run": false,
+  "host_selected": false,
+  "in_process": {
+    "ok": true,
+    "port": 45265,
+    "steps": {
+      "bind": {
+        "error": null,
+        "ok": true
+      },
+      "connect": {
+        "error": null,
+        "ok": true
+      },
+      "create": {
+        "error": null,
+        "ok": true
+      },
+      "listen": {
+        "error": null,
+        "ok": true
+      }
+    }
+  },
+  "interpreter": {
+    "executable": "/home/box/.local/bin/python3.12",
+    "implementation": "CPython",
+    "version": "3.12.15"
+  },
+  "mode": "host",
+  "permission_granted": false,
+  "platform": {
+    "machine": "x86_64",
+    "platform": "Linux-6.12.113+-x86_64-with-glibc2.41",
+    "release": "6.12.113+",
+    "system": "Linux"
+  },
+  "require_exit": 0,
+  "schema_version": 1,
+  "tool": "check_loopback_host"
+}
+
+EXIT: 0

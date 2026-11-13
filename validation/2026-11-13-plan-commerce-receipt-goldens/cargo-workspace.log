@@ -1,0 +1,658 @@
+$ cargo test --manifest-path runtime/Cargo.toml --workspace --locked
+   Compiling kix-kernel-v5 v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-kernel-v5)
+   Compiling kix-feature-semantics v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-feature-semantics)
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling typenum v1.20.1
+   Compiling serde_core v1.0.229
+   Compiling const-oid v0.10.2
+   Compiling kix-feature-ir v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-feature-ir)
+   Compiling serde v1.0.229
+   Compiling cfg-if v1.0.4
+   Compiling cpufeatures v0.3.1
+   Compiling hybrid-array v0.4.15
+   Compiling kix-delegated-exec v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-delegated-exec)
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling syn v3.0.5
+   Compiling digest v0.11.3
+   Compiling sha2 v0.11.0
+   Compiling bcs v0.2.1
+   Compiling kix-types v0.0.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-types)
+   Compiling serde_derive v1.0.229
+   Compiling kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-bcs1)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 42.57s
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_bcs1-a128f9141c580d73)
+
+running 3 tests
+test tests::bounded_utf8_rejects_oversize_values ... ok
+test tests::round_trip_and_hash_are_deterministic ... ok
+test tests::wrong_magic_schema_version_and_trailing_bytes_are_rejected ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/golden_vectors.rs (runtime/target/debug/deps/golden_vectors-42f51c24e7f0e8bb)
+
+running 4 tests
+test domain_schema_and_version_are_bound ... ok
+test fixed_bytes_and_hash_match_external_golden_values ... ok
+test legacy_json_is_not_kix_bcs1_identity ... ok
+test u128_zero_and_max_are_lossless ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_delegated_exec-cd35b4d4a9f8cc1f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/boundary.rs (runtime/target/debug/deps/boundary-90ba9e2dbdc410b3)
+
+running 2 tests
+test clippy_boundary_is_the_v4_byte_copy ... ok
+test manifest_normal_dependencies_are_kix_types_and_kix_kernel_v5 ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/delegation_fence.rs (runtime/target/debug/deps/delegation_fence-1b622a6211b699ae)
+
+running 12 tests
+test grant_identity_collisions_are_invalid_configuration ... ok
+test a_consume_committed_before_the_cut_still_reconciles_late_facts ... ok
+test the_cut_refuses_new_commitments_but_replays_stored_results ... ok
+test the_cut_still_replays_a_stored_ga_result_on_its_pinned_page ... ok
+test undelegation_requires_a_closed_grant_and_a_validated_unused_remainder ... ok
+test a_revoke_cut_completes_page_by_page_and_retries_pending_pages ... ok
+test a_failed_authority_transition_bumps_no_epoch_and_stays_retryable ... ok
+test same_request_identity_with_a_different_payload_conflicts ... ok
+test delegation_moves_the_execution_fence_to_the_delegate ... ok
+test the_cut_is_per_grant_and_undelegation_restores_the_direct_path ... ok
+test delegation_requires_an_open_grant_an_undelegated_page_and_no_reservations ... ok
+test identical_retries_replay_the_stored_first_result ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/ga_slots.rs (runtime/target/debug/deps/ga_slots-330b2e7f94a393a2)
+
+running 7 tests
+test lowest_free_slots_are_assigned_deterministically ... ok
+test a_ga_request_spanning_pages_is_refused_before_any_kernel_call ... ok
+test an_order_id_bound_on_one_page_cannot_rebind_on_another_ga_page ... ok
+test a_stored_ga_command_replays_on_its_pinned_page_after_capacity_shifts ... ok
+test ga_conservation_holds_across_mixed_sequences ... ok
+test a_replayed_ga_hold_consumes_no_free_slots ... ok
+test expire_returns_the_slots_to_the_page_free_set ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/range_table.rs (runtime/target/debug/deps/range_table-9cd7aa41edb1dc73)
+
+running 7 tests
+test duplicate_page_indices_are_invalid ... ok
+test empty_or_inverted_page_is_invalid ... ok
+test empty_table_is_invalid ... ok
+test gaps_in_the_table_are_slots_without_an_owning_page ... ok
+test input_order_does_not_matter_and_lookup_uses_half_open_ranges ... ok
+test overlapping_pages_are_invalid ... ok
+test seat_page_is_bounded_by_kernel_max_seats ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/routing.rs (runtime/target/debug/deps/routing-448971a9c4929506)
+
+running 11 tests
+test a_bundle_may_not_cross_a_page_boundary ... ok
+test kernel_rejections_pass_through_with_the_command_record ... ok
+test show_above_max_seats_routes_to_the_owning_page ... ok
+test slots_without_a_seat_page_are_unknown ... ok
+test capture_observations_route_to_the_bound_operations_page ... ok
+test a_command_scope_other_than_the_shows_is_wrong_scope ... ok
+test a_payment_operation_binds_at_most_one_order_across_pages ... ok
+test ga_requests_route_to_the_lowest_start_page_that_can_serve_them ... ok
+test an_order_id_binds_at_most_one_page_across_pages ... ok
+test bundle_bound_is_the_kernel_max_bundle ... ok
+test a_kernel_capacity_error_pins_no_route ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/seeded_differential.rs (runtime/target/debug/deps/seeded_differential-00180049ac0edad1)
+
+running 9 tests
+test late_ga_capture_releases_slots_before_next_reserve ... ok
+test negative_control_flipped_replay_flag_is_detected ... ok
+test one_page_seat_matches_a_bare_kernel ... ok
+test one_page_ga_matches_a_bare_kernel ... ok
+test delegation_cut_invariants_under_interleaved_transitions ... ok
+test negative_control_expire_reporting_false_is_detected ... ok
+test multi_page_matches_independent_page_kernels ... ok
+test negative_control_closed_grant_reserve_accepted_is_detected ... ok
+test coverage_guard_every_family_rejection_and_grant_transition_occurs ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.94s
+
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_feature_ir-5cf2adb8a7185769)
+
+running 5 tests
+test tests::engine_neutral_plan_validates_with_explicit_semantics ... ok
+test tests::fast64_profile_is_bound_to_asset_and_registry_version ... ok
+test tests::mean_is_terminal_and_empty_is_null ... ok
+test tests::terminal_f64_must_be_final_except_limit ... ok
+test tests::empty_plan_is_rejected ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/api_boundaries.rs (runtime/target/debug/deps/api_boundaries-57ad33e0fc517f4c)
+
+running 2 tests
+test fast64_external_consumer_api_boundaries ... ok
+test validated_plan_external_consumer_api_boundaries ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.27s
+
+     Running tests/audit_regressions.rs (runtime/target/debug/deps/audit_regressions-0ad3733de7ee4d35)
+
+running 8 tests
+test audit_a02_filter_must_reject_nonterminal_f64 ... ok
+test audit_a03_terminal_divide_must_reject_nested_divide ... ok
+test audit_a04_projection_kind_must_match_literal_type ... ok
+test audit_control_count_star_may_omit_an_input ... ok
+test audit_control_single_terminal_divide_then_limit_is_allowed ... ok
+test audit_a04_filter_requires_a_boolean_expression ... ok
+test audit_a04_sum_requires_an_input_column ... ok
+test audit_control_integer_comparison_filter_is_allowed ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/empty_stages.rs (runtime/target/debug/deps/empty_stages-00ded4a694944a0b)
+
+running 3 tests
+test characterize_empty_group_by_rejection ... ok
+test characterize_empty_projection_rejection ... ok
+test characterize_empty_sort_rejection ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/plan_limits.rs (runtime/target/debug/deps/plan_limits-a82046a680d7b4ef)
+
+running 7 tests
+test characterize_stage_limit_with_mixed_stage_kinds ... ok
+test characterize_depth_limit_for_filter_predicate ... ok
+test characterize_depth_limit_for_project_item ... ok
+test characterize_depth_limit_restarts_for_each_expression ... ok
+test characterize_stage_limit_with_limit_stages ... ok
+test characterize_node_budget_is_plan_wide_across_stages_and_items ... ok
+test characterize_node_limit_for_single_filter ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
+     Running tests/schema_bound.rs (runtime/target/debug/deps/schema_bound-f016d7a40f76c5d9)
+
+running 21 tests
+test aggregate_input_and_output_kinds_must_match_contract ... ok
+test catalog_resolution_checks_identity_version_and_duplicates ... ok
+test column_types_are_checked_inside_all_operators ... ok
+test duplicate_output_and_key_ids_are_rejected ... ok
+test fast64_checked_range_is_inclusive_at_claim_and_capped_at_i64_max ... ok
+test fast64_identity_mismatch_precedes_amount_range_for_each_identity_field ... ok
+test excessively_nested_expression_is_rejected_without_unbounded_walk ... ok
+test fast64_checked_claim_is_not_inherited_across_registry_versions ... ok
+test mixed_signed_unsigned_arithmetic_requires_explicit_future_conversion ... ok
+test group_output_contains_only_keys_and_aggregate_results ... ok
+test inner_and_left_join_output_include_right_columns ... ok
+test fast64_rejects_wrong_asset_version_or_hash_at_export ... ok
+test joins_require_existing_matching_keys_and_unambiguous_output_ids ... ok
+test nested_f64_in_either_operand_and_boolean_wrappers_is_rejected ... ok
+test projection_drops_source_columns_and_does_not_allow_sibling_alias_reuse ... ok
+test semi_and_anti_join_output_exclude_right_columns ... ok
+test valid_integer_expression_can_feed_terminal_division ... ok
+test terminal_mean_can_only_be_followed_by_limits ... ok
+test missing_columns_are_rejected_in_expressions_aggregates_and_keys ... ok
+test only_count_star_can_omit_input ... ok
+test source_f64_is_rejected_even_for_limit_only_plan ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/validator_matrix.rs (runtime/target/debug/deps/validator_matrix-5275d7fd37c4d222)
+
+running 7 tests
+test aggregate_contract_empty_policy_control_validates ... ok
+test aggregate_empty_policy_mismatch_is_rejected_for_every_op ... ok
+test divide_to_f64_placement_and_output_kind_matrix ... ok
+test implicit_signed_unsigned_coercion_is_rejected_in_compare_and_arithmetic ... ok
+test join_right_version_selects_its_own_schema ... ok
+test divide_to_f64_root_operand_type_matrix ... ok
+test join_right_dataset_identity_and_version_failure_matrix ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_feature_semantics-913e2b171372b7f7)
+
+running 6 tests
+test tests::aggregate_empty_semantics_are_fixed ... ok
+test tests::null_join_semantics_are_explicit ... ok
+test tests::category_equality_is_semantic_not_dictionary_position ... ok
+test tests::divide_by_zero_and_null_produce_null ... ok
+test tests::filter_null_is_dropped ... ok
+test tests::non_finite_terminal_values_are_rejected ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/semantics_v1_edges.rs (runtime/target/debug/deps/semantics_v1_edges-dfd409914773a262)
+
+running 11 tests
+test aggregate_empty_policy_is_exhaustive_over_aggregate_kind ... ok
+test category_value_differs_by_vocabulary_id_or_semantic_code ... ok
+test category_value_equality_and_hash_ignore_dictionary_position ... ok
+test characterize_zero_over_negative_denominator_is_negative_zero ... ok
+test divide_boundary_rows_have_pinned_values ... ok
+test divide_matches_independent_f64_expression_over_boundary_set ... ok
+test filter_keeps_table_matches_section_2 ... ok
+test nullable_keys_equal_table_covers_all_null_combinations_under_both_policies ... ok
+test validate_terminal_f64_accepts_finite_extremes_and_zeros ... ok
+test validate_terminal_f64_rejects_non_finite_values ... ok
+test divide_yields_none_for_zero_or_null_operand ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_kernel-09a846946f2bc4a0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/contract_edge_cases.rs (runtime/target/debug/deps/contract_edge_cases-eca76c6a276f4888)
+
+running 39 tests
+test altered_payload_conflicts_without_touching_an_unknown_payment ... ok
+test altered_payload_conflicts_before_fence_and_clock_guards ... ok
+test class_b_command_and_order_limits_are_independent ... ok
+test bound_quarantine_survives_owner_change_expiry_and_cancellation ... ok
+test altered_payload_conflicts_when_its_operation_is_quarantined ... ok
+test class_b_cancelled_identity_reuse_remains_fenced ... ok
+test altered_payload_conflicts_at_full_command_capacity ... ok
+test class_b_bundle_limit_value_and_ga_scope ... ok
+test altered_payload_conflicts_after_local_cancellation ... ok
+test altered_payload_conflicts_when_its_selection_is_unavailable ... ok
+test class_b_return_required_inventory_is_reusable ... ok
+test full_command_capacity_backpressures_after_local_cancellation ... ok
+test full_command_capacity_backpressures_before_a_quarantine_rejection ... ok
+test inventory_released_by_expiry_is_reusable_by_a_new_command ... ok
+test expiry_instant_is_treated_consistently_by_every_entry_point ... ok
+test regressed_time_records_nothing_after_local_cancellation ... ok
+test last_command_and_order_slots_admit_a_reservation_after_a_recorded_rejection ... ok
+test regressed_time_applies_no_capture_to_an_unknown_payment ... ok
+test regressed_time_applies_no_quarantine ... ok
+test regressed_time_records_no_unavailable_rejection ... ok
+test return_required_is_stable_under_further_late_evidence ... ok
+test replay_lookup_is_guarded_by_scope_and_semantics_only ... ok
+test rejection_replay_stays_immutable_after_the_blocking_hold_is_released ... ok
+test class_b_unavailable_selection_preserves_observed_rejection_precedence ... ok
+test retained_unbound_conflict_bans_the_identity_for_any_future_order ... ok
+test stale_execution_fence_applies_no_quarantine ... ok
+test stale_execution_fence_neither_sends_nor_captures_an_unknown_payment ... ok
+test stale_execution_fence_records_no_unavailable_rejection ... ok
+test free_contiguous_range_inside_one_actual_segment_is_held ... ok
+test unknown_retry_after_the_deadline_keeps_the_reservation_and_its_slot ... ok
+test success_follows_unrelated_rejections_errors_and_replays ... ok
+test unsupported_semantics_applies_no_quarantine ... ok
+test unsupported_semantics_neither_sends_nor_captures_an_unknown_payment ... ok
+test word_crossing_range_inside_one_segment_is_held_between_neighbours ... ok
+test full_command_capacity_backpressures_before_an_unavailable_rejection ... ok
+test unsupported_semantics_records_no_unavailable_rejection ... ok
+test unsupported_semantics_records_nothing_after_local_cancellation ... ok
+test seats_and_general_admission_are_held_up_to_exact_remaining_capacity ... ok
+test smallest_positive_price_and_one_millisecond_ttl_are_held ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/contract_invariants.rs (runtime/target/debug/deps/contract_invariants-91fe6d246b04f660)
+
+running 5 tests
+test reply_oracle_rejects_deliberately_wrong_expected_replies ... ok
+test contract_predicates_reject_corrupted_observations_not_kernel_mutations ... ok
+test inv3_replay_predicate_rejects_corrupted_observer_views_not_kernel_mutations ... ok
+test contract_test_source_identity_and_format_diagnostic ... ok
+test five_contract_invariants_on_kernel_only_generated_histories ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.92s
+
+     Running tests/e4_state_model.rs (runtime/target/debug/deps/e4_state_model-cb64108b62334d6d)
+
+running 12 tests
+test altered_payload_matrix_excludes_multiple_fields_and_other_payload_changes ... ok
+test model_schema_relations_are_explicit_and_corruption_is_detected ... ok
+test capacity_two_sequence_is_observed_not_repaired ... ok
+test history_gates_reject_missing_or_wrong_causal_provenance ... ok
+test exact_read_only_gate_detects_public_api_clock_only_perturbation ... ok
+test oracle_sensitivity_detects_and_shrinks_missing_full_budget_quarantine ... ok
+test relation_properties_detect_model_only_quarantine_omission_and_shrink ... ok
+test locked_sources_and_new_harness_sources_are_identified ... ok
+test locked_v4_matches_independent_state_model ... ok
+test relation_aware_generated_traces_reach_every_property_family ... ok
+test baseline_corpus_relation_coverage_is_inventoried_not_retuned ... ok
+whole_kernel_read_only_checks relation=36069 baseline=85775
+gate=altered_expiry_normal relation=551 baseline=1192 first=P1/config0/seed2: step=6
+gate=altered_expiry_regressed_clock_only relation=212 baseline=45 first=P1/config0/seed1: step=41
+gate=altered_expiry_stale_fence_only relation=193 baseline=47 first=P1/config0/seed1: step=28
+gate=altered_operation_normal relation=477 baseline=0 first=P1/config0/seed1: step=40
+gate=altered_operation_regressed_clock_only relation=222 baseline=0 first=P1/config0/seed4: step=22
+gate=altered_operation_stale_fence_only relation=179 baseline=0 first=P1/config0/seed1: step=34
+gate=altered_order_id_normal relation=422 baseline=0 first=P1/config0/seed1: step=38
+gate=altered_order_id_regressed_clock_only relation=234 baseline=0 first=P1/config0/seed1: step=36
+gate=altered_order_id_stale_fence_only relation=188 baseline=0 first=P1/config0/seed1: step=10
+gate=altered_selection_normal relation=341 baseline=1090 first=P1/config0/seed1: step=24
+gate=altered_selection_regressed_clock_only relation=166 baseline=38 first=P1/config0/seed1: step=44
+gate=altered_selection_stale_fence_only relation=162 baseline=52 first=P1/config0/seed3: step=2
+gate=retained_two_bound_owner_expiry_cancel_send_sequence relation=9 baseline=2 first=P5/config0/seed15: order=KixId([252, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+gate=return_duplicate_mismatch_reviewed_send_sequence relation=11 baseline=3 first=P6/config0/seed30: order=KixId([7, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+gate=unknown_deadline_retry_then_late_capture relation=22 baseline=73 first=P3/config0/seed12: order=KixId([249, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+test task_001_deterministic_edge_cases_are_cross_validated_by_generated_witnesses ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.95s
+
+     Running tests/observation_slots.rs (runtime/target/debug/deps/observation_slots-60507b6e88ce5f34)
+
+running 11 tests
+test conflicting_event_cannot_spend_slot_reserved_for_capture ... ok
+test full_budget_new_conflict_quarantines_without_retaining_evidence ... ok
+test previous_semantics_version_is_rejected_without_silent_replay_change ... ok
+test accepted_conflict_keeps_slot_until_fresh_capture_preserves_reviewed_fact ... ok
+test repeated_unknown_reserves_once_and_other_operation_cannot_take_slot ... ok
+test reserved_slot_survives_expiry_check_owner_change_and_cancellation ... ok
+test unrelated_event_flood_cannot_starve_promised_capture ... ok
+test captured_operation_does_not_reserve_again_and_exact_event_replay_needs_no_slot ... ok
+test fresh_unbound_capture_remains_unstored_and_later_binding_is_not_reconciled ... ok
+test mismatched_amount_uses_reserved_slot_and_preserves_actual_capture_for_review ... ok
+test full_observation_budget_blocks_first_unknown_without_state_change ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/performance_harness.rs (runtime/target/debug/deps/performance_harness-f84949e66fd0a568)
+
+running 32 tests
+test evidence_binding_records_budgets_toolchain_and_non_claims ... ok
+test goodput_matches_fixed_integer_expectations ... ok
+test injected_kernel_reconstruction_is_counted_and_reported ... ok
+test evidence_binding_serializes_tree_probe_toolchain_host_and_files ... ok
+test conflict_saturation_ignores_command_limit ... ok
+test low_load_uniform_is_distinct_from_hot_seat_retry_and_saturation ... ok
+test each_workload_and_low_load_run_constructs_exactly_one_kernel ... ok
+test elapsed_ns_covers_every_row_and_scheduled_wait ... ok
+test capacity_json_is_top_level_and_separate_from_business_reject ... ok
+test nearest_rank_p99_matches_fixed_expectations ... ok
+test other_outcomes_json_matches_measured_calls ... ok
+test csv_rows_keep_service_inside_call_window_and_latency_arithmetic ... ok
+test perf_probe_routes_kernel_new_through_one_helper ... ok
+test retry_comparison_rejects_corrupted_captured_original ... ok
+test retry_replays_complete_first_result ... ok
+test other_outcomes_count_real_reserve_error_and_applied_capture ... ok
+test scheduled_csv_uses_fixed_origin_i_over_rate ... ok
+test outcome_summaries_do_not_label_mixed_p99_as_success ... ok
+test timing_boundaries_exclude_setup_and_formatting ... ok
+test first_capacity_index_json_is_zero_based_or_null ... ok
+test timing_boundaries_late_driver ... ok
+test memory_probe_reports_saturation_without_recreating_kernel ... ok
+test smoke_final_remaining_matches_v4_smoke_signature ... ok
+test outcome_count_json_keys_are_top_level_per_workload ... ok
+test summary_p99_matches_raw_csv_by_outcome ... ok
+test timing_boundaries_scheduled ... ok
+test timing_boundaries_reject_included_preparation ... ok
+test timing_boundaries_rate_zero ... ok
+test workload_report_json_names_budgets_samples_and_rate ... ok
+test inventory_is_4096_seats_all_reservable_by_uniform ... ok
+test uniform_selections_wrap_past_4096_despite_order_saturation ... ok
+test other_stays_zero_for_every_reachable_probe_input ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+
+     Running tests/quarantine_capacity.rs (runtime/target/debug/deps/quarantine_capacity-5da24c3fb2f0d16d)
+
+running 8 tests
+test rejected_evidence_that_quarantines_also_advances_logical_time ... ok
+test v3_inputs_are_rejected_before_any_state_change ... ok
+test many_unbound_conflicts_trip_bounded_scope_quarantine_without_losing_slots ... ok
+test retained_unbound_conflict_blocks_future_binding_without_expanding_bound_set ... ok
+test full_evidence_budget_still_quarantines_both_bound_operations ... ok
+test full_budget_quarantine_preserves_the_already_promised_capture_slot ... ok
+test unretained_unbound_conflict_creates_no_speculative_binding_ban ... ok
+test original_event_and_command_replays_never_clear_quarantine ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/transitions.rs (runtime/target/debug/deps/transitions-eaa6479f51a88906)
+
+running 32 tests
+test accepted_expiry_check_advances_time_but_reservation_result_lookup_does_not ... ok
+test conflict_naming_unbound_operation_blocks_future_binding_without_changing_replays ... ok
+test conflict_capacity_failure_keeps_quarantine_and_original_evidence ... ok
+test bounded_records_backpressure_without_evicting_old_results ... ok
+test event_conflict_quarantines_both_bound_orders_and_blocks_payment_sending ... ok
+test accepted_duplicate_observation_advances_time_without_reapplying_capture ... ok
+test event_deduplication_and_economic_effect_deduplication_are_separate ... ok
+test duplicate_external_operation_cannot_fund_two_orders ... ok
+test late_capture_after_cancellation_creates_return_marker_not_resurrection ... ok
+test late_capture_after_expiry_and_resale_does_not_release_new_buyer ... ok
+test historical_capture_after_owner_change_is_not_discarded ... ok
+test local_cancellation_blocks_new_reservations_but_not_original_results ... ok
+test mismatched_asset_or_registry_is_recorded_for_review_not_paid ... ok
+test overlapping_bundle_rejection_never_partially_allocates ... ok
+test ownership_generation_does_not_change_command_identity ... ok
+test expired_hold_retry_keeps_original_result_and_separate_current_state ... ok
+test general_admission_never_overdraws_and_expiry_is_single_release ... ok
+test retained_cross_order_conflict_replays_at_capacity_without_duplicate_evidence ... ok
+test replaying_ordered_inputs_reconstructs_identical_state ... ok
+test reservation_has_inventory_order_and_stable_external_intent ... ok
+test response_loss_retry_returns_original_before_availability_check ... ok
+test reviewed_order_preserves_matching_capture_without_normal_confirmation ... ok
+test actual_segment_boundary_is_an_aisle ... ok
+test same_event_different_payload_preserves_conflicting_evidence ... ok
+test sixty_four_bit_word_boundary_is_not_an_aisle ... ok
+test u128_max_is_not_narrowed ... ok
+test unknown_semantics_and_regressed_time_are_not_applied ... ok
+test reviewed_late_capture_keeps_return_marker_and_review_requirement ... ok
+test identical_id_with_changed_payload_is_a_conflict ... ok
+test overflow_empty_and_oversize_selections_fail_without_inventory_change ... ok
+test invalid_inventory_configuration_is_rejected ... ok
+test unknown_payment_is_not_released_by_ttl ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_kernel_v5-6d4e751ca8026f94)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/boundary.rs (runtime/target/debug/deps/boundary-eb716a9510f0bbe5)
+
+running 2 tests
+test manifest_normal_dependency_is_only_kix_types ... ok
+test clippy_boundary_is_the_v4_byte_copy ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/conflict_index.rs (runtime/target/debug/deps/conflict_index-e24800f61e853ee0)
+
+running 4 tests
+test capacity_on_conflict_matches_the_v4_quarantine_rule ... ok
+test retained_unbound_identity_blocks_only_that_operation ... ok
+test unretained_unbound_identity_does_not_block_later_binding ... ok
+test index_keeps_distinct_conflicts_in_vector_order_and_replays_in_place ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/contract_invariants_v5.rs (runtime/target/debug/deps/contract_invariants_v5-28f37a9ff60eacb2)
+
+running 6 tests
+test inv3_rejects_corrupted_reserve_terminate_and_hold_replay_probes ... ok
+test inv4_rejects_corrupted_rebinding_and_double_capture_views ... ok
+test inv2_rejects_corrupted_budget_and_termination_count_views ... ok
+test inv5_rejects_corrupted_capture_on_terminated_and_held_orders ... ok
+test inv1_rejects_corrupted_overlap_and_conservation_views ... ok
+test five_contract_invariants_on_v5_kernel_only_generated_histories ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 22.05s
+
+     Running tests/holds.rs (runtime/target/debug/deps/holds-c7db506a334a7e89)
+
+running 9 tests
+test an_order_carries_one_hold_and_a_second_one_is_rejected ... ok
+test replaying_the_same_placement_returns_the_original_and_changes_nothing ... ok
+test same_hold_id_with_a_different_payload_conflicts ... ok
+test placement_rejections_change_no_state ... ok
+test clear_hold_is_explicit_and_releases_nothing_else ... ok
+test clearing_an_explicit_hold_keeps_an_implicit_hold ... ok
+test clear_hold_rejections_change_no_state ... ok
+test every_hold_kind_blocks_and_is_recorded ... ok
+test a_hold_never_expires_by_time ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/lifecycle_model.rs (runtime/target/debug/deps/lifecycle_model-2121f8829cf7ddf5)
+
+running 1 test
+test seeded_lifecycle_histories_match_oracle ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+     Running tests/reclaim_batch.rs (runtime/target/debug/deps/reclaim_batch-94ed9112c61f2379)
+
+running 6 tests
+test a_regressed_batch_time_is_rejected ... ok
+test a_late_conflict_after_termination_is_reported_for_every_affected_order ... ok
+test reports_cover_only_terminated_orders_sorted_by_time_then_order_id ... ok
+test residency_cap_is_a_count_of_terminated_records ... ok
+test empty_kernel_gives_an_empty_batch ... ok
+test ten_thousand_records_report_synchronously_in_order_within_the_slo ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.34s
+
+     Running tests/reclaim_report.rs (runtime/target/debug/deps/reclaim_report-e01be89a665c6382)
+
+running 13 tests
+test blocker_declaration_order_is_the_fixed_report_order ... ok
+test defaults_are_the_owner_delegate_values ... ok
+test review_unbound_fence_and_open_conflict_hold_are_listed ... ok
+test saturating_arithmetic_never_wraps_the_windows ... ok
+test termination_clears_only_active_op ... ok
+test unterminated_orders_list_active_op_and_the_reserved_slot ... ok
+test unknown_order_and_regressed_time_are_rejected_without_change ... ok
+test unterminated_report_has_no_termination_derived_times ... ok
+test late_capture_after_termination_adds_the_return_obligation ... ok
+test no_report_is_ever_eligible ... ok
+test replay_window_ends_exactly_at_first_result_plus_window ... ok
+test report_does_not_change_state_or_advance_time ... ok
+test return_required_is_listed_and_treated_as_held ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/stopped_transitions.rs (runtime/target/debug/deps/stopped_transitions-66c269fe2f0ebb20)
+
+running 5 tests
+test redelivery_never_clears_review_required ... ok
+test expiry_cancel_owner_change_and_termination_keep_the_reserved_slot ... ok
+test return_required_plus_late_mismatch_keeps_both_markers ... ok
+test hold_report_and_clear_release_no_slot_inventory_review_or_evidence ... ok
+test reserved_to_stored_capture_does_not_shrink_the_total_budget ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/termination.rs (runtime/target/debug/deps/termination-413e5d1331db33c7)
+
+running 13 tests
+test condition_indexes_are_c1_through_c5 ... ok
+test known_capture_return_required_and_review_are_rejected ... ok
+test a_false_condition_wins_over_a_stale_snapshot ... ok
+test a_second_decision_on_the_same_operation_is_already_terminated ... ok
+test automatic_approval_is_rejected_before_order_checks ... ok
+test failed_termination_does_not_change_state ... ok
+test held_without_a_reserved_slot_is_not_an_absence_close ... ok
+test each_false_condition_is_rejected_and_stores_nothing ... ok
+test replay_returns_the_original_record_and_does_not_change_state ... ok
+test same_decision_with_a_different_payload_conflicts ... ok
+test stale_snapshot_after_a_new_observation_or_conflict_is_rejected ... ok
+test termination_records_once_and_blocks_only_the_next_send ... ok
+test late_capture_keeps_the_termination_and_the_original_reserve_result ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/v4_differential.rs (runtime/target/debug/deps/v4_differential-3f39b8680d21f61d)
+
+running 3 tests
+test version_5_context_is_rejected_by_v4 ... ok
+test version_4_context_is_rejected_by_v5_without_state_change ... ok
+test seeded_histories_match_v4_on_shared_commands ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_types-360fe9615c5dacc8)
+
+running 6 tests
+test tests::amount_cannot_lose_asset_or_registry_context ... ok
+test tests::hash_parser_is_compatibility_only_and_strict ... ok
+test tests::asset_identity_is_binary_first ... ok
+test tests::production_id_is_fixed_128_bits ... ok
+test tests::semantic_integer_types_keep_distinct_ranges ... ok
+test tests::bcs_header_types_cannot_be_zero ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/boundary_edges.rs (runtime/target/debug/deps/boundary_edges-7b8b3a3bb827165f)
+
+running 7 tests
+test byte_array_ids_order_and_hash_consistently ... ok
+test full_range_counters_accept_zero_and_primitive_max ... ok
+test hash32_parse_rejects_malformed_lengths_and_case ... ok
+test hash32_display_round_trips_lowercase_hex ... ok
+test legacy_asset_id_rejects_malformed_inputs ... ok
+test type_error_display_strings_are_pinned ... ok
+test asset_amount_checked_at_approved_boundaries ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests kix_bcs1
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_delegated_exec
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_feature_ir
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_feature_semantics
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_kernel
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_kernel_v5
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_types
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+EXIT: 0

@@ -1,0 +1,11 @@
+$ python3.12 -B scripts/check_rs_profile_traceability.py --self-test
+self-test: detected removed RS-C01 from profile (missing in profile: RS-C01)
+self-test: detected duplicated RS-C01 in profile (duplicated in profile: RS-C01 (2))
+self-test: detected removed IM-01 from profile (missing in profile: IM-01)
+self-test: detected duplicated IM-01 in profile (duplicated in profile: IM-01 (2))
+self-test: detected removed RS-C03 from blueprint (missing in blueprint: RS-C03)
+self-test: detected duplicated RS-C03 in blueprint (duplicated in blueprint: RS-C03 (2))
+self-test: detected extra ids in profile (extra in profile: RS-C99 (1))
+self-test: pass
+
+EXIT: 0

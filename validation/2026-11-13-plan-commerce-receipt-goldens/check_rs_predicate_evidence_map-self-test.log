@@ -1,0 +1,18 @@
+$ python3.12 -B scripts/check_rs_predicate_evidence_map.py --self-test
+self-test: detected removed RS-C01 row (missing in map: RS-C01)
+self-test: detected duplicated RS-C01 row (duplicated in map: RS-C01 (2))
+self-test: detected dangling path (RS-C01: move citation reference/rights_scale/sui/tests/no_such_file.move does not exist)
+self-test: detected dangling symbol (RS-C01: move citation reference/rights_scale/sui/tests/predicate_tests.move::no_such_fn_9f3a is not defined in the file)
+self-test: detected unknown status (RS-C01: unknown status 'SUFFICIENT')
+self-test: detected NOT_COVERED row that carries a citation (RS-C01: NOT_COVERED row carries a citation)
+self-test: detected uncited row that is not NOT_COVERED (RS-C13: COVERED_MODEL_OR_MEMORY row has no citation, so it must be NOT_COVERED)
+self-test: detected altered test id (RS-C01: test id 'RS-C01-T9' differs from the profile 'RS-C01-T1')
+self-test: detected owner not written in the profile (RS-C02: owner part 'Nobody Else' is not written in the profile)
+self-test: detected empty missing cell on a PARTIAL row (RS-C07: PARTIAL row must say what is missing)
+self-test: detected citation under reference/v0.3-rc1 (RS-C07: python citation reference/v0.3-rc1/x.py is under reference/v0.3-rc1)
+self-test: detected split label dropped (RS-C07: split label '(a)' is missing)
+self-test: detected misspelled node:test name (RR-4: local citation reference/rights_scale/client/witness-reconstruction.test.mjs::populated_tre is not defined in the file)
+self-test: detected wrong counts line (counts line 'Counts: COVERED_LOCALNET=13 COVERED_MODEL_OR_MEMORY=2 PARTIAL=96 NOT_COVERED=0 MEASUREMENT_ONLY=2' differs from the table 'Counts: COVERED_LOCALNET=13 COVERED_MODEL_OR_MEMORY=2 PARTIAL=6 NOT_COVERED=0 MEASUREMENT_ONLY=2')
+self-test: pass
+
+EXIT: 0

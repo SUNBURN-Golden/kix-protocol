@@ -1,0 +1,24 @@
+$ python3.12 -B scripts/check_stage5_host.py --self-test
+self-test: caught all prerequisites pass
+self-test: caught postgres binary missing
+self-test: caught postgres binary not executable
+self-test: caught postgres --version exits non-zero
+self-test: caught postgres --version times out
+self-test: caught wrong upstream version 17.10
+self-test: caught wrong version 17.110 (no substring match)
+self-test: caught wrong debian revision deb13u2
+self-test: caught missing debian revision
+self-test: caught trailing suffix on banner
+self-test: caught initdb banner mismatches independently
+self-test: caught psycopg import fails
+self-test: caught psycopg probe times out (error-key dict)
+self-test: caught psycopg major version 2
+self-test: caught psycopg major version 4
+self-test: caught psycopg version unparseable
+self-test: caught taskset missing from PATH
+self-test: caught ss missing from PATH
+self-test: caught core 1 outside affinity mask
+self-test: caught affinity API unavailable
+self-test: pass
+
+EXIT: 0

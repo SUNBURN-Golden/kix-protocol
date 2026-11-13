@@ -1,0 +1,28 @@
+$ python3.12 -B scripts/check_openapi_contract.py --self-test
+self-test: detected ident bound: reference-observed: operationId.rule must match ident bound 100 and whitespace rule
+self-test: detected ident error: reference-observed: operationId.error must be INVALID_ID
+self-test: detected actor observed block removed: reference-observed: actor.check must be ident
+self-test: detected source ident bound drift: reference-observed: operationId.rule must match ident bound 64 and whitespace rule
+self-test: detected specification field added to local envelope: envelope-domain: protocolDomain must not be a local envelope field
+self-test: detected body-domain specification conflation: envelope-domain: body-domain specificationField must be protocolDomain
+self-test: detected body-domain separate argument: envelope-domain: body-domain notASeparatePythonArgument must be True
+self-test: detected body-domain pin drift: envelope-domain: body-domain pinnedDomain must be kix:fixture:lifecycle:0.3
+self-test: detected source trim removed: reference-observed: ident source must require string/length/whitespace with an error code
+self-test: detected source actor validation removed: reference-observed: Core.execute must call ident(actor)
+self-test: detected source conflict changed: reference-observed: Core.execute must retain OPERATION_ID_CONFLICT check
+self-test: detected source domain comparison changed: envelope-domain: Core.execute must compare body.domain with self.DOMAIN using DOMAIN_MISMATCH
+self-test: detected source extra envelope argument: envelope-domain: Core.execute must keep the fixed local parameters plus keyword-only options
+self-test: detected added command: schema names drifted from protocol_contract.json commands
+self-test: detected security scheme: forbidden transport or auth field: securitySchemes
+self-test: detected contract-only OPTIONS: OPTIONS operation forbidden: contract-only /x-kix-contract-only/local-call
+self-test: detected gate OPTIONS: OPTIONS operation forbidden: integration-gate /x-kix-contract-only/local-call
+self-test: detected gate publicHost: integration-gate publicHost must be false
+self-test: detected gate liveHttpServer.publicHost: integration-gate liveHttpServer.publicHost must be false
+self-test: detected gate productionEndpoint: integration-gate productionEndpoint must be false
+self-test: detected README sha256: README pin table mismatch: sha256 != contract-only sha256
+self-test: detected README row removed: README pin table missing row: FSM domain
+self-test: detected README row duplicated: README pin table duplicated row: git blob
+self-test: detected gate pin drift: README pin table mismatch: sha256 != integration-gate sha256
+self-test: pass
+
+EXIT: 0
