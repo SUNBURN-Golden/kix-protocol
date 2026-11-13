@@ -762,3 +762,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-13 economics-to-credit consumer vectors — 위치 안내만
 
 - [Economics/F04 consumer field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) · [builder evidence](../validation/2026-11-13-plan-economics-credit-consumer-vectors/README.md) — location pointers for offline synthetic composition snapshots, separately stated arithmetic, byte pins and replay. No consumer acceptance, published read binding, policy adoption or evidence-grade change; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-13 Capital companion rejection vectors — 위치 안내만
+
+- [Capital rejection schema, case inventory and replay](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-companion-rejection-vectors) · [builder evidence](../validation/2026-11-13-plan-capital-refusal-vectors/README.md) — 51 source-cited synthetic rejection inputs for unchanged F04 §§7.11–7.12 observers, preserving JSON types and omitted/null distinction, with exact reference-only error replay, non-mutation, source/artifact pins and unchanged positive controls. No new error precedence, default, netting, reconciliation completion, binding or execution authority. External Capital acceptance remains UNVERIFIED; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
