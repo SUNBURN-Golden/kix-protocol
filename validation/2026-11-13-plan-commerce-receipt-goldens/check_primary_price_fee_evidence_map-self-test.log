@@ -1,0 +1,81 @@
+$ python3.12 -B scripts/check_primary_price_fee_evidence_map.py --self-test
+self-test: detected missing clause
+self-test: detected duplicate clause
+self-test: detected invented clause
+self-test: detected new contract heading
+self-test: detected removed PF-C heading
+self-test: detected removed numbered heading
+self-test: detected duplicate contract heading
+self-test: detected title drift
+self-test: detected dangling path
+self-test: detected dangling symbol
+self-test: detected helper symbol
+self-test: detected non-test method
+self-test: detected protected path
+self-test: detected absolute path
+self-test: detected parent path
+self-test: detected backslash path
+self-test: detected noncanonical path
+self-test: detected nested path
+self-test: detected non-test file
+self-test: detected bare citation
+self-test: detected stale counts
+self-test: detected duplicate counts
+self-test: detected closed PF-C03
+self-test: detected closed §4
+self-test: detected closed §6
+self-test: detected promoted PF-C04
+self-test: detected promoted PF-C05
+self-test: detected PF-C05 opened
+self-test: detected PF-C05 owner drift
+self-test: detected PF-C05 missing marker
+self-test: detected PF-C owner drift
+self-test: detected unknown owner
+self-test: detected clause owner drift
+self-test: detected missing owner
+self-test: detected empty owner
+self-test: detected missing open marker
+self-test: detected closed chain row
+self-test: detected cited chain row
+self-test: detected missing chain row
+self-test: detected missing chain PF-C05
+self-test: detected duplicate chain row
+self-test: detected invented chain row
+self-test: detected chain owner drift
+self-test: detected chain missing marker
+self-test: detected chain row width
+self-test: detected stale chain count
+self-test: detected duplicate chain count
+self-test: detected open item owner drift
+self-test: detected open item shortened owner
+self-test: detected open item status drift
+self-test: detected contract status drift
+self-test: detected open item title drift
+self-test: detected missing open item
+self-test: detected duplicate open item
+self-test: detected invented open item
+self-test: detected O-label order drift
+self-test: detected open item missing marker
+self-test: detected open item missing owner
+self-test: detected cited open item
+self-test: detected open item row width
+self-test: detected stale open count
+self-test: detected duplicate open count
+self-test: detected missing contract open item
+self-test: detected row width
+self-test: detected unknown status
+self-test: detected missing paraphrase
+self-test: detected uncited COVERED
+self-test: detected uncited PARTIAL
+self-test: detected COVERED gap
+self-test: detected PARTIAL missing gap
+self-test: detected NOT_COVERED missing gap
+self-test: detected NOT_COVERED citation
+self-test: detected missing banner
+self-test: detected missing grade banner
+self-test: detected ordinary class
+self-test: detected invalid Python
+self-test: direct TestCase selection pass
+self-test: pass (76 negative controls)
+
+EXIT: 0

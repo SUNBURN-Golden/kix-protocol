@@ -1,0 +1,20 @@
+$ python3.12 -B scripts/check_rs_im_evidence_map.py --self-test
+self-test: detected removed IM-01 row (missing in map: IM-01)
+self-test: detected duplicated IM-01 row (duplicated in map: IM-01 (2))
+self-test: detected dangling path (IM-01: move citation reference/rights_scale/sui/tests/no_such_file.move does not exist)
+self-test: detected dangling symbol (IM-01: move citation reference/rights_scale/sui/tests/predicate_tests.move::no_such_fn_9f3a is not defined in the file)
+self-test: detected unknown status (IM-01: unknown status 'SUFFICIENT')
+self-test: detected altered treatment word (IM-01: treatment '유지' differs from the profile '변경')
+self-test: detected treatment word that is not a profile word (IM-01: treatment 'keep' is not one of the profile words)
+self-test: detected NOT_COVERED row that carries a citation (IM-01: NOT_COVERED row carries a citation)
+self-test: detected PARTIAL row with an empty missing cell (IM-03: PARTIAL row must say what is missing)
+self-test: detected PARTIAL row with an owner the profile does not write (IM-03: owner part 'Nobody Else' is not written in the profile)
+self-test: detected citation under reference/v0.3-rc1 (IM-01: python citation reference/v0.3-rc1/x.py is under reference/v0.3-rc1)
+self-test: detected UNCHANGED_BY_DESIGN on a changed row (IM-01: UNCHANGED_BY_DESIGN is only for 손대지 않음 rows)
+self-test: detected COVERED status on an untouched row (IM-25: a 손대지 않음 row is never COVERED_MODEL_OR_MEMORY)
+self-test: detected misspelled node:test name (IM-19: local citation reference/rights_scale/client/witness-reconstruction.test.mjs::populated_tre is not defined in the file)
+self-test: detected wrong cell count (IM-01: expected 11 cells, found 12)
+self-test: detected wrong counts line (counts line 'Counts: COVERED_LOCALNET=11 COVERED_MODEL_OR_MEMORY=5 PARTIAL=912 NOT_COVERED=0 MEASUREMENT_ONLY=0 UNCHANGED_BY_DESIGN=2' differs from the table 'Counts: COVERED_LOCALNET=11 COVERED_MODEL_OR_MEMORY=5 PARTIAL=12 NOT_COVERED=0 MEASUREMENT_ONLY=0 UNCHANGED_BY_DESIGN=2')
+self-test: pass
+
+EXIT: 0

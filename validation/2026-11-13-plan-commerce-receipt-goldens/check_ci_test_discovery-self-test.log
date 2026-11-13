@@ -1,0 +1,22 @@
+$ python3.12 -B scripts/check_ci_test_discovery.py --self-test
+self-test: detected unwired suite directory
+self-test: detected unwired node test
+self-test: detected unreached top-level module
+self-test: detected unreached nested module
+self-test: detected unreached module outside a package
+self-test: detected exclusion without reason
+self-test: detected module reached only by import statement
+self-test: detected module reached only as a package attribute
+self-test: detected partial from-import
+self-test: detected reference test in a non-package subdirectory
+self-test: detected commented-out wiring line
+self-test: detected unexpanded loop variable
+self-test: detected unsupported discover option
+self-test: detected workflow names missing module
+self-test: detected workflow names missing node test
+self-test: detected exclusion of an absent tree
+self-test: detected excluded tree wired by discover
+self-test: detected empty workflow
+self-test: pass (18 negative controls)
+
+EXIT: 0

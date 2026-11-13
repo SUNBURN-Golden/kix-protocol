@@ -1,0 +1,28 @@
+$ python3.12 -B scripts/check_ci_test_discovery.py
+reached: reference/ai_delegation files=12 <- protocol/Offline reference state machines and OpenAPI pins
+reached: reference/booking_resale_admission files=64 <- protocol/Offline reference state machines and OpenAPI pins
+reached: reference/credit_advance_f04 files=15 <- protocol/Offline reference state machines and OpenAPI pins
+reached: reference/economics files=12 <- protocol/Offline reference state machines and OpenAPI pins
+reached: reference/payment_effects files=2 <- protocol/Offline reference state machines and OpenAPI pins
+reached: reference/provider_facts files=15 <- protocol/Offline reference state machines and OpenAPI pins
+reached: reference/rights_scale files=6 <- rights-scale/Rights-scale Move and model tests
+reached: reference/settlement_f01_f03 files=15 <- protocol/Offline reference state machines and OpenAPI pins
+reached: reference/token_reward files=26 <- protocol/Offline reference state machines and OpenAPI pins
+reached: reference/rights_scale/client/admission-packet.test.mjs <- rights-scale/Offline admission packet regressions
+reached: reference/rights_scale/client/mint-note.test.mjs <- rights-scale/Offline mint note regressions
+reached: reference/rights_scale/client/ptau-header.test.mjs <- rights-scale/Offline PTAU header parsing regressions
+reached: reference/rights_scale/client/spend-witness.test.mjs <- rights-scale/Offline spend witness regressions
+reached: reference/rights_scale/client/verifier-binding.test.mjs <- rights-scale/Offline verifier binding regressions
+reached: reference/rights_scale/client/witness-reconstruction.test.mjs <- rights-scale/Offline witness reconstruction regressions
+reached: reference/rights_scale/client/zk-helpers.test.mjs <- rights-scale/Offline public-byte encoding regressions
+reached: reference/rights_scale/client/zk-policy-v2.test.mjs <- rights-scale/Offline manifest validation regressions
+reached: integration_gate.test_http_gate <- protocol/Non-production HTTP integration gate
+reached: integration_gate.test_offline_limits <- protocol/Offline reference state machines and OpenAPI pins
+reached: readiness.test_conformance_sensitivity <- protocol/Non-production HTTP integration gate via readiness.test_faults
+reached: readiness.test_faults <- protocol/Non-production HTTP integration gate
+excluded: reference/v0.1: historical v0.1 reference tree; no protocol.yml step runs its tests and this guard does not claim they run
+excluded: reference/v0.2: historical v0.2 reference tree; no protocol.yml step runs its tests and this guard does not claim they run
+excluded: reference/v0.3-rc1: historical v0.3-rc1 tree; its Python tests are invoked inside scripts/verify_runtime.py, which this guard does not parse, so no run is claimed here
+ci test discovery ok: reference_suites=9 node_tests=8 modules=4 excluded=3
+
+EXIT: 0

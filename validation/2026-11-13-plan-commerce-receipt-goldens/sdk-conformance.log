@@ -1,0 +1,22 @@
+$ npm --prefix sdk run conformance
+
+> kix-protocol-client-0@0.0.0 conformance
+> node --test conformance/conformance.test.mjs
+
+✔ catalogue pin matches the contract-only OpenAPI and the source contract (4.674046ms)
+✔ every catalogue command accepts a minimal body and rejects schema violations (20.667055ms)
+✔ envelope, identifier, and transport rules stay local to one call (4.812001ms)
+✔ canonical encoding vectors (8.109096ms)
+✔ mixed-input vectors and the committed manifest (7390.878314ms)
+✔ manifest-v1 verifier negative vectors reject exactly one fault each (38035.17238ms)
+✔ client surface does not carry a URL, credential, or repeat-call API (28.999591ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 45948.554307
+
+EXIT: 0

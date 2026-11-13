@@ -728,6 +728,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 
 ## 2026-11-10 commerce journey end-to-end conformance — 위치 안내만
 
+- [Complete Commerce journey receipt vectors and local evidence](../validation/2026-11-13-plan-commerce-receipt-goldens/README.md) — 44 ordered in-process mock outcomes, full receipt byte comparison and source pins. The 13 reads stay NOT_BOUND, SD1 stays OPEN/User-owned, and semantic consumption stays HOLD_SEMANTIC. Independent exact-head review and CI remain delivery gates.
 - [plan-commerce-journey-end-to-end-conformance builder evidence](../validation/2026-11-10-plan-commerce-journey-end-to-end-conformance/README.md) — one deterministic 44-step offline transcript through the published FSM catalogue on one show: reservation, primary payment observation, issuance, resale adoption/listing/transfer, admission, settlement distribution, cancellation/failure/refund and five adverse refusals. Command receipts are the only evidence; mock gate and mock settlement only, all funds/finality/production flags false, and the 13 read queries remain NOT_BOUND. Non-author exact-head review and KTX/KIX CI remain separate gates.
 
 ## 2026-11-10 settlement-to-credit boundary vectors — 위치 안내만

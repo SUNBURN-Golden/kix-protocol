@@ -1,0 +1,5 @@
+$ python3.12 -B -c 'import hashlib,json; from pathlib import Path; pins=json.loads(Path("validation/2026-11-13-plan-commerce-receipt-goldens/preserved-inputs.json").read_text()); drift=[p for p,h in pins.items() if hashlib.sha256(Path(p).read_bytes()).hexdigest()!=h]; print("Protected input files:",len(pins),"; drift:",drift); assert not drift; raw=Path("reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json").read_bytes(); assert hashlib.sha256(raw).hexdigest()=="6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998"; print("Companion bytes unchanged:",len(raw))'
+Protected input files: 156 ; drift: []
+Companion bytes unchanged: 82562
+
+EXIT: 0
