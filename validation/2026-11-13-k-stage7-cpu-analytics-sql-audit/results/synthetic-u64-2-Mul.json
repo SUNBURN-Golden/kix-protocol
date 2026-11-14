@@ -1,0 +1,25 @@
+{
+  "caseId": "u64-2-Mul",
+  "comparison": "duplicate-preserving multiset",
+  "contractClause": "Feature Semantics §4",
+  "datasets": "[Table { schema: DatasetSchema { dataset: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, columns: [ColumnSchema { column: ColumnId(1), kind: U64 }, ColumnSchema { column: ColumnId(2), kind: U64 }] }, rows: [[U(18446744073709551615), U(2)]] }]",
+  "duckdb": "Err(\"DuckDB: Out of Range Error: Overflow in multiplication of UINT64 (18446744073709551615 * 2)!\")",
+  "expected": "Err(\"overflow\")",
+  "exportTrace": {
+    "derivation": "synthetic boundary dataset, not source rows"
+  },
+  "fixtureKind": "synthetic-boundary-characterization",
+  "limitations": "local fixture; source-informed; no economic writes or production claim",
+  "normalizedOutcomes": {
+    "duckdb": "OVERFLOW",
+    "polars": "OVERFLOW",
+    "rust": "OVERFLOW"
+  },
+  "plan": "FeaturePlanV1 { plan_id: KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]), source: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, stages: [Project([Projection { output: ColumnId(10), output_kind: U64, expr: Arithmetic { op: Mul, overflow: Error, left: Column(ColumnId(1)), right: Column(ColumnId(2)) } }])] }",
+  "planId": "KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250])",
+  "polars": "Err(\"Polars: conversion from `i128` to `u64` failed in column 'literal' for 1 out of 1 values: [-1]\")",
+  "querySql": "CREATE TEMP TABLE stage0 AS SELECT CAST((c1 * c2) AS UBIGINT) AS c10,_ord FROM t0;\n",
+  "rust": "Err(\"overflow\")",
+  "schemaVersion": 1,
+  "status": "PASS"
+}

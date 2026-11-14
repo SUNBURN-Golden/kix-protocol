@@ -1,0 +1,25 @@
+{
+  "caseId": "aggregate-all-null",
+  "comparison": "duplicate-preserving multiset",
+  "contractClause": "Feature Semantics §4",
+  "datasets": "[Table { schema: DatasetSchema { dataset: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, columns: [ColumnSchema { column: ColumnId(1), kind: I64 }] }, rows: [[Null], [Null]] }]",
+  "duckdb": "Ok([[U(2), U(0), Null, Null, Null, Null]])",
+  "expected": "Ok([[U(2), U(0), Null, Null, Null, Null]])",
+  "exportTrace": {
+    "derivation": "synthetic boundary dataset, not source rows"
+  },
+  "fixtureKind": "synthetic-boundary-characterization",
+  "limitations": "local fixture; source-informed; no economic writes or production claim",
+  "normalizedOutcomes": {
+    "duckdb": "ROWS",
+    "polars": "ROWS",
+    "rust": "ROWS"
+  },
+  "plan": "FeaturePlanV1 { plan_id: KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]), source: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, stages: [GroupBy { keys: [], aggregates: [AggregateSpec { output: ColumnId(10), output_kind: U64, op: Count, input: None, null_policy: Ignore, empty_policy: Zero, overflow_policy: Error }, AggregateSpec { output: ColumnId(11), output_kind: U64, op: Count, input: Some(ColumnId(1)), null_policy: Ignore, empty_policy: Zero, overflow_policy: Error }, AggregateSpec { output: ColumnId(12), output_kind: I64, op: Sum, input: Some(ColumnId(1)), null_policy: Ignore, empty_policy: Null, overflow_policy: Error }, AggregateSpec { output: ColumnId(13), output_kind: I64, op: Min, input: Some(ColumnId(1)), null_policy: Ignore, empty_policy: Null, overflow_policy: Error }, AggregateSpec { output: ColumnId(14), output_kind: I64, op: Max, input: Some(ColumnId(1)), null_policy: Ignore, empty_policy: Null, overflow_policy: Error }, AggregateSpec { output: ColumnId(15), output_kind: TerminalF64, op: Mean, input: Some(ColumnId(1)), null_policy: Ignore, empty_policy: Null, overflow_policy: Error }], null_keys: Include }] }",
+  "planId": "KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250])",
+  "polars": "Ok([[U(2), U(0), Null, Null, Null, Null]])",
+  "querySql": "CREATE TEMP TABLE stage0 AS SELECT CAST(count(*) AS UBIGINT) AS c10,CAST(count(c1) AS UBIGINT) AS c11,CAST(sum(c1) AS BIGINT) AS c12,CAST(min(c1) AS BIGINT) AS c13,CAST(max(c1) AS BIGINT) AS c14,CAST(avg(c1) AS DOUBLE) AS c15,row_number() OVER () AS _ord FROM t0;\nSELECT CAST(c10 AS VARCHAR),CAST(c11 AS VARCHAR),CAST(c12 AS VARCHAR),CAST(c13 AS VARCHAR),CAST(c14 AS VARCHAR),CAST(c15 AS VARCHAR) FROM stage0 ORDER BY _ord",
+  "rust": "Ok([[U(2), U(0), Null, Null, Null, Null]])",
+  "schemaVersion": 1,
+  "status": "PASS"
+}

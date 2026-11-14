@@ -1,0 +1,11 @@
+{
+  "duckdbCrate": "1.20000.1",
+  "duckdbLibrary": "v2.0.0",
+  "extensionsDownloaded": false,
+  "externalConnections": false,
+  "fundsExecuted": false,
+  "polarsCrate": "0.55.2",
+  "productionConformance": false,
+  "productionReadiness": false,
+  "productionRuntime": false
+}
