@@ -1,0 +1,8 @@
+$ /home/box/.local/bin/python3.12 -B -m unittest discover -s reference/economics -t reference/economics
+...................................................................................................
+----------------------------------------------------------------------
+Ran 99 tests in 1.025s
+
+OK
+
+EXIT: 0

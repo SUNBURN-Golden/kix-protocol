@@ -3867,3 +3867,93 @@ readiness. The existing binding index, producer tuple, catalogue, gate and SDK
 are unchanged. Non-author exact-head review and both exact-head CI workflows
 remain delivery gates. See [coverage, hashes, actual commands/results and
 limitations](../../validation/2026-11-13-plan-commerce-receipt-goldens/README.md).
+
+## Commerce expiry and stale-ownership vectors
+
+[`commerce_temporal_inputs_v1.json`](fixtures/commerce_temporal_inputs_v1.json)
+and [`commerce_temporal_receipts_v1.json`](fixtures/commerce_temporal_receipts_v1.json)
+add three independent, complete setups through the existing published FSM
+commands on `integration_gate.fsm_host.FsmHost`. They complement the unchanged
+44-step journey and its receipt artifact. The gap is **portable consumer
+evidence**; the underlying behaviors already have deterministic regressions.
+
+| Case | Existing sufficient behavioral coverage | Contract predicates |
+|---|---|---|
+| `paid-reservation-expiry` | [`ReservationFsmTests.test_cancel_before_payment_frees_and_payment_blocks_compensation`](test_reservation_fsm.py) | [GATES](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md) §§3, 9.1, 9.2, 9.6: paid cancellation is `COMPENSATION_UNDEFINED`; expiry refuses issuance with `RESERVATION_EXPIRED`. Payment and the reserved slot remain; no right, compensation or refund is created. |
+| `transfer-stale-presentations` | [`AdmissionFsmTests.test_transfer_then_entry_rejects_both_presentations`](test_admission_fsm.py) | GATES §§10.6, 11.3–11.4: resale becomes buyer-2/version 2 while reservation stays buyer-1/version 1; both admission presentations return `STALE_VERSION`. Credential remains `ELIGIBLE`; `venue_credential_reissued=false`. |
+| `expired-authorization-replacement` | [`AdmissionFsmTests.test_expired_authorization_is_replaced_once`](test_admission_fsm.py); same module's `test_issued_credential_is_consumed_once_and_replay_does_not_bump_version` covers replay/single consumption | GATES §§11.1–11.2, 11.4–11.5: expiry retains `AUTHORIZED`/`ADMISSION_AUTHORIZED`, version 1; late consumption returns `ADMISSION_EXPIRED`. Explicit replacement changes admission ID, key, gate, request and expiry; one `CONSUMED_ONCE` raises version to 2. Identical replay has no effect; another consumption returns `ALREADY_CONSUMED`. |
+
+The input has 39 ordered steps (9/15/15), each with its full command body,
+including subject and idempotency key, and exactly one `expect` or
+`expect_error`. IDs are unique within each case. Cases share no runtime state.
+`contract_predicates` identifies the contract path and numbered section;
+`source_test` names the source-informed regression. `clocks` labels synthetic
+inputs: T0 `1000000`, reservation expiry `1900000`, first authorization expiry
+`1120000` and replacement expiry `1240000`. These are fixture constants;
+**product time limits remain UNDETERMINED, owned by Astra**.
+
+Accepted expectations use the journey's `duplicate`, `applied`, `paths` and
+`journal` conventions. Optional step `observe` and `final_expect.views` assert
+paths in existing Python views as test observations, without binding queries.
+`final_expect.separate_facts` keeps payment, issuance, authorization and
+consumption identities distinct. Before and after every refusal, the runner
+compares detached canonical state, state digest and complete journal of all
+five machines, plus the existing views available at that step. An identical
+consumption replay must preserve the same snapshot and first receipt fields.
+Clock advances are explicit accepted commands; expiry alone does not consume.
+These checks apply to these synchronized sequential fixtures and make no
+general cross-machine rollback claim.
+
+The receipt artifact records 32 entire accepted dictionaries and seven exact
+refusal codes, including every nested snapshot, null, boolean and replay field.
+Its non-normative schema is `kix-commerce-temporal-receipts/1`, record kind
+`IN_PROCESS_MOCK_RECEIPT_VECTORS`. Each outcome points to the complete body at
+`commerce_temporal_inputs_v1.json#/cases/<i>/steps/<j>/body` (zero-based).
+There is no inferred HTTP envelope. The fixture `domain` is metadata and is
+never passed to `FsmHost.call`.
+
+Run offline from repository root with Python 3.12:
+
+```bash
+python3.12 -B -m unittest discover \
+  -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission \
+  -p 'test_commerce_temporal_vectors.py' -v
+python3.12 -B -m unittest discover \
+  -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission \
+  -p 'test_commerce_journey*.py' -v
+```
+
+The comparator verifies raw SHA-256 and Git blob pins for the input and an
+explicit source set **before execution**, including the two cited FSM test
+files, both existing journey artifacts, existing helper modules, machines,
+contracts, producer tuple and consumer binding index. It validates each body
+against the published command schema and enforces fixed case/step order and
+one outcome per input, then compares complete canonical receipt bytes.
+Serialization reuses `mock_gates._canonical`: UTF-8, sorted object keys,
+preserved array order, compact separators, non-ASCII preserved, no non-finite
+numbers and no trailing newline. Duplicate JSON keys are rejected. This is
+fixture serialization, with no new protocol encoding. Artifact and test hashes
+are [recorded separately](../../validation/2026-11-15-plan-commerce-temporal-vectors/artifacts.json)
+to avoid circular self-hashes.
+
+Tests have no golden update mode. Source drift or changed bytes fail; diagnose
+the mismatch before any separately authorized fixture revision. In-memory
+mutation controls exercise altered nested outcomes, false→0, null changes,
+refusal codes, missing/duplicated/reordered inputs and outcomes, corrupt
+references and source pins, and byte-only source drift before execution.
+Protected sources are never mutated by those controls.
+
+All 13 reads remain **NOT_BOUND**, semantic consumption remains
+**HOLD_SEMANTIC**, and **SD1 remains OPEN/User-owned**. Undefined paid-cancellation
+compensation remains undefined. Legal/provider dependencies retain their
+contract owners. This is source-informed in-process mock consumer evidence
+preparation: it does not execute or complete the queued SDK-example or
+adversarial-corpus nodes. No SDK, client, console, adapter, query, command,
+policy value or runtime is added. It establishes no external-consumer
+acceptance, clean-room independence, funds movement, chain authority,
+durability, venue admission, legal effect or production readiness. See
+[builder coverage and actual local results](../../validation/2026-11-15-plan-commerce-temporal-vectors/README.md);
+A2 non-author exact-head review and both exact-head CI workflows remain
+supervisor delivery gates.

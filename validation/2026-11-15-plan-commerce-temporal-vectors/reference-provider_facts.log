@@ -1,0 +1,8 @@
+$ /home/box/.local/bin/python3.12 -B -m unittest discover -s reference/provider_facts -t reference/provider_facts
+......................................................................................
+----------------------------------------------------------------------
+Ran 86 tests in 10.344s
+
+OK
+
+EXIT: 0
