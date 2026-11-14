@@ -1,0 +1,25 @@
+{
+  "caseId": "join-Left-Equal",
+  "comparison": "duplicate-preserving multiset",
+  "contractClause": "Feature Semantics §§2,10",
+  "datasets": "[Table { schema: DatasetSchema { dataset: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, columns: [ColumnSchema { column: ColumnId(1), kind: I64 }, ColumnSchema { column: ColumnId(2), kind: I64 }, ColumnSchema { column: ColumnId(3), kind: U64 }] }, rows: [[Null, I(10), U(0)], [I(1), Null, U(1)], [I(1), I(20), U(2)], [I(2), I(30), U(3)], [I(3), I(40), U(4)]] }, Table { schema: DatasetSchema { dataset: DatasetRef { dataset_id: KixId([101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101]), schema_version: 1 }, columns: [ColumnSchema { column: ColumnId(4), kind: I64 }, ColumnSchema { column: ColumnId(5), kind: I64 }] }, rows: [[Null, I(90)], [I(1), I(100)], [I(1), I(200)], [I(9), I(900)]] }]",
+  "duckdb": "Ok([[Null, I(10), U(0), Null, I(90)], [I(1), Null, U(1), I(1), I(100)], [I(1), Null, U(1), I(1), I(200)], [I(1), I(20), U(2), I(1), I(100)], [I(1), I(20), U(2), I(1), I(200)], [I(2), I(30), U(3), Null, Null], [I(3), I(40), U(4), Null, Null]])",
+  "expected": "Ok([[I(1), Null, U(1), I(1), I(100)], [I(1), Null, U(1), I(1), I(200)], [I(1), I(20), U(2), I(1), I(100)], [I(1), I(20), U(2), I(1), I(200)], [Null, I(10), U(0), Null, I(90)], [I(2), I(30), U(3), Null, Null], [I(3), I(40), U(4), Null, Null]])",
+  "exportTrace": {
+    "derivation": "synthetic boundary dataset, not source rows"
+  },
+  "fixtureKind": "synthetic-boundary-characterization",
+  "limitations": "local fixture; source-informed; no economic writes or production claim",
+  "normalizedOutcomes": {
+    "duckdb": "ROWS",
+    "polars": "ROWS",
+    "rust": "ROWS"
+  },
+  "plan": "FeaturePlanV1 { plan_id: KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]), source: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, stages: [Join(JoinSpec { right: DatasetRef { dataset_id: KixId([101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101]), schema_version: 1 }, kind: Left, left_key: ColumnId(1), right_key: ColumnId(4), null_equality: Equal })] }",
+  "planId": "KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250])",
+  "polars": "Ok([[Null, I(10), U(0), Null, I(90)], [I(1), Null, U(1), I(1), I(100)], [I(1), Null, U(1), I(1), I(200)], [I(1), I(20), U(2), I(1), I(100)], [I(1), I(20), U(2), I(1), I(200)], [I(2), I(30), U(3), Null, Null], [I(3), I(40), U(4), Null, Null]])",
+  "querySql": "CREATE TEMP TABLE stage0 AS SELECT l.c1,l.c2,l.c3,r.c4,r.c5,row_number() OVER (ORDER BY l._ord,r._ord) AS _ord FROM t0 l LEFT JOIN t1 r ON l.c1 IS NOT DISTINCT FROM r.c4;\nSELECT CAST(c1 AS VARCHAR),CAST(c2 AS VARCHAR),CAST(c3 AS VARCHAR),CAST(c4 AS VARCHAR),CAST(c5 AS VARCHAR) FROM stage0 ORDER BY _ord",
+  "rust": "Ok([[Null, I(10), U(0), Null, I(90)], [I(1), Null, U(1), I(1), I(100)], [I(1), Null, U(1), I(1), I(200)], [I(1), I(20), U(2), I(1), I(100)], [I(1), I(20), U(2), I(1), I(200)], [I(2), I(30), U(3), Null, Null], [I(3), I(40), U(4), Null, Null]])",
+  "schemaVersion": 1,
+  "status": "PASS"
+}
