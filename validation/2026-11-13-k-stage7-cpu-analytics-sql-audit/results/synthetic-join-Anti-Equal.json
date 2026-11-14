@@ -1,0 +1,25 @@
+{
+  "caseId": "join-Anti-Equal",
+  "comparison": "duplicate-preserving multiset",
+  "contractClause": "Feature Semantics §§2,10",
+  "datasets": "[Table { schema: DatasetSchema { dataset: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, columns: [ColumnSchema { column: ColumnId(1), kind: I64 }, ColumnSchema { column: ColumnId(2), kind: I64 }, ColumnSchema { column: ColumnId(3), kind: U64 }] }, rows: [[Null, I(10), U(0)], [I(1), Null, U(1)], [I(1), I(20), U(2)], [I(2), I(30), U(3)], [I(3), I(40), U(4)]] }, Table { schema: DatasetSchema { dataset: DatasetRef { dataset_id: KixId([101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101]), schema_version: 1 }, columns: [ColumnSchema { column: ColumnId(4), kind: I64 }, ColumnSchema { column: ColumnId(5), kind: I64 }] }, rows: [[Null, I(90)], [I(1), I(100)], [I(1), I(200)], [I(9), I(900)]] }]",
+  "duckdb": "Ok([[I(2), I(30), U(3)], [I(3), I(40), U(4)]])",
+  "expected": "Ok([[I(2), I(30), U(3)], [I(3), I(40), U(4)]])",
+  "exportTrace": {
+    "derivation": "synthetic boundary dataset, not source rows"
+  },
+  "fixtureKind": "synthetic-boundary-characterization",
+  "limitations": "local fixture; source-informed; no economic writes or production claim",
+  "normalizedOutcomes": {
+    "duckdb": "ROWS",
+    "polars": "ROWS",
+    "rust": "ROWS"
+  },
+  "plan": "FeaturePlanV1 { plan_id: KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]), source: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, stages: [Join(JoinSpec { right: DatasetRef { dataset_id: KixId([101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101, 101]), schema_version: 1 }, kind: Anti, left_key: ColumnId(1), right_key: ColumnId(4), null_equality: Equal })] }",
+  "planId": "KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250])",
+  "polars": "Ok([[I(2), I(30), U(3)], [I(3), I(40), U(4)]])",
+  "querySql": "CREATE TEMP TABLE stage0 AS SELECT l.c1,l.c2,l.c3,row_number() OVER (ORDER BY l._ord) AS _ord FROM t0 l ANTI JOIN t1 r ON l.c1 IS NOT DISTINCT FROM r.c4;\nSELECT CAST(c1 AS VARCHAR),CAST(c2 AS VARCHAR),CAST(c3 AS VARCHAR) FROM stage0 ORDER BY _ord",
+  "rust": "Ok([[I(2), I(30), U(3)], [I(3), I(40), U(4)]])",
+  "schemaVersion": 1,
+  "status": "PASS"
+}

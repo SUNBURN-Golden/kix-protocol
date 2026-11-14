@@ -1,0 +1,25 @@
+{
+  "caseId": "i64-6-Add",
+  "comparison": "duplicate-preserving multiset",
+  "contractClause": "Feature Semantics §4",
+  "datasets": "[Table { schema: DatasetSchema { dataset: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, columns: [ColumnSchema { column: ColumnId(1), kind: I64 }, ColumnSchema { column: ColumnId(2), kind: I64 }] }, rows: [[I(9223372036854775807), I(0)]] }]",
+  "duckdb": "Ok([[I(9223372036854775807)]])",
+  "expected": "Ok([[I(9223372036854775807)]])",
+  "exportTrace": {
+    "derivation": "synthetic boundary dataset, not source rows"
+  },
+  "fixtureKind": "synthetic-boundary-characterization",
+  "limitations": "local fixture; source-informed; no economic writes or production claim",
+  "normalizedOutcomes": {
+    "duckdb": "ROWS",
+    "polars": "ROWS",
+    "rust": "ROWS"
+  },
+  "plan": "FeaturePlanV1 { plan_id: KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]), source: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, stages: [Project([Projection { output: ColumnId(10), output_kind: I64, expr: Arithmetic { op: Add, overflow: Error, left: Column(ColumnId(1)), right: Column(ColumnId(2)) } }])] }",
+  "planId": "KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250])",
+  "polars": "Ok([[I(9223372036854775807)]])",
+  "querySql": "CREATE TEMP TABLE stage0 AS SELECT CAST((c1 + c2) AS BIGINT) AS c10,_ord FROM t0;\nSELECT CAST(c10 AS VARCHAR) FROM stage0 ORDER BY _ord",
+  "rust": "Ok([[I(9223372036854775807)]])",
+  "schemaVersion": 1,
+  "status": "PASS"
+}
