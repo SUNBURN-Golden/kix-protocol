@@ -1,0 +1,18 @@
+   Compiling libduckdb-sys v1.20000.1
+   Compiling duckdb v1.20000.1
+   Compiling kix-analytics-audit v0.1.0 (/workspace/kix-run/wt/k-stage7-cpu-analytics-sql-audit/runtime/crates/kix-analytics-audit)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 08s
+     Running tests/conformance.rs (runtime/target/debug/deps/conformance-aa89871a48039792)
+
+running 8 tests
+test comparator_sensitivity ... ok
+test engine_versions ... ok
+test export_binding ... ok
+test join_semantics ... ok
+test money_roundtrip_and_version_rejection ... ok
+test null_semantics ... ok
+test ordering_semantics ... ok
+test overflow_semantics ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.76s
+

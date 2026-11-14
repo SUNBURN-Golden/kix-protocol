@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_feature_semantics_evidence_map.py
+feature semantics evidence map ok: Counts: rows=41 COVERED=3 PARTIAL=21 NOT_COVERED=17
+
+EXIT: 0

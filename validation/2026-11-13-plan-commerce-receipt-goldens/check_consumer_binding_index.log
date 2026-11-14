@@ -1,0 +1,5 @@
+$ python3.12 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py
+consumer binding index ok: commands=84 core=40 fsm=44 mock=27 bootstrap=57 reads=13 not_bound=13 journey_steps=44 journey_actions=27
+non-normative navigation only; BOOTSTRAP is not consumer acceptance
+
+EXIT: 0

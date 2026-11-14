@@ -42,6 +42,12 @@ engine metadata and all production/runtime flags false. The [command
 table](verification.md) lists the exact completed foreground
 commands and exit codes; the JSONL retains output tails and log SHA-256 values.
 
+A later supervisor-initiated merge of `origin/main` `1e40278…` (2026-11-14)
+conflicted only in `docs/README.md`; the resolution and the merge-round local
+check battery are recorded in [merge-resolution.md](merge-resolution.md). The
+statements above about no merge having been performed describe the earlier
+builder sessions and remain historical.
+
 No implementation commit or exact final task head exists: the supervisor owns
 committing. KTX exact-head CI run ID/status/conclusion: unavailable/not queried.
 KIX protocol exact-head CI run ID/status/conclusion: unavailable/not queried.

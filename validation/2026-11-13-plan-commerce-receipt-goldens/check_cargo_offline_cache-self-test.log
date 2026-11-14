@@ -1,0 +1,11 @@
+$ python3.12 -B scripts/check_cargo_offline_cache.py --self-test
+self-test: legacy all present; git/path sources ignored
+self-test: legacy one missing; --require exit 1; cache controls
+self-test: legacy malformed lock refused with exit 2
+self-test: tomllib all present; git/path sources ignored
+self-test: tomllib one missing; --require exit 1; cache controls
+self-test: tomllib malformed lock refused with exit 2
+self-test: environment defaults, missing input and inspection errors
+self-test: pass
+
+EXIT: 0

@@ -3813,3 +3813,57 @@ remain separate. Product policy: **UNDETERMINED — Astra/User**. Legal effects:
 **UNDETERMINED — User/legal**. No SDK, external service, persistence, protocol
 command or runtime activation was added. See the [coverage, full transcripts,
 actual local results and pending review/CI gates](../../validation/2026-11-10-plan-plan-local-source-quote-console/README.md).
+
+## Complete Commerce journey receipt vectors
+
+[`fixtures/commerce_journey_receipts_v1.json`](fixtures/commerce_journey_receipts_v1.json)
+is a non-normative companion to the unchanged
+[`commerce_journey_conformance_v1.json`](fixtures/commerce_journey_conformance_v1.json).
+It records all 44 steps in original order: 39 entire dictionaries returned by
+`FsmHost` and five existing reference rejection codes (`SLOT`, `SLOT_OCCUPIED`,
+`TERMINAL_IMMUTABLE`, `ALREADY_CONSUMED`, `SETTLEMENT_NOT_COMMITTED`). No HTTP
+status or error envelope is inferred. Each entry has the original `id`, `action`,
+an `input_ref` JSON pointer to `#/steps/<zero-based index>/body` in the original
+fixture, and exactly one of `receipt` or `rejection_code`.
+
+Receipts include all nested snapshots, provenance, false authority flags,
+nulls, `duplicate` and `applied`. Payment observation, issuance, admission
+authorization, consumption, cancellation and refund remain separate facts.
+`replay-consume-B` retains `duplicate=true`, `applied=null`, the first receipt's
+other fields and zero journal growth, as checked by the unchanged journey suite.
+
+Run from the repository root, offline, with Python 3.12 (the CI version):
+
+```bash
+python3.12 -B -m unittest discover \
+  -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission \
+  -p 'test_commerce_journey*.py' -v
+```
+
+The new module imports the existing journey runner and reuses its invariants.
+It checks the raw SHA-256 and Git blob of the input fixture and an explicit set
+of 19 relevant source/contract/status files **before replay**, then independently
+builds all ordered outcomes and compares complete canonical bytes against the
+committed companion. Serialization uses `mock_gates._canonical`: UTF-8,
+sorted object keys, preserved array order, compact separators, non-ASCII
+preserved, no NaN/Infinity and no trailing newline. This is fixture serialization,
+not a protocol wire encoding. Malformed JSON and duplicate keys are rejected.
+The companion has no self-hash; its digest is in the validation evidence.
+
+Tests never write or refresh the golden. A source-pin or byte mismatch fails;
+diagnose it and obtain a separately reviewed, authorized fixture change instead
+of accepting an automatic update. In-memory negative controls exercise altered
+nested output, boolean/number and null changes, rejections, omitted/duplicated/
+reordered steps, bad input references, malformed JSON and source drift, including
+byte-only changes that would leave behavior unchanged.
+
+This is source-informed **in-process mock evidence** only. All 13 reads remain
+**NOT_BOUND**; semantic consumption remains **HOLD_SEMANTIC**; **SD1 stays OPEN,
+User-owned**. Product policy values remain **UNDETERMINED**. These vectors claim
+no HTTP behavior, external consumer acceptance, clean-room independence,
+durability, real payment execution, chain authority, legal effect or production
+readiness. The existing binding index, producer tuple, catalogue, gate and SDK
+are unchanged. Non-author exact-head review and both exact-head CI workflows
+remain delivery gates. See [coverage, hashes, actual commands/results and
+limitations](../../validation/2026-11-13-plan-commerce-receipt-goldens/README.md).

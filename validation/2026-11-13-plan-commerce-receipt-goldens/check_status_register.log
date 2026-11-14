@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_status_register.py
+capability register ok: paths=577 ev_ids=15 original32=32
+
+EXIT: 0

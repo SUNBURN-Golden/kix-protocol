@@ -35,6 +35,11 @@ semantic SDK consumption stays `HOLD_SEMANTIC`, external `kix-commerce-apps`
 expectations are `UNVERIFIED` and SD1 stays User-owned and `OPEN`.
 [Builder validation and actual local results](../validation/2026-11-10-plan-commerce-consumer-binding-index/README.md).
 
+[Consumer-binding CI wiring and local verification](../validation/2026-11-13-plan-consumer-binding-ci-guard/README.md)
+records the existing checker's plain and self-test invocations in the unguarded
+stdlib document-check step, including documentation-only and same-tree skips.
+This identity guard does not qualify semantic consumption or close SD1.
+
 ## BOOTSTRAP producer-qualification tuple
 
 [Non-normative identity record](status/PRODUCER_QUALIFICATION_TUPLE_V1.md)
@@ -723,6 +728,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 
 ## 2026-11-10 commerce journey end-to-end conformance — 위치 안내만
 
+- [Complete Commerce journey receipt vectors and local evidence](../validation/2026-11-13-plan-commerce-receipt-goldens/README.md) — 44 ordered in-process mock outcomes, full receipt byte comparison and source pins. The 13 reads stay NOT_BOUND, SD1 stays OPEN/User-owned, and semantic consumption stays HOLD_SEMANTIC. Independent exact-head review and CI remain delivery gates.
 - [plan-commerce-journey-end-to-end-conformance builder evidence](../validation/2026-11-10-plan-commerce-journey-end-to-end-conformance/README.md) — one deterministic 44-step offline transcript through the published FSM catalogue on one show: reservation, primary payment observation, issuance, resale adoption/listing/transfer, admission, settlement distribution, cancellation/failure/refund and five adverse refusals. Command receipts are the only evidence; mock gate and mock settlement only, all funds/finality/production flags false, and the 13 read queries remain NOT_BOUND. Non-author exact-head review and KTX/KIX CI remain separate gates.
 
 ## 2026-11-10 settlement-to-credit boundary vectors — 위치 안내만
@@ -752,6 +758,14 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-12 authenticated export (Track K stage 7, R-11) — 위치 안내만
 
 - [Authenticated export fixture](../authenticated_export/README.md) · [builder evidence](../validation/2026-11-12-k-stage7-authenticated-export/README.md) — the new top-level `authenticated_export/` package composes `durable/` unchanged and implements `runtime/AUTHENTICATED_EXPORT.md` §§1–5 locally: one single-shard `SERIALIZABLE READ ONLY` MVCC snapshot as the source cut (`pg_current_snapshot()` identity + per-table `{rowCount, contentSha256}`; WAL LSN is provenance only, never the cut), projection-applied watermarks recorded separately with visible lag, an `ExportManifestV1`-shaped local manifest carrying the contract's exact field names, per-file sha256 + `manifestHash` binding, fixture HMAC-SHA256 authentication with caller-supplied keys and fail-closed consumer verification, a local atomic anti-rollback registry, the pinned `kix-local-export-types/1` type mapping (u128 decimal text Wide128-lossless, binary(16)/binary(32) hex widths, epoch-ms units, pinned vocabularies, verbatim inbox occurred-time text/offset), and an audit trace resolving query → exportId → manifest → cut/watermarks → files/hashes → schema versions. FULL_SNAPSHOT and INCREMENTAL (`table-keyset/1`, `startExclusive-endInclusive`, PK-identity dedup) modes; no multi-shard cut is certified and no global-atomicity claim is made. No Arrow/Parquet materialization; the production signing scheme, trust root/registry and anti-rollback policy stay `DECISION_REQUIRED · Astra`. The PG-bound suite is local-only and not CI-wired; all execution flags false. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-13 economics-to-credit consumer vectors — 위치 안내만
+
+- [Economics/F04 consumer field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) · [builder evidence](../validation/2026-11-13-plan-economics-credit-consumer-vectors/README.md) — location pointers for offline synthetic composition snapshots, separately stated arithmetic, byte pins and replay. No consumer acceptance, published read binding, policy adoption or evidence-grade change; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-13 Capital companion rejection vectors — 위치 안내만
+
+- [Capital rejection schema, case inventory and replay](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-companion-rejection-vectors) · [builder evidence](../validation/2026-11-13-plan-capital-refusal-vectors/README.md) — 51 source-cited synthetic rejection inputs for unchanged F04 §§7.11–7.12 observers, preserving JSON types and omitted/null distinction, with exact reference-only error replay, non-mutation, source/artifact pins and unchanged positive controls. No new error precedence, default, netting, reconciliation completion, binding or execution authority. External Capital acceptance remains UNVERIFIED; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
 
 ## Stage 7 CPU analytics / SQL audit (local evidence)
 

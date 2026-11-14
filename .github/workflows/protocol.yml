@@ -214,6 +214,8 @@ jobs:
           python3 scripts/check_status_register.py --self-test
           python3 scripts/check_producer_qualification_tuple.py
           python3 scripts/check_producer_qualification_tuple.py --self-test
+          python3 validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py
+          python3 validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py --self-test
           python3 scripts/check_rs_profile_traceability.py
           python3 scripts/check_rs_profile_traceability.py --self-test
           python3 scripts/check_read_model_source_map.py

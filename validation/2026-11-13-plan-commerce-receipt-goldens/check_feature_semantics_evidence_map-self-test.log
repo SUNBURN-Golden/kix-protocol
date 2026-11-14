@@ -1,0 +1,85 @@
+$ python3.12 -B scripts/check_feature_semantics_evidence_map.py --self-test
+self-test: detected boundary missing harness
+self-test: detected boundary fabricated symbol
+self-test: detected boundary non-test helper
+self-test: detected boundary fixture outside allowlist
+self-test: detected missing row
+self-test: detected duplicate row
+self-test: detected invented row
+self-test: detected row width
+self-test: detected table header
+self-test: detected counts
+self-test: detected duplicate map heading
+self-test: detected section coverage
+self-test: detected gate row
+self-test: detected fabricated symbol alone
+self-test: detected fabricated symbol mixed
+self-test: detected non-test helper alone
+self-test: detected non-test helper mixed
+self-test: detected nested non-test helper alone
+self-test: detected nested non-test helper mixed
+self-test: detected bare path alone
+self-test: detected bare path mixed
+self-test: detected empty symbol alone
+self-test: detected empty symbol mixed
+self-test: detected blank symbol alone
+self-test: detected blank symbol mixed
+self-test: detected prose alone
+self-test: detected prose mixed
+self-test: detected absolute path alone
+self-test: detected absolute path mixed
+self-test: detected traversal alone
+self-test: detected traversal mixed
+self-test: detected reference path alone
+self-test: detected reference path mixed
+self-test: detected outside path alone
+self-test: detected outside path mixed
+self-test: detected missing file
+self-test: detected non-UTF8 file
+self-test: detected section cell
+self-test: detected empty clause
+self-test: detected bad status
+self-test: detected covered gap
+self-test: detected covered owner
+self-test: detected covered no tests
+self-test: detected partial no tests
+self-test: detected partial no gap
+self-test: detected partial no owner
+self-test: detected uncovered has tests
+self-test: detected uncovered no gap
+self-test: detected uncovered no owner
+self-test: detected unknown owner
+self-test: detected empty gap
+self-test: detected pinned status X-JOIN-EXEC
+self-test: detected pinned owner X-JOIN-EXEC
+self-test: detected pinned status X-GROUP-EXEC
+self-test: detected pinned owner X-GROUP-EXEC
+self-test: detected pinned status X-SORT-EXEC
+self-test: detected pinned owner X-SORT-EXEC
+self-test: detected pinned status X-AGG-EXEC
+self-test: detected pinned owner X-AGG-EXEC
+self-test: detected pinned status X-BACKEND-CONFORMANCE
+self-test: detected pinned owner X-BACKEND-CONFORMANCE
+self-test: detected characterization status S10-LIMITS
+self-test: detected characterization owner S10-LIMITS
+self-test: detected characterization status S8-F64-TOLERANCE
+self-test: detected characterization owner S8-F64-TOLERANCE
+self-test: detected class-B citation
+self-test: detected class-B citation
+self-test: detected non-claim
+self-test: detected non-claim
+self-test: detected non-claim
+self-test: detected non-claim
+self-test: detected new heading
+self-test: detected duplicate heading
+self-test: detected missing heading
+self-test: detected unnumbered heading
+self-test: detected gate removed
+self-test: detected gate reordered
+self-test: detected gate anchor drift
+self-test: detected anchor drift
+self-test: detected locked blob drift
+self-test: detected locked blob drift
+self-test: pass (81 negative controls, injected positive control)
+
+EXIT: 0
