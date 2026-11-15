@@ -543,3 +543,184 @@ command, funds/provider call, chain execution, storage engine, durability,
 distributed fencing, bank exactly-once, legal compliance or production readiness
 is established. A2 non-author exact-head review, exact-head KTX/KIX workflows
 and human merge authorization remain separate supervisor delivery gates.
+
+## Companion terminal-capacity histories (plan-capital-terminal-capacity-vectors)
+
+Task input is the supervisor-supplied node specification; no issue or task document
+exists for this node. This is source-informed portable consumer evidence for
+CREDIT_ADVANCE_F04 §7.2, §7.3, §7.4 and §7.12, not independent lifecycle verification.
+The following coverage mapping was recorded before adding the companion tests.
+FSM names below are methods of `reference/credit_advance_f04/test_credit_fsm.py::CreditFsmTests`.
+
+| Requirement | Existing coverage classification | New portable evidence gap |
+| --- | --- | --- |
+| Premature close / zero-exposure default | Sufficient semantics: `test_close_rejects_remaining_exposure_before_release`, `test_repayment_order_partial_and_double_application` | T1 ordered complete refusal/results and state |
+| Repayment retains reservation; selective close releases capacity | Sufficient semantics: `test_limit_race_is_ordered_and_cash_is_not_capacity`; E6 shared-exposure transport partial | T1 with another drawn advance and a waiting approved advance |
+| Default retains exposure and reservation | Sufficient semantics: `test_default_keeps_the_reservation_and_does_not_foreclose`; E3 shared-exposure snapshot sufficient | T2 complete default history and terminal refusals |
+| First receipts versus current views, restore, journals/digests | Partial: `test_capital_operation_replay_vectors.py` covers nonterminal histories | Both terminal compositions with original-key replays |
+| Frozen faces and once-per-claim aggregation | Sufficient observer semantics: `test_shared_exposure_contract.py` | Detached golden views from every checkpoint |
+| New artifact integrity and mutation sensitivity | Not covered for these artifacts | Byte/source pins and independent arithmetic/semantic mutation controls |
+| Observation authority and unresolved owners | Sufficient contracts: F04 §7.9/§7.12 | Preserve all boundary flags in captured results |
+
+### Portable schema and consumer procedure
+
+The new canonical input is
+[`capital_terminal_capacity_v1.json`](../../reference/credit_advance_f04/fixtures/capital_terminal_capacity_v1.json);
+its complete captures are
+[`capital_terminal_capacity_vectors_v1.json`](../../reference/credit_advance_f04/fixtures/capital_terminal_capacity_vectors_v1.json).
+The input root is `{fixture_version,fixture_kind,synthetic_only,provenance,scenarios}`,
+with version `capital-terminal-capacity/1`, kind
+`SYNTHETIC_TERMINAL_CAPACITY_VECTORS`, `synthetic_only=true`, and provenance
+`{"settlement":"MOCK_SETTLEMENT_ONLY","credit":"MOCK_CREDIT_F04_ONLY"}`.
+This is a test artifact version, with no published interface or protocol command.
+
+Scenario fields are `scenario_id,source_tests,contracts,setup_steps,advance_ids,
+claim_id,group_id,limit,steps,expected_arithmetic`. Setup entries are
+`{step_id,target,operation,arguments}`; history entries are
+`{step_id,operation,arguments}`. Setup permits only existing settlement
+`initiate/authorize/capture/commit` and credit `offer/approve/bind_settlement/draw`.
+History permits existing `draw/repay/close/default/reconcile`, with exact argument
+fields and bounded inventories. `close` takes only `advance_id,idempotency_key`;
+`default` additionally takes `reason`. There are no new command implementations.
+
+The expected root is `{vector_version,fixture_sha256,source_pins,scenarios}`.
+Each scenario contains `setup_results,initial_snapshot,history,restore_checks`
+plus its id. Each history entry is `{step_id,result,snapshot}`; result is the
+complete `{ok: receipt}` or `{error:{type:"CreditError",code:existing_code}}`.
+Snapshots contain full settlement view/journal/canonical state/digest, credit
+advance views/claim/journal/canonical state/digest, and the unchanged observer's
+full output. Every advance view is captured at the same checkpoint; only frozen
+DRAWN/CLOSED/DEFAULTED views enter the observer. APPROVED C remains captured but
+excluded until drawn. Restore uses the same settlement source and checks full
+before/after snapshots and original accepted draw/repay/close/default receipts;
+restore without the source refuses `SETTLEMENT_SOURCE_REQUIRED`. Rejections and
+reconcile receipts do not enter accepted journals; rejection caches are not
+restored, as F04 §7.3 specifies.
+
+For each checkpoint, input arithmetic independently states all six `group_*`
+totals, included `advance_count`, `claim_count`, `within_limit`, and each advance's
+phase, note status, drawn/repaid/outstanding exposure. Consumers should replay
+ordered commands, compare complete results and snapshots, and then feed detached
+captured golden views directly to `observe_shared_exposure(group_id, views,
+limit=explicit_limit)`. Use current snapshots for current exposure. Accepted
+same-key replays preserve the first complete receipt except `duplicate=true` and
+`applied=null`, including historical phases, exposure, effects and capacity.
+
+All three offers literally carry the same complete committed 100,000 face and
+97,000 confirmed cash. Each offer is compared with the public settlement claim
+before dispatch. Offer-journal faces and settlement snapshots remain byte-identical;
+credit claim reservation fields change on draw/close. The entire credit claim
+view is deliberately **not** treated as immutable. Cash never adds capacity.
+
+| Composition | Independent checkpoint arithmetic (synthetic KRW) |
+| --- | --- |
+| T1: 20 history steps | A draws 40,000, B draws 30,000; C is APPROVED for 40,000. Group drawn/outstanding/reserved=70,000, residual=30,000. C refuses `ADVANCE_EXCEEDS_OPEN_FACE`. Repay A 15,000: outstanding=55,000; close refuses `OUTSTANDING_REMAINS`. Repay A 25,000: A remains DRAWN/NOTED at zero; group outstanding=30,000, reserved=70,000, residual=30,000; fresh C draw still refuses. Default A refuses `DEFAULT_REQUIRES_EXPOSURE`; original premature-close key still refuses. Fresh close sets A CLOSED/RELEASED: reserved=30,000, residual=70,000; B retains 30,000. Original rejected C key still refuses. Fresh C key draws: drawn=110,000, repaid=40,000, outstanding=70,000, reserved=70,000, residual=30,000. Fresh close/repay/different-note draw/default on CLOSED A refuse `TERMINAL_IMMUTABLE`; original draw/repayment/close keys retain their first receipts. Explicit observation limit=70,000. |
+| T2: 13 history steps | A draws 70,000, B draws 30,000; C is APPROVED for 40,000. Reserved=100,000, residual=0; initial outstanding=100,000 exceeds explicit observation limit=80,000. Repay A 20,000: group outstanding=80,000. Default A retains NOTED, A exposure=50,000, group reserved=100,000, residual=0; DEFAULTED A stays included. C refuses `ADVANCE_EXCEEDS_OPEN_FACE`; fresh close/repay/different-note draw/default on A refuse `TERMINAL_IMMUTABLE`. Original draw/repayment keys replay. A later 10,000 repayment on B reduces group outstanding to 70,000, repaid=30,000, while reserved remains 100,000; A's original default receipt still replays unchanged. |
+
+Both histories reconcile and replay that key at the end. Capacity is counted
+once for the single claim: open face=100,000 throughout, with two included
+advances initially and three only after T1's fresh C draw. Equality to either
+synthetic group limit is observational and grants no exposure authority.
+T2's later B repayment is a bounded elaboration of the supplied plan, making
+same-key default replay explicit after another accepted state transition.
+
+[`test_capital_terminal_capacity_vectors.py`](../../reference/credit_advance_f04/test_capital_terminal_capacity_vectors.py)
+contains literal SHA-256 pins for both artifacts; vectors pin all reused source,
+helper, contract and citation paths, plus the preserved operation and shared
+exposure packs. Companion prose and this test's own bytes are excluded to avoid
+self-hash cycles. Encoding is finite UTF-8 JSON, sorted keys, compact separators,
+and one trailing newline. Tests never regenerate goldens. Golden captures were
+captured during construction from unchanged public machines, with the
+independently stated checkpoint arithmetic checked before writing outputs.
+
+Detached mutation controls reject each group total, phase, reservation, error
+code, duplicate/applied marker, pin inventory/hash and each pinned source's bytes.
+They also reject omitted/reordered history steps. Semantic controls bypass outer
+artifact hashes; input-history controls adjust corresponding arithmetic row
+order and the fixture hash so the full replay comparison must detect the change.
+Producer files are never mutated.
+
+All observations retain `NOT_BOUND`, repair `NONE`, refund component `NOT_BOUND`,
+`fail_closed=true`, `mutates_state=false`, `authorizes_exposure=false`; execution,
+finality, legal-party, ownership and durability flags remain false. External
+Capital acceptance is **UNVERIFIED**. Product limits, repayment terms and netting
+remain **UNDETERMINED—Astra**; legal parties remain
+**UNDETERMINED—User/designated legal advisers**. These source-informed captures
+do not establish lending, funds execution, bank exactly-once, legal compliance,
+distributed fencing, durability, chain finality or production readiness.
+
+### Builder verification and remaining delivery gates
+
+Observed local `origin/main` and initial/final local branch HEAD are both
+`9778c4193786c93931ca7fc29676e01e84854228`, on
+`agent/kix-plan-capital-terminal-capacity-vectors`. The initial worktree was clean.
+The supervisor expressly prohibited network/GitHub actions and all commits,
+pushes, PRs, issues and comments; therefore `git fetch origin main` was **not run**,
+remote freshness is unverified, and there is no new implementation/final commit
+SHA or hosted CI evidence from this builder. No base adjustment was made.
+This report describes the uncommitted worktree, ready for supervisor delivery,
+not a merge-ready determination.
+
+The complete changed-path inventory is the two new terminal-capacity JSON files,
+`reference/credit_advance_f04/test_capital_terminal_capacity_vectors.py`, and
+`docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md`. Existing packs, producer
+sources, contracts, workflows and published interfaces were preserved.
+
+Commands below were actually run from the repository root. Python test/check
+commands used `PYTHONDONTWRITEBYTECODE=1`; Rust used `RUSTUP_AUTO_INSTALL=0` and
+`CARGO_NET_OFFLINE=true`. `S` in the suite table means the exact command
+`python3 -B -m unittest discover -s reference/S -t reference/S`; each named suite
+was executed separately in workflow order. `C` in the document table means both
+`python3 -B scripts/C.py` and `python3 -B scripts/C.py --self-test`.
+
+| Command | Actual result |
+| --- | --- |
+| `python3 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_capital_terminal_capacity_vectors.py` | Final: 10 tests passed. An intermediate run failed one new test's assumption that `accepted_entries` was global; that count is per advance. Corrected the test to compare the later B/group exposure and reran successfully. |
+| `S=credit_advance_f04` (narrow existing suite, also repeated in workflow loop) | 262 tests passed, including final new tests. |
+| `python3 -B reference/credit_advance_f04/shared_exposure.py --check` | Exit 0; preserved E1–E6 fixture matches. |
+| `S=settlement_f01_f03` | 224 tests passed. |
+| `S=booking_resale_admission` | 983 tests passed. |
+| `S=ai_delegation` | 169 tests passed. |
+| `S=token_reward` | 397 tests passed. |
+| `S=provider_facts` | 86 tests passed. |
+| `S=payment_effects` | 28 tests passed. |
+| `S=economics` | 99 tests passed. |
+| `python3 -B -m unittest integration_gate.test_offline_limits` | 9 tests passed. |
+| `C=check_docs_index` | Plain and self-test passed. |
+| `C=check_credit_evidence_map` | Plain and self-test passed. |
+| `C=check_settlement_evidence_map` | Plain and self-test passed. |
+| `C=check_contract_error_codes` | Plain and self-test passed. |
+| `C=check_class_b_index` | Plain and self-test passed. |
+| `C=check_ci_test_discovery` | Plain and self-test passed; new module reached by the existing credit-suite discovery. |
+| `C=check_ci_checker_wiring` | Plain and self-test passed. |
+| `C=check_openapi_contract` | Plain and self-test passed; 84-command pin unchanged. |
+| `C=check_integration_gate_openapi` | Plain and self-test passed. |
+| `python3 -B scripts/verify_runtime_architecture.py` | Exit 0; architecture dependency gate passed. |
+| `python3 -B scripts/test_runtime_architecture.py` | 7 tests passed. |
+| `cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline` | Exit 0; workspace tests including KTX kernel passed. |
+| `cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings` | Exit 0. |
+| `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | Exit 0. |
+| `git diff --check` | Exit 0. |
+| `git ls-tree -r -z HEAD -- <protected paths>` plus `git hash-object -- <each path>` | All 125 tracked files across both locked kernels, `reference/v0.3-rc1/`, `.aiops/`, `docs/tasks/`, `.github/` match HEAD bytes; no untracked protected files. |
+
+Before and after implementation the locked blobs matched exactly:
+`runtime/crates/kix-kernel/src/lib.rs` =
+`69564b166f0c27f9af5d8422f0a466b18d74c20f`;
+`runtime/crates/kix-kernel/tests/quarantine_capacity.rs` =
+`b607996c83a119c349f1cc90469ac1ba82764e20`.
+The preserved reference tree was compared against the clean starting HEAD,
+including file contents, rather than inferred from test success.
+
+No contract violation or new contract-undefined behavior was found. The only
+plan elaboration is the later synthetic B repayment in T2 described above.
+No resource, policy or new-command decision was required. No external Capital
+consumer was run; no live provider, production runtime, chain, storage-engine,
+Move/localnet/ZK or hosted workflow validation is claimed. The applicable
+local offline/Rust checks do not replace full hosted protocol CI.
+
+Remaining gates are A2 non-author exact-head review, successful exact-head
+**KTX kernel verification** and **KIX protocol verification**, and explicit human
+merge authorization. Both workflow run IDs/status/conclusions are **not obtained**
+(no GitHub access authorized), not passes. No merge occurred; merge SHA and
+post-merge main/push CI are not applicable. The supervisor must establish the
+final committed head and those gates; no earlier SHA's CI result transfers.
