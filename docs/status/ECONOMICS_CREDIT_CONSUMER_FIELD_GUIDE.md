@@ -412,3 +412,134 @@ supervisor delivery gates; local green tests do not satisfy them.
 
 See the [builder evidence](../../validation/2026-11-13-plan-capital-refusal-vectors/README.md)
 for actual commands, protected-byte verification and remaining delivery gates.
+
+## Capital operation replay vectors
+
+This companion fills portable **mutation-history evidence** for kix-capital.
+The preceding Capital refusal pack covers observer-input validation; it does
+not cover draw/repayment key and note identity. Existing producers and their
+fixtures/tests remain byte-identical. These are source-informed captures and
+contract checks, not a clean-room implementation or external consumer acceptance.
+
+### Coverage assessed before adding tests
+
+The [builder record](../../validation/2026-11-15-plan-capital-operation-replay-vectors/README.md#coverage-assessment-recorded-before-new-tests)
+was written before the new test module. The relevant existing methods are in
+[`test_credit_fsm.py::CreditFsmTests`](../../reference/credit_advance_f04/test_credit_fsm.py),
+with contract authority in F04 §§7.2–7.5 and §7.12:
+
+| Requirement | Existing coverage | Missing evidence / new verification |
+| --- | --- | --- |
+| Same draw/repay note never applies twice | Sufficient: `test_same_draw_and_repay_notes_do_not_apply_twice` | R1 portable history; `test_duplicates_preserve_current_state` |
+| Partial repayment and sequence refusal | Sufficient: `test_repayment_order_partial_and_double_application` | R2 history preserves exact JSON types and errors |
+| Reconcile and restore without another draw | Sufficient: `test_reconcile_replays_the_journal_without_a_second_draw` | R3 and `test_reconcile_restore_replay` compare full state and receipt |
+| Conflict/sequence atomicity | Sufficient: `test_credit_rejection_atomicity.py` draw duplicate, repayment binding/sequence/excess methods | Portable R1/R2 snapshots; `test_refusals_preserve_public_state` |
+| Complete receipts/errors at every step | Partial: FSM and settlement-credit boundary suite | `test_complete_history_vectors` compares the complete canonical values |
+| Historical receipt after later repayment | Partial transport evidence: F04 §7.3 and same-note test | R1 late replays; `test_historical_receipts_after_later_repayment` |
+| Frozen face and once-per-claim capacity | Sufficient semantics: boundary S5, shared-exposure E1/E6 and economics consumer suite; history composition partial | `test_frozen_face_and_shared_capacity` uses independent arithmetic literals |
+| Artifact/source pins and semantic sensitivity | Not covered for this new pack | `test_artifact_and_source_pins`, `test_verifier_sensitivity` |
+| Non-authority and owner boundaries | Sufficient existing contract; companion documentation absent | `test_observation_boundaries` and this section |
+
+### Portable schema and source integrity
+
+The canonical [input pack](../../reference/credit_advance_f04/fixtures/capital_operation_replay_v1.json)
+is `fixture_version: "capital-operation-replay/1"`,
+`fixture_kind: "SYNTHETIC_OPERATION_REPLAY_VECTORS"`, `synthetic_only: true`,
+with provenance `{"settlement":"MOCK_SETTLEMENT_ONLY","credit":"MOCK_CREDIT_F04_ONLY"}`.
+Its three `scenarios` contain `scenario_id`, exact `source_tests` and `contracts`
+citations, literal `setup_steps`, `advance_ids`, `claim_id`, `group_id`, an
+explicit synthetic `limit`, ordered `steps` and independent `expected_arithmetic`.
+Amounts and settlement fee policy here are caller-owned synthetic literals;
+no product limits, repayment terms or netting are selected.
+
+Setup entries have exactly `{step_id,target,operation,arguments}` and call only
+settlement `initiate/authorize/capture/commit` and credit
+`offer/approve/bind_settlement/draw`. Before each offer, the test compares its
+entire literal `face` with the committed settlement's public `claim` using
+canonical bytes. There is no face derivation or source adapter. R1/R2 compose
+the cited identity/ordering behavior with a bound committed settlement; the
+original regressions use unbound draws. The new setup reuses the existing
+COMMITTED gate without changing either behavior.
+
+History entries have exactly `{step_id,operation,arguments}`. The test-only
+allowlist dispatches only existing `draw`, `repay`, `reconcile` methods, with
+exact argument fields and bounded lengths. Restore is a direct existing
+`CreditMachine.restore` class call after each history, not a new command.
+
+The canonical [expected pack](../../reference/credit_advance_f04/fixtures/capital_operation_replay_vectors_v1.json)
+contains `vector_version`, `fixture_sha256`, `source_pins`, `scenarios`.
+Each scenario records complete `setup_results`, `initial_snapshot`, ordered
+`history` and `restore_checks`. Each history record is
+`{step_id,result,snapshot}`, with result exactly `{ok: <complete receipt>}` or
+`{error:{type:"CreditError",code:<exact existing code>}}`.
+Snapshots include the settlement's complete view, accepted journal, canonical
+state and digest; credit's complete same-point advance `views`, frozen `claim`,
+accepted `journal`, `canonical_state`, `state_digest`; and the full unchanged
+`shared_exposure` observation. Only drawn/frozen advances aggregate.
+Restore checks record before/after snapshots, the original draw-key replay
+receipt, and exact missing-settlement-source refusal.
+
+Both artifact SHA-256 values are literals in
+[`test_capital_operation_replay_vectors.py`](../../reference/credit_advance_f04/test_capital_operation_replay_vectors.py).
+The vector's ordered `source_pins` inventory covers both contracts, settlement
+and credit implementations and their local dependencies, reused setup/JSON
+helpers, shared-exposure observer and cited behavioral suites. Companion docs
+and the test itself are excluded to avoid self-hashes. JSON encoding is sorted
+keys, compact separators, UTF-8, finite numbers and exactly one trailing newline.
+Tests never write/regenerate expected files. Detached mutations of errors,
+exposure totals, duplicate/applied markers, source pins and each source's bytes
+must fail independently of the outer vector hash. Producer files are never
+mutated by these sensitivity checks.
+
+### History inventory and arithmetic
+
+All histories use one literal 100,000 KRW face, 97,000 mock confirmed cash and
+3,000 non-cash accounted; cash does not add capacity. The unchanged observer
+counts capacity once per distinct claim, even when two advance views include
+that same capacity. All advances are bound to the synthetic committed source.
+
+| History | Ordered steps and exact refusal codes | Independent observations |
+| --- | --- | --- |
+| `R1_note_identity_and_historical_receipts` | Draw 40,000 and 30,000 in setup; same-key draw replay; same draw note/new key; changed binding/same key → `IDEMPOTENCY_CONFLICT`; another draw note → `DUPLICATE_DRAW`; repay 10,000; same-key repay replay; same repayment note/new key; changed note binding/new key → `REPAY_BINDING_CONFLICT`; changed binding/same key → `IDEMPOTENCY_CONFLICT`; repay another 10,000; replay original draw and repayment keys; echo first repayment note with a new key | Drawn 70,000; repaid 0 → 10,000 → 20,000; current outstanding 70,000 → 60,000 → 50,000. Reserved 70,000, open 100,000, residual 30,000 throughout. Synthetic group limit 60,000 crosses from false to true without authorizing exposure. |
+| `R2_repayment_sequence_refusals` | Draw 50,000; skipped `2`, zero `0`, boolean `true` sequences → `REPAYMENT_ORDER`; accept 20,000 at sequence 1; reuse sequence 1 with another note → `REPAYMENT_ORDER`; 30,001 at sequence 2 → `REPAYMENT_EXCEEDS_OUTSTANDING`; accept 30,000 at sequence 2; another 1 after completion → `REPAYMENT_EXCEEDS_OUTSTANDING`; replay completion key | Repaid 0 → 20,000 → 50,000; outstanding 50,000 → 30,000 → 0. Reserved stays 50,000; residual 50,000. Synthetic limit 50,000. Completion is repayment bookkeeping only; there is no close/release. |
+| `R3_reconcile_restore_replay` | Draw 15,000; repay 5,000; reconcile; same-key reconcile replay; restore using same settlement source, then original draw-key replay | Outstanding 10,000, repaid 5,000, reserved 15,000, residual 85,000. Synthetic limit 10,000. Reconcile receipts do not append the journal; restore/replay does not draw again. |
+
+Every scenario also restores from the accepted journal with the same settlement
+source and compares full state/digest/journal before and after original draw
+replay. Restoring these bound draws without that source returns exactly
+`CreditError/SETTLEMENT_SOURCE_REQUIRED`.
+
+### Historical results and current state
+
+A **same-key** accepted replay retains the first complete response's `credit`
+and `effect`, changing only `duplicate: true` and `applied: null`. Thus R1's
+late draw receipt still reports that advance's original 40,000 outstanding,
+and its first repayment receipt reports 30,000. Current `view` reports 20,000
+for that advance plus 30,000 for the other; current group outstanding is 50,000.
+The original draw receipt may also retain earlier claim reservation and journal
+counts. Consumers must use the separately captured current snapshots for current
+exposure, never reinterpret a historical receipt as a new observation.
+
+An **existing note with another key** returns a current duplicate envelope,
+`effect: null`, and no journal entry. Refusals and all duplicate notes leave
+complete public snapshots, accepted journal, canonical state and digest equal
+to their immediately preceding observation. Stored rejection identities are
+excluded from canonical state, so this does not claim private-cache immutability.
+The frozen claim stays byte-identical throughout; repayment changes exposure,
+not frozen face or reservation.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_capital_operation_replay_vectors.py
+```
+
+External Capital acceptance is **UNVERIFIED**. Observer mapping stays
+`NOT_BOUND`, repair `NONE`, refund component `NOT_BOUND`, fail-closed with no
+mutation/exposure authority. Execution, legal-party and economic-finality
+flags stay false. Product limits, repayment terms and netting remain
+**UNDETERMINED — Astra**; legal parties remain **UNDETERMINED — User/designated
+legal advisers**. Future observer binding remains User-owned. No repayment-source
+adapter, new semantics, runtime integration, published read, new protocol
+command, funds/provider call, chain execution, storage engine, durability,
+distributed fencing, bank exactly-once, legal compliance or production readiness
+is established. A2 non-author exact-head review, exact-head KTX/KIX workflows
+and human merge authorization remain separate supervisor delivery gates.
