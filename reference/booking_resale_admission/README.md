@@ -3957,3 +3957,66 @@ durability, venue admission, legal effect or production readiness. See
 [builder coverage and actual local results](../../validation/2026-11-15-plan-commerce-temporal-vectors/README.md);
 A2 non-author exact-head review and both exact-head CI workflows remain
 supervisor delivery gates.
+
+## Historical Commerce receipt replay vectors
+
+The companion [historical inputs](fixtures/commerce_historical_inputs_v1.json)
+and [complete historical receipts](fixtures/commerce_historical_receipts_v1.json)
+contain five isolated, source-informed histories for Commerce consumers:
+
+| History | First receipt on explicit replay | Later current observation |
+|---|---|---|
+| Issuance after consumption | `ISSUED`, right version 1 | Reservation `CONSUMED`, right version 2 |
+| Transfer after listing closure | Listing `TRANSFERRED`, buyer-2/version 2 | Listing `CLOSED`, buyer-2/version 2 |
+| Distribution after partial refund | First distribution snapshot predates the refund | `REQUESTER`, 97,000 distributed; second explicit distribution has zero effect |
+| Full refund after mock acceptance | Distribution/refund snapshots retain their earlier outstanding amounts | Refund outstanding 0, PG adjustment outstanding 100,000, external return open |
+| Same-key settlement conflicts | Exact `IDEMPOTENCY_CONFLICT` / `SETTLEMENT_COMPONENT_MISMATCH` refusals | Settlement remains `CAPTURED`; no cash posted |
+
+All quantities, roles and clock values are synthetic source-test inputs, not
+product defaults. Every replay is an explicit fixture step using the original
+published action and complete body through `integration_gate.fsm_host.FsmHost.call`.
+Accepted historical replays return `duplicate: true`, `applied: null`; the test
+compares all remaining receipt fields with the first result. Public Python
+machine views are test observations only and do not supply a read API.
+All five machines' canonical states, digests and complete journals, plus relevant
+public views, must stay identical across each replay or refusal. Documented
+process-local rejected-key bookkeeping may remain; this proves no general rollback
+or durable recovery guarantee.
+
+The canonical UTF-8 JSON encoding sorts object keys, preserves array order,
+uses compact separators and has no trailing newline, duplicate keys or nonfinite
+numbers. Inputs have `fixture_version: 1`, offline provenance, the published FSM
+domain and ordered `cases`. Each case records its source test, contract predicates,
+synthetic clocks, steps and final view/separate-fact expectations. Each step has
+an action, full body and exactly one accepted expectation or rejection code;
+`replay_of`, `refusal_of` and `conflict_of` refer to earlier step IDs in that case.
+Optional `observe` paths describe current public views after a step.
+
+Outputs use `record_schema_version: "kix-commerce-historical-receipts/1"`,
+`record_kind: "IN_PROCESS_MOCK_RECEIPT_VECTORS"`, `normative: false`, input/source
+SHA-256 and Git blob pins, and one ordered outcome per step. `input_ref` is the
+full repository-relative input path followed by `#/cases/<i>/steps/<j>/body`.
+Every accepted receipt field is retained; refusals are exact `FsmRejected.code`
+values with no HTTP envelope. The test checks full canonical output bytes and
+input canonicality; it has no golden-update mode. Mutation controls cover changed,
+added and missing receipt fields, bool/number and null distinctions, exact errors,
+missing/duplicate/reordered steps and cases, references and every pinned source's
+byte drift. Existing journey and temporal packs remain unchanged.
+
+Run from the repository root:
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_historical_receipt_vectors.py -v
+```
+
+Payment observation, issuance, admission authorization/consumption, refund obligation,
+mock cancellation acceptance and external refund completion remain separate facts.
+All execution/finality flags stay false, semantic SDK consumption stays
+`HOLD_SEMANTIC`, all 13 missing reads stay `NOT_BOUND`, SD1 stays OPEN/User-owned,
+and undecided product policy values stay `UNDETERMINED` with their existing owners.
+This pack adds no client, transport, command, automatic retry, persistence or
+external execution. Source-informed local comparison is not independent consumer
+acceptance, production readiness, real payment or chain finality.
+See [builder evidence](../../validation/2026-11-15-plan-commerce-historical-receipt-vectors/README.md)
+for coverage mapping, actual verification results, preservation and pending
+non-author exact-head review/KTX/KIX CI gates.
