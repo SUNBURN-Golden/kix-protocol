@@ -1,0 +1,19 @@
+$ python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_entry_resale_order_vectors.py -v
+test_all_refusals_preserve_detached_snapshots (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_all_refusals_preserve_detached_snapshots) ... ok
+test_complete_output_bytes_and_references (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_complete_output_bytes_and_references) ... ok
+test_consumption_and_ownership_versions_stay_distinct (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_consumption_and_ownership_versions_stay_distinct) ... ok
+test_detached_input_order_errors_and_schema_fail_before_execution (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_detached_input_order_errors_and_schema_fail_before_execution) ... ok
+test_detached_output_mutations_fail_without_pin_changes (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_detached_output_mutations_fail_without_pin_changes) ... ok
+test_listing_cancel_requires_explicit_authorization (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_listing_cancel_requires_explicit_authorization) ... ok
+test_non_mutation_guard_detects_extra_effect_at_every_refusal (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_non_mutation_guard_detects_extra_effect_at_every_refusal) ... ok
+test_output_order_identity_and_reference_mutations_fail (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_output_order_identity_and_reference_mutations_fail) ... ok
+test_published_schemas_sources_and_unbound_reads (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_published_schemas_sources_and_unbound_reads) ... ok
+test_source_and_fixture_pins_fail_before_execution (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_source_and_fixture_pins_fail_before_execution) ... ok
+test_strict_serialization (test_commerce_entry_resale_order_vectors.CommerceEntryResaleOrderVectorTests.test_strict_serialization) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 1.496s
+
+OK
+
+EXIT: 0

@@ -4020,3 +4020,91 @@ acceptance, production readiness, real payment or chain finality.
 See [builder evidence](../../validation/2026-11-15-plan-commerce-historical-receipt-vectors/README.md)
 for coverage mapping, actual verification results, preservation and pending
 non-author exact-head review/KTX/KIX CI gates.
+
+
+## Commerce resale and admission ordering vectors
+
+The companion [ordered inputs](fixtures/commerce_entry_resale_order_inputs_v1.json)
+and [complete outcomes](fixtures/commerce_entry_resale_order_receipts_v1.json)
+provide two portable, source-informed histories for `kix-commerce-apps` under
+[BOOKING_RESALE_ADMISSION_GATES §11.4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#114-순서).
+They use the unchanged in-process `FsmHost.call` and published command bodies.
+Each case explicitly sets up reservation clock/show/hold/confirmation, observes
+payment and issues the right before separate resale/admission clock/adoption calls.
+
+| History | Ordered command outcomes | Current diagnostic observations |
+|---|---|---|
+| `listing-cancel-before-entry` | List; authorization refuses `LISTING_LOCKED`; cancel listing; explicit fresh-ID/key authorization succeeds; fresh listing refuses `ADMISSION_LOCKED` | Cancellation alone leaves credential `ELIGIBLE`, admission/consume IDs null and reservation `ISSUED`. Only the later authorization produces `AUTHORIZED` / `ADMISSION_AUTHORIZED`. The listing remains `CANCELLED`. |
+| `entry-consumption-before-resale` | Explicit authorization; listing refuses `ADMISSION_LOCKED`; explicit consumption; fresh-ID/key listing refuses `ALREADY_CONSUMED` | Reservation becomes `CONSUMED` with right version 2; the resale machine still observes buyer-1/version 1. |
+
+Existing semantic coverage was sufficient in
+`test_admission_fsm.py::AdmissionFsmTests.test_listing_and_cancel_order_against_entry`
+and `test_admission_fsm.py::AdmissionFsmTests.test_entry_then_transfer_consumes_before_resale_can_move`.
+The merged journey, receipt, temporal and historical packs lacked these portable
+histories. Complete per-step outcomes/snapshots and independent mutation controls
+were absent; refusal/ownership checks were partially covered across prior portable
+histories. The [builder coverage map and results](../../validation/2026-11-16-plan-commerce-entry-resale-order-vectors/README.md)
+record the gap before adding tests. Earlier packs and all implementations remain
+byte-identical.
+
+For consumers, read these fields as separate facts:
+
+| Field or observation | Meaning and boundary |
+|---|---|
+| `payment` receipt: `reservation.payment_ref` | Synthetic payment observation. `issuance_id` and `right` are still null; payment does not issue a right. |
+| `issue` receipt: `reservation.issuance_id`, `evidence.right_id`, `evidence.version` | Mock issuance evidence for issue-1/version 1; `chain_issued` remains false. |
+| Authorization receipt: `credential.admission_id`, `credential.phase`, `admission.request`, `admission.expires_ms` | Explicit authorization for the request/gate/window. `credential.consume_id` is null; authorization is not consumption. |
+| Consumption receipt: `credential.consume_id`, `evidence.decision="CONSUMED_ONCE"`, `evidence.version_after=2` | Explicit once-only mock consumption, distinct from the authorization ID; current credential admission ID is null after consumption. |
+| Current reservation: `right.version=2`; current resale right: `holder_role="buyer-1"`, `version=1` | Consumption advances reservation/admission evidence without resale transfer or an ownership/version update to the resale snapshot. |
+| Earlier receipt versus `diagnostic_snapshot` | Each receipt retains its original snapshot (e.g. list receipt `LISTED`, authorization receipt `AUTHORIZED`). Each diagnostic snapshot describes observations immediately after its own step, not current authority at a later step. |
+
+Inputs carry version 1, offline provenance and domain
+`kix:fixture:fsm-catalogue:0.3` as metadata only, never a command body field.
+Ordered `cases` contain `source_test`, `contract_predicates`, synthetic `clocks`,
+complete `steps` and final view/separate-fact expectations. A step has `id`,
+`action`, full `body` and exactly one `expect` or `expect_error`; accepted
+expectations have `duplicate`, `applied`, field `paths` and all five journal deltas.
+Optional `observe` paths describe current diagnostics. The cancellation body has
+exactly `listing_id`, `idempotency_key`, `seller_role`. Keys are fresh throughout,
+so rejected-key replay cannot hide a later ordering result.
+T0 1,000,000, expiry 1,900,000, authorization expiry 1,120,000 and amount 10,001
+are `SYNTHETIC_FIXTURE_INPUTS_ONLY`, never product defaults.
+
+Outputs use `record_schema_version: "kix-commerce-entry-resale-order-receipts/1"`,
+`record_kind: "IN_PROCESS_MOCK_RECEIPT_VECTORS"`, `normative: false`, a fixture
+pin and sorted explicit source pins (SHA-256 and Git blob). Each ordered outcome
+has `id`, `action`, `input_ref`, exactly one full `receipt` or `rejection_code`,
+and a detached `diagnostic_snapshot`. References resolve to the repository-relative
+input path plus `#/cases/<i>/steps/<j>/body`. Snapshots contain all five machines'
+`state` (canonical JSON string), `digest`, full `journal`, and available reservation/show,
+resale right/listing, credential/presentation Python views. No view for a refused
+new listing is invented. Every refusal preserves the preceding business state,
+digests, journals and views. Documented process-local rejected-key retention is
+outside this observation; this proves no general rollback guarantee.
+
+Canonical UTF-8 bytes use the existing sorted-key compact JSON encoding, array
+order, boolean/number and null distinctions, no trailing newline, duplicate keys
+or nonfinite numbers. Tests compare every outcome/snapshot field, check published
+body schemas and fixed order/error maps, and reject input/source pin drift before
+execution. Detached mutations exercise order, exact errors, receipt fields,
+snapshot states/digests/views and journals independently of outer pins; input
+semantic controls recompute the fixture pin. The refusal guard also detects an
+injected additional public command effect at each refusal. New artifact/test
+hashes are [recorded separately](../../validation/2026-11-16-plan-commerce-entry-resale-order-vectors/artifacts.json)
+to avoid circular self-pins. There is no golden-update mode.
+
+Run from the repository root:
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_entry_resale_order_vectors.py -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_commerce_*.py' -v
+```
+
+Diagnostic snapshots are **not published reads or authenticated authority**.
+All 13 reads stay **NOT_BOUND**, semantic SDK consumption stays **HOLD_SEMANTIC**,
+and **SD1 stays OPEN/User-owned**. Product policy stays **UNDETERMINED** with its
+existing owners. This companion pack qualifies no consumer and adds no interface,
+command, endpoint, automatic reconciliation or retry, production admission,
+distributed exclusivity, external execution, durability or legal/finality claim.
+A2 non-author exact-head review and both exact-head KTX/KIX CI workflows remain
+supervisor delivery gates.
