@@ -776,3 +776,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## Stage 8 native GPU path plan (document only)
 
 - [Native GPU path plan](operations/NATIVE_GPU_PATH_PLAN.md) · [builder evidence](../validation/2026-11-14-k-stage8-gpu-plan/README.md) — semantic acceptance, existing CPU coverage and GPU gaps, native ABI prerequisites, transfer-inclusive crossover measurement, dedicated runner options and undetermined costs. Plan only; no equipment selection/spend, GPU implementation, runner activation, policy adoption or performance claim. A2 non-author review and exact-head KTX/KIX CI remain separate gates.
+
+## 2026-11-15 Capital operation replay vectors — 위치 안내만
+
+- [Capital operation schema, histories and replay](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-operation-replay-vectors) · [input pack](../reference/credit_advance_f04/fixtures/capital_operation_replay_v1.json) · [complete results](../reference/credit_advance_f04/fixtures/capital_operation_replay_vectors_v1.json) · [builder evidence](../validation/2026-11-15-plan-capital-operation-replay-vectors/README.md) — three source-informed synthetic draw/repayment mutation histories, historical receipts versus current exposure, exact refusals, journal restore and unchanged shared-exposure observations with explicit synthetic limits. Companion evidence only; no producer, adapter, policy, runtime, published read or capability-grade change. External Capital acceptance UNVERIFIED; A2 non-author exact-head review and exact-head KTX/KIX CI remain separate gates.

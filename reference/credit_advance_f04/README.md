@@ -459,3 +459,37 @@ records actual local verification. These are synthetic companion observations:
 error precedence, policy default, netting or reconciliation completion are
 inferred. External Capital acceptance remains **UNVERIFIED**; A2 non-author
 exact-head review and exact-head KTX/KIX CI remain delivery gates.
+
+## Capital operation replay vectors
+
+The canonical [operation inputs](fixtures/capital_operation_replay_v1.json) and
+[complete result vectors](fixtures/capital_operation_replay_vectors_v1.json)
+expose three source-informed mutation histories to kix-capital: note/key
+identity and historical receipts, repayment ordering refusals, and journal
+reconcile/restore without another draw. Each starts from an explicit synthetic
+committed settlement; every offered face is byte-equal to its public claim.
+Receipts and current snapshots are deliberately separate: replay of a key
+returns its historical credit/effect, while current views retain later accepted
+repayments. Another key repeating the same note gets a current duplicate
+envelope with no effect. Duplicate notes and refusals add no journal entries.
+
+The unchanged shared-exposure observer receives all drawn/frozen advance
+views captured at the same observation point and an explicit synthetic limit.
+Claim capacity is counted once, frozen face is preserved, and repayment keeps
+the reservation. These are fixture values, not product defaults.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_capital_operation_replay_vectors.py
+```
+
+All loading, bounded replay and restore checks live in that test module; no
+producer, adapter, runtime or published read is added. The
+[field guide](../../docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-operation-replay-vectors)
+records the schema, pre-test coverage map, exact histories and owner boundaries;
+the [builder evidence](../../validation/2026-11-15-plan-capital-operation-replay-vectors/README.md)
+records local results and byte preservation. Observations stay `NOT_BOUND`,
+repair `NONE`, with false execution/finality flags. External Capital acceptance
+remains **UNVERIFIED**. Product limits, repayment terms and netting remain
+**UNDETERMINED — Astra**; legal parties remain **UNDETERMINED — User/designated
+legal advisers**. A2 non-author exact-head review and exact-head KTX/KIX CI remain
+separate supervisor delivery gates.
