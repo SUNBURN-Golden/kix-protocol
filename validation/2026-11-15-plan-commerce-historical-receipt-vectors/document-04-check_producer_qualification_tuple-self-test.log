@@ -1,0 +1,7 @@
+$ python3.12 -B scripts/check_producer_qualification_tuple.py --self-test
+self-test: detected mutated blob digest
+self-test: detected missing command
+self-test: detected mismatched gate pin
+self-test: pass
+
+EXIT: 0

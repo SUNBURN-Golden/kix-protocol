@@ -1,0 +1,21 @@
+$ python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_historical_receipt_vectors.py -v
+test_complete_output_bytes_and_references (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_complete_output_bytes_and_references) ... ok
+test_distribution_after_partial_refund (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_distribution_after_partial_refund) ... ok
+test_input_binding_and_encoding_mutations_fail_before_execution (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_input_binding_and_encoding_mutations_fail_before_execution) ... ok
+test_issuance_after_consumption (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_issuance_after_consumption) ... ok
+test_non_mutation_guard_detects_extra_effects (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_non_mutation_guard_detects_extra_effects) ... ok
+test_order_and_mapping_mutations_fail (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_order_and_mapping_mutations_fail) ... ok
+test_output_mutations_fail_comparison (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_output_mutations_fail_comparison) ... ok
+test_pins_fail_before_execution (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_pins_fail_before_execution) ... ok
+test_published_schemas_and_unbound_reads (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_published_schemas_and_unbound_reads) ... ok
+test_refund_after_mock_acceptance (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_refund_after_mock_acceptance) ... ok
+test_settlement_key_conflicts (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_settlement_key_conflicts) ... ok
+test_strict_serialization (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_strict_serialization) ... ok
+test_transfer_after_closure (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_transfer_after_closure) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.759s
+
+OK
+
+EXIT: 0
