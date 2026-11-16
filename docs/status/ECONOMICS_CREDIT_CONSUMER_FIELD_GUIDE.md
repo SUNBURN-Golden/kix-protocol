@@ -724,3 +724,218 @@ merge authorization. Both workflow run IDs/status/conclusions are **not obtained
 (no GitHub access authorized), not passes. No merge occurred; merge SHA and
 post-merge main/push CI are not applicable. The supervisor must establish the
 final committed head and those gates; no earlier SHA's CI result transfers.
+
+## 2026-11-16 — ordered cross-claim Capital companion history
+
+Node `plan-capital-cross-claim-history-vectors` adds one bounded, source-informed
+pack, version `capital-cross-claim-history/1`, kind
+`SYNTHETIC_CROSS_CLAIM_HISTORY_VECTORS`. The executing task input is the supplied
+supervisor node specification/design, not a GitHub issue or a matching document
+under `docs/tasks/`. This is outside ASTRA program mode. External **kix-capital
+acceptance remains UNVERIFIED**; this is portable offline evidence for a consumer.
+
+### Existing coverage and the remaining gap
+
+Paths below are relative to `reference/credit_advance_f04/` unless stated otherwise.
+This map was inspected before adding tests.
+
+| Requirement | Existing coverage classification and exact evidence | Companion contribution |
+| --- | --- | --- |
+| Distinct-claim capacity and advance sums | Sufficient: `test_shared_exposure_contract.py::SharedExposureContractTests.test_aggregation_formulas_over_exposed_values_only`, E2/E3 in `fixtures/shared_exposure_v1.json` | Apply the same formulas at eight ordered checkpoints with two claims and three advances. |
+| Repayment retains reservation; close releases only its note; default retains exposure | Sufficient per transition: `test_capital_terminal_capacity_vectors.py::CapitalTerminalCapacityVectorTests.test_repayment_close_capacity_arithmetic` and `test_default_retains_shared_exposure` (T1/T2) | Partial composition coverage becomes an ordered two-claim example; no refusal matrix or capacity-reuse history is duplicated. |
+| Settlement refund preserves frozen credit and leaves a gap | Sufficient per behavior: `test_shared_exposure_contract.py::SharedExposureContractTests.test_frozen_face_unchanged_after_settlement_refund`; economics P/F/FD in `test_economics_credit_consumer_vectors.py::EconomicsCreditConsumerTests.test_frozen_credit_bytes_survive_all_economics_actions` | Refund B after repayment/close on A, capture both observers and both journals, then default B. |
+| First receipt versus current view | Partial: operation-replay R1/R3 in `test_capital_operation_replay_vectors.py::CapitalOperationReplayVectorTests.test_complete_history_vectors`; terminal-capacity histories | Replay A1's original draw key after B refund/acceptance/default; retain the original receipt beside current CLOSED A1 and DEFAULTED B1. |
+| Complete portable cross-claim history, byte integrity and temporal substitution controls | Not covered by those existing packs | `test_capital_cross_claim_history_vectors.py`: complete replay, arithmetic, refund/gap, original-key replay, boundary, detached-observation and mutation tests. |
+
+### Files, schema and consumer procedure
+
+The complete delivery changes only these four paths:
+
+- `reference/credit_advance_f04/fixtures/capital_cross_claim_history_v1.json`
+- `reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json`
+- `reference/credit_advance_f04/test_capital_cross_claim_history_vectors.py`
+- `docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md`
+
+The input root has `fixture_version, fixture_kind, synthetic_only, provenance,
+scenarios`. Its single scenario `H1_two_claims_refund_default` has `scenario_id,
+source_tests, contracts, setup_steps, claim_ids, advance_ids, group_id, limit,
+tolerance, steps, expected_arithmetic`. Both step arrays contain exact
+`{step_id,target,operation,arguments}` objects. The verifier fixes the inventory,
+identity and order: 20 setup calls, seven history calls, globally unique step
+IDs, explicit bounded selectors and argument fields. Only the final draw reuses
+an idempotency key. There is no adapter or new protocol command.
+
+The vector root has `vector_version, fixture_sha256, source_pins, scenarios`.
+Each scenario has `scenario_id, setup_results, initial_snapshot, history`.
+Every setup result preserves the complete `{step_id,target,operation,result}`;
+every history row preserves `{step_id,target,operation,result,snapshot}`.
+Results use full `{ok: receipt}` or existing `{error:{type,code}}` envelopes.
+All 27 calls in this fixture succeed, including the final duplicate.
+
+Every snapshot captures complete public data at one observation point:
+
+- `settlement.{views,journal,canonical_state,state_digest}`, with views keyed by claim ID;
+- `credit.{views,claims,journal,canonical_state,state_digest}`, including CLOSED and DEFAULTED advances and claims keyed by claim ID;
+- `variance`, containing complete observations keyed by claim ID;
+- `shared_exposure`, containing the complete group observation.
+
+A consumer should check canonical UTF-8 JSON (sorted keys, compact separators,
+one trailing newline), artifact SHA-256 pins and ordered source pins before
+replaying. Input SHA-256 is
+`60d6625b602743f0d4ee6a6a3f0bc7b7d9ed33f9604fdca69af51d45190e5d41`;
+vector SHA-256 is
+`561d213760e60f44a7debaa5901494387d7fd9d4b022c43e03084293fd65d673`.
+The verifier pins both artifact bytes, and the vectors pin every reused local
+producer/helper and cited contract/test source listed by `SOURCE_PATHS`.
+Self-referential hashes of the new verifier and this guide are excluded.
+The tests only read the artifacts; golden capture is not part of test execution.
+Source-informed capture is not clean-room or external consumer verification.
+
+Replay setup on fresh, unchanged `SettlementMachine` and `CreditMachine` objects
+with `replay_scenario_with_state`. Both claims use explicit `PRIMARY_FEE_BPS`,
+`fee_bps=500`, organizer/platform labels and KRW. Commit gross as confirmed cash,
+with statement fee/tax/held/adjustment all zero. Before dispatching every offer,
+compare its literal `face` with the corresponding committed settlement
+`view(settlement_id)['claim']`. Draw A1 before A2, then B1. Start observations
+after all draws; pre-draw grouping is outside this evidence.
+
+Replay history in order and compare every complete result and snapshot.
+Independently compare `expected_arithmetic`, including all six exact group
+fields, per-claim membership/reservation/residual, per-advance phase/note and
+exposure amounts, and each claim's variance arithmetic. Verify canonical-state
+digests and rerun observers over detached captured views without mutating them.
+Do not treat a receipt as the current view: the last A1 receipt still says DRAWN
+with outstanding 40000, while its current view is CLOSED with outstanding zero.
+The only differences from the original receipt are `duplicate=true` and
+`applied=null`; both machines' journals and state remain unchanged by replay.
+
+### Independently stated checkpoint arithmetic
+
+All amounts below are full synthetic integer KRW. A is `claim-h1-a`, B is
+`claim-h1-b`; advances are `adv-h1-a1`, `adv-h1-a2`, `adv-h1-b1`. The six total
+columns correspond exactly to `group_drawn_exposure, group_repaid_exposure,
+group_outstanding_exposure, group_open_face, group_reserved_open,
+group_residual_unreserved`. Every row has `advance_count=3`, `claim_count=2`,
+`within_limit=true`; synthetic `limit=120000`, `tolerance=0` are explicit inputs.
+
+| Checkpoint | Drawn | Repaid | Outstanding | Open | Reserved | Residual | A reserved/residual | B reserved/residual |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| initial | 120000 | 0 | 120000 | 180000 | 120000 | 60000 | 70000/30000 | 50000/30000 |
+| repay-a1-part (10000, sequence 1) | 120000 | 10000 | 110000 | 180000 | 120000 | 60000 | 70000/30000 | 50000/30000 |
+| repay-a1-rest (30000, sequence 2) | 120000 | 40000 | 80000 | 180000 | 120000 | 60000 | 70000/30000 | 50000/30000 |
+| close-a1 | 120000 | 40000 | 80000 | 180000 | 80000 | 100000 | 30000/70000 | 50000/30000 |
+| refund-b (80000 before distribution) | 120000 | 40000 | 80000 | 180000 | 80000 | 100000 | 30000/70000 | 50000/30000 |
+| accept-b (80000 mock cancel acceptance) | 120000 | 40000 | 80000 | 180000 | 80000 | 100000 | 30000/70000 | 50000/30000 |
+| default-b1 (synthetic reason) | 120000 | 40000 | 80000 | 180000 | 80000 | 100000 | 30000/70000 | 50000/30000 |
+| replay-a1 (original draw key/arguments) | 120000 | 40000 | 80000 | 180000 | 80000 | 100000 | 30000/70000 | 50000/30000 |
+
+Capacity is `100000+80000=180000`, counted once per distinct claim. A1 and A2
+share A's capacity; adding A's capacity twice would incorrectly report 280000.
+A1's drawn/repaid/outstanding is `40000/0/40000`, then `40000/10000/30000`, then
+`40000/40000/0`. It stays DRAWN/NOTED through full repayment and becomes
+CLOSED/RELEASED only at close. A2 stays DRAWN/NOTED with `30000/0/30000` at every
+checkpoint. B1 stays `50000/0/50000`; default changes DRAWN to DEFAULTED while
+its note remains NOTED. All those values are literal arithmetic rows in the
+input fixture, separately transcribed from the plan, not derived from observers.
+
+A's settlement outstanding stays 100000, frozen credit open face stays 100000,
+and variance stays zero. Before refund, B's outstanding is `76000+4000=80000`
+and its frozen credit face is 80000. Refund cancels those unpaid obligations,
+so variance becomes `0-80000=-80000` and stays outside tolerance through
+acceptance, default and replay. Both claims' cash/recovery deltas remain zero.
+B's refund face/accepted/outstanding/PG-adjustment values progress
+`0/0/0/0` → `80000/0/80000/0` → `80000/80000/0/80000`.
+Acceptance decreases refund outstanding and **increases** PG-adjustment
+outstanding. It neither repays credit nor closes the reconciliation gap.
+The complete credit snapshots are byte-equal before refund, after refund and
+after acceptance. Frozen credit faces remain unchanged throughout the history.
+
+Detached negative controls bypass the outer artifact hashes. They reject every
+wrong total, wrong claim/advance grouping, capacity counted twice for A,
+omitted/reordered setup or history, altered receipt metadata, historical/current
+receipt substitutions in both directions, and stale settlement/variance data
+after refund. Fixture mutation controls update `fixture_sha256` before checking
+arithmetic/order, so a hash failure cannot mask the semantic failure. Every
+source pin is also checked with deliberately altered detached source bytes.
+Temporal validity comes from ordered replay comparison; neither observer
+authenticates freshness or grants current execution authority.
+
+### Boundaries and local evidence
+
+Every observation retains `NOT_BOUND`, `repair=NONE`, `refund_component=NOT_BOUND`,
+`fail_closed=true`, `mutates_state=false`, `authorizes_exposure=false`.
+All execution/authority/finality flags stay false, including `funds_executed`,
+`bank_debit_observed`, `repayment_observed` and `legal_debtor_bound`.
+The synthetic pool is a caller label, not a legal identity. Product limits,
+tolerances and netting remain **UNDETERMINED — Astra**. Legal parties remain
+**UNDETERMINED — User/designated legal advisers**. No source implementation,
+contract, existing pack, CI, `.aiops/`, `docs/tasks/`, locked kernel or
+`reference/v0.3-rc1/**` was changed.
+
+Observed local `origin/main`, base and unchanged branch HEAD are all
+`9db1dbe04ee208f21f1aa40fece541d7fc9f091f`. The supervisor explicitly prohibited
+network and git publication: `git fetch origin main` was not run, so remote
+freshness is unverified. No base adjustment was made. There is no new committed
+implementation/final head, merge SHA or hosted CI run from this builder.
+
+Commands were run from the repository root. In the table, `S` expands to
+`python3 -B -m unittest discover -s reference/S -t reference/S`; `C` expands to
+both `python3 -B scripts/C.py` and `python3 -B scripts/C.py --self-test`.
+The eight suites ran sequentially in the `protocol.yml` loop. Rust commands use
+`RUSTUP_AUTO_INSTALL=0` and `--offline` without network or background shell jobs.
+
+| Command | Actual result |
+| --- | --- |
+| `python3 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_capital_cross_claim_history_vectors.py` | Final: 8 tests passed. Initial run had one incorrect assertion about PG-adjustment direction; corrected against the existing contract, then reran successfully. |
+| `S=settlement_f01_f03` | 224 tests passed. |
+| `S=booking_resale_admission` | 994 tests passed. |
+| `S=credit_advance_f04` | 270 tests passed, including all existing Capital packs and the new pack. |
+| `S=ai_delegation` | 169 tests passed. |
+| `S=token_reward` | 397 tests passed. |
+| `S=provider_facts` | 86 tests passed. |
+| `S=payment_effects` | 28 tests passed. |
+| `S=economics` | 99 tests passed. |
+| `C=check_docs_index` | Plain and self-test passed. |
+| `C=check_credit_evidence_map` | Plain and self-test passed. |
+| `C=check_settlement_evidence_map` | Plain and self-test passed. |
+| `C=check_contract_error_codes` | Plain and self-test passed. |
+| `C=check_class_b_index` | Plain and self-test passed. |
+| `C=check_ci_test_discovery` | Plain and self-test passed; new module reached by existing credit-suite discovery. |
+| `C=check_ci_checker_wiring` | Plain and self-test passed. |
+| `C=check_openapi_contract` | Plain and self-test passed; 84-command pin unchanged. |
+| `C=check_integration_gate_openapi` | Plain and self-test passed. |
+| `python3 -B -m unittest integration_gate.test_offline_limits` | 9 tests passed. |
+| `python3 -B scripts/verify_runtime_architecture.py` | Exit 0; dependency gate passed. |
+| `python3 -B scripts/test_runtime_architecture.py` | 7 tests passed. |
+| `RUSTUP_AUTO_INSTALL=0 cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline` | Exit 0; workspace tests passed, including KTX kernel. The existing CPU/SQL-engine acceptance test remains ignored without its separately provisioned feature/bundle. |
+| `RUSTUP_AUTO_INSTALL=0 cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings` | Exit 0. |
+| `RUSTUP_AUTO_INSTALL=0 cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | Exit 0. |
+| `git diff --check` | Exit 0. |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | Both locked blobs match before and after work (values below). |
+| Python byte-manifest comparison plus `git hash-object` / `git rev-parse HEAD:<path>` for every protected path | All 125 tracked protected files match both the initial SHA-256 manifest and HEAD; no untracked protected files. |
+
+The before/after locked Git blobs are
+`69564b166f0c27f9af5d8422f0a466b18d74c20f` for
+`runtime/crates/kix-kernel/src/lib.rs`, and
+`b607996c83a119c349f1cc90469ac1ba82764e20` for
+`runtime/crates/kix-kernel/tests/quarantine_capacity.rs`. The byte comparison also
+covers the complete `reference/v0.3-rc1/`, `.aiops/`, `docs/tasks/` and `.github/`
+trees against the clean starting HEAD. Tests were not used as a substitute for
+this integrity comparison.
+
+No contract violation or new contract-undefined characterization was found.
+No design/scope deviation was needed; the initial new-test assertion was
+corrected as described above. The supervisor's no-network rule superseded the
+session-start fetch instruction. No commit, push, PR, issue, comment, marker or
+merge was made. No external Capital consumer, live provider, production
+runtime, real funds, chain, Move/localnet/ZK, storage-engine or hosted workflow
+verification is claimed. The selected local equivalents do not constitute full
+hosted protocol verification or certify production readiness/durability.
+
+Remaining gates: A2 non-author review at the supervisor's final committed head,
+completed/success **KTX kernel verification** and **KIX protocol verification**
+for that exact head, and human authorization for ready-for-review and merge.
+Neither workflow's run ID/status/conclusion was obtained (GitHub/network was
+prohibited); they are unverified, not passes. Merge SHA, final-merge lock checks
+and post-merge main/push CI are not applicable. The supervisor must establish
+those gates without transferring CI evidence from an earlier SHA.
