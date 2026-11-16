@@ -18,7 +18,9 @@ step of ``.github/workflows/protocol.yml``.
 Exit status is 0 when every recorded digest and structural pin matches, 1
 otherwise. ``--self-test`` mutates in-memory copies and requires the checker to
 detect a mutated blob digest, a missing command and a mismatched gate source
-pin.
+pin, plus specific diagnostics for false semantic/read promotion, SD1
+resolution or owner/status changes, normative claims, missing non-claims,
+read-name drift and candidate-fixture binding drift.
 """
 import copy
 import hashlib
@@ -807,6 +809,106 @@ def self_test():
         print('self-test: mismatched gate pin was accepted', file=sys.stderr)
         return 1
     print('self-test: detected mismatched gate pin')
+
+    def expect_diagnostic(label, mutated, expected):
+        actual = validate(mutated, artifacts, present)
+        if expected not in actual:
+            print('self-test: %s: missing diagnostic: %s' % (label, expected),
+                  file=sys.stderr)
+            print('self-test: actual diagnostics: %r' % actual, file=sys.stderr)
+            return False
+        print('self-test: detected ' + label)
+        return True
+
+    # Every boundary control gets its own detached record; artefacts stay intact.
+    mutated = copy.deepcopy(record)
+    mutated['semantic_hold']['status'] = 'BOOTSTRAP_SCHEMA_BOUND'
+    if not expect_diagnostic('semantic status promotion', mutated,
+                             'semantic hold status is not HOLD_SEMANTIC'):
+        return 1
+
+    for surface_id, expected in (
+            ('semantic_sdk_consumer', 'semantic_sdk_consumer is not HOLD_SEMANTIC'),
+            ('read_query_surface', 'read_query_surface is not NOT_BOUND')):
+        mutated = copy.deepcopy(record)
+        surface = next(row for row in mutated['surfaces'] if row['id'] == surface_id)
+        surface['status'] = 'BOOTSTRAP_SCHEMA_BOUND'
+        if not expect_diagnostic(surface_id + ' promotion', mutated, expected):
+            return 1
+
+    mutated = copy.deepcopy(record)
+    query = next(row for row in mutated['read_queries']['items']
+                 if row['name'] == 'get_booking')
+    query['status'] = 'BOOTSTRAP_SCHEMA_BOUND'
+    if not expect_diagnostic('read query promotion', mutated,
+                             'read query is not NOT_BOUND: get_booking'):
+        return 1
+
+    for field, value, expected in (
+            ('status', 'CLOSED', 'SD1 status is not OPEN'),
+            ('owner', 'Builder', 'SD1 owner is not User')):
+        mutated = copy.deepcopy(record)
+        mutated['sd1'][field] = value
+        if not expect_diagnostic('SD1 ' + field + ' change', mutated, expected):
+            return 1
+
+    for key in SD1_FORBIDDEN_KEYS:
+        mutated = copy.deepcopy(record)
+        mutated['sd1'][key] = True
+        if not expect_diagnostic('SD1 forbidden field ' + key, mutated,
+                                 'SD1 records a forbidden resolution field: ' + key):
+            return 1
+
+    mutated = copy.deepcopy(record)
+    mutated['normative'] = True
+    if not expect_diagnostic('normative claim', mutated,
+                             'record must declare normative false'):
+        return 1
+
+    for claim in REQUIRED_NON_CLAIMS:
+        mutated = copy.deepcopy(record)
+        mutated['non_claims'].remove(claim)
+        if not expect_diagnostic('missing non-claim ' + claim, mutated,
+                                 'missing non-claim: ' + claim):
+            return 1
+
+    mutated = copy.deepcopy(record)
+    reads = mutated['read_queries']
+    reads['items'] = [row for row in reads['items'] if row['name'] != 'get_booking']
+    reads['count'] = len(reads['items'])
+    if not expect_diagnostic('missing read name', mutated, 'read query name set drift'):
+        return 1
+
+    mutated = copy.deepcopy(record)
+    reads = mutated['read_queries']
+    query = next(row for row in reads['items'] if row['name'] == 'get_booking')
+    reads['items'].append(copy.deepcopy(query))
+    reads['count'] = len(reads['items'])
+    if not expect_diagnostic('duplicate read name', mutated, 'duplicate read query name'):
+        return 1
+
+    for label, field, value, expected in (
+            ('invalid candidate path', 'candidateVector', 'outside-read-fixtures.json',
+             'read query candidate vector drift: get_booking'),
+            ('changed allowed candidate binding', 'candidateVector',
+             'reference/read_model/vectors/resale.json',
+             'read query fixture digest drift: get_booking'),
+            ('changed fixture digest', 'fixtureSha256', '0' * 64,
+             'read query fixture digest drift: get_booking')):
+        mutated = copy.deepcopy(record)
+        query = next(row for row in mutated['read_queries']['items']
+                     if row['name'] == 'get_booking')
+        query[field] = value
+        if not expect_diagnostic(label, mutated, expected):
+            return 1
+
+    problems = validate(record, artifacts, present)
+    problems += _catalogue_cross_check(record, artifacts)
+    if problems:
+        print('self-test: original inputs failed after controls: %r' % problems,
+              file=sys.stderr)
+        return 1
+    print('self-test: original inputs still pass after controls')
 
     print('self-test: pass')
     return 0

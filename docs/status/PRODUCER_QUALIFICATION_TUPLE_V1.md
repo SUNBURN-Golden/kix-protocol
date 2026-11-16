@@ -64,4 +64,16 @@ recomputes the 13 read names and fixture digests, cross-checks the manifest,
 profile, sidecar and toolchain, and refuses drift. It asserts identity only; it
 does not qualify anything. `--self-test` mutates in-memory copies and requires
 detection of a mutated blob digest, a missing command and a mismatched gate
-source pin.
+source pin. Detached record mutations also exercise semantic status/surface
+promotion, read query/surface promotion, SD1 status and owner changes, each
+forbidden SD1 resolution field, a normative claim, each required non-claim,
+missing/duplicate read names, and candidate path/binding/digest drift. Each
+new control requires its specific existing diagnostic; unrelated digest or
+count failures cannot satisfy it. The original tuple is revalidated after
+the controls.
+
+Candidate-binding controls cover allowed paths and digest consistency only;
+they do not establish a unique query-to-fixture assignment or rejection of
+coordinated path-and-digest rebinding. Validation semantics and qualification
+statuses are unchanged. See the [negative-control coverage and local validation
+evidence](../../validation/2026-11-16-plan-producer-hold-negative-controls/README.md).

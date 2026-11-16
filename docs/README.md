@@ -51,6 +51,9 @@ stay `NOT_BOUND` because `read-model-reference` is not merged; semantic SDK
 consumption stays `HOLD_SEMANTIC`; SD1 stays `OPEN` with the User. The record
 asserts identity only and makes no semantic, N/N-1, production, audit or User
 approval claim. [Builder evidence and actual local results](../validation/2026-11-10-plan-producer-qualification-tuple-bundle/README.md).
+[HOLD and non-normative negative-control coverage and validation](../validation/2026-11-16-plan-producer-hold-negative-controls/README.md)
+extends the checker's detached self-tests while preserving validation semantics
+and all qualification statuses.
 
 ## Local supply reconciliation
 
