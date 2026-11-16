@@ -159,3 +159,52 @@ Additional completed checks:
 - Payment, mock settlement commitment, issuance and admission remain separate. Reads remain NOT_BOUND; semantic consumption HOLD_SEMANTIC; SD1 OPEN/User-owned; product policy values UNDETERMINED with existing owners.
 - No HTTP transport, independent external-consumer acceptance, durability, distributed fencing, real PG/bank/KYC/funds, public endpoint, Sui testnet/mainnet, production runtime, legal compliance, production readiness or economic/chain-finality claim. No external acceptance state was promoted.
 - Remaining follow-up: supervisor commit/publication, A2 non-author exact-head review and exact-head KTX/KIX CI. Any future external consumer or durable rejection replay work needs a separate authorized task.
+
+## PR fix round 1 — docs-index coverage row (2026-11-17)
+
+Round input: no blocking review findings and no failed-job CI log (possible
+Actions billing/runner refusal). The committed head
+`875a4680983e06f77e796da082eeec39b2a0aeaa` was re-verified locally. The identity
+section above is the first build session's historical record: delivery was
+uncommitted then, and the supervisor committed it afterwards. It is preserved
+unchanged.
+
+Re-running all 90 recorded commands in the foreground with the same
+interpreters (`python3.12` 3.12.15, `python3` 3.13.5, cargo 1.98.1) gave 88
+passes and two failures: `python3 scripts/check_docs_index.py` and its
+`--self-test`, both reporting
+`not indexed: validation/2026-11-16-plan-commerce-bound-issuance-vectors/README.md`.
+
+Diagnosis: the first session's documents group ran before this handoff README
+existed (its log records `scanned=423`; with the README present the scan set is
+424). The checker requires every on-disk `validation/*/README.md` to be the
+target of a markdown link in `docs/README.md` or `docs/DEVELOPMENT_PLAN.md` and
+is wired into the Stdlib offline document checks step of `protocol.yml`, so the
+committed head fails that CI step even though the first session's logs are
+green. No vector, fixture or implementation defect was found: the other 88
+checks, including the 12 new bound-issuance tests and the full 1006-test
+Commerce suite, passed unchanged.
+
+Fix (one added bullet, established sibling pattern): `docs/README.md`'s
+commerce journey section now links the pack README anchor
+`#commerce-settlement-bound-issuance-refusal-vectors` and this record, beside
+the ordering/temporal/historical/goldens rows. No fixture, test,
+implementation, contract, binding index, producer tuple, SDK, catalogue, CI,
+`.aiops/`, `docs/tasks/` or `reference/v0.3-rc1/**` change. Neither
+`docs/README.md` nor this README is pinned by `artifacts.json` or by the vector
+source pins, so no golden or pin bytes move.
+
+Post-fix re-run: all 90 commands exit 0 (485.9 s total).
+`docs index ok: scanned=424 indexed=389 allowlisted=35`; self-test pass. Test
+counts are identical to the recorded run: reservation 11; bound-issuance 12;
+Commerce 116; settlement 224; booking_resale_admission 1006; credit 270;
+ai_delegation 169; token_reward 397; provider_facts 86; payment_effects 28;
+economics 99; offline_limits 9; runtime architecture 7; cargo kix-kernel test
+suites all ok; clippy `-D warnings` and fmt clean. Re-run logs were kept
+session-local (/tmp), not committed; the first session's evidence logs remain
+byte-identical. The fix-round delta against `875a468` is exactly the
+`docs/README.md` bullet and this appended section. Both locked kernel blobs
+were re-verified after the fix and match §4. No commit, push, PR, comment or
+other publication was performed; supervisor publication, A2 non-author
+exact-head review and exact-head KTX/KIX CI remain the delivery gates. All
+non-claims above are unchanged.
