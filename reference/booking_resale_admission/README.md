@@ -4108,3 +4108,93 @@ command, endpoint, automatic reconciliation or retry, production admission,
 distributed exclusivity, external execution, durability or legal/finality claim.
 A2 non-author exact-head review and both exact-head KTX/KIX CI workflows remain
 supervisor delivery gates.
+
+
+## Commerce settlement-bound issuance refusal vectors
+
+The companion [inputs](fixtures/commerce_bound_issuance_inputs_v1.json) and
+[complete outcomes](fixtures/commerce_bound_issuance_receipts_v1.json) publish two
+source-informed, offline histories through the unchanged in-process `FsmHost.call`
+and existing published command bodies. Each begins with explicit reservation
+clock, show, hold, confirmation and payment observation. No command is inferred
+from a later settlement state.
+
+| History | Ordered outcomes | Reservation result |
+|---|---|---|
+| `bound-issuance-after-commit` | Initiate/authorize settlement; bind reservation; `issue-early` refuses `SETTLEMENT_NOT_COMMITTED`; capture; fresh `issue-captured` refuses the same code; commit; explicitly replay the original complete `issue-early` body and retain its refusal; separately supply fresh `issue-committed` | Commitment alone leaves `PAYMENT_NOTED`, no right and `mock_settlement_commit_observed=false`. Only the explicit fresh-key issuance creates issue-1, active version-1 right and `MOCK_COMMIT_OBSERVED`. |
+| `committed-settlement-amount-mismatch` | Initiate/authorize/capture/commit settlement gross/amount 10000 successfully; bind; issue refuses `SETTLEMENT_AMOUNT_MISMATCH` against paid amount 10001 | Payment reference/amount and `PAYMENT_NOTED` remain; slot stays `RESERVED`; `issuance_id`, `right`, `slot_right_id` stay null. |
+
+Existing semantics are **sufficiently covered** by
+`test_reservation_fsm.py::ReservationFsmTests.test_settlement_gate_refuses_uncommitted_finality`
+and `ReservationFsmTests.test_bound_issue_checks_gross_and_replays_only_with_the_commit_view`.
+Portable atomicity/byte/pin infrastructure was **partially covered** by historical
+and entry/resale-order tests. Reservation-bound portable histories were **not
+covered**: a pre-edit scan of the journey, temporal, historical and entry/resale-order
+input packs found no `reservation_bind_settlement` action. The journey's existing
+`SETTLEMENT_NOT_COMMITTED` refusal concerns resale acceptance. The new test retains
+this gap inventory without changing any prior pack. See the
+[coverage map and actual local evidence](../../validation/2026-11-16-plan-commerce-bound-issuance-vectors/README.md).
+
+Consumer fields describe separate facts:
+
+| Field or observation | Meaning and boundary |
+|---|---|
+| `reservation.payment_ref`, `amount`, `phase="PAYMENT_NOTED"` | Synthetic payment observation; neither a settlement commitment nor an issued right. |
+| `reservation.settlement_id`, `settlement_gate="BOUND"` | Explicit reservation binding only. Binding makes no settlement transition. |
+| `settlement.phase="AUTHORIZED"` / `"CAPTURED"` | Insufficient for bound issuance; both produce the exact `SETTLEMENT_NOT_COMMITTED` refusal. |
+| `settlement.phase="COMMITTED"`, `gross` | Mock commitment. Matching gross is still required; commitment alone neither issues nor marks the reservation's commit observation. |
+| `reservation.mock_settlement_commit_observed=true`, `settlement_gate="MOCK_COMMIT_OBSERVED"` | Successful issuance observed the matching mock commitment. This flag does not assert bank execution, economic finality or chain finality. |
+| `reservation.issuance_id`, `slot_right_id`, `right`, `evidence.right_id`, `evidence.version` | Explicit successful mock issuance identity and active version-1 right. `chain_issued=false`. |
+| `reservation.admission_id`, `consume_id`; settlement `admission_granted` | Admission remains separate: IDs are null and `admission_granted=false` throughout. No authorization or consumption command is in these histories. |
+| `diagnostic_snapshot` | Detached Python observations immediately after each step, distinct from its retained receipt. Contains all five machines' canonical `state` strings, `digest`, complete `journal` and available reservation/show/settlement views. These are not published reads or authenticated authority. |
+
+Inputs use fixture version 1, `OFFLINE_CONFORMANCE_FIXTURE_ONLY`, domain
+`kix:fixture:fsm-catalogue:0.3` as metadata, ordered `cases`, source tests, contract
+predicates and synthetic clocks. Each step contains `id`, `action`, a complete
+published `body` and exactly one `expect` or `expect_error`; accepted expectations
+include `duplicate`, `applied`, field paths and journal deltas for all five machines.
+Optional `observe` describes current diagnostics. `refusal_of="issue-early"`
+requires identical action/body/key; it is an explicit input, never an automatic retry.
+The binding body is exactly `reservation_id`, `idempotency_key`, `settlement_id`;
+the issuance body is exactly `issuance_id`, `idempotency_key`, `order_id`.
+Price 10001, differing gross 10000, T0 1000000, expiry 1900000, `"ab"` repeated 32
+times and zero-fee `PRIMARY_FEE_BPS` are source-test examples, not product defaults.
+
+Outputs use `record_schema_version="kix-commerce-bound-issuance-receipts/1"`,
+`record_kind="IN_PROCESS_MOCK_RECEIPT_VECTORS"`, `normative=false`, input and
+sorted source pins (`path`, `sha256`, `gitBlob`), and ordered case outcomes.
+Each outcome has `id`, `action`, a full input path plus
+`#/cases/<i>/steps/<j>/body`, exactly one complete `receipt` or `rejection_code`,
+and its diagnostic snapshot. Pins cover imported helpers, cited source tests,
+contracts and all four inventoried prior input/output packs. New artifacts/test
+hashes are [separate](../../validation/2026-11-16-plan-commerce-bound-issuance-vectors/artifacts.json),
+avoiding self-hashes. Canonical UTF-8 JSON is compact and sorted-key, with ordered
+arrays, boolean/number/null distinctions and no trailing newline. Strict decoding
+rejects duplicate keys and nonfinite values. There is no golden-update mode.
+
+Every refusal preserves all five machines' public business state, digest, journal
+and views. Binding and issuance also preserve settlement; unused resale, admission
+and credit machines remain unchanged. Rejected keys are process-local bookkeeping
+outside these public business snapshots: rejected commands never enter accepted
+journals and their rejection records are not restored. The original rejected key
+therefore retains its refusal after commit in this host, while a separately supplied
+fresh key can issue. This is neither general rollback nor durable rejection replay.
+Mutation controls independently alter receipts/errors, boolean/number/null values,
+ordering, references, snapshots, keys and source pins. Input semantic controls
+recompute fixture pins; injected unrelated public-command effects at each refusal
+must fail the preservation guard.
+
+Run from the repository root:
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_bound_issuance_vectors.py -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_commerce_*.py' -v
+```
+
+Payment, mock settlement commitment, issuance and admission remain separate facts.
+All 13 reads remain **NOT_BOUND**, semantic SDK consumption **HOLD_SEMANTIC**, and
+**SD1 OPEN/User-owned**. Policy values remain **UNDETERMINED** with existing owners.
+This pack makes no HTTP, durability, external-consumer acceptance, production,
+real-payment, legal or chain-finality claim. It changes no implementation,
+contract, binding index, producer tuple, SDK or catalogue. A2 non-author exact-head
+review and both successful exact-head workflows remain supervisor delivery gates.
