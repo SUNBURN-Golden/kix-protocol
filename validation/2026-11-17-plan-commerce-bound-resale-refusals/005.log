@@ -1,0 +1,47 @@
+................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 224 tests in 1.775s
+
+OK
+................................................{"admit":"probe","component":"integration-gate","correlationId":"0ae697b4fb9874d00df4a2fef7a6ae7f","durationMs":2,"event":"http_request","journalDecision":"probe","localFileJournal":false,"method":"GET","path":"/ready","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"0ae697b4fb9874d00df4a2fef7a6ae7f","status":200,"ts":"2026-11-17T01:48:24Z"}
+{"admit":"probe","component":"integration-gate","correlationId":"b975dca5212bdce1f630ce07cd832015","durationMs":0,"event":"http_request","journalDecision":"probe","localFileJournal":false,"method":"GET","path":"/health","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"b975dca5212bdce1f630ce07cd832015","status":200,"ts":"2026-11-17T01:48:24Z"}
+{"admit":"OK","component":"integration-gate","correlationId":"9010ca92149f31bed65e907dc9ce90ca","durationMs":0,"error":"UNKNOWN_ACTION","event":"http_request","inFlight":1,"journalDecision":"not_attempted","localFileJournal":false,"maxInFlight":8,"method":"POST","path":"/x-kix-contract-only/local-call","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"9010ca92149f31bed65e907dc9ce90ca","status":400,"ts":"2026-11-17T01:48:24Z"}
+{"admit":"OK","component":"integration-gate","correlationId":"2e63ee284c7ed557c36cd6c13a87cbcf","durationMs":0,"error":"UNKNOWN_ACTION","event":"http_request","inFlight":1,"journalDecision":"not_attempted","localFileJournal":false,"maxInFlight":8,"method":"POST","path":"/x-kix-contract-only/local-call","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"2e63ee284c7ed557c36cd6c13a87cbcf","status":400,"ts":"2026-11-17T01:48:24Z"}
+{"action":"admit","admit":"OK","component":"integration-gate","correlationId":"effb0c5fc71befd74b4c82440e6a55d4","durationMs":0,"error":"TICKET_NOT_FOUND","event":"http_request","inFlight":1,"journalDecision":"inactive","localFileJournal":false,"maxInFlight":8,"method":"POST","operationId":"op-admit","path":"/x-kix-contract-only/local-call","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"effb0c5fc71befd74b4c82440e6a55d4","status":422,"ts":"2026-11-17T01:48:24Z"}
+..........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 1018 tests in 199.131s
+
+OK
+..............................................................................................................................................................................................................................................usage: settlement_variance.py [--check]
+..................usage: shared_exposure.py [--check]
+..............
+----------------------------------------------------------------------
+Ran 270 tests in 13.495s
+
+OK
+.........................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 169 tests in 9.454s
+
+OK
+.............................................................................................................................................................................................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 397 tests in 58.829s
+
+OK
+......................................................................................
+----------------------------------------------------------------------
+Ran 86 tests in 11.406s
+
+OK
+............................
+----------------------------------------------------------------------
+Ran 28 tests in 1.324s
+
+OK
+...................................................................................................
+----------------------------------------------------------------------
+Ran 99 tests in 1.078s
+
+OK
