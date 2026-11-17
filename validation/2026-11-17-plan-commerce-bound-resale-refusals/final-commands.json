@@ -1,0 +1,44 @@
+[
+  {
+    "command": "python3.12 -B validation/2026-11-17-plan-commerce-bound-resale-refusals/check_preservation.py",
+    "exit_code": 0,
+    "log": "final-001.log",
+    "seconds": 0.133
+  },
+  {
+    "command": "git diff --check",
+    "exit_code": 0,
+    "log": "final-002.log",
+    "seconds": 0.008
+  },
+  {
+    "command": "python3 -B scripts/check_docs_index.py",
+    "exit_code": 0,
+    "log": "final-003.log",
+    "seconds": 0.033
+  },
+  {
+    "command": "python3 -B scripts/check_docs_index.py --self-test",
+    "exit_code": 0,
+    "log": "final-004.log",
+    "seconds": 0.046
+  },
+  {
+    "command": "python3.12 -B validation/2026-11-17-plan-commerce-bound-resale-refusals/check_preservation.py",
+    "exit_code": 0,
+    "log": "final-005.log",
+    "seconds": 0.198
+  },
+  {
+    "command": "git diff --check",
+    "exit_code": 0,
+    "log": "final-006.log",
+    "seconds": 0.01
+  },
+  {
+    "command": "git rev-parse origin/main HEAD",
+    "exit_code": 0,
+    "log": "final-007.log",
+    "seconds": 0.005
+  }
+]

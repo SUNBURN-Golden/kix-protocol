@@ -1,0 +1,32 @@
+[
+  {
+    "command": "python3 -B scripts/verify_runtime_architecture.py",
+    "exit_code": 0,
+    "log": "ktx-001.log",
+    "seconds": 0.039
+  },
+  {
+    "command": "python3 -B scripts/test_runtime_architecture.py",
+    "exit_code": 0,
+    "log": "ktx-002.log",
+    "seconds": 0.282
+  },
+  {
+    "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline",
+    "exit_code": 0,
+    "log": "ktx-003.log",
+    "seconds": 7.521
+  },
+  {
+    "command": "cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings",
+    "exit_code": 0,
+    "log": "ktx-004.log",
+    "seconds": 0.808
+  },
+  {
+    "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check",
+    "exit_code": 0,
+    "log": "ktx-005.log",
+    "seconds": 0.281
+  }
+]

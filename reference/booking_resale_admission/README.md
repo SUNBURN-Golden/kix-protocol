@@ -4198,3 +4198,89 @@ This pack makes no HTTP, durability, external-consumer acceptance, production,
 real-payment, legal or chain-finality claim. It changes no implementation,
 contract, binding index, producer tuple, SDK or catalogue. A2 non-author exact-head
 review and both successful exact-head workflows remain supervisor delivery gates.
+
+## Commerce settlement-bound resale refusal vectors
+
+The companion [canonical inputs](fixtures/commerce_bound_resale_inputs_v1.json)
+and [complete outcomes](fixtures/commerce_bound_resale_receipts_v1.json) publish
+three residual, source-informed histories for `kix-commerce-apps`. They replay
+explicit commands through the unchanged in-process `FsmHost`; no transport or
+external service is involved. The source is
+`test_resale_fsm.py::ResaleFsmTests.test_bound_transfer_waits_for_mock_commit_and_reconciles`,
+[booking/resale §§10.5–10.7](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#105-정산-게이트)
+and [settlement §9](../../docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md#9-참조-수락-상태-기계).
+The [coverage map](../../validation/2026-11-17-plan-commerce-bound-resale-refusals/coverage.md)
+classifies the existing journey, historical, temporal, entry/resale ordering and
+bound-issuance packs before identifying these portable gaps.
+
+| History | Explicit observations |
+|---|---|
+| `committed-resale-amount-mismatch` | Gross `10001` commits against listing amount `8000`; `transfer-mismatch` refuses `SETTLEMENT_AMOUNT_MISMATCH`. |
+| `failed-settlement-blocks-transfer` | `fail` records `synthetic-fail`; `transfer-failed` refuses `SETTLEMENT_NOT_COMMITTED`. |
+| `rejected-transfer-after-commit` | `transfer-early` refuses at AUTHORIZED. Capture and commitment alone leave the seller and version 1. `replay-transfer-early` still refuses; the separately supplied `transfer-fresh` changes ownership to the recipient/version 2, and `replay-transfer-fresh` returns its first receipt without effects. |
+
+For the captured-to-committed success path, consume the existing
+[journey inputs](fixtures/commerce_journey_conformance_v1.json) and
+[journey receipts](fixtures/commerce_journey_receipts_v1.json), specifically
+`accept-A-before-commit → settle-resale-commit → accept-A`. This pack does not
+repeat that history. Each new case explicitly establishes reservation clock,
+show, hold, confirmation, payment and issuance, then resale clock, adoption,
+listing and payment. Primary price `10001`, resale amount `8000`, clock `1000000`,
+expiry `1900000`, fee/cap/role fields and failure reason are synthetic examples,
+not product defaults. Policy values remain `UNDETERMINED` with existing owners
+([booking/resale §7.1](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#71-결정-표),
+[settlement policy](../../docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md)).
+
+Inputs use `fixture_version: 1`, `OFFLINE_CONFORMANCE_FIXTURE_ONLY` and domain
+`kix:fixture:fsm-catalogue:0.3`. Every step has its complete command `body` and
+exactly one `expect` or `expect_error`. Accepted expectations enumerate journal
+deltas for all five machines. `refusal_of` and `replay_of` point to earlier
+explicit steps; the harness never invents follow-up commands or keys. The fresh
+transfer changes only `idempotency_key`, preserving `transfer_id` and listing.
+
+Outputs use non-normative schema `kix-commerce-bound-resale-receipts/1` and kind
+`IN_PROCESS_MOCK_RECEIPT_VECTORS`. Every ordered outcome has its `id`, `action`,
+full `input_ref` (`reference/booking_resale_admission/fixtures/commerce_bound_resale_inputs_v1.json#/cases/<i>/steps/<j>/body`,
+zero-based), exactly one complete `receipt` or exact `rejection_code`, and a
+`diagnostic_snapshot`. Diagnostics detach all five machines' canonical `state`,
+`digest` and accepted `journal`, plus available reservation/show/right/listing/
+settlement views. These are test observations, not new read commands. A digest
+is a local state hash, not a signature or chain commitment.
+
+Both documents are compact sorted-key UTF-8 JSON with ordered arrays and no
+trailing newline. Duplicate keys, nonfinite numbers and changed scalar types
+are rejected. Input and sorted source pins record exact SHA-256 and Git blob
+identities before execution; imported helpers, FSM sources, contracts, source
+tests and prior packs are included. New artifact hashes are
+[separate](../../validation/2026-11-17-plan-commerce-bound-resale-refusals/artifacts.json)
+to avoid self-reference. There is no golden-update mode.
+
+Every refusal preserves observable business state, ownership/version, digests,
+views and accepted journals across reservation, resale, admission, settlement
+and credit. Rejected-key retention is process-local bookkeeping outside those
+journals; this pack does not claim restoration of rejected keys. Commitment is
+separate from transfer. Payment observation, reservation issuance, resale
+ownership and admission remain separate facts. Admission/consume IDs stay null;
+execution, economic-finality, chain and production flags remain false. Binding
+and transfer only observe settlement, and unused admission/credit never move.
+
+All 13 reads remain `NOT_BOUND`; semantic SDK consumption remains
+`HOLD_SEMANTIC`; SD1 remains OPEN/User-owned. The consumer binding index,
+catalogue, contracts, SDK, FSMs and prior packs are unchanged. These vectors do
+not qualify an external consumer, establish durability, restore rejected keys,
+execute funds, prove chain finality, or approve product policy. A2 non-author
+exact-head review and successful exact-head KTX/KIX workflows remain separate
+delivery gates.
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_resale_fsm.py -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_bound_resale_vectors.py -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_commerce_*.py' -v
+```
+
+The new suite compares complete canonical outcomes and resolved references,
+checks refusal preservation and explicit fresh-key transfer, and mutates errors,
+receipt fields/types, order, references, snapshots, journals and pins. Re-pinned
+input mutations must fail semantic checks. Public-command injections test extra
+effects at each refusal, premature transfer during commit and effects on replay.
+See [actual commands and results](../../validation/2026-11-17-plan-commerce-bound-resale-refusals/README.md).
