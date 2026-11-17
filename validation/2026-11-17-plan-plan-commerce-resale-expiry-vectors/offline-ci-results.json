@@ -1,0 +1,169 @@
+[
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/settlement_f01_f03",
+      "-t",
+      "reference/settlement_f01_f03"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 2.031,
+    "log": "offline-ci-01.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/booking_resale_admission",
+      "-t",
+      "reference/booking_resale_admission"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 217.075,
+    "log": "offline-ci-02.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/credit_advance_f04",
+      "-t",
+      "reference/credit_advance_f04"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 13.083,
+    "log": "offline-ci-03.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/ai_delegation",
+      "-t",
+      "reference/ai_delegation"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 8.586,
+    "log": "offline-ci-04.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 42.692,
+    "log": "offline-ci-05.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/provider_facts",
+      "-t",
+      "reference/provider_facts"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 10.348,
+    "log": "offline-ci-06.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/payment_effects",
+      "-t",
+      "reference/payment_effects"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 1.426,
+    "log": "offline-ci-07.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/economics",
+      "-t",
+      "reference/economics"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 1.18,
+    "log": "offline-ci-08.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "integration_gate.test_offline_limits"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.23,
+    "log": "offline-ci-09.log",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  }
+]

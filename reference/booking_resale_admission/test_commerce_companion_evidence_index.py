@@ -15,6 +15,7 @@ import test_commerce_historical_receipt_vectors as historical
 import test_commerce_entry_resale_order_vectors as ordering
 import test_commerce_bound_issuance_vectors as issuance
 import test_commerce_bound_resale_vectors as resale
+import test_commerce_resale_expiry_vectors as expiry
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -30,6 +31,7 @@ PACKS = (
     ('entry_resale_order', ordering, 'CommerceEntryResaleOrderVectorTests', 'test_complete_output_bytes_and_references', 29),
     ('bound_issuance', issuance, 'CommerceBoundIssuanceVectorTests', 'test_complete_output_bytes_and_references', 25),
     ('bound_resale', resale, 'CommerceBoundResaleVectorTests', 'test_complete_output_bytes_and_references', 49),
+    ('resale_expiry', expiry, 'CommerceResaleExpiryVectorTests', 'test_complete_output_bytes_and_references', 27),
 )
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
@@ -61,6 +63,7 @@ LIMITATIONS = {
     'entry_resale_order': ['Synthetic resale/admission ordering; local observations do not establish venue admission or ownership finality.'],
     'bound_issuance': ['Mock settlement binding, commitment and explicit issuance are separate facts; rejected-key retention is process-local.'],
     'bound_resale': ['Mock settlement binding, commitment and explicit transfer are separate facts; rejected-key retention is process-local.'],
+    'resale_expiry': ['Synthetic unpaid/paid listing expiry preserves payment facts and historical receipts; no compensation, relisting or transfer policy is defined.'],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
               'outcome_kind', 'binding_ref', 'binding_status'}
@@ -197,7 +200,7 @@ def validate_index(document, read=_read):
             _check(command['action'] == entry['action'] and command['status'] == entry['binding_status'],
                    'resolved binding association')
         total += len(entries)
-    _check(total == 240, 'total coverage')
+    _check(total == 267, 'total coverage')
     return total
 
 
@@ -212,10 +215,10 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
         mutate(document)
         with self.assertRaisesRegex(AssertionError, diagnostic):
             validate_index(document)
-        self.assertEqual(validate_index(self.document), 240)
+        self.assertEqual(validate_index(self.document), 267)
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 240)
+        self.assertEqual(validate_index(self.document), 267)
 
     def test_coverage_controls(self):
         for mutate in (
@@ -226,7 +229,7 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
         ):
             with self.subTest(mutate=mutate):
                 self._reject(mutate, 'pack coverage/order')
-        for p in range(6):
+        for p in range(len(PACKS)):
             for mutate, diagnostic in (
                 (lambda e: e.pop(), 'entry coverage/count'),
                 (lambda e: e.append(copy.deepcopy(e[0])), 'entry coverage/count'),
@@ -274,7 +277,7 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                      'binding_status association')
 
     def test_digest_and_reference_controls(self):
-        for p in range(6):
+        for p in range(len(PACKS)):
             for side in ('input', 'output'):
                 for digest, value in (('sha256', '0' * 64), ('gitBlob', '0' * 40)):
                     with self.subTest(pack=p, side=side, digest=digest):
@@ -296,24 +299,25 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
         for ref in ('missing.json#/steps/0', 'pack.json#/steps/99', 'pack.json#/absent'):
             with self.subTest(ref=ref), self.assertRaisesRegex(AssertionError, 'unresolvable reference'):
                 _resolve({'pack.json': {'steps': []}}, ref)
-        # Re-pin detached malformed outcomes, so association checks must catch them.
-        for mutate, diagnostic in (
-            (lambda d: d['cases'].reverse(), 'outcome case association'),
-            (lambda d: d['cases'][0]['steps'].pop(), 'outcome step association'),
-            (lambda d: d['cases'][0]['steps'][0].update(action='settlement_commit'), 'outcome action association'),
-            (lambda d: d['cases'][0]['steps'][0].update(input_ref=temporal.FIXTURE + '#/cases/1/steps/0/body'),
-             'outcome input association'),
-            (lambda d: d['cases'][0]['steps'][0].update(rejection_code='CHANGED'), 'outcome kind association'),
-        ):
-            document = copy.deepcopy(self.document)
-            path = document['packs'][1]['output']['path']
-            output = journey._decode(_read(path))
-            mutate(output)
-            raw = _canonical(output).encode()
-            document['packs'][1]['output'] = journey._pin(path, raw)
-            with self.subTest(diagnostic=diagnostic), self.assertRaisesRegex(AssertionError, diagnostic):
-                validate_index(document, read=lambda p: raw if p == path else _read(p))
-        self.assertEqual(validate_index(self.document), 240)
+        # Re-pin detached malformed outcomes for every grouped pack.
+        for p in range(1, len(PACKS)):
+            for mutate, diagnostic in (
+                (lambda d: d['cases'].reverse(), 'outcome case association'),
+                (lambda d: d['cases'][0]['steps'].pop(), 'outcome step association'),
+                (lambda d: d['cases'][0]['steps'][0].update(action='settlement_commit'), 'outcome action association'),
+                (lambda d: d['cases'][0]['steps'][0].update(input_ref=temporal.FIXTURE + '#/cases/1/steps/0/body'),
+                 'outcome input association'),
+                (lambda d: d['cases'][0]['steps'][0].update(rejection_code='CHANGED'), 'outcome kind association'),
+            ):
+                document = copy.deepcopy(self.document)
+                path = document['packs'][p]['output']['path']
+                output = journey._decode(_read(path))
+                mutate(output)
+                raw = _canonical(output).encode()
+                document['packs'][p]['output'] = journey._pin(path, raw)
+                with self.subTest(diagnostic=diagnostic), self.assertRaisesRegex(AssertionError, diagnostic):
+                    validate_index(document, read=lambda p: raw if p == path else _read(p))
+        self.assertEqual(validate_index(self.document), 267)
 
     def test_qualification_controls(self):
         for mutate, diagnostic in (
@@ -344,7 +348,7 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                     b'{"x":NaN}', b'{"x":Infinity}', b'{"x":1e999}', self.raw + b'{}'):
             with self.subTest(raw=raw[:40]), self.assertRaises((ValueError, UnicodeError)):
                 journey._decode(raw)
-        self.assertEqual(validate_index(self.document), 240)
+        self.assertEqual(validate_index(self.document), 267)
 
 
 if __name__ == '__main__':

@@ -2577,6 +2577,298 @@
           "binding_status": "MOCK_EVIDENCE"
         }
       ]
+    },
+    {
+      "entries": [
+        {
+          "action": "reservation_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/0",
+          "step_id": "reservation-clock"
+        },
+        {
+          "action": "reservation_register_show",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/1",
+          "step_id": "show"
+        },
+        {
+          "action": "reservation_hold",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/2",
+          "step_id": "hold"
+        },
+        {
+          "action": "reservation_confirm",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/3",
+          "step_id": "confirm"
+        },
+        {
+          "action": "reservation_observe_payment",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/4",
+          "step_id": "payment"
+        },
+        {
+          "action": "reservation_issue",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/5",
+          "step_id": "issue"
+        },
+        {
+          "action": "resale_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/6",
+          "step_id": "resale-clock"
+        },
+        {
+          "action": "resale_adopt_issued",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/62",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/7",
+          "step_id": "resale-adopt"
+        },
+        {
+          "action": "resale_list_resale",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/8",
+          "step_id": "list"
+        },
+        {
+          "action": "resale_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/9",
+          "step_id": "resale-expire"
+        },
+        {
+          "action": "resale_list_resale",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/10",
+          "step_id": "replay-list"
+        },
+        {
+          "action": "resale_observe_resale_payment",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "unpaid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_kind": "rejection_code",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/0/steps/11",
+          "step_id": "payment-late"
+        },
+        {
+          "action": "reservation_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/0/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/0",
+          "step_id": "reservation-clock"
+        },
+        {
+          "action": "reservation_register_show",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/1/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/1",
+          "step_id": "show"
+        },
+        {
+          "action": "reservation_hold",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/2/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/2",
+          "step_id": "hold"
+        },
+        {
+          "action": "reservation_confirm",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/3/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/3",
+          "step_id": "confirm"
+        },
+        {
+          "action": "reservation_observe_payment",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/4/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/4",
+          "step_id": "payment"
+        },
+        {
+          "action": "reservation_issue",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/5/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/5",
+          "step_id": "issue"
+        },
+        {
+          "action": "resale_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/6/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/6",
+          "step_id": "resale-clock"
+        },
+        {
+          "action": "resale_adopt_issued",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/62",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/7/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/7",
+          "step_id": "resale-adopt"
+        },
+        {
+          "action": "resale_list_resale",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/8/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/8",
+          "step_id": "list"
+        },
+        {
+          "action": "resale_observe_resale_payment",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/9/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/9",
+          "step_id": "resale-payment"
+        },
+        {
+          "action": "resale_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/10/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/10",
+          "step_id": "resale-expire"
+        },
+        {
+          "action": "resale_list_resale",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/11/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/11",
+          "step_id": "replay-list"
+        },
+        {
+          "action": "resale_observe_resale_payment",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/12/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/12",
+          "step_id": "replay-payment"
+        },
+        {
+          "action": "resale_accept_resale",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/69",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/13/body",
+          "outcome_kind": "rejection_code",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/13",
+          "step_id": "transfer-late"
+        },
+        {
+          "action": "resale_cancel_listing",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/66",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND",
+          "case_id": "paid-listing-expiry",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json#/cases/1/steps/14/body",
+          "outcome_kind": "rejection_code",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json#/cases/1/steps/14",
+          "step_id": "cancel-late"
+        }
+      ],
+      "id": "resale_expiry",
+      "input": {
+        "gitBlob": "190bfd567249320b006f4d17086b2c71c41efa2f",
+        "path": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json",
+        "sha256": "82cc7da6c64c4c7808fd3f63af8991ba5db87b18e9f2684bbef5aa0d2e235690"
+      },
+      "limitations": [
+        "Synthetic unpaid/paid listing expiry preserves payment facts and historical receipts; no compensation, relisting or transfer policy is defined."
+      ],
+      "output": {
+        "gitBlob": "fa3a0a5996a232a1edc23236b690b18bcccb7d04",
+        "path": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json",
+        "sha256": "1e7030564f15ba85a72abbaee5b2f6ee27b542dbf7a40310a7920c20157960b7"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_resale_expiry_vectors.py",
+        "symbol": "CommerceResaleExpiryVectorTests.test_complete_output_bytes_and_references"
+      }
     }
   ]
 }

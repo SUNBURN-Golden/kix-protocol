@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects six existing input/outcome pack families (240 steps) to replay tests
+It connects seven input/outcome pack families (267 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -21,6 +21,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `entry_resale_order` | `commerce_entry_resale_order_inputs_v1.json` | `commerce_entry_resale_order_receipts_v1.json` | `test_commerce_entry_resale_order_vectors.py` | 2 / 29 |
 | `bound_issuance` | `commerce_bound_issuance_inputs_v1.json` | `commerce_bound_issuance_receipts_v1.json` | `test_commerce_bound_issuance_vectors.py` | 2 / 25 |
 | `bound_resale` | `commerce_bound_resale_inputs_v1.json` | `commerce_bound_resale_receipts_v1.json` | `test_commerce_bound_resale_vectors.py` | 3 / 49 |
+| `resale_expiry` | `commerce_resale_expiry_inputs_v1.json` | `commerce_resale_expiry_receipts_v1.json` | `test_commerce_resale_expiry_vectors.py` | 2 / 27 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -92,3 +93,28 @@ testnet/mainnet or production runtime is involved.
 record this builder's local work. Local success is not clean-room independence,
 A2 non-author exact-final-head review or hosted exact-head KTX/KIX CI. Those
 remain supervisor delivery gates.
+
+## Resale expiry extension
+
+The seventh family adds two complete ordered histories through the existing
+in-process `FsmHost`: unpaid expiry rejects payment with `LISTING_NOT_OPEN`;
+paid expiry preserves `PAYMENT_NOTED` and the observed payment reference/amount,
+rejects transfer with `LISTING_NOT_OPEN`, and rejects seller cancellation with
+`COMPENSATION_UNDEFINED`. Holder `buyer-1` and version `1` remain unchanged.
+Expiry is diagnostic, not a phase. The pack introduces no compensation, refund,
+automatic relisting or transfer behavior.
+
+Original-key listing/payment replay after clock advancement returns the first
+receipt (`expired: false`), while current diagnostics retain `expired: true`.
+The new outcome schema `kix-commerce-resale-expiry-receipts/1` contains the
+fixture pin, sorted source pins and ordered cases/steps. Each step has `id`,
+`action`, `input_ref`, exactly one of `receipt`/`rejection_code`, and a detached
+`diagnostic_snapshot` of local views. Full machine state, digest and journals
+are checked for rejection/replay non-mutation in memory; these are not read APIs.
+The published listing amount and the accepted payment journal retain the amount;
+there is no invented `payment_amount` view field.
+
+The original six packs and all qualification metadata are preserved. Product TTL
+and compensation policy remain **UNDETERMINED** with Astra/User and existing
+legal/accounting owners. [Extension coverage and actual local verification](../../validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/README.md)
+provide builder evidence only; no external consumer acceptance or A2 review is claimed.
