@@ -208,8 +208,8 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect the seven
-Commerce input/outcome pack families (267 steps, including unpaid/paid resale expiry) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect the eight
+Commerce input/outcome pack families (293 steps, including unpaid/paid resale expiry and admission cancellation) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation without changing the binding index or producer tuple. Later evidence
 does not promote binding statuses; SD1 remains OPEN/User-owned, semantic

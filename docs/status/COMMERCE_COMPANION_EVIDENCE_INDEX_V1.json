@@ -2869,6 +2869,288 @@
         "path": "reference/booking_resale_admission/test_commerce_resale_expiry_vectors.py",
         "symbol": "CommerceResaleExpiryVectorTests.test_complete_output_bytes_and_references"
       }
+    },
+    {
+      "entries": [
+        {
+          "action": "reservation_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-before-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/0/steps/0",
+          "step_id": "reservation-clock"
+        },
+        {
+          "action": "reservation_register_show",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-before-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/0/steps/1",
+          "step_id": "show"
+        },
+        {
+          "action": "reservation_hold",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-before-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/0/steps/2",
+          "step_id": "hold"
+        },
+        {
+          "action": "reservation_confirm",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-before-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/0/steps/3",
+          "step_id": "confirm"
+        },
+        {
+          "action": "reservation_cancel",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/55",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-before-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/0/steps/4",
+          "step_id": "cancel-before-issue"
+        },
+        {
+          "action": "admission_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-before-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/0/steps/5",
+          "step_id": "admission-clock"
+        },
+        {
+          "action": "admission_adopt_issued",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/72",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-before-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_kind": "rejection_code",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/0/steps/6",
+          "step_id": "admission-adopt"
+        },
+        {
+          "action": "reservation_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "payment-without-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/1/steps/0/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/1/steps/0",
+          "step_id": "reservation-clock"
+        },
+        {
+          "action": "reservation_register_show",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "payment-without-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/1/steps/1/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/1/steps/1",
+          "step_id": "show"
+        },
+        {
+          "action": "reservation_hold",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "payment-without-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/1/steps/2/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/1/steps/2",
+          "step_id": "hold"
+        },
+        {
+          "action": "reservation_confirm",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "payment-without-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/1/steps/3/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/1/steps/3",
+          "step_id": "confirm"
+        },
+        {
+          "action": "reservation_observe_payment",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "payment-without-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/1/steps/4/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/1/steps/4",
+          "step_id": "payment"
+        },
+        {
+          "action": "admission_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "payment-without-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/1/steps/5/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/1/steps/5",
+          "step_id": "admission-clock"
+        },
+        {
+          "action": "admission_adopt_issued",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/72",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "payment-without-issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/1/steps/6/body",
+          "outcome_kind": "rejection_code",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/1/steps/6",
+          "step_id": "admission-adopt"
+        },
+        {
+          "action": "reservation_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/0/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/0",
+          "step_id": "reservation-clock"
+        },
+        {
+          "action": "reservation_register_show",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/1/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/1",
+          "step_id": "show"
+        },
+        {
+          "action": "reservation_hold",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/2/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/2",
+          "step_id": "hold"
+        },
+        {
+          "action": "reservation_confirm",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/3/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/3",
+          "step_id": "confirm"
+        },
+        {
+          "action": "reservation_observe_payment",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/4/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/4",
+          "step_id": "payment"
+        },
+        {
+          "action": "reservation_issue",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/5/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/5",
+          "step_id": "issue"
+        },
+        {
+          "action": "admission_set_clock",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/6/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/6",
+          "step_id": "admission-clock"
+        },
+        {
+          "action": "admission_adopt_issued",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/72",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/7/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/7",
+          "step_id": "admission-adopt"
+        },
+        {
+          "action": "reservation_cancel",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/55",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/8/body",
+          "outcome_kind": "rejection_code",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/8",
+          "step_id": "cancel-issued"
+        },
+        {
+          "action": "admission_authorize_admission",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/9/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/9",
+          "step_id": "authorize"
+        },
+        {
+          "action": "admission_consume",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/10/body",
+          "outcome_kind": "receipt",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/10",
+          "step_id": "consume"
+        },
+        {
+          "action": "reservation_cancel",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/55",
+          "binding_status": "MOCK_EVIDENCE",
+          "case_id": "cancel-after-issue-and-consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json#/cases/2/steps/11/body",
+          "outcome_kind": "rejection_code",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json#/cases/2/steps/11",
+          "step_id": "cancel-consumed"
+        }
+      ],
+      "id": "admission_cancellation",
+      "input": {
+        "gitBlob": "c01f5cbaa82c337580ba193c4190c6293dbb0170",
+        "path": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json",
+        "sha256": "02568da4ecaea704f80796cfa89808898cb17d69a52a0468cfd5680851b8bb40"
+      },
+      "limitations": [
+        "Synthetic cancellation/adoption ordering preserves issued credentials; rejected-key retention is process-local and legal effects remain UNDETERMINED—User/legal."
+      ],
+      "output": {
+        "gitBlob": "1466aa61192501e3755c5041566d96a129a005d8",
+        "path": "reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json",
+        "sha256": "d964e4ce880e77e0b3c22b4628e2c2af45cf2e87b2a82f23979a4a8f13d295a7"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_admission_cancellation_vectors.py",
+        "symbol": "CommerceAdmissionCancellationVectorTests.test_complete_output_bytes_and_references"
+      }
     }
   ]
 }

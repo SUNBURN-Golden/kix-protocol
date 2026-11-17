@@ -4350,3 +4350,61 @@ source-informed local mock evidence, not clean-room independence, chain/funds
 finality, legal compliance, production readiness, hosted CI or A2 non-author
 review. [Coverage, preservation and actual command evidence](../../validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/README.md)
 record the builder's scope and remaining delivery gates.
+
+
+## Commerce admission cancellation vectors
+
+The [canonical inputs](fixtures/commerce_admission_cancellation_inputs_v1.json)
+and [complete ordered outcomes](fixtures/commerce_admission_cancellation_receipts_v1.json)
+publish three independent, source-informed histories (26 steps) through the
+unchanged in-process `FsmHost`. The source is
+`test_admission_fsm.py::AdmissionFsmTests.test_cancel_before_issue_blocks_entry_and_cancel_after_issue_does_not_void_it`
+and [contract §11.4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#114-순서).
+
+| Case | Ordered result |
+|---|---|
+| `cancel-before-issue` | Confirm, cancel before payment/issuance, set admission clock, reject adoption with `TICKET_CANCELLED` |
+| `payment-without-issue` | Observe payment, set admission clock, reject adoption with `TICKET_NOT_ISSUED` |
+| `cancel-after-issue-and-consume` | Explicit issue, clock and adopt; reject cancellation with `CANCEL_AFTER_ISSUE`; authorize and consume; reject cancellation again with `CANCEL_AFTER_ISSUE` |
+
+Payment observation creates no issued right. Issuance creates no admission
+credential until explicit adoption. Adoption leaves `ELIGIBLE`, authorization
+leaves `AUTHORIZED`, and consumption produces `CONSUMED`, version 2. Cancellation
+refusals preserve issuance, payment reference, holder and consumed identity.
+Cancelling a paid but unissued reservation is a separate compensation boundary,
+already covered by temporal vectors; no compensation/refund policy is selected.
+
+`kix-commerce-admission-cancellation-receipts/1` uses raw-byte SHA-256/Git blob
+pins, a sorted explicit source set, ordered case/step identities and exact input
+pointers ending in `/cases/<i>/steps/<j>/body`. Each outcome contains exactly
+one complete `receipt` or `rejection_code`, plus a detached diagnostic snapshot
+of all five machines' canonical business state, digest, journals and local
+views. Refusals preserve these observations. Rejected-key bindings are retained
+only in the live process outside these business snapshots/journals; repeated
+refusal and changed-binding conflict are checked separately. No claim about
+unchanged internal memory, restart retention or durable recovery follows.
+
+The [replay suite](test_commerce_admission_cancellation_vectors.py) validates
+published schemas and source/input pins before executing. It compares complete
+canonical bytes with no update mode, and rejects detached wrong outcomes,
+scalar-type changes, omissions, duplicates, reordered steps, crossed references
+and stale pins. Repinned malformed inputs exercise semantic guards before host
+execution. Injected effects prove refusal atomicity checks can detect mutations.
+From repository root, with Python 3.12:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:reference/booking_resale_admission python3.12 -m unittest test_commerce_admission_cancellation_vectors
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:reference/booking_resale_admission python3.12 -m unittest test_commerce_companion_evidence_index
+```
+
+The [companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+appends `admission_cancellation` (26 entries): eight families, 293 entries,
+with the original seven families/267 entries and all qualification metadata
+preserved. This is local synthetic evidence, not a consumer adapter or published
+read API. HOLD_SEMANTIC, all 13 reads NOT_BOUND, SD1 OPEN/User-owned and external
+consumer acceptance UNVERIFIED remain. Policy values stay
+**UNDETERMINED—Astra/User** and legal effects **UNDETERMINED—User/legal**.
+No real funds, PG/bank/KYC calls, sockets, external services, chain execution or
+production runtime are involved. [Coverage, commands, preservation and limitations](../../validation/2026-11-18-plan-plan-commerce-admission-cancellation-vec/README.md)
+record builder evidence only; A2 non-author exact-head review and hosted KTX/KIX
+CI remain separate supervisor gates.
