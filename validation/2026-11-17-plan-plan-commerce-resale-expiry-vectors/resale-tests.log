@@ -1,0 +1,351 @@
+test_bad_json_duplicate_keys_nonfinite_and_overflow_stop_without_followup (test_resale_cli.ResaleCliTests.test_bad_json_duplicate_keys_nonfinite_and_overflow_stop_without_followup) ... ok
+test_bad_paths_setup_and_usage_exit_two (test_resale_cli.ResaleCliTests.test_bad_paths_setup_and_usage_exit_two) ... ok
+test_domain_rejections_continue_only_with_explicit_lines_and_exit_one (test_resale_cli.ResaleCliTests.test_domain_rejections_continue_only_with_explicit_lines_and_exit_one) ... ok
+test_every_selector_dispatches_exactly_once_and_payment_buyer_is_optional (test_resale_cli.ResaleCliTests.test_every_selector_dispatches_exactly_once_and_payment_buyer_is_optional) ... ok
+test_importable_without_cli_side_effects_and_unexpected_failures_surface (test_resale_cli.ResaleCliTests.test_importable_without_cli_side_effects_and_unexpected_failures_surface) ... ok
+test_reconcile_file_stdin_and_direct_fsm_parity (test_resale_cli.ResaleCliTests.test_reconcile_file_stdin_and_direct_fsm_parity) ... ok
+test_structural_failure_stops_before_dispatch_or_next_line (test_resale_cli.ResaleCliTests.test_structural_failure_stops_before_dispatch_or_next_line) ... ok
+test_transcript_file_and_stdin_success_with_historical_receipts_current_views (test_resale_cli.ResaleCliTests.test_transcript_file_and_stdin_success_with_historical_receipts_current_views) ... ok
+test_views_via_cli_do_not_mutate_any_machine_or_fetch (test_resale_cli.ResaleCliTests.test_views_via_cli_do_not_mutate_any_machine_or_fetch) ... ok
+test_all_envelope_setup_and_body_fields_required_before_construction (test_resale_cli.ResaleFixtureTests.test_all_envelope_setup_and_body_fields_required_before_construction) ... ok
+test_bound_uncommitted_refusal_does_not_commit_or_transfer (test_resale_cli.ResaleFixtureTests.test_bound_uncommitted_refusal_does_not_commit_or_transfer) ... ok
+test_explicit_clocks_and_matching_issuance_adoption_are_mandatory (test_resale_cli.ResaleFixtureTests.test_explicit_clocks_and_matching_issuance_adoption_are_mandatory) ... ok
+test_fixture_text_is_strict_before_any_machine_construction (test_resale_cli.ResaleFixtureTests.test_fixture_text_is_strict_before_any_machine_construction) ... ok
+test_fresh_actual_graph_uses_custom_caller_values_without_binding_defaults (test_resale_cli.ResaleFixtureTests.test_fresh_actual_graph_uses_custom_caller_values_without_binding_defaults) ... ok
+test_invalid_shapes_unknown_setup_and_offer_identities_rejected_before_construction (test_resale_cli.ResaleFixtureTests.test_invalid_shapes_unknown_setup_and_offer_identities_rejected_before_construction) ... ok
+test_recordings_validated_on_fetch_and_synthetic_faults_do_no_followup (test_resale_cli.ResaleFixtureTests.test_recordings_validated_on_fetch_and_synthetic_faults_do_no_followup) ... ok
+test_setup_domain_failure_never_publishes_partial_session (test_resale_cli.ResaleFixtureTests.test_setup_domain_failure_never_publishes_partial_session) ... ok
+test_payment_boundary_errors_no_mutation_no_retry_and_key_remains_usable (test_resale_cli.ResaleRecordedPaymentCliTests.test_payment_boundary_errors_no_mutation_no_retry_and_key_remains_usable) ... ok
+test_payment_fixture_strict_before_graph_and_optional_compatibility (test_resale_cli.ResaleRecordedPaymentCliTests.test_payment_fixture_strict_before_graph_and_optional_compatibility) ... ok
+test_recorded_paths_and_semantic_refusals_match_direct_fsm_after_every_request (test_resale_cli.ResaleRecordedPaymentCliTests.test_recorded_paths_and_semantic_refusals_match_direct_fsm_after_every_request) ... ok
+test_recorded_transcripts_file_stdin_match_and_pause_before_transfer (test_resale_cli.ResaleRecordedPaymentCliTests.test_recorded_transcripts_file_stdin_match_and_pause_before_transfer) ... ok
+test_replay_fetches_and_conflicts_preserve_first_result_without_cached_fallback (test_resale_cli.ResaleRecordedPaymentCliTests.test_replay_fetches_and_conflicts_preserve_first_result_without_cached_fallback) ... ok
+test_structural_payment_request_has_zero_fetch_and_stops (test_resale_cli.ResaleRecordedPaymentCliTests.test_structural_payment_request_has_zero_fetch_and_stops) ... ok
+test_request_inputs_domain_errors_continue_only_explicit_lines (test_resale_cli.ResaleRequestInputsCliTests.test_request_inputs_domain_errors_continue_only_explicit_lines) ... ok
+test_request_inputs_empty_offers_file_stdin_and_direct_fsm_parity (test_resale_cli.ResaleRequestInputsCliTests.test_request_inputs_empty_offers_file_stdin_and_direct_fsm_parity) ... ok
+test_request_inputs_strict_fields_stop_before_any_dispatch (test_resale_cli.ResaleRequestInputsCliTests.test_request_inputs_strict_fields_stop_before_any_dispatch) ... ok
+test_documented_transcripts_as_cli_subprocesses (test_resale_console.ResaleConsoleTests.test_documented_transcripts_as_cli_subprocesses) ... ok
+test_eof_interrupt_and_input_failure_stop_and_close (test_resale_console.ResaleConsoleTests.test_eof_interrupt_and_input_failure_stop_and_close) ... ok
+test_every_mutation_requires_literal_single_use_submission (test_resale_console.ResaleConsoleTests.test_every_mutation_requires_literal_single_use_submission) ... ok
+test_fulfillment_confirmation_interruption_sends_nothing (test_resale_console.ResaleConsoleTests.test_fulfillment_confirmation_interruption_sends_nothing) ... ok
+test_fulfillment_prompt_exact_request_decline_and_original_errors (test_resale_console.ResaleConsoleTests.test_fulfillment_prompt_exact_request_decline_and_original_errors) ... ok
+test_invalid_inputs_never_submit_or_generate_values (test_resale_console.ResaleConsoleTests.test_invalid_inputs_never_submit_or_generate_values) ... ok
+test_invalid_payment_inputs_never_submit (test_resale_console.ResaleConsoleTests.test_invalid_payment_inputs_never_submit) ... ok
+test_large_supported_integer_round_trip_and_current_ownership_rendering (test_resale_console.ResaleConsoleTests.test_large_supported_integer_round_trip_and_current_ownership_rendering) ... ok
+test_live_cancel_transcript (test_resale_console.ResaleConsoleTests.test_live_cancel_transcript) ... ok
+test_live_transfer_transcript (test_resale_console.ResaleConsoleTests.test_live_transfer_transcript) ... ok
+test_missing_payment_unknown_record_and_explicit_unbound_transfer (test_resale_console.ResaleConsoleTests.test_missing_payment_unknown_record_and_explicit_unbound_transfer) ... ok
+test_output_failure_retains_reply_and_fences_even_with_broken_diagnostics (test_resale_console.ResaleConsoleTests.test_output_failure_retains_reply_and_fences_even_with_broken_diagnostics) ... ok
+test_payment_input_failure_at_every_prompt_fences_without_submission (test_resale_console.ResaleConsoleTests.test_payment_input_failure_at_every_prompt_fences_without_submission) ... ok
+test_payment_inputs_exact_proposal_and_one_submission_per_confirmation (test_resale_console.ResaleConsoleTests.test_payment_inputs_exact_proposal_and_one_submission_per_confirmation) ... ok
+test_price_and_ownership_refusals_are_exact_and_do_not_correct (test_resale_console.ResaleConsoleTests.test_price_and_ownership_refusals_are_exact_and_do_not_correct) ... ok
+test_real_transport_uncertainty_stops_queued_action_and_reaps_child (test_resale_console.ResaleConsoleTests.test_real_transport_uncertainty_stops_queued_action_and_reaps_child) ... ok
+test_recorded_listing_documented_subprocess (test_resale_console.ResaleConsoleTests.test_recorded_listing_documented_subprocess) ... ok
+test_recorded_listing_inputs_and_confirmation_boundaries (test_resale_console.ResaleConsoleTests.test_recorded_listing_inputs_and_confirmation_boundaries) ... ok
+test_recorded_listing_real_child_replay_and_changed_binding (test_resale_console.ResaleConsoleTests.test_recorded_listing_real_child_replay_and_changed_binding) ... ok
+test_recorded_offer_missing_and_source_faults_preserve_observations (test_resale_console.ResaleConsoleTests.test_recorded_offer_missing_and_source_faults_preserve_observations) ... ok
+test_request_interruption_fences_before_queued_action (test_resale_console.ResaleConsoleTests.test_request_interruption_fences_before_queued_action) ... ok
+test_required_arguments_cleanup_budgets_import_and_cleanup_failure (test_resale_console.ResaleConsoleTests.test_required_arguments_cleanup_budgets_import_and_cleanup_failure) ... ok
+test_terminal_envelopes_preserved_before_queued_action (test_resale_console.ResaleConsoleTests.test_terminal_envelopes_preserved_before_queued_action) ... ok
+test_unknown_and_uncommitted_bound_settlement_preserve_errors (test_resale_console.ResaleConsoleTests.test_unknown_and_uncommitted_bound_settlement_preserve_errors) ... ok
+test_bound_transfer_waits_for_mock_commit_and_reconciles (test_resale_fsm.ResaleFsmTests.test_bound_transfer_waits_for_mock_commit_and_reconciles) ... ok
+test_buy_hold_is_optional_and_cancel_order_decides_the_race (test_resale_fsm.ResaleFsmTests.test_buy_hold_is_optional_and_cancel_order_decides_the_race) ... ok
+test_external_attempts_do_not_journal (test_resale_fsm.ResaleFsmTests.test_external_attempts_do_not_journal) ... ok
+test_reservation_bound_commands_need_a_ticket_source (test_resale_fsm.ResaleFsmTests.test_reservation_bound_commands_need_a_ticket_source) ... ok
+test_reservation_fsm_rejects_unissued_consumed_and_cancelled_tickets (test_resale_fsm.ResaleFsmTests.test_reservation_fsm_rejects_unissued_consumed_and_cancelled_tickets) ... ok
+test_restore_replays_one_transfer_and_omits_rejections (test_resale_fsm.ResaleFsmTests.test_restore_replays_one_transfer_and_omits_rejections) ... ok
+test_stale_listing_policy_and_expiry_do_not_transfer (test_resale_fsm.ResaleFsmTests.test_stale_listing_policy_and_expiry_do_not_transfer) ... ok
+test_transfer_is_idempotent_and_does_not_reissue_a_credential (test_resale_fsm.ResaleFsmTests.test_transfer_is_idempotent_and_does_not_reissue_a_credential) ... ok
+test_unknown_hold_and_conflicting_hold_id_are_rejected (test_resale_fsm.ResaleFsmTests.test_unknown_hold_and_conflicting_hold_id_are_rejected) ... ok
+test_absent_malformed_mismatched_and_fault_records_touch_no_fsm_or_keys (test_resale_offer_adapter.ResaleOfferAdapterTests.test_absent_malformed_mismatched_and_fault_records_touch_no_fsm_or_keys) ... ok
+test_accepted_replay_key_conflict_competing_and_expired_replay_parity (test_resale_offer_adapter.ResaleOfferAdapterTests.test_accepted_replay_key_conflict_competing_and_expired_replay_parity) ... ok
+test_admission_lock_and_retained_refusal_after_lock_expiry_parity (test_resale_offer_adapter.ResaleOfferAdapterTests.test_admission_lock_and_retained_refusal_after_lock_expiry_parity) ... ok
+test_arbitrary_source_fault_is_wrapped_and_local_error_is_preserved (test_resale_offer_adapter.ResaleOfferAdapterTests.test_arbitrary_source_fault_is_wrapped_and_local_error_is_preserved) ... ok
+test_exact_forwarding_and_receipt_and_error_identity (test_resale_offer_adapter.ResaleOfferAdapterTests.test_exact_forwarding_and_receipt_and_error_identity) ... ok
+test_example_uses_actual_machines_lists_and_explicitly_refuses_competitor (test_resale_offer_adapter.ResaleOfferAdapterTests.test_example_uses_actual_machines_lists_and_explicitly_refuses_competitor) ... ok
+test_fetch_failure_after_acceptance_never_returns_cached_receipt (test_resale_offer_adapter.ResaleOfferAdapterTests.test_fetch_failure_after_acceptance_never_returns_cached_receipt) ... ok
+test_invalid_caller_identifiers_still_fetch_once (test_resale_offer_adapter.ResaleOfferAdapterTests.test_invalid_caller_identifiers_still_fetch_once) ... ok
+test_invalid_record_shapes_and_scalars_fetch_once_without_machine_access (test_resale_offer_adapter.ResaleOfferAdapterTests.test_invalid_record_shapes_and_scalars_fetch_once_without_machine_access) ... ok
+test_optional_reservation_omitted_and_null_are_forwarded_as_none (test_resale_offer_adapter.ResaleOfferAdapterTests.test_optional_reservation_omitted_and_null_are_forwarded_as_none) ... ok
+test_rejected_offers_match_direct_errors_states_digests_and_journals (test_resale_offer_adapter.ResaleOfferAdapterTests.test_rejected_offers_match_direct_errors_states_digests_and_journals) ... ok
+test_scalar_upper_bounds_are_shape_valid_and_left_to_fsm (test_resale_offer_adapter.ResaleOfferAdapterTests.test_scalar_upper_bounds_are_shape_valid_and_left_to_fsm) ... ok
+test_constructor_rejects_mutable_recordings_and_nonstring_keys (test_resale_offer_source.ResaleOfferSourceTests.test_constructor_rejects_mutable_recordings_and_nonstring_keys) ... ok
+test_missing_records_are_absent_and_each_fetch_is_recorded (test_resale_offer_source.ResaleOfferSourceTests.test_missing_records_are_absent_and_each_fetch_is_recorded) ... ok
+test_recordings_are_copied_read_only_and_outputs_are_deeply_detached (test_resale_offer_source.ResaleOfferSourceTests.test_recordings_are_copied_read_only_and_outputs_are_deeply_detached) ... ok
+test_strict_json_rejects_bad_roots_duplicates_and_nonfinite_constants (test_resale_offer_source.ResaleOfferSourceTests.test_strict_json_rejects_bad_roots_duplicates_and_nonfinite_constants) ... ok
+test_synthetic_faults_are_immediate_and_do_not_retry_or_fall_back (test_resale_offer_source.ResaleOfferSourceTests.test_synthetic_faults_are_immediate_and_do_not_retry_or_fall_back) ... ok
+test_boundary_failures_touch_no_fsm_and_leave_key_available (test_resale_payment_adapter.ResalePaymentAdapterTests.test_boundary_failures_touch_no_fsm_and_leave_key_available) ... ok
+test_conflicting_observations_match_direct_fsm (test_resale_payment_adapter.ResalePaymentAdapterTests.test_conflicting_observations_match_direct_fsm) ... ok
+test_exact_forwarding_receipt_and_exception_identity (test_resale_payment_adapter.ResalePaymentAdapterTests.test_exact_forwarding_receipt_and_exception_identity) ... ok
+test_expiry_is_left_to_fsm_and_rejection_is_retained (test_resale_payment_adapter.ResalePaymentAdapterTests.test_expiry_is_left_to_fsm_and_rejection_is_retained) ... ok
+test_fetch_errors_preserve_local_error_or_wrap_cause_without_fsm_access (test_resale_payment_adapter.ResalePaymentAdapterTests.test_fetch_errors_preserve_local_error_or_wrap_cause_without_fsm_access) ... ok
+test_fetch_failure_after_acceptance_has_no_receipt_cache_or_fallback (test_resale_payment_adapter.ResalePaymentAdapterTests.test_fetch_failure_after_acceptance_has_no_receipt_cache_or_fallback) ... ok
+test_invalid_callers_still_fetch_exactly_once (test_resale_payment_adapter.ResalePaymentAdapterTests.test_invalid_callers_still_fetch_exactly_once) ... ok
+test_invalid_shapes_and_scalars_fetch_once_before_machine_access (test_resale_payment_adapter.ResalePaymentAdapterTests.test_invalid_shapes_and_scalars_fetch_once_before_machine_access) ... ok
+test_payment_and_replay_parity_from_listed_and_held_then_explicit_transfer (test_resale_payment_adapter.ResalePaymentAdapterTests.test_payment_and_replay_parity_from_listed_and_held_then_explicit_transfer) ... ok
+test_runnable_example_pauses_then_explicitly_transfers (test_resale_payment_adapter.ResalePaymentAdapterTests.test_runnable_example_pauses_then_explicitly_transfers) ... ok
+test_semantic_rejections_and_retained_keys_match_direct_fsm (test_resale_payment_adapter.ResalePaymentAdapterTests.test_semantic_rejections_and_retained_keys_match_direct_fsm) ... ok
+test_constructor_rejects_mutable_recordings_and_nonstring_keys (test_resale_payment_source.ResalePaymentSourceTests.test_constructor_rejects_mutable_recordings_and_nonstring_keys) ... ok
+test_missing_records_are_absent_and_each_fetch_is_recorded (test_resale_payment_source.ResalePaymentSourceTests.test_missing_records_are_absent_and_each_fetch_is_recorded) ... ok
+test_recordings_are_copied_read_only_and_outputs_are_deeply_detached (test_resale_payment_source.ResalePaymentSourceTests.test_recordings_are_copied_read_only_and_outputs_are_deeply_detached) ... ok
+test_strict_json_rejects_bad_roots_duplicates_and_nonfinite_constants (test_resale_payment_source.ResalePaymentSourceTests.test_strict_json_rejects_bad_roots_duplicates_and_nonfinite_constants) ... ok
+test_synthetic_faults_are_immediate_and_do_not_retry_or_fall_back (test_resale_payment_source.ResalePaymentSourceTests.test_synthetic_faults_are_immediate_and_do_not_retry_or_fall_back) ... ok
+test_accept_resale_admission_locked_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_admission_locked_leaves_no_trace)
+Class A: accept_resale / ADMISSION_LOCKED; restore fails ADMISSION_LOCKED per contract §10.3 or §11.4 last row / §11.5. ... ok
+test_accept_resale_already_consumed_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_already_consumed_leaves_no_trace)
+Class A: accept_resale / ALREADY_CONSUMED; restore fails ALREADY_CONSUMED per contract §10.3 or §11.4 last row / §11.5. ... ok
+test_accept_resale_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_illegal_transition_leaves_no_trace)
+Class A: accept_resale / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_invalid_id_leaves_no_trace)
+Class A: accept_resale / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_listing_not_open_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_listing_not_open_leaves_no_trace)
+Class A: accept_resale / LISTING_NOT_OPEN; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_settlement_amount_mismatch_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_settlement_amount_mismatch_leaves_no_trace)
+Class A: accept_resale / SETTLEMENT_AMOUNT_MISMATCH; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_settlement_not_committed_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_settlement_not_committed_leaves_no_trace)
+Class A: accept_resale / SETTLEMENT_NOT_COMMITTED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_settlement_source_required_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_settlement_source_required_leaves_no_trace)
+Class A: accept_resale / SETTLEMENT_SOURCE_REQUIRED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_settlement_view_rejected_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_settlement_view_rejected_leaves_no_trace)
+Class A: accept_resale / SETTLEMENT_VIEW_REJECTED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_terminal_immutable_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_terminal_immutable_leaves_no_trace)
+Class A: accept_resale / TERMINAL_IMMUTABLE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_transfer_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_transfer_binding_conflict_leaves_no_trace)
+Class A: accept_resale / TRANSFER_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_unknown_listing_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_unknown_listing_leaves_no_trace)
+Class A: accept_resale / UNKNOWN_LISTING; contract §10.7 / §11.5 rejection and replay. ... ok
+test_accept_resale_unknown_settlement_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_accept_resale_unknown_settlement_leaves_no_trace)
+Class A: accept_resale / UNKNOWN_SETTLEMENT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_admission_locked_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_admission_locked_leaves_no_trace)
+Class A: adopt_issued / ADMISSION_LOCKED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_already_consumed_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_already_consumed_leaves_no_trace)
+Class A: adopt_issued / ALREADY_CONSUMED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_bps_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_bps_leaves_no_trace)
+Class A: adopt_issued / BPS; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_bps_sum_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_bps_sum_leaves_no_trace)
+Class A: adopt_issued / BPS_SUM; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_capacity_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_capacity_leaves_no_trace)
+Class A: adopt_issued / CAPACITY; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_gates_duplicate_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_gates_duplicate_leaves_no_trace)
+Class A: adopt_issued / GATES_DUPLICATE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_gates_empty_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_gates_empty_leaves_no_trace)
+Class A: adopt_issued / GATES_EMPTY; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_gates_limit_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_gates_limit_leaves_no_trace)
+Class A: adopt_issued / GATES_LIMIT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_gates_type_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_gates_type_leaves_no_trace)
+Class A: adopt_issued / GATES_TYPE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_illegal_transition_leaves_no_trace)
+Class A: adopt_issued / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_invalid_amount_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_invalid_amount_leaves_no_trace)
+Class A: adopt_issued / INVALID_AMOUNT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_invalid_id_leaves_no_trace)
+Class A: adopt_issued / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_issuance_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_issuance_binding_conflict_leaves_no_trace)
+Class A: adopt_issued / ISSUANCE_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_not_holder_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_not_holder_leaves_no_trace)
+Class A: adopt_issued / NOT_HOLDER; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_order_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_order_binding_conflict_leaves_no_trace)
+Class A: adopt_issued / ORDER_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_payment_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_payment_binding_conflict_leaves_no_trace)
+Class A: adopt_issued / PAYMENT_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_payment_ref_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_payment_ref_leaves_no_trace)
+Class A: adopt_issued / PAYMENT_REF; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_policy_flag_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_policy_flag_leaves_no_trace)
+Class A: adopt_issued / POLICY_FLAG; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_primary_price_mismatch_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_primary_price_mismatch_leaves_no_trace)
+Class A: adopt_issued / PRIMARY_PRICE_MISMATCH; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_reservation_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_reservation_binding_conflict_leaves_no_trace)
+Class A: adopt_issued / RESERVATION_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_reservation_window_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_reservation_window_leaves_no_trace)
+Class A: adopt_issued / RESERVATION_WINDOW; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_show_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_show_binding_conflict_leaves_no_trace)
+Class A: adopt_issued / SHOW_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_slot_occupied_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_slot_occupied_leaves_no_trace)
+Class A: adopt_issued / SLOT_OCCUPIED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_ticket_cancelled_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_ticket_cancelled_leaves_no_trace)
+Class A: adopt_issued / TICKET_CANCELLED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_ticket_not_issued_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_ticket_not_issued_leaves_no_trace)
+Class A: adopt_issued / TICKET_NOT_ISSUED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_ticket_source_required_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_ticket_source_required_leaves_no_trace)
+Class A: adopt_issued / TICKET_SOURCE_REQUIRED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_unknown_reservation_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_unknown_reservation_leaves_no_trace)
+Class A: adopt_issued / UNKNOWN_RESERVATION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_adopt_issued_unknown_right_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_adopt_issued_unknown_right_leaves_no_trace)
+Class A: adopt_issued / UNKNOWN_RIGHT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_bind_settlement_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_bind_settlement_illegal_transition_leaves_no_trace)
+Class A: bind_settlement / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_bind_settlement_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_bind_settlement_invalid_id_leaves_no_trace)
+Class A: bind_settlement / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_bind_settlement_settlement_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_bind_settlement_settlement_binding_conflict_leaves_no_trace)
+Class A: bind_settlement / SETTLEMENT_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_bind_settlement_terminal_immutable_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_bind_settlement_terminal_immutable_leaves_no_trace)
+Class A: bind_settlement / TERMINAL_IMMUTABLE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_bind_settlement_unknown_listing_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_bind_settlement_unknown_listing_leaves_no_trace)
+Class A: bind_settlement / UNKNOWN_LISTING; contract §10.7 / §11.5 rejection and replay. ... ok
+test_cancel_listing_compensation_undefined_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_cancel_listing_compensation_undefined_leaves_no_trace)
+Class A: cancel_listing / COMPENSATION_UNDEFINED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_cancel_listing_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_cancel_listing_illegal_transition_leaves_no_trace)
+Class A: cancel_listing / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_cancel_listing_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_cancel_listing_invalid_id_leaves_no_trace)
+Class A: cancel_listing / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_cancel_listing_listing_not_open_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_cancel_listing_listing_not_open_leaves_no_trace)
+Class A: cancel_listing / LISTING_NOT_OPEN; contract §10.7 / §11.5 rejection and replay. ... ok
+test_cancel_listing_not_holder_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_cancel_listing_not_holder_leaves_no_trace)
+Class A: cancel_listing / NOT_HOLDER; contract §10.7 / §11.5 rejection and replay. ... ok
+test_cancel_listing_terminal_immutable_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_cancel_listing_terminal_immutable_leaves_no_trace)
+Class A: cancel_listing / TERMINAL_IMMUTABLE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_cancel_listing_unknown_listing_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_cancel_listing_unknown_listing_leaves_no_trace)
+Class A: cancel_listing / UNKNOWN_LISTING; contract §10.7 / §11.5 rejection and replay. ... ok
+test_char_fault_accept_resale (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_accept_resale)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_char_fault_bind_settlement (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_bind_settlement)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_char_fault_cancel_listing (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_cancel_listing)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_char_fault_close (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_close)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_char_fault_hold_buy (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_hold_buy)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_char_fault_list_resale (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_list_resale)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_char_fault_observe_resale_payment (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_observe_resale_payment)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_char_fault_release_hold (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_release_hold)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_char_fault_rows_cover_replayable_commands (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_rows_cover_replayable_commands) ... ok
+test_char_fault_set_clock (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_char_fault_set_clock)
+B: injected internal invariant failure; no caller-rejection rollback claim. ... ok
+test_close_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_close_illegal_transition_leaves_no_trace)
+Class A: close / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_close_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_close_invalid_id_leaves_no_trace)
+Class A: close / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_close_terminal_immutable_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_close_terminal_immutable_leaves_no_trace)
+Class A: close / TERMINAL_IMMUTABLE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_close_unknown_listing_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_close_unknown_listing_leaves_no_trace)
+Class A: close / UNKNOWN_LISTING; contract §10.7 / §11.5 rejection and replay. ... ok
+test_hold_buy_buyer_hold_locked_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_hold_buy_buyer_hold_locked_leaves_no_trace)
+Class A: hold_buy / BUYER_HOLD_LOCKED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_hold_buy_hold_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_hold_buy_hold_binding_conflict_leaves_no_trace)
+Class A: hold_buy / HOLD_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_hold_buy_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_hold_buy_illegal_transition_leaves_no_trace)
+Class A: hold_buy / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_hold_buy_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_hold_buy_invalid_id_leaves_no_trace)
+Class A: hold_buy / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_hold_buy_listing_not_open_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_hold_buy_listing_not_open_leaves_no_trace)
+Class A: hold_buy / LISTING_NOT_OPEN; contract §10.7 / §11.5 rejection and replay. ... ok
+test_hold_buy_recipient_mismatch_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_hold_buy_recipient_mismatch_leaves_no_trace)
+Class A: hold_buy / RECIPIENT_MISMATCH; contract §10.7 / §11.5 rejection and replay. ... ok
+test_hold_buy_terminal_immutable_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_hold_buy_terminal_immutable_leaves_no_trace)
+Class A: hold_buy / TERMINAL_IMMUTABLE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_hold_buy_unknown_listing_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_hold_buy_unknown_listing_leaves_no_trace)
+Class A: hold_buy / UNKNOWN_LISTING; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_admission_locked_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_admission_locked_leaves_no_trace)
+Class A: list_resale / ADMISSION_LOCKED; restore fails ADMISSION_LOCKED per contract §10.3 or §11.4 last row / §11.5. ... ok
+test_list_resale_already_consumed_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_already_consumed_leaves_no_trace)
+Class A: list_resale / ALREADY_CONSUMED; restore fails ALREADY_CONSUMED per contract §10.3 or §11.4 last row / §11.5. ... ok
+test_list_resale_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_illegal_transition_leaves_no_trace)
+Class A: list_resale / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_invalid_amount_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_invalid_amount_leaves_no_trace)
+Class A: list_resale / INVALID_AMOUNT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_invalid_id_leaves_no_trace)
+Class A: list_resale / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_listing_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_listing_binding_conflict_leaves_no_trace)
+Class A: list_resale / LISTING_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_listing_window_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_listing_window_leaves_no_trace)
+Class A: list_resale / LISTING_WINDOW; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_not_holder_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_not_holder_leaves_no_trace)
+Class A: list_resale / NOT_HOLDER; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_recipient_is_holder_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_recipient_is_holder_leaves_no_trace)
+Class A: list_resale / RECIPIENT_IS_HOLDER; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_resale_cap_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_resale_cap_leaves_no_trace)
+Class A: list_resale / RESALE_CAP; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_resale_policy_rejected_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_resale_policy_rejected_leaves_no_trace)
+Class A: list_resale / RESALE_POLICY_REJECTED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_right_sale_locked_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_right_sale_locked_leaves_no_trace)
+Class A: list_resale / RIGHT_SALE_LOCKED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_stale_version_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_stale_version_leaves_no_trace)
+Class A: list_resale / STALE_VERSION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_terminal_immutable_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_terminal_immutable_leaves_no_trace)
+Class A: list_resale / TERMINAL_IMMUTABLE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_ticket_cancelled_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_ticket_cancelled_leaves_no_trace)
+Class A: list_resale / TICKET_CANCELLED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_ticket_not_issued_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_ticket_not_issued_leaves_no_trace)
+Class A: list_resale / TICKET_NOT_ISSUED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_ticket_source_required_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_ticket_source_required_leaves_no_trace)
+Class A: list_resale / TICKET_SOURCE_REQUIRED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_unknown_reservation_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_unknown_reservation_leaves_no_trace)
+Class A: list_resale / UNKNOWN_RESERVATION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_unknown_right_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_unknown_right_leaves_no_trace)
+Class A: list_resale / UNKNOWN_RIGHT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_list_resale_version_type_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_list_resale_version_type_leaves_no_trace)
+Class A: list_resale / VERSION_TYPE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_buyer_mismatch_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_buyer_mismatch_leaves_no_trace)
+Class A: observe_resale_payment / BUYER_MISMATCH; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_illegal_transition_leaves_no_trace)
+Class A: observe_resale_payment / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_invalid_amount_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_invalid_amount_leaves_no_trace)
+Class A: observe_resale_payment / INVALID_AMOUNT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_invalid_id_leaves_no_trace)
+Class A: observe_resale_payment / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_listing_not_open_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_listing_not_open_leaves_no_trace)
+Class A: observe_resale_payment / LISTING_NOT_OPEN; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_listing_payment_bound_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_listing_payment_bound_leaves_no_trace)
+Class A: observe_resale_payment / LISTING_PAYMENT_BOUND; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_payment_binding_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_payment_binding_conflict_leaves_no_trace)
+Class A: observe_resale_payment / PAYMENT_BINDING_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_payment_ref_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_payment_ref_leaves_no_trace)
+Class A: observe_resale_payment / PAYMENT_REF; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_recipient_mismatch_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_recipient_mismatch_leaves_no_trace)
+Class A: observe_resale_payment / RECIPIENT_MISMATCH; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_resale_amount_mismatch_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_resale_amount_mismatch_leaves_no_trace)
+Class A: observe_resale_payment / RESALE_AMOUNT_MISMATCH; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_terminal_immutable_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_terminal_immutable_leaves_no_trace)
+Class A: observe_resale_payment / TERMINAL_IMMUTABLE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_observe_resale_payment_unknown_listing_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_observe_resale_payment_unknown_listing_leaves_no_trace)
+Class A: observe_resale_payment / UNKNOWN_LISTING; contract §10.7 / §11.5 rejection and replay. ... ok
+test_reject_external_external_unsupported_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_reject_external_external_unsupported_leaves_no_trace)
+Class A: reject_external / EXTERNAL_UNSUPPORTED; contract §10.7 / §11.5 rejection and replay. ... ok
+test_reject_external_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_reject_external_invalid_id_leaves_no_trace)
+Class A: reject_external / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_release_hold_buyer_mismatch_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_release_hold_buyer_mismatch_leaves_no_trace)
+Class A: release_hold / BUYER_MISMATCH; contract §10.7 / §11.5 rejection and replay. ... ok
+test_release_hold_illegal_transition_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_release_hold_illegal_transition_leaves_no_trace)
+Class A: release_hold / ILLEGAL_TRANSITION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_release_hold_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_release_hold_invalid_id_leaves_no_trace)
+Class A: release_hold / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_release_hold_terminal_immutable_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_release_hold_terminal_immutable_leaves_no_trace)
+Class A: release_hold / TERMINAL_IMMUTABLE; contract §10.7 / §11.5 rejection and replay. ... ok
+test_release_hold_unknown_hold_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_release_hold_unknown_hold_leaves_no_trace)
+Class A: release_hold / UNKNOWN_HOLD; contract §10.7 / §11.5 rejection and replay. ... ok
+test_restore_invalid_journal_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_restore_invalid_journal_leaves_no_trace)
+Class A: restore / INVALID_JOURNAL; contract §10.7 / §11.5 rejection and replay. ... ok
+test_set_clock_clock_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_set_clock_clock_leaves_no_trace)
+Class A: set_clock / CLOCK; contract §10.7 / §11.5 rejection and replay. ... ok
+test_set_clock_clock_regression_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_set_clock_clock_regression_leaves_no_trace)
+Class A: set_clock / CLOCK_REGRESSION; contract §10.7 / §11.5 rejection and replay. ... ok
+test_set_clock_idempotency_conflict_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_set_clock_idempotency_conflict_leaves_no_trace)
+Class A: set_clock / IDEMPOTENCY_CONFLICT; contract §10.7 / §11.5 rejection and replay. ... ok
+test_set_clock_invalid_id_leaves_no_trace (test_resale_rejection_atomicity.ResaleRejectionAtomicityTests.test_set_clock_invalid_id_leaves_no_trace)
+Class A: set_clock / INVALID_ID; contract §10.7 / §11.5 rejection and replay. ... ok
+test_admission_lock_refusal_retained_after_lock_expiry (test_resale_session.ResaleRequestInputsTests.test_admission_lock_refusal_retained_after_lock_expiry) ... ok
+test_exactly_one_call_opaque_inputs_receipt_and_exception_identity (test_resale_session.ResaleRequestInputsTests.test_exactly_one_call_opaque_inputs_receipt_and_exception_identity) ... ok
+test_recorded_and_request_paths_share_existing_fsm_replay_identity (test_resale_session.ResaleRequestInputsTests.test_recorded_and_request_paths_share_existing_fsm_replay_identity) ... ok
+test_replay_after_cancel_and_expiry_and_competing_sale_lock (test_resale_session.ResaleRequestInputsTests.test_replay_after_cancel_and_expiry_and_competing_sale_lock) ... ok
+test_request_refusals_retained_keys_and_direct_fsm_parity (test_resale_session.ResaleRequestInputsTests.test_request_refusals_retained_keys_and_direct_fsm_parity) ... ok
+test_competing_listing_release_cancel_and_post_payment_error (test_resale_session.ResaleSessionTests.test_competing_listing_release_cancel_and_post_payment_error) ... ok
+test_complete_explicit_flow_and_replay_after_close (test_resale_session.ResaleSessionTests.test_complete_explicit_flow_and_replay_after_close) ... ok
+test_direct_forwarding_preserves_receipt_and_exception_identity (test_resale_session.ResaleSessionTests.test_direct_forwarding_preserves_receipt_and_exception_identity) ... ok
+test_no_implicit_payment_binding_hold_or_close_and_unbound_transfer_works (test_resale_session.ResaleSessionTests.test_no_implicit_payment_binding_hold_or_close_and_unbound_transfer_works) ... ok
+test_reconcile_forwards_opaque_identity_and_key_without_source_fetch (test_resale_session.ResaleSessionTests.test_reconcile_forwards_opaque_identity_and_key_without_source_fetch) ... ok
+test_reconciliation_matches_direct_graph_and_preserves_business_state (test_resale_session.ResaleSessionTests.test_reconciliation_matches_direct_graph_and_preserves_business_state) ... ok
+test_recorded_payment_faults_and_replay_failure_never_generate_followup (test_resale_session.ResaleSessionTests.test_recorded_payment_faults_and_replay_failure_never_generate_followup) ... ok
+test_recorded_payment_requires_explicit_configuration_without_machine_access (test_resale_session.ResaleSessionTests.test_recorded_payment_requires_explicit_configuration_without_machine_access) ... ok
+test_recorded_payment_uses_actual_session_and_requires_separate_transfer (test_resale_session.ResaleSessionTests.test_recorded_payment_uses_actual_session_and_requires_separate_transfer) ... ok
+test_source_fault_has_one_fetch_and_zero_followup_even_on_replay (test_resale_session.ResaleSessionTests.test_source_fault_has_one_fetch_and_zero_followup_even_on_replay) ... ok
+test_stale_inputs_and_expiry_keep_existing_errors_and_independent_clock (test_resale_session.ResaleSessionTests.test_stale_inputs_and_expiry_keep_existing_errors_and_independent_clock) ... ok
+test_views_are_pure_and_detached_with_no_source_fetch (test_resale_session.ResaleSessionTests.test_views_are_pure_and_detached_with_no_source_fetch) ... ok
+
+----------------------------------------------------------------------
+Ran 228 tests in 21.416s
+
+OK

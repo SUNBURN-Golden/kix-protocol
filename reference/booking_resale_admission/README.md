@@ -4284,3 +4284,69 @@ receipt fields/types, order, references, snapshots, journals and pins. Re-pinned
 input mutations must fail semantic checks. Public-command injections test extra
 effects at each refusal, premature transfer during commit and effects on replay.
 See [actual commands and results](../../validation/2026-11-17-plan-commerce-bound-resale-refusals/README.md).
+
+## Commerce resale expiry vectors
+
+The [literal inputs](fixtures/commerce_resale_expiry_inputs_v1.json) and
+[complete outcomes](fixtures/commerce_resale_expiry_receipts_v1.json) publish
+two source-informed histories through the existing in-process `FsmHost`, using
+only published command bodies. They supplement
+[contract §§10.1–10.4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#10-리셀-수락-상태-기계),
+`ResaleFsmTests.test_stale_listing_policy_and_expiry_do_not_transfer` and the
+existing resale rejection atomicity rows. These tests already cover unit
+behavior; the new evidence fills the portable ordered-history gap.
+
+| Case | Steps | Current result |
+|---|---|---|
+| `unpaid-listing-expiry` | 12 | `LISTED`, expired, no resale payment; late payment rejects `LISTING_NOT_OPEN` |
+| `paid-listing-expiry` | 15 | `PAYMENT_NOTED`, expired, original resale payment reference/amount retained; transfer rejects `LISTING_NOT_OPEN`, seller cancellation rejects `COMPENSATION_UNDEFINED` |
+
+Both start with reservation clock, show, hold, confirm, original issuance payment,
+issue, resale clock, adoption and listing. “Unpaid” means no **resale** payment;
+the issuance payment remains recorded. Synthetic clock `1000000` advances to
+exact listing expiry `1900000`. Optional buyer hold and settlement binding are
+omitted. Holder `buyer-1` and version `1` stay unchanged; no transfer identity,
+refund, compensation or automatic relisting is created. Expiry does not change
+the FSM phase.
+
+Original-key replay of listing (both histories) and resale payment (paid history)
+after advancement returns the historical first receipt, apart from permitted
+replay metadata. Its listing says `expired: false`; current local diagnostics
+say `expired: true`. Replaying an old success grants no current execution
+eligibility. Every refusal/replay preserves detached state, digest, journals and
+views across all five host machines.
+
+Inputs contain complete ordered `action`/`body`, exactly one `expect` or
+`expect_error`, observation checkpoints, and explicit original-key `replay_of`
+references. Outcomes use local schema `kix-commerce-resale-expiry-receipts/1`,
+`record_kind: IN_PROCESS_MOCK_RECEIPT_VECTORS`, `normative: false`, fixture and
+sorted source pins, and cases with one outcome per step. Each outcome has `id`,
+`action`, a full input path plus `#/cases/<i>/steps/<j>/body`, one complete
+`receipt` or `rejection_code`, and detached post-step `diagnostic_snapshot`
+views. Amount is retained in the listing and observed-payment journal, without
+adding a view field. Pins use raw-byte `sha256` and `gitBlob`; artifact hashes
+are recorded separately with no self-hash. There is no runtime template
+expansion or test golden-update mode.
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_resale_expiry_vectors.py -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_resale*.py' -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_companion_evidence_index.py -v
+```
+
+The validator compares canonical bytes, schemas, pins and references; detached
+negative controls alter errors, payment facts, holder/version, diagnostics,
+order, omissions, duplicates and crossed references. Re-pinned malformed inputs
+reach semantic checks, and injected effects test refusal/replay non-mutation.
+The [companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+appends the `resale_expiry` family (27 entries), preserving the original six
+families and all qualification metadata: seven families, 267 entries.
+
+Product TTL and compensation policy remain **UNDETERMINED** with Astra/User
+and existing legal/accounting owners. All 13 reads remain **NOT_BOUND**,
+semantic consumption **HOLD_SEMANTIC**, SD1 **OPEN/User-owned**, and external
+consumer acceptance **UNVERIFIED**. Diagnostics publish no read API. This is
+source-informed local mock evidence, not clean-room independence, chain/funds
+finality, legal compliance, production readiness, hosted CI or A2 non-author
+review. [Coverage, preservation and actual command evidence](../../validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/README.md)
+record the builder's scope and remaining delivery gates.

@@ -1,0 +1,373 @@
+{
+  "record_schema_version": "kix-commerce-resale-expiry-artifacts/1",
+  "normative": false,
+  "task_id": "plan-plan-commerce-resale-expiry-vectors",
+  "observed_local_main": "3a119fcfa9b784f67082a667ee499a018fc4e7ce",
+  "branch_head": "3a119fcfa9b784f67082a667ee499a018fc4e7ce",
+  "implementation_state": "UNCOMMITTED_WORKTREE_PATCH",
+  "hosted_exact_head_ci": "NOT_RUN",
+  "a2_non_author_review": "NOT_PERFORMED",
+  "self_hash_omitted": true,
+  "artifacts": [
+    {
+      "path": "docs/README.md",
+      "sha256": "76f825ceaff50f9409f353ed628cd41c8cdd2ce5dcdf397c18107bd579a803c5",
+      "gitBlob": "af0cab583d6f025a94f3f470076660cec5b0f526"
+    },
+    {
+      "path": "docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json",
+      "sha256": "722a0ab915f13d5ec3f9d016cdd0993bb4ff7b55ff0fe09c27a5892a32c2e44f",
+      "gitBlob": "51d3e2ca523a77e2b55ca10f4b602cfface2507f"
+    },
+    {
+      "path": "docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md",
+      "sha256": "d17e837ed8c743e86013aede67199c2cea2802996e0af5a5de2083e3fa403e73",
+      "gitBlob": "b6059ac306c25015b337f296cbfecefbf5bdf497"
+    },
+    {
+      "path": "docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md",
+      "sha256": "16b175a1e141619e42f7000bc373ce87739c2937657fc2bf8cf105332fae6980",
+      "gitBlob": "fc17f9610f62c3e94e80ce11533931d059392aca"
+    },
+    {
+      "path": "reference/booking_resale_admission/README.md",
+      "sha256": "73f64af883f45dee89b7d9e55da596f38a41afe7f1822cff2a8513e6996dcc1e",
+      "gitBlob": "3232bab29ce47aa54a4ec35aa8ea55a93c2fd5e4"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json",
+      "sha256": "82cc7da6c64c4c7808fd3f63af8991ba5db87b18e9f2684bbef5aa0d2e235690",
+      "gitBlob": "190bfd567249320b006f4d17086b2c71c41efa2f"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json",
+      "sha256": "1e7030564f15ba85a72abbaee5b2f6ee27b542dbf7a40310a7920c20157960b7",
+      "gitBlob": "fa3a0a5996a232a1edc23236b690b18bcccb7d04"
+    },
+    {
+      "path": "reference/booking_resale_admission/test_commerce_companion_evidence_index.py",
+      "sha256": "58d037363babbf26c1121fcb178d9334cc6520db11232011c4f7d5061ea5b989",
+      "gitBlob": "7dceb40bc3c3b4563554d2c92e62a579cece8220"
+    },
+    {
+      "path": "reference/booking_resale_admission/test_commerce_resale_expiry_vectors.py",
+      "sha256": "1278edccecf89def51044ab512453f3d1de92a6e420cebf1da4dea0e4e88c915",
+      "gitBlob": "e6952a12aa6dd6bc54d546e728b2c23517e265b1"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/README.md",
+      "sha256": "f958be48fecaa6627f3388e1dc170dde879dae6720ad032154c6f56764d90d9d",
+      "gitBlob": "b418d3331f7042cda7659c9f04f7440cb82a36f9"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/changed-paths.txt",
+      "sha256": "c069c6b7037a5feb158d6f3029eb9d20fbd6ebee9094e20f720f121b63b8851e",
+      "gitBlob": "a1b0d7f7433b21d4c052611eb0a402fa0287790b"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/check_preservation.py",
+      "sha256": "516ab96364efd5a9486f980bf4374e804f47a26de0213899565812b4f74fde52",
+      "gitBlob": "e3f23e2dfbe2fd137817a6d125a5d0792887692e"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-01.log",
+      "sha256": "ab4e7c4ef35b8aab497a5a7f82f0fb937bb1299d7d421c86694eb20965ae62e9",
+      "gitBlob": "5773f43c0965641d5f2aa99f73a1b9bcc22efc4b"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-02.log",
+      "sha256": "e485adaf4c6cc77bd761170bf11c8b303a4a1c9d3b2c96cb635f1f77ef235081",
+      "gitBlob": "a9f89c716524879da5fedc2aff40cd410b5b3df5"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-03.log",
+      "sha256": "14005d9601e2991f4c91c7f76b2625d3cc33eb5c3a0f2e27fc1d6a49addc747c",
+      "gitBlob": "d51880a704bda962ea0cb727d6d539bb7456ee44"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-04.log",
+      "sha256": "18f9ebb4d8ea786c426385e5766a2535db141b2d1c99bbe85900f8cce272a8eb",
+      "gitBlob": "f7897150b556cd17dec8f8289bc1dff23b689fb3"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-05.log",
+      "sha256": "e4c7576240b079d6eabbc303b2db8a30359b9b8c16acfd23ff172c2ae55b82aa",
+      "gitBlob": "72c56889452524c1ec70e43c8fc09029d91472aa"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-06.log",
+      "sha256": "275a6091f4d0a8951eb3a6d950b17baf68b62c550578585f3246da5d5eb8c81f",
+      "gitBlob": "cf51a885f34437475d0684da8ed31b29a40166cc"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-07.log",
+      "sha256": "1c003f81efa40e0de94003ba8cbc3d049ded22faa5be4a7e1c5e29b696ac52cd",
+      "gitBlob": "639613f7245349aeb8b2410df8ef8724e890e2d0"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-08.log",
+      "sha256": "5e2966e3b8551d6593339b5b80eb212ad9d650d9c99c5273163593bc867ef8d9",
+      "gitBlob": "ae293447a08475b73b3308164ebdc74a066955c4"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-09.log",
+      "sha256": "0bf972db56341c5a188ac90d49828a6dda0a7e386b3cbb4f1d51951be3b62d8d",
+      "gitBlob": "5168f5e4c3cec6c860ba64b6cc1aa290558f8e88"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-10.log",
+      "sha256": "de4139aa20cea866ef66d1ed3568042274eb431e48d5a675e21fd81b9f74cc35",
+      "gitBlob": "b74a72f243335139cea6dc4ebd5f8b095cdc778a"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-11.log",
+      "sha256": "b7d087e22b3dc6f90ef04177d982ea8de538d38bb9f06e2d73f72730dc6051a6",
+      "gitBlob": "953b27abac4822512e5ab4b93b5b6f684ae8aedc"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-12.log",
+      "sha256": "0e52cb3c167478ec3f095e70ebd7d594f036dceb12c5eb56924fac30a0b89a07",
+      "gitBlob": "98b016f5c231e3ce3952fe0cc6952e00fef9c3c3"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-13.log",
+      "sha256": "82b986c67c3ac3c375f2dc450d74426f032d067fa690ecc55f9cc0451d7a2dc1",
+      "gitBlob": "79dbd01cee38646dea6348b9870dbfd2594e3916"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-14.log",
+      "sha256": "20b5d89b115752d77b32ccb08ffd3e69aed062ae5cfaa06544c2e6c453861187",
+      "gitBlob": "d957f9a473ddbfae03f5eee85b8c72acb49199e9"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-15.log",
+      "sha256": "f1a6034f9f5455fd7cd4b923711f8097fc6978312cf7394d5d7204122b5430a0",
+      "gitBlob": "8e68695f1e78d72c6aa62ff164981ea51e4cd423"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-16.log",
+      "sha256": "2655a0a082567afa5a075a8d54aa8d868a8a7e91e78d501533ef8167bcce905d",
+      "gitBlob": "45111271164fbb2874d28813ec988a9450b731f1"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/checkers-results.json",
+      "sha256": "4e45e8545743be4c88835c8ade91d6d156ad745097aa613df9cb01eaf0c4e42d",
+      "gitBlob": "5cae0c9d96bebdf501a606ef8b6a15e716e8a3ab"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/commerce-tests.log",
+      "sha256": "27aa4836c618e3a708965b60bc8ebd78ab21222fd8bddf98b8a6029a210e5b02",
+      "gitBlob": "d38f466f57a286fda3786d7ced7da2c140799cee"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/companion-tests.log",
+      "sha256": "a753ab85dbf6a1c5b671f3db3fd0458ca5b0ea5f02ed1ff77fd0a3471f5e5cb0",
+      "gitBlob": "8ccfabb53a0d6b43c4015f34973b010f0eddb934"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/coverage.md",
+      "sha256": "7dab42da9d160372aa20da1eef35f03bb58c055394a0547044b8a43233f63a9d",
+      "gitBlob": "14d071a3695d4750d52f389dd30119592bf1f39c"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/diagnostic-results.json",
+      "sha256": "da381626e98b97c134c6e448946b3df4830505a1fc9bdc3e5822e82fc66c7800",
+      "gitBlob": "3898425c968ecc18064f7efe9ac5d3e6ad58ae81"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/expiry-tests.log",
+      "sha256": "51572b75baa72545f055186c4b03265563a0e1c9696a2be223a199fc7c137ad4",
+      "gitBlob": "05b687fe2f5688033f944fe59005db0a424bb4ae"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/final-01.log",
+      "sha256": "e4c7576240b079d6eabbc303b2db8a30359b9b8c16acfd23ff172c2ae55b82aa",
+      "gitBlob": "72c56889452524c1ec70e43c8fc09029d91472aa"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/final-02.log",
+      "sha256": "275a6091f4d0a8951eb3a6d950b17baf68b62c550578585f3246da5d5eb8c81f",
+      "gitBlob": "cf51a885f34437475d0684da8ed31b29a40166cc"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/final-03.log",
+      "sha256": "eb590dea198a52115844caae03be45f60fb65ba619a286d68d08a3e1fe107aaa",
+      "gitBlob": "e4116677a0fa2fc221c87618c45a5315618ca4b4"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/final-04.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/final-results.json",
+      "sha256": "bdc8ae70d179f2925bdd590068ed2e7dbb3f60c7629cb15a085ccd27c20dd0cc",
+      "gitBlob": "3691edf3e77e3ce139ea7f92c971352c717c3235"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/focused-results.json",
+      "sha256": "3860df0e90d4e57bc79b1baf825035a158f4dabc460c72951d06ed73f6fd1983",
+      "gitBlob": "11f75bbf06034eafad93d486f4c61fc4606e8f8f"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/ktx-01.log",
+      "sha256": "f9a648358a5382d5522a9ccf23b3efc4a712f916ed4e9c451e7ec17b801d46a3",
+      "gitBlob": "fb81be0a0e89dde7f70160256c10146989a0b2cc"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/ktx-02.log",
+      "sha256": "6d9facf9399b18c9480922be91b176f136e089d2a9754b9abd269fc5e1295313",
+      "gitBlob": "e00b0cce176b3c3a8b7a24fde6ab4029648d12af"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/ktx-03.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gitBlob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/ktx-results.json",
+      "sha256": "c16efa8650d4bffeeefabb7c059974bd080126d66969bd75edbdf95b6b8157c3",
+      "gitBlob": "b610135f0e4254e91738a9093c9d7a742166f92a"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-01.log",
+      "sha256": "f1fb6ad570093e712182eef3b19718a64122ee92e7776bf026a0931437253262",
+      "gitBlob": "c77f5e3a3cf7672289da8ea6e51de665b858b90c"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-02.log",
+      "sha256": "aad0ce22160bdc9f6c4928dd6c5193642b77af441fd4259abd6f2e721ee0e866",
+      "gitBlob": "6275c0c75e41822232e28c594b9e2a335908778b"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-03.log",
+      "sha256": "1f6d3751cad9f8fcaeb576fe2cb06e28049a5cc882e1ecd88ccb5b62b7f66675",
+      "gitBlob": "3fbdc4e47c781918a769b70e570dd8a720f28c40"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-04.log",
+      "sha256": "e0f8f700b60c189d957efcfc70ceb3ce2f1c4ac8f165ce6f39f3e32e611051c9",
+      "gitBlob": "98e88da6a222238f626ea6b3e10092a54b9e13ca"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-05.log",
+      "sha256": "b0fed037e714fdde5752711bcd1dc3cf3ed07b7d83ca204b7f93f2492e23f6ba",
+      "gitBlob": "e73748a39fab093f063a7aa9667a964f3d27d9be"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-06.log",
+      "sha256": "7a9148e9c8d1f5330a2f0ba5f38eb5291ee3913f40b5487965ad228caf09ccba",
+      "gitBlob": "d159857c44bd0101dc086ec0c5c25cba36eca299"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-01.log",
+      "sha256": "84d495974f6e45cbb7b6198b8c1c98981b20722cb55d27ba865a44f637c3c50e",
+      "gitBlob": "4909f1666ff5be6c5a1c238f25ae30f68c6eb78f"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-02.log",
+      "sha256": "028b786ef22ea9997640f46fe3bcbafa26739b74f64eb82357767b53148d9c5e",
+      "gitBlob": "981d60434ca8948758c7adc33ef577ac11be4377"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-03.log",
+      "sha256": "58f821d85df6dd24582740ea64bc02ac1555cd07890f28436462e16cc8498170",
+      "gitBlob": "f0b08c6c23138d8e5551a42c2b34fd879ffed955"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-04.log",
+      "sha256": "aa2af9f34991e0e8efbedd36effb1b80fe4db18b7d2387dc44d997efd72d843b",
+      "gitBlob": "cdb60e6bb4d564ba7c6ac0c8ccdc2f6fa777e48a"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-05.log",
+      "sha256": "1d3e8bd7980ac8d6a2b010d3dd6ac68339bf50fcedc85e0901e80600f012f75e",
+      "gitBlob": "666ffeb4516e929f08dfbd5dee779253a49b29ff"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-06.log",
+      "sha256": "ce9578827857956b08c0044182de1ccd6cdac3b560741b41b92b92712b018046",
+      "gitBlob": "41c0f225570c220fa42f46f549d556ec965cddbe"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-07.log",
+      "sha256": "f8f210e29706270f25e766172f41b2b631a17987f500df0fd7e5668b0a656413",
+      "gitBlob": "0ad778a4d3b98072223b4848df9c3407be6ee851"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-08.log",
+      "sha256": "f7272d237eee6926fce9559dd78abcbd14832e8e07efcaa221a2393c0cc931c1",
+      "gitBlob": "27d3abfc9a7a2ade7dfd97071254d3f66ecf456f"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-09.log",
+      "sha256": "157777097d774a2d8a37d2e2ce4eebb237385fea924c0ac13fa301afa010688b",
+      "gitBlob": "84fb19f67f4debb05bf5ad58e6dea718d5fbb0ca"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-ci-results.json",
+      "sha256": "95b3a05ce726f832c9cf600abeab2d0666f673c42cbe4a438ecf8ed4a9cb4bb3",
+      "gitBlob": "d0646066e45e631b19b364ff933c52f6f3f847d8"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-results.json",
+      "sha256": "b1861f2095ceaeba027724cf44027a2c892e7989ef4da85a5d06b5f28a5c28bc",
+      "gitBlob": "7a4933731429068dc1d495bbebe07f72e9158c3c"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-tail-01.log",
+      "sha256": "a40ec4049017a6fc98120e514fb6eea69b79992df69fb3ca5c6d8fef287852a1",
+      "gitBlob": "ae5b9c11a3fa574809052e0fb64348e16a4584f7"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-tail-02.log",
+      "sha256": "470cd2488eedabcbd48cc870ba886952ed3ded500287abf2a40398a036e18aba",
+      "gitBlob": "c97345d439a51fd156e84ba43f514b797160cfe3"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-tail-03.log",
+      "sha256": "6018cbfa361517bbace10a807dc6f06b5eab91fccbfac19198ef6a530976294a",
+      "gitBlob": "bfa89bbc4d42ef6254c8cd1a08f6a5fe80060fb7"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-tail-04.log",
+      "sha256": "a3a96b7731b11f20a7424e62c7e8b0c862366e90803d250d22052ee56062edda",
+      "gitBlob": "86a24ce9ec4d9338505a7f692bd8d454825d34e6"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/offline-tail-results.json",
+      "sha256": "ee696d0fb60335170b88a435a60ce25af1e80e70ac0c8a08c63799b1714d3714",
+      "gitBlob": "a4c0747f74d03aa7af7a7ef809ca6231f1b3bbad"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/preservation-after.json",
+      "sha256": "688b6950d524389024999da7e561d5d129d25a21488cbc5efdafea8c8281bec2",
+      "gitBlob": "db472f7bcea4ed4bfce99e8aa4073aa1d0646752"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/preservation-before.json",
+      "sha256": "4676a8c6e627b66e35dd4319909d802fa1c43b1478f3d81140ff40777ec9efaf",
+      "gitBlob": "04eadf29067ebf78261ac44e440a97e101b7ec55"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/preservation-results.json",
+      "sha256": "eb590dea198a52115844caae03be45f60fb65ba619a286d68d08a3e1fe107aaa",
+      "gitBlob": "e4116677a0fa2fc221c87618c45a5315618ca4b4"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/provider-timeout-diagnostic.log",
+      "sha256": "70f5047562c2646ef182640e25ad8d0d200a7f718cfa5eff0b3e52fcec8a3b24",
+      "gitBlob": "7060d1f376c3e2362f8932d57a6ef810ffeb58d0"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/resale-tests.log",
+      "sha256": "f5a59475b61f36fcfc00012eda99a2507a3bfe0dc9f65daa58512bef77dbf00f",
+      "gitBlob": "b2472e74ac639d8c61192ae3945d45ef63d26888"
+    },
+    {
+      "path": "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/run_checks.py",
+      "sha256": "ff35154b54ff5c1bb1963c8ce03249185634182a3f4150693eff54f2af917beb",
+      "gitBlob": "bf639cc3433f384487ecc0a2c4669538eda8b42f"
+    }
+  ]
+}
