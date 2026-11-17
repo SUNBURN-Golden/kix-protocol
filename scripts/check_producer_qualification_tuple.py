@@ -20,7 +20,9 @@ otherwise. ``--self-test`` mutates in-memory copies and requires the checker to
 detect a mutated blob digest, a missing command and a mismatched gate source
 pin, plus specific diagnostics for false semantic/read promotion, SD1
 resolution or owner/status changes, normative claims, missing non-claims,
-read-name drift and candidate-fixture binding drift.
+read-name drift and candidate-fixture binding drift. Query ownership and kind
+are derived from the five pinned fixture bodies and checked against both the
+read manifest and tuple, including consistently re-pinned negative controls.
 """
 import copy
 import hashlib
@@ -495,8 +497,37 @@ def _check_manifest(record, artifacts, manifest, profile, toolchains, read_manif
             problems.append('missing artifact id: ' + artifact_id)
 
 
+def _derive_read_query_owners(artifacts, problems):
+    """Derive all owners before enforcing uniqueness; never trust tuple paths."""
+    owners = {}
+    for path in READ_FIXTURES:
+        try:
+            fixture = _json(artifacts[path])
+        except (KeyError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            problems.append('read fixture unreadable: %s (%s)' % (path, type(exc).__name__))
+            continue
+        if not isinstance(fixture, dict):
+            problems.append('read fixture is not an object: ' + path)
+            continue
+        queries = fixture.get('queries')
+        if not isinstance(queries, dict):
+            problems.append('read fixture queries are not an object: ' + path)
+            continue
+        for name, query in queries.items():
+            kind = query.get('kind') if isinstance(query, dict) else None
+            owners.setdefault(name, []).append((path, kind))
+            if not isinstance(query, dict):
+                problems.append('read fixture query is not an object: %s (%s)' % (name, path))
+            if kind not in ('point', 'list'):
+                problems.append('read query association kind mismatch: %s (fixture)' % name)
+    for name, entries in owners.items():
+        if len(entries) != 1:
+            problems.append('read query association duplicate: ' + name)
+    return owners
+
+
 def _check_read_queries(record, artifacts, read_manifest, expected_catalogue, present,
-                        problems):
+                        by_path, problems):
     read_queries = record.get('read_queries') or {}
     items = read_queries.get('items')
     if not isinstance(items, list):
@@ -514,17 +545,64 @@ def _check_read_queries(record, artifacts, read_manifest, expected_catalogue, pr
         problems.append('read query candidate manifest drift')
     if read_queries.get('implementationStatus') != 'read-model-reference not merged':
         problems.append('read query implementation status drift')
-    manifest_queries = read_manifest.get('queries') or {}
-    manifest_files = read_manifest.get('files') or {}
-    recorded_names = [item.get('name') for item in items if isinstance(item, dict)]
+    manifest_queries = read_manifest.get('queries')
+    if not isinstance(manifest_queries, dict):
+        problems.append('read manifest queries are not an object')
+        manifest_queries = {}
+    manifest_files = read_manifest.get('files')
+    if not isinstance(manifest_files, dict):
+        problems.append('read manifest files are not an object')
+        manifest_files = {}
+    owners = _derive_read_query_owners(artifacts, problems)
+    recorded_names = [item['name'] for item in items
+                      if isinstance(item, dict) and isinstance(item.get('name'), str)]
+    if len(recorded_names) != len(items):
+        problems.append('read query entry or name malformed')
     if len(recorded_names) != len(set(recorded_names)):
         problems.append('duplicate read query name')
     if set(recorded_names) != set(manifest_queries):
         problems.append('read query name set drift')
+    if set(owners) != set(manifest_queries):
+        problems.append('read fixture/manifest query name set drift')
+    if set(owners) != set(recorded_names):
+        problems.append('read fixture/tuple query name set drift')
+    for name in set(manifest_queries) | set(recorded_names):
+        if name not in owners:
+            problems.append('read query association missing: ' + name)
+    for name in set(owners) - (set(manifest_queries) & set(recorded_names)):
+        problems.append('unexpected read fixture query: ' + name)
+    for name, kind in manifest_queries.items():
+        entries = owners.get(name, [])
+        if kind not in ('point', 'list') or (len(entries) == 1 and kind != entries[0][1]):
+            problems.append('read query association kind mismatch: %s (manifest)' % name)
+    if set(manifest_files) != {Path(path).name for path in READ_FIXTURES}:
+        problems.append('read manifest fixture file set drift')
+    for path in READ_FIXTURES:
+        meta = manifest_files.get(Path(path).name)
+        if not isinstance(meta, dict):
+            problems.append('read manifest fixture entry malformed: ' + path)
+            meta = {}
+        expected_sha = meta.get('sha256')
+        data = artifacts.get(path)
+        if not _is_hex(expected_sha, 64) or (data is not None and
+                                            sha256_bytes(data) != expected_sha):
+            problems.append('read manifest fixture digest drift: ' + path)
+        pin = by_path.get(path)
+        if pin is None:
+            problems.append('read fixture artifact pin missing: ' + path)
+        elif pin.get('sha256') != expected_sha:
+            problems.append('read fixture artifact digest disagreement: ' + path)
     for item in items:
-        if not isinstance(item, dict):
+        if not isinstance(item, dict) or not isinstance(item.get('name'), str):
             continue
         name = item.get('name')
+        entries = owners.get(name, [])
+        if len(entries) == 1:
+            owner_path, owner_kind = entries[0]
+            if item.get('candidateVector') != owner_path:
+                problems.append('read query association path mismatch: ' + name)
+            if item.get('kind') != owner_kind:
+                problems.append('read query association kind mismatch: %s (tuple)' % name)
         if name not in manifest_queries:
             problems.append('unexpected read query: ' + str(name))
             continue
@@ -538,7 +616,8 @@ def _check_read_queries(record, artifacts, read_manifest, expected_catalogue, pr
         if candidate not in READ_FIXTURES:
             problems.append('read query candidate vector drift: ' + str(name))
             continue
-        expected_sha = (manifest_files.get(Path(candidate).name) or {}).get('sha256')
+        meta = manifest_files.get(Path(candidate).name)
+        expected_sha = meta.get('sha256') if isinstance(meta, dict) else None
         if item.get('fixtureSha256') != expected_sha:
             problems.append('read query fixture digest drift: ' + str(name))
         data = artifacts.get(candidate)
@@ -674,7 +753,7 @@ def validate(record, artifacts, present):
     if not isinstance(records, list) or not records:
         problems.append('artifacts are missing')
         records = []
-    by_id, _ = _artifact_index(records, problems)
+    by_id, by_path = _artifact_index(records, problems)
     _check_artifact_digests(records, artifacts, problems)
 
     try:
@@ -704,11 +783,14 @@ def validate(record, artifacts, present):
     except (KeyError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         problems.append('pinned manifest/profile is unreadable: ' + type(exc).__name__)
         return problems
+    if not isinstance(read_manifest, dict):
+        problems.append('read manifest is not an object')
+        read_manifest = {}
     _check_manifest(record, artifacts, manifest, profile, toolchains, read_manifest,
                     by_id, problems)
     catalogue_names = set(expected_names)
     _check_read_queries(record, artifacts, read_manifest, catalogue_names, present,
-                        problems)
+                        by_path, problems)
     by_surface = _check_surfaces(record, by_id, problems)
     _check_semantic_and_sd1(record, profile, present, by_surface, problems)
 
@@ -764,6 +846,9 @@ def self_test():
         for item in problems:
             print('- ' + item, file=sys.stderr)
         return 1
+    original_record = copy.deepcopy(record)
+    original_artifacts = dict(artifacts)
+    original_present = set(present)
 
     mutated = copy.deepcopy(record)
     for entry in mutated.get('artifacts') or []:
@@ -902,6 +987,153 @@ def self_test():
         if not expect_diagnostic(label, mutated, expected):
             return 1
 
+    def repin(changed_record, changed_artifacts, path, data):
+        """Self-test only: keep byte identity pins consistent for detached edits."""
+        changed_artifacts[path] = data
+        pin = next(row for row in changed_record['artifacts'] if row['path'] == path)
+        pin['sha256'] = sha256_bytes(data)
+        pin['gitBlob'] = git_blob_id(data)
+        if path in READ_FIXTURES:
+            manifest = _json(changed_artifacts[READ_MANIFEST_PATH])
+            manifest['files'][Path(path).name]['sha256'] = sha256_bytes(data)
+            for row in changed_record['read_queries']['items']:
+                if row['candidateVector'] == path:
+                    row['fixtureSha256'] = sha256_bytes(data)
+            repin(changed_record, changed_artifacts, READ_MANIFEST_PATH,
+                  json.dumps(manifest).encode('utf-8'))
+
+    def expect_association(label, changed_record, changed_artifacts, expected):
+        actual = validate(changed_record, changed_artifacts, present)
+        # Require the named predicate, with no accidental byte/pin failures.
+        incidental = [message for message in actual if any(word in message for word in
+                      ('digest', 'sha256', 'gitBlob', 'bytes drift'))]
+        if (expected is None and actual) or (expected is not None and expected not in actual) or incidental:
+            print('self-test: %s: expected %r; actual diagnostics: %r'
+                  % (label, expected, actual), file=sys.stderr)
+            return False
+        print('self-test: ' + ('passed ' if expected is None else 'detected ') + label)
+        return True
+
+    # A harmless serialization change proves that the re-pinning helper keeps
+    # every dependent digest consistent before negative controls rely on it.
+    changed_record = copy.deepcopy(record)
+    changed_artifacts = dict(artifacts)
+    repin(changed_record, changed_artifacts, READ_FIXTURES[0],
+          artifacts[READ_FIXTURES[0]] + b'\n')
+    if not expect_association('association-preserving re-pin', changed_record,
+                              changed_artifacts, None):
+        return 1
+
+    for original_query in record['read_queries']['items']:
+        name = original_query['name']
+        owner = original_query['candidateVector']
+        other = next(path for path in READ_FIXTURES if path != owner)
+        other_kind = 'list' if original_query['kind'] == 'point' else 'point'
+        for mutation in ('rebind', 'missing', 'duplicate', 'fixture kind',
+                         'manifest kind', 'tuple kind', 'manifest/tuple kind'):
+            changed_record = copy.deepcopy(record)
+            changed_artifacts = dict(artifacts)
+            query = next(row for row in changed_record['read_queries']['items']
+                         if row['name'] == name)
+            fixture = _json(artifacts[owner])
+            manifest = _json(artifacts[READ_MANIFEST_PATH])
+            if mutation == 'rebind':
+                query['candidateVector'] = other
+                query['fixtureSha256'] = sha256_bytes(artifacts[other])
+                expected = 'read query association path mismatch: ' + name
+            elif mutation == 'missing':
+                del fixture['queries'][name]
+                expected = 'read query association missing: ' + name
+            elif mutation == 'duplicate':
+                duplicate_fixture = _json(artifacts[other])
+                duplicate_fixture['queries'][name] = copy.deepcopy(fixture['queries'][name])
+                repin(changed_record, changed_artifacts, other,
+                      json.dumps(duplicate_fixture).encode('utf-8'))
+                expected = 'read query association duplicate: ' + name
+            else:
+                if mutation == 'fixture kind':
+                    fixture['queries'][name]['kind'] = other_kind
+                if mutation in ('tuple kind', 'manifest/tuple kind'):
+                    query['kind'] = other_kind
+                if mutation in ('manifest kind', 'manifest/tuple kind'):
+                    manifest['queries'][name] = other_kind
+                    repin(changed_record, changed_artifacts, READ_MANIFEST_PATH,
+                          json.dumps(manifest).encode('utf-8'))
+                source = 'tuple' if mutation == 'tuple kind' else 'manifest'
+                expected = 'read query association kind mismatch: %s (%s)' % (name, source)
+            if mutation in ('missing', 'fixture kind'):
+                repin(changed_record, changed_artifacts, owner,
+                      json.dumps(fixture).encode('utf-8'))
+            if not expect_association(mutation + ': ' + name, changed_record,
+                                      changed_artifacts, expected):
+                return 1
+
+    path = READ_FIXTURES[0]
+    for label, data, expected in (
+            ('invalid UTF-8', b'\xff', 'read fixture unreadable: ' + path + ' (UnicodeDecodeError)'),
+            ('invalid JSON', b'{', 'read fixture unreadable: ' + path + ' (JSONDecodeError)'),
+            ('non-object fixture', b'[]', 'read fixture is not an object: ' + path),
+            ('non-object queries', b'{"queries":[]}', 'read fixture queries are not an object: ' + path),
+            ('non-object query', b'{"queries":{"get_booking":[]}}',
+             'read fixture query is not an object: get_booking (' + path + ')'),
+            ('invalid fixture kind', b'{"queries":{"get_booking":{"kind":"unknown"}}}',
+             'read query association kind mismatch: get_booking (fixture)')):
+        changed_record = copy.deepcopy(record)
+        changed_artifacts = dict(artifacts)
+        repin(changed_record, changed_artifacts, path, data)
+        if not expect_association(label, changed_record, changed_artifacts, expected):
+            return 1
+
+    changed_artifacts = dict(artifacts)
+    del changed_artifacts[path]
+    if 'read fixture unreadable: ' + path + ' (KeyError)' not in validate(record, changed_artifacts, present):
+        print('self-test: missing fixture bytes were accepted', file=sys.stderr)
+        return 1
+    print('self-test: detected missing fixture bytes')
+
+    for mutation in ('unexpected query', 'manifest files', 'manifest queries',
+                     'manifest document', 'extra file', 'missing file', 'file entry'):
+        changed_record = copy.deepcopy(record)
+        changed_artifacts = dict(artifacts)
+        manifest = _json(artifacts[READ_MANIFEST_PATH])
+        if mutation == 'unexpected query':
+            fixture = _json(artifacts[path])
+            fixture['queries']['unexpected_query'] = {'kind': 'point'}
+            repin(changed_record, changed_artifacts, path,
+                  json.dumps(fixture).encode('utf-8'))
+            expected = 'unexpected read fixture query: unexpected_query'
+        else:
+            if mutation == 'manifest files':
+                manifest['files'] = []
+                expected = 'read manifest files are not an object'
+            elif mutation == 'manifest queries':
+                manifest['queries'] = []
+                expected = 'read manifest queries are not an object'
+            elif mutation == 'manifest document':
+                manifest = []
+                expected = 'read manifest is not an object'
+            elif mutation == 'extra file':
+                manifest['files']['extra.json'] = {'sha256': '0' * 64}
+                expected = 'read manifest fixture file set drift'
+            elif mutation == 'missing file':
+                del manifest['files'][Path(path).name]
+                expected = 'read manifest fixture file set drift'
+            else:
+                manifest['files'][Path(path).name] = []
+                expected = 'read manifest fixture entry malformed: ' + path
+            repin(changed_record, changed_artifacts, READ_MANIFEST_PATH,
+                  json.dumps(manifest).encode('utf-8'))
+        # Malformed manifest file maps legitimately cause digest diagnostics.
+        actual = validate(changed_record, changed_artifacts, present)
+        if expected not in actual:
+            print('self-test: %s: missing diagnostic %r; actual: %r'
+                  % (mutation, expected, actual), file=sys.stderr)
+            return 1
+        print('self-test: detected ' + mutation)
+
+    if record != original_record or artifacts != original_artifacts or present != original_present:
+        print('self-test: original inputs mutated by controls', file=sys.stderr)
+        return 1
     problems = validate(record, artifacts, present)
     problems += _catalogue_cross_check(record, artifacts)
     if problems:
