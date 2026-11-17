@@ -54,6 +54,9 @@ approval claim. [Builder evidence and actual local results](../validation/2026-1
 [HOLD and non-normative negative-control coverage and validation](../validation/2026-11-16-plan-producer-hold-negative-controls/README.md)
 extends the checker's detached self-tests while preserving validation semantics
 and all qualification statuses.
+[Candidate read-query association coverage and local validation](../validation/2026-11-17-plan-producer-read-association-check/README.md)
+derives ownership and kind from pinned fixture bodies and rejects coordinated
+path/digest rebinding, preserving all qualification statuses and SD1 ownership.
 
 ## Local supply reconciliation
 
