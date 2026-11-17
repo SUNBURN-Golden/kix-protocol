@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects seven input/outcome pack families (267 steps) to replay tests
+It connects eight input/outcome pack families (293 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -22,6 +22,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `bound_issuance` | `commerce_bound_issuance_inputs_v1.json` | `commerce_bound_issuance_receipts_v1.json` | `test_commerce_bound_issuance_vectors.py` | 2 / 25 |
 | `bound_resale` | `commerce_bound_resale_inputs_v1.json` | `commerce_bound_resale_receipts_v1.json` | `test_commerce_bound_resale_vectors.py` | 3 / 49 |
 | `resale_expiry` | `commerce_resale_expiry_inputs_v1.json` | `commerce_resale_expiry_receipts_v1.json` | `test_commerce_resale_expiry_vectors.py` | 2 / 27 |
+| `admission_cancellation` | `commerce_admission_cancellation_inputs_v1.json` | `commerce_admission_cancellation_receipts_v1.json` | `test_commerce_admission_cancellation_vectors.py` | 3 / 26 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -118,3 +119,32 @@ The original six packs and all qualification metadata are preserved. Product TTL
 and compensation policy remain **UNDETERMINED** with Astra/User and existing
 legal/accounting owners. [Extension coverage and actual local verification](../../validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/README.md)
 provide builder evidence only; no external consumer acceptance or A2 review is claimed.
+
+## Admission cancellation extension
+
+The eighth family adds three independent histories (26 steps) through unchanged
+`FsmHost`, based on [§11.4](../contracts/BOOKING_RESALE_ADMISSION_GATES.md#114-순서)
+and `AdmissionFsmTests.test_cancel_before_issue_blocks_entry_and_cancel_after_issue_does_not_void_it`.
+Cancellation before payment/issuance rejects adoption with `TICKET_CANCELLED`;
+payment observation without issuance rejects it with `TICKET_NOT_ISSUED`.
+Cancellation after issuance and after consumption returns `CANCEL_AFTER_ISSUE`.
+The issued credential remains usable through explicit adoption (`ELIGIBLE`),
+authorization (`AUTHORIZED`) and consumption (`CONSUMED`, version 2).
+Cancellation of `PAYMENT_NOTED` belongs to the separate compensation boundary,
+covered by prior temporal vectors; this pack defines no refund or compensation.
+
+`kix-commerce-admission-cancellation-receipts/1` records the input pin, sorted
+source pins, ordered cases and complete receipts or refusal codes with exact
+`input_ref` pointers. Each detached diagnostic snapshot includes all five
+machines' canonical business state, digest and accepted journals plus local
+views. Every refusal preserves those observations. Rejected-key retention is
+separately checked as process-local bookkeeping via repeated rejection and
+changed-binding conflict; these snapshots exclude it and prove no restart
+persistence. They are not published read responses.
+
+The original seven packs and 267 entries are preserved, as are all qualification
+metadata and original binding statuses. Product policy values remain
+**UNDETERMINED—Astra/User**; legal effects remain **UNDETERMINED—User/legal**.
+[Coverage and actual local verification](../../validation/2026-11-18-plan-plan-commerce-admission-cancellation-vec/README.md)
+are source-informed builder evidence, not A2 independent review, hosted
+exact-head CI or external consumer acceptance.
