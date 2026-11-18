@@ -24,7 +24,10 @@ and the cited AI delegation tests in `readiness/conformance.py` and
 
 2026-11-18 update for `plan-plan-aid-contract-map-partial-closure`. The owner
 approved moving the mock's grant-agent binding check ahead of the tool lists
-under §7. The pair matrix and static scan provide source-informed offline
+under §7; the supervisor-delivered owner decision is preserved verbatim, with
+its provenance and scope, in the
+[owner decision location record](../decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md).
+The pair matrix and static scan provide source-informed offline
 evidence. §0 and §7 remain PARTIAL for the verification limits below. See the
 [partial-closure validation record](../../validation/2026-10-26-plan-aid-contract-map-partial-closure/README.md).
 

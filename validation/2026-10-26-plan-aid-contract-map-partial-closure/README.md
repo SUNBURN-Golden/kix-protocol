@@ -1,9 +1,13 @@
 # AI delegation precedence and inertness validation
 
-`plan-plan-aid-contract-map-partial-closure` is ready for supervisor handoff.
-This is builder-authored, source-informed evidence for the offline mock.
-The 2026-11-18 owner decision (pt224u) authorizes the option 1 fix under
+`plan-plan-aid-contract-map-partial-closure` is ready for supervisor handoff
+after fix round 1. This is builder-authored, source-informed evidence for the
+offline mock. The 2026-11-18 owner decision (JunTae delegation `[pt224u]`,
+delivered by the KIX supervisor) authorizes the option 1 fix under
 [AI_DELEGATION_AUTHORITY.md](../../docs/contracts/AI_DELEGATION_AUTHORITY.md) §7.
+The decision text, provenance and scope are preserved verbatim in the
+[owner decision location record](../../docs/decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md),
+written in fix round 1 as the remedy named by the round-1 independent review.
 The earlier blocked draft supplied the validation path and test fixtures.
 
 ## Task and source basis
@@ -12,9 +16,10 @@ The earlier blocked draft supplied the validation path and test fixtures.
 |---|---|
 | Task input | Supervisor node specification, design and owner decision in the session. No issue, matching `docs/tasks/` file or ASTRA envelope. Audit floor A2. |
 | Branch | `agent/kix-plan-plan-aid-contract-map-partial-closure` |
-| Base, initial and final branch HEAD | `a38e1679449e74186c5a4e3d19b6cb79f6b791d5` |
-| Cached `origin/main` | `9f118dc3584edd61ca1076f5f0c2123c1c9428fe` is 353 commits ahead. The contract, mock and evidence map at the two Git refs match. The supplied base was preserved. Remote freshness is unverified. |
-| Implementation and final task commit SHAs | Unavailable. Implementation resides in the uncommitted worktree patch. |
+| Base and initial branch HEAD | `a38e1679449e74186c5a4e3d19b6cb79f6b791d5` |
+| Round-0 implementation head | `d524eefc2d758163d60e7de495bcada17c136fc2` (supervisor-committed; reviewed in r1) |
+| Cached `origin/main` | `9f118dc3584edd61ca1076f5f0c2123c1c9428fe` is 353 commits ahead (`git rev-list --left-right --count HEAD...origin/main` → `1 353`, rechecked in fix round 1). The contract, mock, seeded oracle and evidence map are unchanged on cached main relative to the base; only this branch edits them. The supplied base was preserved. Remote freshness is unverified. |
+| Fix-round-1 and final task commit SHAs | Unavailable at writing. Fix-round-1 changes reside in the uncommitted worktree patch; the supervisor commits and owns the final head. |
 | Exact-head KTX and KIX protocol CI | NOT_RUN / NOT_QUERIED. Run IDs, status and conclusion unavailable. |
 | Merge and main/push CI | N/A. Publication and merge are supervisor-owned. |
 
@@ -31,8 +36,14 @@ The earlier blocked draft supplied the validation path and test fixtures.
 - `reference/ai_delegation/test_mock_static_inertness.py` adds a closed AST
   scan with in-memory controls and direct checks of both command catalogs.
 - `docs/status/AI_DELEGATION_CONTRACT_EVIDENCE_MAP.md` updates the §0 and §7
-  citations and remaining gap descriptions. `docs/README.md` links this record
-  from the AI delegation contract index entry.
+  citations and remaining gap descriptions; the §0 Basis update note cites the
+  owner decision location record (fix round 1). `docs/README.md` links this
+  record and the decision record from the AI delegation contract index entry.
+- `docs/decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md` (fix
+  round 1) preserves the supervisor-delivered owner decision verbatim with its
+  provenance, scope and non-claims, following the location-record genre of
+  `OPENAPI_CATALOGUE_PROMOTION_OWNER_DECISION_20261009.md` and
+  `POLICY_DEEPENING_OWNER_DECISION_20261009.md`. It creates no new decision.
 - `validation/2026-10-26-plan-aid-contract-map-partial-closure/README.md` is this record.
 
 ## Existing coverage and new evidence
@@ -76,7 +87,80 @@ owned and open. The record covers neither runtime sandboxing nor production
 behavior such as durability, distributed fencing, bank exactly-once, chain
 finality, legal authority or deployment readiness.
 
-## Verification commands and results
+## Fix round 1 (2026-11-18)
+
+The r1 independent review (supervisor-commissioned, read-only) returned one
+blocking finding: the mock fix, seeded-oracle alignment and exact-code
+expectation update exceed the node's "test-only / no mock change" acceptance
+item, and the sole justification — the 2026-11-18 owner decision `[pt224u]` —
+was recorded nowhere under `docs/decisions/` as AGENTS.md §5 requires. The
+review accepted the fix itself as "correct, minimal, and contract-conformant"
+and named the remedy: "record it under `docs/decisions/` (or have the owner
+confirm it in-repo)". No other blocking finding was raised; exact-head CI for
+the round-0 head passed (supervisor ledger: PR #470, `CI PASS`).
+
+**Provenance check before applying the remedy.** The decision is genuine and
+was granted outside the executing session:
+
+- The supervisor-generated round-0 builder prompt
+  `/workspace/kix-run/logs/plan-plan-aid-contract-map-partial-closure_build_a0_codex0.prompt.md`
+  carries the section `=== Owner decision (answers the earlier
+  DECISION_REQUIRED; authoritative for this node) ===` at lines 182–186;
+  `grep -n "pt224u"` hits line 183. Lines 183–184 are quoted verbatim in the
+  decision record. That file is supervisor-owned; builder sessions cannot
+  write it.
+- The supervisor loop ledger `/workspace/kix-run/AUTOLOOP_RESULT.md` uses the
+  same `KIX 2026-11-18, JunTae delegation [pt224u]` tag on 24 lines for that
+  day's batch of node dispositions, corroborating the tag as a supervisor
+  batch identifier.
+- The class C stop the decision answers is recorded on cached `origin/main`
+  as item A5 of `docs/status/OPEN_USER_DECISIONS_20261026_ADDENDUM.md`
+  (`git show origin/main:…`; merged as `be97eaa`, absent at this branch's
+  base). It names the source stop's SHA-256, options 1/2, the option-1
+  recommendation and the owner cell; its I-S1 option-1 inventory lists
+  `Model.predict_call_tool`, covering the seeded-oracle alignment.
+
+**Remedy applied (docs only).** Added
+`docs/decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md`
+(location record: verbatim decision, channel, scope, non-claims; no new
+decision, no grade or ledger change), linked it from the existing AI
+delegation contract index line in `docs/README.md`, cited it in the evidence
+map's §0 Basis update note, and updated this record. No mock, oracle, test,
+contract, flag, checker or CI change in this round
+(`git diff --exit-code HEAD -- reference/ai_delegation` passed). The
+index link sits on the line this PR already touches; `git merge-file --stdout`
+against cached main merged cleanly (exit 0, no conflict markers, link
+preserved). `DECISION_REQUIRED.md` is not recreated: the recorded owner
+decision expressly instructs its removal and `STATUS: READY`, so the node's
+STOP path is superseded for this fix by the now-recorded authorization.
+
+**Fix-round-1 commands and actual results.** Python `3.13.5` (`python3`) and
+`3.12.15` (`python3.12`); `PYTHONDONTWRITEBYTECODE=1` throughout.
+
+| Command | Actual result |
+|---|---|
+| `python3 -m unittest discover -s reference/ai_delegation -t reference/ai_delegation` | 98 tests, OK. |
+| `python3 -m unittest discover … -p test_check_order_precedence.py` / `-p test_mock_static_inertness.py` | 9 tests OK / 4 tests OK. |
+| Full `Stdlib offline document checks` `run:` block extracted from `.github/workflows/protocol.yml` and run with `bash -ex` | Exit 0. Includes `check_ai_delegation_evidence_map.py` (105 citations; COVERED=3 PARTIAL=6 NOT_COVERED=1 OPEN=1) and `--self-test` (86 negative controls), `check_contract_error_codes.py` (199 rows, CLASS_B=0 CLASS_C=0) and `--self-test`, `check_docs_index.py` (scanned=247 indexed=212 allowlisted=35; the new decision record is scanned and indexed) and `--self-test`, `check_status_register.py` (385 paths, 15 EV IDs, 32 original IDs) and `--self-test`, and every other checker in the block with its self-test. |
+| `python3.12 -m unittest discover` for settlement_f01_f03, booking_resale_admission, credit_advance_f04, ai_delegation, token_reward | 196 / 412 / 148 / 98 / 168 tests, all OK. |
+| `python3.12 -m unittest integration_gate.test_http_gate readiness.test_faults` | 100 tests, OK; the suite emitted an unclosed-file `ResourceWarning` (as in round 0). |
+| `python3.12 scripts/check_openapi_contract.py` and `--self-test`; `check_integration_gate_openapi.py` and `--self-test` | All passed. 84 commands (40 core, 44 FSM); `productionEndpoint=false`, `publicHost=false`. |
+| `PYTHONPATH=reference/ai_delegation python3` enumerating `cells()` and `category({vi,vj})` | 28 pairs, 169 cells; 148 contract, 20 unbuildable, 1 same_code — equal to the module constants. |
+| Cached-main overlay: `git archive origin/main` into a fresh directory, branch files overlaid, merged `docs/README.md` from `git merge-file`; then `python3.12 -m unittest discover -s …/reference/ai_delegation` | 182 tests, OK (main's extended suite). |
+| Overlay: `python3.12` on main's `check_ai_delegation_evidence_map.py` (+`--self-test`, 86 controls), `check_evidence_map_rollup.py`, `check_docs_index.py` (+`--self-test`), `check_class_b_index.py`, `check_ci_test_discovery.py`, `check_status_register.py`, `check_contract_error_codes.py` | All passed. Roll-up 25 contracts; docs index scanned=435 indexed=400 allowlisted=35; class B index 218 rows; CI discovery 9 reference suites, both new modules discovered; register 577 paths; error codes 199 rows with main's own CLASS_B=1 row (pre-existing on main, untouched here). |
+| `git merge-file --stdout` for `docs/README.md` (ours, base `a38e167`, cached main) | Exit 0, no conflict markers, decision-record link present in the merged preview. |
+| Link check: every relative Markdown target in the new decision record resolved against the worktree | All 6 targets exist. |
+| `git hash-object` on both locked files; `git diff --exit-code HEAD -- reference/v0.3-rc1 docs/contracts runtime .aiops docs/tasks .github scripts reference/ai_delegation`; `git diff --check`; Python Git-blob comparison of all `reference/v0.3-rc1` files | Locked blobs `69564b16…` / `b607996c…` match; protected paths and all round-0 code unchanged this round; no whitespace errors; 108 frozen files byte-identical. |
+| `git rev-list --left-right --count HEAD...origin/main`; `git rev-parse origin/main` | `1 353`; `9f118dc3584edd61ca1076f5f0c2123c1c9428fe`. Fetch NOT_RUN (supervisor no-network rule); remote freshness unverified. |
+
+Fix-round-1 changed paths: `docs/decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md`
+(new), `docs/README.md`, `docs/status/AI_DELEGATION_CONTRACT_EVIDENCE_MAP.md`,
+`validation/2026-10-26-plan-aid-contract-map-partial-closure/README.md`.
+Exact-head CI for the commit carrying these changes is supervisor-owned and
+NOT_RUN at writing; per AGENTS.md §11 it belongs in the PR closure, not in a
+further commit.
+
+## Verification commands and results (round 0)
 
 Python `3.13.5` supplies `python3`. `python3.12` is `3.12.15`, matching the
 protocol workflow's 3.12 series. Python verification set `PYTHONDONTWRITEBYTECODE=1`.
@@ -132,9 +216,10 @@ Entries that include a `--self-test` variant ran both commands independently.
 | `runtime/crates/kix-kernel/src/lib.rs` | `69564b166f0c27f9af5d8422f0a466b18d74c20f` |
 | `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` | `b607996c83a119c349f1cc90469ac1ba82764e20` |
 
-The owner decision supersedes the design's diagnostic stop and authorizes the
-mock change. The seeded harness required an exact expectation update. The
-direct catalog check was included. The index link was placed at the existing
+The [owner decision](../../docs/decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md),
+recorded in fix round 1, supersedes the design's diagnostic stop and authorizes
+the mock change. The seeded harness required an exact expectation update. The
+direct catalog check was included. The index links were placed at the existing
 AI contract entry to avoid the cached-main conflict. `delegated_execution_enabled`
 is `false`. Fixture limits and periods are synthetic.
 
