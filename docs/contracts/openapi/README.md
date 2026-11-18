@@ -142,3 +142,8 @@ python3 -m integration_gate --port 8765 --browser-origin http://127.0.0.1:5173
 같은 프로세스 안에서는 참조 모형 그대로, 같은 `operationId`와 같은 actor·action·body 지문이면 저장 영수증을 다시 주고, 지문이 다르면 `OPERATION_ID_CONFLICT`다. HTTP `Idempotency-Key`는 보지 않는다. 기본 프로세스를 다시 시작하면 인메모리 상태와 그 재생은 사라진다. `--readiness-dir`가 있을 때만 커밋된 호출을 그 디렉터리의 파일에서 재생하며, 재생은 효과를 다시 적용하지 않는다. 이 재생을 운영 내구성이나 운영 적합으로 읽지 않는다. 기본 바인드는 계속 `127.0.0.1`이다.
 
 `actor`는 픽스처 문자열이다. 인증 결과가 아니다. 외부 PG·KYC·공연장·은행 어댑터는 붙이지 않는다. 성공한 로컬 호출은 실자금·실입장·운영 적합성의 증거가 아니다.
+
+For transport, envelope, identity/replay and authority distinctions from the
+commerce calculator and ticket/token tools, see the
+[non-normative consumer surface map](../../status/CONSUMER_SURFACE_BOUNDARY_MAP.md).
+It defines no aliases or new bindings; semantic SDK consumers remain HOLD.

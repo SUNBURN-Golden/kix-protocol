@@ -1,0 +1,13 @@
+test_structure_cardinality_and_encoding_bounds (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_structure_cardinality_and_encoding_bounds) ... ok
+test_structure_driver_refusals_and_wire_parity (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_structure_driver_refusals_and_wire_parity) ... ok
+test_structure_invalidation_history_and_confirmations (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_structure_invalidation_history_and_confirmations) ... ok
+test_structure_journey_parity (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_structure_journey_parity) ... ok
+test_structure_malformed_attempts_clear_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_structure_malformed_attempts_clear_dependents) ... ok
+test_structure_output_failure_and_uncertainty_stop (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_structure_output_failure_and_uncertainty_stop) ... ok
+test_structure_positions_order_and_no_launch (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_structure_positions_order_and_no_launch) ... ok
+test_structure_precision_and_literal_fields (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_structure_precision_and_literal_fields) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 22.865s
+
+OK

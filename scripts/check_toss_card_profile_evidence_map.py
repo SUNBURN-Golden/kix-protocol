@@ -87,7 +87,7 @@ EXPECTED = {
 }
 
 PROVIDER_ROWS = {i for i in EXPECTED if i.startswith(('S1-', 'S2-'))} | {
-    'S4-SIGNATURE', 'S4-LOOKUP-BINDING', 'S4-NORMALIZE', 'S5-NO-RUN'}
+    'S4-SIGNATURE', 'S4-LOOKUP-BINDING', 'S5-NO-RUN'}
 MUST_BE_OPEN = {i for i in EXPECTED if i.startswith('S8-')} | {
     'S2-IDEMPOTENCY-15D', 'S2-CUT', 'S2-STATUS-STRING', 'S4-SIGNATURE',
     'S6-IDENTITY-SEPARATION', 'S6-SCOPE-BINDING'}
@@ -228,7 +228,7 @@ def find_problems(map_text, sources, root=ROOT, files=None):
                     continue
                 pattern = (r'runtime/crates/kix-kernel(?:-v5)?/tests/[a-z0-9_]+\.rs'
                            if col == KERNEL else
-                           r'(?:reference/(?:booking_resale_admission|settlement_f01_f03)|integration_gate|readiness)/test_[a-z0-9_]+\.py')
+                           r'(?:reference/(?:booking_resale_admission|settlement_f01_f03|provider_facts)|integration_gate|readiness)/test_[a-z0-9_]+\.py')
                 if not re.fullmatch(pattern, path):
                     problems.append(where + ' is outside column paths')
                     continue

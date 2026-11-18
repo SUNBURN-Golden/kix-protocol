@@ -1,0 +1,22 @@
+{
+  "frozen_v03_rc1_byte_identical": true,
+  "frozen_v03_rc1_files": 108,
+  "locked_blobs": [
+    {
+      "gitBlob": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+      "path": "runtime/crates/kix-kernel/src/lib.rs",
+      "sha256": "84c8ef6cca3eb3eafc842639b32580c21b88731b34e83490db2fa84eecb1657f"
+    },
+    {
+      "gitBlob": "b607996c83a119c349f1cc90469ac1ba82764e20",
+      "path": "runtime/crates/kix-kernel/tests/quarantine_capacity.rs",
+      "sha256": "bb76e233f0c955d4b3a3f21b1edd65e7b5a0aefe2c809da894884122d5121978"
+    }
+  ],
+  "original_changed_paths": [
+    "reference/booking_resale_admission/README.md"
+  ],
+  "original_tracked_files": 3823,
+  "unchanged_original_files": 3822,
+  "violations": []
+}

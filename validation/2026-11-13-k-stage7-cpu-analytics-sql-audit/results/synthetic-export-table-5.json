@@ -1,0 +1,299 @@
+{
+  "caseId": "export-table-5",
+  "comparison": "ordered",
+  "contractClause": "Authenticated Export §§4,5",
+  "datasets": "authenticated files identified by exportTrace",
+  "duckdb": "Ok([[B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 99, 111, 109, 112, 108, 101, 116, 105, 111, 110]), U(1987164872), I(1000), B([99, 109, 100, 58, 99, 49]), Bool(true), U(120)], [B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 105, 110, 102, 108, 111, 119]), U(2129213723), I(1000), B([105, 110, 98, 111, 120, 58, 51, 52, 50, 51, 50, 48, 53, 55, 98, 50, 55, 99, 97, 102, 102, 101, 51, 101, 102, 101, 54, 97, 55, 101, 54, 53, 57, 101, 53, 50, 98, 54, 50, 100, 50, 48, 101, 51, 102, 49, 102, 51, 99, 48, 49, 97, 55, 98, 97, 98, 49, 51, 101, 52, 50, 53, 56, 57, 48, 99, 57, 98, 49, 98]), Bool(true), U(34)], [B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 111, 98, 115, 101, 114, 118, 97, 116, 105, 111, 110]), U(2355444833), I(1001), B([111, 98, 115, 58, 111, 98, 115, 45, 99, 50, 45, 51, 52, 48, 51, 97, 48, 51, 54, 52, 49, 50, 53, 53, 97, 50, 97, 57, 100, 53, 98, 49, 54, 97, 100, 98, 55, 50, 102, 56, 53, 55, 57, 55, 53, 56, 49, 100, 100, 102, 99, 51, 51, 49, 57, 97, 50, 101, 50, 48, 99, 55, 51, 50, 51, 57, 52, 54, 49, 48, 101, 57, 56, 56, 48]), Bool(true), U(118)]])",
+  "expected": "Ok([[B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 99, 111, 109, 112, 108, 101, 116, 105, 111, 110]), U(1987164872), I(1000), B([99, 109, 100, 58, 99, 49]), Bool(true), U(120)], [B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 105, 110, 102, 108, 111, 119]), U(2129213723), I(1000), B([105, 110, 98, 111, 120, 58, 51, 52, 50, 51, 50, 48, 53, 55, 98, 50, 55, 99, 97, 102, 102, 101, 51, 101, 102, 101, 54, 97, 55, 101, 54, 53, 57, 101, 53, 50, 98, 54, 50, 100, 50, 48, 101, 51, 102, 49, 102, 51, 99, 48, 49, 97, 55, 98, 97, 98, 49, 51, 101, 52, 50, 53, 56, 57, 48, 99, 57, 98, 49, 98]), Bool(true), U(34)], [B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 111, 98, 115, 101, 114, 118, 97, 116, 105, 111, 110]), U(2355444833), I(1001), B([111, 98, 115, 58, 111, 98, 115, 45, 99, 50, 45, 51, 52, 48, 51, 97, 48, 51, 54, 52, 49, 50, 53, 53, 97, 50, 97, 57, 100, 53, 98, 49, 54, 97, 100, 98, 55, 50, 102, 56, 53, 55, 57, 55, 53, 56, 49, 100, 100, 102, 99, 51, 51, 49, 57, 97, 50, 101, 50, 48, 99, 55, 51, 50, 51, 57, 52, 54, 49, 48, 101, 57, 56, 56, 48]), Bool(true), U(118)]])",
+  "exportTrace": {
+    "auditSource": {
+      "fixtureKind": "synthetic-authenticated-export"
+    },
+    "consistentCutProofOrDecisionBoundary": "single-shard local snapshot; no cross-shard coordinator exists (BACKEND_ADOPTION_PROPOSAL_20261009.md §6); no global-atomicity claim",
+    "exportId": "exp-07198442404cf471",
+    "files": [
+      {
+        "contentSha256": "511790f80121c4e54a7ea58fee553d10d538e7e5904cda2f2af333100ff74822",
+        "path": "tables/command_result.jsonl",
+        "rowCount": 11,
+        "sha256": "2b3a9828f7c9faf9c3cdd1e14615e170decca4ef00da2a40ec49bddef7b60814"
+      },
+      {
+        "contentSha256": "34abee2253e41be6548c10e7633a08b91aef3b01ab54599f22269edd35a93c6d",
+        "path": "tables/slot_hold.jsonl",
+        "rowCount": 1,
+        "sha256": "ce8111c2547f061f188e1f8a68c3fbb6e9f9ca9397e4e4eae9c00c277b967baf"
+      },
+      {
+        "contentSha256": "7d2b63f5168cf7ca41078c5913043317eb70d800d4ade6a12ff2c0f9f3bbefc8",
+        "path": "tables/minimal_order.jsonl",
+        "rowCount": 1,
+        "sha256": "4fd6bc52a1aad6358e0e1ffe9ac7d4fb72aa8327ec029183a156cffb50365c31"
+      },
+      {
+        "contentSha256": "2c891eb68ad0ad59a164e6f4fd357724569c3df5e4d421cf6e8c0be6e6d57720",
+        "path": "tables/outbox_intent.jsonl",
+        "rowCount": 1,
+        "sha256": "4948583db5617906ccd40ae5ac74dea9204fde7651fd61d3aebac92b28f1709b"
+      },
+      {
+        "contentSha256": "9eae6550d01d4553035026d27ca881016c6743460d3cb0411ec24e172794b53d",
+        "path": "tables/outbox_attempt.jsonl",
+        "rowCount": 2,
+        "sha256": "e53c7a69535e8eb96e219e27fcee620c7a2587d42a2ae1215b0750cabb6ce29d"
+      },
+      {
+        "contentSha256": "731b49cb29e86bfa3d56ada28d25971ef49cf3c23b62c51fe496555cadf4f27e",
+        "path": "tables/observation.jsonl",
+        "rowCount": 1,
+        "sha256": "350781f224adb7c5cf9d1921945814425bf430160e3bd1a9c069612828a55612"
+      },
+      {
+        "contentSha256": "a1ca6a59b8e1e043e1d9ac81d5aa74ffece799ed1559def2e5c33d436f283ff9",
+        "path": "tables/ledger.jsonl",
+        "rowCount": 3,
+        "sha256": "be7de1617c77c9c7a6abc57042cb63e3d24a14a3965089b403f3ece418981a15"
+      },
+      {
+        "contentSha256": "ea64bc21d3410a0ba54cdac336f656babbe7fa66d276c0569c6f57d9596f00fc",
+        "path": "tables/event_alias.jsonl",
+        "rowCount": 2,
+        "sha256": "bb25898e5848e149a26c2d9c0632a6c841b762c24692355ce0fc1529f474c85c"
+      },
+      {
+        "contentSha256": "a0e52651d9e502f3f8c46fc9441ed437cf406fcafee8e2c926bf0a6cc6606f93",
+        "path": "tables/inbox_delivery.jsonl",
+        "rowCount": 1,
+        "sha256": "cb3b4b5753dfd74df2768b463e49a07e7ba609cc32b85b12612c973631aced03"
+      },
+      {
+        "contentSha256": "0f00b628a9c2d9884ee4b4b88147ba82736c946b141a82cfa354056cf906588c",
+        "path": "tables/inbox_item.jsonl",
+        "rowCount": 2,
+        "sha256": "c2daf9c4842017c2c959e0a61ae2d19cc9914f7a8c584adf29c39f08b9154e69"
+      },
+      {
+        "contentSha256": "0a106930fff93a789235828b0f07eeff43d2e0e1b1cdd0c2a008d0844dc5d717",
+        "path": "tables/inbox_state.jsonl",
+        "rowCount": 2,
+        "sha256": "a8d74b85dca2ee291faf31601459157dacf7199c19fb29eb4d6c3ee5d0d35c07"
+      },
+      {
+        "path": "type-mapping.json",
+        "rowCount": 0,
+        "sha256": "9176e867eb18b0f6ee9f948fd9a5562fb9a8659b80b8816bf2718d19b8869092"
+      }
+    ],
+    "linksResolved": true,
+    "manifest": {
+      "manifestHash": "b5d3a857bcb5fe9de86e080f1b10a3f900716056d2609a978967f0c3cadfd046",
+      "path": "manifest.json",
+      "sha256": "a5382f943034cd961dc5fa8d5cf343385446718b34e2e9d4790a617dd798f63c"
+    },
+    "projectionAppliedSourceWatermarks": [
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "511790f80121c4e54a7ea58fee553d10d538e7e5904cda2f2af333100ff74822",
+          "rowCount": 11
+        },
+        "lagRowCount": 0,
+        "table": "command_result"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "34abee2253e41be6548c10e7633a08b91aef3b01ab54599f22269edd35a93c6d",
+          "rowCount": 1
+        },
+        "lagRowCount": 0,
+        "table": "slot_hold"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "7d2b63f5168cf7ca41078c5913043317eb70d800d4ade6a12ff2c0f9f3bbefc8",
+          "rowCount": 1
+        },
+        "lagRowCount": 0,
+        "table": "minimal_order"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "2c891eb68ad0ad59a164e6f4fd357724569c3df5e4d421cf6e8c0be6e6d57720",
+          "rowCount": 1
+        },
+        "lagRowCount": 0,
+        "table": "outbox_intent"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "9eae6550d01d4553035026d27ca881016c6743460d3cb0411ec24e172794b53d",
+          "rowCount": 2
+        },
+        "lagRowCount": 0,
+        "table": "outbox_attempt"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "731b49cb29e86bfa3d56ada28d25971ef49cf3c23b62c51fe496555cadf4f27e",
+          "rowCount": 1
+        },
+        "lagRowCount": 0,
+        "table": "observation"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "a1ca6a59b8e1e043e1d9ac81d5aa74ffece799ed1559def2e5c33d436f283ff9",
+          "rowCount": 3
+        },
+        "lagRowCount": 0,
+        "table": "ledger"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "ea64bc21d3410a0ba54cdac336f656babbe7fa66d276c0569c6f57d9596f00fc",
+          "rowCount": 2
+        },
+        "lagRowCount": 0,
+        "table": "event_alias"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "a0e52651d9e502f3f8c46fc9441ed437cf406fcafee8e2c926bf0a6cc6606f93",
+          "rowCount": 1
+        },
+        "lagRowCount": 0,
+        "table": "inbox_delivery"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "0f00b628a9c2d9884ee4b4b88147ba82736c946b141a82cfa354056cf906588c",
+          "rowCount": 2
+        },
+        "lagRowCount": 0,
+        "table": "inbox_item"
+      },
+      {
+        "appliedAtSnapshot": "fixture-snapshot/1",
+        "appliedSourcePosition": {
+          "contentSha256": "0a106930fff93a789235828b0f07eeff43d2e0e1b1cdd0c2a008d0844dc5d717",
+          "rowCount": 2
+        },
+        "lagRowCount": 0,
+        "table": "inbox_state"
+      }
+    ],
+    "query": {
+      "isolationLevel": "SERIALIZABLE READ ONLY",
+      "kind": "local-serializable-snapshot-read",
+      "tables": [
+        "command_result",
+        "slot_hold",
+        "minimal_order",
+        "outbox_intent",
+        "outbox_attempt",
+        "observation",
+        "ledger",
+        "event_alias",
+        "inbox_delivery",
+        "inbox_item",
+        "inbox_state"
+      ]
+    },
+    "schemaVersions": {
+      "exportSchemaVersion": "kix-export-manifest-local/1",
+      "kernelSemanticsVersions": {
+        "sourceModel": "durable-schema/1",
+        "typeMapping": "kix-local-export-types/1"
+      },
+      "sourceSchemaVersion": "durable-schema/1"
+    },
+    "sourceCut": {
+      "committedPosition": {
+        "snapshotId": "fixture-snapshot/1",
+        "tables": [
+          {
+            "contentSha256": "511790f80121c4e54a7ea58fee553d10d538e7e5904cda2f2af333100ff74822",
+            "rowCount": 11,
+            "table": "command_result"
+          },
+          {
+            "contentSha256": "34abee2253e41be6548c10e7633a08b91aef3b01ab54599f22269edd35a93c6d",
+            "rowCount": 1,
+            "table": "slot_hold"
+          },
+          {
+            "contentSha256": "7d2b63f5168cf7ca41078c5913043317eb70d800d4ade6a12ff2c0f9f3bbefc8",
+            "rowCount": 1,
+            "table": "minimal_order"
+          },
+          {
+            "contentSha256": "2c891eb68ad0ad59a164e6f4fd357724569c3df5e4d421cf6e8c0be6e6d57720",
+            "rowCount": 1,
+            "table": "outbox_intent"
+          },
+          {
+            "contentSha256": "9eae6550d01d4553035026d27ca881016c6743460d3cb0411ec24e172794b53d",
+            "rowCount": 2,
+            "table": "outbox_attempt"
+          },
+          {
+            "contentSha256": "731b49cb29e86bfa3d56ada28d25971ef49cf3c23b62c51fe496555cadf4f27e",
+            "rowCount": 1,
+            "table": "observation"
+          },
+          {
+            "contentSha256": "a1ca6a59b8e1e043e1d9ac81d5aa74ffece799ed1559def2e5c33d436f283ff9",
+            "rowCount": 3,
+            "table": "ledger"
+          },
+          {
+            "contentSha256": "ea64bc21d3410a0ba54cdac336f656babbe7fa66d276c0569c6f57d9596f00fc",
+            "rowCount": 2,
+            "table": "event_alias"
+          },
+          {
+            "contentSha256": "a0e52651d9e502f3f8c46fc9441ed437cf406fcafee8e2c926bf0a6cc6606f93",
+            "rowCount": 1,
+            "table": "inbox_delivery"
+          },
+          {
+            "contentSha256": "0f00b628a9c2d9884ee4b4b88147ba82736c946b141a82cfa354056cf906588c",
+            "rowCount": 2,
+            "table": "inbox_item"
+          },
+          {
+            "contentSha256": "0a106930fff93a789235828b0f07eeff43d2e0e1b1cdd0c2a008d0844dc5d717",
+            "rowCount": 2,
+            "table": "inbox_state"
+          }
+        ],
+        "xmax": 200,
+        "xmin": 100
+      },
+      "shardId": "local-single"
+    }
+  },
+  "fixtureKind": "synthetic-authenticated-export",
+  "limitations": "local fixture; source-informed; no economic writes or production claim",
+  "normalizedOutcomes": {
+    "duckdb": "ROWS",
+    "polars": "ROWS",
+    "rust": "ROWS"
+  },
+  "plan": "FeaturePlanV1 { plan_id: KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]), source: DatasetRef { dataset_id: KixId([6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]), schema_version: 1 }, stages: [Limit(1000000)] }",
+  "planId": "KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250])",
+  "polars": "Ok([[B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 99, 111, 109, 112, 108, 101, 116, 105, 111, 110]), U(1987164872), I(1000), B([99, 109, 100, 58, 99, 49]), Bool(true), U(120)], [B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 105, 110, 102, 108, 111, 119]), U(2129213723), I(1000), B([105, 110, 98, 111, 120, 58, 51, 52, 50, 51, 50, 48, 53, 55, 98, 50, 55, 99, 97, 102, 102, 101, 51, 101, 102, 101, 54, 97, 55, 101, 54, 53, 57, 101, 53, 50, 98, 54, 50, 100, 50, 48, 101, 51, 102, 49, 102, 51, 99, 48, 49, 97, 55, 98, 97, 98, 49, 51, 101, 52, 50, 53, 56, 57, 48, 99, 57, 98, 49, 98]), Bool(true), U(34)], [B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 111, 98, 115, 101, 114, 118, 97, 116, 105, 111, 110]), U(2355444833), I(1001), B([111, 98, 115, 58, 111, 98, 115, 45, 99, 50, 45, 51, 52, 48, 51, 97, 48, 51, 54, 52, 49, 50, 53, 53, 97, 50, 97, 57, 100, 53, 98, 49, 54, 97, 100, 98, 55, 50, 102, 56, 53, 55, 57, 55, 53, 56, 49, 100, 100, 102, 99, 51, 51, 49, 57, 97, 50, 101, 50, 48, 99, 55, 51, 50, 51, 57, 52, 54, 49, 48, 101, 57, 56, 56, 48]), Bool(true), U(118)]])",
+  "querySql": "CREATE TEMP TABLE stage0 AS SELECT * FROM t5 ORDER BY _ord LIMIT 1000000;\nSELECT hex(c501),CAST(c502 AS VARCHAR),CAST(c503 AS VARCHAR),hex(c504),CAST(c505 AS VARCHAR),CAST(c506 AS VARCHAR) FROM stage0 ORDER BY _ord",
+  "rust": "Ok([[B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 99, 111, 109, 112, 108, 101, 116, 105, 111, 110]), U(1987164872), I(1000), B([99, 109, 100, 58, 99, 49]), Bool(true), U(120)], [B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 105, 110, 102, 108, 111, 119]), U(2129213723), I(1000), B([105, 110, 98, 111, 120, 58, 51, 52, 50, 51, 50, 48, 53, 55, 98, 50, 55, 99, 97, 102, 102, 101, 51, 101, 102, 101, 54, 97, 55, 101, 54, 53, 57, 101, 53, 50, 98, 54, 50, 100, 50, 48, 101, 51, 102, 49, 102, 51, 99, 48, 49, 97, 55, 98, 97, 98, 49, 51, 101, 52, 50, 53, 56, 57, 48, 99, 57, 98, 49, 98]), Bool(true), U(34)], [B([98, 117, 100, 103, 101, 116, 95, 99, 108, 97, 115, 115, 47, 49, 58, 111, 98, 115, 101, 114, 118, 97, 116, 105, 111, 110]), U(2355444833), I(1001), B([111, 98, 115, 58, 111, 98, 115, 45, 99, 50, 45, 51, 52, 48, 51, 97, 48, 51, 54, 52, 49, 50, 53, 53, 97, 50, 97, 57, 100, 53, 98, 49, 54, 97, 100, 98, 55, 50, 102, 56, 53, 55, 57, 55, 53, 56, 49, 100, 100, 102, 99, 51, 51, 49, 57, 97, 50, 101, 50, 48, 99, 55, 51, 50, 51, 57, 52, 54, 49, 48, 101, 57, 56, 56, 48]), Bool(true), U(118)]])",
+  "schemaVersion": 1,
+  "status": "PASS"
+}

@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_contract_error_codes.py
+contract error code coverage ok: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=198 ASSERTED=198 COVERED=198 CLASS_B=1 CLASS_C=0
+
+EXIT: 0

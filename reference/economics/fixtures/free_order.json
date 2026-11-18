@@ -1,0 +1,28 @@
+{
+  "fixtureVersion": 1,
+  "evidenceClass": "SYNTHETIC_REFERENCE",
+  "provenance": "synthetic",
+  "comment": "Synthetic free order: a zero-payable quote plans zero legs and never enters the money pipeline. Not product policy.",
+  "orderId": "order-free",
+  "orderVersion": 1,
+  "nowMs": 1000,
+  "scope": {"issuerId": "issuer-1", "eventId": "event-scope-1", "performanceId": "perf-1"},
+  "groups": [
+    {
+      "groupId": "group-1",
+      "policyRef": "pricing-1",
+      "expiresAt": 9999999999999,
+      "lines": [
+        {"lineId": "line-1", "inventoryId": "inv-1", "gross": {"asset": {"namespace": "fiat", "reference": "KRW", "decimals": 0, "maxAtoms": "340282366920938463463374607431768211455"}, "atoms": "0"}}
+      ],
+      "discounts": [],
+      "legs": [],
+      "settlementPolicyRef": null,
+      "eventPolicy": null,
+      "buyer": "buyer-1",
+      "debtorRole": null,
+      "paymentId": null
+    }
+  ],
+  "expected": {"payableAtoms": "0", "phase": "COMPLETED", "legCount": 0}
+}

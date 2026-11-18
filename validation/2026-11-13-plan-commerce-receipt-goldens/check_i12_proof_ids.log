@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_i12_proof_ids.py
+i12 proof ids ok: proof_headings=4 proof_keys=10 pack_keys=14 expected=14
+
+EXIT: 0

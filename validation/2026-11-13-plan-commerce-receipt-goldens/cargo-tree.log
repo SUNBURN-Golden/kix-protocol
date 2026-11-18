@@ -1,0 +1,5 @@
+$ cargo tree --manifest-path runtime/Cargo.toml -p kix-kernel --edges normal --locked
+kix-kernel v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-kernel)
+└── kix-types v0.0.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-types)
+
+EXIT: 0

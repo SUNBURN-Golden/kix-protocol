@@ -526,6 +526,9 @@ class Model:
             codes.add("INVALID_ID")
         if codes:
             return err(codes)
+        g = self.grants.get(gid)
+        if g is not None and g["agent_id"] != actor:
+            return err({"UNKNOWN_ACTOR"})
         if tool in DENY_CODES:
             return err({DENY_CODES[tool]})
         if tool not in ALLOW_LEVELS:
@@ -534,11 +537,8 @@ class Model:
             codes.add("INVALID_PERIOD")
         if type(args) is not dict:
             codes.add("INVALID_ID")
-        g = self.grants.get(gid)
         if g is None:
             codes.add("UNKNOWN_GRANT")
-        elif g["agent_id"] != actor:
-            codes.add("UNKNOWN_ACTOR")
         if codes:
             return err(codes)
         return getattr(self, "tool_" + tool)(g, args, now)

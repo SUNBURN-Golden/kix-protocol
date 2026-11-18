@@ -1,0 +1,26 @@
+import json, os, subprocess, sys, time
+from pathlib import Path
+out = Path('validation/2026-11-09-plan-local-refund-line-picker')
+label, *command = sys.argv[1:]
+env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', CARGO_NET_OFFLINE='true')
+env.pop('PYTHONPATH', None)
+if command[0] == 'cargo':
+    env['PATH'] = '/home/box/.rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin:' + env['PATH']
+    env['CARGO_HOME'] = str(Path('.local/refund-picker/cargo').resolve())
+    env['CARGO_TARGET_DIR'] = str(Path('.local/refund-picker/target').resolve())
+started = time.monotonic()
+input_path = env.pop('PICKER_TRANSCRIPT', None)
+target_cwd = env.pop('PICKER_CWD', os.getcwd())
+result = subprocess.run(command, env=env, capture_output=True, cwd=target_cwd,
+                        input=Path(input_path).read_bytes() if input_path else None)
+(out / (label + '.stdout.txt')).write_bytes(result.stdout)
+(out / (label + '.stderr.txt')).write_bytes(result.stderr)
+record = dict(label=label, command=command, cwd=target_cwd, exitCode=result.returncode,
+              stdinPath=input_path, elapsedSeconds=round(time.monotonic()-started, 3),
+              environment={key:env.get(key) for key in ('PYTHONPATH','PYTHONDONTWRITEBYTECODE',
+                           'CARGO_NET_OFFLINE','CARGO_HOME','CARGO_TARGET_DIR','PATH')})
+with (out / 'command-results.jsonl').open('a') as stream:
+    stream.write(json.dumps(record, sort_keys=True)+'\n')
+print(json.dumps(record), flush=True)
+print((result.stdout + result.stderr).decode('utf-8', errors='replace')[-2400:], flush=True)
+sys.exit(result.returncode)

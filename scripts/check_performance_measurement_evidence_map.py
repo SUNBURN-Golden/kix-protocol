@@ -328,6 +328,36 @@ def self_test(map_text, sources):
         ('`%s`' % HISTORICAL_FILE, 'historical file only allowed'),
     ):
         cell('source citation', ident, SOURCE, value, reason)
+    # Remove each new M-OTHER symbol from injected bytes, retaining all other
+    # citations. A specific missing-symbol diagnostic must catch each removal.
+    for path, symbol, kind in (
+        (TEST_FILE, 'other_outcomes_count_real_reserve_error_and_applied_capture', 'test function'),
+        (TEST_FILE, 'other_outcomes_json_matches_measured_calls', 'test function'),
+        (SOURCE_FILES[0], 'run_with_injected_other_outcomes', 'source symbol'),
+    ):
+        data = (ROOT / path).read_bytes()
+        token = ('fn ' + symbol + '(').encode()
+        assert data.count(token) == 1
+        cases.append(('M-OTHER missing ' + symbol, map_text, sources,
+                      {path: data.replace(token, b'fn removed_symbol(', 1)},
+                      'M-OTHER: %s::%s is not a %s' % (path, symbol, kind)))
+    # Timing citations retain the same missing-symbol guard, in memory only.
+    for row in ('M-SERVICE-NS', 'M-ELAPSED'):
+        for path, symbol, kind in (
+            *((TEST_FILE, name, 'test function') for name in (
+                'timing_boundaries_rate_zero',
+                'timing_boundaries_scheduled',
+                'timing_boundaries_late_driver',
+                'timing_boundaries_exclude_setup_and_formatting',
+                'timing_boundaries_reject_included_preparation')),
+            (SOURCE_FILES[0], 'run_with_clock_for_test', 'source symbol'),
+        ):
+            data = (ROOT / path).read_bytes()
+            token = ('fn ' + symbol + '(').encode()
+            assert data.count(token) == 1
+            cases.append((row + ' missing ' + symbol, map_text, sources,
+                          {path: data.replace(token, b'fn removed_symbol(', 1)},
+                          '%s: %s::%s is not a %s' % (row, path, symbol, kind)))
     line = _row_line(map_text, ident)
     for label, changed, reason in (
         ('removed row', map_text.replace(line + '\n', ''), 'missing row'),
@@ -349,11 +379,11 @@ def self_test(map_text, sources):
         ('OPEN status', ident, STATUS, 'OPEN', 'bad status'),
         ('covered gap', ident, GAP, 'gap', 'COVERED needs'),
         ('covered without tests', ident, TESTS, 'none', 'COVERED needs'),
-        ('partial without tests', 'M-REPLAYED', TESTS, 'none', 'PARTIAL needs'),
-        ('partial without gap', 'M-REPLAYED', GAP, 'none', 'PARTIAL needs'),
-        ('partial without owner', 'M-REPLAYED', OWNER, 'none', 'PARTIAL needs'),
+        ('partial without tests', 'M-SERVICE-NS', TESTS, 'none', 'PARTIAL needs'),
+        ('partial without gap', 'M-SERVICE-NS', GAP, 'none', 'PARTIAL needs'),
+        ('partial without owner', 'M-SERVICE-NS', OWNER, 'none', 'PARTIAL needs'),
         ('unknown owner', ident, OWNER, 'Someone', 'unknown owner'),
-        ('empty gap', 'M-REPLAYED', GAP, '', 'Gap must be nonempty'),
+        ('empty gap', 'M-SERVICE-NS', GAP, '', 'Gap must be nonempty'),
         ('not run with tests', 'X-RELEASE-REPRO', TESTS, good, 'NOT_RUN needs'),
         ('not covered with tests', 'BD-FAIL-CLOSED', TESTS, good, 'NOT_COVERED needs'),
         ('historical row source', 'C-SMOKE-V4-COUNTS', SOURCE, 'none', 'historical citation/phrase missing'),

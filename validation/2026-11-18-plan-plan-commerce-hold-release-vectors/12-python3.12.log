@@ -1,0 +1,2 @@
+consumer binding index ok: commands=84 core=40 fsm=44 mock=27 bootstrap=57 reads=13 not_bound=13 journey_steps=44 journey_actions=27
+non-normative navigation only; BOOTSTRAP is not consumer acceptance

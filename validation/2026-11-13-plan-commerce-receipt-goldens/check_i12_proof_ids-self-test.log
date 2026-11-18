@@ -1,0 +1,10 @@
+$ python3.12 -B scripts/check_i12_proof_ids.py --self-test
+self-test: detected removed P1 heading from proof (missing in proof: P1)
+self-test: detected removed A5 row from proof (missing in proof: A5)
+self-test: detected removed A9 row from pack (missing in pack: A9)
+self-test: detected extra A11 row in pack (extra in pack: A11 (1))
+self-test: detected extra P9 heading in proof (extra in proof: P9 (1))
+self-test: detected unresolved proof §9 citation in pack (unresolved section reference in pack line 220: proof §9)
+self-test: pass
+
+EXIT: 0

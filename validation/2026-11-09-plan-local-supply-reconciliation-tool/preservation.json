@@ -1,0 +1,40 @@
+{
+  "commands": [
+    {
+      "command": "git rev-parse HEAD",
+      "exit_status": 0,
+      "stdout": "c530b26ddd2487d686cf0a1d3f52e6b404d2741f\n",
+      "stderr": ""
+    },
+    {
+      "command": "git rev-parse origin/main",
+      "exit_status": 0,
+      "stdout": "c530b26ddd2487d686cf0a1d3f52e6b404d2741f\n",
+      "stderr": ""
+    },
+    {
+      "command": "git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs",
+      "exit_status": 0,
+      "stdout": "69564b166f0c27f9af5d8422f0a466b18d74c20f\nb607996c83a119c349f1cc90469ac1ba82764e20\n",
+      "stderr": ""
+    },
+    {
+      "command": "git ls-tree HEAD reference/v0.3-rc1",
+      "exit_status": 0,
+      "stdout": "040000 tree a6ecb124dc2b2267ca6be19e39fbe2aef143074b\treference/v0.3-rc1\n",
+      "stderr": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit_status": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "tracked_files_compared": 1875,
+  "comparison": "Every tracked file except the two authorized README edits matches its HEAD blob byte-for-byte.",
+  "checked_path_list_sha256": "74706c665bd4e77d9c75d93d9deeddb909aba19e3a611878c5d7ed5fe75bd612",
+  "comparison_method": "Read git ls-tree -r -z HEAD; for each blob outside the two authorized README edits, calculate SHA-1 of blob header plus working file bytes (symlink target bytes for mode 120000), and assert equality with its HEAD blob.",
+  "all_compared_blobs_match": true,
+  "legacy_reference_files_compared": 108
+}

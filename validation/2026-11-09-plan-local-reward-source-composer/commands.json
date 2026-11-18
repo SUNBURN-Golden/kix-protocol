@@ -1,0 +1,362 @@
+[
+  {
+    "label": "narrow",
+    "command": "python3.12 -B -m unittest discover -s reference/token_reward -t reference/token_reward -p 'test_reward_console*.py'",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 1,
+    "elapsed_seconds": 34.601,
+    "stdout": "narrow.stdout.txt",
+    "stderr": "narrow.stderr.txt"
+  },
+  {
+    "label": "narrow-fixed",
+    "command": "python3.12 -B -m unittest discover -s reference/token_reward -t reference/token_reward -p 'test_reward_console*.py'",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 34.827,
+    "stdout": "narrow-fixed.stdout.txt",
+    "stderr": "narrow-fixed.stderr.txt"
+  },
+  {
+    "label": "full",
+    "command": "python3.12 -B -m unittest discover -s reference/token_reward -t reference/token_reward",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 41.025,
+    "stdout": "full.stdout.txt",
+    "stderr": "full.stderr.txt"
+  },
+  {
+    "label": "check_docs_index",
+    "command": "python3.12 -B scripts/check_docs_index.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.039,
+    "stdout": "check_docs_index.stdout.txt",
+    "stderr": "check_docs_index.stderr.txt"
+  },
+  {
+    "label": "check_docs_index-self-test",
+    "command": "python3.12 -B scripts/check_docs_index.py --self-test",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.047,
+    "stdout": "check_docs_index-self-test.stdout.txt",
+    "stderr": "check_docs_index-self-test.stderr.txt"
+  },
+  {
+    "label": "check_status_register",
+    "command": "python3.12 -B scripts/check_status_register.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.303,
+    "stdout": "check_status_register.stdout.txt",
+    "stderr": "check_status_register.stderr.txt"
+  },
+  {
+    "label": "check_status_register-self-test",
+    "command": "python3.12 -B scripts/check_status_register.py --self-test",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 1.408,
+    "stdout": "check_status_register-self-test.stdout.txt",
+    "stderr": "check_status_register-self-test.stderr.txt"
+  },
+  {
+    "label": "check_tl_predicate_evidence_map",
+    "command": "python3.12 -B scripts/check_tl_predicate_evidence_map.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.034,
+    "stdout": "check_tl_predicate_evidence_map.stdout.txt",
+    "stderr": "check_tl_predicate_evidence_map.stderr.txt"
+  },
+  {
+    "label": "check_tl_predicate_evidence_map-self-test",
+    "command": "python3.12 -B scripts/check_tl_predicate_evidence_map.py --self-test",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.091,
+    "stdout": "check_tl_predicate_evidence_map-self-test.stdout.txt",
+    "stderr": "check_tl_predicate_evidence_map-self-test.stderr.txt"
+  },
+  {
+    "label": "check_class_b_index",
+    "command": "python3.12 -B scripts/check_class_b_index.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.085,
+    "stdout": "check_class_b_index.stdout.txt",
+    "stderr": "check_class_b_index.stderr.txt"
+  },
+  {
+    "label": "check_class_b_index-self-test",
+    "command": "python3.12 -B scripts/check_class_b_index.py --self-test",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.025,
+    "stdout": "check_class_b_index-self-test.stdout.txt",
+    "stderr": "check_class_b_index-self-test.stderr.txt"
+  },
+  {
+    "label": "check_ci_test_discovery",
+    "command": "python3.12 -B scripts/check_ci_test_discovery.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.12,
+    "stdout": "check_ci_test_discovery.stdout.txt",
+    "stderr": "check_ci_test_discovery.stderr.txt"
+  },
+  {
+    "label": "check_ci_test_discovery-self-test",
+    "command": "python3.12 -B scripts/check_ci_test_discovery.py --self-test",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.092,
+    "stdout": "check_ci_test_discovery-self-test.stdout.txt",
+    "stderr": "check_ci_test_discovery-self-test.stderr.txt"
+  },
+  {
+    "label": "check_ci_checker_wiring",
+    "command": "python3.12 -B scripts/check_ci_checker_wiring.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.04,
+    "stdout": "check_ci_checker_wiring.stdout.txt",
+    "stderr": "check_ci_checker_wiring.stderr.txt"
+  },
+  {
+    "label": "check_ci_checker_wiring-self-test",
+    "command": "python3.12 -B scripts/check_ci_checker_wiring.py --self-test",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.023,
+    "stdout": "check_ci_checker_wiring-self-test.stdout.txt",
+    "stderr": "check_ci_checker_wiring-self-test.stderr.txt"
+  },
+  {
+    "label": "check_openapi_contract",
+    "command": "python3.12 -B scripts/check_openapi_contract.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.095,
+    "stdout": "check_openapi_contract.stdout.txt",
+    "stderr": "check_openapi_contract.stderr.txt"
+  },
+  {
+    "label": "check_openapi_contract-self-test",
+    "command": "python3.12 -B scripts/check_openapi_contract.py --self-test",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.187,
+    "stdout": "check_openapi_contract-self-test.stdout.txt",
+    "stderr": "check_openapi_contract-self-test.stderr.txt"
+  },
+  {
+    "label": "check_integration_gate_openapi",
+    "command": "python3.12 -B scripts/check_integration_gate_openapi.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.07,
+    "stdout": "check_integration_gate_openapi.stdout.txt",
+    "stderr": "check_integration_gate_openapi.stderr.txt"
+  },
+  {
+    "label": "check_integration_gate_openapi-self-test",
+    "command": "python3.12 -B scripts/check_integration_gate_openapi.py --self-test",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.098,
+    "stdout": "check_integration_gate_openapi-self-test.stdout.txt",
+    "stderr": "check_integration_gate_openapi-self-test.stderr.txt"
+  },
+  {
+    "label": "verify_runtime_architecture",
+    "command": "python3.12 -B scripts/verify_runtime_architecture.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.036,
+    "stdout": "verify_runtime_architecture.stdout.txt",
+    "stderr": "verify_runtime_architecture.stderr.txt"
+  },
+  {
+    "label": "test_runtime_architecture",
+    "command": "python3.12 -B scripts/test_runtime_architecture.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.287,
+    "stdout": "test_runtime_architecture.stdout.txt",
+    "stderr": "test_runtime_architecture.stderr.txt"
+  },
+  {
+    "label": "kernel-tests",
+    "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 101,
+    "elapsed_seconds": 0.193,
+    "stdout": "kernel-tests.stdout.txt",
+    "stderr": "kernel-tests.stderr.txt"
+  },
+  {
+    "label": "kernel-clippy",
+    "command": "cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 101,
+    "elapsed_seconds": 0.138,
+    "stdout": "kernel-clippy.stdout.txt",
+    "stderr": "kernel-clippy.stderr.txt"
+  },
+  {
+    "label": "workspace-tests",
+    "command": "cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 101,
+    "elapsed_seconds": 0.048,
+    "stdout": "workspace-tests.stdout.txt",
+    "stderr": "workspace-tests.stderr.txt"
+  },
+  {
+    "label": "workspace-clippy",
+    "command": "cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 101,
+    "elapsed_seconds": 0.079,
+    "stdout": "workspace-clippy.stdout.txt",
+    "stderr": "workspace-clippy.stderr.txt"
+  },
+  {
+    "label": "rust-format",
+    "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.357,
+    "stdout": "rust-format.stdout.txt",
+    "stderr": "rust-format.stderr.txt"
+  },
+  {
+    "label": "environment",
+    "command": "python3.12 -B -c 'import subprocess, sys; print(sys.version); [subprocess.run(c, check=True) for c in (['\"'\"'rustc'\"'\"','\"'\"'--version'\"'\"'],['\"'\"'cargo'\"'\"','\"'\"'--version'\"'\"'],['\"'\"'git'\"'\"','\"'\"'rev-parse'\"'\"','\"'\"'origin/main'\"'\"'],['\"'\"'git'\"'\"','\"'\"'rev-parse'\"'\"','\"'\"'HEAD'\"'\"'],['\"'\"'git'\"'\"','\"'\"'branch'\"'\"','\"'\"'--show-current'\"'\"'])]'",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.081,
+    "stdout": "environment.stdout.txt",
+    "stderr": "environment.stderr.txt"
+  },
+  {
+    "label": "in-process-journey",
+    "command": "python3.12 -B reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode in-process < reference/token_reward/fixtures/reward_console_source_journey.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": "reference/token_reward/fixtures/reward_console_source_journey.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 0.041,
+    "stdout": "in-process-journey.stdout.txt",
+    "stderr": "in-process-journey.stderr.txt"
+  },
+  {
+    "label": "in-process-cancellation",
+    "command": "python3.12 -B reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode in-process < reference/token_reward/fixtures/reward_console_source_cancellation.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": "reference/token_reward/fixtures/reward_console_source_cancellation.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 0.041,
+    "stdout": "in-process-cancellation.stdout.txt",
+    "stderr": "in-process-cancellation.stderr.txt"
+  },
+  {
+    "label": "in-process-boundaries",
+    "command": "python3.12 -B reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode in-process < reference/token_reward/fixtures/reward_console_source_boundaries.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": "reference/token_reward/fixtures/reward_console_source_boundaries.txt",
+    "exit_code": 1,
+    "elapsed_seconds": 0.041,
+    "stdout": "in-process-boundaries.stdout.txt",
+    "stderr": "in-process-boundaries.stderr.txt"
+  },
+  {
+    "label": "subprocess-journey",
+    "command": "python3.12 -B reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_source_journey.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": "reference/token_reward/fixtures/reward_console_source_journey.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 0.083,
+    "stdout": "subprocess-journey.stdout.txt",
+    "stderr": "subprocess-journey.stderr.txt"
+  },
+  {
+    "label": "subprocess-cancellation",
+    "command": "python3.12 -B reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_source_cancellation.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": "reference/token_reward/fixtures/reward_console_source_cancellation.txt",
+    "exit_code": 0,
+    "elapsed_seconds": 0.09,
+    "stdout": "subprocess-cancellation.stdout.txt",
+    "stderr": "subprocess-cancellation.stderr.txt"
+  },
+  {
+    "label": "subprocess-boundaries",
+    "command": "python3.12 -B reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_source_boundaries.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": "reference/token_reward/fixtures/reward_console_source_boundaries.txt",
+    "exit_code": 1,
+    "elapsed_seconds": 0.083,
+    "stdout": "subprocess-boundaries.stdout.txt",
+    "stderr": "subprocess-boundaries.stderr.txt"
+  },
+  {
+    "label": "preservation",
+    "command": "python3.12 -B validation/2026-11-09-plan-local-reward-source-composer/verify_preservation.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.04,
+    "stdout": "preservation.stdout.txt",
+    "stderr": "preservation.stderr.txt"
+  },
+  {
+    "label": "diff-check",
+    "command": "git diff --check",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.079,
+    "stdout": "diff-check.stdout.txt",
+    "stderr": "diff-check.stderr.txt"
+  },
+  {
+    "label": "docs-index-final",
+    "command": "python3.12 -B scripts/check_docs_index.py",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-source-composer",
+    "stdin": null,
+    "exit_code": 0,
+    "elapsed_seconds": 0.037,
+    "stdout": "docs-index-final.stdout.txt",
+    "stderr": "docs-index-final.stderr.txt"
+  }
+]

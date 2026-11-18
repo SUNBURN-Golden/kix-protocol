@@ -1,0 +1,12 @@
+$ env PYTHONPATH=reference/booking_resale_admission python3.12 -B -m unittest test_reservation_fsm.ReservationFsmTests.test_cancel_before_payment_frees_and_payment_blocks_compensation test_admission_fsm.AdmissionFsmTests.test_transfer_then_entry_rejects_both_presentations test_admission_fsm.AdmissionFsmTests.test_expired_authorization_is_replaced_once test_admission_fsm.AdmissionFsmTests.test_issued_credential_is_consumed_once_and_replay_does_not_bump_version -v
+test_cancel_before_payment_frees_and_payment_blocks_compensation (test_reservation_fsm.ReservationFsmTests.test_cancel_before_payment_frees_and_payment_blocks_compensation) ... ok
+test_transfer_then_entry_rejects_both_presentations (test_admission_fsm.AdmissionFsmTests.test_transfer_then_entry_rejects_both_presentations) ... ok
+test_expired_authorization_is_replaced_once (test_admission_fsm.AdmissionFsmTests.test_expired_authorization_is_replaced_once) ... ok
+test_issued_credential_is_consumed_once_and_replay_does_not_bump_version (test_admission_fsm.AdmissionFsmTests.test_issued_credential_is_consumed_once_and_replay_does_not_bump_version) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.010s
+
+OK
+
+EXIT: 0

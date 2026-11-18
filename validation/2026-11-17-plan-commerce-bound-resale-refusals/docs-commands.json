@@ -1,0 +1,404 @@
+[
+  {
+    "command": "python3 -B scripts/check_status_register.py",
+    "exit_code": 0,
+    "log": "docs-001.log",
+    "seconds": 0.259
+  },
+  {
+    "command": "python3 -B scripts/check_status_register.py --self-test",
+    "exit_code": 0,
+    "log": "docs-002.log",
+    "seconds": 1.077
+  },
+  {
+    "command": "python3 -B scripts/check_producer_qualification_tuple.py",
+    "exit_code": 0,
+    "log": "docs-003.log",
+    "seconds": 0.087
+  },
+  {
+    "command": "python3 -B scripts/check_producer_qualification_tuple.py --self-test",
+    "exit_code": 0,
+    "log": "docs-004.log",
+    "seconds": 0.658
+  },
+  {
+    "command": "python3 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py",
+    "exit_code": 0,
+    "log": "docs-005.log",
+    "seconds": 0.075
+  },
+  {
+    "command": "python3 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py --self-test",
+    "exit_code": 0,
+    "log": "docs-006.log",
+    "seconds": 0.103
+  },
+  {
+    "command": "python3 -B scripts/check_rs_profile_traceability.py",
+    "exit_code": 0,
+    "log": "docs-007.log",
+    "seconds": 0.019
+  },
+  {
+    "command": "python3 -B scripts/check_rs_profile_traceability.py --self-test",
+    "exit_code": 0,
+    "log": "docs-008.log",
+    "seconds": 0.025
+  },
+  {
+    "command": "python3 -B scripts/check_read_model_source_map.py",
+    "exit_code": 0,
+    "log": "docs-009.log",
+    "seconds": 0.701
+  },
+  {
+    "command": "python3 -B scripts/check_read_model_source_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-010.log",
+    "seconds": 11.669
+  },
+  {
+    "command": "python3 -B scripts/check_docs_index.py",
+    "exit_code": 0,
+    "log": "docs-011.log",
+    "seconds": 0.034
+  },
+  {
+    "command": "python3 -B scripts/check_docs_index.py --self-test",
+    "exit_code": 0,
+    "log": "docs-012.log",
+    "seconds": 0.045
+  },
+  {
+    "command": "python3 -B scripts/check_i12_proof_ids.py",
+    "exit_code": 0,
+    "log": "docs-013.log",
+    "seconds": 0.019
+  },
+  {
+    "command": "python3 -B scripts/check_i12_proof_ids.py --self-test",
+    "exit_code": 0,
+    "log": "docs-014.log",
+    "seconds": 0.02
+  },
+  {
+    "command": "python3 -B scripts/check_delegation_layer_matrix.py",
+    "exit_code": 0,
+    "log": "docs-015.log",
+    "seconds": 0.051
+  },
+  {
+    "command": "python3 -B scripts/check_delegation_layer_matrix.py --self-test",
+    "exit_code": 0,
+    "log": "docs-016.log",
+    "seconds": 0.163
+  },
+  {
+    "command": "python3 -B scripts/check_rs_predicate_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-017.log",
+    "seconds": 0.061
+  },
+  {
+    "command": "python3 -B scripts/check_rs_predicate_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-018.log",
+    "seconds": 0.341
+  },
+  {
+    "command": "python3 -B scripts/check_rs_im_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-019.log",
+    "seconds": 0.058
+  },
+  {
+    "command": "python3 -B scripts/check_rs_im_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-020.log",
+    "seconds": 0.356
+  },
+  {
+    "command": "python3 -B scripts/check_tl_predicate_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-021.log",
+    "seconds": 0.031
+  },
+  {
+    "command": "python3 -B scripts/check_tl_predicate_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-022.log",
+    "seconds": 0.082
+  },
+  {
+    "command": "python3 -B scripts/check_contract_error_codes.py",
+    "exit_code": 0,
+    "log": "docs-023.log",
+    "seconds": 1.43
+  },
+  {
+    "command": "python3 -B scripts/check_contract_error_codes.py --self-test",
+    "exit_code": 0,
+    "log": "docs-024.log",
+    "seconds": 45.05
+  },
+  {
+    "command": "python3 -B scripts/check_adapter_identity_map.py",
+    "exit_code": 0,
+    "log": "docs-025.log",
+    "seconds": 0.037
+  },
+  {
+    "command": "python3 -B scripts/check_adapter_identity_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-026.log",
+    "seconds": 0.195
+  },
+  {
+    "command": "python3 -B scripts/check_v5_transition_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-027.log",
+    "seconds": 0.034
+  },
+  {
+    "command": "python3 -B scripts/check_v5_transition_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-028.log",
+    "seconds": 0.502
+  },
+  {
+    "command": "python3 -B scripts/check_readiness_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-029.log",
+    "seconds": 0.105
+  },
+  {
+    "command": "python3 -B scripts/check_readiness_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-030.log",
+    "seconds": 3.181
+  },
+  {
+    "command": "python3 -B scripts/check_settlement_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-031.log",
+    "seconds": 0.048
+  },
+  {
+    "command": "python3 -B scripts/check_settlement_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-032.log",
+    "seconds": 0.768
+  },
+  {
+    "command": "python3 -B scripts/check_bra_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-033.log",
+    "seconds": 0.073
+  },
+  {
+    "command": "python3 -B scripts/check_bra_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-034.log",
+    "seconds": 2.574
+  },
+  {
+    "command": "python3 -B scripts/check_credit_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-035.log",
+    "seconds": 0.052
+  },
+  {
+    "command": "python3 -B scripts/check_credit_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-036.log",
+    "seconds": 1.36
+  },
+  {
+    "command": "python3 -B scripts/check_primary_price_fee_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-037.log",
+    "seconds": 0.058
+  },
+  {
+    "command": "python3 -B scripts/check_primary_price_fee_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-038.log",
+    "seconds": 2.259
+  },
+  {
+    "command": "python3 -B scripts/check_ai_delegation_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-039.log",
+    "seconds": 0.089
+  },
+  {
+    "command": "python3 -B scripts/check_ai_delegation_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-040.log",
+    "seconds": 4.872
+  },
+  {
+    "command": "python3 -B scripts/check_lifecycle_adr_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-041.log",
+    "seconds": 0.05
+  },
+  {
+    "command": "python3 -B scripts/check_lifecycle_adr_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-042.log",
+    "seconds": 0.32
+  },
+  {
+    "command": "python3 -B scripts/check_contract_invariants_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-043.log",
+    "seconds": 0.048
+  },
+  {
+    "command": "python3 -B scripts/check_contract_invariants_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-044.log",
+    "seconds": 1.714
+  },
+  {
+    "command": "python3 -B scripts/check_toss_card_profile_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-045.log",
+    "seconds": 0.037
+  },
+  {
+    "command": "python3 -B scripts/check_toss_card_profile_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-046.log",
+    "seconds": 0.374
+  },
+  {
+    "command": "python3 -B scripts/check_bcs1_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-047.log",
+    "seconds": 0.026
+  },
+  {
+    "command": "python3 -B scripts/check_bcs1_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-048.log",
+    "seconds": 0.158
+  },
+  {
+    "command": "python3 -B scripts/check_performance_measurement_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-049.log",
+    "seconds": 0.047
+  },
+  {
+    "command": "python3 -B scripts/check_performance_measurement_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-050.log",
+    "seconds": 1.523
+  },
+  {
+    "command": "python3 -B scripts/check_feature_semantics_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-051.log",
+    "seconds": 0.033
+  },
+  {
+    "command": "python3 -B scripts/check_feature_semantics_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-052.log",
+    "seconds": 0.38
+  },
+  {
+    "command": "python3 -B scripts/check_integration_gate_contract_evidence_map.py",
+    "exit_code": 0,
+    "log": "docs-053.log",
+    "seconds": 0.063
+  },
+  {
+    "command": "python3 -B scripts/check_integration_gate_contract_evidence_map.py --self-test",
+    "exit_code": 0,
+    "log": "docs-054.log",
+    "seconds": 2.727
+  },
+  {
+    "command": "python3 -B scripts/check_evidence_map_rollup.py",
+    "exit_code": 0,
+    "log": "docs-055.log",
+    "seconds": 0.042
+  },
+  {
+    "command": "python3 -B scripts/check_evidence_map_rollup.py --self-test",
+    "exit_code": 0,
+    "log": "docs-056.log",
+    "seconds": 0.025
+  },
+  {
+    "command": "python3 -B scripts/check_class_b_index.py",
+    "exit_code": 0,
+    "log": "docs-057.log",
+    "seconds": 0.075
+  },
+  {
+    "command": "python3 -B scripts/check_class_b_index.py --self-test",
+    "exit_code": 0,
+    "log": "docs-058.log",
+    "seconds": 0.027
+  },
+  {
+    "command": "python3 -B scripts/check_ci_checker_wiring.py",
+    "exit_code": 0,
+    "log": "docs-059.log",
+    "seconds": 0.037
+  },
+  {
+    "command": "python3 -B scripts/check_ci_checker_wiring.py --self-test",
+    "exit_code": 0,
+    "log": "docs-060.log",
+    "seconds": 0.022
+  },
+  {
+    "command": "python3 -B scripts/check_ci_test_discovery.py",
+    "exit_code": 0,
+    "log": "docs-061.log",
+    "seconds": 0.103
+  },
+  {
+    "command": "python3 -B scripts/check_ci_test_discovery.py --self-test",
+    "exit_code": 0,
+    "log": "docs-062.log",
+    "seconds": 0.077
+  },
+  {
+    "command": "python3 -B scripts/check_loopback_host.py",
+    "exit_code": 0,
+    "log": "docs-063.log",
+    "seconds": 0.041
+  },
+  {
+    "command": "python3 -B scripts/check_loopback_host.py --self-test",
+    "exit_code": 0,
+    "log": "docs-064.log",
+    "seconds": 0.025
+  },
+  {
+    "command": "python3 -B scripts/check_cargo_offline_cache.py",
+    "exit_code": 0,
+    "log": "docs-065.log",
+    "seconds": 0.091
+  },
+  {
+    "command": "python3 -B scripts/check_cargo_offline_cache.py --self-test",
+    "exit_code": 0,
+    "log": "docs-066.log",
+    "seconds": 0.084
+  },
+  {
+    "command": "python3 -B scripts/check_stage5_host.py --self-test",
+    "exit_code": 0,
+    "log": "docs-067.log",
+    "seconds": 0.024
+  }
+]

@@ -1,0 +1,14 @@
+test_bound_transfer_waits_for_mock_commit_and_reconciles (test_resale_fsm.ResaleFsmTests.test_bound_transfer_waits_for_mock_commit_and_reconciles) ... ok
+test_buy_hold_is_optional_and_cancel_order_decides_the_race (test_resale_fsm.ResaleFsmTests.test_buy_hold_is_optional_and_cancel_order_decides_the_race) ... ok
+test_external_attempts_do_not_journal (test_resale_fsm.ResaleFsmTests.test_external_attempts_do_not_journal) ... ok
+test_reservation_bound_commands_need_a_ticket_source (test_resale_fsm.ResaleFsmTests.test_reservation_bound_commands_need_a_ticket_source) ... ok
+test_reservation_fsm_rejects_unissued_consumed_and_cancelled_tickets (test_resale_fsm.ResaleFsmTests.test_reservation_fsm_rejects_unissued_consumed_and_cancelled_tickets) ... ok
+test_restore_replays_one_transfer_and_omits_rejections (test_resale_fsm.ResaleFsmTests.test_restore_replays_one_transfer_and_omits_rejections) ... ok
+test_stale_listing_policy_and_expiry_do_not_transfer (test_resale_fsm.ResaleFsmTests.test_stale_listing_policy_and_expiry_do_not_transfer) ... ok
+test_transfer_is_idempotent_and_does_not_reissue_a_credential (test_resale_fsm.ResaleFsmTests.test_transfer_is_idempotent_and_does_not_reissue_a_credential) ... ok
+test_unknown_hold_and_conflicting_hold_id_are_rejected (test_resale_fsm.ResaleFsmTests.test_unknown_hold_and_conflicting_hold_id_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.024s
+
+OK

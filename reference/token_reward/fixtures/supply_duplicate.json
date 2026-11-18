@@ -1,0 +1,23 @@
+{
+  "operation": "supply_report",
+  "arguments": {
+    "events": [
+      {
+        "event_id": "mint-1",
+        "op": "MINT",
+        "amount": 10,
+        "approved": true,
+        "path_approved": true,
+        "program": "synthetic-program"
+      },
+      {
+        "event_id": "mint-1",
+        "op": "MINT",
+        "amount": 10,
+        "approved": true,
+        "path_approved": true,
+        "program": "synthetic-program"
+      }
+    ]
+  }
+}

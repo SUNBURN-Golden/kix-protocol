@@ -1,0 +1,41 @@
+{
+  "operation": "reconcile_supply",
+  "arguments": {
+    "offchain": {
+      "events": [
+        {
+          "event_id": "mint-1",
+          "op": "MINT",
+          "amount": 10,
+          "approved": true,
+          "path_approved": true,
+          "program": "synthetic-program"
+        },
+        {
+          "event_id": "allocate-1",
+          "op": "ALLOCATE",
+          "amount": 4,
+          "approved": true,
+          "path_approved": true,
+          "program": "synthetic-program"
+        },
+        {
+          "event_id": "burn-1",
+          "op": "BURN",
+          "amount": 3,
+          "approved": true,
+          "path_approved": true,
+          "program": "synthetic-program"
+        }
+      ],
+      "minted_total": 10,
+      "unapproved_mint": 0,
+      "allocated_total": 4,
+      "burned_total": 3,
+      "holder_burn_outside_layer": 0,
+      "layer_supply": 7,
+      "figure": "SYNTHETIC_SUPPLY_FIGURE"
+    },
+    "chain_supply": 6
+  }
+}

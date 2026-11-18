@@ -1,0 +1,86 @@
+$ python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_historical_receipt_vectors.py -v
+test_complete_output_bytes_and_references (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_complete_output_bytes_and_references) ... ok
+test_distribution_after_partial_refund (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_distribution_after_partial_refund) ... ok
+test_input_binding_and_encoding_mutations_fail_before_execution (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_input_binding_and_encoding_mutations_fail_before_execution) ... ok
+test_issuance_after_consumption (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_issuance_after_consumption) ... ok
+test_non_mutation_guard_detects_extra_effects (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_non_mutation_guard_detects_extra_effects) ... 
+  test_non_mutation_guard_detects_extra_effects (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_non_mutation_guard_detects_extra_effects) (target='replay-issue') ... ERROR
+  test_non_mutation_guard_detects_extra_effects (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_non_mutation_guard_detects_extra_effects) (target='bad-commit') ... ERROR
+test_order_and_mapping_mutations_fail (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_order_and_mapping_mutations_fail) ... ok
+test_output_mutations_fail_comparison (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_output_mutations_fail_comparison) ... ok
+test_pins_fail_before_execution (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_pins_fail_before_execution) ... ok
+test_published_schemas_and_unbound_reads (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_published_schemas_and_unbound_reads) ... ok
+test_refund_after_mock_acceptance (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_refund_after_mock_acceptance) ... ok
+test_settlement_key_conflicts (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_settlement_key_conflicts) ... ok
+test_strict_serialization (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_strict_serialization) ... ok
+test_transfer_after_closure (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_transfer_after_closure) ... ok
+
+======================================================================
+ERROR: test_non_mutation_guard_detects_extra_effects (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_non_mutation_guard_detects_extra_effects) (target='replay-issue')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/booking_resale_admission/test_commerce_historical_receipt_vectors.py", line 375, in test_non_mutation_guard_detects_extra_effects
+    _drive(case)
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/booking_resale_admission/test_commerce_historical_receipt_vectors.py", line 153, in _drive
+    receipt = host.call(step["action"], copy.deepcopy(step["body"]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/booking_resale_admission/test_commerce_historical_receipt_vectors.py", line 368, in corrupting_call
+    real_call(host, "credit_set_clock", {
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/integration_gate/fsm_host.py", line 81, in call
+    spec = self._commands[action]
+           ~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'credit_set_clock'
+
+======================================================================
+ERROR: test_non_mutation_guard_detects_extra_effects (test_commerce_historical_receipt_vectors.CommerceHistoricalReceiptVectorTests.test_non_mutation_guard_detects_extra_effects) (target='bad-commit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/integration_gate/fsm_host.py", line 90, in call
+    return method(subject, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/settlement_f01_f03/settlement_fsm.py", line 244, in commit
+    return self._call("commit", settlement_id, idempotency_key, raw, execute)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/settlement_f01_f03/settlement_fsm.py", line 574, in _call
+    return execute(key, request)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/settlement_f01_f03/settlement_fsm.py", line 224, in execute
+    body = _statement_body(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/settlement_f01_f03/settlement_fsm.py", line 90, in _statement_body
+    _require(amount + fee + tax + held + adjustment == gross, "SETTLEMENT_COMPONENT_MISMATCH")
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/settlement_f01_f03/mock_settlement.py", line 30, in _require
+    raise SettlementError(code)
+mock_settlement.SettlementError: SETTLEMENT_COMPONENT_MISMATCH
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/booking_resale_admission/test_commerce_historical_receipt_vectors.py", line 363, in corrupting_call
+    return real_call(host, action, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/integration_gate/fsm_host.py", line 92, in call
+    raise FsmRejected(exc.code) from exc
+integration_gate.fsm_host.FsmRejected: SETTLEMENT_COMPONENT_MISMATCH
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/booking_resale_admission/test_commerce_historical_receipt_vectors.py", line 375, in test_non_mutation_guard_detects_extra_effects
+    _drive(case)
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/booking_resale_admission/test_commerce_historical_receipt_vectors.py", line 153, in _drive
+    receipt = host.call(step["action"], copy.deepcopy(step["body"]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/reference/booking_resale_admission/test_commerce_historical_receipt_vectors.py", line 368, in corrupting_call
+    real_call(host, "credit_set_clock", {
+  File "/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/integration_gate/fsm_host.py", line 81, in call
+    spec = self._commands[action]
+           ~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'credit_set_clock'
+
+----------------------------------------------------------------------
+Ran 13 tests in 1.011s
+
+FAILED (errors=2)
+
+EXIT: 1

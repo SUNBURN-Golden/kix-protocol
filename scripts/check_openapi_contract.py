@@ -3,18 +3,26 @@
 
 The catalogue is a local-call analogue. It does not describe a live HTTP server.
 """
+import ast
 import copy
 import hashlib
 import json
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from integration_gate.fsm_contract import drift_problems, load_fsm
+from integration_gate.openapi_doc import validate as validate_gate
 SOURCE_PATH = ROOT / 'reference/v0.3-rc1/protocol_contract.json'
+COMMON_PATH = ROOT / 'reference/v0.3-rc1/common.py'
+CORE_PATH = ROOT / 'reference/v0.3-rc1/core.py'
 OPENAPI_PATH = ROOT / 'docs/contracts/openapi/kix-protocol.contract-only.openapi.json'
+GATE_OPENAPI_PATH = ROOT / 'docs/contracts/openapi/kix-protocol.integration-gate.openapi.json'
+README_PATH = ROOT / 'docs/contracts/openapi/README.md'
+README_PIN_HEADING = '## 핀'
 SPEC_ENVELOPE = 'reference/v0.1/KIX_프로토콜_통합명세_v0.1.md §9.1'
 LOCAL_CALL = 'reference/v0.3-rc1/core.py Core.execute'
 PLACEHOLDER_PATH = '/x-kix-contract-only/local-call'
@@ -311,7 +319,186 @@ def _walk(value):
             yield from _walk(child)
 
 
-def validate(contract, source_bytes, document, fsm, fsm_bytes):
+def readme_pin_problems(readme_text, document, gate_document):
+    """Compare the human-readable pin table with both machine-readable sources."""
+    lines = readme_text.splitlines()
+    if lines.count(README_PIN_HEADING) != 1:
+        return ['README pin table expected one heading: ' + README_PIN_HEADING]
+    start = lines.index(README_PIN_HEADING) + 1
+    end = next((i for i in range(start, len(lines)) if lines[i].startswith('## ')), len(lines))
+    rows = {}
+    for line in lines[start:end]:
+        if not line.startswith('|'):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+        if cells == ['항목', '값'] or all(cell and not cell.strip('-:') for cell in cells):
+            continue
+        rows.setdefault(cells[0], []).append(cells[1:])
+
+    cs = document.get('x-kix-source') or {}
+    gs = gate_document.get('x-kix-source') or {}
+    expected = {
+        '원본 경로': [('contract-only', 'path', cs.get('path')),
+                    ('integration-gate', 'protocolContract', gs.get('protocolContract'))],
+    }
+    for label in ('git blob', 'sha256', 'domain'):
+        field = 'gitBlob' if label == 'git blob' else label
+        expected[label] = [('contract-only', field, cs.get(field)),
+                           ('integration-gate', field, gs.get(field))]
+    for label, field in (('원본 경로', 'path'), ('git blob', 'gitBlob'),
+                         ('sha256', 'sha256'), ('domain', 'domain')):
+        expected['FSM ' + label] = [
+            (kind, 'fsmSource.' + field, (source.get('fsmSource') or {}).get(field))
+            for kind, source in (('contract-only', cs), ('integration-gate', gs))
+        ]
+    expected['`x-kix-contract-status`'] = [
+        ('contract-only', 'x-kix-contract-status', document.get('x-kix-contract-status')),
+    ]
+    errors = []
+    for label in rows.keys() - expected.keys():
+        errors.append('README pin table unexpected row: ' + label)
+    for label, sources in expected.items():
+        if label not in rows:
+            errors.append('README pin table missing row: ' + label)
+            continue
+        if len(rows[label]) != 1:
+            errors.append('README pin table duplicated row: ' + label)
+        for kind, field, value in sources:
+            if not isinstance(value, str) or rows[label] != [['`' + value + '`']]:
+                errors.append('README pin table mismatch: %s != %s %s' % (label, kind, field))
+    return errors
+
+
+def gate_marker_problems(gate_document):
+    """Keep the published gate's public/production markers explicitly false."""
+    errors = []
+    if gate_document.get('x-kix-public-host') is not False:
+        errors.append('integration-gate publicHost must be false')
+    if (gate_document.get('x-kix-live-http-server') or {}).get('publicHost') is not False:
+        errors.append('integration-gate liveHttpServer.publicHost must be false')
+    if gate_document.get('x-kix-production-endpoint') is not False:
+        errors.append('integration-gate productionEndpoint must be false')
+    return errors
+
+
+def _contains_expression(tree, expression):
+    expected = ast.dump(ast.parse(expression, mode='eval').body)
+    return any(ast.dump(node) == expected for node in ast.walk(tree))
+
+
+def _core_execute(core_bytes):
+    tree = ast.parse(core_bytes)
+    core = next(node for node in tree.body
+                if isinstance(node, ast.ClassDef) and node.name == 'Core')
+    return next(node for node in core.body
+                if isinstance(node, ast.FunctionDef) and node.name == 'execute')
+
+
+def reference_observed_problems(document, common_bytes, core_bytes):
+    """Compare observed identifier rules to source ASTs, without importing them."""
+    prefix = 'reference-observed: '
+    try:
+        tree = ast.parse(common_bytes)
+        ident = next(node for node in tree.body
+                     if isinstance(node, ast.FunctionDef) and node.name == 'ident')
+        bounds = [node.comparators[1].value for node in ast.walk(ident)
+                  if isinstance(node, ast.Compare) and len(node.ops) == 2
+                  and isinstance(node.ops[0], ast.Lt) and isinstance(node.ops[1], ast.LtE)
+                  and isinstance(node.comparators[1], ast.Constant)
+                  and type(node.comparators[1].value) is int
+                  and _contains_expression(node.left, '0')
+                  and _contains_expression(node.comparators[0], 'len(value)')]
+        if len(bounds) != 1 or bounds[0] <= 0:
+            return [prefix + 'ident source must bound 0 < len(value) <= N']
+        bound = bounds[0]
+        predicate = ('isinstance(value, str) and 0 < len(value) <= %d '
+                     'and value.strip() == value' % bound)
+        checks = [node for node in ast.walk(ident)
+                  if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                  and node.func.id == 'require' and len(node.args) == 2
+                  and ast.dump(node.args[0]) == ast.dump(ast.parse(predicate, mode='eval').body)
+                  and isinstance(node.args[1], ast.Constant)
+                  and isinstance(node.args[1].value, str)]
+        if len(checks) != 1:
+            return [prefix + 'ident source must require string/length/whitespace with an error code']
+        source_error = checks[0].args[1].value
+        execute = _core_execute(core_bytes)
+    except (SyntaxError, ValueError, StopIteration, UnicodeError):
+        return [prefix + 'cannot read ident/Core.execute source AST']
+    errors = []
+    for parameter in ('operation_id', 'actor'):
+        if not _contains_expression(execute, 'ident(%s)' % parameter):
+            errors.append(prefix + 'Core.execute must call ident(%s)' % parameter)
+    if not _contains_expression(execute, 'require(old[0] == fingerprint, "OPERATION_ID_CONFLICT")'):
+        errors.append(prefix + 'Core.execute must retain OPERATION_ID_CONFLICT check')
+    envelope = (document.get('components') or {}).get('schemas', {}).get('LocalCallEnvelope') or {}
+    properties = envelope.get('properties') or {}
+    for name in ('operationId', 'actor'):
+        observed = (properties.get(name) or {}).get('x-kix-reference-model-observed') or {}
+        for field, expected in (('check', 'ident'), ('error', source_error),
+                                ('notInExportedCommandSchema', True)):
+            actual = observed.get(field)
+            if actual != expected or (expected is True and actual is not True):
+                errors.append(prefix + name + '.' + field + ' must be ' + str(expected))
+        rule = observed.get('rule')
+        rule = rule if isinstance(rule, str) else ''
+        lengths = re.findall(r'length at most (\d+)', rule)
+        if (lengths != [str(bound)] or 'non-empty' not in rule
+                or 'no leading or trailing whitespace' not in rule):
+            errors.append(prefix + name + '.rule must match ident bound %d and whitespace rule' % bound)
+        if name == 'operationId':
+            invocation = observed.get('sameInvocation') or ''
+            if 'OPERATION_ID_CONFLICT' not in invocation or 'not an HTTP retry contract' not in invocation:
+                errors.append(prefix + 'operationId.sameInvocation must separate conflict from HTTP retry')
+    return errors
+
+
+def envelope_domain_problems(document, contract, core_bytes):
+    """Keep specification fields distinct from local parameters and body.domain."""
+    errors = []
+
+    def need(condition, message):
+        if not condition:
+            errors.append('envelope-domain: ' + message)
+
+    specification = document.get('x-kix-specification-envelope') or {}
+    need(specification.get('fields') == ['protocolDomain', 'operationId', 'actorContext', 'action', 'body'],
+         'specification fields drifted')
+    need((specification.get('pythonLocalCall') or {}).get('parameters') ==
+         ['operationId', 'actor', 'action', 'body'], 'Python local-call parameters drifted')
+    envelope = (document.get('components') or {}).get('schemas', {}).get('LocalCallEnvelope') or {}
+    properties = envelope.get('properties') or {}
+    for name in ('protocolDomain', 'actorContext', 'domain'):
+        need(name not in properties and name not in (envelope.get('required') or []),
+             name + ' must not be a local envelope field')
+    need((properties.get('actor') or {}).get('x-kix-specification-field') == 'actorContext',
+         'actor must map to specification actorContext')
+    check = envelope.get('x-kix-body-domain-check') or {}
+    for field, expected in (('specificationField', 'protocolDomain'), ('pinnedDomain', contract['domain']),
+                            ('notASeparatePythonArgument', True), ('constNotAddedToCommandSchema', True),
+                            ('error', 'DOMAIN_MISMATCH')):
+        actual = check.get(field)
+        need(actual == expected and (expected is not True or actual is True),
+             'body-domain ' + field + ' must be ' + str(expected))
+    try:
+        execute = _core_execute(core_bytes)
+    except (SyntaxError, ValueError, StopIteration, UnicodeError):
+        need(False, 'cannot read Core.execute source AST')
+        return errors
+    args = execute.args
+    need([arg.arg for arg in args.posonlyargs + args.args] ==
+         ['self', 'operation_id', 'actor', 'action', 'body']
+         and args.vararg is None and args.kwarg is None
+         and not {'actor_context', 'protocol_domain'} & {arg.arg for arg in args.kwonlyargs},
+         'Core.execute must keep the fixed local parameters plus keyword-only options')
+    need(_contains_expression(execute,
+                             'require(isinstance(body, dict) and body.get("domain") == self.DOMAIN, '
+                             '"DOMAIN_MISMATCH")'),
+         'Core.execute must compare body.domain with self.DOMAIN using DOMAIN_MISMATCH')
+    return errors
+
+
+def validate(contract, source_bytes, document, fsm, fsm_bytes, gate_document=None):
     """Independent checks against both pinned sources. Returns error strings."""
     errors = []
     core_commands = contract['commands']
@@ -326,6 +513,16 @@ def validate(contract, source_bytes, document, fsm, fsm_bytes):
     def need(condition, message):
         if not condition:
             errors.append(message)
+
+    documents = [('contract-only', document)]
+    if gate_document is not None:
+        documents.append(('integration-gate', gate_document))
+        errors.extend(gate_marker_problems(gate_document))
+    for label, item in documents:
+        for path, path_item in (item.get('paths') or {}).items():
+            for key in path_item:
+                if key.lower() == 'options':
+                    errors.append('OPTIONS operation forbidden: %s %s' % (label, path))
 
     need(document.get('openapi') == '3.1.0', 'openapi version must be 3.1.0')
     info = document.get('info') or {}
@@ -435,9 +632,13 @@ def validate(contract, source_bytes, document, fsm, fsm_bytes):
     return errors
 
 
-def self_test(contract, source_bytes, fsm, fsm_bytes):
+def self_test(contract, source_bytes, fsm, fsm_bytes, gate_document, readme_text,
+              common_bytes, core_bytes):
     document = build_document(contract, source_bytes, fsm, fsm_bytes)
-    if validate(contract, source_bytes, document, fsm, fsm_bytes):
+    if (validate(contract, source_bytes, document, fsm, fsm_bytes, gate_document=gate_document)
+            or readme_pin_problems(readme_text, document, gate_document)
+            or reference_observed_problems(document, common_bytes, core_bytes)
+            or envelope_domain_problems(document, contract, core_bytes)):
         print('self-test: canonical document failed validation', file=sys.stderr)
         return 1
     broken = copy.deepcopy(document)
@@ -472,17 +673,139 @@ def self_test(contract, source_bytes, fsm, fsm_bytes):
     if not validate(contract, source_bytes, broken, fsm, fsm_bytes):
         print('self-test: live status was accepted', file=sys.stderr)
         return 1
+
+    cases = []
+    for label, field, value, diagnostic in (
+        ('ident bound', 'rule', 'non-empty string, length at most 99, no leading or trailing whitespace',
+         'operationId.rule must match ident bound 100'),
+        ('ident error', 'error', 'X', 'operationId.error must be INVALID_ID'),
+    ):
+        broken = copy.deepcopy(document)
+        observed = broken['components']['schemas']['LocalCallEnvelope']['properties']['operationId']
+        observed['x-kix-reference-model-observed'][field] = value
+        cases.append((label, reference_observed_problems(broken, common_bytes, core_bytes),
+                      'reference-observed: ' + diagnostic))
+    broken = copy.deepcopy(document)
+    del broken['components']['schemas']['LocalCallEnvelope']['properties']['actor']['x-kix-reference-model-observed']
+    cases.append(('actor observed block removed',
+                  reference_observed_problems(broken, common_bytes, core_bytes),
+                  'reference-observed: actor.check must be ident'))
+    changed_common = common_bytes.replace(b'<= 100', b'<= 64', 1)
+    cases.append(('source ident bound drift',
+                  reference_observed_problems(document, changed_common, core_bytes),
+                  'reference-observed: operationId.rule must match ident bound 64'))
+    broken = copy.deepcopy(document)
+    broken['components']['schemas']['LocalCallEnvelope']['properties']['protocolDomain'] = {'type': 'string'}
+    cases.append(('specification field added to local envelope',
+                  envelope_domain_problems(broken, contract, core_bytes),
+                  'envelope-domain: protocolDomain must not be a local envelope field'))
+    for label, field, value in (
+        ('body-domain specification conflation', 'specificationField', 'actorContext'),
+        ('body-domain separate argument', 'notASeparatePythonArgument', False),
+        ('body-domain pin drift', 'pinnedDomain', 'wrong-domain'),
+    ):
+        broken = copy.deepcopy(document)
+        broken['components']['schemas']['LocalCallEnvelope']['x-kix-body-domain-check'][field] = value
+        cases.append((label, envelope_domain_problems(broken, contract, core_bytes),
+                      'envelope-domain: body-domain ' + field + ' must be'))
+    # Source fixtures remain in memory; never mutate or import pinned reference code.
+    for label, original, replacement, diagnostic in (
+        ('source trim removed', b' and value.strip() == value', b'',
+         'ident source must require string/length/whitespace with an error code'),
+        ('source actor validation removed', b'ident(actor)', b'pass',
+         'Core.execute must call ident(actor)'),
+        ('source conflict changed', b'OPERATION_ID_CONFLICT', b'OTHER_CONFLICT',
+         'Core.execute must retain OPERATION_ID_CONFLICT check'),
+    ):
+        changed_common = common_bytes.replace(original, replacement, 1)
+        changed_core = core_bytes.replace(original, replacement, 1)
+        cases.append((label, reference_observed_problems(document, changed_common, changed_core),
+                      'reference-observed: ' + diagnostic))
+    for label, original, replacement, diagnostic in (
+        ('source domain comparison changed', b'body.get("domain") == self.DOMAIN',
+         b'body.get("domain") != self.DOMAIN', 'Core.execute must compare body.domain'),
+        ('source extra envelope argument', b'*, fail_before_commit',
+         b'*, protocol_domain=None, fail_before_commit', 'Core.execute must keep the fixed local parameters'),
+    ):
+        cases.append((label, envelope_domain_problems(
+            document, contract, core_bytes.replace(original, replacement, 1)),
+            'envelope-domain: ' + diagnostic))
+    broken = copy.deepcopy(document)
+    broken['components']['schemas']['kyc_verify'] = {'type': 'object', 'additionalProperties': False}
+    operation = copy.deepcopy(broken['x-kix-local-call-operations'][0])
+    operation.update(operationId='kyc_verify', action='kyc_verify',
+                     requestBodySchema='#/components/schemas/kyc_verify')
+    broken['x-kix-local-call-operations'].append(operation)
+    broken['x-kix-action-body-map']['kyc_verify'] = '#/components/schemas/kyc_verify'
+    cases.append(('added command', validate(contract, source_bytes, broken, fsm, fsm_bytes),
+                  'schema names drifted'))
+    broken = copy.deepcopy(document)
+    broken['components']['securitySchemes'] = {'fixture': {'type': 'http', 'scheme': 'bearer'}}
+    cases.append(('security scheme', validate(contract, source_bytes, broken, fsm, fsm_bytes),
+                  'forbidden transport or auth field: securitySchemes'))
+    for label in ('contract-only', 'gate'):
+        broken = copy.deepcopy(document)
+        broken_gate = copy.deepcopy(gate_document)
+        target = broken if label == 'contract-only' else broken_gate
+        target['paths'][PLACEHOLDER_PATH]['options'] = {'operationId': 'preflight'}
+        cases.append((label + ' OPTIONS',
+                      validate(contract, source_bytes, broken, fsm, fsm_bytes,
+                               gate_document=broken_gate),
+                      'OPTIONS operation forbidden: ' + ('integration-gate' if label == 'gate' else label)))
+    for label, field, nested, diagnostic in (
+        ('gate publicHost', 'x-kix-public-host', None, 'publicHost must be false'),
+        ('gate liveHttpServer.publicHost', 'x-kix-live-http-server', 'publicHost',
+         'liveHttpServer.publicHost must be false'),
+        ('gate productionEndpoint', 'x-kix-production-endpoint', None,
+         'productionEndpoint must be false'),
+    ):
+        broken_gate = copy.deepcopy(gate_document)
+        if nested is None:
+            broken_gate[field] = True
+        else:
+            broken_gate[field][nested] = True
+        if not validate_gate(ROOT, broken_gate):
+            print('self-test: gate validator accepted ' + label, file=sys.stderr)
+            return 1
+        cases.append((label, validate(contract, source_bytes, document, fsm, fsm_bytes,
+                                      gate_document=broken_gate), diagnostic))
+    broken_readme = readme_text.replace(document['x-kix-source']['sha256'], '0' * 64)
+    cases.append(('README sha256', readme_pin_problems(broken_readme, document, gate_document),
+                  'README pin table mismatch: sha256'))
+    broken_readme = '\n'.join(line for line in readme_text.splitlines()
+                              if not line.startswith('| FSM domain |'))
+    cases.append(('README row removed', readme_pin_problems(broken_readme, document, gate_document),
+                  'missing row: FSM domain'))
+    row = next(line for line in readme_text.splitlines() if line.startswith('| git blob |'))
+    broken_readme = readme_text.replace(row, row + '\n' + row, 1)
+    cases.append(('README row duplicated', readme_pin_problems(broken_readme, document, gate_document),
+                  'duplicated row: git blob'))
+    broken_gate = copy.deepcopy(gate_document)
+    broken_gate['x-kix-source']['sha256'] = '0' * 64
+    cases.append(('gate pin drift', readme_pin_problems(readme_text, document, broken_gate),
+                  '!= integration-gate'))
+    for label, errors, expected in cases:
+        matching = next((error for error in errors if expected in error), None)
+        if matching is None:
+            print('self-test: missing diagnostic for ' + label, file=sys.stderr)
+            return 1
+        print('self-test: detected %s: %s' % (label, matching))
     print('self-test: pass')
     return 0
 
 
 def main(argv):
     source_bytes = SOURCE_PATH.read_bytes()
+    common_bytes = COMMON_PATH.read_bytes()
+    core_bytes = CORE_PATH.read_bytes()
     contract = json.loads(source_bytes)
     fsm, fsm_bytes = load_fsm(ROOT)
     document = build_document(contract, source_bytes, fsm, fsm_bytes)
     if '--self-test' in argv:
-        return self_test(contract, source_bytes, fsm, fsm_bytes)
+        gate = json.loads(GATE_OPENAPI_PATH.read_text(encoding='utf-8'))
+        readme = README_PATH.read_text(encoding='utf-8')
+        return self_test(contract, source_bytes, fsm, fsm_bytes, gate, readme,
+                         common_bytes, core_bytes)
     if '--write' in argv:
         OPENAPI_PATH.parent.mkdir(parents=True, exist_ok=True)
         OPENAPI_PATH.write_text(render(document), encoding='utf-8')
@@ -492,7 +815,12 @@ def main(argv):
         print('missing ' + str(OPENAPI_PATH), file=sys.stderr)
         return 1
     actual = json.loads(OPENAPI_PATH.read_text(encoding='utf-8'))
-    errors = validate(contract, source_bytes, actual, fsm, fsm_bytes)
+    gate = json.loads(GATE_OPENAPI_PATH.read_text(encoding='utf-8'))
+    readme = README_PATH.read_text(encoding='utf-8')
+    errors = validate(contract, source_bytes, actual, fsm, fsm_bytes, gate_document=gate)
+    errors.extend(readme_pin_problems(readme, actual, gate))
+    errors.extend(reference_observed_problems(actual, common_bytes, core_bytes))
+    errors.extend(envelope_domain_problems(actual, contract, core_bytes))
     if actual != document:
         errors.append('committed OpenAPI document != canonical derivation')
     if errors:
