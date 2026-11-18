@@ -4408,3 +4408,57 @@ No real funds, PG/bank/KYC calls, sockets, external services, chain execution or
 production runtime are involved. [Coverage, commands, preservation and limitations](../../validation/2026-11-18-plan-plan-commerce-admission-cancellation-vec/README.md)
 record builder evidence only; A2 non-author exact-head review and hosted KTX/KIX
 CI remain separate supervisor gates.
+
+## Commerce expired hold release and slot reuse vectors
+
+The pack contains two independent 15-step in-process `FsmHost` histories using
+published `reservation_set_clock`, `reservation_register_show`, `reservation_hold`,
+`reservation_confirm` and `reservation_release` bodies. The fixture declares its
+domain at the root. [Inputs](fixtures/commerce_hold_release_inputs_v1.json) ·
+[Complete ordered outcomes](fixtures/commerce_hold_release_receipts_v1.json)
+
+The histories start at synthetic time `1000000`. A expires at `1001000`, the
+clock advances to `1001000` or `1001001`, and B's expiry is `1900000`. Prices,
+fees and identities are also synthetic. The histories follow the reservation
+contract and `ReservationFsmTests.test_expiry_does_not_release_until_an_explicit_release`.
+[Regression](test_reservation_fsm.py) ·
+[Contract §§9.2–9.4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#92-전이)
+
+At and after expiry, A remains `HELD` and its slot `RESERVED`. Confirmation returns
+`RESERVATION_EXPIRED` and B's competing hold returns `SLOT_OCCUPIED`. Explicit
+release makes A `RELEASED` and the slot `FREE`. Retrying B's rejected key while
+free still returns the original `SLOT_OCCUPIED`. An identical body with a fresh
+key allocates B. Rejected hold and confirmation keys retain their original errors
+after reuse. A changed buyer under B's rejected key returns `IDEMPOTENCY_CONFLICT`.
+Rejected-key retention is process-local and outside the business state and
+accepted journals.
+
+Original-key replay returns the first receipt for each accepted key. A's hold says
+`HELD` and occupied by A. A's release says `FREE`. B's hold says `HELD` and occupied
+by B. Current diagnostics show A `RELEASED`, B `HELD` and the slot occupied by B
+throughout those replays. A's current slot fields point to B. The reservation
+machine derives the `expired` diagnostic for pre-issue phases.
+
+`kix-commerce-hold-release-receipts/1` stores fixture and sorted source byte pins,
+ordered complete receipts and refusals, and exact input pointers. Detached
+diagnostics include all five machines' business state, digest and accepted
+journal plus available reservation and show views. The replay suite compares
+complete canonical UTF-8 bytes and verifies rejection and replay non-mutation,
+published schemas, historical receipts and source references. Detached controls
+detect premature freeing, double occupancy, changed outcomes, pin drift and
+malformed inputs. Test-local journal effects verify the non-mutation guard.
+[Replay suite](test_commerce_hold_release_vectors.py)
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_hold_release_vectors.py
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_companion_evidence_index.py
+```
+
+The companion index appends 30 entries for `hold_release`, bringing the total to
+323 entries across nine families. `HOLD_SEMANTIC`, all 13 reads `NOT_BOUND`, SD1
+`OPEN` and User-owned, and external acceptance `UNVERIFIED` remain. TTL and other
+product policy values remain **UNDETERMINED—Astra/User**. Legal effects remain
+**UNDETERMINED—User/legal**. A2 non-author exact-head review and hosted exact-head
+CI remain supervisor gates.
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md) ·
+[Coverage and local verification](../../validation/2026-11-18-plan-plan-commerce-hold-release-vectors/README.md)

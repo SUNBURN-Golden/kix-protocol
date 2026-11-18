@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects eight input/outcome pack families (293 steps) to replay tests
+It connects nine input/outcome pack families (323 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -23,6 +23,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `bound_resale` | `commerce_bound_resale_inputs_v1.json` | `commerce_bound_resale_receipts_v1.json` | `test_commerce_bound_resale_vectors.py` | 3 / 49 |
 | `resale_expiry` | `commerce_resale_expiry_inputs_v1.json` | `commerce_resale_expiry_receipts_v1.json` | `test_commerce_resale_expiry_vectors.py` | 2 / 27 |
 | `admission_cancellation` | `commerce_admission_cancellation_inputs_v1.json` | `commerce_admission_cancellation_receipts_v1.json` | `test_commerce_admission_cancellation_vectors.py` | 3 / 26 |
+| `hold_release` | `commerce_hold_release_inputs_v1.json` | `commerce_hold_release_receipts_v1.json` | `test_commerce_hold_release_vectors.py` | 2 / 30 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -148,3 +149,36 @@ metadata and original binding statuses. Product policy values remain
 [Coverage and actual local verification](../../validation/2026-11-18-plan-plan-commerce-admission-cancellation-vec/README.md)
 are source-informed builder evidence, not A2 independent review, hosted
 exact-head CI or external consumer acceptance.
+
+## Expired hold release and slot reuse extension
+
+The ninth family adds two 15-step histories through `FsmHost` at a synthetic
+hold's expiry boundary and one millisecond later. A stays `HELD` with its slot
+`RESERVED` after expiry. Confirmation returns `RESERVATION_EXPIRED` and B's
+competing hold returns `SLOT_OCCUPIED`. Explicit `reservation_release` makes A
+`RELEASED` and the slot `FREE`. Retrying B's rejected key while free still
+returns `SLOT_OCCUPIED`. An otherwise identical fresh-key hold allocates B.
+Repeated rejected keys after reuse retain their original codes. Changing the
+buyer under B's rejected key returns `IDEMPOTENCY_CONFLICT`.
+[Reservation contract §§9.2–9.4](../contracts/BOOKING_RESALE_ADMISSION_GATES.md#92-전이)
+
+Original A hold/release and successful B hold keys replay their complete first
+receipts, with only replay metadata changed. A's historical hold says `HELD`
+and its historical release says `FREE`, while current diagnostics show A
+`RELEASED`, B `HELD`, and the slot occupied by B. A's current slot fields refer
+to B. The reservation machine derives the `expired` diagnostic for pre-issue phases.
+
+`kix-commerce-hold-release-receipts/1` contains raw-byte fixture/source pins,
+ordered outcomes and exact input pointers. Each `diagnostic_snapshot` includes
+all five machines' business state, digest and accepted journals plus available
+reservation and show views. Every rejection and replay preserves those
+observations. Rejected-key retention is process-local and outside the diagnostic
+snapshot. Detached controls reject premature freeing, double occupancy, changed
+outcomes and crossed references. Test-local journal effects exercise the
+non-mutation guard.
+
+`HOLD_SEMANTIC`, all 13 reads `NOT_BOUND`, SD1 `OPEN` and User-owned, and external
+acceptance `UNVERIFIED` remain. TTL and policy values remain
+**UNDETERMINED—Astra/User**. Legal effects remain **UNDETERMINED—User/legal**.
+Hosted exact-head CI and A2 non-author review remain supervisor delivery gates.
+[Coverage and local verification](../../validation/2026-11-18-plan-plan-commerce-hold-release-vectors/README.md)
