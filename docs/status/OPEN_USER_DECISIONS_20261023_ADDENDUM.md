@@ -128,6 +128,12 @@ lists citation checks, actual commands and preservation evidence.
   and the unchanged acceptance command. Return actual implementation failures
   for an authorized correction; retain the transport boundary and all locks.
   This supplement grants no host permission and runs none of those tests.
+- **Host preflight pointer (later node, pointer only):**
+  [scripts/check_loopback_host.py](../../scripts/check_loopback_host.py) and its
+  [validation record](../../validation/2026-10-27-plan-loopback-host-preflight/README.md)
+  report a host's loopback socket and child-process capability. No host is
+  chosen, no permission granted, no gate test run, and this supplement's
+  non-claims are unchanged.
 - **Disposition:** No option or node disposition is selected by this supplement.
 
 ### plan-plan-rs-map-gap-closure-batch-2

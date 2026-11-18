@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_lifecycle_adr_evidence_map.py
+lifecycle/ADR map: 27 rows, anchors, test symbols, grammar, counts and both locked blobs OK
+
+EXIT: 0

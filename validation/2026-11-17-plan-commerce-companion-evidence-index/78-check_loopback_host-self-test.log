@@ -1,0 +1,7 @@
+self-test: caught success
+self-test: caught PermissionError at create
+self-test: caught OSError at bind
+self-test: caught child failure (exit 1, REFUSING_BIND-style stderr)
+self-test: caught child malformed stdout
+self-test: caught child ok without valid port
+self-test: pass

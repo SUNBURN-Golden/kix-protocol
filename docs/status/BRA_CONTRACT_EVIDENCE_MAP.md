@@ -136,6 +136,8 @@ statuses/counts, owners and AST-visible test citations. It does not execute test
 or judge their assertions' semantic adequacy. It is **local only**, not wired
 into `protocol.yml`. A separate authorized node may consider CI wiring later.
 
+Amendment 2026-10-26: `scripts/check_bra_evidence_map.py` is now wired, plain and `--self-test`, into the `Stdlib offline document checks` step of `.github/workflows/protocol.yml` by #289; the statement above records the state when this map was written.
+
 `install_rows` / `install_faults` in `test_resale_rejection_atomicity.py` and
 `test_admission_rejection_atomicity.py` install methods with `setattr`. Those
 row-generated methods cannot be cited as AST-visible symbols here. They count

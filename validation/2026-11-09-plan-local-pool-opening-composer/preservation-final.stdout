@@ -1,0 +1,16 @@
+{
+  "base": "c2aa970f7d95bd569f2a8eb40218cbc4c5d33b6b",
+  "head": "c2aa970f7d95bd569f2a8eb40218cbc4c5d33b6b",
+  "protected_tracked_files_compared_byte_for_byte": 121,
+  "changed_protected_paths": [],
+  "reference_files_before_after": 108,
+  "reference_manifest_sha256": "dbfe11de81169745a46e7c2ccfbb705d1ec6e71be2f9922158429a0bfc5ff00f",
+  "locked_blobs_before": {
+    "runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20"
+  },
+  "locked_blobs_after": {
+    "runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20"
+  }
+}

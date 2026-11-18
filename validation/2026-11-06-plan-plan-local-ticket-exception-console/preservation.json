@@ -1,0 +1,34 @@
+{
+  "initial_tracked_files": 1435,
+  "unchanged_tracked_files": 1426,
+  "changed_tracked_paths": [
+    "docs/README.md",
+    "reference/booking_resale_admission/README.md",
+    "reference/booking_resale_admission/admission_console.py",
+    "reference/booking_resale_admission/booking_console.py",
+    "reference/booking_resale_admission/resale_console.py",
+    "reference/booking_resale_admission/settlement_console.py",
+    "reference/booking_resale_admission/test_admission_console.py",
+    "reference/booking_resale_admission/test_settlement_console.py",
+    "reference/booking_resale_admission/test_shared_ticket_console.py"
+  ],
+  "new_code_and_transcript_paths": [
+    "reference/booking_resale_admission/fixtures/settlement_console_exceptions.txt",
+    "reference/booking_resale_admission/fixtures/settlement_console_reconcile.txt",
+    "reference/booking_resale_admission/fixtures/shared_ticket_console_reconcile.txt",
+    "reference/booking_resale_admission/test_ticket_exception_console.py"
+  ],
+  "changed_path_count": 24,
+  "locked_blobs": {
+    "runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20"
+  },
+  "refs": [
+    "cc77ef105a5d63186e20870e83750bae142c9e0f",
+    "cc77ef105a5d63186e20870e83750bae142c9e0f",
+    "a6ecb124dc2b2267ca6be19e39fbe2aef143074b"
+  ],
+  "all_other_initial_tracked_bytes_identical": true,
+  "ast_parse": "PASS",
+  "diff_check": "PASS"
+}

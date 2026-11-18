@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_tl_predicate_evidence_map.py
+tl predicate evidence map ok: rows=49 expected=49 citations=58 HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=24 PARTIAL=7
+
+EXIT: 0

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -28,6 +28,46 @@ const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const OPENAPI_PATH = "docs/contracts/openapi/kix-protocol.contract-only.openapi.json";
 const SOURCE_PATH = "reference/v0.3-rc1/protocol_contract.json";
 const DOMAIN = "kix:fixture:lifecycle:0.3";
+
+const NEGATIVE_VECTOR_PATH = "sdk/conformance/vectors/manifest-verifier-negative.vectors.json";
+const VERIFIER_PATH = "sdk/compat/verify_compat.mjs";
+const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
+const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
+
+// Byte-identical fixture tree for the negative verifier matrix. The copied
+// verifier derives ROOT from its own location, so these are the only files it
+// reads when it runs against a temporary manifest.
+const NEGATIVE_FIXTURES = [
+  VERIFIER_PATH,
+  "sdk/src/jsonschema.ts",
+  "sdk/src/manifest.ts",
+  "sdk/package.json",
+  "toolchains.json",
+  "sdk/compat/profiles/bootstrap-1.profile.json",
+  PROFILE_PATH,
+  MANIFEST_PATH,
+  `${MANIFEST_PATH}.sha256`,
+  "sdk/generate/generate_client.mjs",
+  "sdk/generate/generate_manifest.mjs",
+  "sdk/generated/catalogue.ts",
+  "sdk/conformance/vectors/canonical-encoding.vectors.json",
+  "sdk/conformance/vectors/mixed-input.vectors.json",
+  "docs/contracts/openapi/kix-protocol.contract-only.openapi.json",
+  "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json",
+  "docs/contracts/openapi/fsm-command-contract.json",
+];
+
+// Positive artifacts the manifest binds directly or indirectly. The negative
+// matrix must not change any of their bytes.
+const POSITIVE_ARTIFACTS = [
+  MANIFEST_PATH,
+  `${MANIFEST_PATH}.sha256`,
+  PROFILE_PATH,
+  "sdk/conformance/vectors/canonical-encoding.vectors.json",
+  "sdk/conformance/vectors/mixed-input.vectors.json",
+  "sdk/generated/catalogue.ts",
+  VERIFIER_PATH,
+];
 
 function read(path) {
   return readFileSync(resolve(ROOT, path));
@@ -375,8 +415,185 @@ test("mixed-input vectors and the committed manifest", () => {
 });
 
 function getPath(root, path) {
-  return path.split(".").reduce((cursor, part) => cursor[part], root);
+  if (path === "") {
+    return root;
+  }
+  return path.split(".").reduce(
+    (cursor, part) => cursor[Array.isArray(cursor) ? Number(part) : part],
+    root,
+  );
 }
+
+function setPath(root, path, value) {
+  const parts = path.split(".");
+  const leaf = parts.pop();
+  const parent = parts.length === 0 ? root : getPath(root, parts.join("."));
+  if (Array.isArray(parent)) {
+    parent[Number(leaf)] = value;
+  } else {
+    parent[leaf] = value;
+  }
+}
+
+// One structured mutation per case. Callers re-encode and write the mutated
+// document; no case composes two mutations.
+function mutateDocument(document, item) {
+  if (item.op === "set") {
+    setPath(document, item.path, item.value);
+  } else if (item.op === "add") {
+    getPath(document, item.path)[item.key] = item.value;
+  } else if (item.op === "delete") {
+    delete getPath(document, item.path)[item.key];
+  } else {
+    throw new Error(`unsupported structured mutation ${item.op}`);
+  }
+}
+
+function copyFixtures(targetRoot) {
+  for (const relative of NEGATIVE_FIXTURES) {
+    const target = resolve(targetRoot, relative);
+    mkdirSync(dirname(target), { recursive: true });
+    cpSync(resolve(ROOT, relative), target);
+  }
+}
+
+function writeManifest(targetRoot, manifestBytes) {
+  writeFileSync(resolve(targetRoot, MANIFEST_PATH), manifestBytes);
+  writeFileSync(resolve(targetRoot, `${MANIFEST_PATH}.sha256`), `${sha256Hex(manifestBytes)}\n`);
+}
+
+function applyManifestCase(targetRoot, pristineManifest, item) {
+  let bytes;
+  if (item.op === "truncate") {
+    bytes = pristineManifest.subarray(0, -1);
+  } else if (item.op === "duplicate-key") {
+    const text = pristineManifest.toString("utf8");
+    bytes = Buffer.from(`{"contract":{},${text.slice(1)}`, "utf8");
+  } else if (item.op === "text-replace") {
+    const text = pristineManifest.toString("utf8");
+    if (!text.includes(item.from)) {
+      throw new Error(`${item.name}: text to replace is absent`);
+    }
+    bytes = Buffer.from(text.replace(item.from, item.to), "utf8");
+  } else {
+    const manifest = parseStrict(pristineManifest);
+    mutateDocument(manifest, item);
+    bytes = Buffer.from(canonicalStringify(manifest), "utf8");
+  }
+  writeManifest(targetRoot, bytes);
+}
+
+// A profile fault is the only intended fault: the manifest is re-sealed to the
+// mutated profile bytes so the profile digest check does not add a second one.
+function applyProfileCase(targetRoot, pristineManifest, pristineProfile, item) {
+  const profile = parseStrict(pristineProfile);
+  mutateDocument(profile, item);
+  const profileBytes = Buffer.from(canonicalStringify(profile), "utf8");
+  writeFileSync(resolve(targetRoot, PROFILE_PATH), profileBytes);
+  const manifest = parseStrict(pristineManifest);
+  manifest.profile_sha256 = sha256Hex(profileBytes);
+  writeManifest(targetRoot, Buffer.from(canonicalStringify(manifest), "utf8"));
+}
+
+function applySidecarCase(targetRoot, pristineManifest, item) {
+  writeManifest(targetRoot, pristineManifest);
+  const sidecarPath = resolve(targetRoot, `${MANIFEST_PATH}.sha256`);
+  if (item.absent === true) {
+    rmSync(sidecarPath, { force: true });
+  } else if (item.from !== undefined) {
+    const manifest = parseStrict(pristineManifest);
+    writeFileSync(sidecarPath, `${getPath(manifest, item.from)}\n`);
+  } else {
+    writeFileSync(sidecarPath, item.text);
+  }
+}
+
+function runVerifierAt(root, manifestPath, kind, revision) {
+  return spawnSync(
+    process.execPath,
+    [
+      resolve(root, VERIFIER_PATH),
+      "--manifest",
+      manifestPath,
+      "--expect-kind",
+      kind,
+      "--expect-revision",
+      revision,
+    ],
+    { cwd: root, encoding: "utf8" },
+  );
+}
+
+function digestSnapshot() {
+  return Object.fromEntries(
+    POSITIVE_ARTIFACTS.map((relative) => [relative, sha256Hex(readFileSync(resolve(ROOT, relative)))]),
+  );
+}
+
+// Replacement paths depend on the temporary directory; normalising them keeps
+// the expected error set stable. Sorting discards the verifier's check order on
+// purpose: the matrix asserts which faults are reported, never which one wins.
+function normalizedErrors(errors, targetRoot) {
+  return errors.map((error) => error.split(targetRoot).join("<root>")).sort();
+}
+
+test("manifest-v1 verifier negative vectors reject exactly one fault each", () => {
+  const vectorBytes = readFileSync(resolve(ROOT, NEGATIVE_VECTOR_PATH));
+  const document = parseStrict(vectorBytes);
+  assert.equal(document.profile, "kix-compat-manifest-negative/1");
+  assert.equal(document.verifier, VERIFIER_PATH);
+  assert.equal(canonicalStringify(document), vectorBytes.toString("utf8"));
+  assert.equal(canonicalStringify(document.expect), '{"kind":"BOOTSTRAP","revision":"bootstrap-2"}');
+  assert.equal(document.cases.length > 0, true);
+  assert.equal(new Set(document.cases.map((item) => item.name)).size, document.cases.length);
+
+  const before = digestSnapshot();
+
+  const happy = runVerifierAt(ROOT, resolve(ROOT, MANIFEST_PATH), document.expect.kind, document.expect.revision);
+  assert.equal(happy.status, 0, happy.stderr || happy.stdout);
+  const verdict = JSON.parse(happy.stdout);
+  assert.equal(verdict.ok, true);
+  assert.equal(verdict.profile_kind, "BOOTSTRAP");
+  assert.equal(verdict.profile_revision, "bootstrap-2");
+
+  const pristineManifest = readFileSync(resolve(ROOT, MANIFEST_PATH));
+  const pristineProfile = readFileSync(resolve(ROOT, PROFILE_PATH));
+  const targetRoot = mkdtempSync(join(tmpdir(), "kix-sdk-negative-"));
+  try {
+    copyFixtures(targetRoot);
+    for (const item of document.cases) {
+      writeManifest(targetRoot, pristineManifest);
+      writeFileSync(resolve(targetRoot, PROFILE_PATH), pristineProfile);
+      if (item.surface === "manifest") {
+        applyManifestCase(targetRoot, pristineManifest, item);
+      } else if (item.surface === "profile") {
+        applyProfileCase(targetRoot, pristineManifest, pristineProfile, item);
+      } else if (item.surface === "sidecar") {
+        applySidecarCase(targetRoot, pristineManifest, item);
+      } else {
+        throw new Error(`${item.name}: unsupported surface ${item.surface}`);
+      }
+      const result = runVerifierAt(
+        targetRoot,
+        resolve(targetRoot, MANIFEST_PATH),
+        document.expect.kind,
+        document.expect.revision,
+      );
+      assert.notEqual(result.status, 0, item.name);
+      const body = JSON.parse(result.stdout);
+      assert.equal(body.ok, false, item.name);
+      assert.deepEqual(
+        normalizedErrors(body.errors, targetRoot),
+        [...item.expect_errors].sort(),
+        item.name,
+      );
+    }
+  } finally {
+    rmSync(targetRoot, { recursive: true, force: true });
+  }
+
+  assert.deepEqual(digestSnapshot(), before);
+});
 
 test("client surface does not carry a URL, credential, or repeat-call API", () => {
   const clientSource = readFileSync(resolve(ROOT, "sdk/src/client.ts"), "utf8");

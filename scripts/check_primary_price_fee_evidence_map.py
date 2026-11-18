@@ -6,6 +6,7 @@ reference reads. Only direct test_* methods on explicit TestCase subclasses
 count. Structural coverage and symbol existence do not establish semantic
 adequacy, independent review or acceptance. --self-test validates the real map
 then requires in-memory negative controls to fail for their intended reason.
+PF-C05 permits Python-only PARTIAL evidence; the chain baseline has 3 rows.
 """
 import ast
 import re
@@ -20,8 +21,9 @@ STATUSES = ('COVERED', 'PARTIAL', 'NOT_COVERED', 'OPEN')
 REQUIRED_HEADINGS = {str(n) for n in range(9)}
 REQUIRED_PFC = {'PF-C%02d' % n for n in range(1, 6)}
 MUST_BE_OPEN = {'§4', '§6', 'PF-C03'}
-MUST_BE_UNCOVERED = {'PF-C03', 'PF-C04', 'PF-C05'}
-MUST_BE_NOT_COVERED_CHAIN = {'PF-C01', 'PF-C02'}
+MUST_BE_UNCOVERED = {'PF-C03', 'PF-C04'}
+PYTHON_ONLY = {'PF-C05'}
+MUST_BE_NOT_COVERED_CHAIN = {'PF-C01', 'PF-C02', 'PF-C05'}
 BANNERS = ('Builder-authored map, not a review or an acceptance', 'no grade change')
 # Accept future numeric ids for detection of drift/invented rows, not authorization.
 HEADING = re.compile(r'^## (\d+)\. (.+)$', re.M)
@@ -193,6 +195,11 @@ def find_problems(map_text, contract_text, files=None):
                 problems.append(ident + ': must remain NOT_COVERED or OPEN')
             if owner != 'Astra' or 'DECISION_REQUIRED · Astra' not in gap:
                 problems.append(ident + ': must retain DECISION_REQUIRED · Astra and owner Astra')
+        if ident in PYTHON_ONLY:
+            if status not in ('PARTIAL', 'NOT_COVERED'):
+                problems.append(ident + ': must remain PARTIAL or NOT_COVERED')
+            if owner != 'Astra' or 'DECISION_REQUIRED · Astra' not in gap:
+                problems.append(ident + ': must retain DECISION_REQUIRED · Astra and owner Astra')
         if status == 'OPEN':
             if not open_marker(gap):
                 problems.append(ident + ': OPEN needs DECISION_REQUIRED · Astra or UNDETERMINED')
@@ -334,7 +341,10 @@ def self_test(map_text, contract_text):
         ('closed §4', cell('§4', 4, 'COVERED'), contract_text, {}, 'must remain OPEN'),
         ('closed §6', cell('§6', 4, 'COVERED'), contract_text, {}, 'must remain OPEN'),
         ('promoted PF-C04', cell('PF-C04', 4, 'PARTIAL'), contract_text, {}, 'must remain NOT_COVERED or OPEN'),
-        ('promoted PF-C05', cell('PF-C05', 4, 'COVERED'), contract_text, {}, 'must remain NOT_COVERED or OPEN'),
+        ('promoted PF-C05', cell('PF-C05', 4, 'COVERED'), contract_text, {}, 'must remain PARTIAL or NOT_COVERED'),
+        ('PF-C05 opened', cell('PF-C05', 4, 'OPEN'), contract_text, {}, 'must remain PARTIAL or NOT_COVERED'),
+        ('PF-C05 owner drift', cell('PF-C05', 6, '사용자'), contract_text, {}, 'must retain DECISION_REQUIRED · Astra'),
+        ('PF-C05 missing marker', cell('PF-C05', 5, 'On-chain not executed'), contract_text, {}, 'must retain DECISION_REQUIRED · Astra'),
         ('PF-C owner drift', cell('PF-C04', 6, '사용자'), contract_text, {}, 'must retain DECISION_REQUIRED · Astra'),
         ('unknown owner', cell('§2', 6, 'Nobody-9f3a'), contract_text, {}, 'owner not in contract'),
         ('clause owner drift', cell('§6', 6, 'Astra'), contract_text, {}, 'clause owner drift'),
@@ -344,13 +354,14 @@ def self_test(map_text, contract_text):
         ('closed chain row', chain_cell(2, 'COVERED'), contract_text, {}, 'must remain NOT_COVERED'),
         ('cited chain row', chain_cell(1, citation), contract_text, {}, 'evidence must be none'),
         ('missing chain row', map_text.replace(chain_line + '\n', '', 1), contract_text, {}, 'chain missing in map'),
+        ('missing chain PF-C05', map_text.replace(row_line(map_text, 'PF-C05', CHAIN_ROW) + '\n', '', 1), contract_text, {}, 'chain missing in map: PF-C05'),
         ('duplicate chain row', map_text + chain_line + '\n', contract_text, {}, 'chain duplicated in map'),
         ('invented chain row', map_text + chain_line.replace('PF-C01', 'PF-C03', 1) + '\n', contract_text, {}, 'chain invented id'),
         ('chain owner drift', chain_cell(4, '사용자'), contract_text, {}, 'must retain DECISION_REQUIRED · Astra'),
         ('chain missing marker', chain_cell(3, 'none'), contract_text, {}, 'must retain DECISION_REQUIRED · Astra'),
         ('chain row width', map_text.replace(chain_line, chain_line + ' extra |', 1), contract_text, {}, 'expected 5 cells'),
-        ('stale chain count', map_text.replace('On-chain: NOT_COVERED=2', 'On-chain: NOT_COVERED=1'), contract_text, {}, 'On-chain: line'),
-        ('duplicate chain count', map_text + 'On-chain: NOT_COVERED=2\n', contract_text, {}, 'On-chain: line'),
+        ('stale chain count', map_text.replace('On-chain: NOT_COVERED=3', 'On-chain: NOT_COVERED=2'), contract_text, {}, 'On-chain: line'),
+        ('duplicate chain count', map_text + 'On-chain: NOT_COVERED=3\n', contract_text, {}, 'On-chain: line'),
         ('open item owner drift', item_cell(6, '사용자'), contract_text, {}, 'item owner drift'),
         ('open item shortened owner', with_cell(map_text, 'O4', 6, 'Astra', ITEM_ROW), contract_text, {}, 'item owner drift'),
         ('open item status drift', item_cell(4, 'COVERED'), contract_text, {}, 'item must remain OPEN'),

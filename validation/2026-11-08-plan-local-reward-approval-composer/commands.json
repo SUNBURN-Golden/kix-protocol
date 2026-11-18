@@ -1,0 +1,788 @@
+[
+  {
+    "name": "narrow",
+    "command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward -p 'test_reward_console*.py'",
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward",
+      "-p",
+      "test_reward_console*.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 7.624,
+    "stdout": "narrow.stdout.txt",
+    "stderr": "narrow.stderr.txt"
+  },
+  {
+    "name": "narrow-final",
+    "command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward -p 'test_reward_console*.py'",
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward",
+      "-p",
+      "test_reward_console*.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 7.753,
+    "stdout": "narrow-final.stdout.txt",
+    "stderr": "narrow-final.stderr.txt"
+  },
+  {
+    "name": "check_docs_index",
+    "command": "python3.12 scripts/check_docs_index.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_docs_index.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.041,
+    "stdout": "check_docs_index.stdout.txt",
+    "stderr": "check_docs_index.stderr.txt"
+  },
+  {
+    "name": "check_docs_index-self-test",
+    "command": "python3.12 scripts/check_docs_index.py --self-test",
+    "argv": [
+      "python3.12",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.047,
+    "stdout": "check_docs_index-self-test.stdout.txt",
+    "stderr": "check_docs_index-self-test.stderr.txt"
+  },
+  {
+    "name": "check_status_register",
+    "command": "python3.12 scripts/check_status_register.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_status_register.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.28,
+    "stdout": "check_status_register.stdout.txt",
+    "stderr": "check_status_register.stderr.txt"
+  },
+  {
+    "name": "full",
+    "command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward",
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 14.268,
+    "stdout": "full.stdout.txt",
+    "stderr": "full.stderr.txt"
+  },
+  {
+    "name": "check_status_register-self-test",
+    "command": "python3.12 scripts/check_status_register.py --self-test",
+    "argv": [
+      "python3.12",
+      "scripts/check_status_register.py",
+      "--self-test"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 1.291,
+    "stdout": "check_status_register-self-test.stdout.txt",
+    "stderr": "check_status_register-self-test.stderr.txt"
+  },
+  {
+    "name": "check_tl_predicate_evidence_map",
+    "command": "python3.12 scripts/check_tl_predicate_evidence_map.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_tl_predicate_evidence_map.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.038,
+    "stdout": "check_tl_predicate_evidence_map.stdout.txt",
+    "stderr": "check_tl_predicate_evidence_map.stderr.txt"
+  },
+  {
+    "name": "check_tl_predicate_evidence_map-self-test",
+    "command": "python3.12 scripts/check_tl_predicate_evidence_map.py --self-test",
+    "argv": [
+      "python3.12",
+      "scripts/check_tl_predicate_evidence_map.py",
+      "--self-test"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.09,
+    "stdout": "check_tl_predicate_evidence_map-self-test.stdout.txt",
+    "stderr": "check_tl_predicate_evidence_map-self-test.stderr.txt"
+  },
+  {
+    "name": "check_class_b_index",
+    "command": "python3.12 scripts/check_class_b_index.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_class_b_index.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.112,
+    "stdout": "check_class_b_index.stdout.txt",
+    "stderr": "check_class_b_index.stderr.txt"
+  },
+  {
+    "name": "check_class_b_index-self-test",
+    "command": "python3.12 scripts/check_class_b_index.py --self-test",
+    "argv": [
+      "python3.12",
+      "scripts/check_class_b_index.py",
+      "--self-test"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.024,
+    "stdout": "check_class_b_index-self-test.stdout.txt",
+    "stderr": "check_class_b_index-self-test.stderr.txt"
+  },
+  {
+    "name": "check_ci_test_discovery",
+    "command": "python3.12 scripts/check_ci_test_discovery.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_ci_test_discovery.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.117,
+    "stdout": "check_ci_test_discovery.stdout.txt",
+    "stderr": "check_ci_test_discovery.stderr.txt"
+  },
+  {
+    "name": "check_ci_test_discovery-self-test",
+    "command": "python3.12 scripts/check_ci_test_discovery.py --self-test",
+    "argv": [
+      "python3.12",
+      "scripts/check_ci_test_discovery.py",
+      "--self-test"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.078,
+    "stdout": "check_ci_test_discovery-self-test.stdout.txt",
+    "stderr": "check_ci_test_discovery-self-test.stderr.txt"
+  },
+  {
+    "name": "check_ci_checker_wiring",
+    "command": "python3.12 scripts/check_ci_checker_wiring.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_ci_checker_wiring.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.063,
+    "stdout": "check_ci_checker_wiring.stdout.txt",
+    "stderr": "check_ci_checker_wiring.stderr.txt"
+  },
+  {
+    "name": "check_ci_checker_wiring-self-test",
+    "command": "python3.12 scripts/check_ci_checker_wiring.py --self-test",
+    "argv": [
+      "python3.12",
+      "scripts/check_ci_checker_wiring.py",
+      "--self-test"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.024,
+    "stdout": "check_ci_checker_wiring-self-test.stdout.txt",
+    "stderr": "check_ci_checker_wiring-self-test.stderr.txt"
+  },
+  {
+    "name": "check_openapi_contract",
+    "command": "python3.12 scripts/check_openapi_contract.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_openapi_contract.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.096,
+    "stdout": "check_openapi_contract.stdout.txt",
+    "stderr": "check_openapi_contract.stderr.txt"
+  },
+  {
+    "name": "check_openapi_contract-self-test",
+    "command": "python3.12 scripts/check_openapi_contract.py --self-test",
+    "argv": [
+      "python3.12",
+      "scripts/check_openapi_contract.py",
+      "--self-test"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.202,
+    "stdout": "check_openapi_contract-self-test.stdout.txt",
+    "stderr": "check_openapi_contract-self-test.stderr.txt"
+  },
+  {
+    "name": "check_integration_gate_openapi",
+    "command": "python3.12 scripts/check_integration_gate_openapi.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_integration_gate_openapi.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.08,
+    "stdout": "check_integration_gate_openapi.stdout.txt",
+    "stderr": "check_integration_gate_openapi.stderr.txt"
+  },
+  {
+    "name": "check_integration_gate_openapi-self-test",
+    "command": "python3.12 scripts/check_integration_gate_openapi.py --self-test",
+    "argv": [
+      "python3.12",
+      "scripts/check_integration_gate_openapi.py",
+      "--self-test"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.101,
+    "stdout": "check_integration_gate_openapi-self-test.stdout.txt",
+    "stderr": "check_integration_gate_openapi-self-test.stderr.txt"
+  },
+  {
+    "name": "verify_runtime_architecture",
+    "command": "python3.12 scripts/verify_runtime_architecture.py",
+    "argv": [
+      "python3.12",
+      "scripts/verify_runtime_architecture.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.035,
+    "stdout": "verify_runtime_architecture.stdout.txt",
+    "stderr": "verify_runtime_architecture.stderr.txt"
+  },
+  {
+    "name": "test_runtime_architecture",
+    "command": "python3.12 scripts/test_runtime_architecture.py",
+    "argv": [
+      "python3.12",
+      "scripts/test_runtime_architecture.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.305,
+    "stdout": "test_runtime_architecture.stdout.txt",
+    "stderr": "test_runtime_architecture.stderr.txt"
+  },
+  {
+    "name": "in-process-journey",
+    "command": "python3.12 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode in-process < reference/token_reward/fixtures/reward_console_guided_journey.txt",
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_console.py",
+      "--fixture",
+      "reference/token_reward/fixtures/reward_session.json",
+      "--mode",
+      "in-process"
+    ],
+    "stdin_fixture": "reference/token_reward/fixtures/reward_console_guided_journey.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.04,
+    "stdout": "in-process-journey.stdout.txt",
+    "stderr": "in-process-journey.stderr.txt"
+  },
+  {
+    "name": "in-process-boundaries",
+    "command": "python3.12 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode in-process < reference/token_reward/fixtures/reward_console_guided_boundaries.txt",
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_console.py",
+      "--fixture",
+      "reference/token_reward/fixtures/reward_session.json",
+      "--mode",
+      "in-process"
+    ],
+    "stdin_fixture": "reference/token_reward/fixtures/reward_console_guided_boundaries.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 1,
+    "elapsed_seconds": 0.058,
+    "stdout": "in-process-boundaries.stdout.txt",
+    "stderr": "in-process-boundaries.stderr.txt"
+  },
+  {
+    "name": "subprocess-journey",
+    "command": "python3.12 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_guided_journey.txt",
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_console.py",
+      "--fixture",
+      "reference/token_reward/fixtures/reward_session.json",
+      "--mode",
+      "subprocess",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin_fixture": "reference/token_reward/fixtures/reward_console_guided_journey.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.084,
+    "stdout": "subprocess-journey.stdout.txt",
+    "stderr": "subprocess-journey.stderr.txt"
+  },
+  {
+    "name": "subprocess-boundaries",
+    "command": "python3.12 reference/token_reward/reward_console.py --fixture reference/token_reward/fixtures/reward_session.json --mode subprocess --cleanup-timeout 1 < reference/token_reward/fixtures/reward_console_guided_boundaries.txt",
+    "argv": [
+      "python3.12",
+      "reference/token_reward/reward_console.py",
+      "--fixture",
+      "reference/token_reward/fixtures/reward_session.json",
+      "--mode",
+      "subprocess",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin_fixture": "reference/token_reward/fixtures/reward_console_guided_boundaries.txt",
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 1,
+    "elapsed_seconds": 0.083,
+    "stdout": "subprocess-boundaries.stdout.txt",
+    "stderr": "subprocess-boundaries.stderr.txt"
+  },
+  {
+    "name": "kernel-tests",
+    "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline",
+    "argv": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--locked",
+      "--offline"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.636,
+    "stdout": "kernel-tests.stdout.txt",
+    "stderr": "kernel-tests.stderr.txt"
+  },
+  {
+    "name": "kernel-clippy",
+    "command": "cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.128,
+    "stdout": "kernel-clippy.stdout.txt",
+    "stderr": "kernel-clippy.stderr.txt"
+  },
+  {
+    "name": "workspace-tests",
+    "command": "cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline",
+    "argv": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--locked",
+      "--offline"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.046,
+    "stdout": "workspace-tests.stdout.txt",
+    "stderr": "workspace-tests.stderr.txt"
+  },
+  {
+    "name": "workspace-clippy",
+    "command": "cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.069,
+    "stdout": "workspace-clippy.stdout.txt",
+    "stderr": "workspace-clippy.stderr.txt"
+  },
+  {
+    "name": "rust-format",
+    "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.362,
+    "stdout": "rust-format.stdout.txt",
+    "stderr": "rust-format.stderr.txt"
+  },
+  {
+    "name": "preservation",
+    "command": "python3.12 validation/2026-11-08-plan-local-reward-approval-composer/check_preservation.py",
+    "argv": [
+      "python3.12",
+      "validation/2026-11-08-plan-local-reward-approval-composer/check_preservation.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.249,
+    "stdout": "preservation.stdout.txt",
+    "stderr": "preservation.stderr.txt"
+  },
+  {
+    "name": "environment",
+    "command": "python3.12 -c 'import subprocess,sys; print(sys.version); subprocess.run(['\"'\"'cargo'\"'\"','\"'\"'--version'\"'\"'],check=True); subprocess.run(['\"'\"'rustup'\"'\"','\"'\"'toolchain'\"'\"','\"'\"'list'\"'\"'],check=True); subprocess.run(['\"'\"'git'\"'\"','\"'\"'rev-parse'\"'\"','\"'\"'HEAD'\"'\"','\"'\"'origin/main'\"'\"'],check=True); subprocess.run(['\"'\"'git'\"'\"','\"'\"'branch'\"'\"','\"'\"'--show-current'\"'\"'],check=True)'",
+    "argv": [
+      "python3.12",
+      "-c",
+      "import subprocess,sys; print(sys.version); subprocess.run(['cargo','--version'],check=True); subprocess.run(['rustup','toolchain','list'],check=True); subprocess.run(['git','rev-parse','HEAD','origin/main'],check=True); subprocess.run(['git','branch','--show-current'],check=True)"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.076,
+    "stdout": "environment.stdout.txt",
+    "stderr": "environment.stderr.txt"
+  },
+  {
+    "name": "diff-check",
+    "command": "git diff --check",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.008,
+    "stdout": "diff-check.stdout.txt",
+    "stderr": "diff-check.stderr.txt"
+  },
+  {
+    "name": "narrow-delivery",
+    "command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward -p 'test_reward_console*.py'",
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward",
+      "-p",
+      "test_reward_console*.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 8.807,
+    "stdout": "narrow-delivery.stdout.txt",
+    "stderr": "narrow-delivery.stderr.txt"
+  },
+  {
+    "name": "full-delivery",
+    "command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward",
+    "argv": [
+      "python3.12",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/token_reward",
+      "-t",
+      "reference/token_reward"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 14.685,
+    "stdout": "full-delivery.stdout.txt",
+    "stderr": "full-delivery.stderr.txt"
+  },
+  {
+    "name": "preservation-delivery",
+    "command": "python3.12 validation/2026-11-08-plan-local-reward-approval-composer/check_preservation.py",
+    "argv": [
+      "python3.12",
+      "validation/2026-11-08-plan-local-reward-approval-composer/check_preservation.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.218,
+    "stdout": "preservation-delivery.stdout.txt",
+    "stderr": "preservation-delivery.stderr.txt"
+  },
+  {
+    "name": "docs-index-delivery",
+    "command": "python3.12 scripts/check_docs_index.py",
+    "argv": [
+      "python3.12",
+      "scripts/check_docs_index.py"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.037,
+    "stdout": "docs-index-delivery.stdout.txt",
+    "stderr": "docs-index-delivery.stderr.txt"
+  },
+  {
+    "name": "diff-check-delivery",
+    "command": "git diff --check",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "stdin_fixture": null,
+    "cwd": "/workspace/kix-run/wt/plan-local-reward-approval-composer",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.007,
+    "stdout": "diff-check-delivery.stdout.txt",
+    "stderr": "diff-check-delivery.stderr.txt"
+  }
+]

@@ -1,0 +1,37 @@
+{"command": "python3.12 --version", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-01.log"}
+{"command": "cargo --version", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-02.log"}
+{"command": "rustc --version", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-03.log"}
+{"command": "python3.12 -m unittest test_pool_session test_pool_cli test_pool_client test_pool_console test_pool_console_subprocess", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-04.log"}
+{"command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-05.log"}
+{"command": "python3.12 scripts/check_docs_index.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-06.log"}
+{"command": "python3.12 scripts/check_docs_index.py --self-test", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-07.log"}
+{"command": "python3.12 scripts/check_status_register.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-08.log"}
+{"command": "python3.12 scripts/check_status_register.py --self-test", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-09.log"}
+{"command": "python3.12 scripts/check_tl_predicate_evidence_map.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-10.log"}
+{"command": "python3.12 scripts/check_tl_predicate_evidence_map.py --self-test", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-11.log"}
+{"command": "python3.12 scripts/check_class_b_index.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-12.log"}
+{"command": "python3.12 scripts/check_class_b_index.py --self-test", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-13.log"}
+{"command": "python3.12 scripts/check_ci_checker_wiring.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-14.log"}
+{"command": "python3.12 scripts/check_ci_checker_wiring.py --self-test", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-15.log"}
+{"command": "python3.12 scripts/check_ci_test_discovery.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-16.log"}
+{"command": "python3.12 scripts/check_ci_test_discovery.py --self-test", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-17.log"}
+{"command": "python3.12 scripts/check_openapi_contract.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-18.log"}
+{"command": "python3.12 scripts/check_openapi_contract.py --self-test", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-19.log"}
+{"command": "python3.12 scripts/check_integration_gate_openapi.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-20.log"}
+{"command": "python3.12 scripts/check_integration_gate_openapi.py --self-test", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-21.log"}
+{"command": "python3.12 -m unittest test_pool_session test_pool_cli test_pool_client test_pool_console test_pool_console_subprocess", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-22.log"}
+{"command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 1, "log": "check-23.log"}
+{"command": "python3.12 scripts/verify_runtime_architecture.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-24.log"}
+{"command": "python3.12 scripts/test_runtime_architecture.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-25.log"}
+{"command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-26.log"}
+{"command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 101, "log": "check-27.log"}
+{"command": "cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 101, "log": "check-28.log"}
+{"command": "cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 101, "log": "check-29.log"}
+{"command": "cargo tree --manifest-path runtime/Cargo.toml -p kix-kernel --edges normal --locked --offline", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 101, "log": "check-30.log"}
+{"command": "python3.12 validation/2026-11-10-plan-local-pool-guided-live-init/verify_transcripts.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-31.log"}
+{"command": "python3.12 validation/2026-11-10-plan-local-pool-guided-live-init/verify_preservation.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-32.log"}
+{"command": "python3.12 -m unittest test_reward_console_subprocess.RewardConsoleSubprocessTests.test_source_incomplete_no_dispatch", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-33.log"}
+{"command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-34.log"}
+{"command": "python3.12 scripts/check_docs_index.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-35.log"}
+{"command": "git diff --check", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-36.log"}
+{"command": "python3.12 validation/2026-11-10-plan-local-pool-guided-live-init/verify_preservation.py", "environment": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "reference/token_reward"}, "exit": 0, "log": "check-37.log"}

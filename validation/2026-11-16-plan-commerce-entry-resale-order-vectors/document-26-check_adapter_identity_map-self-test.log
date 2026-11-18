@@ -1,0 +1,23 @@
+$ python3.12 -B scripts/check_adapter_identity_map.py --self-test
+self-test: detected removed TransmissionId row (missing in map: TransmissionId)
+self-test: detected duplicated TransmissionId row (duplicated in map: TransmissionId (2))
+self-test: detected invented id (invented id in map section: FAKE-ID-9f3a)
+self-test: detected dangling path (TransmissionId: kernel citation runtime/crates/kix-kernel/tests/no_such.rs does not exist)
+self-test: detected dangling symbol (TransmissionId: kernel citation runtime/crates/kix-kernel/src/lib.rs::no_such_fn_9f3a is not defined in the file)
+self-test: detected citation in the wrong column (TransmissionId: mock citation runtime/crates/kix-kernel/src/lib.rs is outside the mock column paths)
+self-test: detected citation under reference/v0.3-rc1 (TransmissionId: mock citation reference/v0.3-rc1/core.py is under reference/v0.3-rc1)
+self-test: detected unknown status (TransmissionId: unknown status 'SUFFICIENT')
+self-test: detected status that does not match the cells (RULE-OBSERVE-KEY: status PARTIAL should be CARRIED for these cells)
+self-test: detected UNDETERMINED cell with no owner (TransmissionId: profile cell has UNDETERMINED with no owner)
+self-test: detected UNDETERMINED owner not in the contract (TransmissionId: owner 'Nobody Else' is not written in the contract)
+self-test: detected non-CARRIED row with no owner (TransmissionId: UNDETERMINED row must have an owner)
+self-test: detected owner not in the contract (TransmissionId: owner 'Nobody Else' is not written in the contract)
+self-test: detected NO_SURFACE row that carries a citation (S4-SOURCE: status NO_SURFACE should be UNDETERMINED for these cells)
+self-test: detected missing citation under wrong prefix is not the only bug; free-text-only surface cell (TransmissionId: mock cell is neither none, a citation, nor an owned UNDETERMINED)
+self-test: detected wrong counts line (counts line 'Counts: CARRIED=2 PARTIAL=997 NO_SURFACE=0 UNDETERMINED=8' differs from the table 'Counts: CARRIED=2 PARTIAL=7 NO_SURFACE=0 UNDETERMINED=8')
+self-test: detected map cell that cites the missing cell (TransmissionId: ? citation runtime/crates/kix-kernel/src/lib.rs is inside the missing cell)
+self-test: detected mutated locked blob (locked blob mismatch: runtime/crates/kix-kernel/src/lib.rs (have 2b91c41288b048a233f95b2d4e285b9c262d2333, want 69564b166f0c27f9af5d8422f0a466b18d74c20f))
+self-test: detected removed contract anchor (RULE-OBSERVE-KEY: contract anchor 'observe_capture`의 중복 키는 `(provider, account, event_id)`다' is gone)
+self-test: pass
+
+EXIT: 0

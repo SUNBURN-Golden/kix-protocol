@@ -1,0 +1,138 @@
+self-test: detected mutated blob digest
+self-test: detected missing command
+self-test: detected mismatched gate pin
+self-test: detected semantic status promotion
+self-test: detected semantic_sdk_consumer promotion
+self-test: detected read_query_surface promotion
+self-test: detected read query promotion
+self-test: detected SD1 status change
+self-test: detected SD1 owner change
+self-test: detected SD1 forbidden field selected_option
+self-test: detected SD1 forbidden field option
+self-test: detected SD1 forbidden field options
+self-test: detected SD1 forbidden field waiver
+self-test: detected SD1 forbidden field verifier_order
+self-test: detected SD1 forbidden field resolution
+self-test: detected SD1 forbidden field resolved
+self-test: detected normative claim
+self-test: detected missing non-claim This record is non-normative identity evidence only.
+self-test: detected missing non-claim No semantic qualification is made.
+self-test: detected missing non-claim No N/N-1 qualification is made.
+self-test: detected missing non-claim No production qualification is made.
+self-test: detected missing non-claim No audit approval or User approval is made.
+self-test: detected missing non-claim No read query is published or bound.
+self-test: detected missing non-claim No SD1 resolution, waiver or verifier order is chosen.
+self-test: detected missing non-claim The integration gate is not qualified as production.
+self-test: detected missing read name
+self-test: detected duplicate read name
+self-test: detected invalid candidate path
+self-test: detected changed allowed candidate binding
+self-test: detected changed fixture digest
+self-test: passed association-preserving re-pin
+self-test: detected rebind: get_admission
+self-test: detected missing: get_admission
+self-test: detected duplicate: get_admission
+self-test: detected fixture kind: get_admission
+self-test: detected manifest kind: get_admission
+self-test: detected tuple kind: get_admission
+self-test: detected manifest/tuple kind: get_admission
+self-test: detected rebind: get_booking
+self-test: detected missing: get_booking
+self-test: detected duplicate: get_booking
+self-test: detected fixture kind: get_booking
+self-test: detected manifest kind: get_booking
+self-test: detected tuple kind: get_booking
+self-test: detected manifest/tuple kind: get_booking
+self-test: detected rebind: get_credential
+self-test: detected missing: get_credential
+self-test: detected duplicate: get_credential
+self-test: detected fixture kind: get_credential
+self-test: detected manifest kind: get_credential
+self-test: detected tuple kind: get_credential
+self-test: detected manifest/tuple kind: get_credential
+self-test: detected rebind: get_credit_advance
+self-test: detected missing: get_credit_advance
+self-test: detected duplicate: get_credit_advance
+self-test: detected fixture kind: get_credit_advance
+self-test: detected manifest kind: get_credit_advance
+self-test: detected tuple kind: get_credit_advance
+self-test: detected manifest/tuple kind: get_credit_advance
+self-test: detected rebind: get_credit_claim
+self-test: detected missing: get_credit_claim
+self-test: detected duplicate: get_credit_claim
+self-test: detected fixture kind: get_credit_claim
+self-test: detected manifest kind: get_credit_claim
+self-test: detected tuple kind: get_credit_claim
+self-test: detected manifest/tuple kind: get_credit_claim
+self-test: detected rebind: get_listing
+self-test: detected missing: get_listing
+self-test: detected duplicate: get_listing
+self-test: detected fixture kind: get_listing
+self-test: detected manifest kind: get_listing
+self-test: detected tuple kind: get_listing
+self-test: detected manifest/tuple kind: get_listing
+self-test: detected rebind: get_presentation
+self-test: detected missing: get_presentation
+self-test: detected duplicate: get_presentation
+self-test: detected fixture kind: get_presentation
+self-test: detected manifest kind: get_presentation
+self-test: detected tuple kind: get_presentation
+self-test: detected manifest/tuple kind: get_presentation
+self-test: detected rebind: get_right
+self-test: detected missing: get_right
+self-test: detected duplicate: get_right
+self-test: detected fixture kind: get_right
+self-test: detected manifest kind: get_right
+self-test: detected tuple kind: get_right
+self-test: detected manifest/tuple kind: get_right
+self-test: detected rebind: get_settlement
+self-test: detected missing: get_settlement
+self-test: detected duplicate: get_settlement
+self-test: detected fixture kind: get_settlement
+self-test: detected manifest kind: get_settlement
+self-test: detected tuple kind: get_settlement
+self-test: detected manifest/tuple kind: get_settlement
+self-test: detected rebind: get_show
+self-test: detected missing: get_show
+self-test: detected duplicate: get_show
+self-test: detected fixture kind: get_show
+self-test: detected manifest kind: get_show
+self-test: detected tuple kind: get_show
+self-test: detected manifest/tuple kind: get_show
+self-test: detected rebind: list_bookings
+self-test: detected missing: list_bookings
+self-test: detected duplicate: list_bookings
+self-test: detected fixture kind: list_bookings
+self-test: detected manifest kind: list_bookings
+self-test: detected tuple kind: list_bookings
+self-test: detected manifest/tuple kind: list_bookings
+self-test: detected rebind: list_open_listings
+self-test: detected missing: list_open_listings
+self-test: detected duplicate: list_open_listings
+self-test: detected fixture kind: list_open_listings
+self-test: detected manifest kind: list_open_listings
+self-test: detected tuple kind: list_open_listings
+self-test: detected manifest/tuple kind: list_open_listings
+self-test: detected rebind: list_shows
+self-test: detected missing: list_shows
+self-test: detected duplicate: list_shows
+self-test: detected fixture kind: list_shows
+self-test: detected manifest kind: list_shows
+self-test: detected tuple kind: list_shows
+self-test: detected manifest/tuple kind: list_shows
+self-test: detected invalid UTF-8
+self-test: detected invalid JSON
+self-test: detected non-object fixture
+self-test: detected non-object queries
+self-test: detected non-object query
+self-test: detected invalid fixture kind
+self-test: detected missing fixture bytes
+self-test: detected unexpected query
+self-test: detected manifest files
+self-test: detected manifest queries
+self-test: detected manifest document
+self-test: detected extra file
+self-test: detected missing file
+self-test: detected file entry
+self-test: original inputs still pass after controls
+self-test: pass

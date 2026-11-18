@@ -1,0 +1,14 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running unittests src/lib.rs (.local/analytics-audit/ci-target/debug/deps/kix_analytics_audit-cb966219c968aa86)
+
+running 1 test
+test tests::local_engine_acceptance_requires_explicit_feature ... ignored, CPU/SQL engines require the owner-provisioned offline bundle; run --features engines --test conformance (analytics_audit/README.md)
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kix_analytics_audit
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

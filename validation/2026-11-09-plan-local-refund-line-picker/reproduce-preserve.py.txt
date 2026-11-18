@@ -1,0 +1,35 @@
+import ast
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+
+v = Path('validation/2026-11-09-plan-local-refund-line-picker')
+allowed = {'docs/README.md', 'reference/booking_resale_admission/README.md',
+           'reference/booking_resale_admission/commerce_calculation_console.py',
+           'reference/booking_resale_admission/test_commerce_calculation_console.py'}
+before = json.loads(Path('.local/refund-picker/tracked-before.json').read_text())
+unchanged = [p for p in before if p not in allowed]
+assert all(hashlib.sha256(Path(p).read_bytes()).hexdigest() == before[p] for p in unchanged)
+manifest = json.loads((v / 'preservation-before.json').read_text())
+after = {p: hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in manifest}
+assert manifest == after
+(v / 'preservation-after.json').write_text(json.dumps(after, indent=2) + '\n')
+locks = {'runtime/crates/kix-kernel/src/lib.rs': '69564b166f0c27f9af5d8422f0a466b18d74c20f',
+         'runtime/crates/kix-kernel/tests/quarantine_capacity.rs': 'b607996c83a119c349f1cc90469ac1ba82764e20'}
+for p, expected in locks.items():
+    assert subprocess.check_output(['git', 'hash-object', p], text=True).strip() == expected
+for ref in ('HEAD', 'origin/main'):
+    assert subprocess.check_output(['git', 'rev-parse', ref], text=True).strip() == 'f5fe55278e71e0ff3158f639626a4f138321cc8c'
+for p in allowed:
+    if p.endswith('.py'):
+        ast.parse(Path(p).read_bytes(), filename=p)
+paths = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+paths += subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
+assert all(p in allowed or p.startswith(str(v) + '/') or
+           (p.startswith('reference/booking_resale_admission/fixtures/commerce_console_picker_')
+            and p.endswith('.txt')) for p in paths)
+report = dict(unchangedTrackedPaths=len(unchanged), frozenFiles=len(manifest)-2,
+              lockedBlobs=locks, cachedRefsUnchanged=True, changedPythonAstValid=True)
+(v / 'preservation.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report))

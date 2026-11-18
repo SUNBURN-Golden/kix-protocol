@@ -1,0 +1,12 @@
+test_hidden_target_dependency (__main__.ArchitectureGateTests.test_hidden_target_dependency) ... ok
+test_invalid_contract_values (__main__.ArchitectureGateTests.test_invalid_contract_values) ... ok
+test_kernel_dependency_injection (__main__.ArchitectureGateTests.test_kernel_dependency_injection) ... ok
+test_missing_lock_or_golden_vector (__main__.ArchitectureGateTests.test_missing_lock_or_golden_vector) ... ok
+test_python_runtime_source_is_rejected (__main__.ArchitectureGateTests.test_python_runtime_source_is_rejected) ... ok
+test_transitive_dependency_injection (__main__.ArchitectureGateTests.test_transitive_dependency_injection) ... ok
+test_valid_contract (__main__.ArchitectureGateTests.test_valid_contract) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.419s
+
+OK

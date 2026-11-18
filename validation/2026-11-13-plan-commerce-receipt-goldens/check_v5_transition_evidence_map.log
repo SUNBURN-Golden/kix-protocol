@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_v5_transition_evidence_map.py
+v5 transition evidence map ok: rows=10 expected=10 citations=77 TESTED=6 STOPPED=4 OPEN=0
+
+EXIT: 0

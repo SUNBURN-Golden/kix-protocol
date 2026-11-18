@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-pool-opening-composer/validation/2026-11-09-plan-local-pool-opening-composer/verify_preservation.py", line 18, in <module>
+    changed = [p for p in paths if Path(p).read_bytes() != git('show', f'{BASE}:{p}')]
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/pathlib/_abc.py", line 625, in read_bytes
+    with self.open(mode='rb') as f:
+         ~~~~~~~~~^^^^^^^^^^^
+  File "/usr/lib/python3.13/pathlib/_local.py", line 539, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '"reference/v0.3-rc1/KIX_v0.3_rc1_\\352\\265\\254\\355\\230\\204\\352\\262\\260\\352\\263\\274\\354\\231\\200_\\354\\213\\244\\355\\226\\211\\354\\241\\260\\352\\261\\264.md"'

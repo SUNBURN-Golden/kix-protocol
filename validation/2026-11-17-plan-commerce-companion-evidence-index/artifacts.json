@@ -1,0 +1,35 @@
+{
+  "kind": "UNCOMMITTED_BUILDER_ARTIFACT_IDENTITIES",
+  "artifacts": [
+    {
+      "path": "docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json",
+      "bytes": 148731,
+      "sha256": "6e513cfa8dce1ae28a8728c6b5cb69de71c7ad51018dd596a204f1660c67587c",
+      "gitBlob": "ddd0d46fec64fc209858bd6d7154de4e0583d1f3"
+    },
+    {
+      "path": "docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md",
+      "bytes": 5939,
+      "sha256": "9054ae8d3dd0dfbabeafe5cf2b18cd46aa59c8779879fdb272fa53caef6539f8",
+      "gitBlob": "81edbc44560179e6ef874c6a829b8a744f2c6bed"
+    },
+    {
+      "path": "reference/booking_resale_admission/test_commerce_companion_evidence_index.py",
+      "bytes": 22106,
+      "sha256": "0069b313b81b8463065c1b33cb9f238abd11ac0756aef4a6440c787940da373c",
+      "gitBlob": "72ac9535a9d49fa81db29a1a42345bee27409f3d"
+    },
+    {
+      "path": "docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md",
+      "bytes": 32109,
+      "sha256": "4f22b6c7e080bfd067858b0628ac3b659b2b0d5f73cd06ad80fc88b6a1015b78",
+      "gitBlob": "35e0a093ceabdccb6e4094f8ee371423165cd849"
+    },
+    {
+      "path": "docs/README.md",
+      "bytes": 146475,
+      "sha256": "93fbeb8aa045aceecb9f6efca46a7d1a329cd58f37c9c12df3120d74d8c7d197",
+      "gitBlob": "3b87a1d84362f29cb8863200909062d0e71c2004"
+    }
+  ]
+}

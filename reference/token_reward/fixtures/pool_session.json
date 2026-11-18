@@ -1,0 +1,11 @@
+{
+  "fixture_version": 1,
+  "provenance": "MOCK_TOKEN_REWARD_ONLY",
+  "opening_balances": {
+    "CUSTOMER_DEPOSIT": 20,
+    "ORGANIZER_SETTLEMENT": 20,
+    "REFUND_RESERVE": 20,
+    "PROTOCOL_REVENUE": 2,
+    "TOKEN_TREASURY_REWARD": 9
+  }
+}

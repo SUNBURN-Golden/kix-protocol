@@ -1,0 +1,56 @@
+[
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_resale_fsm.py -v",
+    "exit_code": 0,
+    "log": "001.log",
+    "seconds": 0.091
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_bound_resale_vectors.py -v",
+    "exit_code": 1,
+    "log": "002.log",
+    "seconds": 21.851
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_bound_resale_vectors.py -v",
+    "exit_code": 0,
+    "log": "003.log",
+    "seconds": 2.814
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_commerce_*.py' -v",
+    "exit_code": 0,
+    "log": "004.log",
+    "seconds": 77.921
+  },
+  {
+    "command": "for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation token_reward provider_facts payment_effects economics; do PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s \"reference/$suite\" -t \"reference/$suite\" || exit $?; done",
+    "exit_code": 0,
+    "log": "005.log",
+    "seconds": 297.899
+  },
+  {
+    "command": "python3 -B scripts/check_openapi_contract.py",
+    "exit_code": 0,
+    "log": "006.log",
+    "seconds": 0.088
+  },
+  {
+    "command": "python3 -B scripts/check_openapi_contract.py --self-test",
+    "exit_code": 0,
+    "log": "007.log",
+    "seconds": 0.184
+  },
+  {
+    "command": "python3 -B scripts/check_integration_gate_openapi.py",
+    "exit_code": 0,
+    "log": "008.log",
+    "seconds": 0.079
+  },
+  {
+    "command": "python3 -B scripts/check_integration_gate_openapi.py --self-test",
+    "exit_code": 0,
+    "log": "009.log",
+    "seconds": 0.094
+  }
+]

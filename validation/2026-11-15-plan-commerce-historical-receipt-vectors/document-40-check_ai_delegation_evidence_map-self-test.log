@@ -1,0 +1,91 @@
+$ python3.12 -B scripts/check_ai_delegation_evidence_map.py --self-test
+self-test: detected missing clause
+self-test: detected duplicate clause
+self-test: detected invented clause
+self-test: detected clause row width
+self-test: detected missing code
+self-test: detected duplicate code
+self-test: detected invented code
+self-test: detected code row width
+self-test: detected code order
+self-test: detected missing flag
+self-test: detected duplicate flag
+self-test: detected invented flag
+self-test: detected flag row width
+self-test: detected flag order
+self-test: detected missing item
+self-test: detected duplicate item
+self-test: detected invented item
+self-test: detected item row width
+self-test: detected item order
+self-test: detected new contract heading
+self-test: detected removed heading
+self-test: detected duplicate contract heading
+self-test: detected title drift
+self-test: detected missing paraphrase
+self-test: detected dangling path
+self-test: detected protected path
+self-test: detected absolute path
+self-test: detected parent path
+self-test: detected backslash path
+self-test: detected noncanonical path
+self-test: detected nested path
+self-test: detected non-test file
+self-test: detected unapproved readiness file
+self-test: detected dangling symbol
+self-test: detected helper symbol
+self-test: detected non-test method
+self-test: detected bare citation
+self-test: detected ordinary class
+self-test: detected invalid Python
+self-test: detected orphan readiness mixin
+self-test: detected stale Counts:
+self-test: detected duplicate Counts:
+self-test: detected stale Codes:
+self-test: detected duplicate Codes:
+self-test: detected stale Flags:
+self-test: detected duplicate Flags:
+self-test: detected stale Open items:
+self-test: detected duplicate Open items:
+self-test: detected closed §9
+self-test: detected promoted §10
+self-test: detected clause owner drift
+self-test: detected unknown owner
+self-test: detected empty owner
+self-test: detected missing owner
+self-test: detected missing open marker
+self-test: detected §3 unknown status
+self-test: detected §1 COVERED needs a citation
+self-test: detected §3 PARTIAL needs a citation
+self-test: detected §1 COVERED gap must be none
+self-test: detected §3 PARTIAL needs a named gap
+self-test: detected §10 NOT_COVERED needs a named gap
+self-test: detected §10 NOT_COVERED evidence must be none
+self-test: detected §3 unknown DLG id
+self-test: detected §6 must point to all DLG
+self-test: detected §3 DLG pointer format
+self-test: detected §3 DLG pointer range
+self-test: detected §3 DLG pointer duplicate
+self-test: detected copied DLG row
+self-test: detected missing matrix id
+self-test: detected code absent from ECC
+self-test: detected constructor exclusion
+self-test: detected AID pointer drift
+self-test: detected contract flag drift
+self-test: detected mock flag drift
+self-test: detected execution enabled
+self-test: detected open item item title drift
+self-test: detected open item item status drift
+self-test: detected open item open-item evidence must be none
+self-test: detected open item item must remain OPEN
+self-test: detected open item OPEN needs an open marker
+self-test: detected open item OPEN needs an owner
+self-test: detected O8 owner drift
+self-test: detected O8 execution posture
+self-test: detected missing banner Builder-authored map, not a review or an acceptance
+self-test: detected missing banner no grade change
+self-test: detected missing banner `delegated_execution_enabled` stays `false`
+self-test: transitive TestCase selection and symlink fencing pass
+self-test: pass (86 negative controls)
+
+EXIT: 0

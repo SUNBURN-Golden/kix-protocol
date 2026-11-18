@@ -1,0 +1,27 @@
+........................................E.............................................
+======================================================================
+ERROR: test_invalid_entire_configuration_precedes_all_lookup_and_binding (test_payment_lookup_cli.PaymentLookupCliTests.test_invalid_entire_configuration_precedes_all_lookup_and_binding) (case="value ('bindings', 0, 'operation_ref', 'provider')/''")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-commerce-resale-expiry-vectors/reference/provider_facts/test_payment_lookup_cli.py", line 306, in test_invalid_entire_configuration_precedes_all_lookup_and_binding
+    process = self.invoke()
+              ^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-plan-commerce-resale-expiry-vectors/reference/provider_facts/test_payment_lookup_cli.py", line 160, in invoke
+    process = subprocess.run(
+              ^^^^^^^^^^^^^^^
+  File "/home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['/home/box/.local/bin/python3.12', '/workspace/kix-run/wt/plan-plan-commerce-resale-expiry-vectors/reference/provider_facts/payment_lookup_cli.py', '--fixture', '/tmp/tmpalmxvxbt/new-synthetic-fixture.json', '--operation-ref', '{"provider": "toss-synthetic", "account": "mid_synthetic_001", "operation": "op_synthetic_0001"}']' timed out after 10 seconds
+
+----------------------------------------------------------------------
+Ran 86 tests in 148.405s
+
+FAILED (errors=1)
