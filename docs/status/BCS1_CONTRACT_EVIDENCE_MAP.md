@@ -27,16 +27,16 @@ Statuses are builder judgments. Symbol existence and fixed golden constant check
 | S1-CANONICAL-BYTES | §1 | Canonical bytes wrap the BCS body in the BCS envelope. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::fixed_bytes_and_hash_match_external_golden_values` | COVERED | none | none |
 | S1-CANONICAL-HASH | §1 | SHA-256 over canonical envelope bytes. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::fixed_bytes_and_hash_match_external_golden_values`, `runtime/crates/kix-bcs1/src/lib.rs::round_trip_and_hash_are_deterministic` | COVERED | none | none |
 | S1-SCHEMA-PERMANENCE | §1 | Schema field type/order/meaning is permanent; changes require new identity. | none | NOT_COVERED | No registry or schema-evolution test. | KIX-BCS1 contract owner |
-| S1-VERSION-POSITIVE | §1 | Schema version is positive. | none | NOT_COVERED | FU-ZERO-ID: InvalidSchemaIdentity on zero domain/schema/version has no test; zero domain/schema semantics are contract-undefined. | kix-bcs1 maintainer |
+| S1-VERSION-POSITIVE | §1 | Schema version is positive. | `runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs::fu_zero_id_schema_version_zero_is_rejected` | COVERED | none | none |
 | S2-TYPED-IDENTITY | §2 | Schema trait owns identity and bound; callers do not negotiate ids. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::domain_schema_and_version_are_bound`, `runtime/crates/kix-bcs1/src/lib.rs::wrong_magic_schema_version_and_trailing_bytes_are_rejected` | PARTIAL | Mutation rejection only; no compile-time API or zero-id regression. | kix-bcs1 maintainer |
 | S2-DECODE-ORDER | §2 | Check envelope bound before BCS decoding, then magic/identity/body bound. | `runtime/crates/kix-bcs1/src/lib.rs::wrong_magic_schema_version_and_trailing_bytes_are_rejected`, `runtime/crates/kix-bcs1/tests/golden_vectors.rs::domain_schema_and_version_are_bound` | PARTIAL | Identity rejection covered; predecode ordering and length bounds untested. | kix-bcs1 maintainer |
-| S2-ENVELOPE-BOUND | §2 | EnvelopeTooLarge guard. | none | NOT_COVERED | FU-ENVELOPE-TOO-LARGE: no encode/decode envelope oversize regression; encode behavior is characterization only. | kix-bcs1 maintainer |
-| S2-BODY-BOUND-ENCODE | §2 | Encode body size guard (implementation-bound characterization). | none | NOT_COVERED | FU-BODY-TOO-LARGE-ENCODE: no encode BodyTooLarge regression; error semantics not stated by contract. | kix-bcs1 maintainer |
-| S2-BODY-BOUND-DECODE | §2 | Decode body size guard. | none | NOT_COVERED | FU-BODY-TOO-LARGE-DECODE: no decode BodyTooLarge regression. | kix-bcs1 maintainer |
+| S2-ENVELOPE-BOUND | §2 | EnvelopeTooLarge guard. | `runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs::fu_envelope_too_large_is_rejected_before_bcs_decode` | PARTIAL | FU-ENVELOPE-TOO-LARGE: decode-side bound and ordering tested; encode-side reachability and overhead value contract-undefined. | kix-bcs1 maintainer |
+| S2-BODY-BOUND-ENCODE | §2 | Encode body size guard (implementation-bound characterization). | `runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs::fu_body_too_large_encode_is_rejected` | COVERED | none | none |
+| S2-BODY-BOUND-DECODE | §2 | Decode body size guard. | `runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs::fu_body_too_large_decode_is_rejected` | COVERED | none | none |
 | S2-SCHEMA-OWNS-BODY | §2 | Schema owns body conversion and domain validation. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::fixed_bytes_and_hash_match_external_golden_values` | PARTIAL | Golden wire conversion only; no schema-specific invalid domain object. | kix-bcs1 maintainer |
 | S2-HASH-EXACT | §2 | Canonical hash hashes exact envelope bytes. | `runtime/crates/kix-bcs1/src/lib.rs::round_trip_and_hash_are_deterministic`, `runtime/crates/kix-bcs1/tests/golden_vectors.rs::fixed_bytes_and_hash_match_external_golden_values` | COVERED | none | none |
 | S2-BOUNDED-UTF8 | §2 | BoundedUtf8 rejects oversize construction and body decode. | `runtime/crates/kix-bcs1/src/lib.rs::bounded_utf8_rejects_oversize_values` | PARTIAL | ASCII-only probe; decode check uses decode_bcs_body (BodyDecode), not decode_canonical; see FU-UTF8-MULTIBYTE. | kix-bcs1 maintainer |
-| S2-UTF8-MULTIBYTE | §2 | UTF-8 byte limit differs from character count. | none | NOT_COVERED | FU-UTF8-MULTIBYTE: no multi-byte UTF-8 byte-versus-character boundary test. | kix-bcs1 maintainer |
+| S2-UTF8-MULTIBYTE | §2 | UTF-8 byte limit differs from character count. | `runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs::fu_utf8_multibyte_limit_counts_bytes_not_chars` | COVERED | none | none |
 | S2-TEST-DOMAIN-RESERVED | §2 | Test-only domain/schema is permanently reserved from production registry. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::fixed_bytes_and_hash_match_external_golden_values` | PARTIAL | Golden fixture uses reserved ids; permanent production non-reuse untested. | KIX-BCS1 contract owner |
 | S3-AMOUNT-U128 | §3 | Amounts use u128 atoms; no float. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::u128_zero_and_max_are_lossless` | PARTIAL | Zero/max lossless fixture only; no production schema or float-exclusion proof. | kix-bcs1 maintainer |
 | S3-FIXED-WIDTH-IDS | §3 | UUID identity uses 16 bytes where possible; AssetId/hash use 32 bytes. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::fixed_bytes_and_hash_match_external_golden_values` | PARTIAL | Fixture id and asset widths only; generated UUIDv7 and registry/content hash schemas absent. | kix-bcs1 maintainer |
@@ -57,41 +57,41 @@ Statuses are builder judgments. Symbol existence and fixed golden constant check
 | S8-G1-FIXED-VALUES | §8 | Gate 1: fixed encode/decode/hash values. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::fixed_bytes_and_hash_match_external_golden_values`, `runtime/crates/kix-bcs1/src/lib.rs::round_trip_and_hash_are_deterministic` | COVERED | none | none |
 | S8-G2-IDENTITY-MUTATION | §8 | Gate 2: reject magic/domain/schema/version mutation. | `runtime/crates/kix-bcs1/src/lib.rs::wrong_magic_schema_version_and_trailing_bytes_are_rejected`, `runtime/crates/kix-bcs1/tests/golden_vectors.rs::domain_schema_and_version_are_bound` | COVERED | none | none |
 | S8-G3-MALFORMED-TRAILING | §8 | Gate 3: malformed/trailing rejection. | `runtime/crates/kix-bcs1/src/lib.rs::wrong_magic_schema_version_and_trailing_bytes_are_rejected` | PARTIAL | Trailing byte only; truncation is FU-TRUNCATED-ENVELOPE; no malformed corpus (parked boundary-corpus). | kix-bcs1 maintainer |
-| S8-G3-TRUNCATED | §8 | Gate 3: truncated envelope rejection. | none | NOT_COVERED | FU-TRUNCATED-ENVELOPE: no truncated envelope test; parked boundary-corpus remains outside this node. | kix-bcs1 maintainer |
+| S8-G3-TRUNCATED | §8 | Gate 3: truncated envelope rejection. | `runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs::fu_truncated_envelope_is_rejected` | COVERED | none | none |
 | S8-G4-U128 | §8 | Gate 4: u128 zero/max lossless round-trip. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::u128_zero_and_max_are_lossless` | COVERED | none | none |
 | S8-G5-BOUNDED-UTF8 | §8 | Gate 5: oversize bounded UTF-8 rejection. | `runtime/crates/kix-bcs1/src/lib.rs::bounded_utf8_rejects_oversize_values` | PARTIAL | ASCII-only probe; decode check uses decode_bcs_body (BodyDecode), not decode_canonical; see FU-UTF8-MULTIBYTE. | kix-bcs1 maintainer |
 | S8-G6-CE1-SEPARATION | §8 | Gate 6: CE1-like JSON bytes/hash differ from KIX-BCS1. | `runtime/crates/kix-bcs1/tests/golden_vectors.rs::legacy_json_is_not_kix_bcs1_identity` | COVERED | none | none |
 | S8-MOVE-SDK-EQUALITY | §8 | S08 Rust↔Move equality and SDK↔Rust equality use shared fixture. | none | NOT_COVERED | FU-S08-SDK-EQUALITY: no Rust↔Move/SDK equality; deferred to S08 and SDK schema delivery. | S08 Move/SDK schema owner |
 
-Counts: rows=39 COVERED=12 PARTIAL=10 NOT_COVERED=17
+Counts: rows=39 COVERED=17 PARTIAL=11 NOT_COVERED=11
 
-## 3. Follow-up candidates (NOT_COVERED, no tests added)
+## 3. Follow-up candidates and closures
 
 | FU | Row | Path | Candidate owner |
 |---|---|---|---|
-| FU-ZERO-ID | S1-VERSION-POSITIVE | runtime/crates/kix-bcs1/src/lib.rs | kix-bcs1 maintainer |
-| FU-ENVELOPE-TOO-LARGE | S2-ENVELOPE-BOUND | runtime/crates/kix-bcs1/src/lib.rs | kix-bcs1 maintainer |
-| FU-BODY-TOO-LARGE-ENCODE | S2-BODY-BOUND-ENCODE | runtime/crates/kix-bcs1/src/lib.rs | kix-bcs1 maintainer |
-| FU-BODY-TOO-LARGE-DECODE | S2-BODY-BOUND-DECODE | runtime/crates/kix-bcs1/src/lib.rs | kix-bcs1 maintainer |
-| FU-UTF8-MULTIBYTE | S2-UTF8-MULTIBYTE | runtime/crates/kix-bcs1/src/lib.rs | kix-bcs1 maintainer |
+| FU-ZERO-ID | S1-VERSION-POSITIVE | runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs | kix-bcs1 maintainer |
+| FU-ENVELOPE-TOO-LARGE | S2-ENVELOPE-BOUND | runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs | kix-bcs1 maintainer |
+| FU-BODY-TOO-LARGE-ENCODE | S2-BODY-BOUND-ENCODE | runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs | kix-bcs1 maintainer |
+| FU-BODY-TOO-LARGE-DECODE | S2-BODY-BOUND-DECODE | runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs | kix-bcs1 maintainer |
+| FU-UTF8-MULTIBYTE | S2-UTF8-MULTIBYTE | runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs | kix-bcs1 maintainer |
 | FU-S08-MOVE-EQUALITY | S5-RUST-MOVE-EQUALITY | runtime/crates/kix-bcs1/tests/golden_vectors.rs | S08 Move/SDK schema owner |
-| FU-TRUNCATED-ENVELOPE | S8-G3-TRUNCATED | runtime/crates/kix-bcs1/src/lib.rs | kix-bcs1 maintainer |
+| FU-TRUNCATED-ENVELOPE | S8-G3-TRUNCATED | runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs | kix-bcs1 maintainer |
 | FU-S08-SDK-EQUALITY | S8-MOVE-SDK-EQUALITY | runtime/crates/kix-bcs1/tests/golden_vectors.rs | S08 Move/SDK schema owner |
 
-Paths identify candidate evidence locations only; no new tests are added or authorized. S08 equality will also need Move/SDK fixtures outside these two Rust files after a schema is approved. Other NOT_COVERED rows remain follow-up candidates with the gap and owner in §2.
+The regression file records evidence for six follow-ups. See §2 for the remaining envelope-bound gap. S08 equality remains open with the S08 Move/SDK schema owner and requires Move/SDK fixtures after schema approval. Other NOT_COVERED rows retain their gap and owner in §2.
 
 ## 4. Characterizations (AGENTS §8)
 
-Class A: the cited deterministic tests match their limited predicates; no explicit contract violation was found by inspection.
+Class A tests cover positive schema versions, decode-side envelope guard ordering, decode-side body length, multibyte UTF-8 byte limits, and three fixed envelope truncations.
 
-Class B (contract undefined), observed by source reading rather than new tests:
+### Class B observations
 
-- SchemaDescriptor::of also rejects zero domain_id and schema_id. The contract explicitly marks only schema_version as positive. InvalidSchemaIdentity zero-id coverage is absent.
-- Encode-side BodyTooLarge and EnvelopeTooLarge error behavior is not stated by the contract.
-- MAX_ENVELOPE_OVERHEAD_BYTES = 32 is not specified. Actual framing overhead appears to be 10 bytes plus the ULEB128 length; encode-side EnvelopeTooLarge appears unreachable for realistic bounds. This is an unverified source-informed observation, not a tested reachability claim.
-- Oversize BoundedUtf8 body decode surfaces as BodyDecode, while construction uses BoundedUtf8Exceeded. The contract specifies no error variant. Existing decode evidence uses decode_bcs_body, not decode_canonical.
+- Source inspection shows SchemaDescriptor::of also rejects zero domain_id and schema_id. The contract explicitly marks only schema_version as positive. InvalidSchemaIdentity is asserted for version zero on encode and decode. Zero domain/schema IDs remain untested.
+- Encode-side BodyTooLarge and EnvelopeTooLarge error behavior is not stated by the contract. The test observes `BodyTooLarge` on encode and decode for bodies one byte over the limit.
+- MAX_ENVELOPE_OVERHEAD_BYTES = 32 is not specified. Actual framing overhead appears to be 10 bytes plus the ULEB128 length; encode-side `EnvelopeTooLarge` reachability remains untested. On decode the test observes `EnvelopeTooLarge` above the envelope bound and `EnvelopeDecode` for malformed BCS at that bound and for the three truncations.
+- Oversize BoundedUtf8 body decode surfaces as BodyDecode, while construction uses BoundedUtf8Exceeded. The contract specifies no error variant. The multibyte test exercises both outcomes through construction and full-envelope decode.
 
-No class-C reproduction or contract change is made. The parked plan-bcs1-boundary-corpus scope remains parked.
+The regressions found zero class C violations. The boundary corpus remains parked.
 
 ## 5. Non-claims
 
