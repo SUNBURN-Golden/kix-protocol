@@ -339,7 +339,7 @@
 
 ## 2026-10-26 검증 기록 색인 — 위치 안내만
 
-- [plan-plan-sdk-compat-manifest-clause-evidence](../validation/2026-10-26-plan-sdk-compat-manifest-clause-evidence/README.md) — Bootstrap manifest §§1–5 [clause-to-test map](status/SDK_COMPAT_MANIFEST_EVIDENCE_MAP.md), stdlib checker and owner-approved verifier regression for profile-hash precedence.
+- [plan-plan-sdk-compat-manifest-clause-evidence](../validation/2026-10-26-plan-sdk-compat-manifest-clause-evidence/README.md) — Bootstrap manifest §§1–5 [clause-to-test map](status/SDK_COMPAT_MANIFEST_EVIDENCE_MAP.md), stdlib checker and owner-approved verifier regression for profile-hash precedence. [§4 검사 순서 소유자 결정 위치 기록(2026-11-18)](decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md)(위치만. 새 결정이 아니다).
 
 - [plan-plan-feature-semantics-v1-evidence-map](../validation/2026-10-26-plan-feature-semantics-v1-evidence-map/README.md) — Builder-authored Feature Semantics v1 §§1–10 clause-to-test map ([지도](status/FEATURE_SEMANTICS_V1_EVIDENCE_MAP.md)) and stdlib citation checker; execution/backend conformance stays NOT_COVERED, class-B characterizations retained, no runtime, contract or grade change.
 

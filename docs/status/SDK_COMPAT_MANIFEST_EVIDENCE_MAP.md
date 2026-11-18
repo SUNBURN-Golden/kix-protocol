@@ -4,9 +4,9 @@
 
 Builder-authored traceability for [COMPATIBILITY_MANIFEST_V1](../contracts/sdk/COMPATIBILITY_MANIFEST_V1.md) §§1–5 only, at local base `22d05a0c82693ad4575a72c2d342b4e47114447f`.
 Task: `plan-plan-sdk-compat-manifest-clause-evidence`; supervisor session specification is the immutable input (no issue or node document under docs/tasks).
-The map starts at §1 and uses source-informed evidence from the supplied branch.
+The map starts at §1 and uses source-informed evidence from the supplied branch. The two SDK source edits in this delivery (`sdk/compat/verify_compat.mjs` and the new order regression in `sdk/conformance/conformance.test.mjs`) are authorized by the [2026-11-18 owner decision location record](../decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md), which supersedes the byte-unchanged acceptance item for exactly those two files; all other SDK bytes stay unchanged.
 
-COVERED means the stated bootstrap predicate has executable assertions within this scope; PARTIAL means existing evidence leaves the named gap; NOT_COVERED means no executable evidence establishes that clause. Each function citation refers to the checks it performs. Vectors execute through the named conformance test. Positive byte comparisons establish only the cases they exercise.
+COVERED means the stated bootstrap predicate has executable assertions within this scope; PARTIAL means existing evidence leaves the named gap; NOT_COVERED means no executable evidence establishes that clause. Each function citation refers to the checks it performs. Vectors execute through the named conformance test. Positive byte comparisons establish only the cases they exercise. The Owner column names the owner of the row's gap: COVERED rows have no gap and carry `none`; every PARTIAL and NOT_COVERED row carries a named follow-up owner.
 
 Bootstrap-1 is historical: its [manifest](../../sdk/compat/manifests/manifest.bootstrap-1.json), [profile](../../sdk/compat/profiles/bootstrap-1.profile.json) and [sidecar](../../sdk/compat/manifests/manifest.bootstrap-1.json.sha256) are preserved by check_sdk_client.py::source_pin_errors, not revalidated against expanded OpenAPI bytes. Bootstrap-2 [manifest](../../sdk/compat/manifests/manifest.bootstrap-2.json), [profile](../../sdk/compat/profiles/bootstrap-2.profile.json) and [sidecar](../../sdk/compat/manifests/manifest.bootstrap-2.json.sha256) have current positive reproduction and mixed-input evidence. Existing check_sdk_client.py comparisons generate only into disposable temporary directories; this node never regenerates repository outputs.
 
@@ -72,7 +72,7 @@ Counts: rows=51 COVERED=18 PARTIAL=31 NOT_COVERED=2
 
 ## 3. Contract discrepancies (AGENTS §8 class C)
 
-The prior verifier reported OpenAPI, generator and output failures before the profile byte hash. The 2026-11-18 owner decision authorized the fix in this node. `sdk/compat/verify_compat.mjs` now checks the profile byte hash after the manifest fields and kind and before the OpenAPI checks.
+The prior verifier reported OpenAPI, generator and output failures before the profile byte hash. The [2026-11-18 owner decision location record](../decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md) preserves the supervisor-delivered authorization (JunTae delegation, batch tag pt224u) for the fix in this node; it is a location record, not a new decision. `sdk/compat/verify_compat.mjs` now checks the profile byte hash after the manifest fields and kind and before the OpenAPI checks.
 
 The conformance regression asserts that canonical parsing gates subsequent checks and that diagnostics appear in the §4 stage order. The two-fault regression `validation/2026-10-26-plan-sdk-compat-manifest-clause-evidence/repro_c4_check_order.py` changes the profile and contract-only SHA-256 values in a temporary manifest with a valid sidecar. It requires exit 1, `ok=false` and the profile-hash diagnostic first. The stdlib checker checks stage order in the verifier source and requires the conformance test citation.
 

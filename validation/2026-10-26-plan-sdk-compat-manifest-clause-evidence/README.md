@@ -2,7 +2,7 @@
 
 ## Task and basis
 
-- Task ID `plan-plan-sdk-compat-manifest-clause-evidence`. Task input is the supervisor's node specification and the 2026-11-18 owner decision (pt224u). There is no issue or task file under `docs/tasks/`.
+- Task ID `plan-plan-sdk-compat-manifest-clause-evidence`. Task input is the supervisor's node specification and the 2026-11-18 owner decision (pt224u), now recorded in-tree as [docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md](../../docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md) (fix round 1; see the fix-round-1 section below). There is no issue or task file under `docs/tasks/`.
 - Branch `agent/kix-plan-plan-sdk-compat-manifest-clause-evidence`, local base and unchanged branch HEAD `22d05a0c82693ad4575a72c2d342b4e47114447f`. The observed local `origin/main` ref was `b2357bc4d3f6de2e7dd0a09f53596f24d0a944f7`, 339 commits ahead. The supplied branch was retained. The supervisor's no-network rule superseded the session-start fetch.
 - Implementation and final delivery are uncommitted. KTX kernel verification and KIX protocol verification have no exact-head run ID, status or conclusion for this worktree. Merge SHA and post-merge results do not apply.
 
@@ -11,7 +11,8 @@
 | Path | Change |
 |---|---|
 | `.github/workflows/protocol.yml` | Two checker invocations in the stdlib step. |
-| `docs/README.md` | Index entry for this record and the map. |
+| `docs/README.md` | Index entry for this record and the map; links the owner-decision location record (fix round 1). |
+| `docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md` | Owner-decision location record (fix round 1): verbatim pt224u decision, provenance, scope, non-claims. |
 | `docs/status/SDK_COMPAT_MANIFEST_EVIDENCE_MAP.md` | 51 clauses with evidence, status, gap and owner. |
 | `scripts/check_sdk_compat_manifest_evidence_map.py` | Stdlib checker and in-memory controls. |
 | `sdk/compat/verify_compat.mjs` | Profile byte-hash check moved before both OpenAPI references. |
@@ -134,7 +135,63 @@ Commands ran in the foreground in Python 3.13.5 and Node 24.22.1 (npm 11.21.1). 
 
 ## Deviations and limits
 
-- The owner decision supersedes the original design's diagnostic-only stop. It authorizes the verifier move and the new SDK test. The revised map and checker treat §4 ordering as verified on the worktree. The drafting date remains in the validation directory name.
+- The owner decision supersedes the original design's diagnostic-only stop and the byte-unchanged acceptance item for exactly `sdk/compat/verify_compat.mjs` and `sdk/conformance/conformance.test.mjs`. It authorizes the verifier move and the new SDK test. The authorization is recorded in-tree at [docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md](../../docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md). The revised map and checker treat §4 ordering as verified on the worktree. The drafting date remains in the validation directory name.
 - The map separates decimal number form from integer range, for 51 rows. The unavailable-profile clause remains PARTIAL because the mixed-input test also supplies an expected revision.
 - The newer local main has additional single-fault verifier vectors and a roll-up entry that describes the earlier blocked state. Verification here used the supplied branch. The merge preview identifies the two overlapping insertions for supervisor integration.
 - Evidence is for bootstrap catalogue-schema binding only. Semantic conformance, N/N−1, production fitness, independent audit and consumer qualification are outside this validation. The unchanged runtime and kernel were checked by blob identity. Rust, localnet, ZK and hosted workflows were outside the executed checks.
+
+## Fix round 1 (2026-11-18)
+
+Round-0 head `4ccecef` (committed by the supervisor); round-1 changes are uncommitted in this worktree. The round-1 independent review returned one blocking finding: the two authorized SDK source edits rest on an owner decision (pt224u) with no in-tree record, so the "SDK sources byte-unchanged" acceptance item appeared unmet. The review accepted the fix itself as technically sound and named the remedy: record the decision in-tree, or revert to diagnostic-only delivery. Two non-blocking findings: the stale base disclosure and the `none` owner convention on COVERED rows.
+
+### Provenance verification before recording
+
+The authorization was verified genuine against supervisor-owned channels before writing any record; nothing was reconstructed from builder-authored artifacts:
+
+| Check | Actual result |
+|---|---|
+| Read `/workspace/kix-run/logs/plan-plan-sdk-compat-manifest-clause-evidence_build_a0_codex0.prompt.md` lines 260–262 | Section `=== Owner decision (answers the earlier DECISION_REQUIRED; authoritative for this node) ===` carries the verbatim decision: option 1 approved in this node, JunTae delegation 2026-11-18 `[pt224u]`. |
+| Read `/workspace/kix-run/state/plan-plan-sdk-compat-manifest-clause-evidence.decision.md` and `.decision_answer.md` | Supervisor state preserves the class C stop (options 1/2/3, recommendation option 1, User decides) and the answer text identical to the prompt section. |
+| `grep -c pt224u /workspace/kix-run/AUTOLOOP_RESULT.md` | 24 lines carry the 2026-11-18 `[pt224u]` delegation tag, including this node's FIX row (line 17). Corroboration of the batch tag, not cryptographic verification. |
+| Python comparison of the quoted block in the new decision record against prompt lines 261–262 | Exact string equality (`QUOTE MATCH: True`). |
+| `git show origin/main:docs/decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md` | The sibling node's same-tag decision record is merged on cached main and establishes the location-record genre. It does not exist at this base, so the new record names it as a source pointer. |
+
+### Remedy applied (docs only)
+
+No code, test, checker, workflow, SDK, contract, manifest, profile or vector change this round; `git diff --exit-code HEAD -- sdk` exits 0.
+
+1. New [docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md](../../docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md): location record with the verbatim decision, delivery channel and line numbers, the stop it answers, the exact authorized scope (the two SDK files, map reclassification, checker guard replacement, repro update, DECISION_REQUIRED.md removal), the checked conditional tuple-pin clause, and non-claims (recorder is the builder; no new decision, no Astra signature, no ledger closure, no merge authorization).
+2. `docs/README.md`: this node's existing validation-index entry now links the decision record (single insertion point; no new index section).
+3. Map §1: basis note cites the record and states it supersedes the byte-unchanged acceptance item for exactly the two named SDK files. Map §3 cites the record instead of restating the authorization as unsourced fact.
+4. Map §1 also clarifies the owner convention (non-blocking finding 3): the Owner column names the gap owner; COVERED rows have no gap and carry `none`; every PARTIAL/NOT_COVERED row carries a named owner. No row or checker rule changed.
+5. This record: basis, changed-paths table and deviations now cite the in-tree record.
+
+The delivery is nine paths (the eight round-0 paths plus the decision record). `DECISION_REQUIRED.md` remains absent, as the recorded decision instructs.
+
+### Base delta and merge preview (non-blocking finding 2)
+
+Cached `origin/main` is unchanged at `b2357bc4d3f6de2e7dd0a09f53596f24d0a944f7`; `git rev-list --left-right --count HEAD...origin/main` gives 1/339. Fetch was NOT_RUN per the supervisor no-network rule. The map's coverage claims remain scoped to base `22d05a0c` evidence, as disclosed. Read-only `git merge-file -p` previews (base bytes from `git show 22d05a0`, main bytes from `git show origin/main`): `sdk/compat/verify_compat.mjs` and `sdk/conformance/conformance.test.mjs` merge cleanly (exit 0); `docs/README.md` and `.github/workflows/protocol.yml` each show one insertion conflict (exit 1), the same two overlapping insertions disclosed in round 0, for supervisor integration. All five other delivery paths are new files absent from cached main (no add/add conflict).
+
+### Re-run commands and actual results (fix round 1)
+
+All commands ran in the foreground in Python 3.13.5 and Node 24.22.1. The three workflow shell blocks were extracted from the worktree `protocol.yml` and executed with `bash -ex`.
+
+| Command | Actual result |
+|---|---|
+| `python3 scripts/check_sdk_compat_manifest_evidence_map.py` | Exit 0. rows=51 COVERED=18 PARTIAL=31 NOT_COVERED=2 |
+| `python3 scripts/check_sdk_compat_manifest_evidence_map.py --self-test` | Exit 0. 71 negative fixtures detected, injected positive control; memory only |
+| `python3 scripts/check_docs_index.py` / `--self-test` | Exit 0. scanned=268 indexed=233 allowlisted=35 (decision record indexed); self-test pass |
+| `python3 scripts/check_status_register.py` / `--self-test` | Exit 0. paths=385 ev_ids=15 original32=32; self-test pass |
+| `python3 scripts/check_ci_checker_wiring.py` / `--self-test` | Exit 0. scripts=30 plain=29 self_test=30 self_test_only=1 docs=21 citations=53; self-test pass (13 controls) |
+| Full `Stdlib offline document checks` block (53 commands, `bash -ex`) | Exit 0. 53/53 passed |
+| Full `Offline reference state machines and OpenAPI pins` block (`bash -ex`) | Exit 0. Reference suites 196/418/148/85/168 tests OK; OpenAPI pin 84 commands (40 core, 44 FSM); integration-gate pin 84 commands, productionEndpoint=false publicHost=false; both self-tests pass |
+| Full `Contract-only TypeScript 0.x client` block (`bash -ex`) | Exit 0. 4/4: sdk client pin ok (commands=84, sourceSha256=ed827de1…); self-test pass; conformance 7/7 including the order regression; verify-compat `{"ok":true,…,"profile_revision":"bootstrap-2"}` |
+| `python3 -I validation/2026-10-26-plan-sdk-compat-manifest-clause-evidence/repro_c4_check_order.py` | Exit 0. `C4 profile hash first: profile index=0 contract_only index=1 verifier exit=1` |
+| `git show origin/main:docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.json` + inline JSON check | 18 artifact entries; no `verify_compat` pin. No tuple update needed |
+| `PYTHONPYCACHEPREFIX=/tmp/kix-sdk-fix1-pycache python3 -m py_compile` (checker, repro) | Exit 0 |
+| `git hash-object` on both locked kernel files | `69564b166f0c27f9af5d8422f0a466b18d74c20f` and `b607996c83a119c349f1cc90469ac1ba82764e20` — match |
+| `git diff --exit-code HEAD -- sdk docs/contracts reference/v0.3-rc1 .aiops docs/tasks runtime docs/status/CURRENT_CAPABILITY_REGISTER.md` (excluding the two authorized SDK files) | Exit 0, empty diff. Protected bytes unchanged |
+| `git diff --exit-code HEAD -- sdk` | Exit 0. SDK files byte-identical to round-0 head; this round touched docs only |
+| `git diff --check` | Exit 0 |
+
+Exact-head CI: the round-1 head does not exist yet (supervisor commits); no exact-head run ID, status or conclusion is claimed. Per the ledger row, round-0 exact-head CI passed; that evidence does not transfer to the round-1 head (AGENTS.md §6, §10). Merge authorization remains with the User.
