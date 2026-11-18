@@ -250,6 +250,8 @@ jobs:
           python3 scripts/check_lifecycle_adr_evidence_map.py --self-test
           python3 scripts/check_contract_invariants_evidence_map.py
           python3 scripts/check_contract_invariants_evidence_map.py --self-test
+          python3 scripts/check_contract_invariants_review_pack.py
+          python3 scripts/check_contract_invariants_review_pack.py --self-test
           python3 scripts/check_toss_card_profile_evidence_map.py
           python3 scripts/check_toss_card_profile_evidence_map.py --self-test
           python3 scripts/check_bcs1_evidence_map.py
