@@ -341,7 +341,7 @@
 
 - [plan-plan-bcs1-contract-clause-evidence-map](../validation/2026-10-26-plan-bcs1-contract-clause-evidence-map/README.md) — Builder-authored KIX-BCS1 clause-to-test map ([지도](status/BCS1_CONTRACT_EVIDENCE_MAP.md)) and stdlib citation/golden checker; existing tests only, S08 equality and boundary-corpus remain deferred, no contract or grade change.
 
-- [plan-plan-bcs1-contract-bound-regressions](../validation/2026-10-26-plan-bcs1-contract-bound-regressions/README.md) — Six public-API KIX-BCS1 regressions and their contract and characterization evidence.
+- [plan-plan-bcs1-contract-bound-regressions](../validation/2026-10-26-plan-bcs1-contract-bound-regressions/README.md) — Six public-API KIX-BCS1 regressions and their contract and characterization evidence; fix round 1 syncs the BCS1 Counts copy in the [roll-up](status/EVIDENCE_MAP_ROLLUP.md).
 
 - [plan-plan-contract-invariants-evidence-map](../validation/2026-10-26-plan-contract-invariants-evidence-map/README.md) — Builder-authored CONTRACT_INVARIANTS §§1–5 clause-to-test map ([지도](status/CONTRACT_INVARIANTS_EVIDENCE_MAP.md)), corpus/sensitivity boundaries and stdlib checker; source-informed and contract-path evidence separated, no new Rust tests, contract or grade change.
 
