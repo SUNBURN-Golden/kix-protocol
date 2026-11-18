@@ -3151,6 +3151,328 @@
         "path": "reference/booking_resale_admission/test_commerce_admission_cancellation_vectors.py",
         "symbol": "CommerceAdmissionCancellationVectorTests.test_complete_output_bytes_and_references"
       }
+    },
+    {
+      "id": "hold_release",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json",
+        "sha256": "c066540d038e7d1724b761ba0aae4f29b8f4eae1fea9e771378e032ee92fadab",
+        "gitBlob": "476012c071b0dcb511fd4add510879ccc434fcd4"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json",
+        "sha256": "eacc156b9154d53ee3b362268e0ba29b94dbeedde949d30b1997c7d3be39e08a",
+        "gitBlob": "2b1f0a48720dc25c54059bad019f8b27f61a7c5b"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_hold_release_vectors.py",
+        "symbol": "CommerceHoldReleaseVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Synthetic expired HELD reservations retain their slot until explicit release; historical replay preserves current reuse and rejected-key retention is process-local."
+      ],
+      "entries": [
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "hold-a",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "expire",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "confirm-expired",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/4",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "hold-b-occupied",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/5",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "release-a",
+          "action": "reservation_release",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/53",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "retry-b-free",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/7",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "hold-b-fresh",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/8",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "replay-hold-a",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/9",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "replay-release-a",
+          "action": "reservation_release",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/10",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/53",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "replay-hold-b",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "retry-b-reused",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/12",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "retry-confirm",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/13",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-at-boundary",
+          "step_id": "conflict-b",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/0/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/0/steps/14",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "hold-a",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "expire",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "confirm-expired",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/4",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "hold-b-occupied",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/5",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "release-a",
+          "action": "reservation_release",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/53",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "retry-b-free",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/7",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "hold-b-fresh",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/8",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "replay-hold-a",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/9",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "replay-release-a",
+          "action": "reservation_release",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/10",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/53",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "replay-hold-b",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "retry-b-reused",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/12",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "retry-confirm",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/13",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "expired-held-after-boundary",
+          "step_id": "conflict-b",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json#/cases/1/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json#/cases/1/steps/14",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
     }
   ]
 }

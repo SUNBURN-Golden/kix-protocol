@@ -17,6 +17,7 @@ import test_commerce_bound_issuance_vectors as issuance
 import test_commerce_bound_resale_vectors as resale
 import test_commerce_resale_expiry_vectors as expiry
 import test_commerce_admission_cancellation_vectors as cancellation
+import test_commerce_hold_release_vectors as hold_release
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -34,6 +35,7 @@ PACKS = (
     ('bound_resale', resale, 'CommerceBoundResaleVectorTests', 'test_complete_output_bytes_and_references', 49),
     ('resale_expiry', expiry, 'CommerceResaleExpiryVectorTests', 'test_complete_output_bytes_and_references', 27),
     ('admission_cancellation', cancellation, 'CommerceAdmissionCancellationVectorTests', 'test_complete_output_bytes_and_references', 26),
+    ('hold_release', hold_release, 'CommerceHoldReleaseVectorTests', 'test_complete_output_bytes_and_references', 30),
 )
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
@@ -67,6 +69,7 @@ LIMITATIONS = {
     'bound_resale': ['Mock settlement binding, commitment and explicit transfer are separate facts; rejected-key retention is process-local.'],
     'resale_expiry': ['Synthetic unpaid/paid listing expiry preserves payment facts and historical receipts; no compensation, relisting or transfer policy is defined.'],
     'admission_cancellation': ['Synthetic cancellation/adoption ordering preserves issued credentials; rejected-key retention is process-local and legal effects remain UNDETERMINED—User/legal.'],
+    'hold_release': ['Synthetic expired HELD reservations retain their slot until explicit release; historical replay preserves current reuse and rejected-key retention is process-local.'],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
               'outcome_kind', 'binding_ref', 'binding_status'}
@@ -203,7 +206,7 @@ def validate_index(document, read=_read):
             _check(command['action'] == entry['action'] and command['status'] == entry['binding_status'],
                    'resolved binding association')
         total += len(entries)
-    _check(total == 293, 'total coverage')
+    _check(total == 323, 'total coverage')
     return total
 
 
@@ -218,10 +221,10 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
         mutate(document)
         with self.assertRaisesRegex(AssertionError, diagnostic):
             validate_index(document)
-        self.assertEqual(validate_index(self.document), 293)
+        self.assertEqual(validate_index(self.document), 323)
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 293)
+        self.assertEqual(validate_index(self.document), 323)
 
     def test_coverage_controls(self):
         for mutate in (
@@ -280,7 +283,7 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                      'binding_status association')
 
     def test_admission_cancellation_association_controls(self):
-        p = len(PACKS) - 1
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'admission_cancellation')
         self._reject(lambda d: d['packs'][p].update(input=d['packs'][3]['input']), 'input path association')
         self._reject(lambda d: d['packs'][p].update(output=d['packs'][3]['output']), 'output path association')
         for field, value in (
@@ -337,7 +340,27 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                 document['packs'][p]['output'] = journey._pin(path, raw)
                 with self.subTest(diagnostic=diagnostic), self.assertRaisesRegex(AssertionError, diagnostic):
                     validate_index(document, read=lambda p: raw if p == path else _read(p))
-        self.assertEqual(validate_index(self.document), 293)
+        self.assertEqual(validate_index(self.document), 323)
+
+    def test_hold_release_association_controls(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'hold_release')
+        for side in ('input', 'output'):
+            self._reject(lambda d: d['packs'][p].update({side: d['packs'][1][side]}),
+                         side + ' path association')
+        for field, value in (
+            ('action', 'resale_set_clock'),
+            ('input_ref', hold_release.FIXTURE + '#/cases/1/steps/0/body'),
+            ('outcome_ref', hold_release.GOLDEN.relative_to(ROOT).as_posix() + '#/cases/1/steps/0'),
+            ('outcome_kind', 'rejection_code'),
+            ('binding_ref', BINDING + '#/commands/items/0'),
+            ('binding_status', 'BOOTSTRAP_SCHEMA_BOUND'),
+        ):
+            with self.subTest(field=field):
+                self._reject(lambda d: d['packs'][p]['entries'][0].update({field: value}),
+                             field + ' association')
+        self._reject(lambda d: d['packs'][p].update(limitations=[]), 'pack limitation claim')
+        self._reject(lambda d: d['packs'][p]['replay_test'].update(
+            symbol='CommerceTemporalVectorTests.test_complete_output_bytes_and_references'), 'replay location')
 
     def test_qualification_controls(self):
         for mutate, diagnostic in (
@@ -368,7 +391,7 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                     b'{"x":NaN}', b'{"x":Infinity}', b'{"x":1e999}', self.raw + b'{}'):
             with self.subTest(raw=raw[:40]), self.assertRaises((ValueError, UnicodeError)):
                 journey._decode(raw)
-        self.assertEqual(validate_index(self.document), 293)
+        self.assertEqual(validate_index(self.document), 323)
 
 
 if __name__ == '__main__':
