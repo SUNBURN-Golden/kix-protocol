@@ -7,8 +7,14 @@ use std::process::Command;
 
 const LOCKED_KERNEL: &str = "69564b166f0c27f9af5d8422f0a466b18d74c20f";
 const LOCKED_QUARANTINE: &str = "b607996c83a119c349f1cc90469ac1ba82764e20";
-const LOCKED_EDGE: &str = "d37ea7df55423c83bedee16bf12bdc8dd61f7cae";
+const LOCKED_EDGE: &str = "8533d6419077d6a073d16ca2fce3a7d461a4de5b";
 const LOCKED_MODEL: &str = "f020860b86933bf7511befccdb833b0c532b3629";
+const REQUIRED: probe::FrozenBlobs<'static> = probe::FrozenBlobs {
+    kernel: LOCKED_KERNEL,
+    quarantine: LOCKED_QUARANTINE,
+    edge: LOCKED_EDGE,
+    model: LOCKED_MODEL,
+};
 
 const OUTPUT_FILES: &[&str] = &[
     "uniform.csv",
@@ -68,13 +74,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "runtime/crates/kix-kernel/tests/support/model_v4.rs",
         ],
     )?;
-    if kernel_blob != LOCKED_KERNEL
-        || quarantine_blob != LOCKED_QUARANTINE
-        || edge_blob != LOCKED_EDGE
-        || model_blob != LOCKED_MODEL
-    {
-        return Err("frozen blob mismatch; refusing to write unbound performance evidence".into());
-    }
+    let observed = probe::FrozenBlobs {
+        kernel: &kernel_blob,
+        quarantine: &quarantine_blob,
+        edge: &edge_blob,
+        model: &model_blob,
+    };
+    probe::check_frozen_blobs(&REQUIRED, &observed)?;
     let mut reports = Vec::with_capacity(4);
     for workload in [
         probe::Workload::Uniform,
@@ -103,12 +109,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     write_binding(
         &directory,
         &repo,
-        &FrozenBlobs {
-            kernel: &kernel_blob,
-            quarantine: &quarantine_blob,
-            edge: &edge_blob,
-            model: &model_blob,
-        },
+        &observed,
         ProbeArgs {
             samples: count,
             low_load_samples: low_count,
@@ -117,13 +118,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     )?;
     Ok(())
-}
-
-struct FrozenBlobs<'a> {
-    kernel: &'a str,
-    quarantine: &'a str,
-    edge: &'a str,
-    model: &'a str,
 }
 
 struct ProbeArgs {
@@ -136,7 +130,7 @@ struct ProbeArgs {
 fn write_binding(
     directory: &Path,
     repo: &Path,
-    blobs: &FrozenBlobs<'_>,
+    blobs: &probe::FrozenBlobs<'_>,
     args: ProbeArgs,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let commit = git_line(repo, &["rev-parse", "HEAD"])?;

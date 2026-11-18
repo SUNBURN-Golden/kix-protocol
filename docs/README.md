@@ -392,6 +392,8 @@
 
 - [plan-plan-perf-harness-kernel-construction-co](../validation/2026-10-27-plan-perf-harness-kernel-construction-co/README.md) — Builder-authored perf probe kernel-construction counter; report JSON resets derived from the count with schema unchanged; B-ZERO-KERNEL-REBUILD COVERED, release probe NOT_RUN, no benchmark or timing claim.
 
+- [plan-perf-probe-fail-closed-and-release-repro](../validation/2026-10-27-plan-perf-probe-fail-closed-and-release-repro/README.md) — Perf probe frozen-blob refusal tests, owner-approved edge-pin update, and eleven files from one local release reproduction, including the run binding.
+
 - [plan-v5-kernel-only-contract-invariant-histor](../validation/2026-10-27-v5-kernel-only-contract-invariant-histories/README.md) — Source-informed seeded INV-1..INV-5 histories over kix-kernel-v5 public APIs, including terminate, hold and reclaim report, with no model or oracle and with per-predicate corrupted-view sensitivity; class B characterization, no class C found, no v5 source, contract, map status or grade change.
 
 ## 역사 문서와 증거

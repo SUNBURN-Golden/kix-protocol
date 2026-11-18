@@ -608,6 +608,52 @@ impl Report {
     }
 }
 
+pub const FROZEN_BLOB_MISMATCH: &str =
+    "frozen blob mismatch; refusing to write unbound performance evidence";
+
+// The four Git blob ids the release example binds; names follow binding.json
+// `locked_blobs` keys.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FrozenBlobs<'a> {
+    pub kernel: &'a str,
+    pub quarantine: &'a str,
+    pub edge: &'a str,
+    pub model: &'a str,
+}
+
+// Pure: exact string equality only, no I/O. Mismatched names in fixed order.
+pub fn frozen_blob_mismatches(
+    required: &FrozenBlobs<'_>,
+    observed: &FrozenBlobs<'_>,
+) -> Vec<&'static str> {
+    [
+        ("kernel", required.kernel, observed.kernel),
+        (
+            "quarantine_capacity",
+            required.quarantine,
+            observed.quarantine,
+        ),
+        ("contract_edge_cases", required.edge, observed.edge),
+        ("model_v4", required.model, observed.model),
+    ]
+    .into_iter()
+    .filter(|(_, want, got)| want != got)
+    .map(|(name, _, _)| name)
+    .collect()
+}
+
+// Fail-closed gate: any mismatch refuses before the caller runs or writes.
+pub fn check_frozen_blobs(
+    required: &FrozenBlobs<'_>,
+    observed: &FrozenBlobs<'_>,
+) -> Result<(), &'static str> {
+    if frozen_blob_mismatches(required, observed).is_empty() {
+        Ok(())
+    } else {
+        Err(FROZEN_BLOB_MISMATCH)
+    }
+}
+
 pub struct EvidenceBinding<'a> {
     pub commit: Option<&'a str>,
     pub tree: Option<&'a str>,

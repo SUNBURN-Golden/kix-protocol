@@ -3,6 +3,7 @@
 mod probe;
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 #[test]
 fn memory_probe_reports_saturation_without_recreating_kernel() {
@@ -665,6 +666,181 @@ fn perf_probe_routes_kernel_new_through_one_helper() {
     assert_eq!(src.matches("Kernel::new(").count(), 1);
     assert_eq!(src.matches("fn construct_kernel(").count(), 1);
     assert!(!src.contains("kernel.clone()"));
+}
+
+// Synthetic 40-hex pins only; the frozen-blob tests below never read, hash,
+// copy or mutate any repository file.
+const PIN_KERNEL: &str = "1111111111111111111111111111111111111111";
+const PIN_QUARANTINE: &str = "2222222222222222222222222222222222222222";
+const PIN_EDGE: &str = "33333333333333333333333333333333333abcde";
+const PIN_MODEL: &str = "4444444444444444444444444444444444444444";
+const PINS: probe::FrozenBlobs<'static> = probe::FrozenBlobs {
+    kernel: PIN_KERNEL,
+    quarantine: PIN_QUARANTINE,
+    edge: PIN_EDGE,
+    model: PIN_MODEL,
+};
+const DRIFTED: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+#[test]
+fn frozen_blob_gate_accepts_only_exact_four_pin_match() {
+    let observed = probe::FrozenBlobs {
+        kernel: &String::from(PIN_KERNEL),
+        quarantine: &String::from(PIN_QUARANTINE),
+        edge: &String::from(PIN_EDGE),
+        model: &String::from(PIN_MODEL),
+    };
+    assert_eq!(probe::check_frozen_blobs(&PINS, &observed), Ok(()));
+    assert!(probe::frozen_blob_mismatches(&PINS, &observed).is_empty());
+}
+
+#[test]
+fn frozen_blob_gate_refuses_a_mismatch_on_each_of_the_four_pins() {
+    let single = [
+        (
+            probe::FrozenBlobs {
+                kernel: DRIFTED,
+                ..PINS
+            },
+            "kernel",
+        ),
+        (
+            probe::FrozenBlobs {
+                quarantine: DRIFTED,
+                ..PINS
+            },
+            "quarantine_capacity",
+        ),
+        (
+            probe::FrozenBlobs {
+                edge: DRIFTED,
+                ..PINS
+            },
+            "contract_edge_cases",
+        ),
+        (
+            probe::FrozenBlobs {
+                model: DRIFTED,
+                ..PINS
+            },
+            "model_v4",
+        ),
+    ];
+    for (observed, name) in single {
+        assert_eq!(probe::frozen_blob_mismatches(&PINS, &observed), [name]);
+        assert_eq!(
+            probe::check_frozen_blobs(&PINS, &observed),
+            Err(probe::FROZEN_BLOB_MISMATCH)
+        );
+    }
+    let all = probe::FrozenBlobs {
+        kernel: DRIFTED,
+        quarantine: DRIFTED,
+        edge: DRIFTED,
+        model: DRIFTED,
+    };
+    assert_eq!(
+        probe::frozen_blob_mismatches(&PINS, &all),
+        [
+            "kernel",
+            "quarantine_capacity",
+            "contract_edge_cases",
+            "model_v4"
+        ]
+    );
+    assert_eq!(
+        probe::check_frozen_blobs(&PINS, &all),
+        Err(probe::FROZEN_BLOB_MISMATCH)
+    );
+    // Exact equality: near-miss values of the edge pin are refused too.
+    let near = [
+        String::new(),
+        PIN_EDGE.to_uppercase(),
+        PIN_EDGE[..39].to_string(),
+        format!("{PIN_EDGE}\n"),
+        format!("{PIN_EDGE} "),
+        format!(" {PIN_EDGE}"),
+        format!("{PIN_EDGE}3"),
+    ];
+    for value in &near {
+        let observed = probe::FrozenBlobs {
+            edge: value,
+            ..PINS
+        };
+        assert_eq!(
+            probe::frozen_blob_mismatches(&PINS, &observed),
+            ["contract_edge_cases"]
+        );
+        assert_eq!(
+            probe::check_frozen_blobs(&PINS, &observed),
+            Err(probe::FROZEN_BLOB_MISMATCH)
+        );
+    }
+}
+
+#[test]
+fn example_runs_frozen_blob_gate_before_any_output() {
+    // Source characterization of the example's order: collect the four blobs,
+    // run the shared gate once, and only then run workloads or write files.
+    // Textual, not a semantic proof.
+    let src = include_str!("../examples/r1_perf_probe.rs");
+    let main = src.split_once("fn main()").unwrap().1;
+    let main = main.split_once("\n}\n").unwrap().0;
+    assert_eq!(src.matches("check_frozen_blobs(").count(), 1);
+    assert_eq!(src.matches("FROZEN_BLOB_MISMATCH").count(), 0);
+    assert!(!src.contains("frozen blob mismatch"));
+    assert!(!src.contains("kernel_blob != LOCKED_KERNEL"));
+    let gate = main
+        .find("probe::check_frozen_blobs(&REQUIRED, &observed)?;")
+        .unwrap();
+    assert_eq!(main.matches("\"hash-object\"").count(), 4);
+    assert!(main.rfind("\"hash-object\"").unwrap() < gate);
+    for output in [
+        "probe::run(",
+        "create_dir_all(",
+        "std::fs::write(",
+        "println!",
+        "write_workload(",
+        "write_binding(",
+    ] {
+        let first = main.find(output).unwrap();
+        assert!(gate < first, "{output} precedes the frozen-blob gate");
+    }
+    for constant in [
+        "LOCKED_KERNEL",
+        "LOCKED_QUARANTINE",
+        "LOCKED_EDGE",
+        "LOCKED_MODEL",
+    ] {
+        assert_eq!(src.matches(constant).count(), 2, "{constant}");
+    }
+}
+
+#[test]
+fn release_probe_extra_pins_match_worktree_blobs() {
+    let example = include_str!("../examples/r1_perf_probe.rs");
+    for (pin, path) in [
+        ("LOCKED_EDGE", "tests/contract_edge_cases.rs"),
+        ("LOCKED_MODEL", "tests/support/model_v4.rs"),
+    ] {
+        let prefix = format!("const {pin}: &str = \"");
+        let required = example
+            .lines()
+            .find_map(|line| line.strip_prefix(&prefix)?.strip_suffix("\";"))
+            .unwrap_or_else(|| panic!("missing {pin} declaration in r1_perf_probe.rs"));
+        let output = Command::new("git")
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .args(["hash-object", "--", path])
+            .output()
+            .expect("run git hash-object");
+        assert!(
+            output.status.success(),
+            "git hash-object failed for {path}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let observed = String::from_utf8(output.stdout).unwrap();
+        assert_eq!(required, observed.trim(), "{pin} differs from {path}");
+    }
 }
 
 // CSV columns: index, scheduled_ns, start_ns, end_ns, service_ns,
