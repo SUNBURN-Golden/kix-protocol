@@ -1,0 +1,23 @@
+$ cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings
+    Checking kix-types v0.0.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-types)
+    Checking kix-feature-semantics v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-feature-semantics)
+    Checking typenum v1.20.1
+    Checking const-oid v0.10.2
+    Checking serde_core v1.0.229
+    Checking cpufeatures v0.3.1
+    Checking cfg-if v1.0.4
+    Checking kix-kernel v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-kernel)
+    Checking kix-kernel-v5 v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-kernel-v5)
+    Checking kix-feature-ir v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-feature-ir)
+    Checking kix-delegated-exec v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-delegated-exec)
+    Checking hybrid-array v0.4.15
+    Checking serde v1.0.229
+    Checking bcs v0.2.1
+    Checking crypto-common v0.2.2
+    Checking block-buffer v0.12.1
+    Checking digest v0.11.3
+    Checking sha2 v0.11.0
+    Checking kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-bcs1)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.54s
+
+EXIT: 0

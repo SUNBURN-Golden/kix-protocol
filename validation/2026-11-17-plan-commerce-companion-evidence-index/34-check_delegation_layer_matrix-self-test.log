@@ -1,0 +1,9 @@
+self-test: detected removed DLG-17 row (missing in matrix: DLG-17)
+self-test: detected dangling path (DLG-06: chain citation reference/rights_scale/sui/sources/NO_SUCH_FILE.move does not exist)
+self-test: detected dangling symbol (DLG-06: chain citation reference/rights_scale/sui/sources/rights_scale.move::no_such_fn_9f3a is not defined in the file)
+self-test: detected duplicated DLG-17 row (duplicated in matrix: DLG-17 (2))
+self-test: detected unknown status (DLG-01: unknown status 'SUFFICIENT')
+self-test: detected mock test that does not cite the id (DLG-01: mock tests ['test_period_boundaries'] differ from docstring citations ['test_query_does_not_change_state_and_propose_is_a_memo'])
+self-test: detected MOCK_ONLY row with a chain citation (DLG-01: MOCK_ONLY needs none in chain and executor cells)
+self-test: detected id dropped from the Neither line (gap summary '- Neither:' lists ['DLG-02', 'DLG-03', 'DLG-04', 'DLG-05', 'DLG-07', 'DLG-08', 'DLG-09', 'DLG-10', 'DLG-11', 'DLG-12', 'DLG-14', 'DLG-15', 'DLG-16', 'DLG-17', 'DLG-18', 'DLG-19', 'DLG-21', 'DLG-24', 'DLG-25', 'DLG-27', 'DLG-28', 'DLG-29', 'DLG-30', 'DLG-31', 'DLG-33', 'DLG-34', 'DLG-35', 'DLG-36'] but the table gives ['DLG-01', 'DLG-02', 'DLG-03', 'DLG-04', 'DLG-05', 'DLG-07', 'DLG-08', 'DLG-09', 'DLG-10', 'DLG-11', 'DLG-12', 'DLG-14', 'DLG-15', 'DLG-16', 'DLG-17', 'DLG-18', 'DLG-19', 'DLG-21', 'DLG-24', 'DLG-25', 'DLG-27', 'DLG-28', 'DLG-29', 'DLG-30', 'DLG-31', 'DLG-33', 'DLG-34', 'DLG-35', 'DLG-36'])
+self-test: pass

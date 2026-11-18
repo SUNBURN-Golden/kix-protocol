@@ -1,0 +1,31 @@
+$ python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_admission_fsm.py -v
+test_adopt_with_a_reservation_but_no_ticket_source_is_required (test_admission_fsm.AdmissionFsmTests.test_adopt_with_a_reservation_but_no_ticket_source_is_required) ... ok
+test_cancel_before_issue_blocks_entry_and_cancel_after_issue_does_not_void_it (test_admission_fsm.AdmissionFsmTests.test_cancel_before_issue_blocks_entry_and_cancel_after_issue_does_not_void_it) ... ok
+test_catalogue_has_no_new_admission_command (test_admission_fsm.AdmissionFsmTests.test_catalogue_has_no_new_admission_command) ... ok
+test_entry_then_transfer_consumes_before_resale_can_move (test_admission_fsm.AdmissionFsmTests.test_entry_then_transfer_consumes_before_resale_can_move) ... ok
+test_expired_authorization_is_replaced_once (test_admission_fsm.AdmissionFsmTests.test_expired_authorization_is_replaced_once) ... ok
+test_external_sources_fail_closed_without_being_read (test_admission_fsm.AdmissionFsmTests.test_external_sources_fail_closed_without_being_read) ... ok
+test_issued_credential_is_consumed_once_and_replay_does_not_bump_version (test_admission_fsm.AdmissionFsmTests.test_issued_credential_is_consumed_once_and_replay_does_not_bump_version) ... ok
+test_listing_and_cancel_order_against_entry (test_admission_fsm.AdmissionFsmTests.test_listing_and_cancel_order_against_entry) ... ok
+test_loopback_rejects_fsm_names_and_matches_published_admit (test_admission_fsm.AdmissionFsmTests.test_loopback_rejects_fsm_names_and_matches_published_admit) ... {"admit":"probe","component":"integration-gate","correlationId":"e39711fbdc8a028e1b03dc7838ada1d3","durationMs":6,"event":"http_request","journalDecision":"probe","localFileJournal":false,"method":"GET","path":"/ready","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"e39711fbdc8a028e1b03dc7838ada1d3","status":200,"ts":"2026-11-15T22:28:52Z"}
+{"admit":"probe","component":"integration-gate","correlationId":"ba88317a3e4404d596b1db27000df11d","durationMs":0,"event":"http_request","journalDecision":"probe","localFileJournal":false,"method":"GET","path":"/health","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"ba88317a3e4404d596b1db27000df11d","status":200,"ts":"2026-11-15T22:28:52Z"}
+{"admit":"OK","component":"integration-gate","correlationId":"f329af78bcb9082aa0854248cc1bce98","durationMs":0,"error":"UNKNOWN_ACTION","event":"http_request","inFlight":1,"journalDecision":"not_attempted","localFileJournal":false,"maxInFlight":8,"method":"POST","path":"/x-kix-contract-only/local-call","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"f329af78bcb9082aa0854248cc1bce98","status":400,"ts":"2026-11-15T22:28:52Z"}
+{"admit":"OK","component":"integration-gate","correlationId":"5fea77c720e71a965e827d9d2152c5cb","durationMs":0,"error":"UNKNOWN_ACTION","event":"http_request","inFlight":1,"journalDecision":"not_attempted","localFileJournal":false,"maxInFlight":8,"method":"POST","path":"/x-kix-contract-only/local-call","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"5fea77c720e71a965e827d9d2152c5cb","status":400,"ts":"2026-11-15T22:28:52Z"}
+{"action":"admit","admit":"OK","component":"integration-gate","correlationId":"bbb4aef3b17a65909371db92c8f2b840","durationMs":0,"error":"TICKET_NOT_FOUND","event":"http_request","inFlight":1,"journalDecision":"inactive","localFileJournal":false,"maxInFlight":8,"method":"POST","operationId":"op-admit","path":"/x-kix-contract-only/local-call","productionConformance":false,"productionEndpoint":false,"productionReadiness":false,"protocolTruth":false,"queued":0,"requestId":"bbb4aef3b17a65909371db92c8f2b840","status":422,"ts":"2026-11-15T22:28:52Z"}
+ok
+test_restart_replays_journal_and_retry_is_duplicate (test_admission_fsm.AdmissionFsmTests.test_restart_replays_journal_and_retry_is_duplicate) ... ok
+test_restore_fails_closed_when_ownership_moves (test_admission_fsm.AdmissionFsmTests.test_restore_fails_closed_when_ownership_moves) ... ok
+test_settlement_commit_is_not_entry_and_a_granted_flag_rejects (test_admission_fsm.AdmissionFsmTests.test_settlement_commit_is_not_entry_and_a_granted_flag_rejects) ... ok
+test_settlement_source_that_breaks_fails_closed (test_admission_fsm.AdmissionFsmTests.test_settlement_source_that_breaks_fails_closed) ... ok
+test_stale_presentation_answer_is_credential_stale (test_admission_fsm.AdmissionFsmTests.test_stale_presentation_answer_is_credential_stale) ... ok
+test_ticket_source_that_breaks_is_unavailable_not_silent (test_admission_fsm.AdmissionFsmTests.test_ticket_source_that_breaks_is_unavailable_not_silent) ... ok
+test_transfer_then_entry_rejects_both_presentations (test_admission_fsm.AdmissionFsmTests.test_transfer_then_entry_rejects_both_presentations) ... ok
+test_unavailable_ownership_or_revocation_does_not_admit (test_admission_fsm.AdmissionFsmTests.test_unavailable_ownership_or_revocation_does_not_admit) ... ok
+test_unbound_mock_gate_still_rejects_a_second_scanner (test_admission_fsm.AdmissionFsmTests.test_unbound_mock_gate_still_rejects_a_second_scanner) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.232s
+
+OK
+
+EXIT: 0

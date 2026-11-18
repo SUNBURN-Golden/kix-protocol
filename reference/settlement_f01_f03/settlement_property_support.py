@@ -186,8 +186,6 @@ class Mirror:
             found.add("DISTRIBUTION_ORDER_MISMATCH")
         if self.order is not None and list(order) != self.order:
             found.add("DISTRIBUTION_ORDER_FROZEN")
-        if self.refund_face and not self.reclassified:
-            found.add("DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED")
         return found
 
     def refund_state_violations(self, rid, vals) -> set:
@@ -659,18 +657,19 @@ class MockDriver:
 
 # --- refund corpus (plan-settlement-multi-payee-refund-corpus) ----------------
 
-BEARER_RANK = {"NONE": 0, "UNDEFINED": 1, "FIXTURE_FULL_GROSS_RECLASS": 2}
+BEARER_RANK = {"NONE": 0, "REQUESTER": 1, "FIXTURE_FULL_GROSS_RECLASS": 2}
 REFUND_OPS = ("bind_refund", "observe_mock_cancel_acceptance")
 
 
 def check_refund_view(view: dict) -> None:
-    """Contract section 5 and section 7.6 (B0) refund predicates.
+    """Contract section 5 and section 7.6 (B5) refund predicates.
 
     Typed from the contract, not from the mock's control flow: the bearer
     label is derived only from refund_face and the reclass flag; a reclass
     reserves each payee's unpaid face as cancelled_unpaid and its already
     paid cash as recovery_due; a partial sum that reaches gross never
     reclassifies (asserted through the flag, not through a bearer rule).
+    Under B5 a partial refund never blocks distribution.
     """
 
     face = view["refund_face"]
@@ -682,9 +681,9 @@ def check_refund_view(view: dict) -> None:
     reclassified = view["fixture_reclassified"]
     bearer = view["refund_bearer_policy"]
     assert bearer == (
-        "FIXTURE_FULL_GROSS_RECLASS" if reclassified else "UNDEFINED" if face else "NONE"
+        "FIXTURE_FULL_GROSS_RECLASS" if reclassified else "REQUESTER" if face else "NONE"
     ), bearer
-    assert view["distribution_blocked"] is bool(face and not reclassified)
+    assert view["distribution_blocked"] is False
     lines = view["obligations"]
     assert view["recovery_due"] == sum(item["recovery_due"] for item in lines)
     if reclassified:
@@ -746,7 +745,7 @@ class RefundCorpusDriver(MockDriver):
             prev = self.bearer.get(cid)
             if prev is not None:
                 # Contract section 5: reclass needs refund_face == 0, so only
-                # NONE can move, and nothing leaves UNDEFINED or the reclass.
+                # NONE can move, and nothing leaves REQUESTER or the reclass.
                 assert rank == prev or prev == 0, (cid, prev, rank)
             self.bearer[cid] = rank
 
@@ -815,7 +814,8 @@ class RefundCorpusDriver(MockDriver):
         r = self.r
         if 0 < mirror.refund_face < mirror.gross and r.random() < 0.15:
             # Top up to exactly gross: contract section 5 never reclassifies
-            # a partial sum, so the claim stays bearer-UNDEFINED and blocked.
+            # a partial sum, so the claim stays bearer-REQUESTER (B5) and
+            # distribution keeps proceeding.
             rid = f"r-top-{len(mirror.refunds)}"
             vals = (mirror.gross - mirror.refund_face, mirror.beneficiary, "fixture-reason")
             expected = mirror.refund_state_violations(rid, vals)
@@ -1072,7 +1072,9 @@ class MachineDriver:
             return dict(refund_id=f"rf-{self.serial}", amount=amount, beneficiary_role="fixture-buyer", reason="fixture-reason"), not bad
         if op == "observe_mock_cancel_acceptance":
             left = (claim["refund_outstanding"] if claim else 1) or 1
-            amount = r.randint(1, max(1, left))
+            # Over-acceptance probe, as in RefundCorpusDriver.step_accept:
+            # keeps REFUND_ACCEPTANCE_EXCEEDS_OBLIGATION deliberately reachable.
+            amount = r.randint(1, max(1, left + (1 if r.random() < 0.15 else 0)))
             if bad:
                 amount = r.choice(BAD_MONEY)
             return dict(source_id=f"ac-{self.serial}", amount=amount), not bad

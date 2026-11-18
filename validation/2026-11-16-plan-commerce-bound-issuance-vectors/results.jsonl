@@ -1,0 +1,90 @@
+{"command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_reservation_fsm.py -v", "duration_seconds": 0.111, "exit_code": 0, "group": "narrow", "log": "narrow-00-0.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_bound_issuance_vectors.py -v", "duration_seconds": 1.252, "exit_code": 0, "group": "narrow", "log": "narrow-01-244.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_commerce_*.py' -v", "duration_seconds": 177.869, "exit_code": 0, "group": "narrow", "log": "narrow-02-506.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03", "duration_seconds": 1.957, "exit_code": 0, "group": "suites", "log": "suites-00-751.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission", "duration_seconds": 234.179, "exit_code": 0, "group": "suites", "log": "suites-01-955.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04", "duration_seconds": 15.829, "exit_code": 0, "group": "suites", "log": "suites-02-1173.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/ai_delegation -t reference/ai_delegation", "duration_seconds": 9.625, "exit_code": 0, "group": "suites", "log": "suites-03-1379.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/token_reward -t reference/token_reward", "duration_seconds": 54.919, "exit_code": 0, "group": "suites", "log": "suites-04-1574.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/provider_facts -t reference/provider_facts", "duration_seconds": 10.584, "exit_code": 0, "group": "suites", "log": "suites-05-1768.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/payment_effects -t reference/payment_effects", "duration_seconds": 1.347, "exit_code": 0, "group": "suites", "log": "suites-06-1966.log"}
+{"command": "python3.12 -B -m unittest discover -s reference/economics -t reference/economics", "duration_seconds": 1.143, "exit_code": 0, "group": "suites", "log": "suites-07-2165.log"}
+{"command": "python3.12 -B scripts/check_openapi_contract.py", "duration_seconds": 0.093, "exit_code": 0, "group": "contracts", "log": "contracts-00-2352.log"}
+{"command": "python3.12 -B scripts/check_openapi_contract.py --self-test", "duration_seconds": 0.189, "exit_code": 0, "group": "contracts", "log": "contracts-01-2512.log"}
+{"command": "python3.12 -B scripts/check_integration_gate_openapi.py", "duration_seconds": 0.073, "exit_code": 0, "group": "contracts", "log": "contracts-02-2684.log"}
+{"command": "python3.12 -B scripts/check_integration_gate_openapi.py --self-test", "duration_seconds": 0.096, "exit_code": 0, "group": "contracts", "log": "contracts-03-2852.log"}
+{"command": "python3.12 -B scripts/check_sdk_client.py", "duration_seconds": 0.298, "exit_code": 0, "group": "contracts", "log": "contracts-04-3032.log"}
+{"command": "python3.12 -B scripts/check_sdk_client.py --self-test", "duration_seconds": 0.374, "exit_code": 0, "group": "contracts", "log": "contracts-05-3186.log"}
+{"command": "python3.12 -B -m unittest integration_gate.test_offline_limits", "duration_seconds": 0.263, "exit_code": 0, "group": "contracts", "log": "contracts-06-3352.log"}
+{"command": "python3.12 -B scripts/verify_runtime_architecture.py", "duration_seconds": 0.049, "exit_code": 0, "group": "kernel", "log": "kernel-00-3527.log"}
+{"command": "python3.12 -B scripts/test_runtime_architecture.py", "duration_seconds": 0.51, "exit_code": 0, "group": "kernel", "log": "kernel-01-3686.log"}
+{"command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline", "duration_seconds": 7.413, "exit_code": 0, "group": "kernel", "log": "kernel-02-3842.log"}
+{"command": "cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings", "duration_seconds": 0.838, "exit_code": 0, "group": "kernel", "log": "kernel-03-4027.log"}
+{"command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check", "duration_seconds": 0.287, "exit_code": 0, "group": "kernel", "log": "kernel-04-4243.log"}
+{"command": "python3 scripts/check_status_register.py", "duration_seconds": 0.39, "exit_code": 0, "group": "documents", "log": "documents-00-4411.log"}
+{"command": "python3 scripts/check_status_register.py --self-test", "duration_seconds": 1.214, "exit_code": 0, "group": "documents", "log": "documents-01-4563.log"}
+{"command": "python3 scripts/check_producer_qualification_tuple.py", "duration_seconds": 0.088, "exit_code": 0, "group": "documents", "log": "documents-02-4728.log"}
+{"command": "python3 scripts/check_producer_qualification_tuple.py --self-test", "duration_seconds": 0.173, "exit_code": 0, "group": "documents", "log": "documents-03-4894.log"}
+{"command": "python3 validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py", "duration_seconds": 0.074, "exit_code": 0, "group": "documents", "log": "documents-04-5072.log"}
+{"command": "python3 validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py --self-test", "duration_seconds": 0.102, "exit_code": 0, "group": "documents", "log": "documents-05-5283.log"}
+{"command": "python3 scripts/check_rs_profile_traceability.py", "duration_seconds": 0.02, "exit_code": 0, "group": "documents", "log": "documents-06-5506.log"}
+{"command": "python3 scripts/check_rs_profile_traceability.py --self-test", "duration_seconds": 0.023, "exit_code": 0, "group": "documents", "log": "documents-07-5666.log"}
+{"command": "python3 scripts/check_read_model_source_map.py", "duration_seconds": 0.734, "exit_code": 0, "group": "documents", "log": "documents-08-5839.log"}
+{"command": "python3 scripts/check_read_model_source_map.py --self-test", "duration_seconds": 11.798, "exit_code": 0, "group": "documents", "log": "documents-09-5998.log"}
+{"command": "python3 scripts/check_docs_index.py", "duration_seconds": 0.034, "exit_code": 0, "group": "documents", "log": "documents-10-6170.log"}
+{"command": "python3 scripts/check_docs_index.py --self-test", "duration_seconds": 0.048, "exit_code": 0, "group": "documents", "log": "documents-11-6318.log"}
+{"command": "python3 scripts/check_i12_proof_ids.py", "duration_seconds": 0.02, "exit_code": 0, "group": "documents", "log": "documents-12-6478.log"}
+{"command": "python3 scripts/check_i12_proof_ids.py --self-test", "duration_seconds": 0.022, "exit_code": 0, "group": "documents", "log": "documents-13-6628.log"}
+{"command": "python3 scripts/check_delegation_layer_matrix.py", "duration_seconds": 0.052, "exit_code": 0, "group": "documents", "log": "documents-14-6791.log"}
+{"command": "python3 scripts/check_delegation_layer_matrix.py --self-test", "duration_seconds": 0.164, "exit_code": 0, "group": "documents", "log": "documents-15-6952.log"}
+{"command": "python3 scripts/check_rs_predicate_evidence_map.py", "duration_seconds": 0.073, "exit_code": 0, "group": "documents", "log": "documents-16-7125.log"}
+{"command": "python3 scripts/check_rs_predicate_evidence_map.py --self-test", "duration_seconds": 0.333, "exit_code": 0, "group": "documents", "log": "documents-17-7288.log"}
+{"command": "python3 scripts/check_rs_im_evidence_map.py", "duration_seconds": 0.063, "exit_code": 0, "group": "documents", "log": "documents-18-7463.log"}
+{"command": "python3 scripts/check_rs_im_evidence_map.py --self-test", "duration_seconds": 0.36, "exit_code": 0, "group": "documents", "log": "documents-19-7619.log"}
+{"command": "python3 scripts/check_tl_predicate_evidence_map.py", "duration_seconds": 0.028, "exit_code": 0, "group": "documents", "log": "documents-20-7786.log"}
+{"command": "python3 scripts/check_tl_predicate_evidence_map.py --self-test", "duration_seconds": 0.08, "exit_code": 0, "group": "documents", "log": "documents-21-7949.log"}
+{"command": "python3 scripts/check_contract_error_codes.py", "duration_seconds": 1.317, "exit_code": 0, "group": "documents", "log": "documents-22-8123.log"}
+{"command": "python3 scripts/check_contract_error_codes.py --self-test", "duration_seconds": 217.092, "exit_code": 0, "group": "documents", "log": "documents-23-8281.log"}
+{"command": "python3 scripts/check_adapter_identity_map.py", "duration_seconds": 0.04, "exit_code": 0, "group": "documents", "log": "documents-24-8453.log"}
+{"command": "python3 scripts/check_adapter_identity_map.py --self-test", "duration_seconds": 0.201, "exit_code": 0, "group": "documents", "log": "documents-25-8610.log"}
+{"command": "python3 scripts/check_v5_transition_evidence_map.py", "duration_seconds": 0.036, "exit_code": 0, "group": "documents", "log": "documents-26-8780.log"}
+{"command": "python3 scripts/check_v5_transition_evidence_map.py --self-test", "duration_seconds": 0.487, "exit_code": 0, "group": "documents", "log": "documents-27-8944.log"}
+{"command": "python3 scripts/check_readiness_evidence_map.py", "duration_seconds": 0.103, "exit_code": 0, "group": "documents", "log": "documents-28-9120.log"}
+{"command": "python3 scripts/check_readiness_evidence_map.py --self-test", "duration_seconds": 3.168, "exit_code": 0, "group": "documents", "log": "documents-29-9280.log"}
+{"command": "python3 scripts/check_settlement_evidence_map.py", "duration_seconds": 0.049, "exit_code": 0, "group": "documents", "log": "documents-30-9452.log"}
+{"command": "python3 scripts/check_settlement_evidence_map.py --self-test", "duration_seconds": 0.763, "exit_code": 0, "group": "documents", "log": "documents-31-9613.log"}
+{"command": "python3 scripts/check_bra_evidence_map.py", "duration_seconds": 0.075, "exit_code": 0, "group": "documents", "log": "documents-32-9786.log"}
+{"command": "python3 scripts/check_bra_evidence_map.py --self-test", "duration_seconds": 2.501, "exit_code": 0, "group": "documents", "log": "documents-33-9940.log"}
+{"command": "python3 scripts/check_credit_evidence_map.py", "duration_seconds": 0.05, "exit_code": 0, "group": "documents", "log": "documents-34-10106.log"}
+{"command": "python3 scripts/check_credit_evidence_map.py --self-test", "duration_seconds": 1.293, "exit_code": 0, "group": "documents", "log": "documents-35-10263.log"}
+{"command": "python3 scripts/check_primary_price_fee_evidence_map.py", "duration_seconds": 0.058, "exit_code": 0, "group": "documents", "log": "documents-36-10433.log"}
+{"command": "python3 scripts/check_primary_price_fee_evidence_map.py --self-test", "duration_seconds": 2.261, "exit_code": 0, "group": "documents", "log": "documents-37-10602.log"}
+{"command": "python3 scripts/check_ai_delegation_evidence_map.py", "duration_seconds": 0.086, "exit_code": 0, "group": "documents", "log": "documents-38-10783.log"}
+{"command": "python3 scripts/check_ai_delegation_evidence_map.py --self-test", "duration_seconds": 4.663, "exit_code": 0, "group": "documents", "log": "documents-39-10948.log"}
+{"command": "python3 scripts/check_lifecycle_adr_evidence_map.py", "duration_seconds": 0.034, "exit_code": 0, "group": "documents", "log": "documents-40-11125.log"}
+{"command": "python3 scripts/check_lifecycle_adr_evidence_map.py --self-test", "duration_seconds": 0.308, "exit_code": 0, "group": "documents", "log": "documents-41-11290.log"}
+{"command": "python3 scripts/check_contract_invariants_evidence_map.py", "duration_seconds": 0.046, "exit_code": 0, "group": "documents", "log": "documents-42-11467.log"}
+{"command": "python3 scripts/check_contract_invariants_evidence_map.py --self-test", "duration_seconds": 1.745, "exit_code": 0, "group": "documents", "log": "documents-43-11638.log"}
+{"command": "python3 scripts/check_toss_card_profile_evidence_map.py", "duration_seconds": 0.034, "exit_code": 0, "group": "documents", "log": "documents-44-11821.log"}
+{"command": "python3 scripts/check_toss_card_profile_evidence_map.py --self-test", "duration_seconds": 0.372, "exit_code": 0, "group": "documents", "log": "documents-45-11990.log"}
+{"command": "python3 scripts/check_bcs1_evidence_map.py", "duration_seconds": 0.027, "exit_code": 0, "group": "documents", "log": "documents-46-12171.log"}
+{"command": "python3 scripts/check_bcs1_evidence_map.py --self-test", "duration_seconds": 0.153, "exit_code": 0, "group": "documents", "log": "documents-47-12327.log"}
+{"command": "python3 scripts/check_performance_measurement_evidence_map.py", "duration_seconds": 0.064, "exit_code": 0, "group": "documents", "log": "documents-48-12495.log"}
+{"command": "python3 scripts/check_performance_measurement_evidence_map.py --self-test", "duration_seconds": 1.514, "exit_code": 0, "group": "documents", "log": "documents-49-12670.log"}
+{"command": "python3 scripts/check_feature_semantics_evidence_map.py", "duration_seconds": 0.032, "exit_code": 0, "group": "documents", "log": "documents-50-12857.log"}
+{"command": "python3 scripts/check_feature_semantics_evidence_map.py --self-test", "duration_seconds": 0.387, "exit_code": 0, "group": "documents", "log": "documents-51-13026.log"}
+{"command": "python3 scripts/check_integration_gate_contract_evidence_map.py", "duration_seconds": 0.061, "exit_code": 0, "group": "documents", "log": "documents-52-13207.log"}
+{"command": "python3 scripts/check_integration_gate_contract_evidence_map.py --self-test", "duration_seconds": 2.798, "exit_code": 0, "group": "documents", "log": "documents-53-13384.log"}
+{"command": "python3 scripts/check_evidence_map_rollup.py", "duration_seconds": 0.033, "exit_code": 0, "group": "documents", "log": "documents-54-13573.log"}
+{"command": "python3 scripts/check_evidence_map_rollup.py --self-test", "duration_seconds": 0.025, "exit_code": 0, "group": "documents", "log": "documents-55-13731.log"}
+{"command": "python3 scripts/check_class_b_index.py", "duration_seconds": 0.092, "exit_code": 0, "group": "documents", "log": "documents-56-13901.log"}
+{"command": "python3 scripts/check_class_b_index.py --self-test", "duration_seconds": 0.025, "exit_code": 0, "group": "documents", "log": "documents-57-14053.log"}
+{"command": "python3 scripts/check_ci_checker_wiring.py", "duration_seconds": 0.038, "exit_code": 0, "group": "documents", "log": "documents-58-14217.log"}
+{"command": "python3 scripts/check_ci_checker_wiring.py --self-test", "duration_seconds": 0.022, "exit_code": 0, "group": "documents", "log": "documents-59-14373.log"}
+{"command": "python3 scripts/check_ci_test_discovery.py", "duration_seconds": 0.102, "exit_code": 0, "group": "documents", "log": "documents-60-14541.log"}
+{"command": "python3 scripts/check_ci_test_discovery.py --self-test", "duration_seconds": 0.077, "exit_code": 0, "group": "documents", "log": "documents-61-14697.log"}
+{"command": "python3 scripts/check_loopback_host.py", "duration_seconds": 0.044, "exit_code": 0, "group": "documents", "log": "documents-62-14865.log"}
+{"command": "python3 scripts/check_loopback_host.py --self-test", "duration_seconds": 0.025, "exit_code": 0, "group": "documents", "log": "documents-63-15017.log"}
+{"command": "python3 scripts/check_cargo_offline_cache.py", "duration_seconds": 0.084, "exit_code": 0, "group": "documents", "log": "documents-64-15181.log"}
+{"command": "python3 scripts/check_cargo_offline_cache.py --self-test", "duration_seconds": 0.08, "exit_code": 0, "group": "documents", "log": "documents-65-15339.log"}
+{"command": "python3 scripts/check_stage5_host.py --self-test", "duration_seconds": 0.023, "exit_code": 0, "group": "documents", "log": "documents-66-15508.log"}

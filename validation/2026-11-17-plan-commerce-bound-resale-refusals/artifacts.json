@@ -1,0 +1,47 @@
+{
+  "note": "Detached artifact identities; this manifest and command/evidence reports are excluded to avoid self-reference.",
+  "artifacts": [
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_bound_resale_inputs_v1.json",
+      "bytes": 27034,
+      "sha256": "ece9cf4e094086b5aacc13cf249e8da88e58548b2f57536fcc12507914be55d8",
+      "gitBlob": "cfadac0596e4091d43f06701e95da0c5abb95eda"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_bound_resale_receipts_v1.json",
+      "bytes": 693627,
+      "sha256": "1c3c8d4a7c87a9900c56844867af055521995566fd8bf4b26ac99dcd13e6e229",
+      "gitBlob": "5e22af0834a46e5d2b57ef656ced08f910ed04e9"
+    },
+    {
+      "path": "reference/booking_resale_admission/test_commerce_bound_resale_vectors.py",
+      "bytes": 30045,
+      "sha256": "ddb92cd32dc6969931194a482d72b57afe64c4f7ac17919396b2951925e0c0de",
+      "gitBlob": "5d4642b5a10fff1db4ca149b52e752ac5c481d23"
+    },
+    {
+      "path": "reference/booking_resale_admission/README.md",
+      "bytes": 271408,
+      "sha256": "2f0a40e1afe03707fa07a090dbacd1a34181a3a8f79b90aa0af895ceb978a2f0",
+      "gitBlob": "632c6651e0b5772eb0298ba6bc5e77414aa0c326"
+    },
+    {
+      "path": "docs/README.md",
+      "bytes": 145793,
+      "sha256": "a24be672c0a42e006ebfd292e394c2d683a895150a50682d0d612999b0ac2a24",
+      "gitBlob": "fcb9d8569db15b6a7aa96c512c0e5975f2539065"
+    },
+    {
+      "path": "validation/2026-11-17-plan-commerce-bound-resale-refusals/coverage.md",
+      "bytes": 4763,
+      "sha256": "d7964b3adbbcd992b033bf4f100c0d01d04c6255cfed084284574f4f174d8d8c",
+      "gitBlob": "2426bd9497ef03248e390bc101238a256fbe245c"
+    },
+    {
+      "path": "validation/2026-11-17-plan-commerce-bound-resale-refusals/check_preservation.py",
+      "bytes": 2648,
+      "sha256": "6d1d19dd281927647f8e3b6b84a98416a3e646a00c4f0a3b652b65291d3d86f0",
+      "gitBlob": "62601c4985496a15e39d33fcfa0fa5a83f6ba239"
+    }
+  ]
+}

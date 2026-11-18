@@ -1,0 +1,2 @@
+PASS: 110 protected files match before/after (108 preserved reference files, both required kernel blobs).
+PASS: protected path Git diff and untracked additions empty; guided CLI modes have byte-identical stdout and empty stderr.

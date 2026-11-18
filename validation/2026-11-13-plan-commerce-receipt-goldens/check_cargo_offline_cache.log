@@ -1,0 +1,10 @@
+$ python3.12 -B scripts/check_cargo_offline_cache.py
+{
+  "cargo_home": "/home/box/.cargo",
+  "lock_sha256": "a948a1b687de2727ad717db0f7a0aa4159ecf5258e52e18eccf05cc08329d83e",
+  "missing": [],
+  "present": 18,
+  "total": 18
+}
+
+EXIT: 0

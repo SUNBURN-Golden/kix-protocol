@@ -1,0 +1,14 @@
+.................F...........................................................
+======================================================================
+FAIL: test_stdin_init_ack_flushed_before_reading_requests_and_no_output_retry (test_delegation_cli.DelegationCliTests.test_stdin_init_ack_flushed_before_reading_requests_and_no_output_retry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-delegation-guided-init/reference/ai_delegation/test_delegation_cli.py", line 96, in test_stdin_init_ack_flushed_before_reading_requests_and_no_output_retry
+    self.assertEqual(target.write.call_count, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1
+
+----------------------------------------------------------------------
+Ran 77 tests in 10.573s
+
+FAILED (failures=1)

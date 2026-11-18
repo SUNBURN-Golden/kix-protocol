@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_credit_evidence_map.py
+credit evidence map ok: rows=24 headings=24 items=5 citations=134 COVERED=16 PARTIAL=4 NOT_COVERED=1 OPEN=3
+
+EXIT: 0

@@ -1,0 +1,36 @@
+{"command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3 -m unittest test_reward_model.PoolConservationTests test_tl4_model_properties.PoolPropertyTests test_tl4_fuzz_boundaries", "exit": 0, "seconds": 2.11, "log": "model-baseline.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3 -m unittest test_pool_session test_pool_cli test_pool_console", "exit": 0, "seconds": 2.379, "log": "pool-focused.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3 -m unittest test_pool_session test_pool_cli test_pool_console", "exit": 0, "seconds": 1.963, "log": "pool-focused-final.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs_index.py", "exit": 0, "seconds": 0.041, "log": "check_docs_index.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs_index.py --self-test", "exit": 0, "seconds": 0.054, "log": "check_docs_index-self-test.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_tl_predicate_evidence_map.py", "exit": 0, "seconds": 0.031, "log": "check_tl_predicate_evidence_map.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_tl_predicate_evidence_map.py --self-test", "exit": 0, "seconds": 0.085, "log": "check_tl_predicate_evidence_map-self-test.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_class_b_index.py", "exit": 0, "seconds": 0.106, "log": "check_class_b_index.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_class_b_index.py --self-test", "exit": 0, "seconds": 0.028, "log": "check_class_b_index-self-test.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_ci_checker_wiring.py", "exit": 0, "seconds": 0.038, "log": "check_ci_checker_wiring.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_ci_checker_wiring.py --self-test", "exit": 0, "seconds": 0.023, "log": "check_ci_checker_wiring-self-test.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_ci_test_discovery.py", "exit": 0, "seconds": 0.102, "log": "check_ci_test_discovery.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_ci_test_discovery.py --self-test", "exit": 0, "seconds": 0.084, "log": "check_ci_test_discovery-self-test.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_openapi_contract.py", "exit": 0, "seconds": 0.092, "log": "check_openapi_contract.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_openapi_contract.py --self-test", "exit": 0, "seconds": 0.198, "log": "check_openapi_contract-self-test.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/verify_runtime_architecture.py", "exit": 0, "seconds": 0.039, "log": "runtime-architecture.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_integration_gate_openapi.py", "exit": 0, "seconds": 0.079, "log": "check_integration_gate_openapi.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_integration_gate_openapi.py --self-test", "exit": 0, "seconds": 0.108, "log": "check_integration_gate_openapi-self-test.log"}
+{"command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline", "exit": 101, "seconds": 0.122, "log": "kernel-tests.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_runtime_architecture.py", "exit": 0, "seconds": 20.43, "log": "runtime-architecture-regressions.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/token_reward -t reference/token_reward", "exit": 1, "seconds": 76.081, "log": "token-reward-discovery.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=reference/token_reward python3 -m unittest test_reward_console_subprocess.RewardConsoleSubprocessTests.test_source_incomplete_no_dispatch", "exit": 0, "seconds": 20.695, "log": "existing-reward-timeout-diagnostic.log"}
+{"command": "cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline", "exit": 101, "seconds": 0.36, "log": "workspace-tests.log"}
+{"command": "cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings", "exit": 101, "seconds": 0.084, "log": "workspace-clippy.log"}
+{"command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check", "exit": 0, "seconds": 0.327, "log": "workspace-fmt.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_cargo_offline_cache.py", "exit": 0, "seconds": 0.073, "log": "cargo-cache-diagnostic.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/pool_cli.py --fixture reference/token_reward/fixtures/pool_session.json --requests reference/token_reward/fixtures/pool_journey.jsonl", "exit": 0, "seconds": 0.041, "stdout": "pool-cli-journey.stdout", "stderr": "pool-cli-journey.stderr", "exit_file": "pool-cli-journey.exit"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/pool_cli.py --fixture reference/token_reward/fixtures/pool_session.json --requests reference/token_reward/fixtures/pool_boundaries.jsonl", "exit": 1, "seconds": 0.04, "stdout": "pool-cli-boundaries.stdout", "stderr": "pool-cli-boundaries.stderr", "exit_file": "pool-cli-boundaries.exit"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/pool_console.py --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_journey.txt", "exit": 0, "seconds": 0.054, "stdout": "pool-console-journey.stdout", "stderr": "pool-console-journey.stderr", "exit_file": "pool-console-journey.exit"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 reference/token_reward/pool_console.py --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_boundaries.txt", "exit": 1, "seconds": 0.039, "stdout": "pool-console-boundaries.stdout", "stderr": "pool-console-boundaries.stderr", "exit_file": "pool-console-boundaries.exit"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 validation/2026-11-09-plan-plan-local-pool-accounting-workbench/verify_preservation.py", "exit": 0, "seconds": 0.536, "log": "protected-preservation.log"}
+{"command": "git diff --check", "exit": 0, "seconds": 0.009, "log": "patch-whitespace.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/token_reward -t reference/token_reward", "exit": 0, "seconds": 50.989, "log": "token-reward-discovery-final.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 validation/2026-11-09-plan-plan-local-pool-accounting-workbench/verify_preservation.py", "exit": 0, "seconds": 0.233, "log": "protected-preservation-final.log"}
+{"command": "env PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_docs_index.py", "exit": 0, "seconds": 0.038, "log": "docs-index-final.log"}
+{"command": "git diff --check", "exit": 0, "seconds": 0.007, "log": "patch-whitespace-final.log"}

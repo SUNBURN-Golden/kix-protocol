@@ -1,0 +1,82 @@
+[
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/booking_resale_admission",
+      "-t",
+      "reference/booking_resale_admission",
+      "-p",
+      "test_commerce_resale_expiry_vectors.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "tests": 8,
+    "elapsed_seconds": 1.13,
+    "log": "expiry-tests.log"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/booking_resale_admission",
+      "-t",
+      "reference/booking_resale_admission",
+      "-p",
+      "test_resale*.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "tests": 228,
+    "elapsed_seconds": 21.416,
+    "log": "resale-tests.log"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/booking_resale_admission",
+      "-t",
+      "reference/booking_resale_admission",
+      "-p",
+      "test_commerce_*.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "tests": 142,
+    "elapsed_seconds": 92.076,
+    "log": "commerce-tests.log"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/booking_resale_admission",
+      "-t",
+      "reference/booking_resale_admission",
+      "-p",
+      "test_commerce_companion_evidence_index.py",
+      "-v"
+    ],
+    "exit_code": 0,
+    "tests": 6,
+    "elapsed_seconds": 10.046,
+    "log": "companion-tests.log"
+  }
+]

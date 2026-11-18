@@ -195,3 +195,51 @@ All commands ran in the foreground in Python 3.13.5 and Node 24.22.1. The three 
 | `git diff --check` | Exit 0 |
 
 Exact-head CI: the round-1 head does not exist yet (supervisor commits); no exact-head run ID, status or conclusion is claimed. Per the ledger row, round-0 exact-head CI passed; that evidence does not transfer to the round-1 head (AGENTS.md §6, §10). Merge authorization remains with the User.
+
+## Merge resolution round (2026-11-18)
+
+The supervisor started `git merge origin/main` into this branch; it stopped with the two insertion conflicts predicted by the fix-round-1 merge preview. This round resolved them in the worktree only. Node head `bd2b5721541efd8ba74cc6c53e7c1f49ab5d604c`; `MERGE_HEAD` (cached `origin/main`) `b2357bc4d3f6de2e7dd0a09f53596f24d0a944f7`; merge base `22d05a0c82693ad4575a72c2d342b4e47114447f`; `git rev-list --left-right --count HEAD...MERGE_HEAD` = 2/339. No commit, push, abort or network action was performed; the supervisor commits the merge. No fetch was run (supervisor no-network rule); the cached main pin is unchanged from fix round 1.
+
+### Conflict resolutions (both sides' intent kept)
+
+1. `.github/workflows/protocol.yml`, stdlib offline document-check step: main's three new checker pairs (`check_integration_gate_contract_evidence_map.py`, `check_evidence_map_rollup.py`, `check_class_b_index.py`, each plain and `--self-test`) are kept in main's order, and this node's `check_sdk_compat_manifest_evidence_map.py` pair is re-applied after them, before `check_ci_checker_wiring.py`. No other workflow line changed by this round.
+2. `docs/README.md`, `## 2026-10-26 검증 기록 색인` section: main's `plan-plan-integration-gate-contract-clause-ev` bullet is kept first and this node's `plan-plan-sdk-compat-manifest-clause-evidence` bullet (with the decision-record link) is re-applied after it. Both bullets unchanged in text.
+
+Only three files were modified by both sides (`comm -12` of the two base-diff name lists): the two above and `sdk/conformance/conformance.test.mjs`, which git auto-merged. The auto-merge was verified to be the exact union: the added/removed line content of `git diff HEAD -- <file>` equals that of `git diff <base> MERGE_HEAD -- <file>`, and symmetrically for the main side (both comparisons byte-equal). Main's negative-vector matrix and this node's contract-order test are both present; the conformance suite passes 8/8 with both.
+
+### Protected bytes after resolution
+
+- Locked blobs: `git hash-object` gives `69564b166f0c27f9af5d8422f0a466b18d74c20f` (kernel `lib.rs`) and `b607996c83a119c349f1cc90469ac1ba82764e20` (`quarantine_capacity.rs`) — match, re-checked after all test runs.
+- `reference/v0.3-rc1/**`: empty diff against both HEAD and MERGE_HEAD — byte-identical to both parents.
+- `runtime/**`: empty diff against MERGE_HEAD — the merged Rust tree is exactly main's; the node never touched it.
+- `sdk/generated/`, `sdk/compat/manifests/`, `sdk/compat/profiles/`, `sdk/generate/`, `sdk/src/`, `docs/contracts/sdk/`: empty diff against node HEAD — unchanged. `sdk/compat/verify_compat.mjs`: empty diff against node HEAD (main did not touch it); the owner-authorized verifier state is preserved. Main's new `sdk/conformance/vectors/manifest-verifier-negative.vectors.json` and `sdk/README.md` update come in verbatim.
+- `git diff --cached --check` on the two resolved files: exit 0. The 598 trailing-whitespace flags elsewhere in the cached diff are all main's verbatim fixture/transcript bytes (identical to MERGE_HEAD); they were not edited.
+- Resolved `protocol.yml` parses as YAML (`yaml.safe_load`, exit 0).
+
+### Commands actually run and actual results (merge resolution round)
+
+Foreground, Python 3.13.5, Node v24.22.1, in the worktree.
+
+| Command | Actual result |
+|---|---|
+| `python3 scripts/check_sdk_compat_manifest_evidence_map.py` / `--self-test` | Exit 0 / exit 0 |
+| `python3 scripts/check_ci_checker_wiring.py` / `--self-test` | Exit 0 / exit 0 |
+| `python3 scripts/check_docs_index.py` / `--self-test` | Exit 0 / exit 0 |
+| `python3 scripts/check_status_register.py` / `--self-test` | Exit 0 / exit 0 |
+| `python3 scripts/check_integration_gate_contract_evidence_map.py` / `--self-test` | Exit 0 / exit 0 |
+| `python3 scripts/check_evidence_map_rollup.py` / `--self-test` | Exit 0 / exit 0 |
+| `python3 scripts/check_class_b_index.py` / `--self-test` | Exit 0 / exit 0 |
+| Full merged `Stdlib offline document checks` run block (69 `python3` commands, extracted from the resolved `protocol.yml` and executed in order) | Exit 0. 69/69 passed |
+| `python3 scripts/check_ci_test_discovery.py` / `--self-test` | Exit 0 / exit 0. reference_suites=9 node_tests=8 modules=4 excluded=3 |
+| `python3 scripts/check_sdk_client.py` / `--self-test` | Exit 0 / exit 0. commands=84 node=24.22.1 sourceSha256=ed827de1… |
+| `npm --prefix sdk run conformance` | Exit 0. tests 8, pass 8, fail 0 — includes the node's "manifest verifier reports failures in contract order" and main's "manifest-v1 verifier negative vectors reject exactly one fault each" |
+| `npm --prefix sdk run verify-compat` | Exit 0. `{"ok":true,"manifest_sha256":"eec17505…","profile_kind":"BOOTSTRAP","profile_revision":"bootstrap-2"}` |
+| `python3 -m unittest integration_gate.test_http_gate readiness.test_faults` | Exit 0. OK; self-test: pass |
+| Reference suites via `python3 -m unittest discover -s reference/<suite> -t reference/<suite>` | settlement_f01_f03 224 OK; booking_resale_admission 1052 OK; credit_advance_f04 284 OK; token_reward 397 OK; provider_facts 86 OK; payment_effects 28 OK; economics 99 OK; ai_delegation: first run 182 ran / 1 failure, full rerun 182 OK (see below) |
+| `python3 scripts/check_openapi_contract.py` / `--self-test`; `python3 scripts/check_integration_gate_openapi.py` / `--self-test`; `python3 -m unittest integration_gate.test_offline_limits` | All exit 0 |
+| `python3 -m unittest discover -s durable -t . -p 'test_*.py'` | Exit 0. Ran 98 tests, OK |
+| `git hash-object` on both locked kernel files (after all runs) | Both required hashes match |
+
+ai_delegation first-run failure: `test_guided_eof_and_output_failures_stop_queued_sentinel (eof=8)` — "console must receive replies before input EOF", a subprocess timing assertion. The suite is byte-identical to MERGE_HEAD (empty diff), so the merge did not introduce it. The single test passes in isolation (1 test, OK) and the full suite passes on rerun (182 tests, OK). Recorded as an environment/load flake in main's verbatim content, not a merge regression; no file was changed for it.
+
+Explicit non-claims this round: `analytics_audit` and `authenticated_export` test suites were not completed — they are main's verbatim new modules, referenced by no workflow in `.github/workflows/`; an `analytics_audit` discover run began compiling a heavy Rust/polars dependency tree and was stopped at the 15-minute foreground timeout (no worktree pollution; `git status` shows no untracked files). `onsale` has no test files. The Rust workspace was not rebuilt or retested: `runtime/**` is byte-identical to MERGE_HEAD, whose own main CI covers it; that evidence is cited by tree identity, not transferred to this merge head (AGENTS.md §6). No exact-head CI run ID, status or conclusion is claimed for the uncommitted merge result; the supervisor commits it and exact-head CI follows. Merge authorization remains with the User.

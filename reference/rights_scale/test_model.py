@@ -187,6 +187,22 @@ class RangeTable(unittest.TestCase):
             args.update(kwargs)
             self.assertTrue(aborts(model.EPolicy, Show, **args), kwargs)
 
+    def test_create_bps_sum_boundaries_preserve_supplied_values(self):
+        # Synthetic allocations around the existing ceiling, not commercial choices.
+        for organizer_bps, platform_bps in (
+                (4999, 5000), (0, 9999), (9999, 0),
+                (5000, 5000), (0, 10000), (10000, 0),
+                (5000, 5001), (0, 10001), (10001, 0)):
+            with self.subTest(organizer_bps=organizer_bps, platform_bps=platform_bps):
+                kwargs = dict(claim=False, seal=False, organizer_bps=organizer_bps,
+                              platform_bps=platform_bps)
+                if organizer_bps + platform_bps <= 10000:
+                    show = make(**kwargs)
+                    self.assertEqual((show.organizer_bps, show.platform_bps),
+                                     (organizer_bps, platform_bps))
+                else:
+                    self.assertTrue(aborts(model.EPolicy, make, **kwargs))
+
 
 class Creation(unittest.TestCase):
     def test_nothing_can_be_consumed_before_seal(self):
@@ -386,10 +402,40 @@ class Predicates(unittest.TestCase):
         self.assertEqual(allocation[3:], (100000, 95000, 2000, 3000))
 
     def test_each_issue_emits_two_events(self):
-        show = make()
-        before = len(show.events)
-        show.bundle('issuer', 0, 3, 3, 'a')
-        self.assertEqual(len(show.events) - before, 6)
+        for n in range(1, model.MAX_BUNDLE_CHAIN + 1):
+            with self.subTest(issuances=n):
+                # The unchanged fixture maximum crosses three pages from slot 2.
+                show = make(seated=16, ga=0, page_size=4)
+                before = len(show.events)
+                tickets = show.bundle('issuer', 2, n, n, 'a')
+                events = show.events[before:]
+                self.assertEqual(len(tickets), n)
+                self.assertEqual(len(events), 2 * n)
+                self.assertEqual(sum(e[0] == 'Issuance' for e in events), n)
+                self.assertEqual(sum(e[0] == 'Change' for e in events), n)
+                show.check_invariants()
+
+    def test_recorded_profile_event_budget_arithmetic(self):
+        profile = (HERE.parents[1] / 'docs/contracts/RIGHTS_SCALE_PROFILE.md').read_text()
+        section = profile.split('## 6. ', 1)[1].split('\n## 7. ', 1)[0]
+        rows = [line.split('|')[1:-1] for line in section.splitlines()
+                if line.startswith('|')]
+        event_rows = [row for row in rows if row[0].strip() == '`max_num_event_emit`']
+        self.assertEqual(len(event_rows), 1)
+        event_budget = int(event_rows[0][1].strip())
+        self.assertEqual(event_budget, 1024)
+
+        # test_each_issue_emits_two_events checks this rate on actual fixture bundles.
+        # Integer arithmetic only: no oversized bundles or PTB feasibility claim.
+        events_per_issuance = 2
+        self.assertEqual(event_budget // events_per_issuance, 512)
+        for issuances, required, remaining, fits in (
+                (511, 1022, 2, True), (512, 1024, 0, True), (513, 1026, -2, False)):
+            with self.subTest(issuances=issuances):
+                actual_required = issuances * events_per_issuance
+                self.assertEqual(actual_required, required)
+                self.assertEqual(event_budget - actual_required, remaining)
+                self.assertEqual(actual_required <= event_budget, fits)
 
     def test_the_issuance_event_carries_the_slot_and_the_generation(self):
         # IM-04 and IM-29: the Issuance event keeps its slot and generation
