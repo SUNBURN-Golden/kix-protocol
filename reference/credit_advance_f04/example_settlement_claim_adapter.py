@@ -61,8 +61,9 @@ def run_example(*, policy: dict, amount: object, beneficiary_role: object) -> di
 
 
 if __name__ == "__main__":
-    print(json.dumps(run_example(
+    run_example(
         policy=dict(kind="PRIMARY_FEE_BPS", fee_bps=500,
                     residual_payee="fixture-organizer", fee_payee="fixture-platform"),
         amount=40_000, beneficiary_role="fixture-beneficiary",
-    ), indent=2, sort_keys=True))
+    )
+    print(json.dumps({"status": "completed"}))

@@ -307,3 +307,38 @@ violation or contract-undefined semantic is introduced: the selector ordering is
 recorded, not redefined. No product, legal, accounting or collateral decision is
 made or implied. Non-author exact-head review and required KTX/KIX CI remain
 separate merge gates.
+
+## Fix round 4 (CodeQL clear-text logging)
+
+The supervisor reported one HIGH `py/clear-text-logging-sensitive-data` alert
+on PR #381 at `4fe2b067be928630ed73b7aa476543efb902fdd7`. The script entry
+point serialized the full return value of `run_example()` to stdout, including
+receipts and journals. It now calls the same function with the same inputs
+and prints the fixed JSON object `{"status": "completed"}` after it returns.
+The print argument contains only literals. The existing example test still
+exercises the detailed return value, including zero drawn exposure at OFFERED
+and the mock commit gate at draw.
+
+This round changes `reference/credit_advance_f04/example_settlement_claim_adapter.py`
+and this validation record. The worktree started clean at the reviewed head
+above. Its merge base with cached `origin/main` was
+`c641a7437f8dcf9094740bd0a4024ea1d2b89317`. Cached `origin/main` was
+`5a1735824305f902036c97b3b31f503abe76bae5` (4 commits unique to the branch,
+197 unique to cached main). The supervisor required offline work.
+
+Local checks used Python 3.12.15 from the repository root with `PYTHONPATH`
+unset and `PYTHONDONTWRITEBYTECODE=1`.
+
+| Command or check | Result |
+|---|---|
+| `python3.12 reference/credit_advance_f04/example_settlement_claim_adapter.py` (captured by `subprocess.run` with `check=True`) | Exit 0. Exact stdout bytes were `b'{"status": "completed"}\n'` and stderr was empty. |
+| `python3.12 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p 'test_settlement_claim*.py'` | 14 passed. |
+| `python3.12 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | 162 passed, including the 14 focused tests. |
+| `python3.12 -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03` | 224 passed. |
+| `python3.12 scripts/<name>.py` for `check_docs_index`, `check_settlement_evidence_map`, `check_credit_evidence_map`, `check_contract_error_codes`, `check_ci_test_discovery`, `check_ci_checker_wiring`, `check_openapi_contract` | All seven passed both normally and with `--self-test`. |
+| `python3.12 scripts/verify_runtime_architecture.py` and `python3.12 scripts/test_runtime_architecture.py` | Architecture gate passed. All 7 architecture tests passed. |
+| Protected-byte command above and `git hash-object` for both kernel locks before and after the fix | All 123 protected files matched HEAD, including the locked blobs and the historical reference tree recorded above. |
+| `git diff --check` | Passed. |
+
+`command -v codeql` found no local CLI. Confirmation of the alert resolution,
+non-author review and exact-head KTX/KIX results await the supervisor's commit.
