@@ -41,15 +41,30 @@ candidate vector paths because `read-model-reference` is not merged. They are
 are not conformance evidence.
 Source: [`docs/contracts/READ_MODEL_QUERIES.md`](../contracts/READ_MODEL_QUERIES.md).
 
-## SD1 and semantic HOLD stay open
+## SD1 verifier evidence and ledger status
 
-SD1, the SDK compatibility-manifest verifier check-order violation, is recorded
-with owner **User** and status **OPEN**. This record chooses no option, waiver
-or verifier order.
-Source: [`OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md`](OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md).
+The pinned tuple's `sd1.status = OPEN` and `sd1.owner = User` record the
+October class C stop, when the verifier checked the OpenAPI references,
+generator and SDK output before hashing the profile. JunTae authorized option
+1 on November 18 (`[pt224u]`). Formal ledger disposition remains with JunTae.
+See the [October stop](OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md)
+and the [owner decision record](../decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md).
 
-Semantic SDK consumption remains `HOLD_SEMANTIC`: the BOOTSTRAP profile binds
-catalogue/schema bytes only and asserts no semantic acceptance.
+The checked-in verifier now checks the profile byte hash before either
+OpenAPI reference, as required by [manifest contract §4](../contracts/sdk/COMPATIBILITY_MANIFEST_V1.md#4-최소-검증기).
+See the [profile hash block](../../sdk/compat/verify_compat.mjs#L146-L150)
+and the [ordered conformance regression](../../sdk/conformance/conformance.test.mjs#L364-L409).
+The §4 interpretation of `extension_profile` remains `UNDETERMINED` with
+the User.
+
+The tuple's 18 artifact entries omit the verifier. The handoff records its
+exact byte identity and the bootstrap-2 manifest digest so the order result
+can be traced to the verifier and manifest tested together.
+See the [SD1 handoff validation record](../../validation/2026-11-19-plan-producer-sd1-evidence-handoff/README.md).
+
+Semantic SDK consumption remains `HOLD_SEMANTIC`. The BOOTSTRAP profile
+binds catalogue/schema bytes only. External consumer acceptance remains
+`UNVERIFIED`. See the [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 
 ## Checker
 

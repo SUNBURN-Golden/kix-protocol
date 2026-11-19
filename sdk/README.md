@@ -36,8 +36,8 @@
 
 The [non-normative consumer surface map](../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md)
 separates this local-call client from calculator, ticket and token-tool envelopes.
-It preserves semantic HOLD and the existing User-owned SD1 verifier-order blocker;
-BOOTSTRAP success does not resolve either boundary.
+BOOTSTRAP grants catalogue-schema binding only. Semantic SDK consumption
+remains `HOLD_SEMANTIC`.
 
 타입 검사는 Node 24의 타입 제거로 돌린다. `tsc`와 패키지 의존성은 없다. 지울 수 있는 구문만 쓴다.
 
@@ -52,10 +52,23 @@ mutation per case to the manifest, the `bootstrap-2` profile or the manifest
 sidecar, and requires a non-zero exit with the exact expected error set.
 
 Where one fault makes several checks fail, the test compares the whole error
-set after sorting. It makes no claim about the verifier's check order and does
-not resolve or waive SD1. The suite does not edit `compat/verify_compat.mjs` and
-adds no semantic, N/N-1, production, audit or approval claim; it covers
-BOOTSTRAP catalogue-schema binding only.
+set after sorting. This companion suite covers unordered error sets for
+BOOTSTRAP catalogue-schema binding.
+
+## SD1 verifier check order
+
+JunTae's November 18 option 1 authorization (`[pt224u]`) answered the October
+SD1 class C stop. See the [October stop](../docs/status/OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md)
+and the [owner decision record](../docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md).
+
+The current verifier checks the profile byte hash before either OpenAPI
+reference. The ordered regression asserts canonical parse gating and the
+contract's diagnostic sequence. See [manifest contract §4](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md#4-최소-검증기),
+the [profile hash block](compat/verify_compat.mjs#L146-L150) and
+[`manifest verifier reports failures in contract order`](conformance/conformance.test.mjs#L364-L409).
+
+The producer tuple records the October `OPEN` / `User` snapshot. Formal
+ledger disposition belongs to JunTae. See the [producer handoff and byte evidence](../docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.md#sd1-verifier-evidence-and-ledger-status).
 
 ## 재생과 검사
 
