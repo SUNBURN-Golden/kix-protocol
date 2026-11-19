@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates seven existing
+read-only discovery metadata for `kix-capital`. It associates eight
 consumer pack families and two supporting observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -53,6 +53,12 @@ used. Digests identify bytes and do not authenticate them.
 | capital_terminal_capacity | setup_and_history | 63 | 37 |
 | capital_cross_claim_history | setup_and_history | 27 | 8 |
 | capital_refund_composition | setup_and_history | 33 | 11 |
+| capital_refund_identity | setup_and_history | 24 | 13 |
+| **Total** | | **403** | **100** |
+
+The eighth family pairs refund and cancellation-acceptance inputs with their
+receipts, errors and current snapshots. For the coverage map and an example of
+a historical receipt, see the [refund identity field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-refund-and-cancellation-acceptance-identity-histories).
 
 Each pack has `id`, `shape`, `input`, `output`, `replay_test`, `guide_refs`,
 `limitations`, ordered `entries` and `observations`. Replay references contain
@@ -73,7 +79,7 @@ ordering follows the existing replay recipe: create, capture confirmation,
 settle, each advance's offer/approve/bind/draw, frozen checkpoint, then each
 history action and its checkpoint. P/F/FD keep their distinct order.
 
-The four later histories separately associate `setup_steps` with
+The five families with setup and history associate `setup_steps` with
 `setup_results`, and `steps` with `history`. `observations` contain
 `scenario_id`, `kind`, `ref`, and `step_id` for `step_snapshot` observations.
 They reference existing initial/per-step snapshots and, where present,
@@ -88,7 +94,7 @@ The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the seven consumer families.
+evidence, outside the eight consumer families.
 
 ## Read-only consumption
 
@@ -128,8 +134,9 @@ success grants no authority. Observations and refund components remain
 
 External `kix-capital` acceptance remains **UNVERIFIED**. Product limits remain
 **UNDETERMINED—Astra** and legal responsibility **UNDETERMINED—User/legal**.
-No existing pack, producer, observer, replay module, contract or field-guide
-text is changed. No new policy, protocol behavior, durable recovery, real
+The refund identity entry extends the original seven-family inventory. The
+producer implementations, previous packs and supporting fixtures retain their original bytes.
+No new policy, protocol behavior, durable recovery, real
 funds/PG/bank/KYC, public endpoints, Sui testnet/mainnet, storage engine,
 coin/TIX, secrets or production runtime is introduced or tested.
 A2 non-author exact-head review and exact-head KTX/KIX CI remain supervisor

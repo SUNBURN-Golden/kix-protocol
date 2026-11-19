@@ -51,6 +51,10 @@ PACKS = (
      'test_capital_refund_composition_vectors.py', 'CapitalRefundCompositionVectorTests.test_complete_history_vectors',
      'Refund composition companion (plan-capital-refund-composition-vectors)',
      ('R1_full_refund_after_partial_distribution', 'R2_partial_refunds_summing_to_gross'), ((12, 3), (12, 6))),
+    ('capital_refund_identity', 'setup_and_history', 'capital_refund_identity_v1.json', 'capital_refund_identity_vectors_v1.json',
+     'test_capital_refund_identity_vectors.py', 'CapitalRefundIdentityVectorTests.test_complete_history_vectors',
+     'Capital refund and cancellation-acceptance identity histories',
+     ('I1_refund_acceptance_identity',), ((12, 12),)),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -83,6 +87,7 @@ LIMITATIONS = {
     'capital_terminal_capacity': ['Repay preserves reservations; close at zero exposure releases capacity; default retains reservations and exposure. No new terminal or release behavior.'],
     'capital_cross_claim_history': ['Two distinct claims share a caller label, not a legal debtor; same-claim capacity is counted once and default exposure remains aggregated.'],
     'capital_refund_composition': ['One full-gross refund and successive partial refunds remain distinct; partial refunds summing to gross do not reclassify faces. Recovery, acceptance and credit obligations stay separate.'],
+    'capital_refund_identity': ['Fresh command keys can journal an existing business binding once more. Original-key replay returns its historical receipt. Mock acceptance leaves confirmed cash, external return status and drawn credit unchanged.'],
 }
 SUPPORTING = (
     ('settlement_variance', 'SettlementVarianceContractTests', '7.11 정산 잔차(settlement variance)'),
@@ -315,10 +320,10 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 379)
+        self.assertEqual(validate_index(self.document), 403)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33])
-        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 87)
+                         [98, 54, 51, 53, 63, 27, 33, 24])
+        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 100)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
     def test_membership_controls(self):
@@ -379,7 +384,8 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
                      'entry membership')
         self._reject(lambda d: d['packs'][2]['entries'][0].__setitem__(
             'arguments_ref', d['packs'][2]['entries'][1]['arguments_ref']), 'entry membership')
-        for i in range(3, 7):
+        histories = [i for i, spec in enumerate(PACKS) if spec[1] == 'setup_and_history']
+        for i in histories:
             self._reject(lambda d: d['packs'][i]['observations'].pop(), 'supplemental observation')
             self._reject(lambda d: d['packs'][i]['entries'][0].__setitem__('section', 'steps'), 'entry membership')
         self._reject(lambda d: d['supporting_evidence'][0]['entries'][0].__setitem__(
@@ -395,7 +401,7 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         self._detached(0, 'output', lambda d: d['scenarios'][0]['steps'][0].__setitem__('result', {'ok': {}, 'error': {}}),
                        'complete result envelope')
         self._detached(1, 'output', lambda d: d['scenarios'][2]['steps'].reverse(), 'economics recipe/order')
-        for i in range(3, 7):
+        for i in histories:
             self._detached(i, 'output', lambda d: d['scenarios'][0]['setup_results'].pop(), 'output step identity')
             self._detached(i, 'output', lambda d: d['scenarios'][0]['history'].reverse(), 'output step identity')
         # Refusal file is genuinely self-contained: update both pins, then require
@@ -415,8 +421,21 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, 'case membership'):
                 validate_index(d, lambda p: raw if p == path else _read(p))
 
+    def test_refund_identity_crossed_references(self):
+        # These acceptance rows share an operation, source, amount and settlement.
+        # Swapping valid pointers must still break their command/receipt association.
+        def swap(document, field):
+            pack = next(p for p in document['packs'] if p['id'] == 'capital_refund_identity')
+            rows = {entry['step_id']: entry for entry in pack['entries']}
+            fresh, replay = rows['fresh-acceptance'], rows['replay-acceptance']
+            fresh[field], replay[field] = replay[field], fresh[field]
+
+        for field in ('input_ref', 'result_ref'):
+            with self.subTest(field=field):
+                self._reject(lambda d: swap(d, field), 'entry membership/association')
+
     def test_pin_controls(self):
-        for i in range(7):
+        for i in range(len(PACKS)):
             for side in ('input', 'output'):
                 for field in ('sha256', 'gitBlob'):
                     with self.subTest(pack=i, side=side, field=field):
@@ -460,7 +479,7 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             self._reject(lambda d: d['qualification'].pop(key), 'qualification claim/type')
         for i in range(len(NON_CLAIMS)):
             self._reject(lambda d: d['nonClaims'].pop(i), 'nonClaims')
-        for i in range(7):
+        for i in range(len(PACKS)):
             self._reject(lambda d: d['packs'][i]['limitations'].clear(), 'limitations')
         self._reject(lambda d: d.__setitem__('normative', 0), 'normative/consumer')
         self._reject(lambda d: d.__setitem__('extra', True), 'record requires')
