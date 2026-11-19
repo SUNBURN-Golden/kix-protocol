@@ -1,0 +1,24 @@
+$ python3 -m unittest discover -s reference/token_reward -t reference/token_reward -p 'test_collateral_*.py' -v
+exit: 0
+stdout:
+
+stderr:
+test_complete_results_parity_and_input_preservation (test_collateral_assessment.CollateralDispatchTests.test_complete_results_parity_and_input_preservation) ... ok
+test_domain_code_and_error_precedence_parity (test_collateral_assessment.CollateralDispatchTests.test_domain_code_and_error_precedence_parity) ... ok
+test_exact_integer_boundaries_forward_without_coercion (test_collateral_assessment.CollateralDispatchTests.test_exact_integer_boundaries_forward_without_coercion) ... ok
+test_invalid_envelopes_and_python_values_never_calculate (test_collateral_assessment.CollateralDispatchTests.test_invalid_envelopes_and_python_values_never_calculate) ... ok
+test_confirmed_guided_domain_rejection_calls_once (test_collateral_cli.CollateralCliTests.test_confirmed_guided_domain_rejection_calls_once) ... ok
+test_duplicate_surrogate_key_rejection_has_utf8_json_diagnostic (test_collateral_cli.CollateralCliTests.test_duplicate_surrogate_key_rejection_has_utf8_json_diagnostic) ... ok
+test_eof_at_every_prompt_and_declines_never_calculate (test_collateral_cli.CollateralCliTests.test_eof_at_every_prompt_and_declines_never_calculate) ... ok
+test_every_json_fixture_file_stdin_parity_and_determinism (test_collateral_cli.CollateralCliTests.test_every_json_fixture_file_stdin_parity_and_determinism) ... ok
+test_exactly_one_input_mode (test_collateral_cli.CollateralCliTests.test_exactly_one_input_mode) ... ok
+test_guided_complete_empty_decline_and_incomplete_fixtures (test_collateral_cli.CollateralCliTests.test_guided_complete_empty_decline_and_incomplete_fixtures) ... ok
+test_interrupt_at_every_prompt_never_calculates (test_collateral_cli.CollateralCliTests.test_interrupt_at_every_prompt_never_calculates) ... ok
+test_invalid_utf8_file_and_stdin_and_missing_file (test_collateral_cli.CollateralCliTests.test_invalid_utf8_file_and_stdin_and_missing_file) ... ok
+test_malformed_guided_inputs_never_calculate (test_collateral_cli.CollateralCliTests.test_malformed_guided_inputs_never_calculate) ... ok
+test_strict_decoding_failures_never_calculate (test_collateral_cli.CollateralCliTests.test_strict_decoding_failures_never_calculate) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.999s
+
+OK

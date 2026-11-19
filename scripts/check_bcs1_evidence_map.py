@@ -11,7 +11,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MAP = 'docs/status/BCS1_CONTRACT_EVIDENCE_MAP.md'
 SOURCES = {'contract': 'runtime/CANONICAL_BINARY_BCS_V1.md'}
-TEST_FILES = ('runtime/crates/kix-bcs1/src/lib.rs', 'runtime/crates/kix-bcs1/tests/golden_vectors.rs')
+CONTRACT_BOUND_TEST = 'runtime/crates/kix-bcs1/tests/contract_bound_regressions.rs'
+TEST_FILES = ('runtime/crates/kix-bcs1/src/lib.rs', 'runtime/crates/kix-bcs1/tests/golden_vectors.rs',
+              CONTRACT_BOUND_TEST)
 LOCKED_BLOBS = {
     'runtime/crates/kix-kernel/src/lib.rs':
         '69564b166f0c27f9af5d8422f0a466b18d74c20f',
@@ -23,7 +25,7 @@ HEADER = ['ID', 'Section', 'Clause', 'Tests', 'Status', 'Gap', 'Owner']
 FU_HEADER = ['FU', 'Row', 'Path', 'Candidate owner']
 SECTION, CLAUSE, TESTS, STATUS, GAP, OWNER = range(1, 7)
 MAP_HEAD = '## 2. Map'
-FU_HEAD = '## 3. Follow-up candidates (NOT_COVERED, no tests added)'
+FU_HEAD = '## 3. Follow-up candidates and closures'
 MAPPED_SECTIONS = {'1', '2', '3', '5', '6', '7', '8'}
 OWNERS = {'kix-bcs1 maintainer', 'KIX-BCS1 contract owner',
           'S08 Move/SDK schema owner', 'non-author A2 reviewer', 'none'}
@@ -85,7 +87,15 @@ FOLLOW_UP = {
     'S8-G3-TRUNCATED': 'FU-TRUNCATED-ENVELOPE',
     'S8-MOVE-SDK-EQUALITY': 'FU-S08-SDK-EQUALITY',
 }
-MUST_BE_NOT_COVERED = set(FOLLOW_UP)
+CLOSED_FOLLOW_UP = {
+    'S1-VERSION-POSITIVE': f'{CONTRACT_BOUND_TEST}::fu_zero_id_schema_version_zero_is_rejected',
+    'S2-ENVELOPE-BOUND': f'{CONTRACT_BOUND_TEST}::fu_envelope_too_large_is_rejected_before_bcs_decode',
+    'S2-BODY-BOUND-ENCODE': f'{CONTRACT_BOUND_TEST}::fu_body_too_large_encode_is_rejected',
+    'S2-BODY-BOUND-DECODE': f'{CONTRACT_BOUND_TEST}::fu_body_too_large_decode_is_rejected',
+    'S2-UTF8-MULTIBYTE': f'{CONTRACT_BOUND_TEST}::fu_utf8_multibyte_limit_counts_bytes_not_chars',
+    'S8-G3-TRUNCATED': f'{CONTRACT_BOUND_TEST}::fu_truncated_envelope_is_rejected',
+}
+MUST_BE_NOT_COVERED = set(FOLLOW_UP) - set(CLOSED_FOLLOW_UP)
 PRESERVED_PARTIAL = {
     'S2-BOUNDED-UTF8': 'runtime/crates/kix-bcs1/src/lib.rs::bounded_utf8_rejects_oversize_values',
     'S8-G3-MALFORMED-TRAILING':
@@ -267,13 +277,18 @@ def find_problems(map_text, sources, root=ROOT, files=None):
                 problems.append(ident + ': PARTIAL needs tests, gap and owner')
             if status == 'NOT_COVERED' and (cell != 'none' or gap == 'none' or owner == 'none'):
                 problems.append(ident + ': NOT_COVERED needs no tests, gap and owner')
-        if ident in MUST_BE_NOT_COVERED:
-            if status != 'NOT_COVERED':
-                problems.append(ident + ': must stay NOT_COVERED')
-            if FOLLOW_UP[ident] not in gap:
-                problems.append(ident + ': missing follow-up tag: ' + FOLLOW_UP[ident])
+        if ident in MUST_BE_NOT_COVERED and status != 'NOT_COVERED':
+            problems.append(ident + ': must stay NOT_COVERED')
+        if ident in FOLLOW_UP and gap != 'none' and FOLLOW_UP[ident] not in gap:
+            problems.append(ident + ': missing follow-up tag: ' + FOLLOW_UP[ident])
+        cited_symbols = [p + '::' + (s or '') for p, s in cites]
+        if ident in CLOSED_FOLLOW_UP:
+            if CLOSED_FOLLOW_UP[ident] not in cited_symbols:
+                problems.append(ident + ': missing required follow-up citation: ' + CLOSED_FOLLOW_UP[ident])
+            if status == 'NOT_COVERED':
+                problems.append(ident + ': tested follow-up cannot be NOT_COVERED')
         if ident in PRESERVED_PARTIAL and (status != 'PARTIAL' or
-                PRESERVED_PARTIAL[ident] not in [p + '::' + (s or '') for p, s in cites]):
+                PRESERVED_PARTIAL[ident] not in cited_symbols):
             problems.append(ident + ': must stay PARTIAL with preserved citation')
 
     fu_rows = table_rows(map_text, FU_HEAD, FU_HEADER, problems)
@@ -374,9 +389,11 @@ def self_test(map_text, sources):
         ('partial without tests', 'S2-BOUNDED-UTF8', TESTS, 'none', 'PARTIAL needs'),
         ('partial without gap', 'S2-BOUNDED-UTF8', GAP, 'none', 'PARTIAL needs'),
         ('partial without owner', 'S2-BOUNDED-UTF8', OWNER, 'none', 'PARTIAL needs'),
-        ('not covered with tests', 'S1-VERSION-POSITIVE', TESTS, good, 'NOT_COVERED needs'),
-        ('FU flipped', 'S1-VERSION-POSITIVE', STATUS, 'PARTIAL', 'must stay NOT_COVERED'),
-        ('FU tag dropped', 'S1-VERSION-POSITIVE', GAP, 'zero ids', 'missing follow-up tag'),
+        ('not covered with tests', 'S5-RUST-MOVE-EQUALITY', TESTS, good, 'NOT_COVERED needs'),
+        ('FU flipped', 'S5-RUST-MOVE-EQUALITY', STATUS, 'PARTIAL', 'must stay NOT_COVERED'),
+        ('FU tag dropped', 'S5-RUST-MOVE-EQUALITY', GAP, 'missing Move evidence', 'missing follow-up tag'),
+        ('closed FU citation lost', 'S1-VERSION-POSITIVE', TESTS, good, 'missing required follow-up citation'),
+        ('closed FU reverted', 'S1-VERSION-POSITIVE', STATUS, 'NOT_COVERED', 'tested follow-up cannot be NOT_COVERED'),
         ('preserved partial citation lost', 'S2-BOUNDED-UTF8', TESTS, good, 'must stay PARTIAL'),
         ('preserved partial promoted', 'S8-G3-MALFORMED-TRAILING', STATUS, 'COVERED', 'must stay PARTIAL'),
         ('bad owner', ident, OWNER, 'someone', 'unknown owner'),

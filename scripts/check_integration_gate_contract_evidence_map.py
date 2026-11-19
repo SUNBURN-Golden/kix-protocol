@@ -99,6 +99,19 @@ REQUIRED_CITES = {
     'G-LOOPBACK-BIND': TEST_PATH + '::OpenApiAndSchemaTests.test_refuses_non_loopback_bind',
     'G-NO-PUBLIC': 'integration_gate/openapi_doc.py::validate',
 }
+REQUIRED_OFFLINE_CITES = {
+    'G-OPENAPI-NO-CORS-CHANGE': (
+        OFFLINE_TEST_PATH + '::OfflineGapTests.test_gate_openapi_rendered_bytes_are_pinned',
+        OFFLINE_TEST_PATH + '::OfflineGapTests.test_browser_origin_is_transport_only_statically',
+    ),
+    'G-SAME-PROCESS-REPLAY': (
+        OFFLINE_TEST_PATH + '::OfflineGapTests.test_core_actor_only_conflict_preserves_receipt',
+        OFFLINE_TEST_PATH + '::OfflineGapTests.test_core_action_only_conflict_preserves_receipt',
+    ),
+    'K-WIRE-NAMES': (
+        OFFLINE_TEST_PATH + '::OfflineGapTests.test_unprefixed_admission_names_are_not_dispatchable',
+    ),
+}
 HEADER = ['ID', 'Section', 'Clause', 'Tests', 'Checkers', 'Status', 'Gap', 'Owner']
 SECTION, CLAUSE, TESTS, CHECKERS, STATUS, GAP, OWNER = range(1, 8)
 MAP_HEAD = '## 2. Map'
@@ -331,6 +344,9 @@ def find_problems(map_text, contract, root=ROOT, files=None):
                 problems.append(ident + ': pinned owner must stay ' + HOST_OWNER)
         if ident in REQUIRED_CITES and REQUIRED_CITES[ident] not in cites:
             problems.append(ident + ': missing required citation: ' + REQUIRED_CITES[ident])
+        for cite in REQUIRED_OFFLINE_CITES.get(ident, ()):
+            if cite not in cites:
+                problems.append(ident + ': missing required offline citation: ' + cite)
     want = count_line(rows)
     if [line for line in map_text.splitlines() if line.startswith('Counts:')] != [want]:
         problems.append('counts mismatch: expected ' + want)
@@ -450,6 +466,20 @@ def self_test(map_text, contract):
     for row, cite in REQUIRED_CITES.items():
         col = TESTS if cite.startswith(TEST_PATH) else CHECKERS
         cell('required citation ' + row, row, col, 'none', 'missing required citation: ' + cite)
+    for row, cites in REQUIRED_OFFLINE_CITES.items():
+        for cite in cites:
+            original = split_row(_row_line(map_text, row))[TESTS]
+            remaining = [item for item in CITATION.findall(original) if item != cite]
+            cell('deleted offline citation ' + cite, row, TESTS,
+                 ', '.join('`' + item + '`' for item in remaining) or 'none',
+                 'missing required offline citation: ' + cite)
+            cell('fabricated offline citation ' + cite, row, TESTS,
+                 original.replace(cite, cite + '_fabricated'), 'is not a test method')
+            method = cite.split('::')[1].split('.')[1]
+            case('deleted offline method ' + cite, injected={OFFLINE_TEST_PATH:
+                 (ROOT / OFFLINE_TEST_PATH).read_bytes().replace(
+                     ('def ' + method + '(').encode(), ('def removed_' + method + '(').encode())},
+                 reason=cite + ' is not a test method')
     case('anchor drift', source=contract.replace(EXPECTED['I-GATE-ROUTING'][1], 'changed'),
          reason='I-GATE-ROUTING: contract anchor is gone')
     case('added heading', source=contract + '\n## New\n', reason='contract headings must be exactly')

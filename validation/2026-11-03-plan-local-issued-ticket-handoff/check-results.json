@@ -1,0 +1,172 @@
+[
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/settlement_f01_f03",
+      "-t",
+      "reference/settlement_f01_f03"
+    ],
+    "exit": 0,
+    "output_tail": "................................................................................................................................................................................................................................\n----------------------------------------------------------------------\nRan 224 tests in 1.845s\n\nOK\n"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "integration_gate.test_http_gate",
+      "readiness.test_faults"
+    ],
+    "exit": 0,
+    "output_tail": "rmance\":false,\"productionEndpoint\":false,\"productionReadiness\":false,\"protocolTruth\":false,\"queued\":0,\"requestId\":\"90e8186b96472da37c857764b28469b4\",\"status\":400,\"ts\":\"2026-11-03T12:15:52Z\"}\n{\"admit\":\"OK\",\"component\":\"integration-gate\",\"correlationId\":\"3b3e53dfa779096d25ed69fba590f408\",\"durationMs\":0,\"error\":\"UNKNOWN_ACTION\",\"event\":\"http_request\",\"inFlight\":1,\"journalDecision\":\"not_attempted\",\"localFileJournal\":false,\"maxInFlight\":8,\"method\":\"POST\",\"path\":\"/x-kix-contract-only/local-call\",\"productionConformance\":false,\"productionEndpoint\":false,\"productionReadiness\":false,\"protocolTruth\":false,\"queued\":0,\"requestId\":\"3b3e53dfa779096d25ed69fba590f408\",\"status\":400,\"ts\":\"2026-11-03T12:15:52Z\"}\n{\"admit\":\"OK\",\"component\":\"integration-gate\",\"correlationId\":\"4f06b29fd54fca5327e6cd2ada2d3253\",\"durationMs\":0,\"error\":\"UNKNOWN_ACTION\",\"event\":\"http_request\",\"inFlight\":1,\"journalDecision\":\"not_attempted\",\"localFileJournal\":false,\"maxInFlight\":8,\"method\":\"POST\",\"path\":\"/x-kix-contract-only/local-call\",\"productionConformance\":false,\"productionEndpoint\":false,\"productionReadiness\":false,\"protocolTruth\":false,\"queued\":0,\"requestId\":\"4f06b29fd54fca5327e6cd2ada2d3253\",\"status\":400,\"ts\":\"2026-11-03T12:15:52Z\"}\n{\"admit\":\"OK\",\"component\":\"integration-gate\",\"correlationId\":\"514dee7c946aebe7060e0b0e0af7afa4\",\"durationMs\":0,\"error\":\"UNKNOWN_ACTION\",\"event\":\"http_request\",\"inFlight\":1,\"journalDecision\":\"not_attempted\",\"localFileJournal\":false,\"maxInFlight\":8,\"method\":\"POST\",\"path\":\"/x-kix-contract-only/local-call\",\"productionConformance\":false,\"productionEndpoint\":false,\"productionReadiness\":false,\"protocolTruth\":false,\"queued\":0,\"requestId\":\"514dee7c946aebe7060e0b0e0af7afa4\",\"status\":400,\"ts\":\"2026-11-03T12:15:52Z\"}\n{\"admit\":\"OK\",\"component\":\"integration-gate\",\"correlationId\":\"368e32cbb8dd32fe405e9d3c8fa8b415\",\"durationMs\":0,\"error\":\"UNKNOWN_ACTION\",\"event\":\"http_request\",\"inFlight\":1,\"journalDecision\":\"not_attempted\",\"localFileJournal\":false,\"maxInFlight\":8,\"method\":\"POST\",\"path\":\"/x-kix-contract-only/local-call\",\"productionConformance\":false,\"productionEndpoint\":false,\"productionReadiness\":false,\"protocolTruth\":false,\"queued\":0,\"requestId\":\"368e32cbb8dd32fe405e9d3c8fa8b415\",\"status\":400,\"ts\":\"2026-11-03T12:15:52Z\"}\n{\"admit\":\"OK\",\"component\":\"integration-gate\",\"correlationId\":\"ad57845f7d2e1fc244b7fcefef5e98da\",\"durationMs\":0,\"error\":\"UNKNOWN_ACTION\",\"event\":\"http_request\",\"inFlight\":1,\"journalDecision\":\"not_attempted\",\"localFileJournal\":false,\"maxInFlight\":8,\"method\":\"POST\",\"path\":\"/x-kix-contract-only/local-call\",\"productionConformance\":false,\"productionEndpoint\":false,\"productionReadiness\":false,\"protocolTruth\":false,\"queued\":0,\"requestId\":\"ad57845f7d2e1fc244b7fcefef5e98da\",\"status\":400,\"ts\":\"2026-11-03T12:15:52Z\"}\n{\"action\":\"advance_clock\",\"admit\":\"OK\",\"component\":\"integration-gate\",\"correlationId\":\"35be4fc9c8462a09c2e04cba420e3529\",\"durationMs\":0,\"event\":\"http_request\",\"inFlight\":1,\"journalDecision\":\"inactive\",\"localFileJournal\":false,\"maxInFlight\":8,\"method\":\"POST\",\"operationId\":\"op-after-unknown\",\"path\":\"/x-kix-contract-only/local-call\",\"productionConformance\":false,\"productionEndpoint\":false,\"productionReadiness\":false,\"protocolTruth\":false,\"queued\":0,\"requestId\":\"35be4fc9c8462a09c2e04cba420e3529\",\"status\":200,\"ts\":\"2026-11-03T12:15:52Z\"}\n...................................................................................................\n----------------------------------------------------------------------\nRan 139 tests in 6.790s\n\nOK\nself-test: pass\n"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "integration_gate.test_offline_limits"
+    ],
+    "exit": 0,
+    "output_tail": ".........\n----------------------------------------------------------------------\nRan 9 tests in 0.195s\n\nOK\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_openapi_contract.py"
+    ],
+    "exit": 0,
+    "output_tail": "openapi contract pin ok: commands=84 core=40 fsm=44 sha256=ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e gitBlob=619ae21c82ca3df5661bd3831613f15fa65225ff\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_openapi_contract.py",
+      "--self-test"
+    ],
+    "exit": 0,
+    "output_tail": "self-test: detected ident bound: reference-observed: operationId.rule must match ident bound 100 and whitespace rule\nself-test: detected ident error: reference-observed: operationId.error must be INVALID_ID\nself-test: detected actor observed block removed: reference-observed: actor.check must be ident\nself-test: detected source ident bound drift: reference-observed: operationId.rule must match ident bound 64 and whitespace rule\nself-test: detected specification field added to local envelope: envelope-domain: protocolDomain must not be a local envelope field\nself-test: detected body-domain specification conflation: envelope-domain: body-domain specificationField must be protocolDomain\nself-test: detected body-domain separate argument: envelope-domain: body-domain notASeparatePythonArgument must be True\nself-test: detected body-domain pin drift: envelope-domain: body-domain pinnedDomain must be kix:fixture:lifecycle:0.3\nself-test: detected source trim removed: reference-observed: ident source must require string/length/whitespace with an error code\nself-test: detected source actor validation removed: reference-observed: Core.execute must call ident(actor)\nself-test: detected source conflict changed: reference-observed: Core.execute must retain OPERATION_ID_CONFLICT check\nself-test: detected source domain comparison changed: envelope-domain: Core.execute must compare body.domain with self.DOMAIN using DOMAIN_MISMATCH\nself-test: detected source extra envelope argument: envelope-domain: Core.execute must keep the fixed local parameters plus keyword-only options\nself-test: detected added command: schema names drifted from protocol_contract.json commands\nself-test: detected security scheme: forbidden transport or auth field: securitySchemes\nself-test: detected contract-only OPTIONS: OPTIONS operation forbidden: contract-only /x-kix-contract-only/local-call\nself-test: detected gate OPTIONS: OPTIONS operation forbidden: integration-gate /x-kix-contract-only/local-call\nself-test: detected gate publicHost: integration-gate publicHost must be false\nself-test: detected gate liveHttpServer.publicHost: integration-gate liveHttpServer.publicHost must be false\nself-test: detected gate productionEndpoint: integration-gate productionEndpoint must be false\nself-test: detected README sha256: README pin table mismatch: sha256 != contract-only sha256\nself-test: detected README row removed: README pin table missing row: FSM domain\nself-test: detected README row duplicated: README pin table duplicated row: git blob\nself-test: detected gate pin drift: README pin table mismatch: sha256 != integration-gate sha256\nself-test: pass\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_integration_gate_openapi.py"
+    ],
+    "exit": 0,
+    "output_tail": "integration-gate openapi ok: commands=84 productionEndpoint=false publicHost=false\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_integration_gate_openapi.py",
+      "--self-test"
+    ],
+    "exit": 0,
+    "output_tail": "self-test: pass\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_docs_index.py"
+    ],
+    "exit": 0,
+    "output_tail": "docs index ok: scanned=343 indexed=308 allowlisted=35\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "exit": 0,
+    "output_tail": "self-test: detected removed index link to docs/adr/0001-ktx-authority-commit-recovery.md (not indexed: docs/adr/0001-ktx-authority-commit-recovery.md)\nself-test: detected unindexed scanned file docs/status/SELFTEST_UNINDEXED.md (not indexed: docs/status/SELFTEST_UNINDEXED.md)\nself-test: detected unindexed validation record validation/SELFTEST_UNINDEXED/README.md (not indexed: validation/SELFTEST_UNINDEXED/README.md)\nself-test: detected dropped allowlist entry docs/contracts/openapi/fsm-command-contract.json (not indexed: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected removed scanned file docs/contracts/openapi/fsm-command-contract.json (allowlist names a file outside the scanned set: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected allowlisted entry also index-linked docs/contracts/openapi/fsm-command-contract.json (allowlisted but indexed: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected broken index link docs/status/SELFTEST_MISSING_TARGET.md (broken index link: docs/status/SELFTEST_MISSING_TARGET.md)\nself-test: pass\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ci_test_discovery.py"
+    ],
+    "exit": 0,
+    "output_tail": "reached: reference/ai_delegation files=6 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/booking_resale_admission files=44 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/credit_advance_f04 files=8 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/provider_facts files=14 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/rights_scale files=6 <- rights-scale/Rights-scale Move and model tests\nreached: reference/settlement_f01_f03 files=15 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/token_reward files=11 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/rights_scale/client/admission-packet.test.mjs <- rights-scale/Offline admission packet regressions\nreached: reference/rights_scale/client/mint-note.test.mjs <- rights-scale/Offline mint note regressions\nreached: reference/rights_scale/client/ptau-header.test.mjs <- rights-scale/Offline PTAU header parsing regressions\nreached: reference/rights_scale/client/spend-witness.test.mjs <- rights-scale/Offline spend witness regressions\nreached: reference/rights_scale/client/verifier-binding.test.mjs <- rights-scale/Offline verifier binding regressions\nreached: reference/rights_scale/client/witness-reconstruction.test.mjs <- rights-scale/Offline witness reconstruction regressions\nreached: reference/rights_scale/client/zk-helpers.test.mjs <- rights-scale/Offline public-byte encoding regressions\nreached: reference/rights_scale/client/zk-policy-v2.test.mjs <- rights-scale/Offline manifest validation regressions\nreached: integration_gate.test_http_gate <- protocol/Non-production HTTP integration gate\nreached: integration_gate.test_offline_limits <- protocol/Offline reference state machines and OpenAPI pins\nreached: readiness.test_conformance_sensitivity <- protocol/Non-production HTTP integration gate via readiness.test_faults\nreached: readiness.test_faults <- protocol/Non-production HTTP integration gate\nexcluded: reference/v0.1: historical v0.1 reference tree; no protocol.yml step runs its tests and this guard does not claim they run\nexcluded: reference/v0.2: historical v0.2 reference tree; no protocol.yml step runs its tests and this guard does not claim they run\nexcluded: reference/v0.3-rc1: historical v0.3-rc1 tree; its Python tests are invoked inside scripts/verify_runtime.py, which this guard does not parse, so no run is claimed here\nci test discovery ok: reference_suites=7 node_tests=8 modules=4 excluded=3\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ci_test_discovery.py",
+      "--self-test"
+    ],
+    "exit": 0,
+    "output_tail": "self-test: detected unwired suite directory\nself-test: detected unwired node test\nself-test: detected unreached top-level module\nself-test: detected unreached nested module\nself-test: detected unreached module outside a package\nself-test: detected exclusion without reason\nself-test: detected module reached only by import statement\nself-test: detected module reached only as a package attribute\nself-test: detected partial from-import\nself-test: detected reference test in a non-package subdirectory\nself-test: detected commented-out wiring line\nself-test: detected unexpanded loop variable\nself-test: detected unsupported discover option\nself-test: detected workflow names missing module\nself-test: detected workflow names missing node test\nself-test: detected exclusion of an absent tree\nself-test: detected excluded tree wired by discover\nself-test: detected empty workflow\nself-test: pass (18 negative controls)\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ci_checker_wiring.py"
+    ],
+    "exit": 0,
+    "output_tail": "ci checker wiring ok: scripts=35 plain=34 self_test=35 self_test_only=1 docs=22 citations=99\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_ci_checker_wiring.py",
+      "--self-test"
+    ],
+    "exit": 0,
+    "output_tail": "self-test: detected unwired checker\nself-test: detected plain-only wiring\nself-test: detected unlisted self-test-only checker\nself-test: detected missing cited checker\nself-test: detected document cites unrun checker\nself-test: detected allowlisted script wired plain\nself-test: detected allowlisted script missing self-test\nself-test: detected missing allowlisted script\nself-test: detected workflow invokes missing file\nself-test: detected commented-out invocation\nself-test: detected no scripts\nself-test: detected no invocations\nself-test: detected no documents\nself-test: pass (13 negative controls)\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_bra_evidence_map.py"
+    ],
+    "exit": 0,
+    "output_tail": "bra evidence map ok: rows=39 headings=39 items=9 citations=219 COVERED=22 PARTIAL=14 NOT_COVERED=1 OPEN=2\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_bra_evidence_map.py",
+      "--self-test"
+    ],
+    "exit": 0,
+    "output_tail": "self-test: detected missing clause\nself-test: detected new contract heading\nself-test: detected removed required heading\nself-test: detected duplicate heading\nself-test: detected duplicate row\nself-test: detected invented row\nself-test: detected dangling path\nself-test: detected dangling symbol\nself-test: detected helper symbol\nself-test: detected dynamic setattr row\nself-test: detected protected path\nself-test: detected absolute path\nself-test: detected parent path\nself-test: detected backslash path\nself-test: detected closed open clause\nself-test: detected closed options\nself-test: detected promoted real gaps\nself-test: detected unknown owner\nself-test: detected missing owner\nself-test: detected empty owner\nself-test: detected missing UNDETERMINED\nself-test: detected open item missing\nself-test: detected open item invented\nself-test: detected open item duplicate\nself-test: detected open item adopted\nself-test: detected open item status\nself-test: detected open item owner drift\nself-test: detected open item missing owner\nself-test: detected open item missing UNDETERMINED\nself-test: detected open item row width\nself-test: detected open item dangling citation\nself-test: detected title drift\nself-test: detected row width\nself-test: detected unknown status\nself-test: detected missing paraphrase\nself-test: detected uncited COVERED\nself-test: detected uncited PARTIAL\nself-test: detected COVERED gap\nself-test: detected PARTIAL missing gap\nself-test: detected NOT_COVERED missing gap\nself-test: detected NOT_COVERED citation\nself-test: detected bare citation\nself-test: detected stale counts\nself-test: detected duplicate counts\nself-test: detected stale open-items count\nself-test: detected duplicate open-items count\nself-test: detected missing banner\nself-test: detected missing grade banner\nself-test: detected ordinary class\nself-test: detected invalid Python\nself-test: same-module transitive inheritance pass\nself-test: pass (50 negative controls)\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_contract_error_codes.py"
+    ],
+    "exit": 0,
+    "output_tail": "contract error code coverage ok: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_contract_error_codes.py",
+      "--self-test"
+    ],
+    "exit": 0,
+    "output_tail": "NVALID_IDX is not in the contract table)\nself-test: detected stale counts line (counts line 'Counts: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=9199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0' differs from the table 'Counts: SET=34 BRA=64 BRA-RES9=10 BRA-RES=20 BRA-ADM=15 F04=16 F04-FSM=15 AID=25 rows=199 RAISED=199 ASSERTED=199 COVERED=199 CLASS_B=0 CLASS_C=0')\nself-test: detected wrong cell count (SET: expected 6 cells, found 7)\nself-test: detected unknown status (SET INVALID_ID: unknown status 'SUFFICIENT')\nself-test: detected MOCK_INVARIANT row (SET: MOCK_INVARIANT is excluded and must not have a row)\nself-test: detected removed raise site (SET INVALID_ID: Raised cites a site but none is derived)\nself-test: detected removed asserting test (SET INVALID_ID: Asserted cites a site but none is derived)\nself-test: detected Raised cell set to no (SET INVALID_ID: Raised is no but the sources have 2 site(s))\nself-test: detected dangling path (SET INVALID_ID: Raised citation reference/settlement_f01_f03/no_such.py::x: file does not exist)\nself-test: detected dangling symbol (SET INVALID_ID: Raised citation reference/settlement_f01_f03/mock_settlement.py::no_such_fn_9f3a: symbol is not defined in the file)\nself-test: detected citation outside the suite directory (SET INVALID_ID: Raised citation reference/ai_delegation/ai_delegation_mock.py::x is outside the suite directory reference/settlement_f01_f03)\nself-test: detected citation under reference/v0.3-rc1 (SET INVALID_ID: Raised citation reference/v0.3-rc1/x.py::y is under reference/v0.3-rc1)\nself-test: detected citation that is not a derived site (SET INVALID_ID: Raised citation reference/settlement_f01_f03/mock_settlement.py::MockSettlement.__init__ is not a derived site)\nself-test: detected contract table with an added code (SET: ADDED_PROBE_CODE missing in doc)\nself-test: detected contract table with a removed heading (SET: heading '## 6. \uc624\ub958 \ucf54\ub4dc' not found)\nself-test: detected COVERED row without an asserting test (SET INVALID_ID: COVERED needs both a raise site and an asserting test)\nself-test: detected added code in the BRA-RES contract table (BRA-RES: ADDED_PROBE_CODE missing in doc)\nself-test: detected removed raise site on a BRA-RES row (BRA-RES TICKET_NOT_ISSUED: Raised cites a site but none is derived)\nself-test: detected citation that is not a derived site on a BRA-RES row (BRA-RES TICKET_NOT_ISSUED: Raised citation reference/booking_resale_admission/resale_fsm.py::ResaleMachine._listing is not a derived site)\nself-test: detected missing section 9 raise citation (BRA-RES9 ALREADY_CONSUMED: Raised is no but the sources have 1 site(s))\nself-test: detected missing section 9 assertion citation (BRA-RES9 ALREADY_CONSUMED: Asserted is no but the sources have 14 site(s))\nself-test: detected added code in the section 9.2 effect column (BRA-RES9: ADDED_PROBE_CODE missing in doc)\nself-test: detected added code in the section 9.5 code column (BRA-RES9: ADDED_PROBE_CODE missing in doc)\nself-test: detected removed section 9.5 heading (BRA-RES9: heading '### 9.5 \uc815\uc0b0 \uac8c\uc774\ud2b8' not found)\nself-test: detected malformed section 9.5 row (BRA-RES9: heading '### 9.5 \uc815\uc0b0 \uac8c\uc774\ud2b8': expected 2 cells, found 3)\nself-test: detected CLASS_B status on an asserted code with a none note (SET INVALID_ID: CLASS_B row needs a reasoned note)\nself-test: detected CLASS_C status on an asserted code (SET INVALID_ID: CLASS_C row is asserted by a test, so it is COVERED)\nself-test: pass\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/verify_runtime_architecture.py"
+    ],
+    "exit": 0,
+    "output_tail": "architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified\n"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/test_runtime_architecture.py"
+    ],
+    "exit": 0,
+    "output_tail": "test_hidden_target_dependency (__main__.ArchitectureGateTests.test_hidden_target_dependency) ... ok\ntest_invalid_contract_values (__main__.ArchitectureGateTests.test_invalid_contract_values) ... ok\ntest_kernel_dependency_injection (__main__.ArchitectureGateTests.test_kernel_dependency_injection) ... ok\ntest_missing_lock_or_golden_vector (__main__.ArchitectureGateTests.test_missing_lock_or_golden_vector) ... ok\ntest_python_runtime_source_is_rejected (__main__.ArchitectureGateTests.test_python_runtime_source_is_rejected) ... ok\ntest_transitive_dependency_injection (__main__.ArchitectureGateTests.test_transitive_dependency_injection) ... ok\ntest_valid_contract (__main__.ArchitectureGateTests.test_valid_contract) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.213s\n\nOK\n"
+  }
+]

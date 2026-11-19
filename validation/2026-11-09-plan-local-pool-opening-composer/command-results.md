@@ -1,0 +1,44 @@
+# Actual command results
+
+Repository root; all captured commands used `PYTHONDONTWRITEBYTECODE=1` and
+`PYTHONPATH=reference/token_reward`. Each label links complete stdout/stderr/exit evidence.
+Boundary exit 1 is the expected model-refusal outcome. Rust exit 101 means unavailable.
+The initial discovery and preservation failures are retained, with diagnosis in README.
+
+| Label | Command | Actual result | Captures |
+|---|---|---|---|
+| pool-focused | `python3 -m unittest test_pool_console test_pool_session test_pool_cli` | exit 0; 35 tests; OK | [stdout](pool-focused.stdout), [stderr](pool-focused.stderr), [exit](pool-focused.exit) |
+| check_docs_index | `python3 scripts/check_docs_index.py` | exit 0; passed | [stdout](check_docs_index.stdout), [stderr](check_docs_index.stderr), [exit](check_docs_index.exit) |
+| check_docs_index-self-test | `python3 scripts/check_docs_index.py --self-test` | exit 0; passed | [stdout](check_docs_index-self-test.stdout), [stderr](check_docs_index-self-test.stderr), [exit](check_docs_index-self-test.exit) |
+| check_tl_predicate_evidence_map | `python3 scripts/check_tl_predicate_evidence_map.py` | exit 0; passed | [stdout](check_tl_predicate_evidence_map.stdout), [stderr](check_tl_predicate_evidence_map.stderr), [exit](check_tl_predicate_evidence_map.exit) |
+| check_tl_predicate_evidence_map-self-test | `python3 scripts/check_tl_predicate_evidence_map.py --self-test` | exit 0; passed | [stdout](check_tl_predicate_evidence_map-self-test.stdout), [stderr](check_tl_predicate_evidence_map-self-test.stderr), [exit](check_tl_predicate_evidence_map-self-test.exit) |
+| check_class_b_index | `python3 scripts/check_class_b_index.py` | exit 0; passed | [stdout](check_class_b_index.stdout), [stderr](check_class_b_index.stderr), [exit](check_class_b_index.exit) |
+| check_class_b_index-self-test | `python3 scripts/check_class_b_index.py --self-test` | exit 0; passed | [stdout](check_class_b_index-self-test.stdout), [stderr](check_class_b_index-self-test.stderr), [exit](check_class_b_index-self-test.exit) |
+| check_ci_checker_wiring | `python3 scripts/check_ci_checker_wiring.py` | exit 0; passed | [stdout](check_ci_checker_wiring.stdout), [stderr](check_ci_checker_wiring.stderr), [exit](check_ci_checker_wiring.exit) |
+| check_ci_checker_wiring-self-test | `python3 scripts/check_ci_checker_wiring.py --self-test` | exit 0; passed | [stdout](check_ci_checker_wiring-self-test.stdout), [stderr](check_ci_checker_wiring-self-test.stderr), [exit](check_ci_checker_wiring-self-test.exit) |
+| file-free-journey | `bash validation/2026-11-09-plan-local-pool-opening-composer/file-free-journey.sh` | exit 0; passed | [stdout](file-free-journey.stdout), [stderr](file-free-journey.stderr), [exit](file-free-journey.exit) |
+| check_ci_test_discovery | `python3 scripts/check_ci_test_discovery.py` | exit 0; passed | [stdout](check_ci_test_discovery.stdout), [stderr](check_ci_test_discovery.stderr), [exit](check_ci_test_discovery.exit) |
+| guided-journey | `bash -c 'python3 reference/token_reward/pool_console.py --guided-init < reference/token_reward/fixtures/pool_console_opening_journey.txt'` | exit 0; passed | [stdout](guided-journey.stdout), [stderr](guided-journey.stderr), [exit](guided-journey.exit) |
+| check_ci_test_discovery-self-test | `python3 scripts/check_ci_test_discovery.py --self-test` | exit 0; passed | [stdout](check_ci_test_discovery-self-test.stdout), [stderr](check_ci_test_discovery-self-test.stderr), [exit](check_ci_test_discovery-self-test.exit) |
+| fixture-journey | `bash -c 'python3 reference/token_reward/pool_console.py --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_journey.txt'` | exit 0; passed | [stdout](fixture-journey.stdout), [stderr](fixture-journey.stderr), [exit](fixture-journey.exit) |
+| guided-boundaries | `bash -c 'python3 reference/token_reward/pool_console.py --guided-init < reference/token_reward/fixtures/pool_console_opening_boundaries.txt'` | exit 1; expected refusal journey | [stdout](guided-boundaries.stdout), [stderr](guided-boundaries.stderr), [exit](guided-boundaries.exit) |
+| fixture-boundaries | `bash -c 'python3 reference/token_reward/pool_console.py --fixture reference/token_reward/fixtures/pool_session.json < reference/token_reward/fixtures/pool_console_boundaries.txt'` | exit 1; expected refusal journey | [stdout](fixture-boundaries.stdout), [stderr](fixture-boundaries.stderr), [exit](fixture-boundaries.exit) |
+| check_openapi_contract | `python3 scripts/check_openapi_contract.py` | exit 0; passed | [stdout](check_openapi_contract.stdout), [stderr](check_openapi_contract.stderr), [exit](check_openapi_contract.exit) |
+| check_openapi_contract-self-test | `python3 scripts/check_openapi_contract.py --self-test` | exit 0; passed | [stdout](check_openapi_contract-self-test.stdout), [stderr](check_openapi_contract-self-test.stderr), [exit](check_openapi_contract-self-test.exit) |
+| check_integration_gate_openapi | `python3 scripts/check_integration_gate_openapi.py` | exit 0; passed | [stdout](check_integration_gate_openapi.stdout), [stderr](check_integration_gate_openapi.stderr), [exit](check_integration_gate_openapi.exit) |
+| check_integration_gate_openapi-self-test | `python3 scripts/check_integration_gate_openapi.py --self-test` | exit 0; passed | [stdout](check_integration_gate_openapi-self-test.stdout), [stderr](check_integration_gate_openapi-self-test.stderr), [exit](check_integration_gate_openapi-self-test.exit) |
+| architecture | `python3 scripts/verify_runtime_architecture.py` | exit 0; passed | [stdout](architecture.stdout), [stderr](architecture.stderr), [exit](architecture.exit) |
+| architecture-tests | `python3 scripts/test_runtime_architecture.py` | exit 0; 7 tests; OK | [stdout](architecture-tests.stdout), [stderr](architecture-tests.stderr), [exit](architecture-tests.exit) |
+| rust-format | `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | exit 0; passed | [stdout](rust-format.stdout), [stderr](rust-format.stderr), [exit](rust-format.exit) |
+| kernel-offline | `cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline` | exit 101; unavailable: missing bcs, no compilation | [stdout](kernel-offline.stdout), [stderr](kernel-offline.stderr), [exit](kernel-offline.exit) |
+| workspace-offline | `cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline` | exit 101; unavailable: missing bcs, no compilation | [stdout](workspace-offline.stdout), [stderr](workspace-offline.stderr), [exit](workspace-offline.exit) |
+| clippy-offline | `cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings` | exit 101; unavailable: missing bcs, no compilation | [stdout](clippy-offline.stdout), [stderr](clippy-offline.stderr), [exit](clippy-offline.exit) |
+| token-reward-discovery | `python3 -m unittest discover -s reference/token_reward -t reference/token_reward` | exit 1; 323 tests; FAILED | [stdout](token-reward-discovery.stdout), [stderr](token-reward-discovery.stderr), [exit](token-reward-discovery.exit) |
+| reward-timeout-diagnostic | `python3 -m unittest test_reward_console_subprocess.RewardConsoleSubprocessTests.test_source_incomplete_no_dispatch` | exit 0; 1 tests; OK | [stdout](reward-timeout-diagnostic.stdout), [stderr](reward-timeout-diagnostic.stderr), [exit](reward-timeout-diagnostic.exit) |
+| pool-focused-python312 | `python3.12 -m unittest test_pool_console test_pool_session test_pool_cli` | exit 0; 35 tests; OK | [stdout](pool-focused-python312.stdout), [stderr](pool-focused-python312.stderr), [exit](pool-focused-python312.exit) |
+| preservation | `python3 validation/2026-11-09-plan-local-pool-opening-composer/verify_preservation.py` | exit 1; failed (see retained diagnostic) | [stdout](preservation.stdout), [stderr](preservation.stderr), [exit](preservation.exit) |
+| diff-check | `git diff --check` | exit 0; passed | [stdout](diff-check.stdout), [stderr](diff-check.stderr), [exit](diff-check.exit) |
+| preservation-final | `python3 validation/2026-11-09-plan-local-pool-opening-composer/verify_preservation.py` | exit 0; passed | [stdout](preservation-final.stdout), [stderr](preservation-final.stderr), [exit](preservation-final.exit) |
+| token-reward-discovery-python312 | `python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward` | exit 0; 323 tests; OK | [stdout](token-reward-discovery-python312.stdout), [stderr](token-reward-discovery-python312.stderr), [exit](token-reward-discovery-python312.exit) |
+| docs-index-final | `python3 scripts/check_docs_index.py` | exit 0; passed | [stdout](docs-index-final.stdout), [stderr](docs-index-final.stderr), [exit](docs-index-final.exit) |
+| diff-check-final | `git diff --check` | exit 0; passed | [stdout](diff-check-final.stdout), [stderr](diff-check-final.stderr), [exit](diff-check-final.exit) |

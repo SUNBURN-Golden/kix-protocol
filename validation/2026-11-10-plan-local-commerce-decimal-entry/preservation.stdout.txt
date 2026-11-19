@@ -1,0 +1,1 @@
+PASS: both required locked blobs match; all 108 protected reference files byte-identical; 2698 non-task tracked files unchanged; refs unchanged; changed Python ASTs valid; diff whitespace clean.

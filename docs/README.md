@@ -18,6 +18,134 @@
 9. [범위 편입 결정 기록(2026-09-29)](decisions/TOKEN_LAYER_AND_RIGHTS_SCALE_SCOPE_20260929.md) — #79 사용자 병합(`5cf4168`)으로 승인. 선택적 자체 토큰 계층과 확장형 권리·재고·검표 계층. 당시 설계·계획 문서화 한정이며 후속 조건부 범위는 [프로그램 로드맵 R-1~R-11](decisions/PROGRAM_ROADMAP_20260930.md)을 따른다. D-1~D-3의 잠금·해제 조건은 유지하며 범위 승인과 실행 시작을 분리한다. [개발계획 §18](DEVELOPMENT_PLAN.md#18-2026-09-29--선택적-자체-토큰-계층과-확장형-권리재고검표-계층의-범위-편입).
 10. [.aiops/program.json](../.aiops/program.json) — 현재 노드 입력·canonical 의존성. [감사·병합 판정 표](aiops/PROGRAM_ASTRA_DELEGATION.md), [pending catalogue](decisions/PROGRAM_ROADMAP_20260930_PENDING.json), [확대 후보](aiops/PROGRAM_EXPANSION_20261002_KO.md) — 외부 선행·별도 채택·release 결정을 완료로 간주하지 않는다. 후보 집계 반영은 별도 채택 뒤 개발계획 §17에 따른다.
 
+## Consumer surface boundaries
+
+[Non-normative consumer surface inventory](status/CONSUMER_SURFACE_BOUNDARY_MAP.md)
+distinguishes HTTP/SDK, commerce calculations, ticket sessions and reward/pool/
+supply/collateral tools, with source citations, prerequisites and replay limits.
+Pool references do not deduplicate accepted calls; synthetic observations are not
+authenticated facts. Unsupported bindings remain NOT_BOUND and semantic SDK
+consumers HOLD. [Builder validation and remaining delivery gates](../validation/2026-11-10-audit29-consumer-surface-boundary-map/README.md).
+
+The [machine-readable consumer binding
+index](status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json) binds all 84 published
+commands and the 13 read names to their pins, statuses and offline journey
+evidence. BOOTSTRAP is not consumer acceptance; reads stay `NOT_BOUND`,
+semantic SDK consumption stays `HOLD_SEMANTIC`, external `kix-commerce-apps`
+expectations are `UNVERIFIED` and SD1 stays User-owned and `OPEN`.
+[Builder validation and actual local results](../validation/2026-11-10-plan-commerce-consumer-binding-index/README.md).
+
+[Consumer-binding CI wiring and local verification](../validation/2026-11-13-plan-consumer-binding-ci-guard/README.md)
+records the existing checker's plain and self-test invocations in the unguarded
+stdlib document-check step, including documentation-only and same-tree skips.
+This identity guard does not qualify semantic consumption or close SD1.
+
+## BOOTSTRAP producer-qualification tuple
+
+[Non-normative identity record](status/PRODUCER_QUALIFICATION_TUPLE_V1.md)
+pins the current 84-command contract-only OpenAPI tuple (40 core + 44 FSM),
+both OpenAPI documents, the generated SDK catalogue, generator, toolchain,
+`bootstrap-2` profile/manifest/sidecar and conformance vectors, and maps every
+command to its core/FSM source and gate route. The 13 owner-decided read names
+stay `NOT_BOUND` because `read-model-reference` is not merged; semantic SDK
+consumption stays `HOLD_SEMANTIC`; SD1 stays `OPEN` with the User. The record
+asserts identity only and makes no semantic, N/N-1, production, audit or User
+approval claim. [Builder evidence and actual local results](../validation/2026-11-10-plan-producer-qualification-tuple-bundle/README.md).
+[HOLD and non-normative negative-control coverage and validation](../validation/2026-11-16-plan-producer-hold-negative-controls/README.md)
+extends the checker's detached self-tests while preserving validation semantics
+and all qualification statuses.
+[Candidate read-query association coverage and local validation](../validation/2026-11-17-plan-producer-read-association-check/README.md)
+derives ownership and kind from pinned fixture bodies and rejects coordinated
+path/digest rebinding, preserving all qualification statuses and SD1 ownership.
+
+## Local supply reconciliation
+
+[Reusable subprocess client and explicit console mode](../reference/token_reward/README.md#reusable-supply-subprocess-client)
+and [both-mode transcripts and builder validation](../validation/2026-11-10-plan-local-supply-live-console/README.md)
+connect confirmed local requests to one CLI child per calculation, preserving
+complete replies and fencing transport uncertainty. Synthetic calculation only;
+policy remains UNDETERMINED — Astra/User. No runtime or capability-grade change.
+
+[Terminal console usage](../reference/token_reward/README.md#local-supply-console)
+and [file-free console transcripts and builder evidence](../validation/2026-11-09-plan-plan-local-supply-console/README.md)
+cover explicit event composition, separately confirmed reporting and comparison
+against the returned report. Synthetic calculation only; policy remains
+UNDETERMINED — Astra/User, with non-author exact-head review and KTX/KIX CI pending.
+
+[Usage](../reference/token_reward/README.md#local-supply-reconciliation) and
+[builder evidence with file/stdin transcripts](../validation/2026-11-09-plan-local-supply-reconciliation-tool/README.md)
+expose synthetic event reporting and supplied-report reconciliation through the
+unchanged model. Reported alarms and `stop_payout` execute no action. Supply
+policy and operational responses remain UNDETERMINED — Astra/User; no protocol
+command, capability-grade change or runtime activation is implied.
+
+## Local collateral assessment
+
+[Calculator usage](../reference/token_reward/README.md#local-collateral-assessment)
+and [builder evidence with CLI transcripts](../validation/2026-11-08-plan-local-collateral-assessment-tool/README.md)
+cover the existing synthetic U2/TK-12 recognition calculation through JSON and
+guided local input. No collateral adequacy, loan or legal approval is determined.
+Asset selection, collateral ratios and legal enforceability remain unresolved;
+capability grades, protocol commands and runtime activation are unchanged.
+
+## Local commerce calculation console
+
+[Bundle/leg structure guide](../reference/booking_resale_admission/README.md#revising-bundle-structure-and-payment-legs)
+and [builder evidence](../validation/2026-11-10-plan-local-cart-structure-editor/README.md)
+cover ordered insertion/removal/moves, complete leg replacement and separate
+confirmed repricing/replanning/refund proposals. CALCULATION_ONLY;
+executionAuthorized=false. Product policy remains UNDETERMINED — Astra/User;
+legal/accounting treatment UNDETERMINED — User/designated advisers. Independent
+review and exact-head CI remain required; no capability or stage-6 promotion.
+
+[Draft editor evidence](../validation/2026-11-10-plan-local-commerce-draft-editor/README.md)
+and the [draft editing guide](../reference/booking_resale_admission/README.md#editing-a-quote-request-draft)
+cover ordered positional replacement, explicit version/expiry and separate
+recalculation through the frozen driver. CALCULATION_ONLY; product policy remains
+UNDETERMINED — Astra/User; no execution authority or stage-6 scope change.
+
+[Exact decimal-entry evidence](../validation/2026-11-10-plan-local-commerce-decimal-entry/README.md)
+and the [console guide](../reference/booking_resale_admission/README.md#exact-decimal-entry)
+cover explicitly selected decimal quote and payment-leg inputs, caller-supplied
+asset metadata, exact atom previews and separate calculation consent. Calculation-only;
+product policy remains UNDETERMINED — Astra/User and capability grades are unchanged.
+
+[Guided refund line picker evidence](../validation/2026-11-09-plan-local-refund-line-picker/README.md)
+and the [console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+cover returned quote rows, exact atom strings, literal ID selection and separate
+refund calculation confirmation. Explicit JSON selection remains available.
+Calculation-only; refund policy remains UNDETERMINED — Astra/User and
+legal/accounting treatment UNDETERMINED — User/designated advisers; grades unchanged.
+
+[Guided bundle quote composition evidence](../validation/2026-11-09-plan-plan-local-bundle-quote-composer/README.md)
+and the [console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+cover explicit multi-line synthetic quotes with ordered discounts, guided payment
+legs and original-route refund proposals. Calculation-only; policy remains
+UNDETERMINED and capability grades are unchanged.
+
+[Guided split-payment entry evidence](../validation/2026-11-08-plan-local-split-payment-entry/README.md)
+and the [extended console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+cover explicit synthetic leg composition, preview and separate submission.
+Calculation usability only; capability grades and policy decisions are unchanged.
+
+[Console guide](../reference/booking_resale_admission/README.md#commerce-calculation-console)
+and [builder evidence](../validation/2026-11-08-plan-plan-local-commerce-calculation-console/README.md)
+cover explicit synthetic quote, payment-plan and selected-line reversal calculations
+through the unchanged local driver. No booking, settlement or execution authority.
+
+## Local reward subprocess client
+
+[Fixture-free guided opening balances](../reference/token_reward/README.md#fixture-free-guided-reward-initialization)
+and [builder coverage, transcripts and offline checks](../validation/2026-11-10-plan-local-reward-guided-init/README.md)
+cover explicit five-pool input, complete preview/confirmation and a startup-only
+input acknowledgement before business requests. Synthetic scenarios only; no
+funding, token issuance or policy values. Review and exact-head CI remain pending.
+
+[Reward client guide](../reference/token_reward/README.md#live-subprocess-client)
+and [2026-11-06 builder evidence](../validation/2026-11-06-plan-local-reward-stdio-client/README.md)
+cover one explicitly launched synthetic in-memory child, response-derived reads
+and transport fencing. No policy decision, activation or independent review is implied.
+
 ## 계약 전용 OpenAPI
 
 [계약 전용 OpenAPI](contracts/openapi/README.md)는 `reference/v0.3-rc1/protocol_contract.json`의 로컬 호출 명령과 FSM `REPLAYABLE` 명령을 담은 OpenAPI 3.1 핀이다. 그 핀은 라이브 서버를 선언하지 않고, 운영 엔드포인트도 없다. 같은 84개 명령과 같은 로컬 호출 경로를 루프백에서 부르는 비운영 통합 관문이 따로 있다. 공개 호스트·실 PG·KYC·공연장·은행 연동이 아니며, 로컬 HTTP 성공은 운영 승인이 아니다. 선택적 로컬 파일 저널과 재시작 재생은 [준비 런타임 경계](contracts/READINESS_RUNTIME.md)에 적는다. 그 저장은 프로토콜 정본이 아니고, 공개 배치·운영 적합·외부 연동의 승인이 아니다.
@@ -45,7 +173,7 @@
 |---|---|---|
 | [어댑터 전송·이벤트·결제·operation 정체성](contracts/ADAPTER_EVENT_IDENTITY.md) | 전송·원문 증거·이벤트·결제·경제 operation의 묶음 | 계약 초안 0.1. 구현·schema·wire 아님 |
 | [조회·목록 쿼리](contracts/READ_MODEL_QUERIES.md) | 상거래 표면의 조회·목록 의미 | 초안 0.1. 와이어 본문·카탈로그 삽입 없음 |
-| [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md) | 조회·제안·실행 권한. 오프라인 목의 술어 | 초안 0.1. 실행을 켜지 않음. 목은 `reference/ai_delegation/` |
+| [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md) | 조회·제안·실행 권한. 오프라인 목의 술어 | 초안 0.1. 실행을 켜지 않음. 목은 `reference/ai_delegation/`. [§0·§7 후속 검증](../validation/2026-10-26-plan-aid-contract-map-partial-closure/README.md). [§7 검사 순서 소유자 결정 위치 기록(2026-11-18)](decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md)(위치만. 새 결정이 아니다) |
 | [1차 발행 가격·수수료](contracts/MOVE_PRIMARY_ISSUANCE_PRICE_FEE.md) | 1차 발행의 구조·바인딩·산술·사건 의미 | 초안 0.1. 가격·수수료 값은 정하지 않음 |
 | [확장 권리 프로파일](contracts/RIGHTS_SCALE_PROFILE.md) | 확장 프로파일 계약 | 0.2 (초안). 미검토·미측정 |
 | [RS-0 결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) | 권리 확장의 객체·재고 권위 | 결정 초안. 확정 조건은 그 문서가 정한다 |
@@ -124,6 +252,7 @@
 | [정산 분배 F01–F03 목 계약](contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) | Wave 3 정산 mock 술어와 §7 정책 선택지 | 목 계약. F01·F02·F03·P04는 설계중 그대로. §7 권고 0.3 |
 | [예매·리셀·검표 게이트 목 계약](contracts/BOOKING_RESALE_ADMISSION_GATES.md) | Wave 4 예매·리셀·검표 mock 술어와 수락 상태 기계 | 목 계약. B01–B05, R01–R05, P03은 설계중 그대로. §7 초안 0.2 |
 | [여신·신용 선지급 F04 목 계약](contracts/CREDIT_ADVANCE_F04.md) | Wave 5 F04 mock 술어 | 목 계약. mock/sim only. F04·E06은 설계중 그대로 |
+| [k-stage5-durable-tx 기록](../validation/2026-10-13-k-stage5-durable-tx/README.md) | 채택된 로컬·비운영 PostgreSQL 17.11 위 영속 거래·adapter inbox/outbox·항목별 webhook 정규화·예산의 `durable/` 계층 | 로컬 구현·acceptance 기록. 잠금 v4 밖, 운영 플래그 false 그대로. exact-head CI·비작성자 검토·사용자 병합 전이며 운영 준비를 주장하지 않음 |
 | [조회 원천 지도](contracts/READ_MODEL_SOURCE_MAP.md) | 승인된 13개 조회 이름의 소스 표면·보존 술어·카탈로그 기작 | 입력 자료. 결정·구현·카탈로그 변경 없음 |
 | [I12 검토 자료 묶음](status/I12_REVIEW_PACK.md) | 절단 증명의 명제 P1–P4·가정 A1–A10별 기존 근거 대응표 | 빌더 작성 검토 자료 묶음. 독립 검토·수락·상태 변경 아님. I12는 미완결 |
 
@@ -341,6 +470,8 @@
 
 - [plan-plan-integration-gate-contract-clause-ev](../validation/2026-10-26-plan-integration-gate-contract-clause-ev/README.md) — Builder-authored integration-gate contract clause-to-test map ([지도](status/INTEGRATION_GATE_CONTRACT_EVIDENCE_MAP.md)) and CI-wired static stdlib checker; seeded journey differential stays an owned open gap, no HTTP tests, gate behavior, contract or grade change.
 
+- [plan-plan-sdk-compat-manifest-clause-evidence](../validation/2026-10-26-plan-sdk-compat-manifest-clause-evidence/README.md) — Bootstrap manifest §§1–5 [clause-to-test map](status/SDK_COMPAT_MANIFEST_EVIDENCE_MAP.md), stdlib checker and owner-approved verifier regression for profile-hash precedence. [§4 검사 순서 소유자 결정 위치 기록(2026-11-18)](decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md)(위치만. 새 결정이 아니다).
+
 - [plan-plan-feature-semantics-v1-evidence-map](../validation/2026-10-26-plan-feature-semantics-v1-evidence-map/README.md) — Builder-authored Feature Semantics v1 §§1–10 clause-to-test map ([지도](status/FEATURE_SEMANTICS_V1_EVIDENCE_MAP.md)) and stdlib citation checker; execution/backend conformance stays NOT_COVERED, class-B characterizations retained, no runtime, contract or grade change.
 
 - [plan-plan-feature-ir-money-profile-precedence](../validation/2026-10-26-plan-feature-ir-money-profile-precedence-tests/README.md) — Public-API Fast64 identity-before-range, claimed-range boundary and cross-version non-inheritance regressions; S6-EXPORT-BOUNDARY and G9-4 remain PARTIAL, authentication stays open, no grade change.
@@ -352,6 +483,8 @@
 - [plan-plan-rs4-l2-option-impact-inventory](../validation/2026-10-26-plan-rs4-l2-option-impact-inventory/README.md) — [RS-4 L2 결정 선택지별 영향 목록](status/RS4_L2_DECISION_IMPACT_INVENTORY.md): 트리 내 수락 문구·지도 행·L1 분모와 L2 미정 입력·후속 의존성만. 선택·값·측정·노드 상태 변경이 아니다.
 
 - [plan-plan-bcs1-contract-clause-evidence-map](../validation/2026-10-26-plan-bcs1-contract-clause-evidence-map/README.md) — Builder-authored KIX-BCS1 clause-to-test map ([지도](status/BCS1_CONTRACT_EVIDENCE_MAP.md)) and stdlib citation/golden checker; existing tests only, S08 equality and boundary-corpus remain deferred, no contract or grade change.
+
+- [plan-plan-bcs1-contract-bound-regressions](../validation/2026-10-26-plan-bcs1-contract-bound-regressions/README.md) — Six public-API KIX-BCS1 regressions and their contract and characterization evidence; fix round 1 syncs the BCS1 Counts copy in the [roll-up](status/EVIDENCE_MAP_ROLLUP.md).
 
 - [plan-plan-contract-invariants-evidence-map](../validation/2026-10-26-plan-contract-invariants-evidence-map/README.md) — Builder-authored CONTRACT_INVARIANTS §§1–5 clause-to-test map ([지도](status/CONTRACT_INVARIANTS_EVIDENCE_MAP.md)), corpus/sensitivity boundaries and stdlib checker; source-informed and contract-path evidence separated, no new Rust tests, contract or grade change.
 
@@ -414,6 +547,14 @@
 
 - [plan-plan-validated-plan-borrow-tests](../validation/2026-10-28-plan-validated-plan-borrow-tests/README.md) — Source-informed ValidatedFeaturePlan construction, shared-accessor and borrow-boundary compilation fixtures; S10-CATALOG-AUTH remains PARTIAL, catalog authentication and backend admission open.
 
+- [plan-feature-ir-empty-stage-tests](../validation/2026-10-28-plan-feature-ir-empty-stage-tests/README.md) — Public-API empty Project, GroupBy and Sort rejection characterizations with nonempty controls; source-informed class B evidence only, no validator, contract, backend or grade change.
+
+- [plan-rs-profile-arithmetic-regressions](../validation/2026-10-28-plan-rs-profile-arithmetic-regressions/README.md) — Stdlib model creation-bps boundaries and recorded event-budget arithmetic; IM-01/IM-29 statuses and owners unchanged, operational MAX_BUNDLE_CHAIN UNDETERMINED, no PTB feasibility or policy selection.
+
+- [plan-perf-replay-result-evidence](../validation/2026-10-28-plan-perf-replay-result-evidence/README.md) — Actual classified reserve replies retained outside service/call timing; complete Retry first-result equality and captured-result corruption sensitivity; M-REPLAYED COVERED, schemas unchanged, release probe NOT_RUN, no timing or independent-proof claim.
+
+- [plan-perf-summary-arithmetic](../validation/2026-10-28-plan-perf-summary-arithmetic/README.md) — Builder-authored fixed p99 vectors, raw-CSV mixed/outcome summary reconciliation and synthetic integer goodput expectations; only M-MIXED-P99/M-OUTCOMES/M-GOODPUT become COVERED, apparatus scope only, release probe NOT_RUN, no benchmark, SLO or production claim.
+
 ## 역사 문서와 증거
 
 [루트 역사 문서 목록](../README.md#6-역사-문서--현행-계획-아님)의 V24·V23·V2·BLUEPRINT·ROADMAP 등은 현행 계획이 아닙니다. 특히 V24의 자동 R2 진행은 현재 금지입니다. 역사 문서의 상단 경고 뒤 본문은 당시 기록으로 보존합니다.
@@ -421,3 +562,254 @@
 [ADR-0001](adr/0001-ktx-authority-commit-recovery.md)의 안전 관계와 [보안 보완](PROTOCOL_HARDENING.md)·[저장 조사](STORAGE_INVESTIGATION.md)·[회귀 검증](RUNTIME_VALIDATION.md)은 근거별 범위로 읽습니다. 옛 계획의 승인 효력을 폐기했다고 안전 규칙이나 사건 기록을 삭제하지 않습니다.
 
 모델 1·첫 묶음 승인은 backend 채택·커널 전환 완료·실금전 운영 승인과 다릅니다. 미정 항목, 두 잠금 blob, R2 금지, (a) 보류, 위생 일괄 금지는 유지합니다.
+
+- [plan-plan-integration-gate-offline-gap-closur](../validation/2026-10-28-plan-integration-gate-offline-gap-closur/README.md) — Socket-guarded current OpenAPI byte pin/browser isolation, actor/action replay conflicts in Core and excluded wire-name dispatch regressions; three rows remain PARTIAL with HTTP/historical gaps, no gate behavior or grade change.
+
+- [plan-plan-provider-fact-normalization-offlin](../validation/2026-10-28-plan-provider-fact-normalization-offline/README.md) — Dependency-free offline `reference/provider_facts/` normalization harness over synthetic Toss-shaped recorded documents: five-field PaymentRef, integer-KRW no-f64 parsing, ambiguous-timezone preservation, verified-only normalization, per-item SHA-256 evidence hash, one-payment cancels[] history and operation→payment conflict binding; MOCK/synthetic evidence only, four Toss-map and five adapter-map rows updated, all UNDETERMINED cells/owners unchanged.
+
+- [plan-provider-evidence-summary-sync](../validation/2026-10-28-plan-provider-evidence-summary-sync/README.md) — Adapter §§3–4 summary and E01 pointer correction for the existing synthetic/offline provider harness (Analog, NOT Toss); no map-cell, count, owner, open-decision or capability-grade change.
+
+- [plan-provider-cancel-boundary-tests](../validation/2026-10-28-plan-provider-cancel-boundary-tests/README.md) — Synthetic offline cancellation amount/status boundaries through document and JSON-text entry points, mixed-history rejection and retained valid facts/hashes; technical representation checks only (Analog, NOT Toss), no implementation, policy or evidence-grade change.
+
+- [plan-provider-normalization-golden-vectors](../validation/2026-10-28-plan-provider-normalization-golden-vectors/README.md) — Source-informed literal synthetic facts, canonical UTF-8 bytes and SHA-256 vectors for payment/cancel, Korean text, raw timestamps and u128; formatting invariance and included-field sensitivity (Analog, NOT Toss), no operational encoding, contract or grade change.
+
+- [plan-provider-structural-rejection-tests](../validation/2026-10-28-plan-provider-structural-rejection-tests/README.md) — Offline synthetic provider structural rejection regressions through public parsing/normalization entry points, unchanged inputs and retained valid histories/facts/hashes; source-informed characterizations (Analog, NOT Toss), no implementation, contract, policy or evidence-grade change.
+
+- [plan-provider-binding-boundaries](../validation/2026-10-28-plan-provider-binding-boundaries/README.md) — Offline operation scope isolation and capture/reference rejection atomicity, preserving complete public binding/review/capture state; source-informed synthetic characterization (Analog, NOT Toss), no implementation, contract, policy or evidence-grade change.
+
+- [plan-plan-contract-invariants-s5-residual-cha](../validation/2026-10-28-plan-contract-invariants-s5-residual-cha/README.md) — Five public-API class B residual characterizations for F-B5/F-B6 and a raw-byte F-B1 provenance pin; PARTIAL statuses/owners retained, LOCKED_EDGE owner decision unresolved, no availability or precedence-completeness claim.
+
+- [plan-plan-perf-probe-other-outcome-tests](../validation/2026-10-28-plan-plan-perf-probe-other-outcome-tests/README.md) — Builder-authored nonzero other_error/other_observation probe fixtures, CSV/JSON reconciliation and M-OTHER coverage; ordinary workloads unchanged, release probe NOT_RUN, no timing, product SLO or A2 review claim.
+- [plan-perf-timing-boundaries](../validation/2026-10-28-plan-perf-timing-boundaries/README.md) — Deterministic virtual-clock service/elapsed boundary fixtures, exact CSV/JSON and included-preparation negative control; both timing rows remain PARTIAL with host/I/O caveats, release probe NOT_RUN, no benchmark or product target claim.
+
+- [plan-plan-readiness-mutation-guard-tests](../validation/2026-10-29-plan-plan-readiness-mutation-guard-tests/README.md) — Source-informed injected local-wrapper journal-rewrite and unjournaled-mutation guard characterizations, exception identity, fencing and committed-prefix recovery; no rollback, production-durability or backend-conformance proof, no grade change.
+
+- [plan-readiness-writer-lock-lifecycle](../validation/2026-10-29-plan-readiness-writer-lock-lifecycle/README.md) — Offline cross-process writer refusal and explicit-close/failed-initialization lock cleanup regressions; supplemental JRN-SINGLE-WRITER citations only, statuses and open decisions unchanged.
+
+- [plan-readiness-record-byte-boundaries](../validation/2026-10-29-plan-readiness-record-byte-boundaries/README.md) — Source-informed characterization of stamped JSON UTF-8 byte boundaries and oversized rejection atomicity/same-handle reuse; no implementation, product policy, evidence grade or recovery-decision change.
+
+- [plan-plan-readiness-json-codec-regressions](../validation/2026-10-29-plan-plan-readiness-json-codec-regressions/README.md) — Source-informed complete-frame JSON rejection, serialization-error atomicity and literal canonical Unicode receipt-digest regressions; no implementation, contract, evidence grade or open-decision change.
+
+- [plan-readiness-wrap-fault-sensitivity](../validation/2026-10-29-plan-readiness-wrap-fault-sensitivity/README.md) — Six persistent AI-delegation/reward recovery negative controls through unchanged conformance cases; intentional inner assertion failures with passing controls, no backend acceptance, independent verification or durability claim, no grade change.
+
+- [plan-readiness-wrap-restore-rejections](../validation/2026-10-29-plan-readiness-wrap-restore-rejections/README.md) — Public-API malformed AI-delegation/reward wrapper journal rejection characterizations with exact errors, unchanged caller input and paired valid controls; class B only, no implementation, contract, grade or open-decision change.
+
+- [plan-readiness-record-envelope-tests](../validation/2026-10-29-plan-readiness-record-envelope-tests/README.md) — Offline store envelope rejection with append preservation/reuse and complete checksum-valid frame refusal without rewriting; source-informed class B characterizations, no runtime, contract, grade or open-decision change.
+
+- [plan-readiness-post-append-ack-loss](../validation/2026-10-29-plan-readiness-post-append-ack-loss/README.md) — Seven controlled in-process completed-append acknowledgement-loss regressions with retained-result replay and no extra append; no OS-crash, power-loss, external exactly-once, production durability or grade claim.
+
+- [plan-local-payment-lookup-adapter](../validation/2026-10-30-plan-local-payment-lookup-adapter/README.md) — Internal operation-bound synthetic lookup service and deterministic fake; one-call normalization, zero-call scope rejection and unresolved failures with preserved evidence (Analog, NOT Toss); no authentication, provider conformance, durability, finality, payment-completion or grade change.
+
+- [plan-local-payment-scope-router](../validation/2026-10-30-plan-local-payment-scope-router/README.md) — Internal immutable synthetic scope routing through existing operation/payment bindings; exact provider/account/environment selection, no fallback, retained normalized outputs and capture/review state (Analog, NOT Toss); no authentication, merchant authorization, persistence or runtime activation.
+
+- [plan-local-payment-lookup-cli](../validation/2026-10-30-plan-local-payment-lookup-cli/README.md) — Reusable standard-library offline CLI for one operation-bound synthetic lookup from a fully validated local fixture; complete references, unchanged normalized facts/hashes, unresolved reasons and actual fake-call snapshots; no provider authentication, persistence, policy decision or runtime activation.
+
+- [plan-local-settlement-statement-adapter](../validation/2026-10-31-plan-local-settlement-statement-adapter/README.md) — Internal synthetic statement source, immutable local recordings and explicit caller-selected commit/observe adapter over the unchanged settlement FSM; offline example requires fixture policy/order and separate distribution, with MOCK provenance and false execution/durability/finality flags. No product policy, protocol command or runtime activation.
+- [plan-local-refund-acceptance-source](../validation/2026-10-31-plan-local-refund-acceptance-source/README.md) — Internal synthetic cancellation-acceptance source, immutable recordings and thin adapter over the unchanged settlement FSM; explicit refund obligation and separate observations preserve cash, open adjustment and partial-refund distribution blocking. No provider-history translation, product policy, new protocol command or runtime activation.
+
+- [plan-local-admission-presentation-adapter](../validation/2026-10-31-plan-local-admission-presentation-adapter/README.md) — Internal synthetic presentation inputs, immutable recordings and separate explicit authorization/consume delegation to the existing bound admission FSM; mock-only replay and refusal evidence. No identity/currentness authority, reissuance, product policy, new protocol command or runtime activation.
+
+- [Local admission session and CLI](../reference/booking_resale_admission/README.md#reusable-admission-session-and-jsonl-cli) · [plan-local-admission-session-cli evidence](../validation/2026-11-02-plan-local-admission-session-cli/README.md) — Explicit synthetic setup and JSONL requests through the actual local FSM graph; separate authorization/consume, first receipts/current views and unchanged refusal codes. Mock-only; no production policy or activation.
+
+- [plan-local-resale-offer-source](../validation/2026-11-02-plan-local-resale-offer-source/README.md) — Synthetic immutable resale recordings and an explicit one-fetch listing adapter to the existing FSM, with actual-machine example and source-informed parity tests; R01/R05 remain partial/설계중, policy UNDETERMINED with existing owners, no payment/transfer handoff or production claim.
+
+- [Local resale session and CLI](../reference/booking_resale_admission/README.md#reusable-resale-session-and-jsonl-cli) · [plan-local-resale-session-cli evidence](../validation/2026-11-02-plan-local-resale-session-cli/README.md) — Explicit synthetic setup and JSONL resale lifecycle through actual local FSMs; separate payment/binding/transfer, first receipts/current views and strict parsing, preserving UNBOUND and mock limitations. No policy, protocol command or runtime activation.
+
+- [Shared local ticket operations desk](../reference/booking_resale_admission/README.md#shared-local-ticket-operations-desk) · [plan-local-ticket-operations-desk evidence](../validation/2026-11-02-plan-local-ticket-operations-desk/README.md) — One in-memory graph for explicit resale/admission operations, strict combined fixtures and ordering/replay transcripts. Mock-only; timing, authentication and reissuance remain UNDETERMINED; no runtime activation.
+
+- [Local booking desk session and CLI](../reference/booking_resale_admission/README.md#local-booking-desk-session-and-jsonl-cli) · [plan-local-booking-desk-cli evidence](../validation/2026-11-02-plan-local-booking-desk-cli/README.md) — Explicit show registration and pre-payment holds/confirmation/cancellation through the unchanged reservation FSM; strict JSONL and synthetic transcripts, no payment/issuance handoff, policy decision or activation.
+
+## 2026-11-02 로컬 보상 데스크 — 위치 안내만
+
+- [F4 local reward desk usage](../reference/token_reward/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged reward FSM; no policy, approval or runtime activation.
+- [plan-local-reward-desk evidence](../validation/2026-11-02-plan-local-reward-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
+- [Guided local reward console](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-05 builder evidence](../validation/2026-11-05-plan-local-reward-console/README.md) — Fresh in-process F4 session, complete proposals and literal single-use confirmation, historical snapshots and explicit reads; no policy or FSM change, A2 non-author review and exact-head KTX/KIX CI pending.
+
+- [Recorded payments in both local ticket desks](../reference/booking_resale_admission/README.md#recorded-payments-in-both-local-ticket-desks) · [plan-local-resale-payment-desk evidence](../validation/2026-11-02-plan-local-resale-payment-desk/README.md) — Strict synthetic payment recordings and explicit one-observation requests through standalone/shared desks; separate transfer/admission and unchanged STALE_VERSION refusals. No policy, provider authority, real funds or runtime activation.
+
+- [Explicit reconciliation in local ticket desks](../reference/booking_resale_admission/README.md#explicit-reconciliation-in-local-ticket-desks) · [plan-local-ticket-desk-reconciliation evidence](../validation/2026-11-03-plan-local-ticket-desk-reconciliation/README.md) — Caller-directed delegation to existing FSM reconciliation, historical replay/current views and shared ownership-change refusals; process-local bookkeeping, no repair, durable recovery or activation.
+- [Explicit local ticket fulfillment](../reference/booking_resale_admission/README.md#explicit-ticket-fulfillment-on-the-shared-desk) · [plan-local-ticket-fulfillment-desk evidence](../validation/2026-11-03-plan-local-ticket-fulfillment-desk/README.md) — Explicit synthetic binding, issuance and separate resale/admission adoption; source-informed local evidence with pending review/CI gates.
+- [Source-backed issued ticket handoff](../reference/booking_resale_admission/README.md#source-backed-issued-ticket-handoff-on-the-shared-desk) · [plan-local-issued-ticket-handoff evidence](../validation/2026-11-03-plan-local-issued-ticket-handoff/README.md) — One caller-selected adoption from the same local booking/show records; separate explicit issuance and lifecycle requests, original buyer inputs, unchanged mock semantics; policy/legal effects UNDETERMINED, review and CI pending.
+- [Booking on the shared local ticket desk](../reference/booking_resale_admission/README.md#booking-on-the-shared-desk) · [plan-plan-local-ticket-desk-booking-surface evidence](../validation/2026-11-03-plan-plan-local-ticket-desk-booking-surface/README.md) — Existing booking dispatcher over the shared reservation machine, explicit clock prerequisites, historical/current views and admission visibility; synthetic local evidence, no policy or capability-grade change.
+- [Synthetic local resale payment source](../reference/booking_resale_admission/README.md#synthetic-local-resale-payment-source) · [plan-local-resale-payment-source evidence](../validation/2026-11-02-plan-local-resale-payment-source/README.md) — Immutable synthetic recordings, one-fetch payment observation adapter and explicit session payment/transfer requests; unchanged FSM semantics and mock flags. No provider authority, product policy, reservation handoff or runtime activation.
+
+- [plan-plan-local-booking-quote-source](../validation/2026-11-03-plan-plan-local-booking-quote-source/README.md) — Builder-authored synthetic recorded-quote source, adapter and standalone booking CLI confirmation evidence; [interface and fixture guide](../reference/booking_resale_admission/README.md#synthetic-recorded-booking-quotes). No authenticated pricing, discount policy, payment handoff, protocol command, grade change or runtime activation.
+- [Recorded booking quotes on the shared desk](../reference/booking_resale_admission/README.md#recorded-booking-quotes-on-the-shared-desk) · [plan-local-ticket-desk-quotes evidence](../validation/2026-11-03-plan-local-ticket-desk-quotes/README.md) — Optional recorded-quote adapter on the existing shared booking graph, explicit Python/JSONL composition and source refusal/replay evidence; synthetic in-memory only, pricing/discount/quote authority UNDETERMINED — Astra/User, no payment handoff or activation.
+- [Locally calculated booking quotes](../reference/booking_resale_admission/README.md#locally-calculated-booking-quotes) · [plan-local-calculated-booking-quotes evidence](../validation/2026-11-03-plan-local-calculated-booking-quotes/README.md) — Opt-in single-line undiscounted KRW calculation source on both local desks; CALCULATION_ONLY, no authenticated quote authority, payment handoff or activation; pricing/discount/quote policy remains UNDETERMINED — Astra/User.
+- [Request-time calculated booking confirmation](../reference/booking_resale_admission/README.md#request-time-calculated-booking-confirmation) · [plan-local-booking-calculation-inputs evidence](../validation/2026-11-04-plan-local-booking-calculation-inputs/README.md) — Complete request text on both local booking desks without startup quote recordings; calculator/confirmation composition only, CALCULATION_ONLY and MOCK_GATE_ONLY remain distinct; no authority decision, payment handoff or activation.
+- [Calculation-only booking quote preview](../reference/booking_resale_admission/README.md#calculation-only-booking-quote-preview) · [plan-local-booking-quote-preview evidence](../validation/2026-11-04-plan-local-booking-quote-preview/README.md) — Complete unchanged quote on both local booking desks before explicit confirmation; no reservation access, mutation clock, key binding or source fetch; B03/B05 stay partial and quote authority remains undetermined.
+
+- [Shared local ticket settlement controls](../reference/booking_resale_admission/README.md#explicit-settlement-controls-on-the-shared-ticket-desk) · [plan-local-ticket-settlement-controls evidence](../validation/2026-11-03-plan-local-ticket-settlement-controls/README.md) — Five explicit existing settlement selectors on the shared ticket graph; synthetic in-memory evidence, policy/legal treatment UNDETERMINED, pending review and CI.
+
+- [Shared local ticket refund controls](../reference/booking_resale_admission/README.md#explicit-refund-controls-on-the-shared-ticket-desk) · [plan-plan-local-ticket-refund-controls evidence](../validation/2026-11-03-plan-plan-local-ticket-refund-controls/README.md) — Explicit refund obligations and synthetic recorded cancellation acceptance on the shared settlement machine; policy and liability UNDETERMINED, no automatic ticket effects or external return closure; pending review and CI.
+- [Shared local ticket recorded statements and distribution](../reference/booking_resale_admission/README.md#recorded-statements-and-explicit-distribution-on-the-shared-ticket-desk) · [plan-local-ticket-statement-distribution evidence](../validation/2026-11-03-plan-local-ticket-statement-distribution/README.md) — Explicit recorded commit/later observation and caller-ordered distribution on the shared settlement; synthetic only, policy UNDETERMINED, independent review and exact-head CI pending.
+- [Shared local settlement failure, cancellation and reconciliation](../reference/booking_resale_admission/README.md#settlement-failure-cancellation-and-reconciliation-on-the-shared-ticket-desk) · [plan-local-ticket-settlement-exceptions evidence](../validation/2026-11-03-plan-local-ticket-settlement-exceptions/README.md) — Explicit existing FSM controls with strict JSONL selectors; process-local reconciliation, no automatic ticket or external money effects; legal effects UNDETERMINED — User/legal; independent review and exact-head CI pending.
+- [Initiating settlement from local ticket records](../reference/booking_resale_admission/README.md#initiating-settlement-from-local-ticket-records) · [plan-local-ticket-settlement-inputs evidence](../validation/2026-11-04-plan-local-ticket-settlement-inputs/README.md) — Explicit booking/resale source selection on the same in-memory graph; single source read and existing initiation call, manual/source replay parity and separate lifecycle requests; synthetic only, policy/legal treatment UNDETERMINED, non-author review and exact-head CI pending.
+- [Request-time synthetic settlement facts](../reference/booking_resale_admission/README.md#request-time-synthetic-settlement-facts) · [plan-local-settlement-fact-inputs evidence](../validation/2026-11-04-plan-local-settlement-fact-inputs/README.md) — Complete local statement and cancellation acceptance fields without startup recordings; unchanged FSM replay/refusals, explicit distribution/refund steps, synthetic flags preserved; non-author review and exact-head CI pending.
+- [Live local ticket subprocess client](../reference/booking_resale_admission/README.md#live-local-subprocess-client) · [plan-local-ticket-stdio-client evidence](../validation/2026-11-04-plan-local-ticket-stdio-client/README.md) — Explicit single-child JSONL exchanges, caller-directed requests and transport uncertainty fencing; synthetic/non-production only, review and exact-head CI pending.
+- [Request-time local resale inputs](../reference/booking_resale_admission/README.md#request-time-resale-inputs) · [plan-local-resale-request-inputs evidence](../validation/2026-11-04-plan-local-resale-request-inputs/README.md) — Complete caller inputs through one existing FSM listing call, empty-offer file/stdin transcripts and explicit continuation; synthetic only, policy/legal effects UNDETERMINED, non-author review and exact-head CI pending.
+
+- [Request-time local admission inputs](../reference/booking_resale_admission/README.md#request-time-admission-inputs) · [plan-local-admission-request-inputs evidence](../validation/2026-11-04-plan-local-admission-request-inputs/README.md) — Separate complete caller-input authorization/consumption on standalone and shared desks, empty-recording file/stdin transcripts and existing FSM checks/replay semantics; synthetic only, policy/legal effects UNDETERMINED, non-author review and exact-head CI pending.
+
+## Guided local booking console evidence
+
+- [Source-backed booking console usage](../reference/booking_resale_admission/README.md#source-backed-booking-confirmation-in-the-live-consoles) · [2026-11-10 builder evidence](../validation/2026-11-10-plan-plan-local-source-quote-console/README.md) — Optional recorded/calculated sources on one live local child, explicit confirmation/current views, historical replay, original refusals and terminal fencing. Policy UNDETERMINED — Astra/User; legal effects UNDETERMINED — User/legal; independent exact-head A2 review and KTX/KIX CI remain pending.
+
+- [Guided local booking console usage](../reference/booking_resale_admission/README.md#guided-local-booking-console) — standard-library prompts over one local synthetic desk; calculation-only preview and explicit mock reservation confirmation.
+- [2026-11-05 console builder validation](../validation/2026-11-05-plan-plan-local-booking-console/README.md) — coverage mapping, executed commands, protected-byte checks and pending non-author exact-head review/CI. This index grants no production or merge authority.
+
+- [Guided local resale console usage](../reference/booking_resale_admission/README.md#guided-local-resale-console) · [2026-11-05 resale console builder evidence](../validation/2026-11-05-plan-plan-local-resale-console/README.md) — Standard-library prompts over one live synthetic ticket desk; separate listing/payment/ownership outcomes, explicit replay/current views and terminal uncertainty fencing. No policy or capability-grade change; independent exact-head review/CI pending.
+
+- [Guided local admission console usage](../reference/booking_resale_admission/README.md#guided-local-admission-console) · [2026-11-05 admission console builder evidence](../validation/2026-11-05-plan-plan-local-admission-console/README.md) — One socket-free synthetic desk, separate explicit authorization/consumption, receipt snapshots versus current local observations, decline and terminal fencing. Timing/identity/legal policy remain UNDETERMINED; no grade change, independent exact-head review/CI pending.
+
+- [Guided local settlement console usage](../reference/booking_resale_admission/README.md#guided-local-settlement-console) · [2026-11-05 settlement console builder evidence](../validation/2026-11-05-plan-plan-local-settlement-console/README.md) — One local synthetic desk, explicit statement/distribution/refund/acceptance selections, separate service cash/allocation/refund/PG-adjustment fields and historical/current views; policy/legal effects UNDETERMINED, independent exact-head review/CI pending.
+- [Caller-entered settlement policy and distribution order](../reference/booking_resale_admission/README.md#caller-entered-policy-and-distribution-order) · [2026-11-08 composer builder evidence](../validation/2026-11-08-plan-local-settlement-input-composer/README.md) — Additive guided policy fields and ordered payees, raw-JSON parity and one request per explicit confirmation; synthetic P04/F01–F03 only, policy/legal treatment UNDETERMINED, exact-head review/CI pending.
+- [Start synthetic settlements from booking/resale](../reference/booking_resale_admission/README.md#guided-local-settlement-console) · [2026-11-05 start-flow builder evidence](../validation/2026-11-05-plan-local-settlement-console-start/README.md) — Explicit source, identifiers, debtor, synthetic policy and keys; separate initiation/authorization/capture confirmations, source-owned amount/currency and continued statement/distribution/refund controls. No automatic ticket binding or payment observation; no capability grade change, policy/legal effects UNDETERMINED, exact-head review/CI pending.
+
+- [Recorded offer/presentation console usage](../reference/booking_resale_admission/README.md#recorded-offers-and-presentations-in-the-ticket-console) · [2026-11-09 builder evidence](../validation/2026-11-09-plan-local-recorded-ticket-console/README.md) — Existing local recorded selectors with separate literal confirmation, explicit replay/current views and terminal fencing. Synthetic only; policy/legal effects remain UNDETERMINED, non-author exact-HEAD review and KTX/KIX checks pending.
+- [Shared local ticket console usage](../reference/booking_resale_admission/README.md#shared-local-ticket-console) · [2026-11-05 shared console builder evidence](../validation/2026-11-05-plan-local-shared-ticket-console/README.md) — Booking/resale/admission/settlement navigation over one live synthetic desk, explicit current views, fresh booking previews on re-entry and session-wide terminal fencing. No policy or capability-grade change; non-author exact-head review and KTX/KIX CI pending.
+- [Caller-entered synthetic resale console payments](../reference/booking_resale_admission/README.md#caller-entered-synthetic-resale-payments-in-the-shared-console) · [2026-11-06 payment input builder evidence](../validation/2026-11-06-plan-plan-local-resale-payment-console-inputs/README.md) — Explicit buyer/null, integer amount, reference and key over one shared child; separately selected settlement/transfer, original refusals/replay and terminal fencing. Policy UNDETERMINED — Astra/User; provider authentication UNDETERMINED — Toss/User; non-author exact-head review and CI pending.
+- [Guided local ticket exception actions](../reference/booking_resale_admission/README.md#guided-local-ticket-exception-actions) · [2026-11-06 builder evidence](../validation/2026-11-06-plan-plan-local-ticket-exception-console/README.md) — Confirmed reconciliation on all four surfaces plus existing settlement fail/cancel; historical receipts, explicit current views and session fencing. Policy UNDETERMINED — Astra/User; legal/accounting effects UNDETERMINED — User/designated advisers; non-author exact-head A2 review and KTX/KIX CI pending.
+- [Guided local fulfillment console](../reference/booking_resale_admission/README.md#guided-local-fulfillment-in-the-shared-console) · [2026-11-05 builder evidence](../validation/2026-11-05-plan-local-fulfillment-console/README.md) — Explicit synthetic paid-order binding/issuance, separate source-backed admission/resale adoptions, authorization and independently confirmed consumption on one local graph; historical receipts versus current views and session-wide fencing. No policy/capability-grade change; non-author exact-head review and KTX/KIX CI pending.
+
+## 2026-11-05 로컬 신용 데스크 — 위치 안내만
+
+- [F04 local credit desk usage](../reference/credit_advance_f04/README.md) — synthetic-only importable session and strict JSONL CLI over the unchanged credit FSM; optional real local settlement replay for the bound-draw COMMITTED gate; no policy, approval or runtime activation.
+- [plan-local-credit-desk evidence](../validation/2026-11-05-plan-local-credit-desk/README.md) — builder-authored local checks and deterministic transcripts; non-author exact-head review and KTX/KIX CI remain separate gates.
+- [Live local credit subprocess client](../reference/credit_advance_f04/README.md#live-local-subprocess-client) · [runnable example](../reference/credit_advance_f04/example_credit_client.py) · [plan-local-credit-stdio-client evidence](../validation/2026-11-06-plan-local-credit-stdio-client/README.md) — Explicit single-child JSONL exchanges, caller-directed requests and transport uncertainty fencing; synthetic/non-production only, non-author review and exact-head CI remain separate gates.
+
+## 2026-11-05 로컬 AI 위임 데스크 — 위치 안내만
+
+- [Local AI delegation desk usage](../reference/ai_delegation/README.md) — seven explicit session methods and a strict JSONL CLI over the unchanged synthetic mock; execution disabled, A5 check-order discrepancy retained with its owners, no policy or runtime activation.
+- [plan-local-ai-delegation-desk evidence](../validation/2026-11-05-plan-local-ai-delegation-desk/README.md) — builder-authored coverage, executed commands and deterministic transcripts; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-05 위치 동기화 — observed main #398
+
+고정 기준 cached `origin/main` `bca90b865442ba287b4aecf5ca6b5bde5d767a3a`; 원격 최신성은 fetch NOT_RUN으로 미검증이다. #290–#398의 104개 first-parent 병합 위치는 [개발계획 §5](DEVELOPMENT_PLAN.md#5-전체-단계), [capability register](status/CURRENT_CAPABILITY_REGISTER.md), [loop-node crosswalk](status/LOOP_NODE_CROSSWALK.md)에 연결한다. 기존 날짜별 집계·등급·소유자·열린 정지는 그대로다. 서로 다른 coverage 등급은 합산하지 않는다. 현재 source-map별 집계는 [roll-up](status/EVIDENCE_MAP_ROLLUP.md)과 아래 검증 기록의 실제 checker 출력으로 확인한다.
+
+- [plan-register-index-sync-20261105](../validation/2026-11-05-plan-register-index-sync-20261105/README.md) — §5 추가 71행, register 16행의 fixture 위치·근거, crosswalk 추가 14행·56 nonmatch·5 absent 번호 및 실제 로컬 검증. 등급·상태·소유자·canonical 완료 변경 없음.
+
+현재 index checker 집계(새 검증 기록 포함): **scanned=361, indexed=326, allowlisted=35**. 과거 집계는 당시 기준이며 바꾸지 않는다. 25개 계약의 roll-up은 textual index이며 다른 coverage 등급을 하나의 완료 수로 더하지 않는다.
+
+## 2026-11-06 로컬 AI 위임 console — 위치 안내만
+
+- [Console 사용법](../reference/ai_delegation/README.md#interactive-console) — 명시적 입력·preview·SUBMIT, 합성 grant/query/proposal/결정/회수와 현재 기록 replay. 실행·효과 플래그는 false다.
+- [Console builder 검증 기록](../validation/2026-11-06-plan-plan-local-delegation-console/README.md) — 기존 coverage mapping, 실제 로컬 명령과 한계. 독립 A2 검토·exact-head CI·병합 승인이 아니며 A5의 class-C check-order 및 missing-grant 해석은 Astra/User 미해결 상태다.
+
+이 기록 추가 후 로컬 index checker 집계: **scanned=362, indexed=327, allowlisted=35**. 위 집계는 각 기록 당시 기준으로 보존한다.
+
+- [Guided local payment lookup console](../reference/provider_facts/README.md#guided-local-payment-lookup-console) · [2026-11-07 builder evidence](../validation/2026-11-07-plan-local-payment-lookup-console/README.md) — Explicit synthetic fixture, complete OperationRef preview and one confirmed local router lookup; no payment-completion decision or economic application. Provider authentication UNDETERMINED — Toss/User; non-author A2 exact-head review and KTX/KIX CI remain required.
+
+- [Guided reward console subprocess mode](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-07 builder evidence](../validation/2026-11-07-plan-plan-local-reward-live-console/README.md) — One live synthetic local reward desk across confirmed actions and explicit reads; uncertainty stops submission, no retry/fallback, no policy, FSM or capability-grade change.
+- [Reward identity and synthetic approval composer](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-08 builder evidence](../validation/2026-11-08-plan-local-reward-approval-composer/README.md) — Optional `:guided` entry with explicit evidence and prior-record omission; raw JSON and live local desk operations remain available. Caller assertions only; no approver provisioning, policy value or capability-grade change. Non-author exact-head review and required CI remain pending.
+- [Reward source snapshot composer](../reference/token_reward/README.md#guided-local-reward-console) · [2026-11-09 builder evidence](../validation/2026-11-09-plan-local-reward-source-composer/README.md) — Explicit synthetic source phase, currency and finality flags with opaque additional JSON fields for observation, eligibility, cancellation and refund; no source-machine connection, policy default, FSM or capability-grade change. A2 non-author exact-head review and required KTX/KIX CI remain pending.
+
+- [Reusable local delegation client and subprocess console](../reference/ai_delegation/README.md#reusable-local-subprocess-client) — standard-library JSONL child ownership, explicit confirmations, terminal transport fencing; execution disabled, A5 and policy/identity/legal owners unchanged.
+- [Local delegation live console builder evidence](../validation/2026-11-07-plan-plan-local-delegation-live-console/README.md) — source-informed coverage, actual local checks, preservation and transcripts; no status promotion, A2 review or exact-head CI claim.
+
+- [Guided delegation input composer builder evidence](../validation/2026-11-08-plan-local-delegation-input-composer/README.md) — optional guided composition, unchanged envelopes, local child parity and failure fencing; A5, policy owners, A2 review and exact-head CI gates remain unchanged.
+- [Guided delegation registry initialization builder evidence](../validation/2026-11-10-plan-local-delegation-guided-init/README.md) — fixture-free confirmed startup, correlated acknowledgement and failure fencing; synthetic identities only, authority UNDETERMINED — Astra/User, A5 and exact-head review/CI gates unchanged.
+
+- [Synthetic local pool accounting workbench](../reference/token_reward/README.md#local-pool-accounting-workbench) · [2026-11-09 pool workbench builder evidence](../validation/2026-11-09-plan-plan-local-pool-accounting-workbench/README.md) — Explicit five-pool initialization, direct model credit/spend/view, confirmed guided mutations and original refusals. Separate POINT_F4 process-local simulation; pool/funding/approval values UNDETERMINED — Astra/User, accounting/legal treatment UNDETERMINED — User/designated advisers; A2 non-author exact-head review and KTX/KIX CI pending.
+
+- [Guided synthetic pool opening composer](../reference/token_reward/README.md#local-pool-accounting-workbench) · [2026-11-09 opening composer builder evidence](../validation/2026-11-09-plan-local-pool-opening-composer/README.md) — Optional explicit five-balance entry, shared initialization confirmation and unchanged process-local accounting; no funding or policy defaults. A2 non-author exact-final-head review and KTX/KIX CI remain pending.
+
+- [Live synthetic pool client and subprocess console](../reference/token_reward/README.md#live-pool-subprocess-client) · [2026-11-09 live pool builder evidence](../validation/2026-11-09-plan-local-pool-live-console/README.md) — One persistent caller-initialized local child, confirmed mutations and explicit reads; complete synthetic envelopes, terminal uncertainty fencing and child cleanup. Pool/funding policy UNDETERMINED — Astra/User; accounting UNDETERMINED — User/designated advisers. A2 non-author exact-final-head review and KTX/KIX CI remain pending.
+
+- [Guided live pool initialization](../reference/token_reward/README.md#live-pool-subprocess-client) · [2026-11-10 guided live builder evidence](../validation/2026-11-10-plan-local-pool-guided-live-init/README.md) — Confirmed five-balance initialization over stdin to one local child without an initialization fixture file; complete envelope parity and terminal initialization uncertainty cleanup. Funding policy UNDETERMINED — Astra/User; accounting UNDETERMINED — User/designated advisers. A2 non-author exact-final-head review and KTX/KIX CI remain delivery gates.
+
+## 2026-11-10 로컬 결제 효과 데스크 — 위치 안내만
+
+- [Synthetic local payment effect desk](../reference/payment_effects/README.md) — explicit synthetic fixture initialization of one private in-memory Core, the four already-published effect commands and detached selected views. `send_effect` is a local intent only; no provider, bank, chain or network transmission, pending Finance projection or new protocol command.
+- [plan-plan-local-payment-effect-desk builder evidence](../validation/2026-11-10-plan-plan-local-payment-effect-desk/README.md) — real JSONL subprocess journeys, direct-Core parity, existing coverage mapping, actual local commands and protected-file preservation. Product values UNDETERMINED — Astra/User; provider facts UNDETERMINED — provider/User; legal/accounting treatment UNDETERMINED — User/designated advisers. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-10 Manifest-v1 verifier negative vectors — 위치 안내만
+
+- [plan-manifest-verifier-negative-vector-comple builder evidence](../validation/2026-11-10-plan-manifest-verifier-negative-vector-comple/README.md) — a 56-case companion single-fault matrix over the manifest, `bootstrap-2` profile and sidecar, run by the SDK conformance harness against a temporary verifier root. Every case asserts the exact error set without ordering. Positive manifest/profile/sidecar/vector bytes and `verify_compat.mjs` are unchanged; SD1 stays OPEN, scope stays BOOTSTRAP, and no semantic or N/N-1 claim is added.
+
+## 2026-11-10 audit #30 위치 동기화 — 위치 안내만
+
+Bounded selection: 정확히 PR #426–#435이며, #399–#425와 #435 이후 범위는 이 절의 대상이 아니다. 이 절은 위치 안내만이며 canonical node 수락·완료·등급·상태·소유자·집계 변경이 아니다. 관측 base와 `origin/main`은 `bee3fc18281ca38204930d80a0e665b9575985d4`(merge #435)이다. Canonical counting은 계속 `DECISION_REQUIRED · Astra`다.
+
+- [개발계획 §5 audit #30 보충](DEVELOPMENT_PLAN.md#2026-11-10-audit-30--bounded-current-tree-location-supplement)
+- [capability register — Audit30 supplement](status/CURRENT_CAPABILITY_REGISTER.md#audit30-current-tree-supplement)
+- [loop-node crosswalk §8](status/LOOP_NODE_CROSSWALK.md#8-audit30-current-tree-supplement)
+- [audit #30 builder 검증 기록](../validation/2026-11-10-audit30-sync-nov10-location-tables/README.md) — 관측 SHA, first-parent merge mapping, 실제 로컬 checker 결과, locked blob 및 `reference/v0.3-rc1/**` 보존, 남은 전달 gate. 비작성자 검토·exact-head KTX/KIX CI·병합 승인이 아니다.
+
+SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate는 기존 조건과 소유자로 열린 채 남는다. 운영 capability 수 **0**, semantic consumers **HOLD**, unsupported bindings **NOT_BOUND**를 바꾸지 않는다.
+
+## 2026-11-10 commerce journey end-to-end conformance — 위치 안내만
+
+- The Commerce companion evidence index provides non-normative navigation across nine packs and 323 steps, with exact case/step/action associations, byte pins, resolvable outcomes and replay locations. Semantic consumption remains `HOLD_SEMANTIC`, all 13 reads remain `NOT_BOUND`, SD1 remains `OPEN` and User-owned, and external acceptance remains `UNVERIFIED`. [Index](status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md) · [JSON](status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) · [Initial index validation](../validation/2026-11-17-plan-commerce-companion-evidence-index/README.md)
+- [Commerce settlement-bound resale refusal vectors](../reference/booking_resale_admission/README.md#commerce-settlement-bound-resale-refusal-vectors) · [builder evidence](../validation/2026-11-17-plan-commerce-bound-resale-refusals/README.md) — three source-informed portable histories: committed amount mismatch, failed settlement, and retained rejected transfer key after commitment followed by an explicit fresh-key transfer and accepted replay. Complete outcomes, source pins and detached five-machine diagnostics; every refusal preserves ownership/version and accepted journals. All 13 reads NOT_BOUND, semantic consumption HOLD_SEMANTIC, SD1 OPEN/User-owned; policy values UNDETERMINED with existing owners. A2 non-author exact-head review and KTX/KIX CI remain delivery gates.
+- [Commerce settlement-bound issuance refusal vectors](../reference/booking_resale_admission/README.md#commerce-settlement-bound-issuance-refusal-vectors) · [builder evidence](../validation/2026-11-16-plan-commerce-bound-issuance-vectors/README.md) — two source-informed portable reservation histories through the unchanged in-process host: payment observation and explicit settlement binding, `SETTLEMENT_NOT_COMMITTED` refusals at AUTHORIZED and CAPTURED, an explicitly replayed original rejected key retaining its refusal after commit, a separate explicit fresh-key issuance, and a separate committed-gross amount mismatch (`SETTLEMENT_AMOUNT_MISMATCH`) preserving the paid reservation without creating a right. All five machines' snapshots, digests and journals are preserved around every refusal; rejected-key retention stays process-local. All 13 reads NOT_BOUND, semantic consumption HOLD_SEMANTIC, SD1 OPEN/User-owned; policy values UNDETERMINED with existing owners. A2 non-author exact-head review and KTX/KIX CI remain delivery gates.
+- [Commerce resale/admission ordering vectors](../reference/booking_resale_admission/README.md#commerce-resale-and-admission-ordering-vectors) · [builder evidence](../validation/2026-11-16-plan-commerce-entry-resale-order-vectors/README.md) — two source-informed portable §11.4 histories with complete receipts, exact refusals, detached diagnostics and journals; cancellation requires later explicit authorization, authorization/consumption block resale. All 13 reads NOT_BOUND, semantic consumption HOLD_SEMANTIC, SD1 OPEN/User-owned; no consumer qualification. A2 non-author exact-head review and KTX/KIX CI remain delivery gates.
+- [Historical Commerce receipt replay vectors](../validation/2026-11-15-plan-commerce-historical-receipt-vectors/README.md) — five source-informed in-process histories, canonical complete receipts/errors and explicit input/source pins. Replays retain first snapshots while current observations retain consumption, closure or refund state; no additional effects or journal append. Semantic consumption remains HOLD_SEMANTIC, 13 reads NOT_BOUND and SD1 OPEN/User-owned; A2 non-author exact-head review and KTX/KIX CI remain delivery gates.
+- [Commerce expiry and stale-ownership vectors](../validation/2026-11-15-plan-commerce-temporal-vectors/README.md) — three source-informed in-process cases with complete ordered inputs, full receipt/refusal comparison and source pins. The 13 reads stay NOT_BOUND, SD1 stays OPEN/User-owned, and semantic consumption stays HOLD_SEMANTIC. Product time limits remain UNDETERMINED with Astra; review and exact-head CI remain delivery gates.
+- [Complete Commerce journey receipt vectors and local evidence](../validation/2026-11-13-plan-commerce-receipt-goldens/README.md) — 44 ordered in-process mock outcomes, full receipt byte comparison and source pins. The 13 reads stay NOT_BOUND, SD1 stays OPEN/User-owned, and semantic consumption stays HOLD_SEMANTIC. Independent exact-head review and CI remain delivery gates.
+- [plan-commerce-journey-end-to-end-conformance builder evidence](../validation/2026-11-10-plan-commerce-journey-end-to-end-conformance/README.md) — one deterministic 44-step offline transcript through the published FSM catalogue on one show: reservation, primary payment observation, issuance, resale adoption/listing/transfer, admission, settlement distribution, cancellation/failure/refund and five adverse refusals. Command receipts are the only evidence; mock gate and mock settlement only, all funds/finality/production flags false, and the 13 read queries remain NOT_BOUND. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-10 settlement-to-credit boundary vectors — 위치 안내만
+
+- [Cross-boundary settlement-to-credit vector pack](../reference/credit_advance_f04/README.md#cross-boundary-settlement-to-credit-vector-pack) · [builder evidence](../validation/2026-11-10-plan-settlement-credit-boundary-vectors/README.md) — six synthetic consumer-replay scenarios across the F01-F03 settlement to F04 credit boundary: literal captured/committed claim snapshots as the face with no derivation, frozen face and stable `view_claim`, refund obligation and partial acceptance with `funds_executed: false`, two advances sharing one exposure ledger with caller-supplied limits, and a reported reconciliation gap with no repair. Exact JSON vectors replay with a stdlib driver; no adapter, command, product policy, Finance design, funds or funds-finality claim. A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-10 settlement variance contract — 위치 안내만
+
+- [Settlement variance observation](../reference/credit_advance_f04/README.md#settlement-variance-observation-cr-capital-1110-1) · [builder evidence](../validation/2026-11-10-cr1110-settlement-variance-contract/README.md) — F04 §7.11 defines `variance = Σ settlement obligations[].outstanding − credit view_claim.open_face` over literal mock snapshots, with a required caller-supplied `tolerance` and no default. Non-zero or out-of-tolerance observations map to `NOT_BOUND` with repair `NONE`, fail-closed and without exposure authority; `cash_delta`/`recovery_delta` are diagnostic-only and the refund component is `NOT_BOUND`. Six canonical fixture scenarios plus a stdlib replay driver; no protocol command, FSM state, error-table entry, OpenAPI byte, product policy, funds or finality claim. A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-11 shared exposure contract — 위치 안내만
+
+- [Shared exposure observation](../reference/credit_advance_f04/README.md#shared-exposure-observation-cr-capital-1110-2) · [builder evidence](../validation/2026-11-11-cr1110-shared-exposure-contract/README.md) — F04 §7.12 defines the caller-grouped, observation-only aggregation of frozen `CreditMachine.view` snapshots sharing a debtor or pool label: advance-level exposure sums plus claim-level capacity counted once per distinct `claim_id`, with a required caller-supplied `limit` and no default. `within_limit` is inclusive and never an acceptance; the machine enforces only per-claim ceilings. Frozen faces are not recomputed and exposure moves only via the existing `draw`/`repay`/`close`/`default` transitions; the refund component is `NOT_BOUND`. Every observation maps to `NOT_BOUND` with repair `NONE`, fail-closed and without exposure authority; `group_id` is a label, not a legal party. Six canonical fixture scenarios plus a stdlib replay driver extend the boundary-vectors pack without duplicating it; no protocol command, FSM state, error-table entry, OpenAPI byte, product policy, funds or finality claim. A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-11 partial-refund bearer REQUESTER (B5) — 위치 안내만
+
+- [builder evidence](../validation/2026-11-11-cr1110-refund-bearer-requester/README.md) — owner decision 2026-11-10 adopts SET option B5 `REQUESTER` for partial refunds: the mock reports `refund_bearer_policy = "REQUESTER"`, `distribution_blocked` stays `false`, distribution continues without reducing payee faces or creating `recovery_due`, and the retained `REFUND_OBLIGATION_OPEN` gate in F04 is unchanged. The historical `DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED` code stays in the SET §6 table as unreachable. All netting mechanics and numbers remain `UNDETERMINED`; the legal refund debtor is unchanged. Mock funds only, all execution flags false, no new protocol command. A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-12 on-sale admission control (stage-5 local) — 위치 안내만
+
+- [Contract revision ONSALE-STAGE5-LOCAL-0.1](../runtime/ONSALE_ADMISSION_CONTROL.md) · [builder evidence](../validation/2026-11-12-k-onsale-admission-control/README.md) — the historical R4 on-sale contract is refreshed for the adopted local, non-production PostgreSQL 17.11 backend: §§1–8 stay verbatim, and the revision adds the clause-by-clause local realization map (§9), the open values with owners (§10, DECISION_REQUIRED · Astra / UNDETERMINED) and the non-claims (§11). The new top-level `onsale/` package composes `durable/` unchanged and implements the waiting room and GA routing locally: GA sum invariant and per-shard capacity with no global hot row, waiting/admitted separation with a coarse versioned artifact and bounded authorized session views, §4 admission tokens with fixture HMAC signing (caller-supplied key, never stored), CommandIdentity without routing components, replay/conflict/UNKNOWN first-result semantics, versioned negative hints that are never a permanent SOLD verdict, queue-position-preserving reissue with single capacity consumption, five-class budgets with no starvation, first-of group-commit proposal, and append-only §8 evidence with per-row CRC fail-closed. No public endpoint, no new protocol command, all execution flags false; fairness/capacity/TTL/strategy/signature values are not invented. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-12 economics reference model (Track K stage 6, R-10) — 위치 안내만
+
+- [Economics reference model](../reference/economics/README.md) · [builder evidence](../validation/2026-11-12-k-stage6-economics-reference/README.md) — synthetic-money economics as a reference model: one explicit, sequential, in-memory `EconomicsSession` composing unchanged published layers (`kix:commerce:2` calculation, the frozen lifecycle/finance Core, stage-5 pure capture admission with an optional local-PG binding, the SET-POLICY-DRAFT-0.4 settlement FSM, the four published payment-effect commands, and the resale `seller_due` face). Covers asset/policy authentication, OrderLine, immutable quotes, free orders, discounts, bundles, multiple intents and captures, allocation, refunds and payouts, resale seller payout and multiple assets. Internal Python API only — no wire names, no catalogue entries, no new protocol error codes; every rate/cap/TTL/budget/expiry is caller-supplied synthetic fixture input, nothing defaults a product policy value. u128 quotes above the KRW-only `10**12` fixture money bound are refused, never narrowed; non-KRW groups compose calculation/admission but their settlement binding is refused (no FX). `evidenceClass` is `SYNTHETIC_REFERENCE`, every execution flag false. Product policy values and new protocol commands stay `DECISION_REQUIRED · Astra`; legal/tax/accounting and provider-dependent values stay `UNDETERMINED` with their owners. The optional durable binding (`durable/test_economics_binding.py`) is local-only and not CI-wired. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-12 authenticated export (Track K stage 7, R-11) — 위치 안내만
+
+- [Authenticated export fixture](../authenticated_export/README.md) · [builder evidence](../validation/2026-11-12-k-stage7-authenticated-export/README.md) — the new top-level `authenticated_export/` package composes `durable/` unchanged and implements `runtime/AUTHENTICATED_EXPORT.md` §§1–5 locally: one single-shard `SERIALIZABLE READ ONLY` MVCC snapshot as the source cut (`pg_current_snapshot()` identity + per-table `{rowCount, contentSha256}`; WAL LSN is provenance only, never the cut), projection-applied watermarks recorded separately with visible lag, an `ExportManifestV1`-shaped local manifest carrying the contract's exact field names, per-file sha256 + `manifestHash` binding, fixture HMAC-SHA256 authentication with caller-supplied keys and fail-closed consumer verification, a local atomic anti-rollback registry, the pinned `kix-local-export-types/1` type mapping (u128 decimal text Wide128-lossless, binary(16)/binary(32) hex widths, epoch-ms units, pinned vocabularies, verbatim inbox occurred-time text/offset), and an audit trace resolving query → exportId → manifest → cut/watermarks → files/hashes → schema versions. FULL_SNAPSHOT and INCREMENTAL (`table-keyset/1`, `startExclusive-endInclusive`, PK-identity dedup) modes; no multi-shard cut is certified and no global-atomicity claim is made. No Arrow/Parquet materialization; the production signing scheme, trust root/registry and anti-rollback policy stay `DECISION_REQUIRED · Astra`. The PG-bound suite is local-only and not CI-wired; all execution flags false. Non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-13 economics-to-credit consumer vectors — 위치 안내만
+
+- [Economics/F04 consumer field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) · [builder evidence](../validation/2026-11-13-plan-economics-credit-consumer-vectors/README.md) — location pointers for offline synthetic composition snapshots, separately stated arithmetic, byte pins and replay. No consumer acceptance, published read binding, policy adoption or evidence-grade change; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## 2026-11-13 Capital companion rejection vectors — 위치 안내만
+
+- [Capital rejection schema, case inventory and replay](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-companion-rejection-vectors) · [builder evidence](../validation/2026-11-13-plan-capital-refusal-vectors/README.md) — 51 source-cited synthetic rejection inputs for unchanged F04 §§7.11–7.12 observers, preserving JSON types and omitted/null distinction, with exact reference-only error replay, non-mutation, source/artifact pins and unchanged positive controls. No new error precedence, default, netting, reconciliation completion, binding or execution authority. External Capital acceptance remains UNVERIFIED; A2 non-author exact-head review and KTX/KIX CI remain separate gates.
+
+## Stage 7 CPU analytics / SQL audit (local evidence)
+
+- [CPU analytics audit](../analytics_audit/README.md) — offline Rust / Polars / DuckDB harness; no production runtime.
+- [2026-11-13 validation report](../validation/2026-11-13-k-stage7-cpu-analytics-sql-audit/README.md) — builder-authored results; no A2 review or exact-head CI claim.
+
+## Stage 8 native GPU path plan (document only)
+
+- [Native GPU path plan](operations/NATIVE_GPU_PATH_PLAN.md) · [builder evidence](../validation/2026-11-14-k-stage8-gpu-plan/README.md) — semantic acceptance, existing CPU coverage and GPU gaps, native ABI prerequisites, transfer-inclusive crossover measurement, dedicated runner options and undetermined costs. Plan only; no equipment selection/spend, GPU implementation, runner activation, policy adoption or performance claim. A2 non-author review and exact-head KTX/KIX CI remain separate gates.
+
+## 2026-11-15 Capital operation replay vectors — 위치 안내만
+
+- [Capital operation schema, histories and replay](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-operation-replay-vectors) · [input pack](../reference/credit_advance_f04/fixtures/capital_operation_replay_v1.json) · [complete results](../reference/credit_advance_f04/fixtures/capital_operation_replay_vectors_v1.json) · [builder evidence](../validation/2026-11-15-plan-capital-operation-replay-vectors/README.md) — three source-informed synthetic draw/repayment mutation histories, historical receipts versus current exposure, exact refusals, journal restore and unchanged shared-exposure observations with explicit synthetic limits. Companion evidence only; no producer, adapter, policy, runtime, published read or capability-grade change. External Capital acceptance UNVERIFIED; A2 non-author exact-head review and exact-head KTX/KIX CI remain separate gates.
+
+## 2026-11-17 Commerce resale expiry vectors — 위치 안내만
+
+- [Unpaid and paid resale expiry histories](../reference/booking_resale_admission/README.md#commerce-resale-expiry-vectors) · [inputs](../reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json) · [outcomes](../reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json) · [builder validation](../validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/README.md) — two source-informed in-process histories (27 steps), original-key historical replay after expiry, retained payment facts, unchanged holder/version and detached diagnostics. Seventh companion family; existing entries/statuses preserved. No refund, compensation, relisting or transfer behavior; product TTL and compensation policy remain UNDETERMINED with Astra/User and legal owners. All 13 reads NOT_BOUND, HOLD_SEMANTIC, SD1 OPEN/User-owned and external acceptance UNVERIFIED remain.
+
+## 2026-11-18 Capital companion evidence index — 위치 안내만
+
+- [Capital companion usage and coverage](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md) · [JSON index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) · [builder validation](../validation/2026-11-18-plan-plan-capital-companion-evidence-index/README.md) — non-normative discovery of seven existing consumer families (379 associations), 87 supplemental observations and two supporting observer fixtures. Pins, scenario/case order, complete result references, replay symbols and guide sections are validated without changing behavioral evidence. Class B, frozen faces, separate refund obligations, NOT_BOUND and repair=NONE remain; external Capital acceptance UNVERIFIED, product limits UNDETERMINED—Astra and legal responsibility UNDETERMINED—User/legal. A2 non-author exact-head review and exact-head KTX/KIX CI remain delivery gates.
+
+## 2026-11-18 Commerce admission cancellation vectors — 위치 안내만
+
+- [Cancellation/adoption histories and replay](../reference/booking_resale_admission/README.md#commerce-admission-cancellation-vectors) · [inputs](../reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json) · [complete outcomes](../reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json) · [builder validation](../validation/2026-11-18-plan-plan-commerce-admission-cancellation-vec/README.md) — three source-informed in-process histories (26 steps) for TICKET_CANCELLED, TICKET_NOT_ISSUED and CANCEL_AFTER_ISSUE, preserving issued credentials and explicit issuance/adoption/authorization/consumption. Eighth companion family; prior entries/statuses preserved. HOLD_SEMANTIC, all 13 reads NOT_BOUND, SD1 OPEN/User-owned and external acceptance UNVERIFIED remain. Policy values UNDETERMINED—Astra/User; legal effects UNDETERMINED—User/legal. A2 non-author exact-head review and exact-head KTX/KIX CI remain separate delivery gates.
+
+## 2026-11-18 Commerce expired hold release and slot reuse — 위치 안내만
+
+- Two source-informed histories show how an expired hold retains its slot until explicit release, after which a fresh key can allocate the slot. Original-key replay returns the historical receipts while the new reservation keeps the slot. Rejected-key retention is process-local. [Replay guide](../reference/booking_resale_admission/README.md#commerce-expired-hold-release-and-slot-reuse-vectors) · [Inputs](../reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json) · [Outcomes](../reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json) · [Builder validation](../validation/2026-11-18-plan-plan-commerce-hold-release-vectors/README.md)

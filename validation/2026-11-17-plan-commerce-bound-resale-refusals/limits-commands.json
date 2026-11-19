@@ -1,0 +1,8 @@
+[
+  {
+    "command": "python3 -B -m unittest integration_gate.test_offline_limits",
+    "exit_code": 0,
+    "log": "limits-001.log",
+    "seconds": 0.297
+  }
+]

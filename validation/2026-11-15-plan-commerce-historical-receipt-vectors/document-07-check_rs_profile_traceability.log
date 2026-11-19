@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_rs_profile_traceability.py
+rs profile traceability ok: blueprint=47 profile=47 expected=47
+
+EXIT: 0

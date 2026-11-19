@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_toss_card_profile_evidence_map.py --self-test
+Toss profile self-test: 3 positive controls and 77 negative fixtures OK (memory only)
+
+EXIT: 0

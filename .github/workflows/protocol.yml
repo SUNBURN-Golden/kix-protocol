@@ -212,6 +212,10 @@ jobs:
         run: |
           python3 scripts/check_status_register.py
           python3 scripts/check_status_register.py --self-test
+          python3 scripts/check_producer_qualification_tuple.py
+          python3 scripts/check_producer_qualification_tuple.py --self-test
+          python3 validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py
+          python3 validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py --self-test
           python3 scripts/check_rs_profile_traceability.py
           python3 scripts/check_rs_profile_traceability.py --self-test
           python3 scripts/check_read_model_source_map.py
@@ -264,6 +268,8 @@ jobs:
           python3 scripts/check_evidence_map_rollup.py --self-test
           python3 scripts/check_class_b_index.py
           python3 scripts/check_class_b_index.py --self-test
+          python3 scripts/check_sdk_compat_manifest_evidence_map.py
+          python3 scripts/check_sdk_compat_manifest_evidence_map.py --self-test
           python3 scripts/check_ci_checker_wiring.py
           python3 scripts/check_ci_checker_wiring.py --self-test
           python3 scripts/check_ci_test_discovery.py
@@ -283,7 +289,7 @@ jobs:
       - name: Offline reference state machines and OpenAPI pins
         if: steps.scope.outputs.docs_only != 'true' && steps.verified.outputs.hit != 'true'
         run: |
-          for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation token_reward; do
+          for suite in settlement_f01_f03 booking_resale_admission credit_advance_f04 ai_delegation token_reward provider_facts payment_effects economics; do
             PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "reference/$suite" -t "reference/$suite"
           done
           python3 scripts/check_openapi_contract.py

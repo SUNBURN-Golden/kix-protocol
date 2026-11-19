@@ -1,0 +1,1 @@
+docs index ok: scanned=380 indexed=345 allowlisted=35

@@ -1,0 +1,276 @@
+{
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "CARGO_NET_OFFLINE": "true",
+    "RUSTC": "/usr/bin/rustc",
+    "RUSTDOC": "/usr/bin/rustdoc",
+    "CARGO_TARGET_DIR": "/tmp/reward-desk-target"
+  },
+  "results": [
+    {
+      "command": "python3 -m unittest discover -s reference/token_reward -t reference/token_reward -p test_reward_session.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ".....\n----------------------------------------------------------------------\nRan 5 tests in 0.030s\n\nOK\n"
+    },
+    {
+      "command": "python3 -m unittest discover -s reference/token_reward -t reference/token_reward -p test_reward_serialization.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "......\n----------------------------------------------------------------------\nRan 6 tests in 0.016s\n\nOK\n"
+    },
+    {
+      "command": "python3 -m unittest discover -s reference/token_reward -t reference/token_reward -p test_reward_cli.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ".......\n----------------------------------------------------------------------\nRan 7 tests in 1.383s\n\nOK\n"
+    },
+    {
+      "command": "python3 -m unittest discover -s reference/token_reward -t reference/token_reward",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "..........................................................................................................................................................................................\n----------------------------------------------------------------------\nRan 186 tests in 3.545s\n\nOK\n"
+    },
+    {
+      "command": "python3.12 -m unittest discover -s reference/token_reward -t reference/token_reward",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "..........................................................................................................................................................................................\n----------------------------------------------------------------------\nRan 186 tests in 3.609s\n\nOK\n"
+    },
+    {
+      "command": "python3 scripts/check_docs_index.py",
+      "exit_code": 0,
+      "stdout": "docs index ok: scanned=330 indexed=295 allowlisted=35\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_docs_index.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: detected removed index link to docs/adr/0001-ktx-authority-commit-recovery.md (not indexed: docs/adr/0001-ktx-authority-commit-recovery.md)\nself-test: detected unindexed scanned file docs/status/SELFTEST_UNINDEXED.md (not indexed: docs/status/SELFTEST_UNINDEXED.md)\nself-test: detected unindexed validation record validation/SELFTEST_UNINDEXED/README.md (not indexed: validation/SELFTEST_UNINDEXED/README.md)\nself-test: detected dropped allowlist entry docs/contracts/openapi/fsm-command-contract.json (not indexed: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected removed scanned file docs/contracts/openapi/fsm-command-contract.json (allowlist names a file outside the scanned set: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected allowlisted entry also index-linked docs/contracts/openapi/fsm-command-contract.json (allowlisted but indexed: docs/contracts/openapi/fsm-command-contract.json)\nself-test: detected broken index link docs/status/SELFTEST_MISSING_TARGET.md (broken index link: docs/status/SELFTEST_MISSING_TARGET.md)\nself-test: pass\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_status_register.py",
+      "exit_code": 0,
+      "stdout": "capability register ok: paths=457 ev_ids=15 original32=32\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_status_register.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: detected missing path (path not found: docs/status/NO_SUCH_FILE_9f3a.md)\nself-test: detected undefined EV id (undefined evidence id referenced: EV-XXX)\nself-test: detected dropped original id (original id E01 appears 0 times as a row key (want 1))\nself-test: detected duplicated original id (original id E01 appears 2 times as a row key (want 1))\nself-test: pass\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_tl_predicate_evidence_map.py",
+      "exit_code": 0,
+      "stdout": "tl predicate evidence map ok: rows=49 expected=49 citations=58 HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=24 PARTIAL=7\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_tl_predicate_evidence_map.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: detected removed TK-4 row (missing in map: TK-4)\nself-test: detected duplicated TK-4 row (duplicated in map: TK-4 (2))\nself-test: detected invented id (invented id: TK-99)\nself-test: detected dangling path (TK-4: citation reference/token_reward/no_such_file.py is not an allowed evidence path)\nself-test: detected dangling symbol (TK-4: citation reference/token_reward/test_reward_model.py::no_such_fn_9f3a is not defined in the file)\nself-test: detected unknown status (TK-4: unknown status 'SUFFICIENT')\nself-test: detected uncited row that is not NOT_VERIFIABLE_NO_PACKAGE (V1: HARNESS_AUTHOR_SIDE row has no citation)\nself-test: detected empty missing cell (V1: empty missing-or-open cell)\nself-test: detected owner not in source (V1: owner 'Nobody Else' not found in docs/blueprints/optional-native-token-v1/README.md)\nself-test: detected stale counts line (counts line 'Counts: HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=9924 PARTIAL=7' differs from 'Counts: HARNESS_AUTHOR_SIDE=12 REVIEWED_RECORD=6 NOT_VERIFIABLE_NO_PACKAGE=24 PARTIAL=7')\nself-test: pass\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_class_b_index.py",
+      "exit_code": 0,
+      "stdout": "class B index ok: rows=218 sources=73 symbols=47; textual index only\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_class_b_index.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: detected missing path\nself-test: detected missing test path\nself-test: detected altered quote\nself-test: detected short quote\nself-test: detected piped quote\nself-test: detected unknown symbol\nself-test: detected unknown dotted part\nself-test: detected unknown node:test name\nself-test: detected duplicate id\nself-test: detected bad id\nself-test: detected wrong count\nself-test: detected missing count token\nself-test: detected two counts lines\nself-test: detected invented owner\nself-test: detected invented contract\nself-test: detected out-of-scope source\nself-test: detected invented status\nself-test: detected superseded without supersession quote\nself-test: detected superseded with wrong PR\nself-test: detected wrong header\nself-test: pass (20 negative controls)\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_ci_test_discovery.py",
+      "exit_code": 0,
+      "stdout": "reached: reference/ai_delegation files=6 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/booking_resale_admission files=29 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/credit_advance_f04 files=8 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/provider_facts files=14 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/rights_scale files=6 <- rights-scale/Rights-scale Move and model tests\nreached: reference/settlement_f01_f03 files=15 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/token_reward files=11 <- protocol/Offline reference state machines and OpenAPI pins\nreached: reference/rights_scale/client/admission-packet.test.mjs <- rights-scale/Offline admission packet regressions\nreached: reference/rights_scale/client/mint-note.test.mjs <- rights-scale/Offline mint note regressions\nreached: reference/rights_scale/client/ptau-header.test.mjs <- rights-scale/Offline PTAU header parsing regressions\nreached: reference/rights_scale/client/spend-witness.test.mjs <- rights-scale/Offline spend witness regressions\nreached: reference/rights_scale/client/verifier-binding.test.mjs <- rights-scale/Offline verifier binding regressions\nreached: reference/rights_scale/client/witness-reconstruction.test.mjs <- rights-scale/Offline witness reconstruction regressions\nreached: reference/rights_scale/client/zk-helpers.test.mjs <- rights-scale/Offline public-byte encoding regressions\nreached: reference/rights_scale/client/zk-policy-v2.test.mjs <- rights-scale/Offline manifest validation regressions\nreached: integration_gate.test_http_gate <- protocol/Non-production HTTP integration gate\nreached: integration_gate.test_offline_limits <- protocol/Offline reference state machines and OpenAPI pins\nreached: readiness.test_conformance_sensitivity <- protocol/Non-production HTTP integration gate via readiness.test_faults\nreached: readiness.test_faults <- protocol/Non-production HTTP integration gate\nexcluded: reference/v0.1: historical v0.1 reference tree; no protocol.yml step runs its tests and this guard does not claim they run\nexcluded: reference/v0.2: historical v0.2 reference tree; no protocol.yml step runs its tests and this guard does not claim they run\nexcluded: reference/v0.3-rc1: historical v0.3-rc1 tree; its Python tests are invoked inside scripts/verify_runtime.py, which this guard does not parse, so no run is claimed here\nci test discovery ok: reference_suites=7 node_tests=8 modules=4 excluded=3\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_ci_test_discovery.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: detected unwired suite directory\nself-test: detected unwired node test\nself-test: detected unreached top-level module\nself-test: detected unreached nested module\nself-test: detected unreached module outside a package\nself-test: detected exclusion without reason\nself-test: detected module reached only by import statement\nself-test: detected module reached only as a package attribute\nself-test: detected partial from-import\nself-test: detected reference test in a non-package subdirectory\nself-test: detected commented-out wiring line\nself-test: detected unexpanded loop variable\nself-test: detected unsupported discover option\nself-test: detected workflow names missing module\nself-test: detected workflow names missing node test\nself-test: detected exclusion of an absent tree\nself-test: detected excluded tree wired by discover\nself-test: detected empty workflow\nself-test: pass (18 negative controls)\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_ci_checker_wiring.py",
+      "exit_code": 0,
+      "stdout": "ci checker wiring ok: scripts=35 plain=34 self_test=35 self_test_only=1 docs=22 citations=99\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/check_ci_checker_wiring.py --self-test",
+      "exit_code": 0,
+      "stdout": "self-test: detected unwired checker\nself-test: detected plain-only wiring\nself-test: detected unlisted self-test-only checker\nself-test: detected missing cited checker\nself-test: detected document cites unrun checker\nself-test: detected allowlisted script wired plain\nself-test: detected allowlisted script missing self-test\nself-test: detected missing allowlisted script\nself-test: detected workflow invokes missing file\nself-test: detected commented-out invocation\nself-test: detected no scripts\nself-test: detected no invocations\nself-test: detected no documents\nself-test: pass (13 negative controls)\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/verify_runtime_architecture.py",
+      "exit_code": 0,
+      "stdout": "architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified\n",
+      "stderr": ""
+    },
+    {
+      "command": "python3 scripts/test_runtime_architecture.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_hidden_target_dependency (__main__.ArchitectureGateTests.test_hidden_target_dependency) ... ok\ntest_invalid_contract_values (__main__.ArchitectureGateTests.test_invalid_contract_values) ... ok\ntest_kernel_dependency_injection (__main__.ArchitectureGateTests.test_kernel_dependency_injection) ... ok\ntest_missing_lock_or_golden_vector (__main__.ArchitectureGateTests.test_missing_lock_or_golden_vector) ... ok\ntest_python_runtime_source_is_rejected (__main__.ArchitectureGateTests.test_python_runtime_source_is_rejected) ... ok\ntest_transitive_dependency_injection (__main__.ArchitectureGateTests.test_transitive_dependency_injection) ... ok\ntest_valid_contract (__main__.ArchitectureGateTests.test_valid_contract) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.397s\n\nOK\n"
+    },
+    {
+      "command": "/usr/bin/cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline",
+      "exit_code": 101,
+      "stdout": "",
+      "stderr": "error: no matching package named `const-oid` found\nlocation searched: crates.io index\nrequired by package `digest v0.11.3`\n    ... which satisfies dependency `digest = \"^0.11\"` (locked to 0.11.3) of package `sha2 v0.11.0`\n    ... which satisfies dependency `sha2 = \"=0.11.0\"` (locked to 0.11.0) of package `kix-bcs1 v0.1.0 (/workspace/kix-run/wt/plan-local-reward-desk/runtime/crates/kix-bcs1)`\nAs a reminder, you're using offline mode (--offline) which can sometimes cause surprising resolution failures, if this error is too confusing you may wish to retry without the offline flag.\n"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "python3 reference/token_reward/reward_cli.py --fixture reference/token_reward/fixtures/reward_session.json --requests reference/token_reward/fixtures/participation.jsonl",
+      "exit_code": 0,
+      "repetitions": 2,
+      "stdout_artifact": "participation.stdout.jsonl",
+      "stdout_sha256": "ce9189d5b991084c9550704b6af27ef6e02eab1352d95365ec3164b80f02a423",
+      "stdout_lines": 11,
+      "stderr": "",
+      "repeat_identical": true
+    },
+    {
+      "command": "python3 reference/token_reward/reward_cli.py --fixture reference/token_reward/fixtures/reward_session.json --requests reference/token_reward/fixtures/cancellation.jsonl",
+      "exit_code": 0,
+      "repetitions": 2,
+      "stdout_artifact": "cancellation.stdout.jsonl",
+      "stdout_sha256": "ad35a49a77f35d345102c3d3478f3b9466d0c1342db43d3527a55c9d1449e677",
+      "stdout_lines": 13,
+      "stderr": "",
+      "repeat_identical": true
+    },
+    {
+      "command": "python3 reference/token_reward/reward_cli.py --fixture reference/token_reward/fixtures/reward_session.json --requests reference/token_reward/fixtures/boundaries.jsonl",
+      "exit_code": 1,
+      "repetitions": 2,
+      "stdout_artifact": "boundaries.stdout.jsonl",
+      "stdout_sha256": "fab64d647a5605c10dc49bb9d79da5500439b7241e310ac0f60ac38db1eb3811",
+      "stdout_lines": 10,
+      "stderr": "",
+      "repeat_identical": true
+    },
+    {
+      "command": "python3 reference/token_reward/reward_cli.py --fixture reference/token_reward/fixtures/reward_session.json --requests reference/token_reward/fixtures/unknown_pending.jsonl",
+      "exit_code": 1,
+      "repetitions": 2,
+      "stdout_artifact": "unknown_pending.stdout.jsonl",
+      "stdout_sha256": "aa505e7ff36a167278fbf2a79bc2e876cebda666b55d9f7226000abd3eb54d54",
+      "stdout_lines": 14,
+      "stderr": "",
+      "repeat_identical": true
+    },
+    {
+      "command": "python3 reference/token_reward/reward_cli.py --fixture reference/token_reward/fixtures/reward_session.json --requests reference/token_reward/fixtures/unknown_resolution.jsonl",
+      "exit_code": 1,
+      "repetitions": 2,
+      "stdout_artifact": "unknown_resolution.stdout.jsonl",
+      "stdout_sha256": "82eda5b575e770bf613770fccedf72fc217a7921b49d914ec8151b5a90462504",
+      "stdout_lines": 4,
+      "stderr": "",
+      "repeat_identical": true
+    },
+    {
+      "command": "cat reference/token_reward/fixtures/unknown_pending.jsonl reference/token_reward/fixtures/unknown_resolution.jsonl | python3 reference/token_reward/reward_cli.py --fixture reference/token_reward/fixtures/reward_session.json --requests -",
+      "exit_code": 1,
+      "repetitions": 2,
+      "stdout_artifact": "unknown_combined.stdout.jsonl",
+      "stdout_sha256": "4e675d8e2092a053854b2b9d3d844dffec0021dc40216a753a808627efb2a6ed",
+      "stdout_lines": 18,
+      "stderr": "",
+      "repeat_identical": true
+    },
+    {
+      "command": "git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs",
+      "exit_code": 0,
+      "stdout": "69564b166f0c27f9af5d8422f0a466b18d74c20f\nb607996c83a119c349f1cc90469ac1ba82764e20\n",
+      "stderr": ""
+    },
+    {
+      "command": "git diff --exit-code origin/main -- reference/v0.3-rc1 .aiops docs/tasks .github runtime reference/token_reward/reward_fsm.py reference/token_reward/token_reward_model.py",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "git diff --name-only",
+      "exit_code": 0,
+      "stdout": "docs/README.md\n",
+      "stderr": ""
+    },
+    {
+      "command": "git ls-files --others --exclude-standard",
+      "exit_code": 0,
+      "stdout": "reference/token_reward/README.md\nreference/token_reward/fixtures/boundaries.jsonl\nreference/token_reward/fixtures/cancellation.jsonl\nreference/token_reward/fixtures/participation.jsonl\nreference/token_reward/fixtures/reward_session.json\nreference/token_reward/fixtures/unknown_pending.jsonl\nreference/token_reward/fixtures/unknown_resolution.jsonl\nreference/token_reward/reward_cli.py\nreference/token_reward/reward_fixture.py\nreference/token_reward/reward_session.py\nreference/token_reward/test_reward_cli.py\nreference/token_reward/test_reward_serialization.py\nreference/token_reward/test_reward_session.py\nvalidation/2026-11-02-plan-local-reward-desk/README.md\nvalidation/2026-11-02-plan-local-reward-desk/boundaries.stdout.jsonl\nvalidation/2026-11-02-plan-local-reward-desk/cancellation.stdout.jsonl\nvalidation/2026-11-02-plan-local-reward-desk/commands.json\nvalidation/2026-11-02-plan-local-reward-desk/participation.stdout.jsonl\nvalidation/2026-11-02-plan-local-reward-desk/unknown_combined.stdout.jsonl\nvalidation/2026-11-02-plan-local-reward-desk/unknown_pending.stdout.jsonl\nvalidation/2026-11-02-plan-local-reward-desk/unknown_resolution.stdout.jsonl\n",
+      "stderr": ""
+    }
+  ],
+  "not_run": [
+    {
+      "command": "git fetch origin main",
+      "reason": "Supervisor explicitly prohibits network actions."
+    },
+    {
+      "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked (pinned 1.98.1)",
+      "reason": "No installed rustup toolchains; offline system Cargo attempt recorded separately."
+    },
+    {
+      "command": "cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked -- -D warnings",
+      "reason": "Pinned 1.98.1 absent; system Clippy absent; no network installation authorized."
+    },
+    {
+      "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check",
+      "reason": "Pinned 1.98.1 absent; system rustfmt absent; no network installation authorized."
+    },
+    {
+      "command": "Hosted exact-final-head KTX and KIX workflows",
+      "reason": "No commit/publication authorized; supervisor owns git and GitHub."
+    }
+  ],
+  "preservation": {
+    "locked_blobs_before_and_after": [
+      "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+      "b607996c83a119c349f1cc90469ac1ba82764e20"
+    ],
+    "historical_reference_files": 108,
+    "historical_manifest_sha256": "dbfe11de81169745a46e7c2ccfbb705d1ec6e71be2f9922158429a0bfc5ff00f",
+    "all_historical_bytes_equal": true
+  },
+  "changed_paths": [
+    "docs/README.md",
+    "reference/token_reward/README.md",
+    "reference/token_reward/fixtures/boundaries.jsonl",
+    "reference/token_reward/fixtures/cancellation.jsonl",
+    "reference/token_reward/fixtures/participation.jsonl",
+    "reference/token_reward/fixtures/reward_session.json",
+    "reference/token_reward/fixtures/unknown_pending.jsonl",
+    "reference/token_reward/fixtures/unknown_resolution.jsonl",
+    "reference/token_reward/reward_cli.py",
+    "reference/token_reward/reward_fixture.py",
+    "reference/token_reward/reward_session.py",
+    "reference/token_reward/test_reward_cli.py",
+    "reference/token_reward/test_reward_serialization.py",
+    "reference/token_reward/test_reward_session.py",
+    "validation/2026-11-02-plan-local-reward-desk/README.md",
+    "validation/2026-11-02-plan-local-reward-desk/boundaries.stdout.jsonl",
+    "validation/2026-11-02-plan-local-reward-desk/cancellation.stdout.jsonl",
+    "validation/2026-11-02-plan-local-reward-desk/commands.json",
+    "validation/2026-11-02-plan-local-reward-desk/participation.stdout.jsonl",
+    "validation/2026-11-02-plan-local-reward-desk/unknown_combined.stdout.jsonl",
+    "validation/2026-11-02-plan-local-reward-desk/unknown_pending.stdout.jsonl",
+    "validation/2026-11-02-plan-local-reward-desk/unknown_resolution.stdout.jsonl"
+  ]
+}

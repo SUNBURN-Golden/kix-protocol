@@ -1,0 +1,2 @@
+{"branch": "agent/kix-plan-local-cart-structure-editor", "cached_origin_main": "8a1ee64fa84557355ffd1c8f174ebcbd8fd2ece2", "changed_python_syntax": "PASS", "frozen_files": 108, "head": "8a1ee64fa84557355ffd1c8f174ebcbd8fd2ece2", "locked_blobs": {"runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f", "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20"}, "non_task_tracked_files_unchanged": 3016, "whitespace": "PASS"}
+Complete changed-path inventory: 98 paths

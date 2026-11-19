@@ -1,0 +1,21 @@
+$ python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_commerce_journey*.py' -v
+test_every_step_binds_a_published_action_and_body (test_commerce_journey_conformance.CommerceJourneyConformanceTests.test_every_step_binds_a_published_action_and_body) ... ok
+test_flags_and_non_claims_stay_false (test_commerce_journey_conformance.CommerceJourneyConformanceTests.test_flags_and_non_claims_stay_false) ... ok
+test_one_show_covers_the_whole_published_journey (test_commerce_journey_conformance.CommerceJourneyConformanceTests.test_one_show_covers_the_whole_published_journey) ... ok
+test_payment_issuance_and_admission_are_separate_facts (test_commerce_journey_conformance.CommerceJourneyConformanceTests.test_payment_issuance_and_admission_are_separate_facts) ... ok
+test_read_queries_remain_not_bound (test_commerce_journey_conformance.CommerceJourneyConformanceTests.test_read_queries_remain_not_bound) ... ok
+test_replay_returns_the_existing_duplicate_result (test_commerce_journey_conformance.CommerceJourneyConformanceTests.test_replay_returns_the_existing_duplicate_result) ... ok
+test_complete_output_bytes (test_commerce_journey_receipts.CommerceJourneyReceiptTests.test_complete_output_bytes) ... ok
+test_output_mutations_fail_comparison (test_commerce_journey_receipts.CommerceJourneyReceiptTests.test_output_mutations_fail_comparison) ... ok
+test_pin_mutations_fail_before_execution (test_commerce_journey_receipts.CommerceJourneyReceiptTests.test_pin_mutations_fail_before_execution) ... ok
+test_source_pins (test_commerce_journey_receipts.CommerceJourneyReceiptTests.test_source_pins) ... ok
+test_step_mapping (test_commerce_journey_receipts.CommerceJourneyReceiptTests.test_step_mapping) ... ok
+test_step_mutations_fail_comparison (test_commerce_journey_receipts.CommerceJourneyReceiptTests.test_step_mutations_fail_comparison) ... ok
+test_strict_json_and_canonical_serialization (test_commerce_journey_receipts.CommerceJourneyReceiptTests.test_strict_json_and_canonical_serialization) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 2.607s
+
+OK
+
+EXIT: 0

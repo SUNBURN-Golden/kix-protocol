@@ -1,7 +1,10 @@
-"""Observable lock for SET-POLICY-DRAFT-0.3.
+"""Observable lock for SET-POLICY-DRAFT-0.4.
 
-The adopted rows are L0, W0, R0, S0, T0, B0, and P0.
-They keep the current mock. They do not set legal parties, rates, or a durable close.
+The adopted rows are L0, W0, R0, S0, T0, B5, and P0.
+B5 (owner decision 2026-11-10 17:43 KST) replaces B0 for partial refunds:
+the requester bears them, distribution continues, payee faces stay untouched.
+The other rows keep the current mock. They do not set legal parties, rates,
+netting numbers, or a durable close.
 Older tests keep the error matrices. This module binds the adopted posture
 and the non-zero tax/held case those tests did not post.
 """
@@ -128,22 +131,25 @@ class AdoptedPolicyTests(unittest.TestCase):
         self.assertEqual(line(distributed, "organizer")["face"], 95_000)
         self.assertEqual(distributed["confirmed_cash"], 90_000)
 
-        blocked = book.bind_refund(
+        refunded = book.bind_refund(
             "claim-1",
             refund_id="refund-1",
             amount=1_000,
             beneficiary_role="buyer",
             reason="PARTIAL",
         )["claim"]
-        self.assertEqual(blocked["refund_bearer_policy"], "UNDEFINED")
-        self.assertIs(blocked["distribution_blocked"], True)
-        self.assertEqual(blocked["distributed_cash"], 90_000)
-        self.assertEqual(line(blocked, "organizer")["cancelled_unpaid"], 0)
-        self.assertEqual(blocked["recovery_due"], 0)
-        self.assertEqual(
-            codes(lambda: book.apply_distribution("claim-1", order=["platform", "organizer"])),
-            "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
-        )
+        self.assertEqual(refunded["refund_bearer_policy"], "REQUESTER")
+        self.assertIs(refunded["distribution_blocked"], False)
+        self.assertEqual(refunded["distributed_cash"], 90_000)
+        self.assertEqual(line(refunded, "organizer")["cancelled_unpaid"], 0)
+        self.assertEqual(refunded["recovery_due"], 0)
+        # B5: distribution proceeds with an open partial refund. All confirmed
+        # cash is already allocated, so the frozen order applies zero and the
+        # organizer's unpaid face stays as it was.
+        again = book.apply_distribution("claim-1", order=["platform", "organizer"])
+        self.assertEqual(again["applied"], {"platform": 0, "organizer": 0})
+        self.assertEqual(again["claim"]["distributed_cash"], 90_000)
+        self.assertEqual(line(again["claim"], "organizer")["outstanding"], 10_000)
         self.assertEqual(book.view("claim-1")["distributed_cash"], 90_000)
         for key in ABSENT:
             self.assertNotIn(key, book.view("claim-1"))

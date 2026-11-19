@@ -1,0 +1,1016 @@
+test_ce1_original_token_rejection_and_invalid_local_envelopes_launch_nothing (test_commerce_calculation_client.CommerceCalculationClientTests.test_ce1_original_token_rejection_and_invalid_local_envelopes_launch_nothing) ... ok
+test_fixed_target_single_writer_no_launch_on_import_or_construction (test_commerce_calculation_client.CommerceCalculationClientTests.test_fixed_target_single_writer_no_launch_on_import_or_construction) ... ok
+test_launch_failure_interrupt_short_write_and_cleanup_escalation (test_commerce_calculation_client.CommerceCalculationClientTests.test_launch_failure_interrupt_short_write_and_cleanup_escalation) ... ok
+test_malformed_reply_exit_failure_and_schema_hash_binding_fence_without_retry (test_commerce_calculation_client.CommerceCalculationClientTests.test_malformed_reply_exit_failure_and_schema_hash_binding_fence_without_retry) ... ok
+test_plan_and_refund_bindings_checked_even_with_rehashed_replies (test_commerce_calculation_client.CommerceCalculationClientTests.test_plan_and_refund_bindings_checked_even_with_rehashed_replies) ... ok
+test_real_driver_journey_exact_bytes_and_detached_snapshots (test_commerce_calculation_client.CommerceCalculationClientTests.test_real_driver_journey_exact_bytes_and_detached_snapshots) ... ok
+test_real_driver_rejections_do_not_promote_or_retry (test_commerce_calculation_client.CommerceCalculationClientTests.test_real_driver_rejections_do_not_promote_or_retry) ... ok
+test_bundle_driver_refusals_preserve_input_and_dispatch_once (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_driver_refusals_preserve_input_and_dispatch_once) ... ok
+test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) ... 
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=1) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=2) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=3) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=4) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=5) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=6) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=7) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=8) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=9) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=10) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=11) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=12) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=13) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=14) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=15) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=16) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=17) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=18) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=19) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=20) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=21) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=22) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=23) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=24) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=25) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=26) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=27) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=28) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=29) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=30) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=31) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=32) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=33) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=34) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=35) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=36) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=37) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=38) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=39) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=40) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=41) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=42) ... FAIL
+  test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=43) ... FAIL
+test_bundle_integer_json_and_encoding_failures_never_publish (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_integer_json_and_encoding_failures_never_publish) ... ok
+test_bundle_journey_file_parity (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_journey_file_parity) ... ok
+test_bundle_literal_strings_caps_and_array_order (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_literal_strings_caps_and_array_order) ... ok
+test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) ... 
+  test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\nsynthetic-bundle\n1\nfixture-issuer\nfixture-show\nevening\ncaller-synthetic-frozen-price\n1000\n3\nL1\ninv-1\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n10000\nL2\ninv-2\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n20000\nL3\ninv-3\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n30000\n2\ncoupon\norganizer\nFIXED\n6000\n["L1", "L2", "L3"]\nnull\nmember\nplatform\nBPS\n1000\n["L1", "L2", "L3"]\nnull\n') ... FAIL
+  test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\nsynthetic-bundle\ntrue\n') ... FAIL
+  test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\nsynthetic-bundle\n1\nfixture-issuer\nfixture-show\nevening\ncaller-synthetic-frozen-price\n1000\n3\nL1\ninv-1\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n10000\nL2\ninv-2\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n20000\nL3\ninv-3\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n30000\n2\ncoupon\norganizer\nFIXED\n6000\n[1]\n') ... FAIL
+  test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\nsynthetic-bundle\n1\nfixture-issuer\nfixture-show\nevening\ncaller-synthetic-frozen-price\n1000\n3\nL1\ninv-1\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n10000\nL2\ninv-2\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n20000\nL3\ninv-3\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n30000\n2\ncoupon\norganizer\nFIXED\n6000\n["L1", "L2", "L3"]\n0\n') ... FAIL
+  test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\né\n1\nfixture-issuer\nfixture-show\nevening\ncaller-synthetic-frozen-price\n1000\n3\nL1\ninv-1\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n10000\nL2\ninv-2\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n20000\nL3\ninv-3\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n30000\n2\ncoupon\norganizer\nFIXED\n6000\n["L1", "L2", "L3"]\nnull\nmember\nplatform\nBPS\n1000\n["L1", "L2", "L3"]\nnull\n') ... FAIL
+test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) ... FAIL
+test_changed_or_malformed_line_selection_cannot_reactivate_old_refund (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_changed_or_malformed_line_selection_cannot_reactivate_old_refund) ... ok
+test_cli_journey_and_cleanup_budget_usage_errors (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_cli_journey_and_cleanup_budget_usage_errors) ... ok
+test_each_submission_decline_and_eof_send_nothing_further (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_each_submission_decline_and_eof_send_nothing_further) ... ok
+test_free_and_large_atom_journeys_preserve_wire_strings_and_empty_routes (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_free_and_large_atom_journeys_preserve_wire_strings_and_empty_routes) ... ok
+test_guided_driver_refusals_are_visible_without_correction_or_retry (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_guided_driver_refusals_are_visible_without_correction_or_retry) ... ok
+test_guided_eof_at_every_prompt_and_decline_submit_nothing_further (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_guided_eof_at_every_prompt_and_decline_submit_nothing_further) ... ok
+test_guided_integer_and_encoding_failures_never_publish_candidate (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_guided_integer_and_encoding_failures_never_publish_candidate) ... ok
+test_guided_literal_strings_order_and_driver_owned_validation (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_guided_literal_strings_order_and_driver_owned_validation) ... ok
+test_guided_plan_uncertainty_fences_after_successful_quote (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_guided_plan_uncertainty_fences_after_successful_quote) ... ok
+test_guided_replacement_invalidates_plan_refund_and_selection (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_guided_replacement_invalidates_plan_refund_and_selection) ... ok
+test_guided_split_refund_journey_and_file_parity (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_guided_split_refund_journey_and_file_parity) ... ok
+test_invalid_original_json_never_promoted_or_submitted (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_invalid_original_json_never_promoted_or_submitted) ... ok
+test_known_refusals_require_explicit_correction_and_new_submission (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_known_refusals_require_explicit_correction_and_new_submission) ... ok
+test_legs_and_plan_input_changes_invalidate_plan_and_line_selection (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_legs_and_plan_input_changes_invalidate_plan_and_line_selection) ... ok
+test_output_failure_retains_received_success_and_stops (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_output_failure_retains_received_success_and_stops) ... ok
+test_quote_replacement_identical_failed_and_declined_invalidate_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_quote_replacement_identical_failed_and_declined_invalidate_dependents) ... ok
+test_real_driver_journey_retains_exact_quote_and_plan_for_next_request (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_real_driver_journey_retains_exact_quote_and_plan_for_next_request) ... ok
+test_transport_failure_stops_console_without_retry_or_fallback (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_transport_failure_stops_console_without_retry_or_fallback) ... ok
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (0, '', 0) != (0, '', 3)
+
+First differing element 2:
+0
+3
+
+- (0, '', 0)
+?         ^
+
++ (0, '', 3)
+?         ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (0, '', 0) != (0, '', 3)
+
+First differing element 2:
+0
+3
+
+- (0, '', 0)
+?         ^
+
++ (0, '', 3)
+?         ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=3)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (0, '', 0) != (0, '', 3)
+
+First differing element 2:
+0
+3
+
+- (0, '', 0)
+?         ^
+
++ (0, '', 3)
+?         ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=4)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=5)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=6)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=7)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=8)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=9)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=10)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=11)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=12)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=13)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=14)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=15)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=16)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=17)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=18)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=19)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=20)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=21)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=22)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=23)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=24)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=25)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=26)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=27)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=28)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=29)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=30)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=31)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=32)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=33)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=34)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=35)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=36)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=37)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=38)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=39)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=40)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=41)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=42)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_eof_decline_and_each_confirmation_launch_counts (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_eof_decline_and_each_confirmation_launch_counts) (calls=3, length=43)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 496, in test_bundle_eof_decline_and_each_confirmation_launch_counts
+    self.assertEqual((status, errors, launch.call_count), (0, '', calls))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\nsynthetic-bundle\n1\nfixture-issuer\nfixture-show\nevening\ncaller-synthetic-frozen-price\n1000\n3\nL1\ninv-1\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n10000\nL2\ninv-2\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n20000\nL3\ninv-3\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n30000\n2\ncoupon\norganizer\nFIXED\n6000\n["L1", "L2", "L3"]\nnull\nmember\nplatform\nBPS\n1000\n["L1", "L2", "L3"]\nnull\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 470, in test_bundle_replacement_clears_input_quote_and_dependents
+    self.assertEqual((status, errors, len(client.exchanges)), (expected, '', 3))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 3)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 3)
+?  ^      ^
+
+
+======================================================================
+FAIL: test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\nsynthetic-bundle\ntrue\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 470, in test_bundle_replacement_clears_input_quote_and_dependents
+    self.assertEqual((status, errors, len(client.exchanges)), (expected, '', 3))
+AssertionError: Tuples differ: (1, '', 0) != (1, '', 3)
+
+First differing element 2:
+0
+3
+
+- (1, '', 0)
+?         ^
+
++ (1, '', 3)
+?         ^
+
+
+======================================================================
+FAIL: test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\nsynthetic-bundle\n1\nfixture-issuer\nfixture-show\nevening\ncaller-synthetic-frozen-price\n1000\n3\nL1\ninv-1\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n10000\nL2\ninv-2\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n20000\nL3\ninv-3\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n30000\n2\ncoupon\norganizer\nFIXED\n6000\n[1]\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 470, in test_bundle_replacement_clears_input_quote_and_dependents
+    self.assertEqual((status, errors, len(client.exchanges)), (expected, '', 3))
+AssertionError: Tuples differ: (1, '', 0) != (1, '', 3)
+
+First differing element 2:
+0
+3
+
+- (1, '', 0)
+?         ^
+
++ (1, '', 3)
+?         ^
+
+
+======================================================================
+FAIL: test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\nsynthetic-bundle\n1\nfixture-issuer\nfixture-show\nevening\ncaller-synthetic-frozen-price\n1000\n3\nL1\ninv-1\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n10000\nL2\ninv-2\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n20000\nL3\ninv-3\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n30000\n2\ncoupon\norganizer\nFIXED\n6000\n["L1", "L2", "L3"]\n0\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 470, in test_bundle_replacement_clears_input_quote_and_dependents
+    self.assertEqual((status, errors, len(client.exchanges)), (expected, '', 3))
+AssertionError: Tuples differ: (1, '', 0) != (1, '', 3)
+
+First differing element 2:
+0
+3
+
+- (1, '', 0)
+?         ^
+
++ (1, '', 3)
+?         ^
+
+
+======================================================================
+FAIL: test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents) (replacement='compose_quote\né\n1\nfixture-issuer\nfixture-show\nevening\ncaller-synthetic-frozen-price\n1000\n3\nL1\ninv-1\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n10000\nL2\ninv-2\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n20000\nL3\ninv-3\nfiat\nKRW\n0\n340282366920938463463374607431768211455\n30000\n2\ncoupon\norganizer\nFIXED\n6000\n["L1", "L2", "L3"]\nnull\nmember\nplatform\nBPS\n1000\n["L1", "L2", "L3"]\nnull\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 470, in test_bundle_replacement_clears_input_quote_and_dependents
+    self.assertEqual((status, errors, len(client.exchanges)), (expected, '', 3))
+AssertionError: Tuples differ: (1, '', 0) != (1, '', 3)
+
+First differing element 2:
+0
+3
+
+- (1, '', 0)
+?         ^
+
++ (1, '', 3)
+?         ^
+
+
+======================================================================
+FAIL: test_bundle_replacement_clears_input_quote_and_dependents (test_commerce_calculation_console.CommerceCalculationConsoleTests.test_bundle_replacement_clears_input_quote_and_dependents)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-plan-local-bundle-quote-composer/reference/booking_resale_admission/test_commerce_calculation_console.py", line 477, in test_bundle_replacement_clears_input_quote_and_dependents
+    self.assertEqual((status, errors, len(client.exchanges)), (0, '', 5))
+AssertionError: Tuples differ: (1, '', 0) != (0, '', 5)
+
+First differing element 0:
+1
+0
+
+- (1, '', 0)
+?  ^      ^
+
++ (0, '', 5)
+?  ^      ^
+
+
+----------------------------------------------------------------------
+Ran 31 tests in 13.625s
+
+FAILED (failures=49)

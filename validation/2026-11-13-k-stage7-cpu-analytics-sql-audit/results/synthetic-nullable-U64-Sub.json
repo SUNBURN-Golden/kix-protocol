@@ -1,0 +1,25 @@
+{
+  "caseId": "nullable-U64-Sub",
+  "comparison": "duplicate-preserving multiset",
+  "contractClause": "Class B: nullable arithmetic characterization; v1 has no explicit propagation rule",
+  "datasets": "[Table { schema: DatasetSchema { dataset: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, columns: [ColumnSchema { column: ColumnId(1), kind: U64 }, ColumnSchema { column: ColumnId(2), kind: U64 }] }, rows: [[Null, U(7)], [U(7), Null], [Null, Null]] }]",
+  "duckdb": "Ok([[Null], [Null], [Null]])",
+  "expected": "Ok([[Null], [Null], [Null]])",
+  "exportTrace": {
+    "derivation": "synthetic boundary dataset, not source rows"
+  },
+  "fixtureKind": "synthetic-boundary-characterization",
+  "limitations": "local fixture; source-informed; no economic writes or production claim",
+  "normalizedOutcomes": {
+    "duckdb": "ROWS",
+    "polars": "ROWS",
+    "rust": "ROWS"
+  },
+  "plan": "FeaturePlanV1 { plan_id: KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250]), source: DatasetRef { dataset_id: KixId([100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]), schema_version: 1 }, stages: [Project([Projection { output: ColumnId(10), output_kind: U64, expr: Arithmetic { op: Sub, overflow: Error, left: Column(ColumnId(1)), right: Column(ColumnId(2)) } }])] }",
+  "planId": "KixId([250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250])",
+  "polars": "Ok([[Null], [Null], [Null]])",
+  "querySql": "CREATE TEMP TABLE stage0 AS SELECT CAST((c1 - c2) AS UBIGINT) AS c10,_ord FROM t0;\nSELECT CAST(c10 AS VARCHAR) FROM stage0 ORDER BY _ord",
+  "rust": "Ok([[Null], [Null], [Null]])",
+  "schemaVersion": 1,
+  "status": "PASS"
+}

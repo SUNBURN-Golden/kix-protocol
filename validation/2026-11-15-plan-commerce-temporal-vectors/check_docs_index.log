@@ -1,0 +1,5 @@
+$ /home/box/.local/bin/python3.12 -B scripts/check_docs_index.py
+docs index coverage check failed:
+- not indexed: validation/2026-11-15-plan-commerce-temporal-vectors/README.md
+
+EXIT: 1

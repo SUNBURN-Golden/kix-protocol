@@ -1,0 +1,6 @@
+$ python3 scripts/verify_runtime_architecture.py
+exit: 0
+stdout:
+architecture v5 + KTX-R1 dependency gate OK; durability/performance NOT certified
+
+stderr:

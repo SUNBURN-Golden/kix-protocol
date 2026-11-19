@@ -1,0 +1,19 @@
+....................................................................................................................................................F.........................................................................................................................................................................................................................................
+======================================================================
+FAIL: test_source_incomplete_no_dispatch (test_reward_console_subprocess.RewardConsoleSubprocessTests.test_source_incomplete_no_dispatch) (operation='observe', invalid='[\'observe\', \'{"kind":"participation","program":"synthetic-program","recipient":"synthetic-recipient","source_op_id":"participation"}\', \':guided\', \'COMMITTED\', \'KRW\', \'false\', \'false\', \'false\', \'false\', \'\']')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/test_reward_console.py", line 204, in test_source_incomplete_no_dispatch
+    status, calls, output, errors = self.guided_drive(invalid + ['quit'])
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/test_reward_console_subprocess.py", line 46, in guided_drive
+    result = self.drive(lines, output=output, configure=capture)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/kix-run/wt/plan-local-pool-guided-live-init/reference/token_reward/test_reward_console_subprocess.py", line 94, in drive
+    self.assertTrue(completed, 'console reply must arrive before input EOF')
+AssertionError: False is not true : console reply must arrive before input EOF
+
+----------------------------------------------------------------------
+Ran 382 tests in 74.233s
+
+FAILED (failures=1)

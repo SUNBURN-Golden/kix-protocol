@@ -1,0 +1,39 @@
+[
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_docs_index.py"
+    ],
+    "exit_code": 0,
+    "log": "final-01.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "exit_code": 0,
+    "log": "final-02.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/check_preservation.py"
+    ],
+    "exit_code": 0,
+    "log": "final-03.log"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "log": "final-04.log"
+  }
+]
