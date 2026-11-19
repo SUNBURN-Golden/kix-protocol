@@ -957,7 +957,8 @@ This is outside ASTRA program mode.
 | Portable ordered artifacts, arithmetic and negative controls | Not covered for these histories; operation-replay and cross-claim packs supply the pattern | New canonical inputs/results, literal arithmetic, exact pins and detached mutation rejection |
 
 The additions are composition evidence. They do not duplicate the seeded
-settlement corpus, redefine contracts or implement parked pre-draw terminals.
+settlement corpus or redefine contracts. Both advances are already drawn at
+the first checkpoint.
 
 ### Artifacts, schema and offline consumption
 
@@ -1118,8 +1119,9 @@ Every observer remains `contract_status=NOT_BOUND`, `repair=NONE`,
 Product limits remain **UNDETERMINED—Astra**. Legal responsibility remains
 **UNDETERMINED—User/legal**. No refund-credit netting, repair, exposure permission,
 product default, production readiness, legal compliance, bank exactly-once,
-durability, chain finality or live funds is established. Parked pre-draw terminal
-work remains excluded. This builder is the author; A2 non-author exact-head
+durability, chain finality or live funds is established. The separate
+[P1 history](#capital-pre-draw-rejection-and-cancellation-companion-p1) covers
+rejection and cancellation before draw. This builder is the author; A2 non-author exact-head
 review remains outstanding.
 
 ### Actual builder verification and delivery limits (2026-11-17)
@@ -1205,3 +1207,236 @@ service, credentials, real PG/bank/KYC call, funds, public endpoint or Sui
 execution was used. External consumer acceptance and A2 non-author exact-head
 review remain follow-up work for the supervisor; these local results do not
 establish merge readiness.
+
+## Capital pre-draw rejection and cancellation companion (P1)
+
+Node `plan-capital-predraw-terminal-vectors` fills the portable pre-draw history
+composition gap for `CREDIT_ADVANCE_F04.md` §§7.1–7.3. The task input is the
+supervisor-supplied node specification and design plan; there is no issue or
+matching task document under `docs/tasks/`. This is outside ASTRA program mode.
+The evidence is bounded, synthetic and source-informed, not an independent
+implementation or an external Capital consumer acceptance.
+
+### Coverage mapped before adding tests
+
+| Requirement / existing evidence | Classification and scope |
+| --- | --- |
+| `test_credit_fsm.py::CreditFsmTests.test_cancel_and_reject_are_terminal_before_exposure` | Sufficient existing transition regression: rejection, cancellation, UNKNOWN_CLAIM, terminal refusal, separate full-capacity draw and late-cancel refusal. P1 composes complete portable observations without duplicating that unit test's role. |
+| Boundary pack `settlement_credit_boundary_v1.json`, S1–S6 / `test_settlement_credit_boundary.py` | Sufficient for literal settlement-face copying, capture/commit binding, frozen faces, refund observations, shared exposure and reconciliation gaps; partial for the requested portable pre-draw composition. |
+| Operation-replay pack R1–R3 / `test_capital_operation_replay_vectors.py` | Sufficient for draw/repay note identity, historical receipts, ordered repayment refusals and reconcile/restore. Partial for pre-draw terminal receipt/error replay. |
+| Terminal-capacity pack T1/T2 / `test_capital_terminal_capacity_vectors.py` | Sufficient for CLOSED capacity reuse and DEFAULTED retained exposure after draw. P1 adds no CLOSED/DEFAULTED history. |
+| Cross-claim pack H1 / `test_capital_cross_claim_history_vectors.py` | Sufficient for two-claim aggregation and settlement refund/default history, with historical/current receipt separation. P1 uses one claim and no refund. |
+| Complete ordered rejection/cancellation observations before the first note, then another advance consuming the available face | Not covered by the existing portable packs. This is the new P1 evidence gap. |
+
+The new verifier checks prior scenario inventories and the cited FSM and prior
+Capital source-test methods using AST inspection, without importing test classes.
+Existing packs and authoritative evidence maps remain unchanged.
+
+The [v1 companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md) records seven
+earlier packs, including the [refund composition histories](#refund-composition-companion-plan-capital-refund-composition-vectors).
+Both refund histories start with two drawn advances. P1 starts before the first
+note and records when the claim first becomes observable.
+
+### Artifacts, schema and consumer procedure
+
+- Input: [`capital_predraw_terminal_v1.json`](../../reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json).
+- Complete captures: [`capital_predraw_terminal_vectors_v1.json`](../../reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json).
+- Read-only verifier: [`test_capital_predraw_terminal_vectors.py`](../../reference/credit_advance_f04/test_capital_predraw_terminal_vectors.py).
+
+Version is `capital-predraw-terminal/1`; kind is
+`SYNTHETIC_PREDRAW_TERMINAL_VECTORS`. Provenance remains
+`MOCK_SETTLEMENT_ONLY` / `MOCK_CREDIT_F04_ONLY`. Input root fields are
+`fixture_version, fixture_kind, synthetic_only, provenance, scenarios`.
+The single scenario `P1_reject_cancel_before_draw` contains
+`scenario_id, source_tests, contracts, setup_steps, advance_ids, claim_id,
+group_id, limit, steps, expected_arithmetic`. Both step arrays contain exactly
+`step_id, target, operation, arguments`. The verifier bounds identities, counts,
+order, globally unique step IDs and explicit operation/argument fields.
+
+Vector root fields are `vector_version, fixture_sha256, source_pins, scenarios`.
+Each scenario contains `scenario_id, setup_results, initial_snapshot, history`.
+Setup results contain `step_id, target, operation, result`; history adds
+`snapshot`. Results preserve the entire `{ok: receipt}` or
+`{error: {type, code}}`, not a subset of receipt fields.
+Each snapshot contains `settlement: {view, journal, canonical_state,
+state_digest}`, `credit: {views, claim, journal, canonical_state, state_digest}`
+and `shared_exposure`. The credit claim always wraps the actual public outcome:
+`{error: {type: "CreditError", code: "UNKNOWN_CLAIM"}}` before the first note,
+then `{ok: complete_claim}` after draw. An unknown claim is not a zero-valued
+claim record.
+
+Check canonical UTF-8 JSON (sorted keys, compact separators, one trailing
+newline), both artifact byte pins and the ordered source pin list first.
+Fixture SHA-256 is
+`538f9cb0123b518c34f2a5ff3916433ac69acd093c961943d04f314178f1e58d`;
+vector SHA-256 is
+`2f08fc5d4d066c3a6dd5b774799fdcaddcd9b2e947d643b6d5eba7a4d6e7fb98`.
+The vector pins unchanged producers, imported helpers, contracts, cited tests
+and prior pack fixtures/vectors listed in `SOURCE_PATHS`; the new verifier and
+edited guide are excluded to avoid circular hashes. Tests never regenerate
+fixtures or vectors.
+
+Replay setup on fresh machines using `replay_scenario_with_state`. Its four
+settlement steps are literal copies of the operation-replay setup: gross
+100000 KRW, `PRIMARY_FEE_BPS=500`, obligations `95000+5000=100000`, confirmed
+cash 97000, statement fee 3000, tax/held/adjustment zero. The complete claim is
+copied literally into each offer and compared canonically with the public
+COMMITTED settlement claim immediately before dispatch. A, B and C are
+`adv-p1-a`, `adv-p1-b`, `adv-p1-c`; their amounts are 40000, 60000 and 100000.
+All initially remain OFFERED. These are caller-owned synthetic fixture values,
+not policy defaults. No credit adapter is added.
+
+Replay the fixed history in order:
+
+1. Reject A; attempt fresh-key approve A and draw A.
+2. Approve B, cancel B; attempt fresh-key approve B and draw B.
+3. Replay the original reject-A and cancel-B requests, then repeat the identical rejected draw-B request.
+4. Approve C and draw its entire 100000 capacity; attempt to cancel C after draw.
+
+Compare complete outcomes and every snapshot. Fresh-key terminal approve/draw
+refusals and repeated rejected draw B return `TERMINAL_IMMUTABLE`; late cancel C
+returns `ILLEGAL_TRANSITION`. Each refusal preserves both public business
+states, journals and digests exactly. Private remembered-error caches are not
+public state and are not included in those comparisons. Rejected requests do
+not enter the journal. Successful original-key reject/cancel replays preserve
+the original complete receipt except `duplicate=true, applied=null` and leave
+current state and journals unchanged.
+
+### Independently stated arithmetic and observation boundary
+
+`expected_arithmetic` has one row for `initial` and each of the 13 commands.
+Rows contain `step_id, advances, claim, shared_exposure`. Each advance projection
+includes `advance_id, phase, note_status, draw_id, drawn_exposure,
+repaid_exposure, outstanding_exposure, reserved_open, residual_unreserved,
+snapshot_frozen`. Claim arithmetic preserves UNKNOWN versus an explicit known
+projection; shared arithmetic is null or the six totals plus advance/claim
+counts and `within_limit`.
+
+| Checkpoints | A phase | B phase | C phase | Claim observation | Reservation / residual on each advance view |
+| --- | --- | --- | --- | --- | --- |
+| initial | OFFERED | OFFERED | OFFERED | UNKNOWN_CLAIM | 0 / 100000 |
+| reject-a through draw-a-late | REJECTED | OFFERED | OFFERED | UNKNOWN_CLAIM | 0 / 100000 |
+| approve-b | REJECTED | APPROVED | OFFERED | UNKNOWN_CLAIM | 0 / 100000 |
+| cancel-b through repeat-draw-b | REJECTED | CANCELLED | OFFERED | UNKNOWN_CLAIM | 0 / 100000 |
+| approve-c | REJECTED | CANCELLED | APPROVED | UNKNOWN_CLAIM | 0 / 100000 |
+| draw-c and cancel-c-late | REJECTED | CANCELLED | DRAWN | Known, frozen | 100000 / 0 |
+
+Before draw, every advance has null note/draw ID, zero drawn/repaid/outstanding
+exposure and `snapshot_frozen=false`. No reservation is created by offer,
+approve, reject or cancel. C draws `95000+5000-0=100000`, using open face rather
+than 97000 cash. C then has `drawn/repaid/outstanding=100000/0/100000`, note
+NOTED, draw ID `draw-p1-c`. The claim has reservation/residual `100000/0`.
+A and B keep null notes/draw IDs and zero individual exposure. Their public
+views now reflect the shared claim's reservation `100000`, residual zero and
+frozen status true; that is not an A/B note or reservation release.
+
+`shared_exposure=null` means **not invoked**, not zero exposure and not a new
+observer outcome. Pre-draw grouping remains contract-undefined. After C draws,
+only C's detached frozen DRAWN view is passed to `observe_shared_exposure`,
+with explicit synthetic `limit=100000`, group label `pool-p1`. REJECTED and
+CANCELLED views and empty lists are never passed. Both final checkpoints have
+`advance_count=1`, `claim_count=1`, `within_limit=true`, totals
+`drawn/repaid/outstanding/open/reserved/residual=100000/0/100000/100000/100000/0`.
+C remains unbound: `settlement_gate=UNBOUND` and
+`mock_settlement_commit_observed=false`. Bound settlement gates already have
+boundary-pack coverage. Settlement views, face bytes, journals and digests stay
+unchanged throughout. Credit face/cash/recovery remain `100000/97000/0`.
+
+The verifier checks whole-value replay, independent arithmetic, refusal and
+replay stability, null note fields, actual UNKNOWN_CLAIM, final capacity and
+late cancellation. It reruns the observer on detached captured C views and
+checks input stability and canonical-state digests. Detached mutation controls
+bypass outer artifact hashes and alter phases, null fields, unknown claims,
+error codes, receipt metadata, journal entries, every exposure/capacity total,
+source pins/bytes and omitted/reordered setup/history. Fixture controls update
+`fixture_sha256` so semantic arithmetic/order checks detect the changes.
+
+All existing execution/finality/authority flags remain false. Observer mapping
+stays `SHARED_EXPOSURE_NOT_BOUND`, `contract_status=NOT_BOUND`, `repair=NONE`,
+`refund_component=NOT_BOUND`, `fail_closed=true`, `mutates_state=false`,
+`authorizes_exposure=false`. Open terms remain UNFILLED with no decided value.
+Product limits and netting remain **UNDETERMINED — Astra**; legal parties remain
+**UNDETERMINED — User/designated legal advisers**. A caller's synthetic pool is
+not a legal identity. No implementation, contract, existing pack, protected path
+or runtime setting changes.
+
+### Builder verification, deviations and remaining gates
+
+At the original P1 build, local `origin/main`, task base and branch HEAD were all
+`def945f6a3afdb8ba0088a6e627dd7a0c6784cc2`, on
+`agent/kix-plan-capital-predraw-terminal-vectors`. The supervisor's explicit
+no-network instruction supersedes the AGENTS.md §1 fetch: `git fetch origin
+main` was not run, so current remote main and dependency merge status remain
+unverified. There was no base adjustment, commit, push, PR, issue, comment,
+marker or merge. There is no new committed implementation/final task head.
+
+Changed paths are exactly the two new P1 JSON artifacts, the new P1 test module
+and this appended field guide section. The pre-existing guide text is retained.
+The table records this builder's commands and results, not historical counts.
+`S` means `python3 -B -m unittest discover -s reference/S -t reference/S`;
+`C` means both `python3 -B scripts/C.py` and
+`python3 -B scripts/C.py --self-test`. All commands ran from repository root;
+Rust ran offline with toolchain auto-install disabled. Long jobs ran as
+foreground commands, without shell background jobs.
+
+| Command | Actual result |
+| --- | --- |
+| `python3 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_capital_predraw_terminal_vectors.py` | 9 tests passed. Initial run: 2 verifier errors (JSON helper used for bytes; negative control expected AssertionError instead of FixtureError). Corrected and reran successfully; final added controls also passed. |
+| `S=settlement_f01_f03` | 224 tests passed. |
+| `S=booking_resale_admission` | 1006 tests passed. |
+| `S=credit_advance_f04` | 279 tests passed, including all prior Capital packs and P1; rerun after the final mutation-control additions also passed. |
+| `S=ai_delegation` | 169 tests passed. |
+| `S=token_reward` | 397 tests passed. |
+| `S=provider_facts` | 86 tests passed. |
+| `S=payment_effects` | 28 tests passed. |
+| `S=economics` | 99 tests passed. |
+| `C=check_docs_index` | Plain and self-test passed. Final appended guide also passed the plain checker with `PYTHONDONTWRITEBYTECODE=1`. |
+| `C=check_credit_evidence_map` | Plain and self-test passed. |
+| `C=check_settlement_evidence_map` | Plain and self-test passed. |
+| `C=check_contract_error_codes` | Plain and self-test passed. |
+| `C=check_class_b_index` | Plain and self-test passed. |
+| `C=check_evidence_map_rollup` | Plain and self-test passed. |
+| `C=check_ci_test_discovery` | Plain and self-test passed; P1 is reached by the existing credit-suite discovery. |
+| `C=check_ci_checker_wiring` | Plain and self-test passed. |
+| `C=check_openapi_contract` | Plain and self-test passed; 84-command pin unchanged. |
+| `C=check_integration_gate_openapi` | Plain and self-test passed. |
+| `python3 -B -m unittest integration_gate.test_offline_limits` | 9 tests passed. |
+| `python3 -B scripts/verify_runtime_architecture.py` | Exit 0; dependency gate passed. |
+| `python3 -B scripts/test_runtime_architecture.py` | 7 tests passed. |
+| `RUSTUP_AUTO_INSTALL=0 cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline` | Exit 0; workspace tests passed, including KTX kernel. Existing CPU/SQL-engine acceptance test ignored pending its separately provisioned feature/bundle. |
+| `RUSTUP_AUTO_INSTALL=0 cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings` | Passed. |
+| `RUSTUP_AUTO_INSTALL=0 cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | Exit 0. |
+| `git diff --check` | Exit 0. |
+| Python SHA-256 protected-path manifest comparison, `git show HEAD:<path>` and `git hash-object` | All 125 original protected files match the initial manifest and HEAD. Final file-set comparison passes after removal of five generated ignored bytecode caches; both locked blobs match before/after. |
+
+Locked blobs before and after are
+`69564b166f0c27f9af5d8422f0a466b18d74c20f`
+(`runtime/crates/kix-kernel/src/lib.rs`) and
+`b607996c83a119c349f1cc90469ac1ba82764e20`
+(`runtime/crates/kix-kernel/tests/quarantine_capacity.rs`). The manifest also
+covers all files under `reference/v0.3-rc1/`, `.aiops/`, `docs/tasks/` and
+`.github/`. The first final file-set check found five new ignored
+`reference/v0.3-rc1/__pycache__/*.pyc` files generated during broader checks.
+All original protected bytes were unchanged. Only those newly generated caches
+were removed, and the complete comparison was rerun. No protected source was
+edited or used for mutation testing.
+
+No contract violation or new contract-undefined behavior was found. The known
+pre-draw shared-exposure gap remains undefined; null records non-invocation.
+No implementation/scope deviation from the design was needed. Procedural
+exceptions are the supervisor-prohibited fetch and the generated-cache cleanup
+described above. No product/policy/resource decision or new command was needed.
+
+No external Capital consumer, live provider, funds, bank/KYC, production
+runtime, chain/testnet/mainnet, Move/localnet/ZK, storage-engine or hosted CI
+verification is claimed. Local checks are the selected practical equivalents
+for the touched paths, not full hosted protocol verification, independent
+review, production readiness, durability or financial/legal approval.
+
+A2 non-author review at the supervisor's final committed head, both exact-head
+**KTX kernel verification** and **KIX protocol verification** successes, and
+human ready/merge authorization remain separate delivery gates. Neither
+workflow's run ID/status/conclusion was obtained: GitHub/network actions were
+prohibited, so both are unverified. No merge SHA, final-merge blob checks or
+post-merge main/push CI applies. The supervisor must establish the final head
+and its exact-head evidence; earlier CI cannot transfer to it.
