@@ -54,8 +54,8 @@ does not bind the surfaces together.
 | Action namespace | The same 84 pinned catalogue actions, not commerce calculator actions or ticket/reward/pool local selectors. |
 | Identity and replay | Validation preserves caller identities and invokes transport once. Server/core/FSM replay rules above still apply; SDK validation is not an idempotency service or an authority check. |
 | Prerequisites and authority | Pinned OpenAPI, generator, catalogue, manifest/profile/vector tuple; Node 24 for existing tooling. Caller supplies transport. `actor` remains a fixture string. `bootstrap-1` is the preserved historical 40-command pin; current generated output uses `bootstrap-2`. |
-| Evidence and qualification | [Conformance tests](../../sdk/conformance/conformance.test.mjs), [SDK byte checker](../../scripts/check_sdk_client.py), [verifier](../../sdk/compat/verify_compat.mjs). BOOTSTRAP grants **catalogue-schema-binding only**, not semantic conformance, N/N−1 compatibility, independent review or operational approval. Semantic consumers remain **HOLD**. |
-| Unavailable bindings | [SD1 decision record](OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md) retains the explicit manifest verifier check-order violation: OpenAPI/generator/output checks precede profile hash verification, contrary to contract §4. Owner: **User**. This inventory neither fixes nor waives it; green BOOTSTRAP checks cannot resolve it. |
+| Evidence and qualification | BOOTSTRAP grants **catalogue-schema-binding only**. Semantic SDK consumption remains **HOLD_SEMANTIC**. [Conformance tests](../../sdk/conformance/conformance.test.mjs), [SDK byte checker](../../scripts/check_sdk_client.py). |
+| SD1 verifier evidence | After JunTae's November 18 option 1 authorization (`[pt224u]`), the checked-in verifier checks the profile byte hash before the OpenAPI references. The ordered §4 regression exercises the sequence. [Owner decision record](../decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md), [profile hash block](../../sdk/compat/verify_compat.mjs#L146-L150), [ordered regression](../../sdk/conformance/conformance.test.mjs#L364-L409). |
 
 ### Commerce calculator
 
@@ -174,7 +174,7 @@ authority and unresolved decision boundaries remain at their contracts.
 | Gap | Present evidence and boundary | Prerequisite / recorded owner |
 |---|---|---|
 | Published ticket/finance reads | [Read-query draft](../contracts/READ_MODEL_QUERIES.md), [source map](../contracts/READ_MODEL_SOURCE_MAP.md) and [candidate fixtures](../../reference/read_model/README.md) describe 13 query names absent from both command pins. Local `view` methods and candidate vectors do not publish a read API. `query_digest`, visibility, modeled cursor error codes and open-listing phase predicate remain **NOT_BOUND** where recorded. | Read-model implementation/publication and applicable producer/consumer qualification are still required. Visibility, limits/defaults, cursor lifetime, sort keys, open phases and retention/history values stay **UNDETERMINED — Astra** as recorded in the source map. Do not send a write as a substitute read. |
-| Semantic SDK handoff | BOOTSTRAP binds catalogue/schema bytes only; semantic consumer state is **HOLD**. This map supplies no independent producer/consumer acceptance. | Applicable exact tuple qualification and independent consumer evidence; SD1 remains with **User** at its linked decision record. |
+| Semantic SDK handoff | BOOTSTRAP binds catalogue/schema bytes only. Semantic SDK consumption remains **HOLD_SEMANTIC** and external consumer acceptance remains **UNVERIFIED**. | Applicable exact tuple qualification and independent consumer evidence. |
 | Authenticated observations and durable effects | Local receipts, views, digests and “live” subprocesses supply no authenticated provider/chain source, durable economic transaction or distributed execution authority. | Existing [open inputs](../contracts/FIRST_BATCH_OPEN_INPUTS.md) retain their named User, provider and designated legal/accounting owners; [program locks](../decisions/PROGRAM_DECISIONS_20260928.md) §5 remain. No policy value is selected here. |
 | Finance projection/export and Capital ownership | [Finance completion design](../aiops/FINANCE_COMPLETION_DESIGN_KO.md) is **PENDING / unadopted / execution prohibited**. It proposes protocol finance logic here and financial screens in Commerce, explicitly no third repository/program. Separate Capital product/repository ownership was not established in this worktree; neither consumer repository was inspected. Pool/supply/collateral tools do not implement that architecture or a finance ledger. Unsupported consumer methods remain **NOT_BOUND**, release readiness **HOLD**. | **User/Astra** must reconcile any separate Capital interpretation and adopt applicable contracts/dependencies before integration. Accounting/legal classifications remain with User and designated advisers; no adoption, projection/export completion or consumer verification is claimed. |
 
@@ -195,10 +195,10 @@ journey evidence and exactly one status:
 
 Semantic SDK consumption stays **HOLD_SEMANTIC**; the record grants
 `catalogue-schema-binding only`. External `kix-commerce-apps` expectations stay
-**UNVERIFIED** because that adapter is not in this repository. SD1 stays
-**OPEN**, User-owned and unresolved. **BOOTSTRAP is not consumer acceptance**,
-and `MOCK_EVIDENCE` is offline fixture evidence only; neither is semantic,
-N/N-1, production, audit or User approval.
+**UNVERIFIED** because that adapter is not in this repository.
+`MOCK_EVIDENCE` covers offline fixtures only. Semantic conformance, N/N−1
+compatibility, production qualification, audit and User approval each require
+their own evidence.
 
 The [checker](../../validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py)
 re-derives the sets, recomputes every pin, cross-checks the producer tuple and
@@ -212,19 +212,22 @@ and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect the nine
 Commerce input/outcome pack families (323 steps, including unpaid/paid resale expiry,
 admission cancellation and expired hold release/slot reuse) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
-navigation without changing the binding index or producer tuple. Later evidence
-does not promote binding statuses; SD1 remains OPEN/User-owned, semantic
-consumption HOLD_SEMANTIC, all 13 reads NOT_BOUND and external consumer acceptance
-UNVERIFIED. This is no consumer integration or qualification.
+navigation within the existing binding index and producer tuple. Semantic
+consumption remains `HOLD_SEMANTIC`, all 13 reads remain `NOT_BOUND` and external
+consumer acceptance remains `UNVERIFIED`.
 
 ## Evidence and non-claims
 
 Behavioral statements above cite existing contracts, dispatchers and tests;
 historical validation links retain their original dates and scope. The
-[new validation record](../../validation/2026-11-10-audit29-consumer-surface-boundary-map/README.md)
-distinguishes this builder's executions from those historical records. Existing
-Class B uncertainty stays characterization; SD1 stays a recorded class C blocker.
-No new discrepancy is resolved or qualification grade raised by this inventory.
+[boundary map validation record](../../validation/2026-11-10-audit29-consumer-surface-boundary-map/README.md)
+records the original map's checks. Existing class B uncertainty remains
+characterization.
+
+The tuple's `OPEN` / `User` entry records the October SD1 stop. The handoff
+records the November verifier evidence, and JunTae owns formal ledger
+disposition. See the [October stop](OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md)
+and the [SD1 handoff validation record](../../validation/2026-11-19-plan-producer-sd1-evidence-handoff/README.md).
 
 No new schema, alias, adapter, protocol command, policy value, finance architecture,
 production runtime, real funds/provider call, public endpoint, Sui testnet/mainnet,

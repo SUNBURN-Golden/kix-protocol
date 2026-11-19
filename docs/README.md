@@ -47,16 +47,19 @@ pins the current 84-command contract-only OpenAPI tuple (40 core + 44 FSM),
 both OpenAPI documents, the generated SDK catalogue, generator, toolchain,
 `bootstrap-2` profile/manifest/sidecar and conformance vectors, and maps every
 command to its core/FSM source and gate route. The 13 owner-decided read names
-stay `NOT_BOUND` because `read-model-reference` is not merged; semantic SDK
-consumption stays `HOLD_SEMANTIC`; SD1 stays `OPEN` with the User. The record
-asserts identity only and makes no semantic, N/N-1, production, audit or User
-approval claim. [Builder evidence and actual local results](../validation/2026-11-10-plan-producer-qualification-tuple-bundle/README.md).
+stay `NOT_BOUND` because `read-model-reference` is not merged. Semantic SDK
+consumption stays `HOLD_SEMANTIC`. The tuple records SD1 as `OPEN` with the
+User. The record asserts identity only and makes no semantic, N/N-1,
+production, audit or User approval claim.
+[Builder evidence and actual local results](../validation/2026-11-10-plan-producer-qualification-tuple-bundle/README.md).
 [HOLD and non-normative negative-control coverage and validation](../validation/2026-11-16-plan-producer-hold-negative-controls/README.md)
 extends the checker's detached self-tests while preserving validation semantics
 and all qualification statuses.
 [Candidate read-query association coverage and local validation](../validation/2026-11-17-plan-producer-read-association-check/README.md)
 derives ownership and kind from pinned fixture bodies and rejects coordinated
 path/digest rebinding, preserving all qualification statuses and SD1 ownership.
+[November SD1 verifier evidence and local validation](../validation/2026-11-19-plan-producer-sd1-evidence-handoff/README.md)
+links the October stop, JunTae's authorization, the checked-in verifier and the §4 regression.
 
 ## Local supply reconciliation
 
