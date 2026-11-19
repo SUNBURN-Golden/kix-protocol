@@ -263,3 +263,67 @@ persistence, retries, polling, network access, credentials, SDK/OpenAPI change,
 provider conformance or runtime activation.
 
 See the [CLI coverage, actual commands and pending delivery gates](../../validation/2026-10-30-plan-local-payment-lookup-cli/README.md).
+
+## Explicit synthetic reservation payment observation
+
+`PaymentReservationHandoff.submit` looks up one fixture operation and can call
+`ReservationMachine.observe_payment` once. Configure the association with a
+bound provider payment and the local reservation and order that should receive
+the observation. The two order IDs may differ.
+
+```python
+from payment_reservation_handoff import (
+    PaymentReservationHandoff, SyntheticReservationAssociation,
+)
+
+association = SyntheticReservationAssociation(
+    operation_ref=operation_ref,
+    payment_ref=bound_payment_ref,
+    reservation_id=reservation_id,
+    order_id=local_order_id,
+    mock_payment_ref=existing_mock_payment_ref,
+    idempotency_key=existing_key,
+)
+handoff = PaymentReservationHandoff(router, machine, association=association)
+result = handoff.submit(operation_ref)
+```
+
+The caller supplies the mock payment reference (64 lowercase hexadecimal characters)
+and the idempotency key. Neither is derived from provider identifiers or hashes.
+All three operation fields and all five payment fields participate in matching.
+Only a single `DONE` payment item with an exact integer KRW amount matching the
+local order can reach the FSM. The reservation accepts amounts from 1 through
+`10**12`. The lookup retains larger provider amounts at their original precision.
+
+| Submission outcome | Result |
+|---|---|
+| Submitted operation differs | `OPERATION_MISMATCH` before lookup |
+| Router returns `Unresolved` | Original lookup and reason, including timeout, missing route or unverified source |
+| Lookup references or provenance differ | Original lookup and `LOOKUP_IDENTITY_MISMATCH` |
+| Cancellation history or unsupported payment shape | Original history in the lookup and `PRIMARY_PAYMENT_REQUIRED` |
+| Local order or amount differs | Original lookup and `RESERVATION_IDENTITY_MISMATCH` or `PAYMENT_AMOUNT_MISMATCH` |
+| Reservation view or observation rejects | Original lookup and the actual `ReservationError` in `fsm_error` |
+| Observation succeeds or replays | Original lookup and unchanged FSM response in `fsm_result` |
+
+`lookup_result` retains `MOCK_SYNTHETIC_PROVIDER_FACTS_ONLY`, the complete
+references, raw timestamps, receipt, item details and hashes. The FSM response
+retains `MOCK_GATE_ONLY`. Each explicit resubmission uses the same association.
+The FSM owns acceptance, cached rejections and first-result replay across later
+transitions. The adapter has no retry, fallback or replacement key.
+
+Run the offline example from the repository root.
+
+```sh
+python3 reference/provider_facts/example_payment_reservation_handoff.py
+```
+
+The example prepares a confirmed reservation. One lookup on its bound fake
+takes it to `PAYMENT_NOTED`. The slot stays reserved, issuance and right are
+absent, and execution and finality flags stay false. Observation does not
+issue, settle, refund, release inventory or clear UNKNOWN.
+
+This is a Track P in-memory fixture under `PROGRAM_DECISIONS_20260928` §2.1
+and `BOOKING_RESALE_ADMISSION_GATES` §§3/9. Provider authentication and
+merchant scope remain **UNDETERMINED — Toss/User**. Event identity, aliases
+and production mapping remain **UNDETERMINED — Astra**.
+[Coverage and validation results](../../validation/2026-10-31-plan-local-payment-reservation-handoff/README.md)

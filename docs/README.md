@@ -468,3 +468,5 @@
 - [plan-local-payment-scope-router](../validation/2026-10-30-plan-local-payment-scope-router/README.md) — Internal immutable synthetic scope routing through existing operation/payment bindings; exact provider/account/environment selection, no fallback, retained normalized outputs and capture/review state (Analog, NOT Toss); no authentication, merchant authorization, persistence or runtime activation.
 
 - [plan-local-payment-lookup-cli](../validation/2026-10-30-plan-local-payment-lookup-cli/README.md) — Reusable standard-library offline CLI for one operation-bound synthetic lookup from a fully validated local fixture; complete references, unchanged normalized facts/hashes, unresolved reasons and actual fake-call snapshots; no provider authentication, persistence, policy decision or runtime activation.
+
+- [plan-local-payment-reservation-handoff](../validation/2026-10-31-plan-local-payment-reservation-handoff/README.md) — One bound synthetic primary-payment lookup reaching reservation payment observation. Covers unapplied cancellation and unresolved evidence, first-result replay, and local verification.
