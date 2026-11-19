@@ -478,6 +478,8 @@ and transport fencing. No policy decision, activation or independent review is i
 
 - [plan-plan-feature-ir-validator-matrix-closure](../validation/2026-10-26-plan-feature-ir-validator-matrix-closure/README.md) — Public-API join-right identity/version, signed/unsigned division and aggregate empty-policy regression matrices; two maintainer-owned §10 rows covered, execution/conformance and other owners unchanged.
 
+  - [2026-11-19 S4 follow-up](../validation/2026-11-19-plan-feature-aggregate-evidence-sync/README.md) — Both validators check empty policies for all five aggregates. Execution on empty and all-null datasets remains open.
+
 - [plan-plan-rs4-l2-option-impact-inventory](../validation/2026-10-26-plan-rs4-l2-option-impact-inventory/README.md) — [RS-4 L2 결정 선택지별 영향 목록](status/RS4_L2_DECISION_IMPACT_INVENTORY.md): 트리 내 수락 문구·지도 행·L1 분모와 L2 미정 입력·후속 의존성만. 선택·값·측정·노드 상태 변경이 아니다.
 
 - [plan-plan-bcs1-contract-clause-evidence-map](../validation/2026-10-26-plan-bcs1-contract-clause-evidence-map/README.md) — Builder-authored KIX-BCS1 clause-to-test map ([지도](status/BCS1_CONTRACT_EVIDENCE_MAP.md)) and stdlib citation/golden checker; existing tests only, S08 equality and boundary-corpus remain deferred, no contract or grade change.
