@@ -208,13 +208,14 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect the nine
-Commerce input/outcome pack families (323 steps, including unpaid/paid resale expiry,
-admission cancellation and expired hold release/slot reuse) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect ten
+Commerce input/outcome pack families (341 steps, including linked purchase and partial
+refund) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Semantic
-consumption remains `HOLD_SEMANTIC`, all 13 reads remain `NOT_BOUND` and external
-consumer acceptance remains `UNVERIFIED`.
+consumption remains `HOLD_SEMANTIC`, all 13 reads remain `NOT_BOUND`, SD1 is
+`OPEN` and User-owned, and external consumer acceptance remains `UNVERIFIED`.
+[Linked refund replay](../../reference/booking_resale_admission/test_commerce_linked_refund_vectors.py)
 
 ## Evidence and non-claims
 
