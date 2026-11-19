@@ -207,6 +207,16 @@ upgraded from `NOT_BOUND` or a semantic claim. It is validation evidence, not a
 second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
+The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect the nine
+Commerce input/outcome pack families (323 steps, including unpaid/paid resale expiry,
+admission cancellation and expired hold release/slot reuse) to exact case/step/action
+identities, byte pins, outcome references and replay locations. They supplement
+navigation without changing the binding index or producer tuple. Later evidence
+does not promote binding statuses; SD1 remains OPEN/User-owned, semantic
+consumption HOLD_SEMANTIC, all 13 reads NOT_BOUND and external consumer acceptance
+UNVERIFIED. This is no consumer integration or qualification.
+
 ## Evidence and non-claims
 
 Behavioral statements above cite existing contracts, dispatchers and tests;

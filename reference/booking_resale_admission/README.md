@@ -4198,3 +4198,267 @@ This pack makes no HTTP, durability, external-consumer acceptance, production,
 real-payment, legal or chain-finality claim. It changes no implementation,
 contract, binding index, producer tuple, SDK or catalogue. A2 non-author exact-head
 review and both successful exact-head workflows remain supervisor delivery gates.
+
+## Commerce settlement-bound resale refusal vectors
+
+The companion [canonical inputs](fixtures/commerce_bound_resale_inputs_v1.json)
+and [complete outcomes](fixtures/commerce_bound_resale_receipts_v1.json) publish
+three residual, source-informed histories for `kix-commerce-apps`. They replay
+explicit commands through the unchanged in-process `FsmHost`; no transport or
+external service is involved. The source is
+`test_resale_fsm.py::ResaleFsmTests.test_bound_transfer_waits_for_mock_commit_and_reconciles`,
+[booking/resale §§10.5–10.7](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#105-정산-게이트)
+and [settlement §9](../../docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md#9-참조-수락-상태-기계).
+The [coverage map](../../validation/2026-11-17-plan-commerce-bound-resale-refusals/coverage.md)
+classifies the existing journey, historical, temporal, entry/resale ordering and
+bound-issuance packs before identifying these portable gaps.
+
+| History | Explicit observations |
+|---|---|
+| `committed-resale-amount-mismatch` | Gross `10001` commits against listing amount `8000`; `transfer-mismatch` refuses `SETTLEMENT_AMOUNT_MISMATCH`. |
+| `failed-settlement-blocks-transfer` | `fail` records `synthetic-fail`; `transfer-failed` refuses `SETTLEMENT_NOT_COMMITTED`. |
+| `rejected-transfer-after-commit` | `transfer-early` refuses at AUTHORIZED. Capture and commitment alone leave the seller and version 1. `replay-transfer-early` still refuses; the separately supplied `transfer-fresh` changes ownership to the recipient/version 2, and `replay-transfer-fresh` returns its first receipt without effects. |
+
+For the captured-to-committed success path, consume the existing
+[journey inputs](fixtures/commerce_journey_conformance_v1.json) and
+[journey receipts](fixtures/commerce_journey_receipts_v1.json), specifically
+`accept-A-before-commit → settle-resale-commit → accept-A`. This pack does not
+repeat that history. Each new case explicitly establishes reservation clock,
+show, hold, confirmation, payment and issuance, then resale clock, adoption,
+listing and payment. Primary price `10001`, resale amount `8000`, clock `1000000`,
+expiry `1900000`, fee/cap/role fields and failure reason are synthetic examples,
+not product defaults. Policy values remain `UNDETERMINED` with existing owners
+([booking/resale §7.1](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#71-결정-표),
+[settlement policy](../../docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md)).
+
+Inputs use `fixture_version: 1`, `OFFLINE_CONFORMANCE_FIXTURE_ONLY` and domain
+`kix:fixture:fsm-catalogue:0.3`. Every step has its complete command `body` and
+exactly one `expect` or `expect_error`. Accepted expectations enumerate journal
+deltas for all five machines. `refusal_of` and `replay_of` point to earlier
+explicit steps; the harness never invents follow-up commands or keys. The fresh
+transfer changes only `idempotency_key`, preserving `transfer_id` and listing.
+
+Outputs use non-normative schema `kix-commerce-bound-resale-receipts/1` and kind
+`IN_PROCESS_MOCK_RECEIPT_VECTORS`. Every ordered outcome has its `id`, `action`,
+full `input_ref` (`reference/booking_resale_admission/fixtures/commerce_bound_resale_inputs_v1.json#/cases/<i>/steps/<j>/body`,
+zero-based), exactly one complete `receipt` or exact `rejection_code`, and a
+`diagnostic_snapshot`. Diagnostics detach all five machines' canonical `state`,
+`digest` and accepted `journal`, plus available reservation/show/right/listing/
+settlement views. These are test observations, not new read commands. A digest
+is a local state hash, not a signature or chain commitment.
+
+Both documents are compact sorted-key UTF-8 JSON with ordered arrays and no
+trailing newline. Duplicate keys, nonfinite numbers and changed scalar types
+are rejected. Input and sorted source pins record exact SHA-256 and Git blob
+identities before execution; imported helpers, FSM sources, contracts, source
+tests and prior packs are included. New artifact hashes are
+[separate](../../validation/2026-11-17-plan-commerce-bound-resale-refusals/artifacts.json)
+to avoid self-reference. There is no golden-update mode.
+
+Every refusal preserves observable business state, ownership/version, digests,
+views and accepted journals across reservation, resale, admission, settlement
+and credit. Rejected-key retention is process-local bookkeeping outside those
+journals; this pack does not claim restoration of rejected keys. Commitment is
+separate from transfer. Payment observation, reservation issuance, resale
+ownership and admission remain separate facts. Admission/consume IDs stay null;
+execution, economic-finality, chain and production flags remain false. Binding
+and transfer only observe settlement, and unused admission/credit never move.
+
+All 13 reads remain `NOT_BOUND`; semantic SDK consumption remains
+`HOLD_SEMANTIC`; SD1 remains OPEN/User-owned. The consumer binding index,
+catalogue, contracts, SDK, FSMs and prior packs are unchanged. These vectors do
+not qualify an external consumer, establish durability, restore rejected keys,
+execute funds, prove chain finality, or approve product policy. A2 non-author
+exact-head review and successful exact-head KTX/KIX workflows remain separate
+delivery gates.
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_resale_fsm.py -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_bound_resale_vectors.py -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_commerce_*.py' -v
+```
+
+The new suite compares complete canonical outcomes and resolved references,
+checks refusal preservation and explicit fresh-key transfer, and mutates errors,
+receipt fields/types, order, references, snapshots, journals and pins. Re-pinned
+input mutations must fail semantic checks. Public-command injections test extra
+effects at each refusal, premature transfer during commit and effects on replay.
+See [actual commands and results](../../validation/2026-11-17-plan-commerce-bound-resale-refusals/README.md).
+
+## Commerce resale expiry vectors
+
+The [literal inputs](fixtures/commerce_resale_expiry_inputs_v1.json) and
+[complete outcomes](fixtures/commerce_resale_expiry_receipts_v1.json) publish
+two source-informed histories through the existing in-process `FsmHost`, using
+only published command bodies. They supplement
+[contract §§10.1–10.4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#10-리셀-수락-상태-기계),
+`ResaleFsmTests.test_stale_listing_policy_and_expiry_do_not_transfer` and the
+existing resale rejection atomicity rows. These tests already cover unit
+behavior; the new evidence fills the portable ordered-history gap.
+
+| Case | Steps | Current result |
+|---|---|---|
+| `unpaid-listing-expiry` | 12 | `LISTED`, expired, no resale payment; late payment rejects `LISTING_NOT_OPEN` |
+| `paid-listing-expiry` | 15 | `PAYMENT_NOTED`, expired, original resale payment reference/amount retained; transfer rejects `LISTING_NOT_OPEN`, seller cancellation rejects `COMPENSATION_UNDEFINED` |
+
+Both start with reservation clock, show, hold, confirm, original issuance payment,
+issue, resale clock, adoption and listing. “Unpaid” means no **resale** payment;
+the issuance payment remains recorded. Synthetic clock `1000000` advances to
+exact listing expiry `1900000`. Optional buyer hold and settlement binding are
+omitted. Holder `buyer-1` and version `1` stay unchanged; no transfer identity,
+refund, compensation or automatic relisting is created. Expiry does not change
+the FSM phase.
+
+Original-key replay of listing (both histories) and resale payment (paid history)
+after advancement returns the historical first receipt, apart from permitted
+replay metadata. Its listing says `expired: false`; current local diagnostics
+say `expired: true`. Replaying an old success grants no current execution
+eligibility. Every refusal/replay preserves detached state, digest, journals and
+views across all five host machines.
+
+Inputs contain complete ordered `action`/`body`, exactly one `expect` or
+`expect_error`, observation checkpoints, and explicit original-key `replay_of`
+references. Outcomes use local schema `kix-commerce-resale-expiry-receipts/1`,
+`record_kind: IN_PROCESS_MOCK_RECEIPT_VECTORS`, `normative: false`, fixture and
+sorted source pins, and cases with one outcome per step. Each outcome has `id`,
+`action`, a full input path plus `#/cases/<i>/steps/<j>/body`, one complete
+`receipt` or `rejection_code`, and detached post-step `diagnostic_snapshot`
+views. Amount is retained in the listing and observed-payment journal, without
+adding a view field. Pins use raw-byte `sha256` and `gitBlob`; artifact hashes
+are recorded separately with no self-hash. There is no runtime template
+expansion or test golden-update mode.
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_resale_expiry_vectors.py -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_resale*.py' -v
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_companion_evidence_index.py -v
+```
+
+The validator compares canonical bytes, schemas, pins and references; detached
+negative controls alter errors, payment facts, holder/version, diagnostics,
+order, omissions, duplicates and crossed references. Re-pinned malformed inputs
+reach semantic checks, and injected effects test refusal/replay non-mutation.
+The [companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+appends the `resale_expiry` family (27 entries), preserving the original six
+families and all qualification metadata: seven families, 267 entries.
+
+Product TTL and compensation policy remain **UNDETERMINED** with Astra/User
+and existing legal/accounting owners. All 13 reads remain **NOT_BOUND**,
+semantic consumption **HOLD_SEMANTIC**, SD1 **OPEN/User-owned**, and external
+consumer acceptance **UNVERIFIED**. Diagnostics publish no read API. This is
+source-informed local mock evidence, not clean-room independence, chain/funds
+finality, legal compliance, production readiness, hosted CI or A2 non-author
+review. [Coverage, preservation and actual command evidence](../../validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/README.md)
+record the builder's scope and remaining delivery gates.
+
+
+## Commerce admission cancellation vectors
+
+The [canonical inputs](fixtures/commerce_admission_cancellation_inputs_v1.json)
+and [complete ordered outcomes](fixtures/commerce_admission_cancellation_receipts_v1.json)
+publish three independent, source-informed histories (26 steps) through the
+unchanged in-process `FsmHost`. The source is
+`test_admission_fsm.py::AdmissionFsmTests.test_cancel_before_issue_blocks_entry_and_cancel_after_issue_does_not_void_it`
+and [contract §11.4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#114-순서).
+
+| Case | Ordered result |
+|---|---|
+| `cancel-before-issue` | Confirm, cancel before payment/issuance, set admission clock, reject adoption with `TICKET_CANCELLED` |
+| `payment-without-issue` | Observe payment, set admission clock, reject adoption with `TICKET_NOT_ISSUED` |
+| `cancel-after-issue-and-consume` | Explicit issue, clock and adopt; reject cancellation with `CANCEL_AFTER_ISSUE`; authorize and consume; reject cancellation again with `CANCEL_AFTER_ISSUE` |
+
+Payment observation creates no issued right. Issuance creates no admission
+credential until explicit adoption. Adoption leaves `ELIGIBLE`, authorization
+leaves `AUTHORIZED`, and consumption produces `CONSUMED`, version 2. Cancellation
+refusals preserve issuance, payment reference, holder and consumed identity.
+Cancelling a paid but unissued reservation is a separate compensation boundary,
+already covered by temporal vectors; no compensation/refund policy is selected.
+
+`kix-commerce-admission-cancellation-receipts/1` uses raw-byte SHA-256/Git blob
+pins, a sorted explicit source set, ordered case/step identities and exact input
+pointers ending in `/cases/<i>/steps/<j>/body`. Each outcome contains exactly
+one complete `receipt` or `rejection_code`, plus a detached diagnostic snapshot
+of all five machines' canonical business state, digest, journals and local
+views. Refusals preserve these observations. Rejected-key bindings are retained
+only in the live process outside these business snapshots/journals; repeated
+refusal and changed-binding conflict are checked separately. No claim about
+unchanged internal memory, restart retention or durable recovery follows.
+
+The [replay suite](test_commerce_admission_cancellation_vectors.py) validates
+published schemas and source/input pins before executing. It compares complete
+canonical bytes with no update mode, and rejects detached wrong outcomes,
+scalar-type changes, omissions, duplicates, reordered steps, crossed references
+and stale pins. Repinned malformed inputs exercise semantic guards before host
+execution. Injected effects prove refusal atomicity checks can detect mutations.
+From repository root, with Python 3.12:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:reference/booking_resale_admission python3.12 -m unittest test_commerce_admission_cancellation_vectors
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:reference/booking_resale_admission python3.12 -m unittest test_commerce_companion_evidence_index
+```
+
+The [companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+appends `admission_cancellation` (26 entries): eight families, 293 entries,
+with the original seven families/267 entries and all qualification metadata
+preserved. This is local synthetic evidence, not a consumer adapter or published
+read API. HOLD_SEMANTIC, all 13 reads NOT_BOUND, SD1 OPEN/User-owned and external
+consumer acceptance UNVERIFIED remain. Policy values stay
+**UNDETERMINED—Astra/User** and legal effects **UNDETERMINED—User/legal**.
+No real funds, PG/bank/KYC calls, sockets, external services, chain execution or
+production runtime are involved. [Coverage, commands, preservation and limitations](../../validation/2026-11-18-plan-plan-commerce-admission-cancellation-vec/README.md)
+record builder evidence only; A2 non-author exact-head review and hosted KTX/KIX
+CI remain separate supervisor gates.
+
+## Commerce expired hold release and slot reuse vectors
+
+The pack contains two independent 15-step in-process `FsmHost` histories using
+published `reservation_set_clock`, `reservation_register_show`, `reservation_hold`,
+`reservation_confirm` and `reservation_release` bodies. The fixture declares its
+domain at the root. [Inputs](fixtures/commerce_hold_release_inputs_v1.json) ·
+[Complete ordered outcomes](fixtures/commerce_hold_release_receipts_v1.json)
+
+The histories start at synthetic time `1000000`. A expires at `1001000`, the
+clock advances to `1001000` or `1001001`, and B's expiry is `1900000`. Prices,
+fees and identities are also synthetic. The histories follow the reservation
+contract and `ReservationFsmTests.test_expiry_does_not_release_until_an_explicit_release`.
+[Regression](test_reservation_fsm.py) ·
+[Contract §§9.2–9.4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#92-전이)
+
+At and after expiry, A remains `HELD` and its slot `RESERVED`. Confirmation returns
+`RESERVATION_EXPIRED` and B's competing hold returns `SLOT_OCCUPIED`. Explicit
+release makes A `RELEASED` and the slot `FREE`. Retrying B's rejected key while
+free still returns the original `SLOT_OCCUPIED`. An identical body with a fresh
+key allocates B. Rejected hold and confirmation keys retain their original errors
+after reuse. A changed buyer under B's rejected key returns `IDEMPOTENCY_CONFLICT`.
+Rejected-key retention is process-local and outside the business state and
+accepted journals.
+
+Original-key replay returns the first receipt for each accepted key. A's hold says
+`HELD` and occupied by A. A's release says `FREE`. B's hold says `HELD` and occupied
+by B. Current diagnostics show A `RELEASED`, B `HELD` and the slot occupied by B
+throughout those replays. A's current slot fields point to B. The reservation
+machine derives the `expired` diagnostic for pre-issue phases.
+
+`kix-commerce-hold-release-receipts/1` stores fixture and sorted source byte pins,
+ordered complete receipts and refusals, and exact input pointers. Detached
+diagnostics include all five machines' business state, digest and accepted
+journal plus available reservation and show views. The replay suite compares
+complete canonical UTF-8 bytes and verifies rejection and replay non-mutation,
+published schemas, historical receipts and source references. Detached controls
+detect premature freeing, double occupancy, changed outcomes, pin drift and
+malformed inputs. Test-local journal effects verify the non-mutation guard.
+[Replay suite](test_commerce_hold_release_vectors.py)
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_hold_release_vectors.py
+PYTHONDONTWRITEBYTECODE=1 python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_companion_evidence_index.py
+```
+
+The companion index appends 30 entries for `hold_release`, bringing the total to
+323 entries across nine families. `HOLD_SEMANTIC`, all 13 reads `NOT_BOUND`, SD1
+`OPEN` and User-owned, and external acceptance `UNVERIFIED` remain. TTL and other
+product policy values remain **UNDETERMINED—Astra/User**. Legal effects remain
+**UNDETERMINED—User/legal**. A2 non-author exact-head review and hosted exact-head
+CI remain supervisor gates.
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md) ·
+[Coverage and local verification](../../validation/2026-11-18-plan-plan-commerce-hold-release-vectors/README.md)

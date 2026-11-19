@@ -49,7 +49,7 @@ scope or stops; they close no open decision or UNDETERMINED value.
 | `docs/contracts/openapi/kix-protocol.contract-only.openapi.json` | none | `scripts/check_openapi_contract.py` | none | none | Machine-readable OpenAPI pin (docs/contracts/openapi/README.md §Files/파일; scripts/check_docs_index.py ALLOWLIST). |
 | `docs/contracts/openapi/kix-protocol.integration-gate.openapi.json` | none | `scripts/check_integration_gate_openapi.py`<br>`scripts/check_openapi_contract.py` | none | none | Machine-readable OpenAPI pin (docs/contracts/openapi/README.md §Files/파일; scripts/check_docs_index.py ALLOWLIST). |
 | `docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md` | none | none | none | none | Clause map blocked by `plan-plan-sdk-compat-manifest-clause-evidence` (DECISION_REQUIRED, User): [SDK compatibility addendum](OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md). |
-| `runtime/CANONICAL_BINARY_BCS_V1.md` | `docs/status/BCS1_CONTRACT_EVIDENCE_MAP.md` | `scripts/check_bcs1_evidence_map.py` | `Counts: rows=39 COVERED=12 PARTIAL=10 NOT_COVERED=17` | KIX-BCS1 contract owner<br>kix-bcs1 maintainer<br>S08 Move/SDK schema owner | none |
+| `runtime/CANONICAL_BINARY_BCS_V1.md` | `docs/status/BCS1_CONTRACT_EVIDENCE_MAP.md` | `scripts/check_bcs1_evidence_map.py` | `Counts: rows=39 COVERED=17 PARTIAL=11 NOT_COVERED=11` | KIX-BCS1 contract owner<br>kix-bcs1 maintainer<br>S08 Move/SDK schema owner | none |
 | `runtime/FEATURE_SEMANTICS_V1.md` | `docs/status/FEATURE_SEMANTICS_V1_EVIDENCE_MAP.md` | `scripts/check_feature_semantics_evidence_map.py` | `Counts: rows=41 COVERED=3 PARTIAL=21 NOT_COVERED=17` | k-stage7-cpu-analytics-sql-audit<br>k-stage7-authenticated-export<br>User | none |
 
 ## 2. Cross-contract maps

@@ -361,6 +361,53 @@ test("canonical encoding vectors", () => {
   }
 });
 
+test("manifest verifier reports failures in contract order", () => {
+  const manifest = parseStrict(read("sdk/compat/manifests/manifest.bootstrap-2.json"));
+  const badDigest = "0".repeat(64);
+  manifest.unexpected = true;
+  manifest.profile_kind = "UNKNOWN";
+  manifest.profile_sha256 = badDigest;
+  manifest.contract.contract_only.sha256 = badDigest;
+  manifest.contract.integration_gate.sha256 = badDigest;
+  manifest.generator.toolchain = "node-0";
+  manifest.generator.sha256 = badDigest;
+  manifest.sdk_output.sha256 = badDigest;
+  manifest.vectors[0].sha256 = badDigest;
+
+  const directory = mkdtempSync(join(tmpdir(), "kix-sdk-order-"));
+  try {
+    const target = join(directory, "manifest.json");
+    const canonical = canonicalStringify(manifest);
+    writeFileSync(`${target}.sha256`, `${"1".repeat(64)}\n`);
+    writeFileSync(target, `${canonical}\n`);
+    const parseFailure = runVerifier(target);
+    assert.equal(parseFailure.status, 1, parseFailure.stderr || parseFailure.stdout);
+    assert.deepEqual(JSON.parse(parseFailure.stdout), { ok: false, errors: ["manifest trailing-bytes"] });
+
+    writeFileSync(target, canonical);
+    const result = runVerifier(target);
+    assert.equal(result.status, 1, result.stderr || result.stdout);
+    const verdict = JSON.parse(result.stdout);
+    assert.equal(verdict.ok, false);
+    const expected = [
+      "manifest field set drift",
+      "unknown profile_kind",
+      "profile bytes drift",
+      "contract_only bytes drift",
+      "integration_gate bytes drift",
+      "toolchain drift",
+      "generator bytes drift",
+      "sdk_output bytes drift",
+      `vector bytes drift: ${manifest.vectors[0].name}`,
+      "manifest sidecar digest drift",
+    ];
+    // Cross-checks can add diagnostics. Assert the ordered stages named in §4.
+    assert.deepEqual(verdict.errors.filter((error) => expected.includes(error)), expected);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("mixed-input vectors and the committed manifest", () => {
   const manifestPath = resolve(ROOT, "sdk/compat/manifests/manifest.bootstrap-2.json");
   const happy = runVerifier(manifestPath);

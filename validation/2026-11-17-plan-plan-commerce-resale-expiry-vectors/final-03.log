@@ -1,0 +1,23 @@
+{
+  "base": "3a119fcfa9b784f67082a667ee499a018fc4e7ce",
+  "inventory_files": 859,
+  "unchanged_files": 856,
+  "locked_blobs": {
+    "runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20"
+  },
+  "v03_files": 108,
+  "v03_inventory_sha256": "27375dffc05b52c228d9dcee5f122538ea2bd881a19eb49f00ae222cd8840d7e",
+  "original_packs": 6,
+  "original_entries": 240,
+  "added_entries": 27,
+  "qualification_metadata_unchanged": true,
+  "changed_tracked_paths": [
+    "docs/README.md",
+    "docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json",
+    "docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md",
+    "docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md",
+    "reference/booking_resale_admission/README.md",
+    "reference/booking_resale_admission/test_commerce_companion_evidence_index.py"
+  ]
+}

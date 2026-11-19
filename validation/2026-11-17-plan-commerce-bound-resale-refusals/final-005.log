@@ -1,0 +1,5 @@
+runtime/crates/kix-kernel/src/lib.rs: 69564b166f0c27f9af5d8422f0a466b18d74c20f MATCH
+runtime/crates/kix-kernel/tests/quarantine_capacity.rs: b607996c83a119c349f1cc90469ac1ba82764e20 MATCH
+Detached artifact identities match: 7 files
+Preserved 3924 existing tracked files, including 108 frozen reference files
+Changed paths remain inside the node allowlist

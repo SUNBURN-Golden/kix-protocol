@@ -60,7 +60,9 @@ python3 -B scripts/check_producer_qualification_tuple.py --self-test
 
 The checker recomputes every recorded sha256 and Git-blob digest, re-derives the
 84/40/44 command counts and the 44 FSM actions from the pinned artefacts,
-recomputes the 13 read names and fixture digests, cross-checks the manifest,
+derives unique owners and point/list kinds for the 13 read names from the five
+pinned fixture bodies, cross-checks fixture/manifest/tuple name sets, the exact
+manifest file set, file digests and tuple artifact pins, cross-checks the manifest,
 profile, sidecar and toolchain, and refuses drift. It asserts identity only; it
 does not qualify anything. `--self-test` mutates in-memory copies and requires
 detection of a mutated blob digest, a missing command and a mismatched gate
@@ -68,12 +70,29 @@ source pin. Detached record mutations also exercise semantic status/surface
 promotion, read query/surface promotion, SD1 status and owner changes, each
 forbidden SD1 resolution field, a normative claim, each required non-claim,
 missing/duplicate read names, and candidate path/binding/digest drift. Each
-new control requires its specific existing diagnostic; unrelated digest or
+false-promotion control requires its specific existing diagnostic; unrelated digest or
 count failures cannot satisfy it. The original tuple is revalidated after
 the controls.
 
-Candidate-binding controls cover allowed paths and digest consistency only;
-they do not establish a unique query-to-fixture assignment or rejection of
-coordinated path-and-digest rebinding. Validation semantics and qualification
-statuses are unchanged. See the [negative-control coverage and local validation
+The checker requires each tuple `candidateVector` to be the unique fixture
+containing that query, with kind matching both fixture and manifest. Detached
+controls for every query consistently re-pin changed fixture bytes, manifest
+file hashes, tuple artifact SHA-256/Git blobs and query fixture hashes. They
+reject coordinated path/digest rebinding, missing/duplicate ownership and
+fixture/manifest/tuple kind disagreements through specific diagnostics:
+`read query association missing`, `duplicate`, `path mismatch` and `kind mismatch`
+(with the query name and kind source). These controls also require absence of
+incidental digest failures. An association-preserving re-pin must pass, malformed
+fixture/manifest inputs must be rejected without throwing, and the original
+inputs must remain unchanged and pass afterward. No second ownership table is
+hardcoded. See [association coverage and actual local validation
+evidence](../../validation/2026-11-17-plan-producer-read-association-check/README.md)
+and the preserved [false-promotion control
 evidence](../../validation/2026-11-16-plan-producer-hold-negative-controls/README.md).
+
+This closes the coordinated path-and-digest rebinding limitation for the pinned
+fixture bodies. It establishes internal identity consistency, not semantic
+correctness or authenticity if all source artifacts and pins are rewritten
+together. Visibility, pagination limits, cursor lifetime, ordering, open-listing
+phases, retention and query-digest policy remain `UNDETERMINED`. Qualification
+statuses, SDK verifier behavior and SD1 ownership/status are unchanged.

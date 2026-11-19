@@ -54,6 +54,9 @@ approval claim. [Builder evidence and actual local results](../validation/2026-1
 [HOLD and non-normative negative-control coverage and validation](../validation/2026-11-16-plan-producer-hold-negative-controls/README.md)
 extends the checker's detached self-tests while preserving validation semantics
 and all qualification statuses.
+[Candidate read-query association coverage and local validation](../validation/2026-11-17-plan-producer-read-association-check/README.md)
+derives ownership and kind from pinned fixture bodies and rejects coordinated
+path/digest rebinding, preserving all qualification statuses and SD1 ownership.
 
 ## Local supply reconciliation
 
@@ -170,7 +173,7 @@ and transport fencing. No policy decision, activation or independent review is i
 |---|---|---|
 | [어댑터 전송·이벤트·결제·operation 정체성](contracts/ADAPTER_EVENT_IDENTITY.md) | 전송·원문 증거·이벤트·결제·경제 operation의 묶음 | 계약 초안 0.1. 구현·schema·wire 아님 |
 | [조회·목록 쿼리](contracts/READ_MODEL_QUERIES.md) | 상거래 표면의 조회·목록 의미 | 초안 0.1. 와이어 본문·카탈로그 삽입 없음 |
-| [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md) | 조회·제안·실행 권한. 오프라인 목의 술어 | 초안 0.1. 실행을 켜지 않음. 목은 `reference/ai_delegation/` |
+| [AI 위임 권한](contracts/AI_DELEGATION_AUTHORITY.md) | 조회·제안·실행 권한. 오프라인 목의 술어 | 초안 0.1. 실행을 켜지 않음. 목은 `reference/ai_delegation/`. [§0·§7 후속 검증](../validation/2026-10-26-plan-aid-contract-map-partial-closure/README.md). [§7 검사 순서 소유자 결정 위치 기록(2026-11-18)](decisions/AI_DELEGATION_CHECK_ORDER_OWNER_DECISION_20261118.md)(위치만. 새 결정이 아니다) |
 | [1차 발행 가격·수수료](contracts/MOVE_PRIMARY_ISSUANCE_PRICE_FEE.md) | 1차 발행의 구조·바인딩·산술·사건 의미 | 초안 0.1. 가격·수수료 값은 정하지 않음 |
 | [확장 권리 프로파일](contracts/RIGHTS_SCALE_PROFILE.md) | 확장 프로파일 계약 | 0.2 (초안). 미검토·미측정 |
 | [RS-0 결정 기록](decisions/RIGHTS_SCALE_RS0_DECISION_20261008.md) | 권리 확장의 객체·재고 권위 | 결정 초안. 확정 조건은 그 문서가 정한다 |
@@ -467,15 +470,21 @@ and transport fencing. No policy decision, activation or independent review is i
 
 - [plan-plan-integration-gate-contract-clause-ev](../validation/2026-10-26-plan-integration-gate-contract-clause-ev/README.md) — Builder-authored integration-gate contract clause-to-test map ([지도](status/INTEGRATION_GATE_CONTRACT_EVIDENCE_MAP.md)) and CI-wired static stdlib checker; seeded journey differential stays an owned open gap, no HTTP tests, gate behavior, contract or grade change.
 
+- [plan-plan-sdk-compat-manifest-clause-evidence](../validation/2026-10-26-plan-sdk-compat-manifest-clause-evidence/README.md) — Bootstrap manifest §§1–5 [clause-to-test map](status/SDK_COMPAT_MANIFEST_EVIDENCE_MAP.md), stdlib checker and owner-approved verifier regression for profile-hash precedence. [§4 검사 순서 소유자 결정 위치 기록(2026-11-18)](decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md)(위치만. 새 결정이 아니다).
+
 - [plan-plan-feature-semantics-v1-evidence-map](../validation/2026-10-26-plan-feature-semantics-v1-evidence-map/README.md) — Builder-authored Feature Semantics v1 §§1–10 clause-to-test map ([지도](status/FEATURE_SEMANTICS_V1_EVIDENCE_MAP.md)) and stdlib citation checker; execution/backend conformance stays NOT_COVERED, class-B characterizations retained, no runtime, contract or grade change.
 
 - [plan-plan-feature-ir-money-profile-precedence](../validation/2026-10-26-plan-feature-ir-money-profile-precedence-tests/README.md) — Public-API Fast64 identity-before-range, claimed-range boundary and cross-version non-inheritance regressions; S6-EXPORT-BOUNDARY and G9-4 remain PARTIAL, authentication stays open, no grade change.
 
 - [plan-plan-feature-ir-validator-matrix-closure](../validation/2026-10-26-plan-feature-ir-validator-matrix-closure/README.md) — Public-API join-right identity/version, signed/unsigned division and aggregate empty-policy regression matrices; two maintainer-owned §10 rows covered, execution/conformance and other owners unchanged.
 
+  - [2026-11-19 S4 follow-up](../validation/2026-11-19-plan-feature-aggregate-evidence-sync/README.md) — Both validators check empty policies for all five aggregates. Execution on empty and all-null datasets remains open.
+
 - [plan-plan-rs4-l2-option-impact-inventory](../validation/2026-10-26-plan-rs4-l2-option-impact-inventory/README.md) — [RS-4 L2 결정 선택지별 영향 목록](status/RS4_L2_DECISION_IMPACT_INVENTORY.md): 트리 내 수락 문구·지도 행·L1 분모와 L2 미정 입력·후속 의존성만. 선택·값·측정·노드 상태 변경이 아니다.
 
 - [plan-plan-bcs1-contract-clause-evidence-map](../validation/2026-10-26-plan-bcs1-contract-clause-evidence-map/README.md) — Builder-authored KIX-BCS1 clause-to-test map ([지도](status/BCS1_CONTRACT_EVIDENCE_MAP.md)) and stdlib citation/golden checker; existing tests only, S08 equality and boundary-corpus remain deferred, no contract or grade change.
+
+- [plan-plan-bcs1-contract-bound-regressions](../validation/2026-10-26-plan-bcs1-contract-bound-regressions/README.md) — Six public-API KIX-BCS1 regressions and their contract and characterization evidence; fix round 1 syncs the BCS1 Counts copy in the [roll-up](status/EVIDENCE_MAP_ROLLUP.md).
 
 - [plan-plan-contract-invariants-evidence-map](../validation/2026-10-26-plan-contract-invariants-evidence-map/README.md) — Builder-authored CONTRACT_INVARIANTS §§1–5 clause-to-test map ([지도](status/CONTRACT_INVARIANTS_EVIDENCE_MAP.md)), corpus/sensitivity boundaries and stdlib checker; source-informed and contract-path evidence separated, no new Rust tests, contract or grade change.
 
@@ -731,6 +740,8 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 
 ## 2026-11-10 commerce journey end-to-end conformance — 위치 안내만
 
+- The Commerce companion evidence index provides non-normative navigation across nine packs and 323 steps, with exact case/step/action associations, byte pins, resolvable outcomes and replay locations. Semantic consumption remains `HOLD_SEMANTIC`, all 13 reads remain `NOT_BOUND`, SD1 remains `OPEN` and User-owned, and external acceptance remains `UNVERIFIED`. [Index](status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md) · [JSON](status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) · [Initial index validation](../validation/2026-11-17-plan-commerce-companion-evidence-index/README.md)
+- [Commerce settlement-bound resale refusal vectors](../reference/booking_resale_admission/README.md#commerce-settlement-bound-resale-refusal-vectors) · [builder evidence](../validation/2026-11-17-plan-commerce-bound-resale-refusals/README.md) — three source-informed portable histories: committed amount mismatch, failed settlement, and retained rejected transfer key after commitment followed by an explicit fresh-key transfer and accepted replay. Complete outcomes, source pins and detached five-machine diagnostics; every refusal preserves ownership/version and accepted journals. All 13 reads NOT_BOUND, semantic consumption HOLD_SEMANTIC, SD1 OPEN/User-owned; policy values UNDETERMINED with existing owners. A2 non-author exact-head review and KTX/KIX CI remain delivery gates.
 - [Commerce settlement-bound issuance refusal vectors](../reference/booking_resale_admission/README.md#commerce-settlement-bound-issuance-refusal-vectors) · [builder evidence](../validation/2026-11-16-plan-commerce-bound-issuance-vectors/README.md) — two source-informed portable reservation histories through the unchanged in-process host: payment observation and explicit settlement binding, `SETTLEMENT_NOT_COMMITTED` refusals at AUTHORIZED and CAPTURED, an explicitly replayed original rejected key retaining its refusal after commit, a separate explicit fresh-key issuance, and a separate committed-gross amount mismatch (`SETTLEMENT_AMOUNT_MISMATCH`) preserving the paid reservation without creating a right. All five machines' snapshots, digests and journals are preserved around every refusal; rejected-key retention stays process-local. All 13 reads NOT_BOUND, semantic consumption HOLD_SEMANTIC, SD1 OPEN/User-owned; policy values UNDETERMINED with existing owners. A2 non-author exact-head review and KTX/KIX CI remain delivery gates.
 - [Commerce resale/admission ordering vectors](../reference/booking_resale_admission/README.md#commerce-resale-and-admission-ordering-vectors) · [builder evidence](../validation/2026-11-16-plan-commerce-entry-resale-order-vectors/README.md) — two source-informed portable §11.4 histories with complete receipts, exact refusals, detached diagnostics and journals; cancellation requires later explicit authorization, authorization/consumption block resale. All 13 reads NOT_BOUND, semantic consumption HOLD_SEMANTIC, SD1 OPEN/User-owned; no consumer qualification. A2 non-author exact-head review and KTX/KIX CI remain delivery gates.
 - [Historical Commerce receipt replay vectors](../validation/2026-11-15-plan-commerce-historical-receipt-vectors/README.md) — five source-informed in-process histories, canonical complete receipts/errors and explicit input/source pins. Replays retain first snapshots while current observations retain consumption, closure or refund state; no additional effects or journal append. Semantic consumption remains HOLD_SEMANTIC, 13 reads NOT_BOUND and SD1 OPEN/User-owned; A2 non-author exact-head review and KTX/KIX CI remain delivery gates.
@@ -786,3 +797,19 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-15 Capital operation replay vectors — 위치 안내만
 
 - [Capital operation schema, histories and replay](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-operation-replay-vectors) · [input pack](../reference/credit_advance_f04/fixtures/capital_operation_replay_v1.json) · [complete results](../reference/credit_advance_f04/fixtures/capital_operation_replay_vectors_v1.json) · [builder evidence](../validation/2026-11-15-plan-capital-operation-replay-vectors/README.md) — three source-informed synthetic draw/repayment mutation histories, historical receipts versus current exposure, exact refusals, journal restore and unchanged shared-exposure observations with explicit synthetic limits. Companion evidence only; no producer, adapter, policy, runtime, published read or capability-grade change. External Capital acceptance UNVERIFIED; A2 non-author exact-head review and exact-head KTX/KIX CI remain separate gates.
+
+## 2026-11-17 Commerce resale expiry vectors — 위치 안내만
+
+- [Unpaid and paid resale expiry histories](../reference/booking_resale_admission/README.md#commerce-resale-expiry-vectors) · [inputs](../reference/booking_resale_admission/fixtures/commerce_resale_expiry_inputs_v1.json) · [outcomes](../reference/booking_resale_admission/fixtures/commerce_resale_expiry_receipts_v1.json) · [builder validation](../validation/2026-11-17-plan-plan-commerce-resale-expiry-vectors/README.md) — two source-informed in-process histories (27 steps), original-key historical replay after expiry, retained payment facts, unchanged holder/version and detached diagnostics. Seventh companion family; existing entries/statuses preserved. No refund, compensation, relisting or transfer behavior; product TTL and compensation policy remain UNDETERMINED with Astra/User and legal owners. All 13 reads NOT_BOUND, HOLD_SEMANTIC, SD1 OPEN/User-owned and external acceptance UNVERIFIED remain.
+
+## 2026-11-18 Capital companion evidence index — 위치 안내만
+
+- [Capital companion usage and coverage](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md) · [JSON index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) · [builder validation](../validation/2026-11-18-plan-plan-capital-companion-evidence-index/README.md) — non-normative discovery of seven existing consumer families (379 associations), 87 supplemental observations and two supporting observer fixtures. Pins, scenario/case order, complete result references, replay symbols and guide sections are validated without changing behavioral evidence. Class B, frozen faces, separate refund obligations, NOT_BOUND and repair=NONE remain; external Capital acceptance UNVERIFIED, product limits UNDETERMINED—Astra and legal responsibility UNDETERMINED—User/legal. A2 non-author exact-head review and exact-head KTX/KIX CI remain delivery gates.
+
+## 2026-11-18 Commerce admission cancellation vectors — 위치 안내만
+
+- [Cancellation/adoption histories and replay](../reference/booking_resale_admission/README.md#commerce-admission-cancellation-vectors) · [inputs](../reference/booking_resale_admission/fixtures/commerce_admission_cancellation_inputs_v1.json) · [complete outcomes](../reference/booking_resale_admission/fixtures/commerce_admission_cancellation_receipts_v1.json) · [builder validation](../validation/2026-11-18-plan-plan-commerce-admission-cancellation-vec/README.md) — three source-informed in-process histories (26 steps) for TICKET_CANCELLED, TICKET_NOT_ISSUED and CANCEL_AFTER_ISSUE, preserving issued credentials and explicit issuance/adoption/authorization/consumption. Eighth companion family; prior entries/statuses preserved. HOLD_SEMANTIC, all 13 reads NOT_BOUND, SD1 OPEN/User-owned and external acceptance UNVERIFIED remain. Policy values UNDETERMINED—Astra/User; legal effects UNDETERMINED—User/legal. A2 non-author exact-head review and exact-head KTX/KIX CI remain separate delivery gates.
+
+## 2026-11-18 Commerce expired hold release and slot reuse — 위치 안내만
+
+- Two source-informed histories show how an expired hold retains its slot until explicit release, after which a fresh key can allocate the slot. Original-key replay returns the historical receipts while the new reservation keeps the slot. Rejected-key retention is process-local. [Replay guide](../reference/booking_resale_admission/README.md#commerce-expired-hold-release-and-slot-reuse-vectors) · [Inputs](../reference/booking_resale_admission/fixtures/commerce_hold_release_inputs_v1.json) · [Outcomes](../reference/booking_resale_admission/fixtures/commerce_hold_release_receipts_v1.json) · [Builder validation](../validation/2026-11-18-plan-plan-commerce-hold-release-vectors/README.md)
