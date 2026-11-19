@@ -439,3 +439,45 @@ Full hosted KIX, Move/localnet/ZK and production behavior were not tested.
 Round-3 disposition: READY for local supervisor handoff. The supervisor retains
 publication, non-author review and both exact-final-head hosted checks. No merge
 readiness or older-SHA evidence transfer is claimed.
+
+## PR fix round 4 — 2026-11-19
+
+The supervisor reported one HIGH CodeQL alert, `py/clear-text-logging-sensitive-data`,
+on the example's print of the full journey. The script now runs the journey
+and prints a fixed JSON completion status after it returns. The callable
+`run_example` still returns the receipts, journals and snapshots used by the
+existing tests. This round changed two files:
+
+- `reference/credit_advance_f04/example_repayment_adapter.py`
+- `validation/2026-10-31-plan-local-credit-repayment-source/README.md`
+
+The task input is the supervisor's node and fix-round instructions in the
+conversation. The implementation commit is `b1772cc4b777b5d79a8bb916c8dd8189d3a16896`.
+The round started on `2a11bef6a8101f4593ada4e8c21223b162b15ebd` and the fix is
+uncommitted. The task base is `fd3333580c0c2ed9186bb3b6917f0077a75a94f3`.
+Local `origin/main` is `5a1735824305f902036c97b3b31f503abe76bae5`,
+236 commits beyond that base. The branch is four commits ahead of the base.
+The supervisor's offline instruction precluded a fetch.
+
+| Local command or check | Round-4 evidence |
+|---|---|
+| `python3 reference/credit_advance_f04/example_repayment_adapter.py` with stdout and stderr captured by `subprocess.run` | Exit 0. Exact stdout was `{"status": "completed"}` followed by one newline. Stderr was empty. |
+| `python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p 'test_repayment*.py'` | 15 passed, including the existing socket-blocked test of exposure, reservation and explicit close. |
+| `python3 -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04` | 163 passed, including the 15 above. |
+| `python3 -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03` | 224 passed. |
+| `python3 scripts/check_{docs_index,credit_evidence_map,settlement_evidence_map,contract_error_codes,ci_checker_wiring,ci_test_discovery}.py` (each script individually, plain and with `--self-test`) | All 12 invocations passed. |
+| `git diff --check` and Git blob comparisons with the task base | Whitespace check passed. Both locked files matched their required blobs before and after the repair. All 108 historical reference files, the program manifest and all 10 task documents matched the base byte for byte. |
+
+The exact-output check covers the CLI logging finding. The existing coverage
+map above applies to the callable. This round found no contract discrepancy.
+
+| Exact-final-head gate | Run ID | Status |
+|---|---|---|
+| CodeQL code-scanning gate | Unavailable | Pending supervisor publication and scan. The local CodeQL CLI was unavailable on PATH. |
+| KTX kernel verification | Unavailable | Pending supervisor publication and CI. |
+| KIX protocol verification | Unavailable | Pending supervisor publication and CI. |
+| Non-author A2 review | — | Pending review of the commit containing this repair. |
+
+The supervisor reported passing Analyze, protocol, kernel and rights-scale jobs
+on the prior head. The final repair SHA, hosted conclusions and merge SHA are
+unavailable in this offline builder round.

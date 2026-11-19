@@ -87,7 +87,8 @@ def run_example(*, policy: dict) -> dict:
 
 if __name__ == "__main__":
     # Synthetic settlement fixture values only; no APR, fee schedule or credit policy.
-    print(json.dumps(run_example(policy=dict(
+    run_example(policy=dict(
         kind="PRIMARY_FEE_BPS", fee_bps=500,
         residual_payee="fixture-organizer", fee_payee="fixture-platform",
-    )), indent=2, sort_keys=True))
+    ))
+    print(json.dumps({"status": "completed"}))
