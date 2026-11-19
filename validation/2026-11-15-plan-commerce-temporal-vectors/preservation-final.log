@@ -1,0 +1,12 @@
+$ python3.12 -B validation/2026-11-15-plan-commerce-temporal-vectors/check_preservation.py
+Protected tracked inputs unchanged: 443
+runtime/crates/kix-kernel/src/lib.rs 69564b166f0c27f9af5d8422f0a466b18d74c20f MATCH
+runtime/crates/kix-kernel/tests/quarantine_capacity.rs b607996c83a119c349f1cc90469ac1ba82764e20 MATCH
+reference/booking_resale_admission/fixtures/commerce_temporal_inputs_v1.json artifact MATCH
+reference/booking_resale_admission/fixtures/commerce_temporal_receipts_v1.json artifact MATCH
+reference/booking_resale_admission/test_commerce_temporal_vectors.py artifact MATCH
+HEAD fc0da57f84471ef41fe56592bd28dd1abb6f345c (origin/main not refreshed)
+origin/main fc0da57f84471ef41fe56592bd28dd1abb6f345c (origin/main not refreshed)
+No protected-tree additions; git diff --check PASS
+
+EXIT: 0

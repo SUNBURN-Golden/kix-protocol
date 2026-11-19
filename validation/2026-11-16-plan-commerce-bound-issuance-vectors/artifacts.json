@@ -1,0 +1,37 @@
+[
+  {
+    "gitBlob": "6f1cd076f55b06597d6efafc72adc4f1efdfc45a",
+    "path": "reference/booking_resale_admission/README.md",
+    "sha256": "411329c41128e83817c135a61f408df8218c92ab2dd855da74c13ee1231def47"
+  },
+  {
+    "gitBlob": "2ac296e56df487fa7f1aeb75a88ebc2c4d9e78a8",
+    "path": "reference/booking_resale_admission/test_commerce_bound_issuance_vectors.py",
+    "sha256": "d6c7b2308dca1f3cef0bf92672da2a771552520318b0a946f6d70f83601ee4b7"
+  },
+  {
+    "gitBlob": "10c6b74b5085e82e896edff2980d72d419860c6a",
+    "path": "reference/booking_resale_admission/fixtures/commerce_bound_issuance_inputs_v1.json",
+    "sha256": "b5fb0ceb2c58a65d134e672225e62f7bea0260d542398b109362dc6ef35eebf3"
+  },
+  {
+    "gitBlob": "8e8c2cf10d5ea1a08a838a7b7ccd7f39f9da7e0e",
+    "path": "reference/booking_resale_admission/fixtures/commerce_bound_issuance_receipts_v1.json",
+    "sha256": "8027a35e59c94eca0ac127c42033c9e3b78da498222d043b389bab5c3a5c28fa"
+  },
+  {
+    "gitBlob": "94b06315b903e6d52ca5fd0a6aea434b38ebfbf4",
+    "path": "validation/2026-11-16-plan-commerce-bound-issuance-vectors/run_checks.py",
+    "sha256": "773aab45eb6b721a1e3ecc0f094a7fa4f411cebb507dd8d435c443907c7334d2"
+  },
+  {
+    "gitBlob": "5241c8ddd8b4e97baefd070a3ce8cd2e67277f0b",
+    "path": "validation/2026-11-16-plan-commerce-bound-issuance-vectors/verify_preservation.py",
+    "sha256": "6587cc5828277458f67679d883fd014c6884fef30e4b6e9349d6f35fdc346585"
+  },
+  {
+    "gitBlob": "653992a61ddd7c58292e4ce50c2b1e89f9c01782",
+    "path": "validation/2026-11-16-plan-commerce-bound-issuance-vectors/coverage.md",
+    "sha256": "6c7689e23cfbb5800297aa9b94a73b79cadece431f44a0f21ed640ceaf429897"
+  }
+]

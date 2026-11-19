@@ -273,3 +273,171 @@ class AdmissionCliTests(unittest.TestCase):
     def test_reconcile_file_stdin_and_direct_fsm_parity(self):
         from test_booking_cli import check_reconcile_cli
         check_reconcile_cli(self, 'admission')
+
+
+class AdmissionInputsDeskChecks:
+    """Exercise the same request-time surface through standalone and shared desks."""
+    def configured(self):
+        return self.loader(HERE / "fixtures" / f"{self.fixture_stem}_session.json")
+
+    def desk(self, session):
+        return session.admission if self.shared else session
+
+    def graph(self, session):
+        machine = self.desk(session)._machine
+        return machine._settlement, machine._tickets, machine._ownership, machine
+
+    def request(self, operation="authorize_admission_inputs", **changes):
+        from test_admission_session import admission_inputs
+        return dict(operation=operation, arguments=admission_inputs(operation, **changes)) | (
+            {"surface": "admission"} if self.shared else {})
+
+    def run_rows(self, session, rows):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = self.runner(session, [json.dumps(row) for row in rows])
+        return code, [json.loads(line) for line in output.getvalue().splitlines()]
+
+    def compare_rows(self, rows):
+        from test_ticket_operations_session import direct_call, direct_graph, outcome, snapshot
+        value = json.loads((HERE / "fixtures" / f"{self.fixture_stem}_session.json").read_text())
+        self.assertEqual(value["presentations"], [])
+        session, control = self.configured(), direct_graph(value["setup"])
+        self.assertEqual(snapshot(self.graph(session)), snapshot(control))
+        results = []
+        for request in rows:
+            before = snapshot(self.graph(session))
+            shared = request if self.shared else request | {"surface": "admission"}
+            expected = outcome(lambda: direct_call(control, shared, value))
+            status, actual = self.run_rows(session, [request])
+            if "error" in expected:
+                self.assertEqual((status, actual[0]["error"]), (1, expected["error"]))
+                self.assertEqual(snapshot(self.graph(session)), before)
+            else:
+                if not self.shared:
+                    del expected["surface"]
+                self.assertEqual((status, actual), (0, [expected]))
+                receipt = actual[0].get("receipt")
+                if receipt and receipt["duplicate"]:
+                    self.assertEqual(snapshot(self.graph(session)), before)
+                if shared["surface"] == "admission":
+                    assert_flags(self, actual[0].get("receipt", actual[0].get("view")))
+            results += actual
+            self.assertEqual(snapshot(self.graph(session)), snapshot(control))
+            if request["operation"] in ("authorize_admission_inputs", "consume_inputs"):
+                after = snapshot(self.graph(session))
+                self.assertEqual((after[0], after[2]), (before[0], before[2]))
+                # Only explicit set_clock changes time; the direct selectors do not.
+                for old, new in zip(before, after):
+                    self.assertEqual(json.loads(old[0]).get("logical_time_ms"),
+                                     json.loads(new[0]).get("logical_time_ms"))
+            self.assertEqual(self.desk(session)._adapter._source.calls, ())
+        return session, results
+
+    def executable(self, selector, stdin=None):
+        return subprocess.run([
+            sys.executable, str(HERE / f"{self.cli_prefix}_cli.py"), "--fixture",
+            str(HERE / "fixtures" / f"{self.fixture_stem}_session.json"), "--requests", selector],
+            input=stdin, capture_output=True, text=True, check=False)
+
+    def test_admission_inputs_empty_recordings_file_stdin_and_fsm_parity(self):
+        path = HERE / "fixtures" / f"{self.fixture_stem}.jsonl"
+        rows = [json.loads(line) for line in path.read_text().splitlines()]
+        session, expected = self.compare_rows(rows)
+        codes = [r["error"]["code"] for r in expected if "error" in r]
+        if self.shared:
+            self.assertEqual(codes, ["LISTING_LOCKED", "LISTING_LOCKED", "STALE_VERSION",
+                                     "NOT_HOLDER", "STALE_VERSION", "NOT_HOLDER"])
+            self.assertEqual(expected[6]["receipt"], expected[5]["receipt"] | {"duplicate": True, "applied": None})
+            self.assertEqual(expected[7]["receipt"], expected[4]["receipt"] | {"duplicate": True, "applied": None})
+            self.assertEqual(session.resale.view_right("issue-2")["right"]["holder_role"], "buyer-3")
+        else:
+            self.assertEqual(codes, ["ADMISSION_REQUIRED", "GATE_MISMATCH", "ADMISSION_REQUEST_MISMATCH",
+                                     "IDEMPOTENCY_CONFLICT", "STALE_VERSION", "RIGHT_NOT_ACTIVE", "ADMISSION_EXPIRED"])
+            self.assertEqual(expected[5]["receipt"], expected[4]["receipt"] | {"duplicate": True, "applied": None})
+            self.assertEqual(expected[6]["receipt"], expected[1]["receipt"] | {"duplicate": True, "applied": None})
+        machine = self.desk(session)._machine
+        self.assertEqual(machine.view("issue-1")["version"], 2)
+        for m in (machine, machine._tickets):
+            self.assertEqual(sum(e["op"] == "consume" for e in m.export_journal()), 1)
+        outputs = []
+        for selector, stdin in ((str(path), None), ("-", path.read_text())):
+            completed = self.executable(selector, stdin)
+            self.assertEqual((completed.returncode, completed.stderr), (1, ""))
+            self.assertEqual([json.loads(line) for line in completed.stdout.splitlines()], expected)
+            outputs.append(completed.stdout)
+        self.assertEqual(outputs[0], outputs[1])
+        # Success-only requests exercise exit zero through each executable.
+        success = [self.request(), self.request("consume_inputs")]
+        _, successful = self.compare_rows(success)
+        completed = self.executable("-", "".join(json.dumps(r) + "\n" for r in success))
+        self.assertEqual((completed.returncode, completed.stderr), (0, ""))
+        self.assertEqual([json.loads(line) for line in completed.stdout.splitlines()], successful)
+
+    def test_admission_inputs_exact_schema_stops_before_any_machine_call(self):
+        from test_ticket_operations_session import snapshot
+        for operation, method in (("authorize_admission_inputs", "authorize_admission"), ("consume_inputs", "consume")):
+            valid = self.request(operation)
+            args = valid["arguments"]
+            bad = [valid | {"arguments": {k: v for k, v in args.items() if k != field}} for field in args]
+            bad += [valid | {"arguments": args | {field: "unexpected"}} for field in
+                    ("extra", "presentation_id", "external_dependency")]
+            bad += [valid | {"arguments": shape} for shape in (None, [], "text", 1)]
+            bad += [None, [], True, valid | {"extra": 1}]
+            bad += [{k: v for k, v in valid.items() if k != field} for field in valid]
+            for request in bad:
+                with self.subTest(operation=operation, request=request):
+                    session = self.configured()
+                    before = snapshot(self.graph(session))
+                    machine = self.desk(session)._machine
+                    with patch.object(machine, method, wraps=getattr(machine, method)) as invoked:
+                        code, results = self.run_rows(session, [request, valid])
+                        self.assertEqual((code, len(results)), (2, 1))
+                        self.assertEqual(results[0]["error"]["type"], "FixtureError")
+                        invoked.assert_not_called()
+                    self.assertEqual(snapshot(self.graph(session)), before)
+                    self.assertEqual(self.desk(session)._adapter._source.calls, ())
+            text = json.dumps(valid)
+            malformed = [text.replace('"operation":', '"operation":"consume_inputs","operation":', 1),
+                         text.replace('"version": 1', '"version":1,"version":1')]
+            malformed += [text.replace('"version": 1', '"version":' + n)
+                          for n in ('NaN', 'Infinity', '-Infinity', '1e999')]
+            for line in malformed:
+                session = Mock()
+                with redirect_stdout(io.StringIO()) as output:
+                    status = self.runner(session, [line, text])
+                self.assertEqual((status, len(output.getvalue().splitlines())), (2, 1))
+                self.assertEqual(session.mock_calls, [])
+            completed = self.executable("-", json.dumps(bad[0]) + "\n" + text)
+            self.assertEqual(completed.returncode, 2)
+            self.assertEqual(len(completed.stdout.splitlines()), 1)
+
+    def test_admission_inputs_semantic_refusals_continue_only_supplied_lines(self):
+        for operation in ("authorize_admission_inputs", "consume_inputs"):
+            for change in ({"version": True}, {"version": 2}, {"request": "BAD"},
+                           {"request": None}, {"right_id": "missing"}, {"gate_role": []}):
+                with self.subTest(operation=operation, change=change):
+                    refused = self.request(operation, **change)
+                    view = dict(operation="view", arguments=dict(right_id="issue-1")) | (
+                        {"surface": "admission"} if self.shared else {})
+                    session, expected = self.compare_rows([refused, refused, view])
+                    self.assertIn("code", expected[0]["error"])
+                    self.assertEqual(expected[0], expected[1])
+                    self.assertEqual(expected[2]["view"]["phase"], "ELIGIBLE")
+                    status, actual = self.run_rows(self.configured(), [refused, refused, view])
+                    self.assertEqual((status, actual), (1, expected))
+                    self.assertEqual(self.desk(session)._adapter._source.calls, ())
+        # A later structural error takes priority over a domain refusal and stops.
+        session = self.configured()
+        status, rows = self.run_rows(session, [self.request("consume_inputs"), {}, self.request()])
+        self.assertEqual((status, len(rows)), (2, 2))
+        self.assertEqual(rows[0]["error"], {"code": "ADMISSION_REQUIRED"})
+        self.assertEqual(self.desk(session).view("issue-1")["phase"], "ELIGIBLE")
+
+
+class AdmissionRequestInputsCliTests(AdmissionInputsDeskChecks, unittest.TestCase):
+    shared = False
+    fixture_stem = "admission_request_inputs"
+    cli_prefix = "admission"
+    loader = staticmethod(load_fixture)
+    runner = staticmethod(run_requests)

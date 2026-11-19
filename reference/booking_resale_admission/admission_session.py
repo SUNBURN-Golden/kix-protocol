@@ -45,6 +45,26 @@ class AdmissionSession:
             gate_role=gate_role,
         )
 
+    def authorize_admission_inputs(
+        self, admission_id: object, *, idempotency_key: object,
+        right_id: object, version: object, holder_role: object,
+        gate_role: object, request: object, expires_ms: object,
+    ) -> dict:
+        return self._machine.authorize_admission(
+            admission_id, idempotency_key=idempotency_key, right_id=right_id,
+            version=version, holder_role=holder_role, gate_role=gate_role,
+            request=request, expires_ms=expires_ms,
+        )
+
+    def consume_inputs(
+        self, consume_id: object, *, idempotency_key: object,
+        right_id: object, version: object, gate_role: object, request: object,
+    ) -> dict:
+        return self._machine.consume(
+            consume_id, idempotency_key=idempotency_key, right_id=right_id,
+            version=version, gate_role=gate_role, request=request,
+        )
+
     def reconcile(self, right_id: object, *, idempotency_key: object) -> dict:
         return self._machine.reconcile(right_id, idempotency_key=idempotency_key)
 

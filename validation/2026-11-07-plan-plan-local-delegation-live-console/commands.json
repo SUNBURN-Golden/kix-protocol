@@ -1,0 +1,653 @@
+[
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "test_delegation_client",
+      "test_delegation_console"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 1.712,
+    "log": "01.log"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "test_delegation_client",
+      "test_delegation_console_subprocess",
+      "test_delegation_console",
+      "test_delegation_cli",
+      "test_delegation_serialization",
+      "test_delegation_session"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 3.385,
+    "log": "02.log"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/ai_delegation",
+      "-t",
+      "reference/ai_delegation"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 6.34,
+    "log": "03.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_ai_delegation_evidence_map.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.092,
+    "log": "04.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_ai_delegation_evidence_map.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 4.763,
+    "log": "05.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_delegation_layer_matrix.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.046,
+    "log": "06.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_delegation_layer_matrix.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.164,
+    "log": "07.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_contract_error_codes.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 1.263,
+    "log": "08.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_contract_error_codes.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 33.814,
+    "log": "09.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_evidence_map_rollup.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.033,
+    "log": "10.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_evidence_map_rollup.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.026,
+    "log": "11.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_class_b_index.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.057,
+    "log": "12.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_class_b_index.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.026,
+    "log": "13.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_docs_index.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.029,
+    "log": "14.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.041,
+    "log": "15.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_status_register.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.177,
+    "log": "16.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_status_register.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.745,
+    "log": "17.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_ci_test_discovery.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.101,
+    "log": "18.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_ci_test_discovery.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.075,
+    "log": "19.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_ci_checker_wiring.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.036,
+    "log": "20.log"
+  },
+  {
+    "command": [
+      "/usr/bin/python3",
+      "scripts/check_ci_checker_wiring.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.022,
+    "log": "21.log"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "test_delegation_client",
+      "test_delegation_console_subprocess",
+      "test_delegation_console",
+      "test_delegation_cli",
+      "test_delegation_serialization",
+      "test_delegation_session"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 4.562,
+    "log": "22.log"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/ai_delegation",
+      "-t",
+      "reference/ai_delegation"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 6.312,
+    "log": "23.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/verify_runtime_architecture.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.033,
+    "log": "24.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/test_runtime_architecture.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.224,
+    "log": "25.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--locked",
+      "--offline"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.248,
+    "log": "26.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.127,
+    "log": "27.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.433,
+    "log": "28.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "tree",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "-p",
+      "kix-kernel",
+      "--edges",
+      "normal",
+      "--locked",
+      "--offline"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.052,
+    "log": "29.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--locked",
+      "--offline"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.045,
+    "log": "30.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--manifest-path",
+      "runtime/Cargo.toml",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--offline",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 101,
+    "elapsed_seconds": 0.069,
+    "log": "31.log"
+  },
+  {
+    "command": [
+      "python3",
+      "reference/ai_delegation/delegation_console.py",
+      "--fixture",
+      "reference/ai_delegation/fixtures/delegation_session.json",
+      "--mode",
+      "subprocess",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin_file": "reference/ai_delegation/fixtures/delegation_console_journey.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONUNBUFFERED": "unset"
+    },
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "elapsed_seconds": 0.082,
+    "stdout": "transcript-journey.stdout.txt",
+    "stderr": "transcript-journey.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "reference/ai_delegation/delegation_console.py",
+      "--fixture",
+      "reference/ai_delegation/fixtures/delegation_session.json",
+      "--mode",
+      "subprocess",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin_file": "reference/ai_delegation/fixtures/delegation_console_replay.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONUNBUFFERED": "unset"
+    },
+    "exit_code": 1,
+    "expected_exit_code": 1,
+    "elapsed_seconds": 0.083,
+    "stdout": "transcript-replay.stdout.txt",
+    "stderr": "transcript-replay.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "reference/ai_delegation/delegation_console.py",
+      "--fixture",
+      "reference/ai_delegation/fixtures/delegation_session.json",
+      "--mode",
+      "subprocess",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin_file": "reference/ai_delegation/fixtures/delegation_console_boundaries.txt",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONUNBUFFERED": "unset"
+    },
+    "exit_code": 1,
+    "expected_exit_code": 1,
+    "elapsed_seconds": 0.077,
+    "stdout": "transcript-boundaries.stdout.txt",
+    "stderr": "transcript-boundaries.stderr.txt"
+  },
+  {
+    "command": [
+      "python3",
+      "-c",
+      "\nfrom pathlib import Path\nimport hashlib,json,subprocess\nv=Path(\"validation/2026-11-07-plan-plan-local-delegation-live-console\")\nbefore=json.loads((v/\"preservation-before.json\").read_text())\npaths=[\"runtime/crates/kix-kernel/src/lib.rs\",\"runtime/crates/kix-kernel/tests/quarantine_capacity.rs\"]\npaths+=sorted(str(p) for p in Path(\"reference/v0.3-rc1\").rglob(\"*\") if p.is_file())\nafter={}\nfor p in paths:\n    data=Path(p).read_bytes()\n    assert data==subprocess.check_output([\"git\",\"show\",\"HEAD:\"+p]), p\n    after[p]={\"sha256\":hashlib.sha256(data).hexdigest(),\"git_blob\":subprocess.check_output([\"git\",\"hash-object\",p],text=True).strip()}\nassert before==after\nassert after[paths[0]][\"git_blob\"]==\"69564b166f0c27f9af5d8422f0a466b18d74c20f\"\nassert after[paths[1]][\"git_blob\"]==\"b607996c83a119c349f1cc90469ac1ba82764e20\"\n(v/\"preservation-after.json\").write_text(json.dumps(after,indent=2)+\"\\n\")\nprint(\"PASS: both locked blobs and all 108 frozen paths/bytes match before and HEAD\")\n"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.481,
+    "log": "35.log"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--exit-code",
+      "HEAD",
+      "--",
+      "runtime",
+      ".aiops",
+      "docs/tasks",
+      ".github",
+      "reference/v0.3-rc1",
+      "reference/ai_delegation/ai_delegation_mock.py",
+      "reference/ai_delegation/delegation_fixture.py",
+      "reference/ai_delegation/delegation_session.py",
+      "reference/ai_delegation/fixtures",
+      "reference/ai_delegation/test_ai_delegation_mock.py",
+      "reference/ai_delegation/test_ai_delegation_properties.py",
+      "reference/ai_delegation/test_delegation_cli.py",
+      "reference/ai_delegation/test_delegation_console.py",
+      "reference/ai_delegation/test_delegation_serialization.py",
+      "reference/ai_delegation/test_delegation_session.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.006,
+    "log": "36.log"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.01,
+    "log": "37.log"
+  },
+  {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD",
+      "origin/main"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.002,
+    "log": "38.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_docs_index.py"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.031,
+    "log": "39.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "reference/ai_delegation"
+    },
+    "exit_code": 0,
+    "elapsed_seconds": 0.042,
+    "log": "40.log"
+  }
+]

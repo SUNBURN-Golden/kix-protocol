@@ -1,0 +1,6 @@
+$ cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings
+    Checking kix-types v0.0.0 (/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/runtime/crates/kix-types)
+    Checking kix-kernel v0.1.0 (/workspace/kix-run/wt/plan-commerce-historical-receipt-vectors/runtime/crates/kix-kernel)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.73s
+
+EXIT: 0

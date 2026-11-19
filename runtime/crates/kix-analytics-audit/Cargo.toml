@@ -1,0 +1,22 @@
+[package]
+name = "kix-analytics-audit"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[features]
+default = []
+# Explicit local acceptance opt-in. Default repository CI does not compile engines.
+engines = ["dep:polars", "dep:duckdb", "dep:serde_json"]
+
+[dependencies]
+kix-feature-ir = { path = "../kix-feature-ir" }
+kix-feature-semantics = { path = "../kix-feature-semantics" }
+kix-types = { path = "../kix-types" }
+polars = { version = "=0.55.2", optional = true, default-features = false, features = ["lazy", "semi_anti_join", "dtype-full", "strings", "is_in", "checked_arithmetic", "abs", "round_series"] }
+duckdb = { version = "=1.20000.1", optional = true, default-features = false, features = ["bundled"] }
+serde_json = { version = "=1.0.154", optional = true }
+
+[[test]]
+name = "conformance"
+required-features = ["engines"]

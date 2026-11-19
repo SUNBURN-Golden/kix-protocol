@@ -17,6 +17,7 @@ from cancel_acceptance_adapter import CancelAcceptanceAdapter
 from cancel_acceptance_source import CancelAcceptanceSource, CancelAcceptanceSourceError
 from statement_adapter import StatementAdapter
 from statement_source import StatementSource, StatementSourceError
+from settlement_input_adapter import SettlementInputAdapter
 
 
 class TicketSettlementSession:
@@ -24,8 +25,11 @@ class TicketSettlementSession:
 
     def __init__(self, machine: SettlementMachine, *,
                  cancel_acceptance_source: CancelAcceptanceSource | None = None,
-                 statement_source: StatementSource | None = None) -> None:
+                 statement_source: StatementSource | None = None,
+                 booking_source=None, resale_source=None) -> None:
         self._machine = machine
+        self._input_adapter = SettlementInputAdapter(
+            machine, booking_source=booking_source, resale_source=resale_source)
         self._statement_adapter = (StatementAdapter(machine, statement_source)
                                    if statement_source is not None else None)
         self._cancel_acceptance_adapter = (
@@ -37,6 +41,20 @@ class TicketSettlementSession:
         return self._machine.initiate(
             settlement_id, idempotency_key=idempotency_key, trade_id=trade_id,
             gross=gross, debtor_role=debtor_role, policy=policy, currency=currency)
+
+    def initiate_from_booking(self, settlement_id, *, reservation_id, idempotency_key,
+                              trade_id, debtor_role, policy):
+        return self._input_adapter.apply(
+            source_kind="booking", source_id=reservation_id, settlement_id=settlement_id,
+            idempotency_key=idempotency_key, trade_id=trade_id, debtor_role=debtor_role,
+            policy=policy)
+
+    def initiate_from_resale(self, settlement_id, *, listing_id, idempotency_key,
+                             trade_id, debtor_role, policy):
+        return self._input_adapter.apply(
+            source_kind="resale", source_id=listing_id, settlement_id=settlement_id,
+            idempotency_key=idempotency_key, trade_id=trade_id, debtor_role=debtor_role,
+            policy=policy)
 
     def authorize(self, settlement_id, *, idempotency_key):
         return self._machine.authorize(settlement_id, idempotency_key=idempotency_key)
@@ -67,6 +85,19 @@ class TicketSettlementSession:
         return self._machine.bind_refund(
             settlement_id, idempotency_key=idempotency_key, refund_id=refund_id,
             amount=amount, beneficiary_role=beneficiary_role, reason=reason)
+
+    def observe_statement(self, settlement_id, *, idempotency_key, movement_id, gross,
+                          amount, fee, tax, held, adjustment, adjustment_reason):
+        return self._machine.observe_statement(
+            settlement_id, idempotency_key=idempotency_key, movement_id=movement_id,
+            gross=gross, amount=amount, fee=fee, tax=tax, held=held,
+            adjustment=adjustment, adjustment_reason=adjustment_reason)
+
+    def observe_mock_cancel_acceptance(self, settlement_id, *, idempotency_key,
+                                       source_id, amount):
+        return self._machine.observe_mock_cancel_acceptance(
+            settlement_id, idempotency_key=idempotency_key, source_id=source_id,
+            amount=amount)
 
     def commit_recorded_statement(self, settlement_id, *, movement_id, idempotency_key):
         if self._statement_adapter is None:
@@ -123,7 +154,7 @@ class TicketOperationsSession:
             method(entry["subject_id"], idempotency_key=entry["idempotency_key"], **entry["body"])
         self.settlement = TicketSettlementSession(
             book, cancel_acceptance_source=cancel_acceptance_source,
-            statement_source=statement_source)
+            statement_source=statement_source, booking_source=tickets, resale_source=resale)
         self.booking = BookingSession(tickets)
         self.resale = ResaleSession(resale, offer_source, payment_source=payment_source)
         self.admission = AdmissionSession(admission, presentation_source)

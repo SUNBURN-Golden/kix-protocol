@@ -1,0 +1,1499 @@
+{
+  "record_schema_version": "kix-producer-qualification-tuple/1",
+  "record_kind": "NON_NORMATIVE_PRODUCER_QUALIFICATION",
+  "normative": false,
+  "record_date": "2026-11-10",
+  "status_enum": [
+    "BOOTSTRAP_SCHEMA_BOUND",
+    "HOLD_SEMANTIC",
+    "NOT_BOUND"
+  ],
+  "status_definitions": {
+    "BOOTSTRAP_SCHEMA_BOUND": "The recorded bytes are pinned and the command, action and read sets are re-derived from them; this binds identity of the BOOTSTRAP schema only and is not semantic, N/N-1 or operational qualification.",
+    "HOLD_SEMANTIC": "The surface is deliberately not qualified for semantic consumption; the BOOTSTRAP profile grants catalogue-schema binding only and asserts no semantic acceptance.",
+    "NOT_BOUND": "The surface is named by contract but has no merged implementation, catalogue entry, wire binding or conformance evidence in this tuple, so no identity is bound for it."
+  },
+  "basis": {
+    "observed_origin_main": "19cdc1c6393e88528d3918e0f4f1f37645a34042",
+    "base_commit": "19cdc1c6393e88528d3918e0f4f1f37645a34042",
+    "catalogue_input_commit": "c2cde86e21a6e5ba6f24a56548636db6d0a34c6f",
+    "catalogue_input_tree": "394084b15e01bbe4a5612aeb3431f3278c43dd85",
+    "toolchain": {
+      "nodeMajor": 24,
+      "pythonMinor": "3.12"
+    },
+    "note": "catalogue_input_commit and catalogue_input_tree are copied from the BOOTSTRAP manifest producer block; they name the input of the generated SDK catalogue, not this record commit."
+  },
+  "artifacts": [
+    {
+      "id": "contract_only_openapi",
+      "path": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json",
+      "role": "surface",
+      "sha256": "2248ff67aa0f43cb98bdd492f63b36fce64c53def6a403a97a7987a128b2d2dc",
+      "gitBlob": "ed23b98fde4ce02607ffda2ba9488ed510645de2"
+    },
+    {
+      "id": "fsm_command_contract",
+      "path": "docs/contracts/openapi/fsm-command-contract.json",
+      "role": "surface",
+      "sha256": "342e97cb37b199622d7bb436ca9164690d969b797058aaa539ff417cab01411c",
+      "gitBlob": "3771a8739b906a478b54c597df37e27d1afc5f21"
+    },
+    {
+      "id": "integration_gate_openapi",
+      "path": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json",
+      "role": "surface",
+      "sha256": "d05beb48c234b924af086b886ce9bb524dc34407ad2e4a57f1e8af84255820f6",
+      "gitBlob": "8d95bf0554f110a6498d7f8e51d0e2cae182e951"
+    },
+    {
+      "id": "protocol_contract_json",
+      "path": "reference/v0.3-rc1/protocol_contract.json",
+      "role": "source",
+      "sha256": "ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e",
+      "gitBlob": "619ae21c82ca3df5661bd3831613f15fa65225ff"
+    },
+    {
+      "id": "generated_sdk_catalogue",
+      "path": "sdk/generated/catalogue.ts",
+      "role": "surface",
+      "sha256": "3162d47c51ffad755f80086850bbcbb7ae4a846c4df47ffa57b0e44f9eced0b5",
+      "gitBlob": "e0800806c603bc5f182103602281aa4b312046dd"
+    },
+    {
+      "id": "sdk_generator",
+      "path": "sdk/generate/generate_client.mjs",
+      "role": "generator",
+      "sha256": "66f0e2010c6511d322f8dfc7e8932d27d25e154ac0b3d6083f19f97af6124bb7",
+      "gitBlob": "8b91493e3a47a4fe4438d6e8a5951ad88b9d83a3"
+    },
+    {
+      "id": "toolchains",
+      "path": "toolchains.json",
+      "role": "toolchain",
+      "sha256": "f4a37d32d50340db6caf8a1f914b1cceb344d410d6c7a5a6299552bd9764e3b5",
+      "gitBlob": "a8c06bcf91eb385875100a5fecf6a6c46664e4c0"
+    },
+    {
+      "id": "compat_profile",
+      "path": "sdk/compat/profiles/bootstrap-2.profile.json",
+      "role": "profile",
+      "sha256": "c356b923997cefc132e63e73a179d5922dd7cb2124b9e9b399c662cd49803b73",
+      "gitBlob": "7f41854b88e4901c1ccb4baf17470e046bdf14a5"
+    },
+    {
+      "id": "compat_manifest",
+      "path": "sdk/compat/manifests/manifest.bootstrap-2.json",
+      "role": "manifest",
+      "sha256": "eec1750532d319ea06d8ae61bafa77316067088a84a9b70d20a1f6966dfba1e0",
+      "gitBlob": "06199b46de4c7d0c9dadd55f39d469936acb601a"
+    },
+    {
+      "id": "manifest_sidecar",
+      "path": "sdk/compat/manifests/manifest.bootstrap-2.json.sha256",
+      "role": "manifest_sidecar",
+      "sha256": "bb4903cb817829f9513b47fc1f60498744ed93355ae8b61511a15a31aa99c8c3",
+      "gitBlob": "b865a19fd02774a804ff2e47ec8f3e6d68ff2d13"
+    },
+    {
+      "id": "sdk_conformance_canonical",
+      "path": "sdk/conformance/vectors/canonical-encoding.vectors.json",
+      "role": "conformance_vector",
+      "sha256": "3446c13847bb153df06c1d5d3b7f09cd3b1648ac10bb0cc76d7b65c7014e99c2",
+      "gitBlob": "947773687ea9e2226925168129bf0370e20a5a04"
+    },
+    {
+      "id": "sdk_conformance_mixed",
+      "path": "sdk/conformance/vectors/mixed-input.vectors.json",
+      "role": "conformance_vector",
+      "sha256": "9e2441ddefc22a2f8c7be230436620908b735b128b9445b7a5a916e4d86a2e19",
+      "gitBlob": "74bf25478d57a98c5ee102c362c4870fc8d16456"
+    },
+    {
+      "id": "read_model_vector_manifest",
+      "path": "reference/read_model/vectors/manifest.json",
+      "role": "read_model_candidate_manifest",
+      "sha256": "cd774bab433d87b130cf49c8f59feb9b94ad96eca22d41ebf42c8f9dd8309b9b",
+      "gitBlob": "036564b9130bf5fad6abb576ce7b8b408695596e"
+    },
+    {
+      "id": "read_model_reservation",
+      "path": "reference/read_model/vectors/reservation.json",
+      "role": "read_model_candidate_vector",
+      "sha256": "d73dca6bf7031a7798d08cadce25967583b1ea02ca0587eb5c2af79dbf221d39",
+      "gitBlob": "debfc375cb867ddb51a995f74d11196f9c70ab95"
+    },
+    {
+      "id": "read_model_resale",
+      "path": "reference/read_model/vectors/resale.json",
+      "role": "read_model_candidate_vector",
+      "sha256": "6cbd01c2c15a2d4cf094974d5465fb0250e3b7db7a02326087f17128e55df3c2",
+      "gitBlob": "c0abcab07a6c12565cad75b9c818369369549ace"
+    },
+    {
+      "id": "read_model_admission",
+      "path": "reference/read_model/vectors/admission.json",
+      "role": "read_model_candidate_vector",
+      "sha256": "bd81537377ad4c7fec1ac6948e7f212cbc29176f8c39841620917060fa48aa7e",
+      "gitBlob": "ecaa18342c9436b0d97c9a58c45d9e1f282eeded"
+    },
+    {
+      "id": "read_model_settlement",
+      "path": "reference/read_model/vectors/settlement.json",
+      "role": "read_model_candidate_vector",
+      "sha256": "c7d58b0415f3bc3e711cd1e3950e9a1a08c6cc00d5b2349f0617ed459e184d4f",
+      "gitBlob": "7fbd79f4baa1509b0c182dd17f42ca8790f009a4"
+    },
+    {
+      "id": "read_model_credit",
+      "path": "reference/read_model/vectors/credit.json",
+      "role": "read_model_candidate_vector",
+      "sha256": "687b88f1659bff54075aa44a95b04ee1f77324da136049e481f47a3fdf2bf802",
+      "gitBlob": "b7f776f9f6b72a4e885b52b05b47ca67d396761d"
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "contract_only_catalogue",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "Pinned OpenAPI 3.1 contract-only document; 84 local-call operations, no live server.",
+      "artifact_ids": [
+        "contract_only_openapi"
+      ]
+    },
+    {
+      "id": "fsm_command_contract",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "Pinned additive FSM catalogue; 44 REPLAYABLE actions over five machines.",
+      "artifact_ids": [
+        "fsm_command_contract"
+      ]
+    },
+    {
+      "id": "integration_gate",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "Pinned non-production loopback gate description; production=false, publicHost=false.",
+      "artifact_ids": [
+        "integration_gate_openapi"
+      ]
+    },
+    {
+      "id": "generated_sdk_catalogue",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "Generated TypeScript catalogue bytes match the pinned generator output digest.",
+      "artifact_ids": [
+        "generated_sdk_catalogue"
+      ]
+    },
+    {
+      "id": "sdk_generator",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "Pinned generator source digest; regeneration is a separate check.",
+      "artifact_ids": [
+        "sdk_generator"
+      ]
+    },
+    {
+      "id": "toolchain",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "Toolchain pin records nodeMajor 24 and pythonMinor 3.12.",
+      "artifact_ids": [
+        "toolchains"
+      ]
+    },
+    {
+      "id": "compat_profile",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "BOOTSTRAP profile bytes pin catalogue binding; grants are catalogue-schema-binding only.",
+      "artifact_ids": [
+        "compat_profile"
+      ]
+    },
+    {
+      "id": "compat_manifest",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "BOOTSTRAP manifest bytes cross-reference the pinned artefacts.",
+      "artifact_ids": [
+        "compat_manifest"
+      ]
+    },
+    {
+      "id": "manifest_sidecar",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "Sidecar content equals sha256(manifest).",
+      "artifact_ids": [
+        "manifest_sidecar"
+      ]
+    },
+    {
+      "id": "sdk_conformance_vectors",
+      "status": "BOOTSTRAP_SCHEMA_BOUND",
+      "basis": "Two pinned SDK conformance vector files match the manifest entries.",
+      "artifact_ids": [
+        "sdk_conformance_canonical",
+        "sdk_conformance_mixed"
+      ]
+    },
+    {
+      "id": "read_query_surface",
+      "status": "NOT_BOUND",
+      "basis": "13 owner-decided read query names have candidate fixtures only; read-model-reference is not merged.",
+      "artifact_ids": [
+        "read_model_vector_manifest",
+        "read_model_reservation",
+        "read_model_resale",
+        "read_model_admission",
+        "read_model_settlement",
+        "read_model_credit",
+        "contract_only_openapi",
+        "fsm_command_contract"
+      ]
+    },
+    {
+      "id": "semantic_sdk_consumer",
+      "status": "HOLD_SEMANTIC",
+      "basis": "BOOTSTRAP binds catalogue/schema bytes only; no semantic consumer acceptance exists.",
+      "artifact_ids": [
+        "compat_profile",
+        "compat_manifest",
+        "generated_sdk_catalogue",
+        "sdk_generator",
+        "sdk_conformance_canonical",
+        "sdk_conformance_mixed"
+      ]
+    }
+  ],
+  "commands": {
+    "count": 84,
+    "coreCount": 40,
+    "fsmCount": 44,
+    "sourceContract": "reference/v0.3-rc1/protocol_contract.json",
+    "fsmContract": "docs/contracts/openapi/fsm-command-contract.json",
+    "items": [
+      {
+        "name": "abort_effect",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "abort_trade",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "accept_gift",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "accept_trade",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "adjust_pg_cancel",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admit",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "advance_clock",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "authorize_marketing",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "cancel_event",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "cancel_gift",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "cancel_listing",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "capture",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "claim_effect",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "close_delegation",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "close_sales",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "commit_trade",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "complete_event",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "create_event",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "create_listing",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "delegate",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "dispatch_effect",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "expire_trade",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "finalize_effect",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "issue_invitation",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "observe_dispatch_lookup",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "observe_effect",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "observe_funding",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "observe_recovery",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "observe_return",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "offer_gift",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "open_admission",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "prepare_effect",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "prepare_trade",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "refund_ticket",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "release_inventory",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reserve_listing",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "send_effect",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "set_consent",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settle_capture",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "void_unissued",
+        "source": "core",
+        "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "Core.execute",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_initiate",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "initiate",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_authorize",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "authorize",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_capture",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "capture",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_commit",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "commit",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_fail",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "fail",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_cancel",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "cancel",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_observe_statement",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "observe_statement",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_distribute",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "distribute",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_bind_refund",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "bind_refund",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_observe_mock_cancel_acceptance",
+        "source": "fsm",
+        "sourcePath": "reference/settlement_f01_f03/settlement_fsm.py",
+        "machine": "settlement",
+        "op": "observe_mock_cancel_acceptance",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process SettlementMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_set_clock",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "set_clock",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_register_show",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "register_show",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_hold",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "hold",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_release",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "release",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_confirm",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "confirm",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_cancel",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "cancel",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_observe_payment",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "observe_payment",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_bind_settlement",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "bind_settlement",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_issue",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "issue",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_authorize_admission",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "authorize_admission",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_consume",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/reservation_fsm.py",
+        "machine": "reservation",
+        "op": "consume",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ReservationMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_set_clock",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "set_clock",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_adopt_issued",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "adopt_issued",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_list_resale",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "list_resale",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_hold_buy",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "hold_buy",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_release_hold",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "release_hold",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_cancel_listing",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "cancel_listing",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_observe_resale_payment",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "observe_resale_payment",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_bind_settlement",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "bind_settlement",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_accept_resale",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "accept_resale",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_close",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/resale_fsm.py",
+        "machine": "resale",
+        "op": "close",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process ResaleMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admission_set_clock",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/admission_fsm.py",
+        "machine": "admission",
+        "op": "set_clock",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process AdmissionMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admission_adopt_issued",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/admission_fsm.py",
+        "machine": "admission",
+        "op": "adopt_issued",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process AdmissionMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admission_authorize_admission",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/admission_fsm.py",
+        "machine": "admission",
+        "op": "authorize_admission",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process AdmissionMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admission_consume",
+        "source": "fsm",
+        "sourcePath": "reference/booking_resale_admission/admission_fsm.py",
+        "machine": "admission",
+        "op": "consume",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process AdmissionMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_offer",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "offer",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_approve",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "approve",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_reject",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "reject",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_cancel",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "cancel",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_bind_settlement",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "bind_settlement",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_draw",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "draw",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_repay",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "repay",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_close",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "close",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_default",
+        "source": "fsm",
+        "sourcePath": "reference/credit_advance_f04/credit_fsm.py",
+        "machine": "credit",
+        "op": "default",
+        "gateRoute": "/x-kix-contract-only/local-call",
+        "gateDispatch": "in-process CreditMachine",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      }
+    ]
+  },
+  "fsm": {
+    "path": "docs/contracts/openapi/fsm-command-contract.json",
+    "sha256": "342e97cb37b199622d7bb436ca9164690d969b797058aaa539ff417cab01411c",
+    "gitBlob": "3771a8739b906a478b54c597df37e27d1afc5f21",
+    "machineCount": 5,
+    "actionCount": 44,
+    "machineCounts": {
+      "settlement": 10,
+      "reservation": 11,
+      "resale": 10,
+      "admission": 4,
+      "credit": 9
+    },
+    "actions": [
+      {
+        "name": "settlement_initiate",
+        "machine": "settlement",
+        "op": "initiate",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_authorize",
+        "machine": "settlement",
+        "op": "authorize",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_capture",
+        "machine": "settlement",
+        "op": "capture",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_commit",
+        "machine": "settlement",
+        "op": "commit",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_fail",
+        "machine": "settlement",
+        "op": "fail",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_cancel",
+        "machine": "settlement",
+        "op": "cancel",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_observe_statement",
+        "machine": "settlement",
+        "op": "observe_statement",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_distribute",
+        "machine": "settlement",
+        "op": "distribute",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_bind_refund",
+        "machine": "settlement",
+        "op": "bind_refund",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "settlement_observe_mock_cancel_acceptance",
+        "machine": "settlement",
+        "op": "observe_mock_cancel_acceptance",
+        "module": "reference/settlement_f01_f03/settlement_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_set_clock",
+        "machine": "reservation",
+        "op": "set_clock",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_register_show",
+        "machine": "reservation",
+        "op": "register_show",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_hold",
+        "machine": "reservation",
+        "op": "hold",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_release",
+        "machine": "reservation",
+        "op": "release",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_confirm",
+        "machine": "reservation",
+        "op": "confirm",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_cancel",
+        "machine": "reservation",
+        "op": "cancel",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_observe_payment",
+        "machine": "reservation",
+        "op": "observe_payment",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_bind_settlement",
+        "machine": "reservation",
+        "op": "bind_settlement",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_issue",
+        "machine": "reservation",
+        "op": "issue",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_authorize_admission",
+        "machine": "reservation",
+        "op": "authorize_admission",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "reservation_consume",
+        "machine": "reservation",
+        "op": "consume",
+        "module": "reference/booking_resale_admission/reservation_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_set_clock",
+        "machine": "resale",
+        "op": "set_clock",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_adopt_issued",
+        "machine": "resale",
+        "op": "adopt_issued",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_list_resale",
+        "machine": "resale",
+        "op": "list_resale",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_hold_buy",
+        "machine": "resale",
+        "op": "hold_buy",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_release_hold",
+        "machine": "resale",
+        "op": "release_hold",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_cancel_listing",
+        "machine": "resale",
+        "op": "cancel_listing",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_observe_resale_payment",
+        "machine": "resale",
+        "op": "observe_resale_payment",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_bind_settlement",
+        "machine": "resale",
+        "op": "bind_settlement",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_accept_resale",
+        "machine": "resale",
+        "op": "accept_resale",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "resale_close",
+        "machine": "resale",
+        "op": "close",
+        "module": "reference/booking_resale_admission/resale_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admission_set_clock",
+        "machine": "admission",
+        "op": "set_clock",
+        "module": "reference/booking_resale_admission/admission_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admission_adopt_issued",
+        "machine": "admission",
+        "op": "adopt_issued",
+        "module": "reference/booking_resale_admission/admission_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admission_authorize_admission",
+        "machine": "admission",
+        "op": "authorize_admission",
+        "module": "reference/booking_resale_admission/admission_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "admission_consume",
+        "machine": "admission",
+        "op": "consume",
+        "module": "reference/booking_resale_admission/admission_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_offer",
+        "machine": "credit",
+        "op": "offer",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_approve",
+        "machine": "credit",
+        "op": "approve",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_reject",
+        "machine": "credit",
+        "op": "reject",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_cancel",
+        "machine": "credit",
+        "op": "cancel",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_bind_settlement",
+        "machine": "credit",
+        "op": "bind_settlement",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_draw",
+        "machine": "credit",
+        "op": "draw",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_repay",
+        "machine": "credit",
+        "op": "repay",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_close",
+        "machine": "credit",
+        "op": "close",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      },
+      {
+        "name": "credit_default",
+        "machine": "credit",
+        "op": "default",
+        "module": "reference/credit_advance_f04/credit_fsm.py",
+        "status": "BOOTSTRAP_SCHEMA_BOUND"
+      }
+    ]
+  },
+  "read_queries": {
+    "count": 13,
+    "source": "docs/contracts/READ_MODEL_QUERIES.md",
+    "candidateVectorManifest": "reference/read_model/vectors/manifest.json",
+    "implementationStatus": "read-model-reference not merged",
+    "items": [
+      {
+        "name": "get_admission",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/admission.json",
+        "fixtureSha256": "bd81537377ad4c7fec1ac6948e7f212cbc29176f8c39841620917060fa48aa7e",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_booking",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/reservation.json",
+        "fixtureSha256": "d73dca6bf7031a7798d08cadce25967583b1ea02ca0587eb5c2af79dbf221d39",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_credential",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/admission.json",
+        "fixtureSha256": "bd81537377ad4c7fec1ac6948e7f212cbc29176f8c39841620917060fa48aa7e",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_credit_advance",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/credit.json",
+        "fixtureSha256": "687b88f1659bff54075aa44a95b04ee1f77324da136049e481f47a3fdf2bf802",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_credit_claim",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/credit.json",
+        "fixtureSha256": "687b88f1659bff54075aa44a95b04ee1f77324da136049e481f47a3fdf2bf802",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_listing",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/resale.json",
+        "fixtureSha256": "6cbd01c2c15a2d4cf094974d5465fb0250e3b7db7a02326087f17128e55df3c2",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_presentation",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/resale.json",
+        "fixtureSha256": "6cbd01c2c15a2d4cf094974d5465fb0250e3b7db7a02326087f17128e55df3c2",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_right",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/resale.json",
+        "fixtureSha256": "6cbd01c2c15a2d4cf094974d5465fb0250e3b7db7a02326087f17128e55df3c2",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_settlement",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/settlement.json",
+        "fixtureSha256": "c7d58b0415f3bc3e711cd1e3950e9a1a08c6cc00d5b2349f0617ed459e184d4f",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "get_show",
+        "kind": "point",
+        "candidateVector": "reference/read_model/vectors/reservation.json",
+        "fixtureSha256": "d73dca6bf7031a7798d08cadce25967583b1ea02ca0587eb5c2af79dbf221d39",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "list_bookings",
+        "kind": "list",
+        "candidateVector": "reference/read_model/vectors/reservation.json",
+        "fixtureSha256": "d73dca6bf7031a7798d08cadce25967583b1ea02ca0587eb5c2af79dbf221d39",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "list_open_listings",
+        "kind": "list",
+        "candidateVector": "reference/read_model/vectors/resale.json",
+        "fixtureSha256": "6cbd01c2c15a2d4cf094974d5465fb0250e3b7db7a02326087f17128e55df3c2",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      },
+      {
+        "name": "list_shows",
+        "kind": "list",
+        "candidateVector": "reference/read_model/vectors/reservation.json",
+        "fixtureSha256": "d73dca6bf7031a7798d08cadce25967583b1ea02ca0587eb5c2af79dbf221d39",
+        "status": "NOT_BOUND",
+        "reason": "read-model-reference not merged"
+      }
+    ]
+  },
+  "semantic_hold": {
+    "surface": "semantic_sdk_consumer",
+    "status": "HOLD_SEMANTIC",
+    "grants": "catalogue-schema-binding only",
+    "reason": "BOOTSTRAP binds catalogue/schema bytes only; no semantic consumer acceptance exists.",
+    "source": "sdk/compat/profiles/bootstrap-2.profile.json",
+    "profileKind": "BOOTSTRAP",
+    "profileRevision": "bootstrap-2"
+  },
+  "sd1": {
+    "id": "SD1",
+    "owner": "User",
+    "status": "OPEN",
+    "summary": "SDK compatibility-manifest verifier check order: OpenAPI, generator and SDK output byte comparisons run before the profile hash, contrary to COMPATIBILITY_MANIFEST_V1.md section 4. The extension_profile interpretation also remains UNDETERMINED.",
+    "contract": "docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md",
+    "record": "docs/status/OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md",
+    "decision": "The User must choose how to resolve the explicit contract section 4 check-order violation."
+  },
+  "non_claims": [
+    "This record is non-normative identity evidence only.",
+    "No semantic qualification is made.",
+    "No N/N-1 qualification is made.",
+    "No production qualification is made.",
+    "No audit approval or User approval is made.",
+    "No read query is published or bound.",
+    "No SD1 resolution, waiver or verifier order is chosen.",
+    "The integration gate is not qualified as production."
+  ]
+}

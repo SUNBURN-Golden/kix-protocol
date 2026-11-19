@@ -1,0 +1,13 @@
+test_complete_output_bytes_and_references (test_commerce_resale_expiry_vectors.CommerceResaleExpiryVectorTests.test_complete_output_bytes_and_references) ... ok
+test_detached_output_corruption_controls (test_commerce_resale_expiry_vectors.CommerceResaleExpiryVectorTests.test_detached_output_corruption_controls) ... ok
+test_expiry_preserves_facts_and_historical_receipts (test_commerce_resale_expiry_vectors.CommerceResaleExpiryVectorTests.test_expiry_preserves_facts_and_historical_receipts) ... ok
+test_injected_effects_on_refusal_or_replay_are_detected (test_commerce_resale_expiry_vectors.CommerceResaleExpiryVectorTests.test_injected_effects_on_refusal_or_replay_are_detected) ... ok
+test_pins_and_strict_json_controls (test_commerce_resale_expiry_vectors.CommerceResaleExpiryVectorTests.test_pins_and_strict_json_controls) ... ok
+test_refusals_and_replays_do_not_mutate_any_machine (test_commerce_resale_expiry_vectors.CommerceResaleExpiryVectorTests.test_refusals_and_replays_do_not_mutate_any_machine) ... ok
+test_repinned_input_controls_fail_before_execution (test_commerce_resale_expiry_vectors.CommerceResaleExpiryVectorTests.test_repinned_input_controls_fail_before_execution) ... ok
+test_schemas_sources_and_unbound_reads (test_commerce_resale_expiry_vectors.CommerceResaleExpiryVectorTests.test_schemas_sources_and_unbound_reads) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.130s
+
+OK

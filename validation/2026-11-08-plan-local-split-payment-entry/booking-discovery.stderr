@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/workspace/kix-run/wt/plan-local-split-payment-entry/.local/split-payment/socket_free.py", line 8, in <module>
+    suite=unittest.defaultTestLoader.discover('reference/booking_resale_admission',top_level_dir='reference/booking_resale_admission')
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/unittest/loader.py", line 310, in discover
+    tests = list(self._find_tests(start_dir, pattern))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/unittest/loader.py", line 366, in _find_tests
+    tests, should_recurse = self._find_test_path(full_path, pattern)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/box/.local/share/uv/python/cpython-3.12.15-linux-x86_64-gnu/lib/python3.12/unittest/loader.py", line 418, in _find_test_path
+    raise ImportError(
+ImportError: 'test_contract_error_codes' module incorrectly imported from '/workspace/kix-run/wt/plan-local-split-payment-entry/reference/settlement_f01_f03'. Expected '/workspace/kix-run/wt/plan-local-split-payment-entry/reference/booking_resale_admission'. Is this module globally installed?

@@ -1,0 +1,12 @@
+$ python3.12 -B -c 'import subprocess; from pathlib import Path; import hashlib; print("Task: plan-commerce-entry-resale-order-vectors; input: supplied session specification (no repository task document)"); [(print(ref, subprocess.check_output(["git", "rev-parse", ref], text=True).strip())) for ref in ("HEAD", "origin/main")]; print("Branch:", subprocess.check_output(["git", "branch", "--show-current"], text=True).strip()); [(print(p, subprocess.check_output(["git", "hash-object", p], text=True).strip())) for p in ("runtime/crates/kix-kernel/src/lib.rs", "runtime/crates/kix-kernel/tests/quarantine_capacity.rs")]; print("Fetch: NOT_RUN per explicit supervisor network prohibition; remote freshness UNVERIFIED"); print("Starting working tree: clean (observed before edits); original hashes: preserved-inputs.json"); print("Commits/publication/merge/hosted CI: NOT_RUN, supervisor-owned")'
+Task: plan-commerce-entry-resale-order-vectors; input: supplied session specification (no repository task document)
+HEAD 4722072b98c7ab4692bafffbb3f2eeefe6e3a142
+origin/main 4722072b98c7ab4692bafffbb3f2eeefe6e3a142
+Branch: agent/kix-plan-commerce-entry-resale-order-vectors
+runtime/crates/kix-kernel/src/lib.rs 69564b166f0c27f9af5d8422f0a466b18d74c20f
+runtime/crates/kix-kernel/tests/quarantine_capacity.rs b607996c83a119c349f1cc90469ac1ba82764e20
+Fetch: NOT_RUN per explicit supervisor network prohibition; remote freshness UNVERIFIED
+Starting working tree: clean (observed before edits); original hashes: preserved-inputs.json
+Commits/publication/merge/hosted CI: NOT_RUN, supervisor-owned
+
+EXIT: 0

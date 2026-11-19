@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3.12",
+    "-B",
+    "-m",
+    "unittest",
+    "test_payment_lookup_cli.PaymentLookupCliTests.test_invalid_entire_configuration_precedes_all_lookup_and_binding",
+    "-v"
+  ],
+  "environment": {
+    "PYTHONPATH": "reference/provider_facts"
+  },
+  "exit_code": 1,
+  "tests": 1,
+  "log": "provider-timeout-diagnostic.log",
+  "result": "One subprocess exceeded the unchanged 10-second timeout at a different invalid input. Source inspected; no provider edits. Later full suite passes with the CI bytecode environment."
+}

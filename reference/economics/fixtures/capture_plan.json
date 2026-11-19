@@ -1,0 +1,18 @@
+{
+  "fixtureVersion": 1,
+  "evidenceClass": "SYNTHETIC_REFERENCE",
+  "provenance": "synthetic",
+  "comment": "Synthetic multiple-intent capture plan: two partial captures fill one leg exactly; a third over-capture is refused atomically. Not product policy.",
+  "orderId": "order-capture",
+  "orderVersion": 1,
+  "nowMs": 1000,
+  "scope": {"issuerId": "issuer-1", "eventId": "event-scope-1", "performanceId": "perf-1"},
+  "lineAtoms": 10000,
+  "legAmount": 10000,
+  "captures": [
+    {"captureId": "cap-1", "amount": 4000, "outcome": "CONFIRMED"},
+    {"captureId": "cap-2", "amount": 6000, "outcome": "CONFIRMED"}
+  ],
+  "overCapture": {"captureId": "cap-3", "amount": 1},
+  "expected": {"legConfirmed": 10000, "legRemaining": 0, "overCaptureError": "OVER_CAPTURE"}
+}

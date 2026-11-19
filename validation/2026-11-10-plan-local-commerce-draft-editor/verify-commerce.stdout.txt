@@ -1,0 +1,1 @@
+{"evidenceClass":"CALCULATION_ONLY","externalCalls":0,"payable":"48600","report":"validation/2026-11-10-plan-local-commerce-draft-editor/commerce.json","result":"PASS","selectedLineRefund":"16200"}

@@ -157,8 +157,8 @@
 | A26 | `get_credential` 원천 | reference/booking_resale_admission/admission_fsm.py | 515 | `def view_credential(` |
 | A27 | `get_settlement` 원천 | reference/settlement_f01_f03/settlement_fsm.py | 476 | `def view(` |
 | A28 | `get_settlement` view | reference/settlement_f01_f03/settlement_fsm.py | 635 | `def _view(` |
-| A29 | `get_settlement` 중첩 claim | reference/settlement_f01_f03/mock_settlement.py | 289 | `def view(` |
-| A30 | `get_settlement` claim view | reference/settlement_f01_f03/mock_settlement.py | 298 | `def _view(` |
+| A29 | `get_settlement` 중첩 claim | reference/settlement_f01_f03/mock_settlement.py | 287 | `def view(` |
+| A30 | `get_settlement` claim view | reference/settlement_f01_f03/mock_settlement.py | 296 | `def _view(` |
 | A31 | `get_credit_advance` 원천 | reference/credit_advance_f04/credit_fsm.py | 523 | `def view(` |
 | A32 | `get_credit_advance` view | reference/credit_advance_f04/credit_fsm.py | 760 | `def _view(` |
 | A33 | `get_credit_advance` 감시 | reference/credit_advance_f04/credit_fsm.py | 830 | `def _witness(` |

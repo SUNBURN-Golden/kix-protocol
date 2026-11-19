@@ -121,8 +121,7 @@ class TicketStatementDistributionTests(unittest.TestCase):
     def test_file_stdin_and_api_journeys_match_direct_fsm_after_every_step(self):
         codes = ['DISTRIBUTION_ORDER_TYPE', 'DISTRIBUTION_ORDER_DUPLICATE',
                  'DISTRIBUTION_ORDER_MISMATCH', 'DISTRIBUTION_ORDER_MISMATCH',
-                 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'DISTRIBUTION_ORDER_FROZEN',
-                 'DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED']
+                 'IDEMPOTENCY_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'DISTRIBUTION_ORDER_FROZEN']
         for name in ('distribution', 'boundaries'):
             with self.subTest(name=name):
                 self.graph()
@@ -148,7 +147,7 @@ class TicketStatementDistributionTests(unittest.TestCase):
                     for replay, first in ((6, 1), (12, 5), (13, 10)):
                         self.assertEqual(results[replay]['receipt'], results[first]['receipt'] |
                                          {'duplicate': True, 'applied': None})
-                    self.assertEqual(claim['refund_bearer_policy'], 'UNDEFINED')
+                    self.assertEqual(claim['refund_bearer_policy'], 'REQUESTER')
                 restored = SettlementMachine.restore(machines(self.session)[0].export_journal())
                 self.assertEqual(snapshot((restored,)), snapshot((self.control[0],)))
                 for selector, stdin in ((path(name), None), ('-', path(name).read_text())):
@@ -156,7 +155,7 @@ class TicketStatementDistributionTests(unittest.TestCase):
                     self.assertEqual((result.returncode, result.stderr), (0 if name == 'distribution' else 1, ''))
                     self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], results)
 
-    def test_retained_order_refusals_type_key_freedom_and_refund_block(self):
+    def test_retained_order_refusals_type_key_freedom_and_refund_bearer(self):
         self.graph()
         self.step(rows()[0])
         for i, (order, code) in enumerate(((None, 'DISTRIBUTION_ORDER_TYPE'),
@@ -176,10 +175,12 @@ class TicketStatementDistributionTests(unittest.TestCase):
         self.assertEqual((prior['distributed_cash'], prior['undistributed_cash']), (5500, 3801))
         self.step(request('bind_refund', idempotency_key='refund', refund_id='refund', amount=1000,
                           beneficiary_role='buyer-3', reason='synthetic'))
-        self.step(request('distribute', idempotency_key='blocked', order=ORDER),
-                  'DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED')
-        self.assertEqual(self.session.settlement.view(SID)['claim']['distributed_cash'], 5500)
-        # Same accepted distribution key/body replays its first receipt despite refund block.
+        # B5: the partial refund reports REQUESTER and no longer blocks
+        # distribution; the remaining undistributed cash is applied in order.
+        distributed = self.step(request('distribute', idempotency_key='blocked', order=ORDER))
+        self.assertEqual(distributed['receipt']['effect'], {'platform': 0, 'organizer': 3801})
+        self.assertEqual(self.session.settlement.view(SID)['claim']['distributed_cash'], 9301)
+        # Same accepted distribution key/body replays its first receipt.
         self.step(request('distribute', idempotency_key='bad-order-0', order=ORDER))
 
     def test_direct_recorded_key_equivalence_conflicts_and_movement_characterization(self):

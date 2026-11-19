@@ -1,0 +1,130 @@
+[
+  {
+    "name": "guarantee-file",
+    "command": "python3 reference/token_reward/collateral_cli.py --request reference/token_reward/fixtures/collateral_guarantee.json",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "guarantee-file.stdout.json",
+    "stderr": "guarantee-file.stderr.txt"
+  },
+  {
+    "name": "guarantee-stdin",
+    "command": "python3 reference/token_reward/collateral_cli.py --request - < reference/token_reward/fixtures/collateral_guarantee.json",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "guarantee-stdin.stdout.json",
+    "stderr": "guarantee-stdin.stderr.txt"
+  },
+  {
+    "name": "escrow-file",
+    "command": "python3 reference/token_reward/collateral_cli.py --request reference/token_reward/fixtures/collateral_escrow.json",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "escrow-file.stdout.json",
+    "stderr": "escrow-file.stderr.txt"
+  },
+  {
+    "name": "escrow-stdin",
+    "command": "python3 reference/token_reward/collateral_cli.py --request - < reference/token_reward/fixtures/collateral_escrow.json",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "escrow-stdin.stdout.json",
+    "stderr": "escrow-stdin.stderr.txt"
+  },
+  {
+    "name": "mixed-file",
+    "command": "python3 reference/token_reward/collateral_cli.py --request reference/token_reward/fixtures/collateral_mixed.json",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "mixed-file.stdout.json",
+    "stderr": "mixed-file.stderr.txt"
+  },
+  {
+    "name": "mixed-stdin",
+    "command": "python3 reference/token_reward/collateral_cli.py --request - < reference/token_reward/fixtures/collateral_mixed.json",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "mixed-stdin.stdout.json",
+    "stderr": "mixed-stdin.stderr.txt"
+  },
+  {
+    "name": "empty-file",
+    "command": "python3 reference/token_reward/collateral_cli.py --request reference/token_reward/fixtures/collateral_empty.json",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "empty-file.stdout.json",
+    "stderr": "empty-file.stderr.txt"
+  },
+  {
+    "name": "empty-stdin",
+    "command": "python3 reference/token_reward/collateral_cli.py --request - < reference/token_reward/fixtures/collateral_empty.json",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "empty-stdin.stdout.json",
+    "stderr": "empty-stdin.stderr.txt"
+  },
+  {
+    "name": "token_only-file",
+    "command": "python3 reference/token_reward/collateral_cli.py --request reference/token_reward/fixtures/collateral_token_only.json",
+    "exit": 1,
+    "expected_exit": 1,
+    "stdout": "token_only-file.stdout.json",
+    "stderr": "token_only-file.stderr.txt"
+  },
+  {
+    "name": "token_only-stdin",
+    "command": "python3 reference/token_reward/collateral_cli.py --request - < reference/token_reward/fixtures/collateral_token_only.json",
+    "exit": 1,
+    "expected_exit": 1,
+    "stdout": "token_only-stdin.stdout.json",
+    "stderr": "token_only-stdin.stderr.txt"
+  },
+  {
+    "name": "valuation-file",
+    "command": "python3 reference/token_reward/collateral_cli.py --request reference/token_reward/fixtures/collateral_valuation.json",
+    "exit": 1,
+    "expected_exit": 1,
+    "stdout": "valuation-file.stdout.json",
+    "stderr": "valuation-file.stderr.txt"
+  },
+  {
+    "name": "valuation-stdin",
+    "command": "python3 reference/token_reward/collateral_cli.py --request - < reference/token_reward/fixtures/collateral_valuation.json",
+    "exit": 1,
+    "expected_exit": 1,
+    "stdout": "valuation-stdin.stdout.json",
+    "stderr": "valuation-stdin.stderr.txt"
+  },
+  {
+    "name": "guided-mixed",
+    "command": "python3 reference/token_reward/collateral_cli.py --guided < reference/token_reward/fixtures/collateral_guided_mixed.txt",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "guided-mixed.stdout.json",
+    "stderr": "guided-mixed.stderr.txt"
+  },
+  {
+    "name": "guided-empty",
+    "command": "python3 reference/token_reward/collateral_cli.py --guided < reference/token_reward/fixtures/collateral_guided_empty.txt",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "guided-empty.stdout.json",
+    "stderr": "guided-empty.stderr.txt"
+  },
+  {
+    "name": "guided-decline",
+    "command": "python3 reference/token_reward/collateral_cli.py --guided < reference/token_reward/fixtures/collateral_guided_decline.txt",
+    "exit": 0,
+    "expected_exit": 0,
+    "stdout": "guided-decline.stdout.json",
+    "stderr": "guided-decline.stderr.txt"
+  },
+  {
+    "name": "guided-incomplete",
+    "command": "python3 reference/token_reward/collateral_cli.py --guided < reference/token_reward/fixtures/collateral_guided_incomplete.txt",
+    "exit": 2,
+    "expected_exit": 2,
+    "stdout": "guided-incomplete.stdout.json",
+    "stderr": "guided-incomplete.stderr.txt"
+  }
+]

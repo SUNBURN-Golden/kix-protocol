@@ -1,0 +1,4 @@
+$ /home/box/.local/bin/python3.12 -B scripts/check_integration_gate_openapi.py --self-test
+self-test: pass
+
+EXIT: 0

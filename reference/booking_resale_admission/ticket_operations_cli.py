@@ -23,10 +23,17 @@ from ticket_operations_fixture import load_fixture
 from ticket_operations_session import TicketOperationsSession, TicketSettlementSession
 from cancel_acceptance_source import CancelAcceptanceSourceError
 from statement_source import StatementSourceError
+from settlement_input_adapter import SettlementInputSourceError
 
 
 # Local selectors for existing FSM operations; no policy or statement defaults.
 _SETTLEMENT_DISPATCH = {
+    "initiate_from_booking": (TicketSettlementSession.initiate_from_booking,
+                              {"settlement_id", "reservation_id", "idempotency_key",
+                               "trade_id", "debtor_role", "policy"}, "receipt"),
+    "initiate_from_resale": (TicketSettlementSession.initiate_from_resale,
+                             {"settlement_id", "listing_id", "idempotency_key",
+                              "trade_id", "debtor_role", "policy"}, "receipt"),
     "initiate": (TicketSettlementSession.initiate,
                  {"settlement_id", "idempotency_key", "trade_id", "gross",
                   "debtor_role", "policy", "currency"}, "receipt"),
@@ -45,6 +52,9 @@ _SETTLEMENT_DISPATCH = {
                 "fee", "tax", "held", "adjustment", "adjustment_reason"}, "receipt"),
     "commit_recorded_statement": (TicketSettlementSession.commit_recorded_statement,
                                   {"settlement_id", "movement_id", "idempotency_key"}, "receipt"),
+    "observe_statement": (TicketSettlementSession.observe_statement,
+                          {"settlement_id", "idempotency_key", "movement_id", "gross", "amount",
+                           "fee", "tax", "held", "adjustment", "adjustment_reason"}, "receipt"),
     "observe_recorded_statement": (TicketSettlementSession.observe_recorded_statement,
                                    {"settlement_id", "movement_id", "idempotency_key"}, "receipt"),
     "distribute": (TicketSettlementSession.distribute,
@@ -54,6 +64,8 @@ _SETTLEMENT_DISPATCH = {
                      "beneficiary_role", "reason"}, "receipt"),
     "observe_recorded_cancel_acceptance": (TicketSettlementSession.observe_recorded_cancel_acceptance,
                                            {"settlement_id", "source_id", "idempotency_key"}, "receipt"),
+    "observe_mock_cancel_acceptance": (TicketSettlementSession.observe_mock_cancel_acceptance,
+                                      {"settlement_id", "idempotency_key", "source_id", "amount"}, "receipt"),
     "view": (TicketSettlementSession.view, {"settlement_id"}, "view"),
 }
 
@@ -94,7 +106,7 @@ def _error(surface, operation, error):
 
 
 def _emit(value):
-    print(json.dumps(value, sort_keys=True, allow_nan=False))
+    print(json.dumps(value, sort_keys=True, allow_nan=False), flush=True)
 
 
 def run_requests(session: TicketOperationsSession, lines, *, quote_adapter=None) -> int:
@@ -114,7 +126,7 @@ def run_requests(session: TicketOperationsSession, lines, *, quote_adapter=None)
             return 2
         except (*_DOMAIN_ERRORS, ResaleOfferSourceError, PresentationSourceError,
                 ResalePaymentSourceError, BookingQuoteSourceError, CancelAcceptanceSourceError,
-                StatementSourceError, IssuedTicketSourceError) as error:
+                StatementSourceError, IssuedTicketSourceError, SettlementInputSourceError) as error:
             result = _error(surface, operation, error)
             rejected = True
         _emit(result)

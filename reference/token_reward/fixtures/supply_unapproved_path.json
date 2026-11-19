@@ -1,0 +1,25 @@
+{
+  "operation": "reconcile_supply",
+  "arguments": {
+    "offchain": {
+      "events": [
+        {
+          "event_id": "mint-p",
+          "op": "MINT",
+          "amount": 10,
+          "approved": true,
+          "path_approved": false,
+          "program": "synthetic-program"
+        }
+      ],
+      "minted_total": 10,
+      "unapproved_mint": 0,
+      "allocated_total": 0,
+      "burned_total": 0,
+      "holder_burn_outside_layer": 0,
+      "layer_supply": 10,
+      "figure": "SYNTHETIC_SUPPLY_FIGURE"
+    },
+    "chain_supply": 10
+  }
+}

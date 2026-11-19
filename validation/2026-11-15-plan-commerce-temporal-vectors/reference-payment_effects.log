@@ -1,0 +1,8 @@
+$ /home/box/.local/bin/python3.12 -B -m unittest discover -s reference/payment_effects -t reference/payment_effects
+............................
+----------------------------------------------------------------------
+Ran 28 tests in 1.187s
+
+OK
+
+EXIT: 0

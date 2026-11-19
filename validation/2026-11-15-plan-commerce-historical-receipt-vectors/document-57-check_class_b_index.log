@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_class_b_index.py
+class B index ok: rows=218 sources=73 symbols=47; textual index only
+
+EXIT: 0

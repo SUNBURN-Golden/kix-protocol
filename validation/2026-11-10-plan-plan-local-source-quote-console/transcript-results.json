@@ -1,0 +1,78 @@
+[
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/booking_console.py",
+      "--fixture",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/fixtures/ticket_operations_session.json",
+      "--cleanup-timeout",
+      "1",
+      "--quotes",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json"
+    ],
+    "input": "reference/booking_resale_admission/fixtures/booking_console_source_recorded.txt",
+    "exit_code": 1,
+    "envelopes": 35,
+    "parity": "PASS",
+    "stdout": "booking_console_source_recorded.stdout",
+    "stderr": "booking_console_source_recorded.stderr"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/booking_console.py",
+      "--fixture",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/fixtures/ticket_operations_session.json",
+      "--cleanup-timeout",
+      "1",
+      "--calculated-quotes",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/fixtures/calculated_booking_quotes.json"
+    ],
+    "input": "reference/booking_resale_admission/fixtures/booking_console_source_calculated.txt",
+    "exit_code": 1,
+    "envelopes": 31,
+    "parity": "PASS",
+    "stdout": "booking_console_source_calculated.stdout",
+    "stderr": "booking_console_source_calculated.stderr"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/shared_ticket_console.py",
+      "--fixture",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/fixtures/ticket_operations_session.json",
+      "--cleanup-timeout",
+      "1",
+      "--quotes",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/fixtures/ticket_operations_booking_quotes.json"
+    ],
+    "input": "reference/booking_resale_admission/fixtures/shared_ticket_console_source_recorded.txt",
+    "exit_code": 1,
+    "envelopes": 37,
+    "parity": "PASS",
+    "stdout": "shared_ticket_console_source_recorded.stdout",
+    "stderr": "shared_ticket_console_source_recorded.stderr"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/shared_ticket_console.py",
+      "--fixture",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/fixtures/ticket_operations_session.json",
+      "--cleanup-timeout",
+      "1",
+      "--calculated-quotes",
+      "/workspace/kix-run/wt/plan-plan-local-source-quote-console/reference/booking_resale_admission/fixtures/calculated_booking_quotes.json"
+    ],
+    "input": "reference/booking_resale_admission/fixtures/shared_ticket_console_source_calculated.txt",
+    "exit_code": 1,
+    "envelopes": 33,
+    "parity": "PASS",
+    "stdout": "shared_ticket_console_source_calculated.stdout",
+    "stderr": "shared_ticket_console_source_calculated.stderr"
+  }
+]

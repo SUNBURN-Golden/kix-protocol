@@ -1,0 +1,11 @@
+self-test: detected missing command
+self-test: detected unknown command
+self-test: detected drifted artifact digest
+self-test: detected read query upgraded from NOT_BOUND
+self-test: detected broken journey reference
+self-test: detected journey action mismatch
+self-test: detected multiple status fields
+self-test: detected absent status field
+self-test: detected unresolved body-schema pointer
+self-test: detected injected semantic claim
+self-test: pass (10 negative controls)

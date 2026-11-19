@@ -1,0 +1,20 @@
+{
+  "operation": "collateral_recognized",
+  "arguments": {
+    "liability_krw": 100,
+    "collateral_items": [
+      {
+        "kind": "KRW_GUARANTEE",
+        "amount": 30
+      },
+      {
+        "kind": "ESCROW",
+        "amount": 25
+      },
+      {
+        "kind": "TOKEN",
+        "amount": 999
+      }
+    ]
+  }
+}

@@ -1,0 +1,815 @@
+[
+  {
+    "command": "python3 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_hold_release_vectors.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "started_utc": "2026-11-17T23:00:15.989734+00:00",
+    "seconds": 1.597,
+    "exit_code": 0,
+    "log": "01-python3.log"
+  },
+  {
+    "command": "python3 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_companion_evidence_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "started_utc": "2026-11-17T23:01:04.157047+00:00",
+    "seconds": 18.772,
+    "exit_code": 0,
+    "log": "02-python3.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_reservation*.py'",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true"
+    },
+    "started_utc": "2026-11-17T23:02:14.799610+00:00",
+    "seconds": 0.577,
+    "exit_code": 0,
+    "log": "03-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_hold_release_vectors.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:02:37.107025+00:00",
+    "seconds": 1.364,
+    "exit_code": 0,
+    "log": "04-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:02:55.887776+00:00",
+    "seconds": 247.37,
+    "exit_code": 0,
+    "log": "05-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_openapi_contract.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:12.183296+00:00",
+    "seconds": 0.147,
+    "exit_code": 0,
+    "log": "06-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_openapi_contract.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:12.357640+00:00",
+    "seconds": 0.276,
+    "exit_code": 0,
+    "log": "07-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_integration_gate_openapi.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:12.661087+00:00",
+    "seconds": 0.089,
+    "exit_code": 0,
+    "log": "08-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_integration_gate_openapi.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:12.785680+00:00",
+    "seconds": 0.115,
+    "exit_code": 0,
+    "log": "09-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_producer_qualification_tuple.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:12.924470+00:00",
+    "seconds": 0.114,
+    "exit_code": 0,
+    "log": "10-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_producer_qualification_tuple.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:13.066013+00:00",
+    "seconds": 0.785,
+    "exit_code": 0,
+    "log": "11-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:13.875908+00:00",
+    "seconds": 0.131,
+    "exit_code": 0,
+    "log": "12-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.033573+00:00",
+    "seconds": 0.126,
+    "exit_code": 0,
+    "log": "13-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_docs_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.190848+00:00",
+    "seconds": 0.056,
+    "exit_code": 0,
+    "log": "14-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_docs_index.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.269855+00:00",
+    "seconds": 0.058,
+    "exit_code": 0,
+    "log": "15-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_ci_test_discovery.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.353086+00:00",
+    "seconds": 0.175,
+    "exit_code": 0,
+    "log": "16-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_ci_test_discovery.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.570060+00:00",
+    "seconds": 0.104,
+    "exit_code": 0,
+    "log": "17-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_ci_checker_wiring.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.701456+00:00",
+    "seconds": 0.058,
+    "exit_code": 0,
+    "log": "18-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_ci_checker_wiring.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.788270+00:00",
+    "seconds": 0.039,
+    "exit_code": 0,
+    "log": "19-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_bra_evidence_map.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.851891+00:00",
+    "seconds": 0.116,
+    "exit_code": 0,
+    "log": "20-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_bra_evidence_map.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:14.994733+00:00",
+    "seconds": 3.179,
+    "exit_code": 0,
+    "log": "21-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/verify_runtime_architecture.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:18.199136+00:00",
+    "seconds": 0.067,
+    "exit_code": 0,
+    "log": "22-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/test_runtime_architecture.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:18.297160+00:00",
+    "seconds": 0.416,
+    "exit_code": 0,
+    "log": "23-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:26.377071+00:00",
+    "seconds": 2.038,
+    "exit_code": 0,
+    "log": "24-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:28.440545+00:00",
+    "seconds": 22.831,
+    "exit_code": 0,
+    "log": "25-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/ai_delegation -t reference/ai_delegation",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:53:51.300083+00:00",
+    "seconds": 10.648,
+    "exit_code": 0,
+    "log": "26-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/token_reward -t reference/token_reward",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-17T23:54:01.975726+00:00",
+    "seconds": 78.835,
+    "exit_code": 1,
+    "log": "27-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_hold_release_vectors.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:14:43.500096+00:00",
+    "seconds": 1.094,
+    "exit_code": 0,
+    "log": "28-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_companion_evidence_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:14:44.623585+00:00",
+    "seconds": 17.696,
+    "exit_code": 0,
+    "log": "29-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_reservation*.py'",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:15:02.350978+00:00",
+    "seconds": 0.534,
+    "exit_code": 0,
+    "log": "30-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:16:53.239056+00:00",
+    "seconds": 227.555,
+    "exit_code": 0,
+    "log": "31-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_openapi_contract.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:51.172515+00:00",
+    "seconds": 0.094,
+    "exit_code": 0,
+    "log": "32-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_openapi_contract.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:51.290000+00:00",
+    "seconds": 0.206,
+    "exit_code": 0,
+    "log": "33-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_integration_gate_openapi.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:51.522054+00:00",
+    "seconds": 0.077,
+    "exit_code": 0,
+    "log": "34-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_integration_gate_openapi.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:51.623778+00:00",
+    "seconds": 0.108,
+    "exit_code": 0,
+    "log": "35-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_producer_qualification_tuple.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:51.759517+00:00",
+    "seconds": 0.084,
+    "exit_code": 0,
+    "log": "36-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_producer_qualification_tuple.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:51.867552+00:00",
+    "seconds": 0.743,
+    "exit_code": 0,
+    "log": "37-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:52.643406+00:00",
+    "seconds": 0.083,
+    "exit_code": 0,
+    "log": "38-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:52.751085+00:00",
+    "seconds": 0.11,
+    "exit_code": 0,
+    "log": "39-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_docs_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:52.885183+00:00",
+    "seconds": 0.072,
+    "exit_code": 0,
+    "log": "40-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_docs_index.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:52.988665+00:00",
+    "seconds": 0.054,
+    "exit_code": 0,
+    "log": "41-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_ci_test_discovery.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:53.068220+00:00",
+    "seconds": 0.143,
+    "exit_code": 0,
+    "log": "42-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_ci_test_discovery.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:53.236742+00:00",
+    "seconds": 0.094,
+    "exit_code": 0,
+    "log": "43-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_ci_checker_wiring.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:53.358498+00:00",
+    "seconds": 0.047,
+    "exit_code": 0,
+    "log": "44-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_ci_checker_wiring.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:53.433445+00:00",
+    "seconds": 0.026,
+    "exit_code": 0,
+    "log": "45-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_bra_evidence_map.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:53.487184+00:00",
+    "seconds": 0.096,
+    "exit_code": 0,
+    "log": "46-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_bra_evidence_map.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:53.607939+00:00",
+    "seconds": 2.931,
+    "exit_code": 0,
+    "log": "47-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest integration_gate.test_offline_limits",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:56.565315+00:00",
+    "seconds": 0.255,
+    "exit_code": 0,
+    "log": "48-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/verify_runtime_architecture.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:56.849013+00:00",
+    "seconds": 0.043,
+    "exit_code": 0,
+    "log": "49-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/test_runtime_architecture.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:20:56.920328+00:00",
+    "seconds": 0.361,
+    "exit_code": 0,
+    "log": "50-python3.12.log"
+  },
+  {
+    "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked --offline",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:21:04.305372+00:00",
+    "seconds": 7.822,
+    "exit_code": 0,
+    "log": "51-cargo.log"
+  },
+  {
+    "command": "cargo test --manifest-path runtime/Cargo.toml --workspace --locked --offline",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:21:12.153174+00:00",
+    "seconds": 15.068,
+    "exit_code": 0,
+    "log": "52-cargo.log"
+  },
+  {
+    "command": "cargo clippy --manifest-path runtime/Cargo.toml -p kix-kernel --all-targets --locked --offline -- -D warnings",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:21:27.246516+00:00",
+    "seconds": 0.995,
+    "exit_code": 0,
+    "log": "53-cargo.log"
+  },
+  {
+    "command": "cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:21:28.269355+00:00",
+    "seconds": 1.967,
+    "exit_code": 0,
+    "log": "54-cargo.log"
+  },
+  {
+    "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:21:30.269082+00:00",
+    "seconds": 0.316,
+    "exit_code": 0,
+    "log": "55-cargo.log"
+  },
+  {
+    "command": "cargo tree --manifest-path runtime/Cargo.toml -p kix-kernel --edges normal --locked --offline",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:21:30.612922+00:00",
+    "seconds": 0.165,
+    "exit_code": 0,
+    "log": "56-cargo.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/token_reward -t reference/token_reward",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:21:38.345844+00:00",
+    "seconds": 61.3,
+    "exit_code": 0,
+    "log": "57-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/provider_facts -t reference/provider_facts",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:23:15.416454+00:00",
+    "seconds": 11.01,
+    "exit_code": 0,
+    "log": "58-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/payment_effects -t reference/payment_effects",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:23:26.454745+00:00",
+    "seconds": 1.365,
+    "exit_code": 0,
+    "log": "59-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B -m unittest discover -s reference/economics -t reference/economics",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:23:27.844084+00:00",
+    "seconds": 1.276,
+    "exit_code": 0,
+    "log": "60-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_status_register.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:23:29.148841+00:00",
+    "seconds": 0.84,
+    "exit_code": 0,
+    "log": "61-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_status_register.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:23:30.019432+00:00",
+    "seconds": 3.585,
+    "exit_code": 0,
+    "log": "62-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_read_model_source_map.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:23:33.637389+00:00",
+    "seconds": 2.161,
+    "exit_code": 0,
+    "log": "63-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_read_model_source_map.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:23:35.826162+00:00",
+    "seconds": 36.789,
+    "exit_code": 0,
+    "log": "64-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_docs_index.py",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:25:22.962421+00:00",
+    "seconds": 0.046,
+    "exit_code": 0,
+    "log": "65-python3.12.log"
+  },
+  {
+    "command": "python3.12 -B scripts/check_docs_index.py --self-test",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:25:23.032724+00:00",
+    "seconds": 0.06,
+    "exit_code": 0,
+    "log": "66-python3.12.log"
+  },
+  {
+    "command": "git diff --check",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:25:23.117547+00:00",
+    "seconds": 0.013,
+    "exit_code": 0,
+    "log": "67-git.log"
+  },
+  {
+    "command": "git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "CARGO_NET_OFFLINE": "true",
+      "PYTHONPATH": "."
+    },
+    "started_utc": "2026-11-18T00:25:23.155217+00:00",
+    "seconds": 0.003,
+    "exit_code": 0,
+    "log": "68-git.log"
+  }
+]

@@ -100,8 +100,9 @@ It uses the statement adapter to commit synthetic gross 100,000, cash 97,000
 and fee 3,000. It explicitly binds a 40,000 refund obligation, then separately
 observes caller-selected synthetic acceptances of 10,000 and 5,000. Cash stays
 97,000; adjustment outstanding rises 0 → 10,000 → 15,000; refund outstanding
-ends at 25,000. A separate distribution attempt remains blocked. Receipts
-retain `MOCK_SETTLEMENT_ONLY`, `UNDEFINED` refund burden after binding, and
+ends at 25,000. A separate distribution then allocates the confirmed cash under
+the caller order. Receipts retain `MOCK_SETTLEMENT_ONLY`, `REQUESTER` refund
+burden after binding (B5, owner decision 2026-11-10, `SET-POLICY-DRAFT-0.4`), and
 false execution, bank debit, external-return closure and durability flags.
 No receipt fields are added. New source tests cover recording isolation;
 adapter tests compare direct receipts/errors/state/journal, probe rejection
