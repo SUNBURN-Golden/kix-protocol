@@ -40,6 +40,10 @@ records the existing checker's plain and self-test invocations in the unguarded
 stdlib document-check step, including documentation-only and same-tree skips.
 This identity guard does not qualify semantic consumption or close SD1.
 
+The TypeScript SDK and the socket-free Python gate parser exercise the same
+Commerce requests against the `bootstrap-2` schema. [Commerce envelope
+conformance and builder evidence](../validation/2026-11-20-plan-bootstrap-commerce-envelope-conformance/README.md).
+
 ## BOOTSTRAP producer-qualification tuple
 
 [Non-normative identity record](status/PRODUCER_QUALIFICATION_TUPLE_V1.md)
