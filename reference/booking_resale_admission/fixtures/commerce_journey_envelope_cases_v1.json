@@ -1,0 +1,36 @@
+{
+  "fixture_version": 1,
+  "actor": "commerce-journey-fixture",
+  "operation_id_prefix": "commerce-journey:",
+  "base_step": "payment-A",
+  "cases": [
+    {
+      "id": "missing-idempotency-key",
+      "mutation": {"op": "delete", "path": "/body/idempotency_key"},
+      "sdk_error": "MISSING_REQUIRED",
+      "gate_error": "SCHEMA_REJECTED",
+      "gate_detail": "body: missing idempotency_key"
+    },
+    {
+      "id": "wrong-amount-type",
+      "mutation": {"op": "set", "path": "/body/amount", "value": "12000"},
+      "sdk_error": "WRONG_TYPE",
+      "gate_error": "SCHEMA_REJECTED",
+      "gate_detail": "body.amount: expected integer"
+    },
+    {
+      "id": "extra-body-field",
+      "mutation": {"op": "set", "path": "/body/unexpected", "value": true},
+      "sdk_error": "UNKNOWN_FIELD",
+      "gate_error": "SCHEMA_REJECTED",
+      "gate_detail": "body: unknown fields unexpected"
+    },
+    {
+      "id": "not-bound-read",
+      "mutation": {"op": "set", "path": "/action", "value": "get_booking"},
+      "sdk_error": "UNKNOWN_ACTION",
+      "gate_error": "UNKNOWN_ACTION",
+      "gate_detail": null
+    }
+  ]
+}

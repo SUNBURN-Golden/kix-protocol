@@ -33,6 +33,7 @@ const NEGATIVE_VECTOR_PATH = "sdk/conformance/vectors/manifest-verifier-negative
 const VERIFIER_PATH = "sdk/compat/verify_compat.mjs";
 const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
+const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
 
 // Byte-identical fixture tree for the negative verifier matrix. The copied
 // verifier derives ROOT from its own location, so these are the only files it
@@ -271,6 +272,76 @@ test("every catalogue command accepts a minimal body and rejects schema violatio
       name,
     );
     assert.equal(calls, 1, name);
+  }
+});
+
+function commerceEnvelope(step, fixture) {
+  return {
+    operationId: fixture.operation_id_prefix + step.id,
+    actor: fixture.actor,
+    action: step.action,
+    body: step.body,
+  };
+}
+
+test("Commerce journey envelopes reach the transport once per step", () => {
+  const journey = JSON.parse(read(`${COMMERCE_FIXTURES}/commerce_journey_conformance_v1.json`));
+  const fixture = JSON.parse(read(`${COMMERCE_FIXTURES}/commerce_journey_envelope_cases_v1.json`));
+  const calls = [];
+  const client = createLocalCallClient({
+    transport(envelope) {
+      calls.push(structuredClone(envelope));
+    },
+  });
+  assert.equal(journey.steps.length, 44);
+  assert.equal(new Set(journey.steps.map((step) => step.action)).size, 27);
+  // Schema acceptance includes steps whose expected FSM outcome is a refusal or replay.
+  for (const step of journey.steps) {
+    const envelope = commerceEnvelope(step, fixture);
+    const expected = structuredClone(envelope);
+    const before = calls.length;
+    assert.doesNotThrow(() => client.invoke(envelope), step.id);
+    assert.equal(calls.length, before + 1, step.id);
+    assert.deepEqual(calls[before], expected, step.id);
+  }
+  assert.equal(calls.length, 44);
+});
+
+test("Commerce journey envelope faults are rejected before transport", () => {
+  const journey = JSON.parse(read(`${COMMERCE_FIXTURES}/commerce_journey_conformance_v1.json`));
+  const fixture = JSON.parse(read(`${COMMERCE_FIXTURES}/commerce_journey_envelope_cases_v1.json`));
+  const baseStep = journey.steps.find((step) => step.id === fixture.base_step);
+  assert.ok(baseStep, fixture.base_step);
+  const baseline = commerceEnvelope(baseStep, fixture);
+  const mutations = {
+    "/body/idempotency_key": "delete",
+    "/body/amount": "set",
+    "/body/unexpected": "set",
+    "/action": "set",
+  };
+  assert.equal(fixture.fixture_version, 1);
+  assert.deepEqual(
+    fixture.cases.map(({ mutation }) => mutation.path).sort(),
+    Object.keys(mutations).sort(),
+  );
+  let calls = 0;
+  const client = createLocalCallClient({ transport() { calls += 1; } });
+  for (const { id, mutation, sdk_error: expectedCode } of fixture.cases) {
+    assert.equal(mutation.op, mutations[mutation.path], id);
+    if (mutation.path === "/action") {
+      assert.ok(journey.final_expect.read_queries.includes(mutation.value), id);
+    }
+    const envelope = structuredClone(baseline);
+    const [, field, child] = mutation.path.split("/");
+    const target = child === undefined ? envelope : envelope[field];
+    const key = child ?? field;
+    if (mutation.op === "delete") {
+      delete target[key];
+    } else {
+      target[key] = mutation.value;
+    }
+    assert.equal(rejectionCode(() => client.invoke(envelope)), expectedCode, id);
+    assert.equal(calls, 0, id);
   }
 });
 

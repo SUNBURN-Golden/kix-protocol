@@ -1,13 +1,16 @@
 """Offline default/AST evidence; never build or start the integration gate."""
 import ast
 from collections import Counter
+from copy import deepcopy
 import hashlib
+import json
 from pathlib import Path
 import re
 import socket
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+COMMERCE_FIXTURES = ROOT / 'reference/booking_resale_admission/fixtures'
 _SOCKET_ORIGINALS = {}
 
 
@@ -313,6 +316,80 @@ class OfflineGapTests(unittest.TestCase):
                     self.assertIn(name, surface)
                 spec = catalogue.fsm['commands'][name]
                 self.assertEqual((spec['machine'], spec['op']), (machine, op))
+
+
+class CommerceJourneyEnvelopeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from integration_gate.catalogue import load_catalogue
+
+        cls.journey = json.loads(
+            (COMMERCE_FIXTURES / 'commerce_journey_conformance_v1.json').read_bytes()
+        )
+        cls.fixture = json.loads(
+            (COMMERCE_FIXTURES / 'commerce_journey_envelope_cases_v1.json').read_bytes()
+        )
+        cls.commands = load_catalogue(ROOT).commands
+
+    def _envelope(self, step):
+        return {
+            'operationId': self.fixture['operation_id_prefix'] + step['id'],
+            'actor': self.fixture['actor'],
+            'action': step['action'],
+            'body': step['body'],
+        }
+
+    def test_every_journey_envelope_is_preserved(self):
+        from integration_gate.schema import parse_envelope
+
+        steps = self.journey['steps']
+        self.assertEqual(len(steps), 44)
+        self.assertEqual(len({step['action'] for step in steps}), 27)
+        for step in steps:
+            with self.subTest(step=step['id']):
+                envelope = self._envelope(step)
+                expected = deepcopy(tuple(envelope.values()))
+                parsed = parse_envelope(envelope, self.commands)
+                self.assertEqual(parsed, expected)
+                # JSON comparison also distinguishes booleans from equal-valued integers.
+                self.assertEqual(
+                    json.dumps(parsed[3], sort_keys=True), json.dumps(expected[3], sort_keys=True)
+                )
+
+    def test_shared_faults_are_rejected_by_the_parser(self):
+        from integration_gate.schema import EnvelopeError, parse_envelope
+
+        baseline = self._envelope(next(
+            step for step in self.journey['steps'] if step['id'] == self.fixture['base_step']
+        ))
+        mutations = {
+            '/body/idempotency_key': 'delete',
+            '/body/amount': 'set',
+            '/body/unexpected': 'set',
+            '/action': 'set',
+        }
+        self.assertEqual(self.fixture['fixture_version'], 1)
+        self.assertCountEqual(
+            [case['mutation']['path'] for case in self.fixture['cases']], list(mutations)
+        )
+        for case in self.fixture['cases']:
+            with self.subTest(case=case['id']):
+                mutation = case['mutation']
+                path = mutation['path']
+                self.assertEqual(mutation['op'], mutations[path])
+                if path == '/action':
+                    self.assertIn(mutation['value'], self.journey['final_expect']['read_queries'])
+                envelope = deepcopy(baseline)
+                parent, field = path.rsplit('/', 1)
+                target = envelope['body'] if parent == '/body' else envelope
+                if mutation['op'] == 'delete':
+                    del target[field]
+                else:
+                    target[field] = mutation['value']
+                with self.assertRaises(EnvelopeError) as caught:
+                    parse_envelope(envelope, self.commands)
+                self.assertEqual(caught.exception.error, case['gate_error'])
+                self.assertEqual(caught.exception.detail, case['gate_detail'])
 
 
 if __name__ == '__main__':
