@@ -4007,6 +4007,330 @@
           "ref": "reference/credit_advance_f04/fixtures/capital_refund_composition_vectors_v1.json#/scenarios/1/initial_snapshot"
         }
       ]
+    },
+    {
+      "id": "capital_refund_identity",
+      "shape": "setup_and_history",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json",
+        "sha256": "8c1b263186be587fdd7bc60861c3c3c4a5574ccf43f43dc67222b82a7e993af1",
+        "gitBlob": "41f071ae966c1c9b4a8985ffd41f7cbd2915754c"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json",
+        "sha256": "13e25673177aaf34828cb1472214c69ee824e994b3498883af64bf7b23b8787a",
+        "gitBlob": "a27c39a96abcb789a6f589f1e3f776755a52bba2"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_refund_identity_vectors.py",
+        "symbol": "CapitalRefundIdentityVectorTests.test_complete_history_vectors"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital refund and cancellation-acceptance identity histories"
+        }
+      ],
+      "limitations": [
+        "Fresh command keys can journal an existing business binding once more. Original-key replay returns its historical receipt. Mock acceptance leaves confirmed cash, external return status and drawn credit unchanged."
+      ],
+      "entries": [
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "initiate",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/0/result",
+          "operation": "initiate",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "authorize",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/1/result",
+          "operation": "authorize",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "capture",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/2/result",
+          "operation": "capture",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "commit",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/3/result",
+          "operation": "commit",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "offer-1",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/4",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/4/result",
+          "operation": "offer",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "approve-1",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/5",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/5/result",
+          "operation": "approve",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "bind_settlement-1",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/6",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/6/result",
+          "operation": "bind_settlement",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "draw-1",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/7",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/7/result",
+          "operation": "draw",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "offer-2",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/8",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/8/result",
+          "operation": "offer",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "approve-2",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/9",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/9/result",
+          "operation": "approve",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "bind_settlement-2",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/10",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/10/result",
+          "operation": "bind_settlement",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "setup_steps",
+          "step_id": "draw-2",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/setup_steps/11",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/setup_results/11/result",
+          "operation": "draw",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "first-refund",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/0/result",
+          "operation": "bind_refund",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "first-acceptance",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/1/result",
+          "operation": "observe_mock_cancel_acceptance",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "fresh-refund",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/2/result",
+          "operation": "bind_refund",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "fresh-acceptance",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/3/result",
+          "operation": "observe_mock_cancel_acceptance",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "refund-conflict",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/4",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/4/result",
+          "operation": "bind_refund",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "acceptance-conflict",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/5",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/5/result",
+          "operation": "observe_mock_cancel_acceptance",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "refund-key-conflict",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/6",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/6/result",
+          "operation": "bind_refund",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "acceptance-key-conflict",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/7",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/7/result",
+          "operation": "observe_mock_cancel_acceptance",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "above-ceiling",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/8",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/8/result",
+          "operation": "observe_mock_cancel_acceptance",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "at-ceiling",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/9",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/9/result",
+          "operation": "observe_mock_cancel_acceptance",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "replay-refund",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/10",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/10/result",
+          "operation": "bind_refund",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "section": "steps",
+          "step_id": "replay-acceptance",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json#/scenarios/0/steps/11",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/11/result",
+          "operation": "observe_mock_cancel_acceptance",
+          "target": "settlement"
+        }
+      ],
+      "observations": [
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "first-refund",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/0/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "first-acceptance",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/1/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "fresh-refund",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/2/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "fresh-acceptance",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/3/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "refund-conflict",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/4/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "acceptance-conflict",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/5/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "refund-key-conflict",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/6/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "acceptance-key-conflict",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/7/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "above-ceiling",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/8/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "at-ceiling",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/9/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "replay-refund",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/10/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "step_snapshot",
+          "step_id": "replay-acceptance",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/history/11/snapshot"
+        },
+        {
+          "scenario_id": "I1_refund_acceptance_identity",
+          "kind": "initial_snapshot",
+          "ref": "reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json#/scenarios/0/initial_snapshot"
+        }
+      ]
     }
   ],
   "supporting_evidence": [

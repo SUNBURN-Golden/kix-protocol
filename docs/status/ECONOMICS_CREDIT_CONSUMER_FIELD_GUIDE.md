@@ -1440,3 +1440,142 @@ workflow's run ID/status/conclusion was obtained: GitHub/network actions were
 prohibited, so both are unverified. No merge SHA, final-merge blob checks or
 post-merge main/push CI applies. The supervisor must establish the final head
 and its exact-head evidence; earlier CI cannot transfer to it.
+
+## Capital refund and cancellation-acceptance identity histories
+
+`I1_refund_acceptance_identity` tracks one 30,000 KRW refund against a committed
+synthetic claim. Two advances have already drawn 60,000 and 40,000 KRW. The
+history lets a consumer distinguish the command key on a receipt from the
+`refund_id` or acceptance `source_id` that identifies an economic fact.
+The settlement and credit producers report `MOCK_SETTLEMENT_ONLY` and
+`MOCK_CREDIT_F04_ONLY`. This is source-informed Class B evidence.
+
+### Coverage before this pack
+
+| Requirement | Existing regression and coverage |
+| --- | --- |
+| Business binding | Sufficient direct coverage. `BindingPropertyTests.test_d_refund_binding` varies amount, beneficiary and reason. `test_d_acceptance_binding` varies the amount on the same acceptance source. [Settlement properties](../../reference/settlement_f01_f03/test_settlement_properties.py) |
+| Conflicting keys or bindings and acceptance above the outstanding amount | Sufficient direct coverage. `SettlementRejectionAtomicityTests` checks `test_bind_refund_binding_conflict_leaves_no_trace`, `test_acceptance_binding_conflict_leaves_no_trace`, `test_idempotency_conflict_leaves_no_trace` and `test_acceptance_exceeds_obligation_leaves_no_trace`. [Rejection atomicity](../../reference/settlement_f01_f03/test_settlement_rejection_atomicity.py) |
+| Historical receipt | Sufficient direct refund coverage. `RefundReplayTests.test_i_fsm_refund_key_replay_returns_the_first_result_verbatim` replays a refund after a later acceptance. [Refund replay](../../reference/settlement_f01_f03/test_settlement_multi_payee_refund.py) |
+| Frozen credit across settlement actions | Partial composition coverage. `CapitalRefundCompositionVectorTests.test_settlement_actions_preserve_credit` checks frozen credit and exposure during ordinary refund histories. [Refund composition verifier](../../reference/credit_advance_f04/test_capital_refund_composition_vectors.py) |
+| Portable sequence combining both identities, historical receipts, refusals and both observers | Previously uncovered. I1 supplies 12 ordered setup calls, 12 history calls and 13 snapshots. [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md) |
+
+The semantic basis is settlement §§5, 9.3–9.4 and F04 §§7.11–7.12. [Settlement contract](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) · [Credit contract](../contracts/CREDIT_ADVANCE_F04.md)
+
+### Reading I1
+
+Both artifacts use version `capital-refund-identity/1`. The input carries
+`fixture_kind=SYNTHETIC_REFUND_IDENTITY_VECTORS`, `synthetic_only=true`,
+provenance and one scenario. Its `setup_steps` and `steps` each carry
+`step_id`, `target`, `operation` and literal `arguments`. The scenario also
+names both advances, the claim, the observer group, the synthetic limit and
+tolerance, the source tests and contracts. `expected_arithmetic` gives four
+literal amounts at setup and after each call.
+[Canonical input](../../reference/credit_advance_f04/fixtures/capital_refund_identity_v1.json)
+
+The output carries the input's raw SHA-256, source pins and one scenario.
+`setup_results` contains each complete receipt. Every `history` row identifies
+its step, target and operation, pairs the complete `result.ok` or
+`result.error.{type,code}` with a separate post-call `snapshot`, and can be
+located using the index's JSON pointers. `initial_snapshot` has the same shape.
+Each snapshot includes public settlement and credit views, exported journals,
+canonical states, digests and both observer reports. The verifier compares both
+offered faces with the public `COMMITTED` claim before dispatch.
+[Canonical output](../../reference/credit_advance_f04/fixtures/capital_refund_identity_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_refund_identity_vectors.py)
+
+| Checkpoint (KRW) | Refund face | Accepted | Outstanding | PG adjustment outstanding | Accepted settlement journal entries |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| After setup | 0 | 0 | 0 | 0 | 4 |
+| First refund R | 30,000 | 0 | 30,000 | 0 | 5 |
+| First acceptance A | 30,000 | 10,000 | 20,000 | 10,000 | 6 |
+| R and A each repeated under a fresh key | 30,000 | 10,000 | 20,000 | 10,000 | 7, then 8 |
+| Five refusals | 30,000 | 10,000 | 20,000 | 10,000 | 8 |
+| Acceptance C at the ceiling | 30,000 | 30,000 | 0 | 30,000 | 9 |
+| Replay of each original command | 30,000 | 30,000 | 0 | 30,000 | 9 |
+
+A fresh command key for the same binding returns the current view with
+`duplicate=false` and the operation in `applied`. Its accepted journal row
+retains the original business body and the new key. Changing R's reason or A's
+amount under unused keys produces `REFUND_BINDING_CONFLICT` and
+`ACCEPTANCE_BINDING_CONFLICT`. Submitting those changed bodies under the first
+keys produces `IDEMPOTENCY_CONFLICT` twice. Source B requests 20,001 against
+20,000 outstanding and receives `REFUND_ACCEPTANCE_EXCEEDS_OBLIGATION`.
+Source C accepts exactly 20,000. Acceptance belongs to the claim. Its journal
+body contains the source ID and amount.
+
+For example, at `history[11]` (`replay-acceptance`),
+`result.ok.settlement.claim.refund_accepted` is **10,000**, while
+`snapshot.settlement.view.claim.refund_accepted` is **30,000**. Replaying R
+at `history[10]` returns **0** accepted in its historical receipt. In each
+case the entire receipt matches the first one with `duplicate=true` and
+`applied=null`. A refusal or original-key replay preserves the current public
+view, journal, canonical state and digest. Rejection checks cover these public
+observations. The contract separately describes process-local rejected keys.
+
+Confirmed cash stays 10,000. Both `bank_debit_observed` and
+`external_return_closed` stay false. The frozen claim retains 100,000 open and
+100,000 reserved. Across both advances, exposure is 100,000 outstanding and
+zero repaid. Shared exposure counts the claim's capacity once. The synthetic
+group limit is 100,000 and the variance tolerance is zero. Both observers
+report mapping and refund component `NOT_BOUND`, repair `NONE`,
+`fail_closed=true`, `mutates_state=false` and `authorizes_exposure=false`.
+Detached controls exercise double acceptance, an altered frozen claim, false
+external closure, a suppressed fresh-key journal entry, a stale-receipt error
+and swapped same-operation index pointers.
+
+External `kix-capital` acceptance remains **UNVERIFIED**. Product limits remain
+**UNDETERMINED—Astra** and legal responsibility **UNDETERMINED—User/legal**.
+The evidence covers in-memory mock observations. Real services, fund movement,
+repayment from refunds, cross-claim netting, runtime activation, durability and
+parked pre-draw terminal work fall outside this history.
+
+### Local builder verification
+
+Task `plan-plan-capital-refund-identity-vectors` used the supervisor-supplied
+node specification and design plan. There is no task issue or repository task
+document for this node. The observed branch was
+`agent/kix-plan-plan-capital-refund-identity-vectors`. The cached `origin/main`,
+design base and branch HEAD all resolved to
+`dbb982cb3e3b57ceb7f3d9f3a2291c9c08e2fe58`. The supervisor reserved network
+and GitHub actions, so remote freshness is unverified. The deliverable is the
+uncommitted worktree. Implementation and final delivery commit SHAs, hosted
+exact-head KTX/KIX run IDs and conclusions, non-author A2 review, merge SHA
+and post-merge checks are pending supervisor delivery or inapplicable before merge.
+
+The changed paths are the two `capital_refund_identity*_v1.json` files in
+`reference/credit_advance_f04/fixtures/`, `test_capital_refund_identity_vectors.py`
+and `test_capital_companion_evidence_index.py` in `reference/credit_advance_f04/`,
+and `CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json`, `CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md`
+and this field guide in `docs/status/`.
+
+| Artifact | Raw SHA-256 | Git blob |
+| --- | --- | --- |
+| Input | `8c1b263186be587fdd7bc60861c3c3c4a5574ccf43f43dc67222b82a7e993af1` | `41f071ae966c1c9b4a8985ffd41f7cbd2915754c` |
+| Output | `13e25673177aaf34828cb1472214c69ee824e994b3498883af64bf7b23b8787a` | `a27c39a96abcb789a6f589f1e3f776755a52bba2` |
+
+Commands ran from the repository root with Python 3.12.15, or from `runtime/`
+with the cached Rust 1.98.1 toolchain for Cargo. In the table, `d` expands to
+`reference/credit_advance_f04` and `s` to `reference/settlement_f01_f03`.
+
+| Command | Local result |
+| --- | --- |
+| `git rev-parse origin/main HEAD`, `git branch --show-current` | Both refs match the design base above. |
+| `PYTHONPATH=reference/credit_advance_f04 python3.12 -B -` (one-time input/output capture and index extension) | Checked literal checkpoints and receipt behavior before writing the pack. Recorded 24 associations and 13 supplemental snapshots. |
+| `python3.12 -B -m unittest discover -s "$d" -t "$d" -p test_capital_refund_identity_vectors.py` | 4 passed, including direct semantic mutation controls. |
+| `python3.12 -B -m unittest discover -s "$d" -t "$d" -p test_capital_companion_evidence_index.py` | 8 passed, including both crossed-reference controls. The index resolves 403 pack entries, 100 supplemental observations and 12 separate supporting entries. |
+| `python3.12 -B -m unittest discover -s "$s" -t "$s"` | 224 settlement tests passed. |
+| `python3.12 -B -m unittest discover -s "$d" -t "$d"` | 298 credit tests passed. |
+| `python3.12 -B scripts/check_<name>.py` and each with `--self-test` for `settlement_evidence_map`, `credit_evidence_map`, `contract_error_codes`, `evidence_map_rollup`, `class_b_index`, `docs_index`, `ci_checker_wiring`, `ci_test_discovery` | All 16 invocations passed. Settlement and credit maps retained 27 and 24 rows. Discovery reached the credit suite. |
+| `python3.12 -B scripts/verify_runtime_architecture.py` and `python3.12 -B scripts/test_runtime_architecture.py` | Architecture gate passed. All 7 gate regressions passed. |
+| `cargo test --locked --offline -p kix-kernel` | 139 passed. |
+| `cargo clippy --locked --offline -p kix-kernel --all-targets -- -D warnings`, `cargo tree --locked --offline -p kix-kernel --edges normal`, `cargo fmt --all -- --check` | All passed. The kernel's only normal dependency is `kix-types`. |
+| `cargo test --locked --offline --workspace` | 345 passed, 0 failed, 1 ignored. The existing optional CPU/SQL engine test requires an owner-provisioned offline bundle. |
+| `cargo clippy --locked --offline --workspace --all-targets -- -D warnings` | Passed. |
+| `git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs` before and after | Matched `69564b166f0c27f9af5d8422f0a466b18d74c20f` and `b607996c83a119c349f1cc90469ac1ba82764e20`, respectively. |
+| `git diff --exit-code HEAD -- reference/v0.3-rc1`, `python3.12 -B -` (local Git blob and index comparison), `git diff --check` | All 108 historical files match the base tree `a6ecb124dc2b2267ca6be19e39fbe2aef143074b`. The seven prior pack records and both supporting records match the original index. The field guide retains its original prefix. Whitespace checks passed. |
+
+The replay matched the public producer outputs at every checkpoint. No contract
+violation surfaced. The fresh-key behavior records the observed command journal
+and the economic claim separately. The history supplies no durability, bank
+execution, production readiness or external consumer evidence. A2 review and
+exact-head hosted CI remain separate delivery gates.
