@@ -5,8 +5,8 @@ one 15,000 KRW payment on its bound fake. It retains both the lookup evidence
 and the reservation response. The slot stays reserved and issuance stays absent.
 
 The task input is the supervisor’s inline `plan-local-payment-reservation-handoff`
-node and design, with the 2026-11-18 owner decision on local and hosted
-verification. There is no task issue or node-specific file in `docs/tasks/`.
+node. It requires socket-free local verification and leaves the HTTP test
+outstanding. There is no task issue or node-specific file in `docs/tasks/`.
 The Track P charter is `docs/tasks/TASK_005_MEGA_COMMERCE_PROGRAM.md`. Scope
 comes from `docs/DEVELOPMENT_PLAN.md`, `PROGRAM_DECISIONS_20260928` §§2.1/5
 and `BOOKING_RESALE_ADMISSION_GATES` §§3/9.
@@ -19,10 +19,11 @@ offline runner. This record reports the 2026-11-19 verification on the assigned
 
 | Revision | Observed value |
 |---|---|
-| Task base and local HEAD before and after verification | `8f7eedaef3e2cc74dcc6e19363c0096908796145` |
+| Task base | `8f7eedaef3e2cc74dcc6e19363c0096908796145` |
 | Local `origin/main` | `5a1735824305f902036c97b3b31f503abe76bae5` |
-| Base delta | Task branch 0 ahead, 242 behind the cached ref. The supervisor prohibited fetching or changing the task base. Remote freshness is unverified. |
-| Implementation head and final task head | Pending supervisor commit. The local HEAD identifies the base only. |
+| Base delta | The cached ref is 242 commits ahead of the task base. Remote freshness is unverified under the supervisor’s network restriction. |
+| Reviewed implementation and fix-round HEAD | `5edd199041e76d7634e8616ede6eaf071228ad87`, one commit ahead of the task base and 242 behind the cached ref |
+| Final task head | Pending supervisor commit of the validation record correction |
 | Merge commit and post-merge CI | Inapplicable to this uncommitted builder handoff |
 
 ## Coverage mapping recorded before adding adapter tests
@@ -82,11 +83,10 @@ Lookup and observation spies prove call bounds and returned-object preservation.
 These are source-informed composition tests. Existing normalization vectors and
 FSM tests remain the evidence for their separate contracts.
 
-## Builder verification on 2026-11-19
+## Fix round 1 — socket-free local acceptance
 
-Commands ran from the repository root. Python tests and checkers used
-`PYTHONDONTWRITEBYTECODE=1`. The checker rows with two invocations give the
-plain command and its `--self-test` run. Each verification command below exited 0.
+The builder reran these commands from the repository root with
+`PYTHONDONTWRITEBYTECODE=1`. Each command and each listed self-test exited 0.
 
 | Command | Observed result |
 |---|---|
@@ -94,12 +94,29 @@ plain command and its `--self-test` run. Each verification command below exited 
 | `python3 reference/provider_facts/example_payment_reservation_handoff.py` | One original-fake call, one accepted observation, 15,000 KRW, reserved slot, no issuance or right, execution and finality flags false |
 | `python3 -m unittest discover -s reference/provider_facts -t reference/provider_facts` | 92 passed, including the 19 adapter tests |
 | `python3 validation/2026-10-31-plan-local-payment-reservation-handoff/run_booking_offline.py` | 417 passed. The unchanged runner barred sockets and reported exactly one exclusion. |
-| `PYTHONPATH=reference/booking_resale_admission python3 -m unittest test_admission_fsm.AdmissionFsmTests.test_loopback_rejects_fsm_names_and_matches_published_admit` | 1 passed on the owner-authorized 127.0.0.1 loopback. Both FSM names yielded HTTP 400 and the published admit operation returned the expected rejection. |
-| `python3 -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission` | Full unchanged suite, 418 passed, including the same HTTP test |
-| `python3 -m unittest integration_gate.test_offline_limits` | 9 passed |
 | `python3 scripts/check_openapi_contract.py` and `--self-test` | Both passed. 84 commands (40 core, 44 FSM). SHA-256 `ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e`, Git blob `619ae21c82ca3df5661bd3831613f15fa65225ff` |
 | `python3 scripts/check_integration_gate_openapi.py` and `--self-test` | Both passed. 84 commands, public host and production endpoint flags false |
 | `python3 scripts/check_ci_test_discovery.py` and `--self-test` | Both passed. Protocol workflow reaches all 15 provider test files, including the handoff, and all 17 booking test files. 18 negative controls passed. |
+| `python3 scripts/check_docs_index.py` and `--self-test` | Both passed. 322 documents scanned, 287 indexed, 35 allowlisted. |
+| `git diff --check HEAD^` | Passed for the full node diff, including the fix-round edit. |
+
+### Prior deviations from the socket restriction
+
+The initial builder ran
+`test_admission_fsm.AdmissionFsmTests.test_loopback_rejects_fsm_names_and_matches_published_admit`
+directly (1 reported pass) and again in full booking discovery (418 reported
+passes). Both invocations opened a loopback listener. The initial record cited
+a November 18 exception. The supplied materials contain no owner instruction
+authorizing either run.
+Both runs are deviations and are excluded from local acceptance evidence.
+The fix-round booking result is **417 passed, one HTTP test excluded**. That
+test remains outstanding for hosted KIX protocol verification on the final head.
+
+### Other checks recorded by the initial builder on 2026-11-19
+
+| Command | Observed result in the initial handoff |
+|---|---|
+| `python3 -m unittest integration_gate.test_offline_limits` | 9 passed |
 | `python3 scripts/check_ci_checker_wiring.py` and `--self-test` | Both passed. 35 scripts and 13 negative controls |
 | `python3 scripts/check_bra_evidence_map.py` and `--self-test` | Both passed. 39 booking/resale/admission evidence rows |
 | `python3 scripts/check_adapter_identity_map.py` and `--self-test` | Both passed, including the locked blob checks |
@@ -115,17 +132,13 @@ plain command and its `--self-test` run. Each verification command below exited 
 | `cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings` | Passed |
 | `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | Passed |
 | `git diff --check` | Passed |
-| `git status --short --branch`, `git rev-parse origin/main HEAD`, `git rev-list --left-right --count HEAD...origin/main` | Resumed draft on the assigned branch, revisions and delta above |
+| `git status --short --branch`, `git rev-parse origin/main HEAD`, `git rev-list --left-right --count HEAD...origin/main` | At the task base, 0 ahead and 242 behind the cached ref |
 | `git status --short --untracked-files=all` | Seven delivery paths listed below |
 
-The two overlapping booking results are reported separately. The offline runner
-still excludes exactly
-`test_admission_fsm.AdmissionFsmTests.test_loopback_rejects_fsm_names_and_matches_published_admit`.
-The owner assigned authoritative verification of that test in the full unchanged
-suite to hosted exact-head CI. Loopback was available for the additional builder
-run. Hosted results are pending.
-
 ## Changed files and protected paths
+
+Fix round 1 changes only this validation README. The full node diff from the
+task base covers the following paths.
 
 - `reference/provider_facts/payment_reservation_handoff.py`
 - `reference/provider_facts/example_payment_reservation_handoff.py`
@@ -144,13 +157,9 @@ run. Hosted results are pending.
 
 ## Delivery gates and limits
 
-The owner resolved the earlier verification decision. `DECISION_REQUIRED.md`
-was already absent on resumption. The offline runner remains as supplied.
-The builder performed no GitHub action or external service call.
-
 | Required before merge readiness | Evidence for a committed final head |
 |---|---|
-| Non-author review, A2 floor | Pending |
+| Non-author review, A2 floor | The review of `5edd199` raised the booking evidence finding above. Review of the corrected final head is pending. |
 | KTX kernel verification | Pending. Run ID, status and conclusion unobserved. |
 | KIX protocol verification, including the unchanged booking suite | Pending. Run ID, status and conclusion unobserved. |
 
