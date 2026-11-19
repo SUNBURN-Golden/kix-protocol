@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_toss_card_profile_evidence_map.py
+Toss profile map: 41 rows, sections, anchors, test symbols, open items, related IDs, arithmetic and locked blobs OK
+
+EXIT: 0

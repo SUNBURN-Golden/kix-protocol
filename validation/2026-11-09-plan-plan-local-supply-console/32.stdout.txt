@@ -1,0 +1,1 @@
+104 changed paths recorded; source/document whitespace passed. Actual stdout/stderr captures retained verbatim, including prompt spaces.

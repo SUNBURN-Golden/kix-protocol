@@ -1,0 +1,50 @@
+[
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "reference/booking_resale_admission/shared_ticket_console.py",
+      "--fixture",
+      "reference/booking_resale_admission/fixtures/ticket_operations_session.json",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin": "reference/booking_resale_admission/fixtures/shared_ticket_console_reconcile.txt",
+    "exit": 1,
+    "envelopes": 36,
+    "stdout": "shared_ticket_console_reconcile.stdout",
+    "stderr": "shared_ticket_console_reconcile.stderr"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "reference/booking_resale_admission/settlement_console.py",
+      "--fixture",
+      "reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin": "reference/booking_resale_admission/fixtures/settlement_console_exceptions.txt",
+    "exit": 1,
+    "envelopes": 34,
+    "stdout": "settlement_console_exceptions.stdout",
+    "stderr": "settlement_console_exceptions.stderr"
+  },
+  {
+    "command": [
+      "python3.12",
+      "-B",
+      "reference/booking_resale_admission/settlement_console.py",
+      "--fixture",
+      "reference/booking_resale_admission/fixtures/ticket_operations_settlement_exceptions_session.json",
+      "--cleanup-timeout",
+      "1"
+    ],
+    "stdin": "reference/booking_resale_admission/fixtures/settlement_console_reconcile.txt",
+    "exit": 0,
+    "envelopes": 26,
+    "stdout": "settlement_console_reconcile.stdout",
+    "stderr": "settlement_console_reconcile.stderr"
+  }
+]

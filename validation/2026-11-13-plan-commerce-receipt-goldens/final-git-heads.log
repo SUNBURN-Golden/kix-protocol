@@ -1,0 +1,5 @@
+$ git rev-parse HEAD origin/main
+8ba7f6c36373ac0ec49246f51f7471c164ac3a28
+8ba7f6c36373ac0ec49246f51f7471c164ac3a28
+
+EXIT: 0

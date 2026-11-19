@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_contract_invariants_evidence_map.py
+contract invariants map: 27 rows, corpus, anchors, test symbols, counts, locked blobs and F-B1 document pins OK
+
+EXIT: 0

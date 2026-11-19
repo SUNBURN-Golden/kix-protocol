@@ -1,0 +1,5 @@
+$ python3.12 -B scripts/check_producer_qualification_tuple.py
+producer qualification tuple identity ok: commands=84 core=40 fsm=44 reads=13
+identity only; no semantic or operational qualification
+
+EXIT: 0

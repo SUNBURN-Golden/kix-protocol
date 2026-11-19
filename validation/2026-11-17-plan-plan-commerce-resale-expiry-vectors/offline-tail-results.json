@@ -1,0 +1,62 @@
+[
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/provider_facts",
+      "-t",
+      "reference/provider_facts"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 10.878,
+    "log": "offline-tail-01.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/payment_effects",
+      "-t",
+      "reference/payment_effects"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 1.327,
+    "log": "offline-tail-02.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "reference/economics",
+      "-t",
+      "reference/economics"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 1.37,
+    "log": "offline-tail-03.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "-m",
+      "unittest",
+      "integration_gate.test_offline_limits"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.219,
+    "log": "offline-tail-04.log"
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "fixtureVersion": 1,
+  "evidenceClass": "SYNTHETIC_REFERENCE",
+  "provenance": "synthetic",
+  "comment": "Synthetic partial line refund: two lines, refund one. B5 REQUESTER bearer, faces untouched, distribution continues. Not product policy.",
+  "orderId": "order-refund",
+  "orderVersion": 1,
+  "nowMs": 1000,
+  "scope": {"issuerId": "issuer-1", "eventId": "event-scope-1", "performanceId": "perf-1"},
+  "lines": [
+    {"lineId": "line-1", "atoms": 6000},
+    {"lineId": "line-2", "atoms": 4000}
+  ],
+  "legAmount": 10000,
+  "refund": {"lineIds": ["line-1"], "refundId": "refund-1", "refundPolicyRef": "refund-1", "reason": "partial-refund", "idempotencyKey": "ref-1"},
+  "expected": {"kind": "PARTIAL", "bearer": "REQUESTER", "distributionBlocked": false, "customerRefundAtoms": "6000"}
+}

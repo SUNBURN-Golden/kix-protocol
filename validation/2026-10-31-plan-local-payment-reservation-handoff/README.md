@@ -170,3 +170,43 @@ local behavior (class B). Provider authentication and merchant scope remain
 remain **UNDETERMINED — Astra**. Durability, bank execution, chain finality and
 production behavior are outside this verification. The hosted Move/ZK and
 service checks also lie outside the local runs above.
+
+## 2026-11-19 verification of the merge worktree
+
+The task branch HEAD was `d1f81e8f73921ae18e6b9ee693452bb6558f5284`.
+`MERGE_HEAD` and the cached `origin/main` both pointed to
+`5a1735824305f902036c97b3b31f503abe76bae5`. The branch had two commits
+since the task base and main had 242. The supervisor required an offline run.
+
+The [docs index](../../docs/README.md) retains main's entries and links the
+[adapter guide](../../reference/provider_facts/README.md#explicit-synthetic-reservation-payment-observation)
+and this record beside the existing lookup tools. The provider guide keeps
+main's console instructions and the node's full adapter section. The console
+displays a lookup. Only a separate adapter submission can observe the payment
+on a reservation. These two guides and this record are the paths edited during
+resolution. The adapter, example, tests and offline runner match the task HEAD.
+
+The commands below ran from the repository root with Python 3.12.15. A Linux
+seccomp filter blocked socket creation, socket pairs, binds and connects for
+the Python checks and their child processes. The coverage mapping above still
+applies to the same 19 adapter tests.
+
+| Command | Merge worktree result |
+|---|---|
+| `python3.12 -m unittest discover -s reference/provider_facts -t reference/provider_facts -p test_payment_reservation_handoff.py` | 19 passed |
+| `python3.12 reference/provider_facts/example_payment_reservation_handoff.py` | One bound fake lookup of 15,000 KRW reached `PAYMENT_NOTED`. Slot `RESERVED`, issuance and right absent, funds execution and economic finality false. |
+| `python3.12 -m unittest discover -s reference/provider_facts -t reference/provider_facts` | 105 passed, including the 19 handoff tests |
+| `python3.12 validation/2026-10-31-plan-local-payment-reservation-handoff/run_booking_offline.py` | 1,051 passed. The runner excluded exactly one test, `test_admission_fsm.AdmissionFsmTests.test_loopback_rejects_fsm_names_and_matches_published_admit`. Its HTTP behavior remains unverified on this merge worktree. |
+| `python3.12 -m unittest integration_gate.test_offline_limits` | 9 passed |
+| `python3.12 scripts/check_openapi_contract.py` and `python3.12 scripts/check_integration_gate_openapi.py`, each also with `--self-test` | All four passed. 84 commands, the same SHA-256 and blob as fix round 1, public host and production endpoint flags false. |
+| `python3.12 scripts/check_ci_test_discovery.py` and `--self-test` | Reached 16 provider and 73 booking test files. All 18 negative controls passed. |
+| `python3.12 scripts/check_docs_index.py` and `--self-test` | 441 scanned, 406 indexed, 35 allowlisted. Self-test passed. |
+| `python3.12 scripts/check_bra_evidence_map.py`, `check_adapter_identity_map.py`, `check_toss_card_profile_evidence_map.py` and `check_ci_checker_wiring.py` under `scripts/`, each also with `--self-test` | All eight passed. The evidence maps cover 39, 17 and 41 rows respectively. The wiring check found 37 scripts. |
+| `git diff --check MERGE_HEAD` and tracked-file conflict marker scan with `git grep` | Whitespace check passed. Zero marker lines. |
+| `git show` comparison of both parent READMEs and Python link/anchor checks | All 546 main index links and four main provider-guide links stayed in order. The added guide and validation links resolve. |
+| `git hash-object` on both kernel locks and a working-file blob comparison with `git ls-tree -rz MERGE_HEAD reference/v0.3-rc1` | Both kernel blobs matched the values above before and after resolution. All 108 reference files matched. |
+
+The supervisor owns staging and committing this resolution. The worktree's Git
+index is read-only in the builder session (`git add` exited 128 creating
+`index.lock`). The working files contain the resolution. The final merge SHA,
+non-author review, and exact-head KTX and KIX workflow results remain pending.

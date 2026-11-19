@@ -1,0 +1,17 @@
+{
+  "protected_files": 110,
+  "frozen_reference_files": 108,
+  "before_after_identical": true,
+  "manifest_sha256": "5b6193dee8c4a75427c3dbfa42cb3c83873efcab5769c28bf5e16059c02e2642",
+  "locked_blobs": {
+    "runtime/crates/kix-kernel/src/lib.rs": "69564b166f0c27f9af5d8422f0a466b18d74c20f",
+    "runtime/crates/kix-kernel/tests/quarantine_capacity.rs": "b607996c83a119c349f1cc90469ac1ba82764e20"
+  },
+  "tracked_changed_paths": [
+    "docs/README.md",
+    "reference/token_reward/README.md"
+  ],
+  "all_other_tracked_files_unchanged": true,
+  "head": "aab0627f380931804ce0b9f1beba9d6f3f3fb3c2",
+  "local_origin_main": "aab0627f380931804ce0b9f1beba9d6f3f3fb3c2"
+}

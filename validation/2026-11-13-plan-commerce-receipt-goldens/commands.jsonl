@@ -1,0 +1,102 @@
+{"log": "journey-focused.log", "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p 'test_commerce_journey*.py' -v", "exit": 0, "elapsed_seconds": 5.96}
+{"log": "reference-settlement.log", "command": "python3.12 -B -m unittest discover -s reference/settlement_f01_f03 -t reference/settlement_f01_f03", "exit": 0, "elapsed_seconds": 6.8}
+{"log": "check_status_register.log", "command": "python3.12 -B scripts/check_status_register.py", "exit": 0, "elapsed_seconds": 3.17}
+{"log": "check_status_register-self-test.log", "command": "python3.12 -B scripts/check_status_register.py --self-test", "exit": 0, "elapsed_seconds": 5.08}
+{"log": "check_producer_qualification_tuple.log", "command": "python3.12 -B scripts/check_producer_qualification_tuple.py", "exit": 0, "elapsed_seconds": 0.37}
+{"log": "check_producer_qualification_tuple-self-test.log", "command": "python3.12 -B scripts/check_producer_qualification_tuple.py --self-test", "exit": 0, "elapsed_seconds": 0.32}
+{"log": "check_consumer_binding_index.log", "command": "python3.12 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py", "exit": 0, "elapsed_seconds": 0.29}
+{"log": "check_consumer_binding_index-self-test.log", "command": "python3.12 -B validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py --self-test", "exit": 0, "elapsed_seconds": 1.74}
+{"log": "check_rs_profile_traceability.log", "command": "python3.12 -B scripts/check_rs_profile_traceability.py", "exit": 0, "elapsed_seconds": 0.22}
+{"log": "check_rs_profile_traceability-self-test.log", "command": "python3.12 -B scripts/check_rs_profile_traceability.py --self-test", "exit": 0, "elapsed_seconds": 0.03}
+{"log": "check_read_model_source_map.log", "command": "python3.12 -B scripts/check_read_model_source_map.py", "exit": 0, "elapsed_seconds": 2.87}
+{"log": "architecture.log", "command": "python3.12 -B scripts/verify_runtime_architecture.py", "exit": 0, "elapsed_seconds": 0.26}
+{"log": "architecture-negative.log", "command": "python3.12 -B scripts/test_runtime_architecture.py", "exit": 0, "elapsed_seconds": 2.55}
+{"log": "check_read_model_source_map-self-test.log", "command": "python3.12 -B scripts/check_read_model_source_map.py --self-test", "exit": 0, "elapsed_seconds": 48.4}
+{"log": "check_docs_index.log", "command": "python3.12 -B scripts/check_docs_index.py", "exit": 0, "elapsed_seconds": 0.1}
+{"log": "check_docs_index-self-test.log", "command": "python3.12 -B scripts/check_docs_index.py --self-test", "exit": 0, "elapsed_seconds": 0.07}
+{"log": "check_i12_proof_ids.log", "command": "python3.12 -B scripts/check_i12_proof_ids.py", "exit": 0, "elapsed_seconds": 0.05}
+{"log": "check_i12_proof_ids-self-test.log", "command": "python3.12 -B scripts/check_i12_proof_ids.py --self-test", "exit": 0, "elapsed_seconds": 0.32}
+{"log": "check_delegation_layer_matrix.log", "command": "python3.12 -B scripts/check_delegation_layer_matrix.py", "exit": 0, "elapsed_seconds": 0.12}
+{"log": "check_delegation_layer_matrix-self-test.log", "command": "python3.12 -B scripts/check_delegation_layer_matrix.py --self-test", "exit": 0, "elapsed_seconds": 1.31}
+{"log": "check_rs_predicate_evidence_map.log", "command": "python3.12 -B scripts/check_rs_predicate_evidence_map.py", "exit": 0, "elapsed_seconds": 0.5}
+{"log": "check_rs_predicate_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_rs_predicate_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 0.48}
+{"log": "check_rs_im_evidence_map.log", "command": "python3.12 -B scripts/check_rs_im_evidence_map.py", "exit": 0, "elapsed_seconds": 0.45}
+{"log": "check_rs_im_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_rs_im_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 1.69}
+{"log": "check_tl_predicate_evidence_map.log", "command": "python3.12 -B scripts/check_tl_predicate_evidence_map.py", "exit": 0, "elapsed_seconds": 0.08}
+{"log": "check_tl_predicate_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_tl_predicate_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 0.21}
+{"log": "check_contract_error_codes.log", "command": "python3.12 -B scripts/check_contract_error_codes.py", "exit": 0, "elapsed_seconds": 6.28}
+{"log": "cargo-kernel.log", "command": "cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked", "exit": 0, "elapsed_seconds": 37.59}
+{"log": "check_openapi_contract.log", "command": "python3.12 -B scripts/check_openapi_contract.py", "exit": 0, "elapsed_seconds": 1.29}
+{"log": "check_openapi_contract-self-test.log", "command": "python3.12 -B scripts/check_openapi_contract.py --self-test", "exit": 0, "elapsed_seconds": 1.91}
+{"log": "check_integration_gate_openapi.log", "command": "python3.12 -B scripts/check_integration_gate_openapi.py", "exit": 0, "elapsed_seconds": 0.69}
+{"log": "check_integration_gate_openapi-self-test.log", "command": "python3.12 -B scripts/check_integration_gate_openapi.py --self-test", "exit": 0, "elapsed_seconds": 0.16}
+{"log": "check_sdk_client.log", "command": "python3.12 -B scripts/check_sdk_client.py", "exit": 0, "elapsed_seconds": 0.72}
+{"log": "check_sdk_client-self-test.log", "command": "python3.12 -B scripts/check_sdk_client.py --self-test", "exit": 0, "elapsed_seconds": 3.07}
+{"log": "sdk-conformance.log", "command": "npm --prefix sdk run conformance", "exit": 0, "elapsed_seconds": 46.78}
+{"log": "sdk-compat.log", "command": "npm --prefix sdk run verify-compat", "exit": 0, "elapsed_seconds": 1.19}
+{"log": "cargo-workspace.log", "command": "cargo test --manifest-path runtime/Cargo.toml --workspace --locked", "exit": 0, "elapsed_seconds": 105.98}
+{"log": "reference-credit_advance_f04.log", "command": "python3.12 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04", "exit": 0, "elapsed_seconds": 68.16}
+{"log": "cargo-clippy.log", "command": "cargo clippy --manifest-path runtime/Cargo.toml --workspace --all-targets --locked -- -D warnings", "exit": 0, "elapsed_seconds": 16.83}
+{"log": "cargo-fmt.log", "command": "cargo fmt --manifest-path runtime/Cargo.toml --all -- --check", "exit": 0, "elapsed_seconds": 1.78}
+{"log": "cargo-tree.log", "command": "cargo tree --manifest-path runtime/Cargo.toml -p kix-kernel --edges normal --locked", "exit": 0, "elapsed_seconds": 0.42}
+{"log": "locked-blobs-after.log", "command": "git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs", "exit": 0, "elapsed_seconds": 0.06}
+{"log": "preserved-bytes.log", "command": "python3.12 -B -c 'import hashlib,json; from pathlib import Path; pins=json.loads(Path(\"validation/2026-11-13-plan-commerce-receipt-goldens/preserved-inputs.json\").read_text()); drift=[p for p,h in pins.items() if hashlib.sha256(Path(p).read_bytes()).hexdigest()!=h]; print(\"Protected input files:\",len(pins),\"; drift:\",drift); assert not drift'", "exit": 0, "elapsed_seconds": 0.19}
+{"log": "receipt-hashes.log", "command": "sha256sum reference/booking_resale_admission/fixtures/commerce_journey_conformance_v1.json reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json reference/booking_resale_admission/test_commerce_journey_receipts.py", "exit": 0, "elapsed_seconds": 0.01}
+{"log": "whitespace.log", "command": "git diff --check", "exit": 0, "elapsed_seconds": 0.13}
+{"log": "reference-ai_delegation.log", "command": "python3.12 -B -m unittest discover -s reference/ai_delegation -t reference/ai_delegation", "exit": 0, "elapsed_seconds": 59.36}
+{"log": "check_contract_error_codes-self-test.log", "command": "python3.12 -B scripts/check_contract_error_codes.py --self-test", "exit": 0, "elapsed_seconds": 311.25}
+{"log": "check_adapter_identity_map.log", "command": "python3.12 -B scripts/check_adapter_identity_map.py", "exit": 0, "elapsed_seconds": 0.31}
+{"log": "check_adapter_identity_map-self-test.log", "command": "python3.12 -B scripts/check_adapter_identity_map.py --self-test", "exit": 0, "elapsed_seconds": 1.91}
+{"log": "check_v5_transition_evidence_map.log", "command": "python3.12 -B scripts/check_v5_transition_evidence_map.py", "exit": 0, "elapsed_seconds": 0.1}
+{"log": "check_v5_transition_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_v5_transition_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 5.12}
+{"log": "check_readiness_evidence_map.log", "command": "python3.12 -B scripts/check_readiness_evidence_map.py", "exit": 0, "elapsed_seconds": 1.0}
+{"log": "check_readiness_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_readiness_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 22.3}
+{"log": "check_settlement_evidence_map.log", "command": "python3.12 -B scripts/check_settlement_evidence_map.py", "exit": 0, "elapsed_seconds": 0.41}
+{"log": "check_settlement_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_settlement_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 5.02}
+{"log": "check_bra_evidence_map.log", "command": "python3.12 -B scripts/check_bra_evidence_map.py", "exit": 0, "elapsed_seconds": 0.43}
+{"log": "check_bra_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_bra_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 27.51}
+{"log": "check_credit_evidence_map.log", "command": "python3.12 -B scripts/check_credit_evidence_map.py", "exit": 0, "elapsed_seconds": 0.41}
+{"log": "check_credit_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_credit_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 14.0}
+{"log": "check_primary_price_fee_evidence_map.log", "command": "python3.12 -B scripts/check_primary_price_fee_evidence_map.py", "exit": 0, "elapsed_seconds": 0.53}
+{"log": "check_primary_price_fee_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_primary_price_fee_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 21.83}
+{"log": "check_ai_delegation_evidence_map.log", "command": "python3.12 -B scripts/check_ai_delegation_evidence_map.py", "exit": 0, "elapsed_seconds": 0.82}
+{"log": "check_ai_delegation_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_ai_delegation_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 46.43}
+{"log": "check_lifecycle_adr_evidence_map.log", "command": "python3.12 -B scripts/check_lifecycle_adr_evidence_map.py", "exit": 0, "elapsed_seconds": 0.26}
+{"log": "check_lifecycle_adr_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_lifecycle_adr_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 3.21}
+{"log": "check_contract_invariants_evidence_map.log", "command": "python3.12 -B scripts/check_contract_invariants_evidence_map.py", "exit": 0, "elapsed_seconds": 0.54}
+{"log": "check_contract_invariants_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_contract_invariants_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 10.87}
+{"log": "check_toss_card_profile_evidence_map.log", "command": "python3.12 -B scripts/check_toss_card_profile_evidence_map.py", "exit": 0, "elapsed_seconds": 0.29}
+{"log": "check_toss_card_profile_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_toss_card_profile_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 2.17}
+{"log": "check_bcs1_evidence_map.log", "command": "python3.12 -B scripts/check_bcs1_evidence_map.py", "exit": 0, "elapsed_seconds": 0.36}
+{"log": "check_bcs1_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_bcs1_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 0.83}
+{"log": "check_performance_measurement_evidence_map.log", "command": "python3.12 -B scripts/check_performance_measurement_evidence_map.py", "exit": 0, "elapsed_seconds": 0.35}
+{"log": "reference-token_reward.log", "command": "python3.12 -B -m unittest discover -s reference/token_reward -t reference/token_reward", "exit": 0, "elapsed_seconds": 303.48}
+{"log": "check_performance_measurement_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_performance_measurement_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 13.47}
+{"log": "check_feature_semantics_evidence_map.log", "command": "python3.12 -B scripts/check_feature_semantics_evidence_map.py", "exit": 0, "elapsed_seconds": 0.18}
+{"log": "check_feature_semantics_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_feature_semantics_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 2.37}
+{"log": "check_integration_gate_contract_evidence_map.log", "command": "python3.12 -B scripts/check_integration_gate_contract_evidence_map.py", "exit": 0, "elapsed_seconds": 0.62}
+{"log": "check_integration_gate_contract_evidence_map-self-test.log", "command": "python3.12 -B scripts/check_integration_gate_contract_evidence_map.py --self-test", "exit": 0, "elapsed_seconds": 26.0}
+{"log": "check_evidence_map_rollup.log", "command": "python3.12 -B scripts/check_evidence_map_rollup.py", "exit": 0, "elapsed_seconds": 0.26}
+{"log": "check_evidence_map_rollup-self-test.log", "command": "python3.12 -B scripts/check_evidence_map_rollup.py --self-test", "exit": 0, "elapsed_seconds": 0.09}
+{"log": "check_class_b_index.log", "command": "python3.12 -B scripts/check_class_b_index.py", "exit": 0, "elapsed_seconds": 0.47}
+{"log": "check_class_b_index-self-test.log", "command": "python3.12 -B scripts/check_class_b_index.py --self-test", "exit": 0, "elapsed_seconds": 0.46}
+{"log": "check_ci_checker_wiring.log", "command": "python3.12 -B scripts/check_ci_checker_wiring.py", "exit": 0, "elapsed_seconds": 0.17}
+{"log": "check_ci_checker_wiring-self-test.log", "command": "python3.12 -B scripts/check_ci_checker_wiring.py --self-test", "exit": 0, "elapsed_seconds": 0.17}
+{"log": "check_ci_test_discovery.log", "command": "python3.12 -B scripts/check_ci_test_discovery.py", "exit": 0, "elapsed_seconds": 0.66}
+{"log": "check_ci_test_discovery-self-test.log", "command": "python3.12 -B scripts/check_ci_test_discovery.py --self-test", "exit": 0, "elapsed_seconds": 0.33}
+{"log": "check_loopback_host.log", "command": "python3.12 -B scripts/check_loopback_host.py", "exit": 0, "elapsed_seconds": 0.21}
+{"log": "check_loopback_host-self-test.log", "command": "python3.12 -B scripts/check_loopback_host.py --self-test", "exit": 0, "elapsed_seconds": 0.15}
+{"log": "check_cargo_offline_cache.log", "command": "python3.12 -B scripts/check_cargo_offline_cache.py", "exit": 0, "elapsed_seconds": 0.52}
+{"log": "check_cargo_offline_cache-self-test.log", "command": "python3.12 -B scripts/check_cargo_offline_cache.py --self-test", "exit": 0, "elapsed_seconds": 0.76}
+{"log": "check_stage5_host-self-test.log", "command": "python3.12 -B scripts/check_stage5_host.py --self-test", "exit": 0, "elapsed_seconds": 0.28}
+{"log": "reference-provider_facts.log", "command": "python3.12 -B -m unittest discover -s reference/provider_facts -t reference/provider_facts", "exit": 0, "elapsed_seconds": 72.92}
+{"log": "reference-payment_effects.log", "command": "python3.12 -B -m unittest discover -s reference/payment_effects -t reference/payment_effects", "exit": 0, "elapsed_seconds": 8.6}
+{"log": "reference-economics.log", "command": "python3.12 -B -m unittest discover -s reference/economics -t reference/economics", "exit": 0, "elapsed_seconds": 7.53}
+{"log": "http-readiness.log", "command": "python3.12 -B -m unittest integration_gate.test_http_gate readiness.test_faults", "exit": 0, "elapsed_seconds": 30.24}
+{"log": "offline-limits.log", "command": "python3.12 -B -m unittest integration_gate.test_offline_limits", "exit": 0, "elapsed_seconds": 2.12}
+{"log": "reference-booking.log", "command": "python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission", "exit": 0, "elapsed_seconds": 1042.15}
+{"log": "locked-blobs-final.log", "command": "git hash-object runtime/crates/kix-kernel/src/lib.rs runtime/crates/kix-kernel/tests/quarantine_capacity.rs", "exit": 0, "elapsed_seconds": 0.01}
+{"log": "preserved-bytes-final.log", "command": "python3.12 -B -c 'import hashlib,json; from pathlib import Path; pins=json.loads(Path(\"validation/2026-11-13-plan-commerce-receipt-goldens/preserved-inputs.json\").read_text()); drift=[p for p,h in pins.items() if hashlib.sha256(Path(p).read_bytes()).hexdigest()!=h]; print(\"Protected input files:\",len(pins),\"; drift:\",drift); assert not drift; raw=Path(\"reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json\").read_bytes(); assert hashlib.sha256(raw).hexdigest()==\"6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998\"; print(\"Companion bytes unchanged:\",len(raw))'", "exit": 0, "elapsed_seconds": 0.11}
+{"log": "final-git-heads.log", "command": "git rev-parse HEAD origin/main", "exit": 0, "elapsed_seconds": 0.02}
+{"log": "docs-index-final.log", "command": "python3.12 -B scripts/check_docs_index.py", "exit": 0, "elapsed_seconds": 0.32}
+{"log": "whitespace-final.log", "command": "git diff --check", "exit": 0, "elapsed_seconds": 0.07}

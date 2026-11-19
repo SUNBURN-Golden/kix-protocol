@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/kix-types",
+    "crates/kix-analytics-audit",
     "crates/kix-feature-semantics",
     "crates/kix-feature-ir",
     "crates/kix-bcs1",

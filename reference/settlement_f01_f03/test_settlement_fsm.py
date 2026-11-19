@@ -405,14 +405,14 @@ class SettlementFsmTests(unittest.TestCase):
         self.assertTrue(lost_response["duplicate"])
         self.assertEqual(revived.view("claim-1")["claim"]["confirmed_cash"], 97_000)
 
-    def test_refund_block_survives_replay_and_is_not_a_clawback(self):
+    def test_partial_refund_distribution_survives_replay_and_is_not_a_clawback(self):
         self.commit()
         self.machine.distribute(
             "claim-1",
             idempotency_key="dist-1",
             order=["platform", "organizer"],
         )
-        blocked_at = self.machine.export_journal()
+        distributed_at = self.machine.export_journal()
         refunded = self.machine.bind_refund(
             "claim-1",
             idempotency_key="refund-1",
@@ -422,36 +422,37 @@ class SettlementFsmTests(unittest.TestCase):
             reason="PARTIAL",
         )
         self.assertEqual(refunded["settlement"]["phase"], COMMITTED)
-        self.assertEqual(refunded["settlement"]["claim"]["refund_bearer_policy"], "UNDEFINED")
+        self.assertEqual(refunded["settlement"]["claim"]["refund_bearer_policy"], "REQUESTER")
+        self.assertFalse(refunded["settlement"]["claim"]["distribution_blocked"])
         self.assertEqual(refunded["settlement"]["claim"]["distributed_cash"], 97_000)
         self.assertEqual(line(refunded["settlement"]["claim"], "organizer")["cancelled_unpaid"], 0)
+        # B5: distribution after the partial refund is accepted. No cash
+        # remains, so it applies zero and claws nothing back.
+        again = self.machine.distribute(
+            "claim-1",
+            idempotency_key="dist-2",
+            order=["platform", "organizer"],
+        )
+        self.assertEqual(again["effect"], {"platform": 0, "organizer": 0})
         journal = self.machine.export_journal()
-        self.assertEqual(
-            codes(lambda: self.machine.distribute(
-                "claim-1",
-                idempotency_key="dist-2",
-                order=["platform", "organizer"],
-            )),
-            "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
+        self.assertEqual(len(journal), len(distributed_at) + 2)
+        replayed = self.machine.distribute(
+            "claim-1",
+            idempotency_key="dist-2",
+            order=["platform", "organizer"],
         )
+        self.assertTrue(replayed["duplicate"])
+        self.assertIsNone(replayed["applied"])
         self.assertEqual(self.machine.export_journal(), journal)
-        self.assertEqual(
-            codes(lambda: self.machine.distribute(
-                "claim-1",
-                idempotency_key="dist-2",
-                order=["platform", "organizer"],
-            )),
-            "DISTRIBUTION_BLOCKED_REFUND_BEARER_UNDEFINED",
-        )
         restored = SettlementMachine.restore(json.loads(json.dumps(journal)))
         self.assertEqual(restored.canonical_state(), self.machine.canonical_state())
-        self.assertTrue(restored.view("claim-1")["claim"]["distribution_blocked"])
+        self.assertFalse(restored.view("claim-1")["claim"]["distribution_blocked"])
         self.assertEqual(restored.view("claim-1")["claim"]["distributed_cash"], 97_000)
         report = restored.reconcile("claim-1", idempotency_key="recon-partial")
         self.assertTrue(report["matched"])
         self.assertEqual(report["entry_count"], len(journal))
         self.assertEqual(len(report["state_digest"]), 64)
-        self.assertNotEqual(restored.export_journal(), blocked_at)
+        self.assertNotEqual(restored.export_journal(), distributed_at)
 
     def test_full_refund_acceptance_does_not_close_an_external_return(self):
         self.commit()

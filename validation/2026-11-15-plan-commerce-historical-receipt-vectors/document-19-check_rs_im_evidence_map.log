@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_rs_im_evidence_map.py
+rs im evidence map ok: rows=30 expected=30 citations=202 COVERED_LOCALNET=11 COVERED_MODEL_OR_MEMORY=5 PARTIAL=12 NOT_COVERED=0 MEASUREMENT_ONLY=0 UNCHANGED_BY_DESIGN=2
+
+EXIT: 0

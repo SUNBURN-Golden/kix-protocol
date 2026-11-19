@@ -1,0 +1,31 @@
+{
+  "cachedOriginMain": "1e402787dd44300cf278adcd3eb70d7f5d2ae507",
+  "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+  "flags": {
+    "chainWriter": false,
+    "fundsExecuted": false,
+    "productionConformance": false,
+    "productionEndpoint": false,
+    "productionReadiness": false,
+    "productionRuntime": false,
+    "protocolTruth": false
+  },
+  "g++": "g++ (Debian 14.2.0-19) 14.2.0",
+  "localBuild": {
+    "compilerCacheScript": "compiler-cache.sh",
+    "compilerCacheSha256": "7fa34725a497e856943a77aead01ac9f961ef1037263d0ceca3c64d9375ed3f5",
+    "cxxFlags": "-g0 --param ggc-min-expand=10 --param ggc-min-heapsize=32768",
+    "nativeInputs": "unchanged owner-provisioned pinned registry sources",
+    "network": "prohibited; every Cargo build uses --offline --locked",
+    "releaseOptimization": "Cargo default release profile (no override)"
+  },
+  "node": "v24.22.1",
+  "nodeId": "k-stage7-cpu-analytics-sql-audit",
+  "platform": "Linux-6.12.113+-x86_64-with-glibc2.41",
+  "postgres": "postgres (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1)",
+  "python": "3.13.5",
+  "remoteFreshnessVerified": false,
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "schemaVersion": 1,
+  "sourceHead": "f52c58743b2919cbc66ab9c2760ecc76742faca7"
+}

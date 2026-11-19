@@ -404,7 +404,7 @@ class AuthorityAndInertnessTests(Base):
             self.rejected(m, DENY_CODES[tool], lambda: m.call_tool("agent-1", "g-1", tool, {}, 12))
         for tool in ("delegate", "close_delegation", "", "execute", "Transfer", "mystery"):
             self.rejected(m, "TOOL_NOT_ALLOWED", lambda: m.call_tool("agent-1", "g-1", tool, {}, 12))
-        self.assertEqual(union_codes("deny"), set(DENY_CODES.values()))
+        self.assertEqual(union_codes("deny"), set(DENY_CODES.values()) | {"UNKNOWN_ACTOR"})
         self.assertEqual(union_codes("unknown_tool"), {"TOOL_NOT_ALLOWED"})
 
     def test_execute_is_never_grantable_and_attempt_is_disabled(self):

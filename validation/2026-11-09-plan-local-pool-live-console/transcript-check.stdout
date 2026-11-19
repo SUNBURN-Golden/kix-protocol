@@ -1,0 +1,2 @@
+journey: 8 complete envelopes MATCH across three modes; fixture/live stdout byte-identical; stderr empty; expected exit 0
+boundaries: 6 complete envelopes MATCH across three modes; fixture/live stdout byte-identical; stderr empty; expected exit 1
