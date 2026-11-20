@@ -1629,3 +1629,50 @@ Product tolerance and netting remain **UNDETERMINED — Astra**. Legal liability
 remains **UNDETERMINED — JunTae and legal counsel**. The history is
 source-informed, process-local Class B evidence. External `kix-capital`
 acceptance remains **UNVERIFIED**. [Settlement contract](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) · [F04 contract](../contracts/CREDIT_ADVANCE_F04.md) · [Replay and builder evidence](../../validation/2026-11-20-plan-capital-reconcile-freshness-vectors/README.md)
+
+## Capital later settlement statement vectors
+
+`capital-later-statement/1` captures `L1_later_statement_after_requester_refund`
+as one synthetic, source-informed F01–F04 history. The input contains eight
+setup calls, five history calls and independent checkpoint arithmetic. The
+output preserves each complete receipt envelope and six snapshots with public
+views, both journals, canonical states, state digests and both observers.
+[Inputs](../../reference/credit_advance_f04/fixtures/capital_later_statement_v1.json) · [Complete results](../../reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#l1-later-settlement-statement-after-a-requester-refund)
+
+The synthetic KRW 100,000 claim uses `PRIMARY_FEE_BPS` at 500 bps, opening
+organizer and platform obligations of 95,000 and 5,000. The first statement
+`part-1` commits 60,000 in cash. The F04 offer copies the entire committed
+claim, then the bound mock draw freezes a 100,000 open face with 60,000
+confirmed cash on face and 15,000 outstanding exposure. The caller supplies a
+fixture group limit of 100,000 and variance tolerance of zero.
+
+| Checkpoint | Receivable open | Confirmed cash | Undistributed cash | Organizer / platform outstanding | Refund outstanding | Variance | `cash_delta` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Frozen after `part-1` | 40,000 | 60,000 | 60,000 | 95,000 / 5,000 | 0 | 0 | 0 |
+| Initial distribution | 40,000 | 60,000 | 0 | 35,000 / 5,000 | 0 | −60,000 | 0 |
+| Partial refund binding | 40,000 | 60,000 | 0 | 35,000 / 5,000 | 10,000 | −60,000 | 0 |
+| Observe `part-2` | 0 | 97,000 | 37,000 | 35,000 / 5,000 | 10,000 | −60,000 | +37,000 |
+| Original-key replay | 0 | 97,000 | 37,000 | 35,000 / 5,000 | 10,000 | −60,000 | +37,000 |
+| Later distribution | 0 | 97,000 | 0 | 0 / 3,000 | 10,000 | −97,000 | +37,000 |
+
+`observe_statement` records 37,000 cash and 3,000 explicit non-cash fee
+against 40,000 gross. The settlement stays `COMMITTED` with
+`commit_movement_id=part-1`. The original key returns the first observation's
+receipt with `duplicate=true` and `applied=null`, leaving the full snapshot
+identical. Both distributions use the fixture order `["organizer", "platform"]`.
+The initial distribution allocates 60,000 and 0. The later distribution
+allocates the newly available 37,000 as 35,000 and 2,000.
+
+The 10,000 partial refund remains a separate `REQUESTER` obligation with zero
+accepted, recovery and PG adjustment. Reclassification and distribution-block
+flags remain false. The F04 snapshot and shared-exposure observation stay
+byte-identical throughout the history. Variance subtracts the frozen open face
+from summed payee outstanding. `cash_delta` separately subtracts frozen
+confirmed cash on face from current confirmed cash. Both observers stay
+`NOT_BOUND` with `repair=NONE` and `fail_closed=true`. Mutation, exposure
+authorization and execution flags remain false.
+
+External `kix-capital` acceptance remains **UNVERIFIED**. Product tolerance,
+exposure limits, waterfall and netting terms remain **UNDETERMINED — Astra**.
+Legal responsibility remains **UNDETERMINED — JunTae and legal counsel**.
+[Replay verifier](../../reference/credit_advance_f04/test_capital_later_statement_vectors.py) · [Builder validation](../../validation/2026-11-20-plan-capital-later-statement-vectors/README.md)

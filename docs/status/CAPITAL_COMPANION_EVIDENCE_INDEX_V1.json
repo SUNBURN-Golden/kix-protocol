@@ -4838,6 +4838,189 @@
           "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/initial_snapshot"
         }
       ]
+    },
+    {
+      "id": "capital_later_statement",
+      "shape": "setup_and_history",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json",
+        "sha256": "1d0e7e806258b3bdaca08da0d4486fcdaf119fdb41470ac48f4df4602821ae4b",
+        "gitBlob": "5cd80de37aad4c4ed8aca10208606f79e7856e49"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json",
+        "sha256": "8d9949eec525ade2369437dde20f11f3aaa0a70b1d0a387af36bd64f33294317",
+        "gitBlob": "bbbd19e8ba7db7f7617a5fe0742e1663aa336cff"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_later_statement_vectors.py",
+        "symbol": "CapitalLaterStatementVectorTests.test_complete_history_vectors"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital later settlement statement vectors"
+        }
+      ],
+      "limitations": [
+        "The original statement key replays its first receipt without adding cash. The next distribution uses only new confirmed cash in the original fixture order. The requester refund and frozen credit remain separate. Cash delta is diagnostic and does not enter variance."
+      ],
+      "entries": [
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "initiate",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/0/result",
+          "operation": "initiate",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "authorize",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/1/result",
+          "operation": "authorize",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "capture",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/2/result",
+          "operation": "capture",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "commit",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/3/result",
+          "operation": "commit",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "offer",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/4",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/4/result",
+          "operation": "offer",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "approve",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/5",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/5/result",
+          "operation": "approve",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "bind_settlement",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/6",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/6/result",
+          "operation": "bind_settlement",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "draw",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/7",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/7/result",
+          "operation": "draw",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "distribute-initial",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/0/result",
+          "operation": "distribute",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "refund-partial",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/1/result",
+          "operation": "bind_refund",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "statement-later",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/2/result",
+          "operation": "observe_statement",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "statement-replay",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/3/result",
+          "operation": "observe_statement",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "distribute-later",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/4",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/4/result",
+          "operation": "distribute",
+          "target": "settlement"
+        }
+      ],
+      "observations": [
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "distribute-initial",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/0/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "refund-partial",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/1/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "statement-later",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/2/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "statement-replay",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/3/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "distribute-later",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/4/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "initial_snapshot",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/initial_snapshot"
+        }
+      ]
     }
   ],
   "supporting_evidence": [
