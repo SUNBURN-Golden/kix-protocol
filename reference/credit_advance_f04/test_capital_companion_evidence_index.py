@@ -59,6 +59,10 @@ PACKS = (
      'test_capital_reconcile_freshness_vectors.py', 'CapitalReconcileFreshnessVectorTests.test_complete_history_vectors',
      'Capital reconcile freshness vectors',
      ('F1_historical_reconcile_current_gap',), ((8, 7),)),
+    ('capital_predraw_terminal', 'setup_and_history', 'capital_predraw_terminal_v1.json', 'capital_predraw_terminal_vectors_v1.json',
+     'test_capital_predraw_terminal_vectors.py', 'CapitalPredrawTerminalVectorTests.test_complete_history_vectors',
+     'Capital pre-draw rejection and cancellation companion (P1)',
+     ('P1_reject_cancel_before_draw',), ((7, 13),)),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -93,6 +97,11 @@ LIMITATIONS = {
     'capital_refund_composition': ['One full-gross refund and successive partial refunds remain distinct; partial refunds summing to gross do not reclassify faces. Recovery, acceptance and credit obligations stay separate.'],
     'capital_refund_identity': ['Fresh command keys can journal an existing business binding once more. Original-key replay returns its historical receipt. Mock acceptance leaves confirmed cash, external return status and drawn credit unchanged.'],
     'capital_reconcile_freshness': ['Original keys replay their first reconcile receipts. Fresh local matches can coexist with a current variance outside the synthetic tolerance. The observation grants no exposure authority.'],
+    'capital_predraw_terminal': [
+        'In this synthetic, process-local history, rejection and cancellation precede the first credit note. '
+        'Replays preserve historical outcomes. The separate full-capacity draw is mock evidence. '
+        'Pre-draw shared-exposure grouping remains contract-undefined. A null shared_exposure records that the observer was skipped.',
+    ],
 }
 SUPPORTING = (
     ('settlement_variance', 'SettlementVarianceContractTests', '7.11 정산 잔차(settlement variance)'),
@@ -325,10 +334,10 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 418)
+        self.assertEqual(validate_index(self.document), 438)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15])
-        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 108)
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20])
+        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 122)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
     def test_membership_controls(self):
@@ -454,6 +463,22 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             ):
                 with self.subTest(target=target, field=field):
                     self._reject(lambda d: swap(d, target, collection, field), diagnostic)
+
+    def test_predraw_terminal_crossed_references(self):
+        def swap(document, step_id, collection, field):
+            pack = next(p for p in document['packs'] if p['id'] == 'capital_predraw_terminal')
+            rows = {row.get('step_id'): row for row in pack[collection]}
+            original, replay = rows[step_id], rows['replay-' + step_id]
+            original[field], replay[field] = replay[field], original[field]
+
+        for step_id in ('reject-a', 'cancel-b'):
+            for collection, field, diagnostic in (
+                ('entries', 'input_ref', 'entry membership/association'),
+                ('entries', 'result_ref', 'entry membership/association'),
+                ('observations', 'ref', 'supplemental observation association'),
+            ):
+                with self.subTest(step_id=step_id, field=field):
+                    self._reject(lambda d: swap(d, step_id, collection, field), diagnostic)
 
     def test_pin_controls(self):
         for i in range(len(PACKS)):

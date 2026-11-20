@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates nine
+read-only discovery metadata for `kix-capital`. It associates ten
 consumer pack families and two supporting observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -55,7 +55,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_refund_composition | setup_and_history | 33 | 11 |
 | capital_refund_identity | setup_and_history | 24 | 13 |
 | capital_reconcile_freshness | setup_and_history | 15 | 8 |
-| **Total** | | **418** | **108** |
+| capital_predraw_terminal | setup_and_history | 20 | 14 |
+| **Total** | | **438** | **122** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -85,7 +86,7 @@ ordering follows the existing replay recipe: create, capture confirmation,
 settle, each advance's offer/approve/bind/draw, frozen checkpoint, then each
 history action and its checkpoint. P/F/FD keep their distinct order.
 
-The six families with setup and history associate `setup_steps` with
+The seven families with setup and history associate `setup_steps` with
 `setup_results`, and `steps` with `history`. `observations` contain
 `scenario_id`, `kind`, `ref`, and `step_id` for `step_snapshot` observations.
 They reference existing initial/per-step snapshots and, where present,
@@ -100,7 +101,36 @@ The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the nine consumer families.
+evidence, outside the ten consumer families.
+
+### P1 pre-draw rejection and cancellation
+
+`capital_predraw_terminal` indexes `P1_reject_cancel_before_draw`. This
+synthetic, process-local history captures rejection and cancellation before the
+first credit note, replays of the original outcomes, and a separate mock draw
+that uses the full available capacity.
+
+| Pin under `reference/credit_advance_f04/fixtures/` | SHA-256 | Git blob |
+| --- | --- | --- |
+| [Input `capital_predraw_terminal_v1.json`](../../reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json) | `538f9cb0123b518c34f2a5ff3916433ac69acd093c961943d04f314178f1e58d` | `908c358e10a644769ca659de1dd1531741d47fd6` |
+| [Output `capital_predraw_terminal_vectors_v1.json`](../../reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json) | `2f08fc5d4d066c3a6dd5b774799fdcaddcd9b2e947d643b6d5eba7a4d6e7fb98` | `e86897b912054b2e7f7d392e1da0c8a9df116d0a` |
+
+The setup entries come first, followed by the history entries. Each range
+uses ascending `{j}` and each result selects the full success or error envelope.
+
+| Entries | Input fragment | Result fragment |
+| --- | --- | --- |
+| Setup (`j = 0…6`) | `#/scenarios/0/setup_steps/{j}` | `#/scenarios/0/setup_results/{j}/result` |
+| History (`j = 0…12`) | `#/scenarios/0/steps/{j}` | `#/scenarios/0/history/{j}/result` |
+
+The output observations list `#/scenarios/0/history/{j}/snapshot` for
+`j = 0…12` in history order, then `#/scenarios/0/initial_snapshot`.
+Pre-draw shared-exposure grouping remains contract-undefined. A
+`shared_exposure` value of `null` records that the observer was skipped.
+
+Replay symbol `CapitalPredrawTerminalVectorTests.test_complete_history_vectors`
+in [`test_capital_predraw_terminal_vectors.py`](../../reference/credit_advance_f04/test_capital_predraw_terminal_vectors.py).
+[P1 field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-pre-draw-rejection-and-cancellation-companion-p1)
 
 ## Read-only consumption
 
