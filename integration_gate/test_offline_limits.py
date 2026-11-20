@@ -11,6 +11,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMERCE_FIXTURES = ROOT / 'reference/booking_resale_admission/fixtures'
+COMMERCE_BINDING_INDEX = ROOT / 'docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json'
 _SOCKET_ORIGINALS = {}
 
 
@@ -359,9 +360,21 @@ class CommerceJourneyEnvelopeTests(unittest.TestCase):
     def test_shared_faults_are_rejected_by_the_parser(self):
         from integration_gate.schema import EnvelopeError, parse_envelope
 
+        read_queries = json.loads(COMMERCE_BINDING_INDEX.read_bytes())['readQueries']
+        count, items = read_queries['count'], read_queries['items']
+        self.assertEqual(count, 13)
+        self.assertEqual(len(items), count)
+        read_names = []
+        for item in items:
+            self.assertEqual(item['status'], 'NOT_BOUND', item['name'])
+            read_names.append(item['name'])
+        self.assertEqual(len(set(read_names)), count)
+        self.assertCountEqual(read_names, self.journey['final_expect']['read_queries'])
+
         baseline = self._envelope(next(
             step for step in self.journey['steps'] if step['id'] == self.fixture['base_step']
         ))
+        self.assertEqual(baseline['action'], 'reservation_observe_payment')
         mutations = {
             '/body/idempotency_key': 'delete',
             '/body/amount': 'set',
@@ -372,13 +385,23 @@ class CommerceJourneyEnvelopeTests(unittest.TestCase):
         self.assertCountEqual(
             [case['mutation']['path'] for case in self.fixture['cases']], list(mutations)
         )
-        for case in self.fixture['cases']:
+        read_case = next(case for case in self.fixture['cases'] if case['mutation']['path'] == '/action')
+        self.assertEqual(read_case['id'], 'not-bound-read')
+        self.assertEqual(read_case['gate_error'], 'UNKNOWN_ACTION')
+        self.assertIsNone(read_case['gate_detail'])
+        self.assertIn(read_case['mutation']['value'], read_names)
+        cases = [case for case in self.fixture['cases'] if case is not read_case]
+        cases.extend({
+            **read_case,
+            'id': f"{read_case['id']}:{name}",
+            'mutation': {**read_case['mutation'], 'value': name},
+        } for name in read_names)
+
+        for case in cases:
             with self.subTest(case=case['id']):
                 mutation = case['mutation']
                 path = mutation['path']
                 self.assertEqual(mutation['op'], mutations[path])
-                if path == '/action':
-                    self.assertIn(mutation['value'], self.journey['final_expect']['read_queries'])
                 envelope = deepcopy(baseline)
                 parent, field = path.rsplit('/', 1)
                 target = envelope['body'] if parent == '/body' else envelope
@@ -390,6 +413,11 @@ class CommerceJourneyEnvelopeTests(unittest.TestCase):
                     parse_envelope(envelope, self.commands)
                 self.assertEqual(caught.exception.error, case['gate_error'])
                 self.assertEqual(caught.exception.detail, case['gate_detail'])
+
+        expected = deepcopy(tuple(baseline.values()))
+        parsed = parse_envelope(baseline, self.commands)
+        self.assertEqual(parsed, expected)
+        self.assertEqual(json.dumps(parsed[3], sort_keys=True), json.dumps(expected[3], sort_keys=True))
 
 
 if __name__ == '__main__':
