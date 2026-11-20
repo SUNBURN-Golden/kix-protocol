@@ -1136,6 +1136,88 @@ test("Commerce grant lookup", async (t) => {
       "resale-market/market-cancel-LISTED",
     ]);
   });
+  await t.test("selects every listed outcome and holds every control-only vector", () => {
+    const grant = grantFor(COMMERCE_MANIFEST);
+    assert.ok(grant, "Commerce fixture grant must verify");
+    const { table, vectorsById } = grant;
+    const listedIds = new Set();
+    const controlIds = new Set();
+    const countsByContext = new Map();
+
+    function commandRequest(tuple, vector, commerceStep) {
+      return {
+        kind: "command",
+        manifest_path: COMMERCE_MANIFEST,
+        producer: table.producer,
+        method: tuple.method,
+        path: tuple.path,
+        action: tuple.action,
+        machine: tuple.machine,
+        op: tuple.op,
+        subject_field: tuple.subject_field,
+        body_schema_sha256: tuple.body_schema_sha256,
+        context: vector.context,
+        commerce_step: commerceStep,
+        envelope: vector.envelope,
+        setup: vector.setup,
+        outcome: vector.expected,
+      };
+    }
+
+    for (const tuple of table.tuples) {
+      for (const { context, steps, control_vector_ids } of tuple.contexts) {
+        const counts = countsByContext.get(context) ?? { accept: 0, "business-reject": 0, controls: 0 };
+        countsByContext.set(context, counts);
+        for (const [step, ids] of Object.entries(steps)) {
+          for (const id of ids) {
+            assert.ok(!listedIds.has(id), `duplicate listed vector ${id}`);
+            listedIds.add(id);
+            const vector = vectorsById.get(id);
+            assert.ok(vector, `missing listed vector ${id}`);
+            assert.equal(vector.context, context, id);
+            assert.equal(vector.commerce_step, step, id);
+            counts[vector.expected.kind] += 1;
+            check({
+              id,
+              request: commandRequest(tuple, vector, vector.commerce_step),
+              expect: { status: SEMANTIC, vector_id: id },
+            });
+          }
+        }
+
+        const [listedStep] = Object.keys(steps);
+        assert.ok(listedStep, `${context}/${tuple.action} must have a listed step`);
+        for (const id of control_vector_ids) {
+          assert.ok(!controlIds.has(id), `duplicate control vector ${id}`);
+          controlIds.add(id);
+          const vector = vectorsById.get(id);
+          assert.ok(vector, `missing control vector ${id}`);
+          assert.equal(vector.context, context, id);
+          assert.equal(vector.envelope.action, tuple.action, id);
+          assert.equal(vector.commerce_step, undefined, id);
+          assert.ok(id.startsWith(`${context}/`), id);
+          const unlistedStep = id.slice(context.length + 1);
+          assert.ok(!Object.hasOwn(steps, unlistedStep), id);
+          counts.controls += 1;
+          for (const step of [unlistedStep, listedStep]) {
+            check({
+              id: `${id} offered as ${step}`,
+              request: commandRequest(tuple, vector, step),
+              expect: { status: "HOLD_SEMANTIC", vector_id: null },
+            });
+          }
+        }
+      }
+    }
+
+    assert.deepEqual(Object.fromEntries(countsByContext), {
+      "booking-resale": { accept: 18, "business-reject": 4, controls: 17 },
+      "booking-admission": { accept: 10, "business-reject": 2, controls: 10 },
+      "booking-refund": { accept: 14, "business-reject": 1, controls: 12 },
+      "resale-market": { accept: 14, "business-reject": 0, controls: 14 },
+    });
+    assert.deepEqual([...listedIds, ...controlIds].sort(), [...vectorsById.keys()].sort());
+  });
   await t.test("preserves the unbound reads and proposed recovery lookup", () => {
     const { readQueries } = JSON.parse(read(COMMERCE_BINDING_INDEX));
     const reads = document.cases.filter(({ request }) => request.kind === "read");
