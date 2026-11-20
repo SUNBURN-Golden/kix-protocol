@@ -4485,8 +4485,8 @@ receipt records `CONSUMED_ONCE` and right version `2`.
 The replay validates command bodies against the published FSM schema, then
 compares canonical bytes for the complete receipts, refusal code, exact input
 pointers and detached diagnostics. The receipt file pins input and source bytes
-with SHA-256 and Git blob IDs. The companion index lists this tenth family and
-341 steps in total.
+with SHA-256 and Git blob IDs. This tenth family brought the companion index to
+341 steps.
 [Inputs](fixtures/commerce_linked_refund_inputs_v1.json) ·
 [Complete outcomes](fixtures/commerce_linked_refund_receipts_v1.json) ·
 [Replay suite](test_commerce_linked_refund_vectors.py) ·
@@ -4501,3 +4501,37 @@ liability is **UNDETERMINED** with JunTae and legal counsel. Semantic consumptio
 is `HOLD_SEMANTIC`, all 13 reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned,
 and external consumer acceptance is `UNVERIFIED`.
 [Coverage and local verification](../../validation/2026-11-20-plan-commerce-linked-refund-vectors/README.md)
+
+## Commerce late payment after booking cancellation vectors
+
+The 16-step history runs through the in-process `FsmHost`. Buyer 1 cancels
+confirmed unpaid `order-1`. Buyer 2 confirms `order-2` for the same
+`show-1` slot 0. The late synthetic payment for `order-1` and its exact replay
+both return `TERMINAL_IMMUTABLE`. The replay test compares both reservation
+views, the show, and the canonical state, digest and accepted journal of all
+five machines before, between and after the refusals. Cancellation replay
+returns the original `FREE` slot in the receipt while buyer 2 still holds it.
+[Booking contract §9](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#9-예약발행-수락-상태-기계)
+
+Buyer 2's payment records its own reference without issuing a right. Explicit
+issuance creates active version-1 `issue-2` with an `UNBOUND` settlement gate.
+Admission adopts that right, authorizes it and consumes it in distinct
+receipts, ending at version 2 with `CONSUMED_ONCE`. The input and complete
+outcomes make up the eleventh companion family, bringing the index to 357 steps.
+[Inputs](fixtures/commerce_late_payment_after_cancel_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_late_payment_after_cancel_receipts_v1.json) ·
+[Replay suite](test_commerce_late_payment_after_cancel_vectors.py) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_late_payment_after_cancel_vectors.py
+```
+
+Compensation is **UNDETERMINED** with Astra and JunTae. The refusal describes the
+synthetic reservation command. Actual provider facts remain subject to the
+state lifecycle contract. Refund liability and actual late-fact custody are
+outside this history. Semantic consumption is `HOLD_SEMANTIC`, all 13 reads
+are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external acceptance is
+`UNVERIFIED`.
+[State lifecycle §3](../../docs/contracts/STATE_LIFECYCLE.md#3-lc-fact--늦은-사실-보존) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-late-payment-after-cancel/README.md)

@@ -265,9 +265,8 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect ten
-Commerce input/outcome pack families (341 steps, including linked purchase and partial
-refund) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect eleven
+Commerce input/outcome pack families (357 steps) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Use the
 [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
@@ -276,6 +275,14 @@ to determine which steps have semantic evidence. Other steps remain
 `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external consumer acceptance
 remains `UNVERIFIED`.
 [Linked refund replay](../../reference/booking_resale_admission/test_commerce_linked_refund_vectors.py)
+
+The late-payment pack covers synthetic command refusal, historical cancellation
+replay after slot reuse, and the replacement booking's separate payment,
+issuance, authorization and consumption. Compensation is `UNDETERMINED` with
+Astra and JunTae. Actual provider facts remain subject to the state lifecycle
+contract.
+[Late payment replay](../../reference/booking_resale_admission/test_commerce_late_payment_after_cancel_vectors.py) ·
+[State lifecycle §3](../contracts/STATE_LIFECYCLE.md#3-lc-fact--늦은-사실-보존)
 
 ## Evidence and non-claims
 
