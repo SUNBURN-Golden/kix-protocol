@@ -36,6 +36,7 @@ const VERIFIER_PATH = "sdk/compat/verify_compat.mjs";
 const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
+const COMMERCE_BINDING_INDEX = "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json";
 const COMMERCE_REVISION = "commerce-fixture-8ba7f6c-1";
 const COMMERCE_MANIFEST = `sdk/compat/manifests/manifest.${COMMERCE_REVISION}.json`;
 const COMMERCE_PROFILE = `sdk/compat/profiles/${COMMERCE_REVISION}.profile.json`;
@@ -320,9 +321,20 @@ test("Commerce journey envelopes reach the transport once per step", () => {
 test("Commerce journey envelope faults are rejected before transport", () => {
   const journey = JSON.parse(read(`${COMMERCE_FIXTURES}/commerce_journey_conformance_v1.json`));
   const fixture = JSON.parse(read(`${COMMERCE_FIXTURES}/commerce_journey_envelope_cases_v1.json`));
+  const { count, items } = JSON.parse(read(COMMERCE_BINDING_INDEX)).readQueries;
+  assert.equal(count, 13);
+  assert.equal(items.length, count);
+  const readNames = items.map(({ name, status }) => {
+    assert.equal(status, "NOT_BOUND", name);
+    return name;
+  });
+  assert.equal(new Set(readNames).size, count);
+  assert.deepEqual([...readNames].sort(), [...journey.final_expect.read_queries].sort());
+
   const baseStep = journey.steps.find((step) => step.id === fixture.base_step);
   assert.ok(baseStep, fixture.base_step);
   const baseline = commerceEnvelope(baseStep, fixture);
+  assert.equal(baseline.action, "reservation_observe_payment");
   const mutations = {
     "/body/idempotency_key": "delete",
     "/body/amount": "set",
@@ -334,13 +346,26 @@ test("Commerce journey envelope faults are rejected before transport", () => {
     fixture.cases.map(({ mutation }) => mutation.path).sort(),
     Object.keys(mutations).sort(),
   );
-  let calls = 0;
-  const client = createLocalCallClient({ transport() { calls += 1; } });
-  for (const { id, mutation, sdk_error: expectedCode } of fixture.cases) {
+  const readCase = fixture.cases.find(({ mutation }) => mutation.path === "/action");
+  assert.equal(readCase.id, "not-bound-read");
+  assert.equal(readCase.sdk_error, "UNKNOWN_ACTION");
+  assert.ok(readNames.includes(readCase.mutation.value), readCase.id);
+  const cases = fixture.cases.filter((fault) => fault !== readCase).concat(
+    readNames.map((name) => ({
+      ...readCase,
+      id: `${readCase.id}:${name}`,
+      mutation: { ...readCase.mutation, value: name },
+    })),
+  );
+
+  const calls = [];
+  const client = createLocalCallClient({
+    transport(envelope) {
+      calls.push(structuredClone(envelope));
+    },
+  });
+  for (const { id, mutation, sdk_error: expectedCode } of cases) {
     assert.equal(mutation.op, mutations[mutation.path], id);
-    if (mutation.path === "/action") {
-      assert.ok(journey.final_expect.read_queries.includes(mutation.value), id);
-    }
     const envelope = structuredClone(baseline);
     const [, field, child] = mutation.path.split("/");
     const target = child === undefined ? envelope : envelope[field];
@@ -351,8 +376,12 @@ test("Commerce journey envelope faults are rejected before transport", () => {
       target[key] = mutation.value;
     }
     assert.equal(rejectionCode(() => client.invoke(envelope)), expectedCode, id);
-    assert.equal(calls, 0, id);
+    assert.equal(calls.length, 0, id);
   }
+
+  const expected = structuredClone(baseline);
+  assert.doesNotThrow(() => client.invoke(baseline), fixture.base_step);
+  assert.deepEqual(calls, [expected], fixture.base_step);
 });
 
 test("Commerce semantic manifest binds the exact fixture scope and vector bytes", () => {
