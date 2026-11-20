@@ -64,6 +64,8 @@ derives ownership and kind from pinned fixture bodies and rejects coordinated
 path/digest rebinding, preserving all qualification statuses and SD1 ownership.
 [November SD1 verifier evidence and local validation](../validation/2026-11-19-plan-producer-sd1-evidence-handoff/README.md)
 links the October stop, JunTae's authorization, the checked-in verifier and the §4 regression.
+[Offline producer manifest verdicts and local validation](../validation/2026-11-20-plan-offline-manifest-verdicts/README.md)
+covers the exact JSON verdicts and file preservation for Bootstrap-2 and the Commerce fixture manifest without Git access.
 
 ## Local supply reconciliation
 

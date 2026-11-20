@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -41,15 +43,17 @@ const COMMERCE_TABLE = "docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json";
 const COMMERCE_VECTORS = "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json";
 const SEMANTIC = "SEMANTIC_CONFORMANCE";
 
-// Byte-identical fixture tree for the negative verifier matrix. The copied
-// verifier derives ROOT from its own location, so these are the only files it
-// reads when it runs against a temporary manifest.
-const NEGATIVE_FIXTURES = [
+const VERIFIER_FIXTURES = [
   VERIFIER_PATH,
   "sdk/src/jsonschema.ts",
   "sdk/src/manifest.ts",
   "sdk/package.json",
   "toolchains.json",
+];
+
+// The copied verifier derives ROOT from its own location.
+const NEGATIVE_FIXTURES = [
+  ...VERIFIER_FIXTURES,
   "sdk/compat/profiles/bootstrap-1.profile.json",
   PROFILE_PATH,
   MANIFEST_PATH,
@@ -648,11 +652,11 @@ function mutateDocument(document, item) {
   }
 }
 
-function copyFixtures(targetRoot) {
-  for (const relative of NEGATIVE_FIXTURES) {
-    const target = resolve(targetRoot, relative);
+function copyFixtures(targetRoot, files = NEGATIVE_FIXTURES) {
+  for (const path of files) {
+    const target = resolve(targetRoot, path);
     mkdirSync(dirname(target), { recursive: true });
-    cpSync(resolve(ROOT, relative), target);
+    cpSync(resolve(ROOT, path), target);
   }
 }
 
@@ -707,10 +711,11 @@ function applySidecarCase(targetRoot, pristineManifest, item) {
   }
 }
 
-function runVerifierAt(root, manifestPath, kind, revision) {
+function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env } = {}) {
   return spawnSync(
     process.execPath,
     [
+      ...nodeArgs,
       resolve(root, VERIFIER_PATH),
       "--manifest",
       manifestPath,
@@ -719,9 +724,113 @@ function runVerifierAt(root, manifestPath, kind, revision) {
       "--expect-revision",
       revision,
     ],
-    { cwd: root, encoding: "utf8" },
+    { cwd: root, encoding: "utf8", env },
   );
 }
+
+function snapshotFixtureTree(root) {
+  const entries = readdirSync(root, { recursive: true, withFileTypes: true });
+  return new Map(entries.map((entry) => {
+    const path = join(entry.parentPath, entry.name);
+    assert.ok(entry.isDirectory() || entry.isFile(), `unexpected entry type: ${path}`);
+    return [relative(root, path), entry.isDirectory() ? null : readFileSync(path)];
+  }));
+}
+
+test("vendored producer manifests return one verdict without changing files", () => {
+  for (const { revision, kind, digest, manifestPath, profilePath, missing } of [
+    {
+      revision: "bootstrap-2",
+      kind: "BOOTSTRAP",
+      digest: "eec1750532d319ea06d8ae61bafa77316067088a84a9b70d20a1f6966dfba1e0",
+      manifestPath: MANIFEST_PATH,
+      profilePath: PROFILE_PATH,
+      missing: "mixed-input",
+    },
+    {
+      revision: COMMERCE_REVISION,
+      kind: SEMANTIC,
+      digest: "76ea72c6249ec0f90cb426dfbb8efda8308610f79c4f0ac6ff0a2445cab59a4f",
+      manifestPath: COMMERCE_MANIFEST,
+      profilePath: COMMERCE_PROFILE,
+      missing: "commerce-fixture-request-to-receipt",
+    },
+  ]) {
+    const manifestBytes = read(manifestPath);
+    const sidecarPath = `${manifestPath}.sha256`;
+    assert.equal(sha256Hex(manifestBytes), digest, revision);
+    assert.equal(read(sidecarPath).toString("utf8"), `${digest}\n`, revision);
+    const manifest = parseStrict(manifestBytes);
+    const files = new Set([
+      ...VERIFIER_FIXTURES,
+      manifestPath,
+      sidecarPath,
+      profilePath,
+      manifest.contract.contract_only.path,
+      manifest.contract.integration_gate.path,
+      manifest.generator.path,
+      manifest.sdk_output.path,
+      manifest.source_references.fixture_profile,
+      manifest.source_references.extension_profile.path,
+      ...manifest.vectors.map((vector) => vector.path),
+    ]);
+    const missingVector = manifest.vectors.find((vector) => vector.name === missing);
+    assert.ok(missingVector, `${revision}: missing test vector binding`);
+
+    const root = mkdtempSync(join(realpathSync(tmpdir()), "kix-sdk-vendored-"));
+    try {
+      const fromCheckout = relative(ROOT, root);
+      assert.ok(fromCheckout.startsWith(`..${sep}`) || isAbsolute(fromCheckout), root);
+      copyFixtures(root, files);
+      const emptyPath = "empty-path";
+      mkdirSync(join(root, emptyPath));
+
+      const expected = new Map([[emptyPath, null]]);
+      for (const path of files) {
+        const copiedPath = relative(root, resolve(root, path));
+        expected.set(copiedPath, read(path));
+        for (let directory = dirname(copiedPath); directory !== "."; directory = dirname(directory)) {
+          expected.set(directory, null);
+        }
+      }
+
+      function verdict(exitStatus) {
+        const context = `${revision}, expected exit ${exitStatus}`;
+        const before = snapshotFixtureTree(root);
+        assert.deepEqual(before, expected, `${context}: input inventory and bytes`);
+        const result = runVerifierAt(root, resolve(root, manifestPath), kind, revision, {
+          // No child-process permission, including execution by absolute path.
+          nodeArgs: ["--permission", `--allow-fs-read=${root}`, `--allow-fs-write=${root}`],
+          env: { PATH: join(root, emptyPath) },
+        });
+        assert.deepEqual(snapshotFixtureTree(root), before, `${context}: output inventory and bytes`);
+        assert.ifError(result.error);
+        assert.equal(result.signal, null, context);
+        assert.equal(result.status, exitStatus, `${context}: ${result.stderr || result.stdout}`);
+        assert.equal(result.stderr, "", context);
+        const lines = result.stdout.split("\n");
+        assert.equal(lines.length, 2, context);
+        assert.equal(lines[1], "", context);
+        assert.match(lines[0], /^[^\r\n]+$/u, context);
+        return JSON.parse(lines[0]);
+      }
+
+      assert.deepEqual(verdict(0), {
+        ok: true,
+        manifest_sha256: digest,
+        profile_kind: kind,
+        profile_revision: revision,
+      });
+
+      const missingPath = resolve(root, missingVector.path);
+      rmSync(missingPath);
+      expected.delete(relative(root, missingPath));
+      assert.deepEqual(verdict(1), { ok: false, errors: [`${missing} unreadable: ${missingPath}`] });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
 
 function digestSnapshot() {
   return Object.fromEntries(
