@@ -21,6 +21,7 @@ GUIDE = 'docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md'
 CONTRACT = 'docs/contracts/CREDIT_ADVANCE_F04.md'
 BASE = 'reference/credit_advance_f04/'
 FIXTURES = BASE + 'fixtures/'
+SELF_CONTAINED_SHAPES = {'self_contained_refusals', 'self_contained_comparisons'}
 # Independent fixed family/path, scenario/case identity and section-count inventory.
 PACKS = (
     ('settlement_credit_boundary', 'ordered_steps', 'settlement_credit_boundary_v1.json', 'settlement_credit_boundary_vectors_v1.json',
@@ -67,6 +68,10 @@ PACKS = (
      'test_capital_later_statement_vectors.py', 'CapitalLaterStatementVectorTests.test_complete_history_vectors',
      'Capital later settlement statement vectors',
      ('L1_later_statement_after_requester_refund',), ((8, 5),)),
+    ('capital_mixed_checkpoint_views', 'self_contained_comparisons',
+     'capital_mixed_checkpoint_views_vectors_v1.json', 'capital_mixed_checkpoint_views_vectors_v1.json',
+     'test_capital_mixed_checkpoint_views.py', 'CapitalMixedCheckpointViewsTests.test_checkpoint_pairs',
+     'Capital mixed-checkpoint views', ('repay_mixed', 'repay_same', 'close_mixed', 'close_same'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -83,7 +88,7 @@ NON_CLAIMS = [
     'Product limits remain UNDETERMINED—Astra; legal responsibility UNDETERMINED—User/legal.',
     'Frozen faces are not revalued by later settlement refunds, distribution or acceptance.',
     'Refund obligations, recovery, PG adjustment and credit repayment remain separate; no netting is defined.',
-    'Shared exposure counts capacity once per distinct claim, requires same-point compatible views and an explicit synthetic limit.',
+    'Shared exposure counts capacity once per distinct claim, checks same-claim binding agreement and requires an explicit synthetic limit. Callers select the checkpoints.',
     'Within tolerance or limit is not acceptance, reconciliation completion or exposure authority.',
     'Observations and refund components remain NOT_BOUND; repair=NONE; all execution flags remain false.',
     'Snapshots and restore checks are supplemental observations, not published reads or new input commands.',
@@ -110,6 +115,10 @@ LIMITATIONS = {
         'The original statement key replays its first receipt without adding cash. '
         'The next distribution uses only new confirmed cash in the original fixture order. '
         'The requester refund and frozen credit remain separate. Cash delta is diagnostic and does not enter variance.',
+    ],
+    'capital_mixed_checkpoint_views': [
+        'Mixing the initial and partial-repayment checkpoints can preserve same-claim binding agreement and report stale exposure. '
+        'Mixing the initial and close checkpoints conflicts on reservation. Callers select the checkpoints.',
     ],
 }
 SUPPORTING = (
@@ -195,13 +204,17 @@ def _expected_associations(spec, source, output):
     family, shape, input_name, output_name, *_rest, ids, counts = spec
     ipath, opath = FIXTURES + input_name, FIXTURES + output_name
     entries, observations = [], []
-    if shape == 'self_contained_refusals':
+    if shape in SELF_CONTAINED_SHAPES:
         _check(tuple(c['case_id'] for c in source['cases']) == ids, 'case membership/order')
         for i, case in enumerate(source['cases']):
             prefix = ipath + '#/cases/' + str(i)
-            entries.append({'case_id': case['case_id'], 'observer': case['observer'],
-                            'input_ref': prefix, 'arguments_ref': prefix + '/arguments',
-                            'keywords_ref': prefix + '/keywords', 'result_ref': prefix + '/expected_error'})
+            entry = {'case_id': case['case_id'], 'input_ref': prefix}
+            if shape == 'self_contained_refusals':
+                entry.update(observer=case['observer'], arguments_ref=prefix + '/arguments',
+                             keywords_ref=prefix + '/keywords', result_ref=prefix + '/expected_error')
+            else:
+                entry['result_ref'] = prefix + '/expected_result'
+            entries.append(entry)
         return entries, observations
     _check(tuple(s['scenario_id'] for s in source['scenarios']) == ids, 'scenario membership/order')
     _check(tuple(s['scenario_id'] for s in output['scenarios']) == ids, 'output scenario membership/order')
@@ -273,10 +286,10 @@ def validate_index(document, read=_read):
         _check(_same(pack['limitations'], LIMITATIONS[family]), 'pack limitations claim/type')
         source = _pin_check(pack['input'], FIXTURES + input_name, read)
         output = _pin_check(pack['output'], FIXTURES + output_name, read)
-        if shape != 'self_contained_refusals':
-            _check(output['fixture_sha256'] == pack['input']['sha256'], 'output fixture association')
+        if shape in SELF_CONTAINED_SHAPES:
+            _check(_same(pack['input'], pack['output']), 'self-contained artifact association')
         else:
-            _check(_same(pack['input'], pack['output']), 'refusal self-contained association')
+            _check(output['fixture_sha256'] == pack['input']['sha256'], 'output fixture association')
         _symbol_check(pack['replay_test'], BASE + test, symbol, read)
         _guide_check(pack['guide_refs'], [{'path': GUIDE, 'heading': heading}], read)
         expected, observations = _expected_associations(spec, source, output)
@@ -338,14 +351,16 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         source = decode_json(_read(path).decode('utf-8'))
         mutate(source)
         raw = canonical(source)
-        pack[side] = _pin(path, raw)
+        for pin_side in ('input', 'output'):
+            if pack[pin_side]['path'] == path:
+                pack[pin_side] = _pin(path, raw)
         with self.assertRaisesRegex(AssertionError, diagnostic):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 451)
+        self.assertEqual(validate_index(self.document), 455)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -375,7 +390,7 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
                             else:
                                 entries[position], entries[position + 1] = entries[position + 1], entries[position]
                         self._reject(mutate, 'entry membership')
-            if original['shape'] != 'self_contained_refusals':
+            if original['shape'] not in SELF_CONTAINED_SHAPES:
                 def remove_scenario(d):
                     entries = d['packs'][i]['entries']
                     sid = entries[0]['scenario_id']
@@ -456,6 +471,23 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         for field in ('input_ref', 'result_ref'):
             with self.subTest(field=field):
                 self._reject(lambda d: swap(d, field), 'entry membership/association')
+
+    def test_mixed_checkpoint_crossed_references(self):
+        index = next(i for i, pack in enumerate(self.document['packs'])
+                     if pack['id'] == 'capital_mixed_checkpoint_views')
+
+        def swap(document, case_id, field):
+            entries = {entry['case_id']: entry for entry in document['packs'][index]['entries']}
+            mixed, same = entries[case_id + '_mixed'], entries[case_id + '_same']
+            mixed[field], same[field] = same[field], mixed[field]
+
+        for case_id in ('repay', 'close'):
+            for field in ('input_ref', 'result_ref'):
+                with self.subTest(case=case_id, field=field):
+                    self._reject(lambda d: swap(d, case_id, field), 'entry membership/association')
+        self._detached(index, 'input', lambda d: d['cases'].reverse(), 'case membership/order')
+        self._detached(index, 'input', lambda d: d['cases'][0].__setitem__('expected_result', {}),
+                       'complete result envelope')
 
     def test_reconcile_freshness_crossed_references(self):
         def swap(document, target, collection, field):
