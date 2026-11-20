@@ -843,3 +843,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-20 Commerce late payment after booking cancellation — 위치 안내만
 
 - One 16-step in-process history covers `TERMINAL_IMMUTABLE` on late synthetic payment and exact replay, historical cancellation replay after slot reuse, and separate payment, issuance, authorization and consumption receipts for the replacement buyer. Compensation is `UNDETERMINED` with Astra and JunTae. [Replay guide](../reference/booking_resale_admission/README.md#commerce-late-payment-after-booking-cancellation-vectors) · [Companion index](status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#late-payment-after-booking-cancellation) · [Builder validation](../validation/2026-11-20-plan-commerce-late-payment-after-cancel/README.md)
+
+## 2026-11-20 Capital mixed-checkpoint views — 위치 안내만
+
+- Four synthetic F04 §7.12 pairs show 70,000 KRW of outstanding exposure from mixed repayment views versus 55,000 at the repayment checkpoint. Mixing the initial and close views returns `VIEW_BINDING_CONFLICT`, and the close checkpoint yields 30,000. Callers select checkpoints. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-mixed-checkpoint-views) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#mixed-checkpoint-comparisons) · [Builder validation](../validation/2026-11-20-plan-capital-mixed-checkpoint-views/README.md)

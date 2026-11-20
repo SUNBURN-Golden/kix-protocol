@@ -1676,3 +1676,35 @@ External `kix-capital` acceptance remains **UNVERIFIED**. Product tolerance,
 exposure limits, waterfall and netting terms remain **UNDETERMINED — Astra**.
 Legal responsibility remains **UNDETERMINED — JunTae and legal counsel**.
 [Replay verifier](../../reference/credit_advance_f04/test_capital_later_statement_vectors.py) · [Builder validation](../../validation/2026-11-20-plan-capital-later-statement-vectors/README.md)
+
+## Capital mixed-checkpoint views
+
+The `capital-mixed-checkpoint-views/1` pack compares four ordered pairs of
+`adv-1` and `adv-2` views from `T1_repay_close_capacity_reuse`. Verify both
+`source_pins` against the raw source files, then resolve `group_id_ref`,
+`limit_ref` and each case's `view_refs` in order. The input fixture supplies
+`fixture-terminal-pool-1` and the synthetic 70,000 KRW limit. Each
+`expected_result` records the full §7.12 observation or the typed reference
+error. [Vector pack](../../reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure)
+
+| Case | `adv-1` checkpoint | `adv-2` checkpoint | Drawn / repaid / outstanding (KRW) | Open face / reserved / residual (KRW) |
+| --- | --- | --- | ---: | ---: |
+| `repay_mixed` | Initial | `repay-part` | 70,000 / 0 / 70,000 | 100,000 / 70,000 / 30,000 |
+| `repay_same` | `repay-part` | `repay-part` | 70,000 / 15,000 / 55,000 | 100,000 / 70,000 / 30,000 |
+| `close_mixed` | Initial | `close-fresh` | `VIEW_BINDING_CONFLICT` | Inputs reserve 70,000 and 30,000 |
+| `close_same` | `close-fresh` | `close-fresh` | 70,000 / 40,000 / 30,000 | 100,000 / 30,000 / 70,000 |
+
+Partial repayment lowers `adv-1` exposure while preserving the claim's
+reservation. The mixed repayment pair therefore passes the binding checks
+and carries 15,000 KRW of stale exposure, exactly reaching the synthetic limit.
+The initial and `repay-part` views for `adv-2` have identical values, so preserve
+the exact checkpoint references when comparing the pairs. Closing `adv-1`
+releases its reservation and makes the mixed close pair conflict.
+
+The caller selects the checkpoints and establishes their freshness. Each
+successful observation counts `claim-1` once, reports `within_limit=true`,
+and carries `NOT_BOUND`, `repair=NONE`, `fail_closed=true`,
+`mutates_state=false` and `authorizes_exposure=false`. Product exposure limits
+remain **UNDETERMINED — Astra**, legal responsibility **UNDETERMINED — User/legal**,
+and external `kix-capital` acceptance **UNVERIFIED**.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#mixed-checkpoint-comparisons) · [Builder validation](../../validation/2026-11-20-plan-capital-mixed-checkpoint-views/README.md)

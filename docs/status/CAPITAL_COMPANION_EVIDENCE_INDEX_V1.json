@@ -28,7 +28,7 @@
     "Product limits remain UNDETERMINED—Astra; legal responsibility UNDETERMINED—User/legal.",
     "Frozen faces are not revalued by later settlement refunds, distribution or acceptance.",
     "Refund obligations, recovery, PG adjustment and credit repayment remain separate; no netting is defined.",
-    "Shared exposure counts capacity once per distinct claim, requires same-point compatible views and an explicit synthetic limit.",
+    "Shared exposure counts capacity once per distinct claim, checks same-claim binding agreement and requires an explicit synthetic limit. Callers select the checkpoints.",
     "Within tolerance or limit is not acceptance, reconciliation completion or exposure authority.",
     "Observations and refund components remain NOT_BOUND; repair=NONE; all execution flags remain false.",
     "Snapshots and restore checks are supplemental observations, not published reads or new input commands.",
@@ -5021,6 +5021,56 @@
           "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/initial_snapshot"
         }
       ]
+    },
+    {
+      "id": "capital_mixed_checkpoint_views",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json",
+        "sha256": "eb7daed7e620f9a2852ec51bf57a12651ad112ea8ef85529eae94f82c3692114",
+        "gitBlob": "d6b486b5beabefb93ff1c5897aa8d3cd24d42f14"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json",
+        "sha256": "eb7daed7e620f9a2852ec51bf57a12651ad112ea8ef85529eae94f82c3692114",
+        "gitBlob": "d6b486b5beabefb93ff1c5897aa8d3cd24d42f14"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_mixed_checkpoint_views.py",
+        "symbol": "CapitalMixedCheckpointViewsTests.test_checkpoint_pairs"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital mixed-checkpoint views"
+        }
+      ],
+      "limitations": [
+        "Mixing the initial and partial-repayment checkpoints can preserve same-claim binding agreement and report stale exposure. Mixing the initial and close checkpoints conflicts on reservation. Callers select the checkpoints."
+      ],
+      "entries": [
+        {
+          "case_id": "repay_mixed",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "repay_same",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/1/expected_result"
+        },
+        {
+          "case_id": "close_mixed",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/2/expected_result"
+        },
+        {
+          "case_id": "close_same",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/3/expected_result"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [
