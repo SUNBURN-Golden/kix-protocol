@@ -1579,3 +1579,53 @@ violation surfaced. The fresh-key behavior records the observed command journal
 and the economic claim separately. The history supplies no durability, bank
 execution, production readiness or external consumer evidence. A2 review and
 exact-head hosted CI remain separate delivery gates.
+
+## Capital reconcile freshness vectors
+
+`capital-reconcile-freshness/1` captures one synthetic F01–F04 history,
+`F1_historical_reconcile_current_gap`, on the same in-process settlement and
+credit machines. The eight `setup_steps` copy the operation replay pack's R3
+setup. The `offer` input contains the whole `COMMITTED` settlement claim. The
+replay checks that face against the live claim before calling `offer` and
+captures both first reconcile receipts before binding a single full-gross
+refund against a prior refund face of zero. [Inputs](../../reference/credit_advance_f04/fixtures/capital_reconcile_freshness_v1.json) · [Complete results](../../reference/credit_advance_f04/fixtures/capital_reconcile_freshness_vectors_v1.json)
+
+Both packs use sorted, compact UTF-8 JSON with a trailing newline. The input
+stores the ordered calls, the synthetic group limit of 100,000 KRW and
+variance tolerance of 0 KRW, and separately stated `expected_arithmetic` for
+each checkpoint. The output stores the input SHA-256, ordered source pins,
+`setup_results`, `initial_snapshot` and ordered `history`. Each history row
+contains the full `result` envelope and a separate `snapshot` of both machines
+and both observations. [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md)
+
+### Worked receipt comparison
+
+Each digest is shown by its prefix below. Read `history[i].result.ok` for the
+receipt and `history[i].snapshot.variance` for the current observation at that
+step. All six reconcile receipts report `matched=true` and `effect=null`.
+
+| Step | `duplicate` | `applied` | Receipt digest | Receipt entry count | Current variance (KRW) |
+| --- | --- | --- | --- | ---: | ---: |
+| `settlement-first` | `false` | `reconcile` | `938262684ec7` | 4 | 0 |
+| `credit-first` | `false` | `reconcile` | `549f52755461` | 4 | 0 |
+| `settlement-replay` | `true` | `null` | `938262684ec7` | 4 | −100,000 |
+| `credit-replay` | `true` | `null` | `549f52755461` | 4 | −100,000 |
+| `settlement-fresh` | `false` | `reconcile` | `13b5bf08a03b` | 5 | −100,000 |
+| `credit-fresh` | `false` | `reconcile` | `549f52755461` | 4 | −100,000 |
+
+`refund-full` adds the fifth settlement entry and sets
+`fixture_reclassified=true` and `refund_bearer_policy=FIXTURE_FULL_GROSS_RECLASS`.
+The payees' outstanding amounts fall from 95,000 and 5,000 KRW to zero. F04
+keeps its frozen 100,000 KRW open face and 15,000 KRW outstanding exposure.
+The credit digest stays equal, so its fresh receipt flags identify the new
+check. Reconcile appends no economic journal entry on either machine.
+
+The observer reads the current claim views. It computes `0 − 100000` after
+the refund, which falls outside the fixture tolerance while the fresh
+reconciles both match their own journals. Throughout the history, the mapping
+and refund component remain `NOT_BOUND`, with `repair=NONE`,
+`fail_closed=true`, `mutates_state=false` and `authorizes_exposure=false`.
+Product tolerance and netting remain **UNDETERMINED — Astra**. Legal liability
+remains **UNDETERMINED — JunTae and legal counsel**. The history is
+source-informed, process-local Class B evidence. External `kix-capital`
+acceptance remains **UNVERIFIED**. [Settlement contract](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) · [F04 contract](../contracts/CREDIT_ADVANCE_F04.md) · [Replay and builder evidence](../../validation/2026-11-20-plan-capital-reconcile-freshness-vectors/README.md)
