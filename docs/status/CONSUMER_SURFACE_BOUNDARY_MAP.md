@@ -265,8 +265,8 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect eleven
-Commerce input/outcome pack families (357 steps) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect twelve
+Commerce input/outcome pack families (373 steps) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Use the
 [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
@@ -283,6 +283,12 @@ Astra and JunTae. Actual provider facts remain subject to the state lifecycle
 contract.
 [Late payment replay](../../reference/booking_resale_admission/test_commerce_late_payment_after_cancel_vectors.py) ·
 [State lifecycle §3](../contracts/STATE_LIFECYCLE.md#3-lc-fact--늦은-사실-보존)
+
+The payment-reference scope pack records a same-show resale conflict, a
+distinct resale payment and explicit transfer, and a second-show primary
+payment using the original reference bytes. Both shows run in the same
+in-memory host. [Payment-reference replay](../../reference/booking_resale_admission/test_commerce_payment_ref_scope_vectors.py) ·
+[Builder validation](../../validation/2026-11-20-plan-commerce-payment-ref-scope/README.md)
 
 ## Evidence and non-claims
 

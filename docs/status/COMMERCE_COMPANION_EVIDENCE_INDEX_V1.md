@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects eleven input/outcome pack families (357 steps) to replay tests
+It connects twelve input/outcome pack families (373 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -26,6 +26,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `hold_release` | `commerce_hold_release_inputs_v1.json` | `commerce_hold_release_receipts_v1.json` | `test_commerce_hold_release_vectors.py` | 2 / 30 |
 | `linked_refund` | `commerce_linked_refund_inputs_v1.json` | `commerce_linked_refund_receipts_v1.json` | `test_commerce_linked_refund_vectors.py` | 1 / 18 |
 | `late_payment_after_cancel` | `commerce_late_payment_after_cancel_inputs_v1.json` | `commerce_late_payment_after_cancel_receipts_v1.json` | `test_commerce_late_payment_after_cancel_vectors.py` | 1 / 16 |
+| `payment_ref_scope` | `commerce_payment_ref_scope_inputs_v1.json` | `commerce_payment_ref_scope_receipts_v1.json` | `test_commerce_payment_ref_scope_vectors.py` | 1 / 16 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -221,3 +222,20 @@ all 13 reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external
 acceptance is `UNVERIFIED`.
 [State lifecycle §3](../contracts/STATE_LIFECYCLE.md#3-lc-fact--늦은-사실-보존) ·
 [Coverage and local verification](../../validation/2026-11-20-plan-commerce-late-payment-after-cancel/README.md)
+
+## Show-scoped payment references
+
+`payment_ref_scope` records one 16-step history across two shows in the same
+in-memory host. Reusing the primary reference for a resale on `show-1` returns
+`PAYMENT_BINDING_CONFLICT` and preserves the unpaid listing, seller's right
+version, and all five business journals. A fresh key with a distinct reference
+records the resale payment. A separate command transfers the right. The
+primary payment for `show-2` records the original reference while `show-1`
+retains its primary payment. [Contract §§3–4](../contracts/BOOKING_RESALE_ADMISSION_GATES.md) ·
+[Replay guide](../../reference/booking_resale_admission/README.md#commerce-payment-reference-scope-vectors) ·
+[Builder validation](../../validation/2026-11-20-plan-commerce-payment-ref-scope/README.md)
+
+This history carries `HOLD_SEMANTIC`, 13 `NOT_BOUND` reads, SD1 `OPEN` and
+User-owned, and external acceptance `UNVERIFIED`. The semantic grant for
+`commerce-fixture-8ba7f6c-1` covers the steps and outcomes listed in its
+qualification table. [Scoped fixture qualification](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md)

@@ -4535,3 +4535,38 @@ are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external acceptance is
 `UNVERIFIED`.
 [State lifecycle §3](../../docs/contracts/STATE_LIFECYCLE.md#3-lc-fact--늦은-사실-보존) ·
 [Coverage and local verification](../../validation/2026-11-20-plan-commerce-late-payment-after-cancel/README.md)
+
+## Commerce payment reference scope vectors
+
+One 16-step history runs both shows in the same in-memory `FsmHost`. On
+`show-1`, the buyer confirms a reservation, records the primary payment,
+issues `issue-1`, and lists the right for resale. Presenting the primary
+reference for that listing returns `PAYMENT_BINDING_CONFLICT`. The listing
+stays `LISTED` with null payment and transfer references, and `buyer-1`
+retains version 1 of `issue-1`. The replay compares canonical business state,
+digests, accepted journals, and local views across the refusal.
+[Booking and resale contract §§3–4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md)
+
+A fresh key with a distinct reference advances the listing to `PAYMENT_NOTED`
+while the seller retains version 1. A separate `resale_accept_resale` command
+transfers `issue-1` to `buyer-2` at version 2. Each command appends one resale
+journal entry. The final command records the original primary reference for
+`order-2` on `show-2`. A local snapshot shows both primary payments.
+
+The replay checks the published command schema, complete canonical outcomes,
+and exact input pointers. The companion index now covers twelve families and
+373 steps. [Canonical inputs](fixtures/commerce_payment_ref_scope_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_payment_ref_scope_receipts_v1.json) ·
+[Replay suite](test_commerce_payment_ref_scope_vectors.py) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_payment_ref_scope_vectors.py
+```
+
+The pack records synthetic in-process behavior under `HOLD_SEMANTIC`. All 13
+reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external acceptance is
+`UNVERIFIED`. The separate semantic grant covers its listed steps and outcomes.
+Product TTLs, fees, and compensation are `UNDETERMINED` with Astra and JunTae.
+Provider and legal terms retain their existing owners. [Scoped fixture qualification](../../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-payment-ref-scope/README.md)
