@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates twelve
+read-only discovery metadata for `kix-capital`. It associates thirteen
 consumer pack families and two supporting observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -58,7 +58,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_predraw_terminal | setup_and_history | 20 | 14 |
 | capital_later_statement | setup_and_history | 13 | 6 |
 | capital_mixed_checkpoint_views | self_contained_comparisons | 4 | 0 |
-| **Total** | | **455** | **128** |
+| capital_omitted_exposure_members | self_contained_comparisons | 4 | 0 |
+| **Total** | | **459** | **128** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -99,16 +100,16 @@ Its entries have `case_id`, `observer`, `input_ref` (whole case),
 `arguments_ref`, `keywords_ref`, and `result_ref` (`expected_error`). Omitted
 keywords remain `{}`; null, booleans and JSON floating values stay distinct.
 
-The mixed-checkpoint pack also uses one file for both pins. Its entries have
+Each comparison pack uses one file for both pins. Its entries have
 `case_id`, `input_ref` (whole case) and `result_ref` (complete
-`expected_result` envelope). The case's ordered `view_refs` identify the
-individual snapshots in the pinned terminal-capacity vectors.
+`expected_result` envelope). The case's ordered `view_refs` identify
+individual snapshots in the pinned source files.
 
 The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the twelve consumer families.
+evidence, outside the thirteen consumer families.
 
 ### P1 pre-draw rejection and cancellation
 
@@ -172,6 +173,17 @@ The mixed close pair returns `VIEW_BINDING_CONFLICT` and its control reports
 the underlying source digests and exact view pointers.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_mixed_checkpoint_views.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-mixed-checkpoint-views)
 
+### Omitted exposure member comparisons
+
+`capital_omitted_exposure_members` indexes `e1_full`, `e1_omit_second`,
+`e2_full` and `e2_omit_second` in that order. The pairs hold the fixture
+checkpoint, group label and limit fixed. The case and complete result are at
+`#/cases/{i}` and `#/cases/{i}/expected_result`. Each case points to the
+group label, limit and selected frozen views in the pinned shared-exposure
+fixture. Callers supply group membership. Completeness applies to the fixture
+scenario and cannot be certified for a real pool by the observer.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_omitted_exposure_members.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-omitted-exposure-members)
+
 ## Read-only consumption
 
 Run this inline Python from the repository root; it reads existing files only.
@@ -204,8 +216,8 @@ revalued by refunds, distribution or acceptance. Refund obligations, recovery,
 PG adjustment and credit repayment are separate; no netting mechanics are
 introduced. Shared exposure checks agreement on same-claim binding fields,
 counts capacity once per distinct claim, and requires an explicit
-caller-supplied synthetic limit. The caller selects the checkpoints and
-establishes their freshness. Caller labels do not bind legal debtors. Tolerance/limit
+caller-supplied synthetic limit. The caller supplies group membership, selects
+the checkpoints and establishes their freshness. Caller labels do not bind legal debtors. Tolerance/limit
 success grants no authority. Observations and refund components remain
 `NOT_BOUND`, `repair=NONE`, fail-closed and non-mutating.
 

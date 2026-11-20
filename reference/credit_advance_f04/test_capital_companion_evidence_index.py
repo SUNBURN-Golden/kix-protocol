@@ -72,6 +72,10 @@ PACKS = (
      'capital_mixed_checkpoint_views_vectors_v1.json', 'capital_mixed_checkpoint_views_vectors_v1.json',
      'test_capital_mixed_checkpoint_views.py', 'CapitalMixedCheckpointViewsTests.test_checkpoint_pairs',
      'Capital mixed-checkpoint views', ('repay_mixed', 'repay_same', 'close_mixed', 'close_same'), ()),
+    ('capital_omitted_exposure_members', 'self_contained_comparisons',
+     'capital_omitted_exposure_members_vectors_v1.json', 'capital_omitted_exposure_members_vectors_v1.json',
+     'test_capital_omitted_exposure_members.py', 'CapitalOmittedExposureMembersTests.test_membership_pairs',
+     'Capital omitted exposure members', ('e1_full', 'e1_omit_second', 'e2_full', 'e2_omit_second'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -119,6 +123,10 @@ LIMITATIONS = {
     'capital_mixed_checkpoint_views': [
         'Mixing the initial and partial-repayment checkpoints can preserve same-claim binding agreement and report stale exposure. '
         'Mixing the initial and close checkpoints conflicts on reservation. Callers select the checkpoints.',
+    ],
+    'capital_omitted_exposure_members': [
+        'Callers supply group membership. Complete means all views in the fixture scenario. '
+        'The observer cannot certify real pool membership, and within_limit grants no exposure authority.',
     ],
 }
 SUPPORTING = (
@@ -358,9 +366,9 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 455)
+        self.assertEqual(validate_index(self.document), 459)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -488,6 +496,19 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         self._detached(index, 'input', lambda d: d['cases'].reverse(), 'case membership/order')
         self._detached(index, 'input', lambda d: d['cases'][0].__setitem__('expected_result', {}),
                        'complete result envelope')
+
+    def test_omitted_exposure_members_crossed_references(self):
+        def swap(document, prefix, field):
+            pack = next(p for p in document['packs'] if p['id'] == 'capital_omitted_exposure_members')
+            entries = {entry['case_id']: entry for entry in pack['entries']}
+            full, subset = entries[prefix + '_full'], entries[prefix + '_omit_second']
+            full[field], subset[field] = subset[field], full[field]
+
+        for prefix in ('e1', 'e2'):
+            for field in ('input_ref', 'result_ref'):
+                with self.subTest(pair=prefix, field=field):
+                    self._reject(lambda d: swap(d, prefix, field),
+                                 'entry membership/association/order/type: capital_omitted_exposure_members')
 
     def test_reconcile_freshness_crossed_references(self):
         def swap(document, target, collection, field):
