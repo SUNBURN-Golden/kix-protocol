@@ -5071,6 +5071,56 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_omitted_exposure_members",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json",
+        "sha256": "946ed152019d3674049d6fd823f961dac47da19556b0d065ce5cacad3b8f9211",
+        "gitBlob": "7eb99a026071327349163268bafad512ab1869f7"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json",
+        "sha256": "946ed152019d3674049d6fd823f961dac47da19556b0d065ce5cacad3b8f9211",
+        "gitBlob": "7eb99a026071327349163268bafad512ab1869f7"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_omitted_exposure_members.py",
+        "symbol": "CapitalOmittedExposureMembersTests.test_membership_pairs"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital omitted exposure members"
+        }
+      ],
+      "limitations": [
+        "Callers supply group membership. Complete means all views in the fixture scenario. The observer cannot certify real pool membership, and within_limit grants no exposure authority."
+      ],
+      "entries": [
+        {
+          "case_id": "e1_full",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "e1_omit_second",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/1/expected_result"
+        },
+        {
+          "case_id": "e2_full",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/2/expected_result"
+        },
+        {
+          "case_id": "e2_omit_second",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/3/expected_result"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [

@@ -849,3 +849,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-20 Capital mixed-checkpoint views — 위치 안내만
 
 - Four synthetic F04 §7.12 pairs show 70,000 KRW of outstanding exposure from mixed repayment views versus 55,000 at the repayment checkpoint. Mixing the initial and close views returns `VIEW_BINDING_CONFLICT`, and the close checkpoint yields 30,000. Callers select checkpoints. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-mixed-checkpoint-views) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#mixed-checkpoint-comparisons) · [Builder validation](../validation/2026-11-20-plan-capital-mixed-checkpoint-views/README.md)
+
+## 2026-11-20 Capital omitted exposure members — 위치 안내만
+
+- Two synthetic F04 §7.12 comparisons show how caller-supplied membership changes reported exposure. Omitting one advance brings E2 within the fixture limit. E1's reported exposure falls while its shared claim still carries the full reservation. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-omitted-exposure-members) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#omitted-exposure-member-comparisons) · [Builder validation](../validation/2026-11-20-plan-capital-omitted-exposure-members/README.md)

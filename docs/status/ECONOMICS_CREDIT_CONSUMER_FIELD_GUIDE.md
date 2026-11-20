@@ -1708,3 +1708,42 @@ and carries `NOT_BOUND`, `repair=NONE`, `fail_closed=true`,
 remain **UNDETERMINED — Astra**, legal responsibility **UNDETERMINED — User/legal**,
 and external `kix-capital` acceptance **UNVERIFIED**.
 [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#mixed-checkpoint-comparisons) · [Builder validation](../../validation/2026-11-20-plan-capital-mixed-checkpoint-views/README.md)
+
+## Capital omitted exposure members
+
+The `capital-omitted-exposure-members/1` pack reuses frozen views from E1
+and E2. Each pair uses one fixture checkpoint, group label and limit. The
+complete case includes all views listed in that scenario. The subset keeps
+only the first view. Callers supply group membership, so the observer cannot
+certify that the input list includes every member of a real pool. [Vector pack](../../reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure)
+
+Read the source path in `source_pins` and verify its SHA-256 against the raw
+bytes before parsing. For each case, resolve `group_id_ref`, `limit_ref` and
+the ordered `view_refs` by opening the repository-relative file before `#`
+and following the JSON pointer after it. Scenario indices 0 and 1 identify
+E1 and E2 respectively. Verify the scenario's `id` and preserve the exact
+view pointers even when views elsewhere have identical values. Pass the
+resolved group label, list of views and keyword `limit` to
+`observe_shared_exposure` and compare the entire `{"ok": …}` envelope with
+`expected_result`. [Pinned source](../../reference/credit_advance_f04/fixtures/shared_exposure_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_omitted_exposure_members.py)
+
+| Case | Group / limit (KRW) | Advances / claims | Outstanding (KRW) | Open face / reserved / residual (KRW) | `within_limit` |
+| --- | --- | ---: | ---: | ---: | --- |
+| `e1_full` | `group-e1` / 70,000 | 2 / 1 | 70,000 | 100,000 / 70,000 / 30,000 | `true` |
+| `e1_omit_second` | `group-e1` / 70,000 | 1 / 1 | 40,000 | 100,000 / 70,000 / 30,000 | `true` |
+| `e2_full` | `debtor-e2` / 100,000 | 2 / 2 | 110,000 | 200,000 / 110,000 / 90,000 | `false` |
+| `e2_omit_second` | `debtor-e2` / 100,000 | 1 / 1 | 60,000 | 100,000 / 60,000 / 40,000 | `true` |
+
+Drawn equals outstanding and repaid is zero in every case. In E1, omitting
+`adv-e1-2` removes 30,000 KRW from the advance-level sum. The retained view
+still reports the shared claim's full 70,000 KRW reservation. In E2, omitting
+`adv-e2-b` removes 50,000 KRW and its distinct claim from the observation,
+flipping `within_limit` to `true`.
+
+All observations and refund components remain `NOT_BOUND` with
+`repair=NONE`, `fail_closed=true`, `mutates_state=false`,
+`authorizes_exposure=false` and `legal_debtor_bound=false`. The comparison
+uses fixture limits. Product exposure limits remain **UNDETERMINED — Astra**,
+legal responsibility **UNDETERMINED — User/legal**, and external
+`kix-capital` acceptance **UNVERIFIED**.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#omitted-exposure-member-comparisons) · [Builder validation](../../validation/2026-11-20-plan-capital-omitted-exposure-members/README.md)
