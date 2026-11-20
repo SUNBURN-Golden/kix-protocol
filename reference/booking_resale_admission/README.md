@@ -4570,3 +4570,29 @@ reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external acceptance is
 Product TTLs, fees, and compensation are `UNDETERMINED` with Astra and JunTae.
 Provider and legal terms retain their existing owners. [Scoped fixture qualification](../../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md) ·
 [Coverage and local verification](../../validation/2026-11-20-plan-commerce-payment-ref-scope/README.md)
+
+## Commerce admission lost-reply vectors
+
+Two fresh in-memory hosts replay the same nine setup calls through
+`booking-admission/authorize-B`, then each attempts the pinned
+`booking-admission/consume-B` envelope once. Commerce observes the same
+`operationId` and body `idempotency_key`, a missing receipt, and terminal
+`UNKNOWN` with zero follow-up calls.
+
+The fixture's `producer_evidence` records test diagnostics. Loss before
+dispatch leaves `admit-B` authorized at version 1 and all five journals
+unchanged. Loss after dispatch discards the successful receipt. The admission
+and reservation views show the consumed right at version 2, and each journal
+appends one consume entry. The recovery lookup remains `NOT_BOUND`. The
+diagnostics confer no authority to query, poll, retry, or replace the write.
+[Paired fixture](fixtures/commerce_admission_lost_reply_v1.json) ·
+[Replay suite](test_commerce_admission_lost_reply.py)
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_admission_lost_reply.py
+```
+
+This offline companion evidence sits outside the pinned
+`commerce-fixture-8ba7f6c-1` grant. External Commerce acceptance remains
+`UNVERIFIED`. [Scoped fixture qualification](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#scoped-commerce-fixture-qualification)
