@@ -28,7 +28,15 @@ give `kix-commerce-apps` the complete producer output for each of the 14
 accepted `resale-market` vectors. In the companion JSON, use the vector ID as
 the key in `receipts`, for example `receipts["resale-market/market-pay"]`.
 The companion pins the source corpus and supplements manifest revision
-`commerce-fixture-8ba7f6c-1`. External Commerce acceptance remains `UNVERIFIED`.
+`commerce-fixture-8ba7f6c-1`.
+
+The [booking branch receipts](../../reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json)
+provide the complete producer output for three booking resale, four booking
+admission and three booking refund vectors. Use the full vector ID, for example
+`receipts["booking-admission/order-B"]`. The 32 direct `receipt_ref` entries for
+first acceptances, 14 market receipts and ten booking branch receipts cover all
+56 listed first acceptances. Both companions are non-normative. External
+Commerce acceptance remains `UNVERIFIED`.
 
 An unlisted tuple or context is outside the grant. Keep unresolved `UNKNOWN`
 outcomes fenced. The market, settlement and operation-recovery reads remain
@@ -54,6 +62,13 @@ For the full market receipt comparison and its mutation checks, run
 ```sh
 python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -p 'test_commerce_fixture_tuple_conformance.py' -k market -v
+```
+
+For the booking branch receipt comparison and its mutation checks, run
+
+```sh
+python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -p 'test_commerce_fixture_tuple_conformance.py' -k booking_branch -v
 ```
 
 Use the manifest and vectors with their referenced files. For each target,
