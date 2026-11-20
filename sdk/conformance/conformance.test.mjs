@@ -34,6 +34,12 @@ const VERIFIER_PATH = "sdk/compat/verify_compat.mjs";
 const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
+const COMMERCE_REVISION = "commerce-fixture-8ba7f6c-1";
+const COMMERCE_MANIFEST = `sdk/compat/manifests/manifest.${COMMERCE_REVISION}.json`;
+const COMMERCE_PROFILE = `sdk/compat/profiles/${COMMERCE_REVISION}.profile.json`;
+const COMMERCE_TABLE = "docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json";
+const COMMERCE_VECTORS = "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json";
+const SEMANTIC = "SEMANTIC_CONFORMANCE";
 
 // Byte-identical fixture tree for the negative verifier matrix. The copied
 // verifier derives ROOT from its own location, so these are the only files it
@@ -165,7 +171,7 @@ function independentCanonical(value) {
   return `{${keys.map((key) => `${JSON.stringify(key)}:${independentCanonical(value[key])}`).join(",")}}`;
 }
 
-function runVerifier(manifestPath) {
+function runVerifier(manifestPath, kind = "BOOTSTRAP", revision = "bootstrap-2") {
   return spawnSync(
     process.execPath,
     [
@@ -173,9 +179,9 @@ function runVerifier(manifestPath) {
       "--manifest",
       manifestPath,
       "--expect-kind",
-      "BOOTSTRAP",
+      kind,
       "--expect-revision",
-      "bootstrap-2",
+      revision,
     ],
     { cwd: ROOT, encoding: "utf8" },
   );
@@ -343,6 +349,81 @@ test("Commerce journey envelope faults are rejected before transport", () => {
     assert.equal(rejectionCode(() => client.invoke(envelope)), expectedCode, id);
     assert.equal(calls, 0, id);
   }
+});
+
+test("Commerce semantic manifest binds the exact fixture scope and vector bytes", () => {
+  const happy = runVerifier(COMMERCE_MANIFEST, SEMANTIC, COMMERCE_REVISION);
+  assert.equal(happy.status, 0, happy.stderr || happy.stdout);
+  assert.deepEqual(JSON.parse(happy.stdout), {
+    ok: true, profile_kind: SEMANTIC, profile_revision: COMMERCE_REVISION,
+    manifest_sha256: sha256Hex(read(COMMERCE_MANIFEST)),
+  });
+
+  const table = parseStrict(read(COMMERCE_TABLE));
+  const manifest = parseStrict(read(COMMERCE_MANIFEST));
+  const profile = parseStrict(read(COMMERCE_PROFILE));
+  const bootstrap = parseStrict(read(MANIFEST_PATH));
+  assert.deepEqual(manifest.producer, table.producer);
+  for (const key of ["contract", "generator", "sdk_output", "source_references"]) {
+    assert.deepEqual(manifest[key], bootstrap[key], key);
+  }
+  assert.deepEqual(profile.catalogue, parseStrict(read(PROFILE_PATH)).catalogue);
+  assert.equal(profile.grants, "commerce-fixture-tuples-only: see commerce-fixture-qualification-table");
+  assert.deepEqual(
+    manifest.vectors.map(({ name, path }) => [name, path]),
+    [
+      ["commerce-fixture-qualification-table", COMMERCE_TABLE],
+      ["commerce-fixture-request-to-receipt", COMMERCE_VECTORS],
+      ["commerce-fixture-prior-inputs", `${COMMERCE_FIXTURES}/commerce_journey_conformance_v1.json`],
+      ["commerce-fixture-prior-receipts", `${COMMERCE_FIXTURES}/commerce_journey_receipts_v1.json`],
+    ],
+  );
+
+  const schemaOnly = runVerifier(MANIFEST_PATH, SEMANTIC, COMMERCE_REVISION);
+  assert.equal(schemaOnly.status, 1);
+  assert.deepEqual(JSON.parse(schemaOnly.stdout).errors, ["profile_kind mismatch", "profile_revision mismatch"]);
+  const directory = mkdtempSync(join(tmpdir(), "kix-commerce-compat-"));
+  try {
+    const control = join(directory, "manifest.json");
+    const mixedProfile = { ...manifest, profile_sha256: bootstrap.profile_sha256 };
+    const mixedVectors = structuredClone(manifest);
+    mixedVectors.vectors[1].sha256 = bootstrap.vectors[0].sha256;
+    for (const [mutant, error] of [
+      [mixedProfile, "profile bytes drift"],
+      [mixedVectors, "vector bytes drift: commerce-fixture-request-to-receipt"],
+    ]) {
+      const encoded = canonicalStringify(mutant);
+      writeFileSync(control, encoded);
+      writeFileSync(`${control}.sha256`, `${sha256Hex(encoded)}\n`);
+      const outcome = runVerifier(control, SEMANTIC, COMMERCE_REVISION);
+      assert.equal(outcome.status, 1, outcome.stderr || outcome.stdout);
+      assert.ok(JSON.parse(outcome.stdout).errors.includes(error), outcome.stdout);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("Commerce semantic envelopes preserve the request and stop schema refusals locally", () => {
+  const { vectors } = parseStrict(read(COMMERCE_VECTORS));
+  const calls = [];
+  const client = createLocalCallClient({
+    transport: (envelope) => calls.push(canonicalStringify(envelope)),
+  });
+  for (const { id, envelope, expected } of vectors) {
+    const original = canonicalStringify(envelope);
+    const before = calls.length;
+    assert.notEqual(envelope.operationId, envelope.body.idempotency_key, id);
+    if (expected.kind === "schema-reject") {
+      assert.equal(rejectionCode(() => client.invoke(envelope)), expected.sdk_code, id);
+      assert.equal(calls.length, before, id);
+    } else {
+      client.invoke(envelope);
+      assert.equal(calls.length, before + 1, id);
+      assert.equal(calls[before], original, id);
+    }
+  }
+  assert.equal(calls.length, vectors.filter(({ expected }) => expected.kind !== "schema-reject").length);
 });
 
 test("envelope, identifier, and transport rules stay local to one call", async () => {
