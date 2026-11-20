@@ -18,6 +18,7 @@ import test_commerce_bound_resale_vectors as resale
 import test_commerce_resale_expiry_vectors as expiry
 import test_commerce_admission_cancellation_vectors as cancellation
 import test_commerce_hold_release_vectors as hold_release
+import test_commerce_linked_refund_vectors as linked_refund
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -36,7 +37,9 @@ PACKS = (
     ('resale_expiry', expiry, 'CommerceResaleExpiryVectorTests', 'test_complete_output_bytes_and_references', 27),
     ('admission_cancellation', cancellation, 'CommerceAdmissionCancellationVectorTests', 'test_complete_output_bytes_and_references', 26),
     ('hold_release', hold_release, 'CommerceHoldReleaseVectorTests', 'test_complete_output_bytes_and_references', 30),
+    ('linked_refund', linked_refund, 'CommerceLinkedRefundVectorTests', 'test_complete_output_bytes_and_references', 18),
 )
+TOTAL_ENTRIES = 341
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -70,6 +73,7 @@ LIMITATIONS = {
     'resale_expiry': ['Synthetic unpaid/paid listing expiry preserves payment facts and historical receipts; no compensation, relisting or transfer policy is defined.'],
     'admission_cancellation': ['Synthetic cancellation/adoption ordering preserves issued credentials; rejected-key retention is process-local and legal effects remain UNDETERMINED—User/legal.'],
     'hold_release': ['Synthetic expired HELD reservations retain their slot until explicit release; historical replay preserves current reuse and rejected-key retention is process-local.'],
+    'linked_refund': ['Partial mock cancellation acceptance adjusts the linked settlement while preserving cash and the issued right. Compensation policy is UNDETERMINED with Astra and JunTae. Legal refund liability is UNDETERMINED with JunTae and legal counsel.'],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
               'outcome_kind', 'binding_ref', 'binding_status'}
@@ -206,7 +210,7 @@ def validate_index(document, read=_read):
             _check(command['action'] == entry['action'] and command['status'] == entry['binding_status'],
                    'resolved binding association')
         total += len(entries)
-    _check(total == 323, 'total coverage')
+    _check(total == TOTAL_ENTRIES, 'total coverage')
     return total
 
 
@@ -221,10 +225,10 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
         mutate(document)
         with self.assertRaisesRegex(AssertionError, diagnostic):
             validate_index(document)
-        self.assertEqual(validate_index(self.document), 323)
+        self.assertEqual(validate_index(self.document), TOTAL_ENTRIES)
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 323)
+        self.assertEqual(validate_index(self.document), TOTAL_ENTRIES)
 
     def test_coverage_controls(self):
         for mutate in (
@@ -299,6 +303,17 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
         self._reject(lambda d: d['packs'][p].update(limitations=[]), 'pack limitation claim')
         self._reject(lambda d: d['packs'][p]['replay_test'].update(symbol='Missing.test_missing'), 'replay location')
 
+    def test_linked_refund_crossed_references(self):
+        pack = next(p for p in self.document['packs'] if p['id'] == 'linked_refund')
+        entries = {e['step_id']: e for e in pack['entries']}
+        for field in ('input_ref', 'outcome_ref', 'binding_ref'):
+            def cross(d):
+                linked = next(p for p in d['packs'] if p['id'] == 'linked_refund')
+                target = next(e for e in linked['entries'] if e['step_id'] == 'observe-mock-acceptance')
+                target[field] = entries['bind-refund'][field]
+            with self.subTest(field=field):
+                self._reject(cross, field + ' association')
+
     def test_digest_and_reference_controls(self):
         for p in range(len(PACKS)):
             for side in ('input', 'output'):
@@ -322,10 +337,18 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
         for ref in ('missing.json#/steps/0', 'pack.json#/steps/99', 'pack.json#/absent'):
             with self.subTest(ref=ref), self.assertRaisesRegex(AssertionError, 'unresolvable reference'):
                 _resolve({'pack.json': {'steps': []}}, ref)
+
+        def cross_case(d):
+            cases = d['cases']
+            if len(cases) == 1:
+                cases[0]['id'] = 'other-case'
+            else:
+                cases.reverse()
+
         # Re-pin detached malformed outcomes for every grouped pack.
         for p in range(1, len(PACKS)):
             for mutate, diagnostic in (
-                (lambda d: d['cases'].reverse(), 'outcome case association'),
+                (cross_case, 'outcome case association'),
                 (lambda d: d['cases'][0]['steps'].pop(), 'outcome step association'),
                 (lambda d: d['cases'][0]['steps'][0].update(action='settlement_commit'), 'outcome action association'),
                 (lambda d: d['cases'][0]['steps'][0].update(input_ref=temporal.FIXTURE + '#/cases/1/steps/0/body'),
@@ -338,9 +361,9 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                 mutate(output)
                 raw = _canonical(output).encode()
                 document['packs'][p]['output'] = journey._pin(path, raw)
-                with self.subTest(diagnostic=diagnostic), self.assertRaisesRegex(AssertionError, diagnostic):
+                with self.subTest(pack=p, diagnostic=diagnostic), self.assertRaisesRegex(AssertionError, diagnostic):
                     validate_index(document, read=lambda p: raw if p == path else _read(p))
-        self.assertEqual(validate_index(self.document), 323)
+        self.assertEqual(validate_index(self.document), TOTAL_ENTRIES)
 
     def test_hold_release_association_controls(self):
         p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'hold_release')
@@ -391,7 +414,7 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                     b'{"x":NaN}', b'{"x":Infinity}', b'{"x":1e999}', self.raw + b'{}'):
             with self.subTest(raw=raw[:40]), self.assertRaises((ValueError, UnicodeError)):
                 journey._decode(raw)
-        self.assertEqual(validate_index(self.document), 323)
+        self.assertEqual(validate_index(self.document), TOTAL_ENTRIES)
 
 
 if __name__ == '__main__':

@@ -3473,6 +3473,208 @@
           "binding_status": "MOCK_EVIDENCE"
         }
       ]
+    },
+    {
+      "id": "linked_refund",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json",
+        "sha256": "55e319f9ae179d09a69b1665c203dedbee0690ed32b827ee987cd80490db67a6",
+        "gitBlob": "06d5e061c913e4fb09907e249250dbc33986a0a8"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json",
+        "sha256": "7181761ec5533cf1a9aab450f4a7f3d32ed6c467713c8d532ceff24a89908839",
+        "gitBlob": "7d2871726f3d4dfa7d83015273796a6ba3d64cf7"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_linked_refund_vectors.py",
+        "symbol": "CommerceLinkedRefundVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Partial mock cancellation acceptance adjusts the linked settlement while preserving cash and the issued right. Compensation policy is UNDETERMINED with Astra and JunTae. Legal refund liability is UNDETERMINED with JunTae and legal counsel."
+      ],
+      "entries": [
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "reservation-clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "hold",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "confirm",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "payment",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/4",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "initiate",
+          "action": "settlement_initiate",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/5",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/40",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "settlement-authorize",
+          "action": "settlement_authorize",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/41",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "bind",
+          "action": "reservation_bind_settlement",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/7",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/57",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "capture",
+          "action": "settlement_capture",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/8",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/42",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "commit",
+          "action": "settlement_commit",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/9",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/43",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "issue-committed",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/10",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "admission-clock",
+          "action": "admission_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "admission-adopt",
+          "action": "admission_adopt_issued",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/12",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/72",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "cancel-issued",
+          "action": "reservation_cancel",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/13",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/55",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "bind-refund",
+          "action": "settlement_bind_refund",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/14",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/48",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "observe-mock-acceptance",
+          "action": "settlement_observe_mock_cancel_acceptance",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/15/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/15",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/49",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "authorize",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/16/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/16",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "linked-purchase-partial-refund",
+          "step_id": "consume",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_inputs_v1.json#/cases/0/steps/17/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/17",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
     }
   ]
 }

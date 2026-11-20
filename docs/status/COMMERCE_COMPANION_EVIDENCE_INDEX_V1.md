@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects nine input/outcome pack families (323 steps) to replay tests
+It connects ten input/outcome pack families (341 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -24,6 +24,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `resale_expiry` | `commerce_resale_expiry_inputs_v1.json` | `commerce_resale_expiry_receipts_v1.json` | `test_commerce_resale_expiry_vectors.py` | 2 / 27 |
 | `admission_cancellation` | `commerce_admission_cancellation_inputs_v1.json` | `commerce_admission_cancellation_receipts_v1.json` | `test_commerce_admission_cancellation_vectors.py` | 3 / 26 |
 | `hold_release` | `commerce_hold_release_inputs_v1.json` | `commerce_hold_release_receipts_v1.json` | `test_commerce_hold_release_vectors.py` | 2 / 30 |
+| `linked_refund` | `commerce_linked_refund_inputs_v1.json` | `commerce_linked_refund_receipts_v1.json` | `test_commerce_linked_refund_vectors.py` | 1 / 18 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -182,3 +183,21 @@ acceptance `UNVERIFIED` remain. TTL and policy values remain
 **UNDETERMINED—Astra/User**. Legal effects remain **UNDETERMINED—User/legal**.
 Hosted exact-head CI and A2 non-author review remain supervisor delivery gates.
 [Coverage and local verification](../../validation/2026-11-18-plan-plan-commerce-hold-release-vectors/README.md)
+
+## Linked purchase and partial refund
+
+`linked_refund` appends 18 associations to the preceding nine packs and 323
+associations. The history binds `reserve-1` to `claim-1`, commits the mock
+settlement and issues `issue-1` explicitly. After adoption, reservation
+cancellation yields `CANCEL_AFTER_ISSUE` with identical business snapshots.
+The ensuing refund obligation and partial mock cancellation acceptance both use
+`claim-1`. The acceptance leaves the active right and populated admission journal
+intact. Separate receipts record `AUTHORIZED` and `CONSUMED_ONCE`.
+[Replay guide](../../reference/booking_resale_admission/README.md#commerce-linked-purchase-and-partial-refund-vectors)
+
+Compensation policy is **UNDETERMINED** with Astra and JunTae. Legal refund
+liability is **UNDETERMINED** with JunTae and legal counsel. The index retains
+`HOLD_SEMANTIC`, 13 reads `NOT_BOUND`, SD1 `OPEN` and User-owned, and external
+acceptance `UNVERIFIED`.
+[Replay](../../reference/booking_resale_admission/test_commerce_linked_refund_vectors.py) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-linked-refund-vectors/README.md)

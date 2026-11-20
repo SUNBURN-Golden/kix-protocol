@@ -4454,11 +4454,50 @@ PYTHONDONTWRITEBYTECODE=1 python3.12 -B -m unittest discover -s reference/bookin
 PYTHONDONTWRITEBYTECODE=1 python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_companion_evidence_index.py
 ```
 
-The companion index appends 30 entries for `hold_release`, bringing the total to
-323 entries across nine families. `HOLD_SEMANTIC`, all 13 reads `NOT_BOUND`, SD1
+The `hold_release` extension added 30 entries as the ninth family.
+`HOLD_SEMANTIC`, all 13 reads `NOT_BOUND`, SD1
 `OPEN` and User-owned, and external acceptance `UNVERIFIED` remain. TTL and other
 product policy values remain **UNDETERMINED—Astra/User**. Legal effects remain
 **UNDETERMINED—User/legal**. A2 non-author exact-head review and hosted exact-head
 CI remain supervisor gates.
 [Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md) ·
 [Coverage and local verification](../../validation/2026-11-18-plan-plan-commerce-hold-release-vectors/README.md)
+
+## Commerce linked purchase and partial refund vectors
+
+One 18-step synthetic history replays through `integration_gate.fsm_host.FsmHost`.
+It observes payment for `order-1`, binds `reserve-1` to `claim-1`, commits that
+mock settlement at `10001`, and explicitly issues `issue-1` with
+`MOCK_COMMIT_OBSERVED`. Admission adopts the issued right. Reservation
+cancellation returns `CANCEL_AFTER_ISSUE` and preserves all five machines'
+business state, digests, and accepted journals.
+[Reservation and admission contract](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#95-정산-게이트)
+
+The `4000` refund obligation and `1500` mock cancellation acceptance both use
+`claim-1`. Acceptance reduces the outstanding refund to `2500` and increases
+the outstanding PG adjustment to `1500`. Confirmed cash stays `10001`, the
+issued right and admission journal are unchanged, and `external_return_closed`
+and `right_cancelled` stay false in the settlement and claim. Explicit admission
+authorization then produces `AUTHORIZED` without a consumption ID. A separate
+receipt records `CONSUMED_ONCE` and right version `2`.
+[Settlement contract §5](../../docs/contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md#5-f03--환불-의무와-목-취소-수락)
+
+The replay validates command bodies against the published FSM schema, then
+compares canonical bytes for the complete receipts, refusal code, exact input
+pointers and detached diagnostics. The receipt file pins input and source bytes
+with SHA-256 and Git blob IDs. The companion index lists this tenth family and
+341 steps in total.
+[Inputs](fixtures/commerce_linked_refund_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_linked_refund_receipts_v1.json) ·
+[Replay suite](test_commerce_linked_refund_vectors.py) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_linked_refund_vectors.py
+```
+
+Compensation policy is **UNDETERMINED** with Astra and JunTae. Legal refund
+liability is **UNDETERMINED** with JunTae and legal counsel. Semantic consumption
+is `HOLD_SEMANTIC`, all 13 reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned,
+and external consumer acceptance is `UNVERIFIED`.
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-linked-refund-vectors/README.md)
