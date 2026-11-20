@@ -21,6 +21,13 @@ MANIFEST = "sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json"
 INPUTS = "reference/booking_resale_admission/fixtures/commerce_journey_conformance_v1.json"
 RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json"
 MARKET_RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json"
+BOOKING_BRANCH_RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json"
+BOOKING_BRANCH_SCHEMA = "kix-commerce-booking-branch-receipts/1"
+BOOKING_BRANCH_STEPS = {
+    "booking-resale": {"order-A", "payment-A", "issue-A"},
+    "booking-admission": {"reserve-B", "order-B", "payment-B", "issue-B"},
+    "booking-refund": {"reserve-C", "order-C", "cancel-C"},
+}
 PRODUCER = "8ba7f6c36373ac0ec49246f51f7471c164ac3a28"
 TREE = "d3f5412ef84f64fe83c5d3a3d3ada173921bfbf9"
 COMMERCE = "9a55fe4e257376f9db3f877a11b65e3ecc43c661"
@@ -222,17 +229,20 @@ class CommerceFixtureTupleTests(unittest.TestCase):
         self.replay(host, vector, receipts)
         return receipts
 
-    def compare_market_receipts(self, raw):
-        expected = _decode(raw)
+    def check_companion_fixture_pin(self, document):
         fixture = _pin(VECTORS, self.corpus_raw)
-        self.assertEqual(expected["fixture"], fixture, "companion vector pin drift")
+        self.assertEqual(document["fixture"], fixture, "companion vector pin drift")
         manifest = _decode(read(MANIFEST))
         manifest_pins = [
             (entry["path"], entry["sha256"]) for entry in manifest["vectors"]
             if entry["name"] == "commerce-fixture-request-to-receipt"
         ]
         self.assertEqual(manifest_pins, [(VECTORS, fixture["sha256"])], "manifest vector pin drift")
+        return fixture
 
+    def compare_market_receipts(self, raw):
+        expected = _decode(raw)
+        fixture = self.check_companion_fixture_pin(expected)
         targets = [
             vector for vector in self.vectors
             if vector["context"] == "resale-market" and vector["expected"]["kind"] == "accept"
@@ -313,6 +323,109 @@ class CommerceFixtureTupleTests(unittest.TestCase):
             with self.subTest(mutation=label), self.assertRaisesRegex(AssertionError, message):
                 self.compare_market_receipts(_canonical(document).encode("utf-8"))
 
+    def first_acceptances(self):
+        listed_ids = {
+            vid
+            for row in self.table["tuples"]
+            for context in row["contexts"]
+            for ids in context["steps"].values()
+            for vid in ids
+        }
+        return {
+            vid: self.by_id[vid] for vid in sorted(listed_ids)
+            if self.by_id[vid]["expected"]["kind"] == "accept"
+        }
+
+    def compare_booking_branch_receipts(self, raw):
+        document = _decode(raw)
+        fixture = self.check_companion_fixture_pin(document)
+        targets = {
+            vid: vector for vid, vector in self.first_acceptances().items()
+            if vector["context"] in BOOKING_BRANCH_STEPS
+            and "commerce_step" in vector and "receipt_ref" not in vector["expected"]
+        }
+        self.assertEqual(Counter(vector["context"] for vector in targets.values()), {
+            "booking-resale": 3, "booking-admission": 4, "booking-refund": 3,
+        })
+        self.assertEqual(set(targets), {
+            f"{context}/{step}" for context, steps in BOOKING_BRANCH_STEPS.items() for step in steps
+        })
+        expected = document["receipts"]
+        self.assertEqual(expected.keys(), targets.keys(), "booking receipt IDs differ")
+
+        receipts = {}
+        for vid, vector in targets.items():
+            try:
+                receipt = self.replay_target(vector)[vid]
+                self.assertEqual(
+                    _canonical(receipt), _canonical(expected[vid]),
+                    f"canonical booking receipt bytes differ for {vid}",
+                )
+            except (AssertionError, KeyError) as error:
+                error.add_note(f"vector={vid} setup={vector['setup']}")
+                raise
+            receipts[vid] = receipt
+        observed = {
+            "record_schema_version": BOOKING_BRANCH_SCHEMA,
+            "record_kind": "IN_PROCESS_MOCK_RECEIPT_VECTORS",
+            "normative": False,
+            "fixture": fixture,
+            "receipts": receipts,
+        }
+        self.assertEqual(_canonical(observed).encode("utf-8"), raw, "canonical booking companion bytes differ")
+
+    def test_booking_branch_full_receipts(self):
+        self.compare_booking_branch_receipts(read(BOOKING_BRANCH_RECEIPTS))
+
+    def test_booking_branch_receipt_mutations(self):
+        raw = read(BOOKING_BRANCH_RECEIPTS)
+        self.compare_booking_branch_receipts(raw)
+        pristine = _decode(raw)
+        vid = "booking-admission/order-B"
+        receipt = pristine["receipts"][vid]
+        self.assertIsNone(receipt["reservation"]["admission_id"])
+        self.assertIs(receipt["show"]["open"], True)
+        combined_step = self.golden_steps[6]
+        self.assertEqual(combined_step["id"], self.by_id[vid]["commerce_step"])
+
+        cases = (
+            ("missing field", lambda receipts: receipts[vid]["reservation"].pop("admission_id")),
+            ("changed type", lambda receipts: receipts[vid]["show"].update(open=1)),
+            ("different history", lambda receipts: receipts.update({vid: combined_step["receipt"]})),
+        )
+        for label, mutate in cases:
+            document = copy.deepcopy(pristine)
+            mutate(document["receipts"])
+            with self.subTest(mutation=label), self.assertRaisesRegex(
+                AssertionError, f"canonical booking receipt bytes differ for {vid}",
+            ):
+                self.compare_booking_branch_receipts(_canonical(document).encode("utf-8"))
+
+    def test_all_first_acceptances_resolve(self):
+        targets = self.first_acceptances()
+        direct_ids = {vid for vid, vector in targets.items() if "receipt_ref" in vector["expected"]}
+        market = _decode(read(MARKET_RECEIPTS))["receipts"]
+        booking = _decode(read(BOOKING_BRANCH_RECEIPTS))["receipts"]
+        self.assertEqual(len(targets), 56)
+        self.assertEqual((len(direct_ids), len(market), len(booking)), (32, 14, 10))
+        self.assertEqual(
+            Counter(direct_ids) + Counter(market.keys()) + Counter(booking.keys()),
+            Counter(targets.keys()),
+            "each first acceptance must have exactly one receipt source",
+        )
+        companions = market | booking
+        for vid, vector in targets.items():
+            with self.subTest(vector=vid, setup=vector["setup"]):
+                expected = self.resolve_receipt_ref(vector) if vid in direct_ids else companions[vid]
+                self.assertEqual(_canonical(self.replay_target(vector)[vid]), _canonical(expected))
+
+    def resolve_receipt_ref(self, vector):
+        index = vector["input_index"]
+        self.assertEqual(vector["expected"]["receipt_ref"], f"{RECEIPTS}#/steps/{index}/receipt")
+        golden = self.golden_steps[index]
+        self.assertEqual(golden["action"], vector["envelope"]["action"])
+        return golden["receipt"]
+
     def replay(self, host, vector, receipts):
         envelope = vector["envelope"]
         self.assertEqual(envelope["actor"], "commerce-journey-fixture")
@@ -373,11 +486,7 @@ class CommerceFixtureTupleTests(unittest.TestCase):
         for path, value in expected["receipt_fields"].items():
             self.assertEqual(_canonical(journey._resolve(receipt, path)), _canonical(value), path)
         if "receipt_ref" in expected:
-            index = vector["input_index"]
-            self.assertEqual(expected["receipt_ref"], f"{RECEIPTS}#/steps/{index}/receipt")
-            golden = self.golden_steps[index]
-            self.assertEqual(golden["action"], action)
-            self.assertEqual(_canonical(receipt), _canonical(golden["receipt"]))
+            self.assertEqual(_canonical(receipt), _canonical(self.resolve_receipt_ref(vector)))
         if kind == "duplicate":
             self.assertEqual(snapshot(host), before)
             first = receipts[vector["replay_of"]]
