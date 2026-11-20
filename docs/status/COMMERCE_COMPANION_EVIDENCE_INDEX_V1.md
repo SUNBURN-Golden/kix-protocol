@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects ten input/outcome pack families (341 steps) to replay tests
+It connects eleven input/outcome pack families (357 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -25,6 +25,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `admission_cancellation` | `commerce_admission_cancellation_inputs_v1.json` | `commerce_admission_cancellation_receipts_v1.json` | `test_commerce_admission_cancellation_vectors.py` | 3 / 26 |
 | `hold_release` | `commerce_hold_release_inputs_v1.json` | `commerce_hold_release_receipts_v1.json` | `test_commerce_hold_release_vectors.py` | 2 / 30 |
 | `linked_refund` | `commerce_linked_refund_inputs_v1.json` | `commerce_linked_refund_receipts_v1.json` | `test_commerce_linked_refund_vectors.py` | 1 / 18 |
+| `late_payment_after_cancel` | `commerce_late_payment_after_cancel_inputs_v1.json` | `commerce_late_payment_after_cancel_receipts_v1.json` | `test_commerce_late_payment_after_cancel_vectors.py` | 1 / 16 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -201,3 +202,22 @@ liability is **UNDETERMINED** with JunTae and legal counsel. The index retains
 acceptance `UNVERIFIED`.
 [Replay](../../reference/booking_resale_admission/test_commerce_linked_refund_vectors.py) ·
 [Coverage and local verification](../../validation/2026-11-20-plan-commerce-linked-refund-vectors/README.md)
+
+## Late payment after booking cancellation
+
+`late_payment_after_cancel` appends 16 associations. A confirmed unpaid
+`order-1` is cancelled, and buyer 2 confirms a replacement booking for the same
+slot. The late synthetic payment for `order-1` and its original-key replay both
+return `TERMINAL_IMMUTABLE` with identical machine states, digests and accepted
+journals. The original cancellation key returns the historical `FREE` slot in
+its receipt while the current slot stays reserved for buyer 2. The replacement
+has separate receipts for its own payment, issuance, authorization and
+consumption. [Replay guide](../../reference/booking_resale_admission/README.md#commerce-late-payment-after-booking-cancellation-vectors)
+
+Compensation is **UNDETERMINED** with Astra and JunTae. Refund liability and
+actual late-fact custody are outside this history. Actual provider facts remain
+subject to the state lifecycle contract. The pack carries `HOLD_SEMANTIC`,
+all 13 reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external
+acceptance is `UNVERIFIED`.
+[State lifecycle §3](../contracts/STATE_LIFECYCLE.md#3-lc-fact--늦은-사실-보존) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-late-payment-after-cancel/README.md)

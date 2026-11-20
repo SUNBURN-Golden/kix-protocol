@@ -19,6 +19,7 @@ import test_commerce_resale_expiry_vectors as expiry
 import test_commerce_admission_cancellation_vectors as cancellation
 import test_commerce_hold_release_vectors as hold_release
 import test_commerce_linked_refund_vectors as linked_refund
+import test_commerce_late_payment_after_cancel_vectors as late_payment
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -38,8 +39,10 @@ PACKS = (
     ('admission_cancellation', cancellation, 'CommerceAdmissionCancellationVectorTests', 'test_complete_output_bytes_and_references', 26),
     ('hold_release', hold_release, 'CommerceHoldReleaseVectorTests', 'test_complete_output_bytes_and_references', 30),
     ('linked_refund', linked_refund, 'CommerceLinkedRefundVectorTests', 'test_complete_output_bytes_and_references', 18),
+    ('late_payment_after_cancel', late_payment, 'CommerceLatePaymentAfterCancelVectorTests',
+     'test_complete_output_bytes_and_references', 16),
 )
-TOTAL_ENTRIES = 341
+TOTAL_ENTRIES = 357
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -74,6 +77,10 @@ LIMITATIONS = {
     'admission_cancellation': ['Synthetic cancellation/adoption ordering preserves issued credentials; rejected-key retention is process-local and legal effects remain UNDETERMINED—User/legal.'],
     'hold_release': ['Synthetic expired HELD reservations retain their slot until explicit release; historical replay preserves current reuse and rejected-key retention is process-local.'],
     'linked_refund': ['Partial mock cancellation acceptance adjusts the linked settlement while preserving cash and the issued right. Compensation policy is UNDETERMINED with Astra and JunTae. Legal refund liability is UNDETERMINED with JunTae and legal counsel.'],
+    'late_payment_after_cancel': [
+        'The refusals apply to the synthetic reservation command. Actual provider facts remain subject to STATE_LIFECYCLE.md §3.',
+        'Compensation is UNDETERMINED with Astra and JunTae. Refund liability and actual late-fact custody are outside this history.',
+    ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
               'outcome_kind', 'binding_ref', 'binding_status'}
@@ -313,6 +320,20 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                 target[field] = entries['bind-refund'][field]
             with self.subTest(field=field):
                 self._reject(cross, field + ' association')
+
+    def test_late_payment_crossed_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'late_payment_after_cancel')
+        entries = self.document['packs'][p]['entries']
+        original = next(i for i, entry in enumerate(entries) if entry['step_id'] == 'late-payment-a')
+        for step_id in ('replay-late-payment-a', 'payment-b'):
+            other = next(entry for entry in entries if entry['step_id'] == step_id)
+            self.assertEqual(other['action'], entries[original]['action'])
+            for field in ('input_ref', 'outcome_ref'):
+                with self.subTest(step=step_id, field=field):
+                    self._reject(
+                        lambda d: d['packs'][p]['entries'][original].update({field: other[field]}),
+                        field + ' association',
+                    )
 
     def test_digest_and_reference_controls(self):
         for p in range(len(PACKS)):
