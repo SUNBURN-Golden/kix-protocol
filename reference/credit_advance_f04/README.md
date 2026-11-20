@@ -493,3 +493,18 @@ remains **UNVERIFIED**. Product limits, repayment terms and netting remain
 **UNDETERMINED — Astra**; legal parties remain **UNDETERMINED — User/designated
 legal advisers**. A2 non-author exact-head review and exact-head KTX/KIX CI remain
 separate supervisor delivery gates.
+
+## Capital reconcile freshness vectors
+
+One in-process synthetic history captures both first reconcile receipts,
+then binds a full-gross refund. The original keys return the historical
+receipts. Fresh keys match both local journals while current variance is
+−100,000 KRW against the synthetic zero tolerance. F04 retains its frozen
+100,000 KRW face and 15,000 KRW outstanding exposure. The observation remains
+`NOT_BOUND`, with `repair=NONE` and `authorizes_exposure=false`.
+
+```sh
+python3 -B -m unittest discover -s reference/credit_advance_f04 -t reference/credit_advance_f04 -p test_capital_reconcile_freshness_vectors.py
+```
+
+[Inputs](fixtures/capital_reconcile_freshness_v1.json) · [Complete results](fixtures/capital_reconcile_freshness_vectors_v1.json) · [Worked comparison](../../docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-reconcile-freshness-vectors) · [Companion index](../../docs/status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md)
