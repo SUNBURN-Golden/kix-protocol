@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects twelve input/outcome pack families (373 steps) to replay tests
+It connects thirteen input/outcome pack families (389 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -27,6 +27,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `linked_refund` | `commerce_linked_refund_inputs_v1.json` | `commerce_linked_refund_receipts_v1.json` | `test_commerce_linked_refund_vectors.py` | 1 / 18 |
 | `late_payment_after_cancel` | `commerce_late_payment_after_cancel_inputs_v1.json` | `commerce_late_payment_after_cancel_receipts_v1.json` | `test_commerce_late_payment_after_cancel_vectors.py` | 1 / 16 |
 | `payment_ref_scope` | `commerce_payment_ref_scope_inputs_v1.json` | `commerce_payment_ref_scope_receipts_v1.json` | `test_commerce_payment_ref_scope_vectors.py` | 1 / 16 |
+| `resale_buyer_release` | `commerce_resale_buyer_release_inputs_v1.json` | `commerce_resale_buyer_release_receipts_v1.json` | `test_commerce_resale_buyer_release_vectors.py` | 1 / 16 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -239,3 +240,23 @@ This history carries `HOLD_SEMANTIC`, 13 `NOT_BOUND` reads, SD1 `OPEN` and
 User-owned, and external acceptance `UNVERIFIED`. The semantic grant for
 `commerce-fixture-8ba7f6c-1` covers the steps and outcomes listed in its
 qualification table. [Scoped fixture qualification](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md)
+
+## Resale buyer-hold release
+
+`resale_buyer_release` records one 16-step history. A wrong-buyer release
+returns `BUYER_MISMATCH` and preserves state, accepted journals and views. The
+named buyer releases `hold-1`, returning `list-1` to `LISTED` with the seller
+still holding `issue-1` at version 1 and no resale payment recorded. The same
+recipient acquires `hold-2`. Replaying the original release key returns its
+historical `LISTED` receipt with `duplicate: true` and `applied: null` while the
+current listing remains `BUY_HELD` under `hold-2`. A separate payment observation
+records `PAYMENT_NOTED`, and the explicit transfer moves `issue-1` to `buyer-2`
+at version 2.
+[Resale transitions §10.2](../contracts/BOOKING_RESALE_ADMISSION_GATES.md#102-전이) ·
+[Replay guide](../../reference/booking_resale_admission/README.md#commerce-resale-buyer-hold-release-vectors)
+
+The pack is non-normative mock evidence under `HOLD_SEMANTIC`. All three
+release calls retain `BOOTSTRAP_SCHEMA_BOUND`. The exact replay symbol is
+`CommerceResaleBuyerReleaseVectorTests.test_complete_output_bytes_and_references`.
+[Replay suite](../../reference/booking_resale_admission/test_commerce_resale_buyer_release_vectors.py) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-resale-buyer-release/README.md)

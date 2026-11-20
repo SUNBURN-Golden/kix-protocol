@@ -21,6 +21,7 @@ import test_commerce_hold_release_vectors as hold_release
 import test_commerce_linked_refund_vectors as linked_refund
 import test_commerce_late_payment_after_cancel_vectors as late_payment
 import test_commerce_payment_ref_scope_vectors as payment_ref_scope
+import test_commerce_resale_buyer_release_vectors as resale_buyer_release
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -44,8 +45,10 @@ PACKS = (
      'test_complete_output_bytes_and_references', 16),
     ('payment_ref_scope', payment_ref_scope, 'CommercePaymentRefScopeVectorTests',
      'test_complete_output_bytes_and_references', 16),
+    ('resale_buyer_release', resale_buyer_release, 'CommerceResaleBuyerReleaseVectorTests',
+     'test_complete_output_bytes_and_references', 16),
 )
-TOTAL_ENTRIES = 373
+TOTAL_ENTRIES = 389
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -87,6 +90,10 @@ LIMITATIONS = {
     'payment_ref_scope': [
         'Payment reference scope is observed across two shows in one in-process mock host. Cross-channel exclusivity, provider identity and funds finality are outside this evidence.',
         'Rejected-key retention is process-local. Product TTLs, fees and compensation remain UNDETERMINED with Astra and JunTae, and provider and legal terms remain with their existing owners.',
+    ],
+    'resale_buyer_release': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The resale_release_hold binding is BOOTSTRAP_SCHEMA_BOUND.',
+        'The release replay preserves its first LISTED receipt while the current listing retains the fresh BUY_HELD hold. Payment observation and transfer are separate mock effects.',
     ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
@@ -353,6 +360,26 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
 
             with self.subTest(field=field):
                 self._reject(swap, field + ' association')
+
+    def test_resale_buyer_release_crossed_outcome_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'resale_buyer_release')
+        entries = {entry['step_id']: entry for entry in self.document['packs'][p]['entries']}
+        for step_id in ('release-wrong-buyer', 'release-hold', 'replay-release-hold'):
+            with self.subTest(step=step_id):
+                self.assertEqual(entries[step_id]['binding_ref'], BINDING + '#/commands/items/65')
+                self.assertEqual(entries[step_id]['binding_status'], 'BOOTSTRAP_SCHEMA_BOUND')
+
+        def swap(document):
+            entries = {entry['step_id']: entry for entry in document['packs'][p]['entries']}
+            release, replay = entries['release-hold'], entries['replay-release-hold']
+            self.assertEqual(release['action'], replay['action'])
+            inputs = resale_buyer_release.FIXTURE
+            documents = {inputs: journey._decode(_read(inputs))}
+            self.assertTrue(_same(_resolve(documents, release['input_ref']),
+                                  _resolve(documents, replay['input_ref'])))
+            release['outcome_ref'], replay['outcome_ref'] = replay['outcome_ref'], release['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
 
     def test_digest_and_reference_controls(self):
         for p in range(len(PACKS)):
