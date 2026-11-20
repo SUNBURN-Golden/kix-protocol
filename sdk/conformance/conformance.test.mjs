@@ -24,7 +24,7 @@ import {
   canonicalStringify,
   parseStrict,
 } from "../src/jsonschema.ts";
-import { canonicalBytes, gitBlobId, sha256Hex } from "../src/manifest.ts";
+import { MANIFEST_SCHEMA_VERSION, canonicalBytes, gitBlobId, sha256Hex } from "../src/manifest.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const OPENAPI_PATH = "docs/contracts/openapi/kix-protocol.contract-only.openapi.json";
@@ -1010,4 +1010,148 @@ test("client surface does not carry a URL, credential, or repeat-call API", () =
   assert.equal(pin.openapi.sha256, OPENAPI_PIN.sha256);
   assert.equal(pin.source.sha256, OPENAPI_PIN.sourceSha256);
   assert.equal(createHash("sha256").update(read(OPENAPI_PATH)).digest("hex"), pin.openapi.sha256);
+});
+
+function readCommerceGrantRecord(manifest, name, path, version) {
+  const refs = manifest.vectors.filter((ref) => ref.name === name);
+  if (refs.length !== 1 || refs[0].path !== path) return;
+  const bytes = read(refs[0].path);
+  if (sha256Hex(bytes) !== refs[0].sha256) return;
+  const record = parseStrict(bytes);
+  if (record.record_schema_version === version) return record;
+}
+
+function loadCommerceGrant(manifestPath) {
+  const run = runVerifier(manifestPath, SEMANTIC, COMMERCE_REVISION);
+  if (run.status !== 0) return;
+  const verdict = JSON.parse(run.stdout);
+  const manifestBytes = read(manifestPath);
+  const manifest = parseStrict(manifestBytes);
+  if (!verdict.ok || verdict.manifest_sha256 !== sha256Hex(manifestBytes) ||
+      manifest.manifest_schema_version !== MANIFEST_SCHEMA_VERSION) return;
+
+  const profileBytes = read(COMMERCE_PROFILE);
+  const profile = parseStrict(profileBytes);
+  if (sha256Hex(profileBytes) !== manifest.profile_sha256 ||
+      profile.grants !== "commerce-fixture-tuples-only: see commerce-fixture-qualification-table") return;
+
+  const table = readCommerceGrantRecord(
+    manifest, "commerce-fixture-qualification-table", COMMERCE_TABLE,
+    "kix-commerce-fixture-tuple-conformance/1",
+  );
+  const corpus = readCommerceGrantRecord(
+    manifest, "commerce-fixture-request-to-receipt", COMMERCE_VECTORS,
+    "kix-commerce-fixture-vectors/1",
+  );
+  if (!table || !corpus || !sameFixtureJson(table.producer, manifest.producer)) return;
+  for (const { path, sha256, gitBlob } of Object.values(table.pins).flat()) {
+    const bytes = read(path);
+    if (sha256Hex(bytes) !== sha256 || gitBlobId(bytes) !== gitBlob) return;
+  }
+
+  const vectorsById = new Map(corpus.vectors.map((vector) => [vector.id, vector]));
+  if (vectorsById.size !== corpus.vectors.length) return;
+  return { table, vectorsById, schemaDigests: profile.catalogue.schema_digests };
+}
+
+function sameFixtureJson(left, right) {
+  return left !== undefined && right !== undefined &&
+    canonicalStringify(left) === canonicalStringify(right);
+}
+
+function selectCommerceGrant(request, grantFor) {
+  if (request.kind === "read" || request.kind === "proposed_recovery") {
+    return { status: "NOT_BOUND", vector_id: null };
+  }
+  const hold = { status: "HOLD_SEMANTIC", vector_id: null };
+  const grant = grantFor(request.manifest_path);
+  if (!grant || !sameFixtureJson(request.producer, grant.table.producer)) return hold;
+
+  const fields = ["method", "path", "action", "machine", "op", "subject_field", "body_schema_sha256"];
+  const tuples = grant.table.tuples.filter((tuple) =>
+    tuple.level === SEMANTIC && fields.every((field) => tuple[field] === request[field]));
+  const { action, body_schema_sha256: digest, envelope, setup, outcome } = request;
+  const schema = COMMAND_SCHEMAS[action];
+  if (tuples.length !== 1 || !schema || digest !== grant.schemaDigests[action] ||
+      digest !== sha256Hex(canonicalBytes(schema)) || envelope?.action !== action) return hold;
+
+  const subjectField = tuples[0].subject_field;
+  const subject = envelope.body?.[subjectField];
+  const contexts = tuples[0].contexts.filter((entry) => entry.context === request.context);
+  const ids = contexts[0]?.steps[request.commerce_step];
+  if (subject === undefined || contexts.length !== 1 || !ids?.length ||
+      new Set(ids).size !== ids.length) return hold;
+
+  const candidates = ids.map((id) => grant.vectorsById.get(id));
+  if (candidates.some((vector) => !vector)) return hold;
+  const matches = candidates.filter((vector) =>
+    vector.context === request.context && vector.commerce_step === request.commerce_step &&
+    sameFixtureJson(vector.envelope.body[subjectField], subject) &&
+    sameFixtureJson(vector.envelope, envelope) && sameFixtureJson(vector.setup, setup) &&
+    sameFixtureJson(vector.expected, outcome));
+  if (matches.length !== 1 || matches[0].setup.some((id) => !grant.vectorsById.has(id))) return hold;
+  return { status: SEMANTIC, vector_id: matches[0].id };
+}
+
+test("Commerce grant lookup", async (t) => {
+  const bytes = read("sdk/conformance/vectors/producer-grant-selection.vectors.json");
+  const document = parseStrict(bytes);
+  assert.equal(document.record_schema_version, "kix-producer-grant-selection-vectors/1");
+  assert.equal(bytes.toString("utf8"), canonicalStringify(document));
+  assert.equal(new Set(document.cases.map(({ id }) => id)).size, document.cases.length);
+
+  const grants = new Map();
+  function grantFor(manifestPath) {
+    if (!grants.has(manifestPath)) {
+      let grant;
+      try {
+        grant = loadCommerceGrant(manifestPath);
+      } catch (error) {
+        if (!(error instanceof StrictJsonError) && !["open", "read"].includes(error.syscall)) throw error;
+      }
+      grants.set(manifestPath, grant);
+    }
+    return grants.get(manifestPath);
+  }
+
+  let transportCalls = 0;
+  const consumer = {
+    ...createLocalCallClient({ transport: () => {
+      transportCalls += 1;
+      throw new Error("Commerce grant lookup called transport");
+    } }),
+    select: (request) => selectCommerceGrant(request, grantFor),
+  };
+  function check({ id, request, expect }) {
+    assert.deepEqual(consumer.select(request), { ...expect }, id);
+    assert.equal(transportCalls, 0, id);
+  }
+
+  await t.test("selects only the exact command evidence", () => {
+    const commands = document.cases.filter(({ request }) => request.kind === "command");
+    for (const item of commands) check(item);
+    assert.deepEqual(commands.filter(({ expect }) => expect.status === SEMANTIC)
+      .map(({ expect }) => expect.vector_id).sort(), [
+      "resale-market/market-cancel-BUY_HELD",
+      "resale-market/market-cancel-LISTED",
+    ]);
+  });
+  await t.test("preserves the unbound reads and proposed recovery lookup", () => {
+    const { readQueries } = JSON.parse(read(COMMERCE_BINDING_INDEX));
+    const reads = document.cases.filter(({ request }) => request.kind === "read");
+    assert.equal(reads.length, 13);
+    assert.deepEqual(reads.map(({ request }) => request.name).sort(),
+      readQueries.items.map(({ name }) => name).sort());
+    assert.ok(readQueries.items.every(({ status }) => status === "NOT_BOUND"));
+
+    const recovery = document.cases.filter(({ request }) => request.kind === "proposed_recovery");
+    assert.equal(recovery.length, 1);
+    assert.deepEqual(Object.keys(recovery[0].request).sort(),
+      ["kind", "operation_id", "source_cut", "subject", "trace_id"]);
+    for (const item of [...reads, ...recovery]) {
+      assert.deepEqual({ ...item.expect }, { status: "NOT_BOUND", vector_id: null }, item.id);
+      check(item);
+    }
+  });
+  assert.equal(transportCalls, 0);
 });
