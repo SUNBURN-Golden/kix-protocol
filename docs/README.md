@@ -832,6 +832,10 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 
 - One synthetic F01–F04 history compares first receipts and original-key replays with fresh local matches and current variance after a full-gross refund. The frozen credit face and exposure persist, and the observation remains `NOT_BOUND` with `repair=NONE`. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-reconcile-freshness-vectors) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md) · [Inputs](../reference/credit_advance_f04/fixtures/capital_reconcile_freshness_v1.json) · [Complete results](../reference/credit_advance_f04/fixtures/capital_reconcile_freshness_vectors_v1.json) · [Builder validation](../validation/2026-11-20-plan-capital-reconcile-freshness-vectors/README.md)
 
+## 2026-11-20 Capital later settlement statement vectors — 위치 안내만
+
+- A synthetic F01–F04 history follows a requester-borne partial refund, a later statement and its original-key replay, and the distribution of newly confirmed cash against frozen credit. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-later-settlement-statement-vectors) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#l1-later-settlement-statement-after-a-requester-refund) · [Builder validation](../validation/2026-11-20-plan-capital-later-statement-vectors/README.md)
+
 ## 2026-11-20 Commerce late payment after booking cancellation — 위치 안내만
 
 - One 16-step in-process history covers `TERMINAL_IMMUTABLE` on late synthetic payment and exact replay, historical cancellation replay after slot reuse, and separate payment, issuance, authorization and consumption receipts for the replacement buyer. Compensation is `UNDETERMINED` with Astra and JunTae. [Replay guide](../reference/booking_resale_admission/README.md#commerce-late-payment-after-booking-cancellation-vectors) · [Companion index](status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#late-payment-after-booking-cancellation) · [Builder validation](../validation/2026-11-20-plan-commerce-late-payment-after-cancel/README.md)

@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates ten
+read-only discovery metadata for `kix-capital`. It associates eleven
 consumer pack families and two supporting observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -56,7 +56,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_refund_identity | setup_and_history | 24 | 13 |
 | capital_reconcile_freshness | setup_and_history | 15 | 8 |
 | capital_predraw_terminal | setup_and_history | 20 | 14 |
-| **Total** | | **438** | **122** |
+| capital_later_statement | setup_and_history | 13 | 6 |
+| **Total** | | **451** | **128** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -86,7 +87,7 @@ ordering follows the existing replay recipe: create, capture confirmation,
 settle, each advance's offer/approve/bind/draw, frozen checkpoint, then each
 history action and its checkpoint. P/F/FD keep their distinct order.
 
-The seven families with setup and history associate `setup_steps` with
+The eight families with setup and history associate `setup_steps` with
 `setup_results`, and `steps` with `history`. `observations` contain
 `scenario_id`, `kind`, `ref`, and `step_id` for `step_snapshot` observations.
 They reference existing initial/per-step snapshots and, where present,
@@ -101,7 +102,7 @@ The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the ten consumer families.
+evidence, outside the eleven consumer families.
 
 ### P1 pre-draw rejection and cancellation
 
@@ -131,6 +132,28 @@ Pre-draw shared-exposure grouping remains contract-undefined. A
 Replay symbol `CapitalPredrawTerminalVectorTests.test_complete_history_vectors`
 in [`test_capital_predraw_terminal_vectors.py`](../../reference/credit_advance_f04/test_capital_predraw_terminal_vectors.py).
 [P1 field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-pre-draw-rejection-and-cancellation-companion-p1)
+
+### L1 later settlement statement after a requester refund
+
+`capital_later_statement` indexes `L1_later_statement_after_requester_refund`.
+The history follows the later statement and its original-key replay through the
+next distribution against the same frozen credit claim.
+
+| Pin under `reference/credit_advance_f04/fixtures/` | SHA-256 | Git blob |
+| --- | --- | --- |
+| [Input `capital_later_statement_v1.json`](../../reference/credit_advance_f04/fixtures/capital_later_statement_v1.json) | `1d0e7e806258b3bdaca08da0d4486fcdaf119fdb41470ac48f4df4602821ae4b` | `5cd80de37aad4c4ed8aca10208606f79e7856e49` |
+| [Output `capital_later_statement_vectors_v1.json`](../../reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json) | `8d9949eec525ade2369437dde20f11f3aaa0a70b1d0a387af36bd64f33294317` | `bbbd19e8ba7db7f7617a5fe0742e1663aa336cff` |
+
+| Entries | Input fragment | Complete result fragment |
+| --- | --- | --- |
+| Setup (`j = 0…7`) | `#/scenarios/0/setup_steps/{j}` | `#/scenarios/0/setup_results/{j}/result` |
+| History (`j = 0…4`) | `#/scenarios/0/steps/{j}` | `#/scenarios/0/history/{j}/result` |
+
+The six observations point to `#/scenarios/0/history/{j}/snapshot` in history
+order, followed by `#/scenarios/0/initial_snapshot`. The index validator checks
+position even when the statement and replay arguments or snapshots are equal.
+Replay symbol `CapitalLaterStatementVectorTests.test_complete_history_vectors`.
+[Replay verifier](../../reference/credit_advance_f04/test_capital_later_statement_vectors.py) · [L1 field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-later-settlement-statement-vectors)
 
 ## Read-only consumption
 

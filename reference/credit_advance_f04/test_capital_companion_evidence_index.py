@@ -63,6 +63,10 @@ PACKS = (
      'test_capital_predraw_terminal_vectors.py', 'CapitalPredrawTerminalVectorTests.test_complete_history_vectors',
      'Capital pre-draw rejection and cancellation companion (P1)',
      ('P1_reject_cancel_before_draw',), ((7, 13),)),
+    ('capital_later_statement', 'setup_and_history', 'capital_later_statement_v1.json', 'capital_later_statement_vectors_v1.json',
+     'test_capital_later_statement_vectors.py', 'CapitalLaterStatementVectorTests.test_complete_history_vectors',
+     'Capital later settlement statement vectors',
+     ('L1_later_statement_after_requester_refund',), ((8, 5),)),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -101,6 +105,11 @@ LIMITATIONS = {
         'In this synthetic, process-local history, rejection and cancellation precede the first credit note. '
         'Replays preserve historical outcomes. The separate full-capacity draw is mock evidence. '
         'Pre-draw shared-exposure grouping remains contract-undefined. A null shared_exposure records that the observer was skipped.',
+    ],
+    'capital_later_statement': [
+        'The original statement key replays its first receipt without adding cash. '
+        'The next distribution uses only new confirmed cash in the original fixture order. '
+        'The requester refund and frozen credit remain separate. Cash delta is diagnostic and does not enter variance.',
     ],
 }
 SUPPORTING = (
@@ -334,10 +343,10 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 438)
+        self.assertEqual(validate_index(self.document), 451)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20])
-        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 122)
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13])
+        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
     def test_membership_controls(self):
@@ -479,6 +488,23 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             ):
                 with self.subTest(step_id=step_id, field=field):
                     self._reject(lambda d: swap(d, step_id, collection, field), diagnostic)
+
+    def test_later_statement_crossed_references(self):
+        # Both snapshots and both call argument sets are equal. Position still
+        # distinguishes the first accepted observation from its replay.
+        def swap(document, collection, field):
+            pack = next(p for p in document['packs'] if p['id'] == 'capital_later_statement')
+            rows = {row.get('step_id'): row for row in pack[collection]}
+            first, replayed = rows['statement-later'], rows['statement-replay']
+            first[field], replayed[field] = replayed[field], first[field]
+
+        for collection, field, diagnostic in (
+            ('entries', 'input_ref', 'entry membership/association'),
+            ('entries', 'result_ref', 'entry membership/association'),
+            ('observations', 'ref', 'supplemental observation association'),
+        ):
+            with self.subTest(field=field):
+                self._reject(lambda d: swap(d, collection, field), diagnostic)
 
     def test_pin_controls(self):
         for i in range(len(PACKS)):
