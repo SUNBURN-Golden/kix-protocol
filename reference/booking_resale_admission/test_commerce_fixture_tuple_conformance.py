@@ -1,11 +1,13 @@
 """Replay the pinned Commerce fixture envelopes against the in-memory producer."""
 
+import copy
 import hashlib
 import json
 import unittest
 from collections import Counter, defaultdict
 
 import test_commerce_journey_conformance as journey
+from test_commerce_journey_receipts import _decode, _pin
 from integration_gate.catalogue import git_blob_id, load_catalogue
 from integration_gate.constants import CONTRACT_ONLY_OPENAPI, INTEGRATION_GATE_OPENAPI, LOCAL_CALL_PATH
 from integration_gate.fsm_host import FsmHost, FsmRejected
@@ -15,8 +17,10 @@ from mock_gates import NON_CLAIMS, _canonical
 ROOT = journey.ROOT
 TABLE = "docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json"
 VECTORS = "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json"
+MANIFEST = "sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json"
 INPUTS = "reference/booking_resale_admission/fixtures/commerce_journey_conformance_v1.json"
 RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json"
+MARKET_RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json"
 PRODUCER = "8ba7f6c36373ac0ec49246f51f7471c164ac3a28"
 TREE = "d3f5412ef84f64fe83c5d3a3d3ada173921bfbf9"
 COMMERCE = "9a55fe4e257376f9db3f877a11b65e3ecc43c661"
@@ -43,7 +47,8 @@ class CommerceFixtureTupleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.table = json.loads(read(TABLE))
-        cls.corpus = json.loads(read(VECTORS))
+        cls.corpus_raw = read(VECTORS)
+        cls.corpus = _decode(cls.corpus_raw)
         cls.vectors = cls.corpus["vectors"]
         cls.by_id = {vector["id"]: vector for vector in cls.vectors}
         cls.catalogue = load_catalogue(ROOT)
@@ -199,20 +204,114 @@ class CommerceFixtureTupleTests(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(raw).hexdigest(), ref["sha256"])
 
     def test_vectors(self):
-        # Treat every target as a separate replay so a previous test cannot supply setup.
         for vector in self.vectors:
-            with self.subTest(vector=vector["id"]):
-                host = FsmHost()
-                receipts = {}
-                setup = vector["setup"]
-                self.assertEqual(len(set(setup)), len(setup))
-                self.assertNotIn(vector["id"], setup)
-                for index, vid in enumerate(setup):
-                    entry = self.by_id[vid]
-                    self.assertEqual(entry["context"], vector["context"])
-                    self.assertEqual(entry["setup"], setup[:index])
-                    self.replay(host, entry, receipts)
-                self.replay(host, vector, receipts)
+            with self.subTest(vector=vector["id"], setup=vector["setup"]):
+                self.replay_target(vector)
+
+    def replay_target(self, vector):
+        host = FsmHost()
+        receipts = {}
+        setup = vector["setup"]
+        self.assertEqual(len(set(setup)), len(setup))
+        self.assertNotIn(vector["id"], setup)
+        for index, vid in enumerate(setup):
+            entry = self.by_id[vid]
+            self.assertEqual(entry["context"], vector["context"])
+            self.assertEqual(entry["setup"], setup[:index])
+            self.replay(host, entry, receipts)
+        self.replay(host, vector, receipts)
+        return receipts
+
+    def compare_market_receipts(self, raw):
+        expected = _decode(raw)
+        fixture = _pin(VECTORS, self.corpus_raw)
+        self.assertEqual(expected["fixture"], fixture, "companion vector pin drift")
+        manifest = _decode(read(MANIFEST))
+        manifest_pins = [
+            (entry["path"], entry["sha256"]) for entry in manifest["vectors"]
+            if entry["name"] == "commerce-fixture-request-to-receipt"
+        ]
+        self.assertEqual(manifest_pins, [(VECTORS, fixture["sha256"])], "manifest vector pin drift")
+
+        targets = [
+            vector for vector in self.vectors
+            if vector["context"] == "resale-market" and vector["expected"]["kind"] == "accept"
+        ]
+        ids = {vector["id"] for vector in targets}
+        self.assertEqual(len(targets), 14)
+        self.assertEqual(len(ids), len(targets), "duplicate accepted market vector ID")
+        self.assertEqual(set(expected["receipts"]), ids, "market receipt IDs differ")
+
+        receipts = {}
+        for vector in targets:
+            vid = vector["id"]
+            try:
+                receipt = self.replay_target(vector)[vid]
+                self.assertEqual(
+                    _canonical(receipt), _canonical(expected["receipts"][vid]),
+                    "canonical market receipt bytes differ",
+                )
+            except (AssertionError, KeyError) as error:
+                error.add_note(f"vector={vid} setup={vector['setup']}")
+                raise
+            receipts[vid] = receipt
+        observed = {
+            "record_schema_version": "kix-commerce-market-full-receipts/1",
+            "record_kind": "IN_PROCESS_MOCK_RECEIPT_VECTORS",
+            "normative": False,
+            "fixture": fixture,
+            "receipts": receipts,
+        }
+        self.assertEqual(_canonical(observed).encode("utf-8"), raw, "canonical market companion bytes differ")
+        return receipts
+
+    def test_market_full_receipts(self):
+        receipts = self.compare_market_receipts(read(MARKET_RECEIPTS))
+        for phase, anchor in (("LISTED", "market-list"), ("BUY_HELD", "market-hold")):
+            vid = f"resale-market/market-cancel-{phase}"
+            vector = self.by_id[vid]
+            with self.subTest(vector=vid, setup=vector["setup"]):
+                self.assertEqual(vector["market_cancel_from"], phase)
+                self.assertEqual(vector["setup"][-1], f"resale-market/{anchor}")
+                listing, right = receipts[vid]["listing"], receipts[vid]["right"]
+                self.assertEqual(listing["phase"], "CANCELLED")
+                self.assertIs(listing["attached"], False)
+                self.assertIsNone(right["listing_id"])
+                self.assertEqual((right["right_id"], right["holder_role"], right["version"]),
+                                 ("issue-1", "buyer-1", 1))
+
+        for step, phase, transferred, holder, version in (
+            ("market-pay", "PAYMENT_NOTED", False, "buyer-1", 1),
+            ("market-accept", "TRANSFERRED", True, "buyer-2", 2),
+        ):
+            vid = f"resale-market/{step}"
+            with self.subTest(vector=vid, setup=self.by_id[vid]["setup"]):
+                listing, right = receipts[vid]["listing"], receipts[vid]["right"]
+                self.assertEqual(listing["phase"], phase)
+                self.assertIs(listing["ownership_transferred"], transferred)
+                self.assertEqual(listing["settlement_gate"], "UNBOUND")
+                self.assertEqual((right["right_id"], right["holder_role"], right["version"]),
+                                 ("issue-1", holder, version))
+
+    def test_market_receipt_mutations(self):
+        raw = read(MARKET_RECEIPTS)
+        self.compare_market_receipts(raw)
+        pristine = _decode(raw)
+        pay = "resale-market/market-pay"
+        id_error = "market receipt IDs differ"
+        receipt_error = "canonical market receipt bytes differ"
+        cases = (
+            ("missing ID", id_error, lambda receipts: receipts.pop(pay)),
+            ("extra ID", id_error, lambda receipts: receipts.update({"resale-market/extra": receipts[pay]})),
+            ("extra field", receipt_error, lambda receipts: receipts[pay]["right"].update(extra=None)),
+            ("altered holder", receipt_error, lambda receipts: receipts[pay]["right"].update(holder_role="buyer-2")),
+            ("altered type", receipt_error, lambda receipts: receipts[pay]["listing"].update(ownership_transferred=0)),
+        )
+        for label, message, mutate in cases:
+            document = copy.deepcopy(pristine)
+            mutate(document["receipts"])
+            with self.subTest(mutation=label), self.assertRaisesRegex(AssertionError, message):
+                self.compare_market_receipts(_canonical(document).encode("utf-8"))
 
     def replay(self, host, vector, receipts):
         envelope = vector["envelope"]

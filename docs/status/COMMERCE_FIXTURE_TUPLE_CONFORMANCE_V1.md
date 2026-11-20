@@ -23,6 +23,13 @@ listed actions only. `bootstrap-2` continues to grant schema binding.
 | Booking refund | Confirmed unpaid reservation cancellation, separate mock settlement cancel and fail, and a captured settlement's refund binding and mock acceptance. Issuance after reservation cancellation is a refusal. |
 | Resale market | Primary reservation to issuance, listing, buyer hold, payment and transfer with settlement `UNBOUND`. Listing cancellation is covered from both `LISTED` and `BUY_HELD`. After payment it is a refusal. |
 
+The [full market receipts](../../reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json)
+give `kix-commerce-apps` the complete producer output for each of the 14
+accepted `resale-market` vectors. In the companion JSON, use the vector ID as
+the key in `receipts`, for example `receipts["resale-market/market-pay"]`.
+The companion pins the source corpus and supplements manifest revision
+`commerce-fixture-8ba7f6c-1`. External Commerce acceptance remains `UNVERIFIED`.
+
 An unlisted tuple or context is outside the grant. Keep unresolved `UNKNOWN`
 outcomes fenced. The market, settlement and operation-recovery reads remain
 `NOT_BOUND`. [PR #146 change requests](https://github.com/SUNBURN-Golden/kix-commerce-apps/blob/9a55fe4e257376f9db3f877a11b65e3ecc43c661/docs/kix-resale-journey-binding-change-requests.md)
@@ -40,6 +47,13 @@ node sdk/compat/verify_compat.mjs \
 python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -p 'test_commerce_fixture_tuple_conformance.py'
 npm --prefix sdk run conformance
+```
+
+For the full market receipt comparison and its mutation checks, run
+
+```sh
+python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -p 'test_commerce_fixture_tuple_conformance.py' -k market -v
 ```
 
 Use the manifest and vectors with their referenced files. For each target,
