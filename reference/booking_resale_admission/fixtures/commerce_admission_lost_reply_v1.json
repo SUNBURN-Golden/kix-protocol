@@ -1,0 +1,79 @@
+{
+  "record_schema_version": "kix-commerce-admission-lost-reply/1",
+  "source_vector": {
+    "path": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
+    "id": "booking-admission/consume-B",
+    "sha256": "c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22"
+  },
+  "expected_caller": {
+    "operationId": "op-booking-admission-consume-B",
+    "idempotency_key": "key-consume-B",
+    "receipt": null,
+    "outcome": "UNKNOWN",
+    "attempts": 1,
+    "follow_up_calls": 0
+  },
+  "cases": [
+    {
+      "id": "loss-before-dispatch",
+      "fault_point": "before_dispatch",
+      "producer_evidence": {
+        "dispatches": 0,
+        "admission": {
+          "phase": "AUTHORIZED",
+          "admission_id": "admit-B",
+          "state": "ACTIVE",
+          "version": 1
+        },
+        "reservation": {
+          "phase": "ADMISSION_AUTHORIZED",
+          "admission_id": "admit-B",
+          "state": "ACTIVE",
+          "version": 1
+        },
+        "journal_delta": {
+          "admission": 0,
+          "reservation": 0,
+          "resale": 0,
+          "settlement": 0,
+          "credit": 0
+        },
+        "appended_journal_entries": {}
+      }
+    },
+    {
+      "id": "loss-after-dispatch",
+      "fault_point": "after_dispatch",
+      "producer_evidence": {
+        "dispatches": 1,
+        "admission": {
+          "phase": "CONSUMED",
+          "admission_id": null,
+          "state": "CONSUMED",
+          "version": 2
+        },
+        "reservation": {
+          "phase": "CONSUMED",
+          "admission_id": null,
+          "state": "CONSUMED",
+          "version": 2
+        },
+        "journal_delta": {
+          "admission": 1,
+          "reservation": 1,
+          "resale": 0,
+          "settlement": 0,
+          "credit": 0
+        },
+        "appended_journal_entries": {
+          "admission": [
+            {"op": "consume", "subject_id": "consume-B", "idempotency_key": "key-consume-B"}
+          ],
+          "reservation": [
+            {"op": "consume", "subject_id": "consume-B", "idempotency_key": "key-consume-B"}
+          ]
+        }
+      }
+    }
+  ]
+}
