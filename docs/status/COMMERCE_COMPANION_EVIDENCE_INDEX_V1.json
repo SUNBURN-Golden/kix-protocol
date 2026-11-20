@@ -4041,6 +4041,189 @@
           "binding_status": "MOCK_EVIDENCE"
         }
       ]
+    },
+    {
+      "id": "resale_buyer_release",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json",
+        "sha256": "c2dadf11af8a793f7435235e36d8ae39ed610b28579173eb1cd185bf081303a2",
+        "gitBlob": "5bf705a2f30b47ad14c8cba03135b270abb5b2f5"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json",
+        "sha256": "d4aa095c38c81ed3dc4164b4edc8dbcc845f0a5657f21b36f92acb5917a80ac6",
+        "gitBlob": "f869974e4f0c9d87a2745b2b1aa3cc6d2b9356c2"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_resale_buyer_release_vectors.py",
+        "symbol": "CommerceResaleBuyerReleaseVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The resale_release_hold binding is BOOTSTRAP_SCHEMA_BOUND.",
+        "The release replay preserves its first LISTED receipt while the current listing retains the fresh BUY_HELD hold. Payment observation and transfer are separate mock effects."
+      ],
+      "entries": [
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "reservation-clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "hold",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "confirm",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "payment",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/4",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "issue",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/5",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-clock",
+          "action": "resale_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-adopt",
+          "action": "resale_adopt_issued",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/7",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/62",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "list",
+          "action": "resale_list_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/8",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-hold",
+          "action": "resale_hold_buy",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/9",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/64",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "release-wrong-buyer",
+          "action": "resale_release_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/10",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/65",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "release-hold",
+          "action": "resale_release_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/65",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-hold-fresh",
+          "action": "resale_hold_buy",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/12",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/64",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "replay-release-hold",
+          "action": "resale_release_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/13",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/65",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-payment",
+          "action": "resale_observe_resale_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/14",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "transfer",
+          "action": "resale_accept_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/15/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/15",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/69",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
     }
   ]
 }

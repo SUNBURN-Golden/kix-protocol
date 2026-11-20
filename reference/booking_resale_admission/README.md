@@ -4554,8 +4554,8 @@ journal entry. The final command records the original primary reference for
 `order-2` on `show-2`. A local snapshot shows both primary payments.
 
 The replay checks the published command schema, complete canonical outcomes,
-and exact input pointers. The companion index now covers twelve families and
-373 steps. [Canonical inputs](fixtures/commerce_payment_ref_scope_inputs_v1.json) ·
+and exact input pointers. This twelfth family brought the index to 373 steps.
+[Canonical inputs](fixtures/commerce_payment_ref_scope_inputs_v1.json) ·
 [Complete outcomes](fixtures/commerce_payment_ref_scope_receipts_v1.json) ·
 [Replay suite](test_commerce_payment_ref_scope_vectors.py) ·
 [Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
@@ -4596,3 +4596,36 @@ python3.12 -B -m unittest discover -s reference/booking_resale_admission \
 This offline companion evidence sits outside the pinned
 `commerce-fixture-8ba7f6c-1` grant. External Commerce acceptance remains
 `UNVERIFIED`. [Scoped fixture qualification](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#scoped-commerce-fixture-qualification)
+
+## Commerce resale buyer-hold release vectors
+
+`buyer-2` acquires `hold-1` for `list-1`. A release from `buyer-3` returns
+`BUYER_MISMATCH`. The replay compares canonical state, digests, accepted journals
+and public views across the refusal. The valid release clears the hold and
+returns `LISTED`, with `issue-1` still held by `buyer-1` at version 1 and the
+resale payment reference still null.
+
+After `buyer-2` acquires `hold-2`, replaying the original release key returns
+the first `LISTED` receipt with `duplicate: true` and `applied: null`. The
+current listing stays `BUY_HELD` under `hold-2`. The replay compares the full
+first receipt and checks that current state, digests, journals and views match
+their pre-replay values. An explicit payment observation records `PAYMENT_NOTED`
+without moving funds. The separate transfer moves `issue-1` to `buyer-2` at
+version 2. The companion index covers thirteen families and 389 steps.
+[Canonical inputs](fixtures/commerce_resale_buyer_release_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_resale_buyer_release_receipts_v1.json) ·
+[Replay suite](test_commerce_resale_buyer_release_vectors.py) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_resale_buyer_release_vectors.py
+```
+
+This non-normative mock evidence carries `HOLD_SEMANTIC`. The `resale_release_hold`
+binding is `BOOTSTRAP_SCHEMA_BOUND`, all 13 reads are `NOT_BOUND`, SD1 is `OPEN`
+and User-owned, and external acceptance is `UNVERIFIED`. Product TTLs, fees and
+compensation remain `UNDETERMINED` with Astra and JunTae. Provider and legal
+terms retain their existing owners.
+[Scoped fixture qualification](../../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-resale-buyer-release/README.md)

@@ -265,8 +265,8 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect twelve
-Commerce input/outcome pack families (373 steps) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect thirteen
+Commerce input/outcome pack families (389 steps) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Use the
 [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
@@ -289,6 +289,14 @@ distinct resale payment and explicit transfer, and a second-show primary
 payment using the original reference bytes. Both shows run in the same
 in-memory host. [Payment-reference replay](../../reference/booking_resale_admission/test_commerce_payment_ref_scope_vectors.py) ·
 [Builder validation](../../validation/2026-11-20-plan-commerce-payment-ref-scope/README.md)
+
+The resale buyer-hold release pack records the `BUYER_MISMATCH` refusal,
+release back to `LISTED`, and historical release replay after the same buyer
+acquires a fresh hold. Payment observation and transfer have separate receipts.
+The `resale_release_hold` binding remains `BOOTSTRAP_SCHEMA_BOUND`, and the pack
+carries `HOLD_SEMANTIC` as non-normative mock evidence.
+[Buyer-hold release replay](../../reference/booking_resale_admission/test_commerce_resale_buyer_release_vectors.py) ·
+[Builder validation](../../validation/2026-11-20-plan-commerce-resale-buyer-release/README.md)
 
 ## Evidence and non-claims
 
