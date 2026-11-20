@@ -24,7 +24,7 @@ import {
   canonicalStringify,
   parseStrict,
 } from "../src/jsonschema.ts";
-import { gitBlobId, sha256Hex } from "../src/manifest.ts";
+import { canonicalBytes, gitBlobId, sha256Hex } from "../src/manifest.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const OPENAPI_PATH = "docs/contracts/openapi/kix-protocol.contract-only.openapi.json";
@@ -544,6 +544,67 @@ test("canonical encoding vectors", () => {
       );
     }
   }
+});
+
+test("manifest-v1 bytes use code-point key order", () => {
+  // U+E000 sorts before U+10000 by code point and after it by UTF-16 code unit.
+  const value = { "\u{10000}": 2, "\uE000": 1 };
+  const expected = Buffer.from("7b22ee8080223a312c22f0908080223a327d", "hex");
+  const reversed = Buffer.from("7b22f0908080223a322c22ee8080223a317d", "hex");
+
+  assert.deepEqual(Buffer.from(canonicalBytes(value)), expected);
+  assert.deepEqual({ ...parseStrict(expected) }, value);
+  assert.throws(
+    () => parseStrict(reversed),
+    (error) => error instanceof StrictJsonError && error.reason === "unsorted-keys",
+  );
+});
+
+test("manifest-v1 bytes escape controls quotes and backslashes", () => {
+  const value = "\u0001\"\\";
+  const expected = Buffer.from("225c75303030315c225c5c22", "hex");
+
+  assert.deepEqual(Buffer.from(canonicalBytes(value)), expected);
+  assert.equal(parseStrict(expected), value);
+});
+
+test("manifest-v1 bytes cover safe integer endpoints", () => {
+  for (const [literal, expected] of [
+    ["-9007199254740991", -9007199254740991],
+    ["9007199254740991", 9007199254740991],
+  ]) {
+    const bytes = Buffer.from(literal, "ascii");
+    const value = parseStrict(bytes);
+    assert.equal(value, expected, literal);
+    assert.deepEqual(Buffer.from(canonicalBytes(value)), bytes, literal);
+  }
+  for (const literal of ["-9007199254740992", "9007199254740992"]) {
+    assert.throws(
+      () => parseStrict(Buffer.from(literal, "ascii")),
+      (error) => error instanceof StrictJsonError && error.reason === "integer-range",
+      literal,
+    );
+  }
+});
+
+test("manifest-v1 bytes exercise the parser depth limit", () => {
+  // Each pair adds an array and an object toward the 32-container implementation limit.
+  const pairs = 16;
+  const atLimit = '[{"k":'.repeat(pairs) + "0" + "}]".repeat(pairs);
+  let value = parseStrict(Buffer.from(atLimit, "ascii"));
+  for (let index = 0; index < pairs; index += 1) {
+    assert.ok(Array.isArray(value));
+    assert.equal(value.length, 1);
+    assert.deepEqual(Object.keys(value[0]), ["k"]);
+    value = value[0].k;
+  }
+  assert.equal(value, 0);
+
+  // Characterize the parser diagnostic at 33 containers.
+  assert.throws(
+    () => parseStrict(Buffer.from(`[${atLimit}]`, "ascii")),
+    (error) => error instanceof StrictJsonError && error.reason === "depth",
+  );
 });
 
 test("manifest verifier reports failures in contract order", () => {

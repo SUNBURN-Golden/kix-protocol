@@ -361,17 +361,17 @@ def self_test(map_text, contract):
     ):
         cell(label, ident, EVIDENCE, value, reason)
     for label, row, col, value, reason in (
-        ('NOT_COVERED cites tests', 'C1-DEPTH-LIMIT', EVIDENCE,
+        ('NOT_COVERED cites tests', 'C3-SEMANTIC-KIND-DEFERRED', EVIDENCE,
          '`' + TEST + '::canonical encoding vectors`', 'NOT_COVERED needs no evidence'),
-        ('PARTIAL without owner', 'C1-OBJECT-FORM', OWNER, 'none', 'PARTIAL needs'),
-        ('PARTIAL without gap', 'C1-OBJECT-FORM', GAP, 'none', 'PARTIAL needs'),
-        ('PARTIAL without evidence', 'C1-OBJECT-FORM', EVIDENCE, 'none', 'PARTIAL needs'),
+        ('PARTIAL without owner', 'C1-APPLIES-TO', OWNER, 'none', 'PARTIAL needs'),
+        ('PARTIAL without gap', 'C1-APPLIES-TO', GAP, 'none', 'PARTIAL needs'),
+        ('PARTIAL without evidence', 'C1-APPLIES-TO', EVIDENCE, 'none', 'PARTIAL needs'),
         ('unknown owner', ident, OWNER, 'Somebody', 'unknown owner'),
         ('covered gap', ident, GAP, 'unfinished', 'COVERED needs'),
         ('covered owner', ident, OWNER, 'User', 'COVERED needs'),
         ('covered no evidence', ident, EVIDENCE, 'none', 'COVERED needs'),
-        ('uncovered no gap', 'C1-DEPTH-LIMIT', GAP, 'none', 'NOT_COVERED needs'),
-        ('uncovered no owner', 'C1-DEPTH-LIMIT', OWNER, 'none', 'NOT_COVERED needs'),
+        ('uncovered no gap', 'C3-SEMANTIC-KIND-DEFERRED', GAP, 'none', 'NOT_COVERED needs'),
+        ('uncovered no owner', 'C3-SEMANTIC-KIND-DEFERRED', OWNER, 'none', 'NOT_COVERED needs'),
         ('empty gap', ident, GAP, '', 'Gap must be nonempty'),
         ('gap citation', ident, GAP, '`unfinished`', 'Gap must be nonempty'),
         ('wrong section', ident, SECTION, '§5', 'section/clause mismatch'),
