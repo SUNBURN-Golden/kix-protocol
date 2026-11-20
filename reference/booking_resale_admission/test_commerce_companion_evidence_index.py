@@ -20,6 +20,7 @@ import test_commerce_admission_cancellation_vectors as cancellation
 import test_commerce_hold_release_vectors as hold_release
 import test_commerce_linked_refund_vectors as linked_refund
 import test_commerce_late_payment_after_cancel_vectors as late_payment
+import test_commerce_payment_ref_scope_vectors as payment_ref_scope
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -41,8 +42,10 @@ PACKS = (
     ('linked_refund', linked_refund, 'CommerceLinkedRefundVectorTests', 'test_complete_output_bytes_and_references', 18),
     ('late_payment_after_cancel', late_payment, 'CommerceLatePaymentAfterCancelVectorTests',
      'test_complete_output_bytes_and_references', 16),
+    ('payment_ref_scope', payment_ref_scope, 'CommercePaymentRefScopeVectorTests',
+     'test_complete_output_bytes_and_references', 16),
 )
-TOTAL_ENTRIES = 357
+TOTAL_ENTRIES = 373
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -80,6 +83,10 @@ LIMITATIONS = {
     'late_payment_after_cancel': [
         'The refusals apply to the synthetic reservation command. Actual provider facts remain subject to STATE_LIFECYCLE.md §3.',
         'Compensation is UNDETERMINED with Astra and JunTae. Refund liability and actual late-fact custody are outside this history.',
+    ],
+    'payment_ref_scope': [
+        'Payment reference scope is observed across two shows in one in-process mock host. Cross-channel exclusivity, provider identity and funds finality are outside this evidence.',
+        'Rejected-key retention is process-local. Product TTLs, fees and compensation remain UNDETERMINED with Astra and JunTae, and provider and legal terms remain with their existing owners.',
     ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
@@ -334,6 +341,18 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                         lambda d: d['packs'][p]['entries'][original].update({field: other[field]}),
                         field + ' association',
                     )
+
+    def test_payment_ref_scope_crossed_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'payment_ref_scope')
+        for field in ('input_ref', 'outcome_ref'):
+            def swap(d):
+                entries = {entry['step_id']: entry for entry in d['packs'][p]['entries']}
+                refused, recorded = entries['reuse-primary'], entries['resale-payment']
+                self.assertEqual(refused['action'], recorded['action'])
+                refused[field], recorded[field] = recorded[field], refused[field]
+
+            with self.subTest(field=field):
+                self._reject(swap, field + ' association')
 
     def test_digest_and_reference_controls(self):
         for p in range(len(PACKS)):
