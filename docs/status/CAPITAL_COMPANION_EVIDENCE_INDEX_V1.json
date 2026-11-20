@@ -4544,6 +4544,300 @@
           "ref": "reference/credit_advance_f04/fixtures/capital_reconcile_freshness_vectors_v1.json#/scenarios/0/initial_snapshot"
         }
       ]
+    },
+    {
+      "id": "capital_predraw_terminal",
+      "shape": "setup_and_history",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json",
+        "sha256": "538f9cb0123b518c34f2a5ff3916433ac69acd093c961943d04f314178f1e58d",
+        "gitBlob": "908c358e10a644769ca659de1dd1531741d47fd6"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json",
+        "sha256": "2f08fc5d4d066c3a6dd5b774799fdcaddcd9b2e947d643b6d5eba7a4d6e7fb98",
+        "gitBlob": "e86897b912054b2e7f7d392e1da0c8a9df116d0a"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_predraw_terminal_vectors.py",
+        "symbol": "CapitalPredrawTerminalVectorTests.test_complete_history_vectors"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital pre-draw rejection and cancellation companion (P1)"
+        }
+      ],
+      "limitations": [
+        "In this synthetic, process-local history, rejection and cancellation precede the first credit note. Replays preserve historical outcomes. The separate full-capacity draw is mock evidence. Pre-draw shared-exposure grouping remains contract-undefined. A null shared_exposure records that the observer was skipped."
+      ],
+      "entries": [
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "setup_steps",
+          "step_id": "initiate",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/setup_steps/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/setup_results/0/result",
+          "operation": "initiate",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "setup_steps",
+          "step_id": "authorize",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/setup_steps/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/setup_results/1/result",
+          "operation": "authorize",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "setup_steps",
+          "step_id": "capture",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/setup_steps/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/setup_results/2/result",
+          "operation": "capture",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "setup_steps",
+          "step_id": "commit",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/setup_steps/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/setup_results/3/result",
+          "operation": "commit",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "setup_steps",
+          "step_id": "offer-a",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/setup_steps/4",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/setup_results/4/result",
+          "operation": "offer",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "setup_steps",
+          "step_id": "offer-b",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/setup_steps/5",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/setup_results/5/result",
+          "operation": "offer",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "setup_steps",
+          "step_id": "offer-c",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/setup_steps/6",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/setup_results/6/result",
+          "operation": "offer",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "reject-a",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/0/result",
+          "operation": "reject",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "approve-a-late",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/1/result",
+          "operation": "approve",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "draw-a-late",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/2/result",
+          "operation": "draw",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "approve-b",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/3/result",
+          "operation": "approve",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "cancel-b",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/4",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/4/result",
+          "operation": "cancel",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "approve-b-late",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/5",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/5/result",
+          "operation": "approve",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "draw-b-late",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/6",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/6/result",
+          "operation": "draw",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "replay-reject-a",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/7",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/7/result",
+          "operation": "reject",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "replay-cancel-b",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/8",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/8/result",
+          "operation": "cancel",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "repeat-draw-b",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/9",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/9/result",
+          "operation": "draw",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "approve-c",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/10",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/10/result",
+          "operation": "approve",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "draw-c",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/11",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/11/result",
+          "operation": "draw",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "section": "steps",
+          "step_id": "cancel-c-late",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_v1.json#/scenarios/0/steps/12",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/12/result",
+          "operation": "cancel",
+          "target": "credit"
+        }
+      ],
+      "observations": [
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "reject-a",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/0/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "approve-a-late",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/1/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "draw-a-late",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/2/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "approve-b",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/3/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "cancel-b",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/4/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "approve-b-late",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/5/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "draw-b-late",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/6/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "replay-reject-a",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/7/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "replay-cancel-b",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/8/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "repeat-draw-b",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/9/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "approve-c",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/10/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "draw-c",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/11/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "step_snapshot",
+          "step_id": "cancel-c-late",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/history/12/snapshot"
+        },
+        {
+          "scenario_id": "P1_reject_cancel_before_draw",
+          "kind": "initial_snapshot",
+          "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/initial_snapshot"
+        }
+      ]
     }
   ],
   "supporting_evidence": [
