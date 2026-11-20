@@ -8,8 +8,8 @@ schema, alias table, adapter or qualification result. The
 [development plan](../DEVELOPMENT_PLAN.md),
 [Model 1 authority decision](../decisions/AUTHORITY_MODEL_1.md) and cited
 contracts retain precedence. Policy values stay **UNDETERMINED** with their
-recorded owners. Unsupported bindings stay **NOT_BOUND**; semantic SDK consumers
-stay **HOLD**.
+recorded owners. Unsupported bindings stay **NOT_BOUND**. Semantic SDK
+consumption stays **HOLD_SEMANTIC** outside the scoped Commerce fixture grant.
 
 Task: `audit29-consumer-surface-boundary-map`, supplied by the supervisor with
 its read-only design plan; no issue or corresponding `docs/tasks/` document.
@@ -41,7 +41,7 @@ does not bind the surfaces together.
 | Action namespace | 40 core actions plus 44 `<machine>_<op>` FSM actions, 84 total. Examples: `admission_consume` and `reservation_authorize_admission` are distinct catalogue entries. Envelope `operationId` is the caller's operation identity, not the OpenAPI operation name or `action`. Bare ticket selectors are not HTTP aliases. |
 | Identity and replay | Core replay uses `operationId` plus the fingerprint of `actor`, `action`, `body`; a changed fingerprint yields `OPERATION_ID_CONFLICT`. FSM replay uses the machine's body `idempotency_key` and subject/body rules; the host does not copy envelope `operationId` into that key. HTTP `Idempotency-Key` is ignored. A replayed first receipt is not a new current-state view. |
 | Prerequisites and authority | Pin the existing catalogue/schema bytes; start the local gate explicitly and satisfy machine setup, logical-clock and source prerequisites. `actor` is a fixture string, not authenticated `actorContext`. `/health` and `/ready` report local process/reference availability, not production readiness. Browser access is opt-in as described in the guide, not authentication. |
-| Evidence and qualification | [HTTP tests](../../integration_gate/test_http_gate.py), including `test_http_idempotency_key_header_is_not_consulted` and `test_fsm_idempotency_key_replays_without_using_operation_id`; [contract evidence map](INTEGRATION_GATE_CONTRACT_EVIDENCE_MAP.md). Source-informed non-production tests and pin checks do not grant semantic consumer qualification. |
+| Evidence and qualification | The HTTP tests and pin checks provide source-informed, non-production gate evidence. Apply the [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification) to the listed tuples, contexts and steps. [HTTP tests](../../integration_gate/test_http_gate.py), including `test_http_idempotency_key_header_is_not_consulted` and `test_fsm_idempotency_key_replays_without_using_operation_id`. [Contract evidence map](INTEGRATION_GATE_CONTRACT_EVIDENCE_MAP.md). |
 | Unavailable bindings | No public service, provider authentication or published ticket read API. Optional `--readiness-dir` is bounded local core-call replay, not production durability; this server refuses FSM calls with `READINESS_FSM_REFUSED` while that journal is active. See [readiness limits](../contracts/READINESS_RUNTIME.md). |
 
 ### TypeScript SDK
@@ -54,8 +54,64 @@ does not bind the surfaces together.
 | Action namespace | The same 84 pinned catalogue actions, not commerce calculator actions or ticket/reward/pool local selectors. |
 | Identity and replay | Validation preserves caller identities and invokes transport once. Server/core/FSM replay rules above still apply; SDK validation is not an idempotency service or an authority check. |
 | Prerequisites and authority | Pinned OpenAPI, generator, catalogue, manifest/profile/vector tuple; Node 24 for existing tooling. Caller supplies transport. `actor` remains a fixture string. `bootstrap-1` is the preserved historical 40-command pin; current generated output uses `bootstrap-2`. |
-| Evidence and qualification | BOOTSTRAP grants **catalogue-schema-binding only**. Semantic SDK consumption remains **HOLD_SEMANTIC**. [Conformance tests](../../sdk/conformance/conformance.test.mjs), [SDK byte checker](../../scripts/check_sdk_client.py). |
+| Evidence and qualification | `bootstrap-2` grants catalogue and schema binding for 84 commands. Use the separate [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification) for semantic evidence. Other semantic consumption remains **HOLD_SEMANTIC**. [Conformance tests](../../sdk/conformance/conformance.test.mjs), [SDK byte checker](../../scripts/check_sdk_client.py). |
 | SD1 verifier evidence | After JunTae's November 18 option 1 authorization (`[pt224u]`), the checked-in verifier checks the profile byte hash before the OpenAPI references. The ordered §4 regression exercises the sequence. [Owner decision record](../decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md), [profile hash block](../../sdk/compat/verify_compat.mjs#L146-L150), [ordered regression](../../sdk/conformance/conformance.test.mjs#L364-L409). |
+
+### Scoped Commerce fixture qualification
+
+`bootstrap-2` binds catalogue schemas for 84 commands (40 core and 44 FSM).
+`commerce-fixture-8ba7f6c-1` grants `SEMANTIC_CONFORMANCE` for the listed steps
+and outcomes across 28 actions at the pinned producer. The other 56 actions,
+unlisted contexts or steps and any mismatched tuple remain `HOLD_SEMANTIC`.
+External `kix-commerce-apps` acceptance remains `UNVERIFIED`.
+[Qualification table](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json) ·
+[Semantic manifest](../../sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json)
+
+Before consuming the fixture evidence, `kix-commerce-apps` selects the grant
+as follows.
+
+1. Verify the manifest with its [SHA-256 sidecar](../../sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json.sha256)
+   and [profile](../../sdk/compat/profiles/commerce-fixture-8ba7f6c-1.profile.json).
+   Require `manifest_schema_version = kix-compat-manifest/1`,
+   `profile_kind = SEMANTIC_CONFORMANCE` and
+   `profile_revision = commerce-fixture-8ba7f6c-1`. The profile's
+   `catalogue.schema_digests` identifies all 84 schemas. Its `grants` points to
+   the qualification table for the narrower semantic scope.
+   [Verifier invocation](../../sdk/README.md#scoped-commerce-fixture-qualification)
+2. Follow the manifest's `vectors[]` entry `commerce-fixture-qualification-table`
+   and require `record_schema_version = kix-commerce-fixture-tuple-conformance/1`.
+   Match the complete `producer` object across the manifest, the table and
+   the producer being qualified. Compare `repository`, `source_commit`,
+   `source_tree`, `protocol_domain` and `contract_schema_version`. The pin is
+   `SUNBURN-Golden/kix-protocol` commit `8ba7f6c36373ac0ec49246f51f7471c164ac3a28`,
+   tree `d3f5412ef84f64fe83c5d3a3d3ada173921bfbf9`. Check the referenced file
+   digests and the table's `pins` for the replay dependencies. The table's
+   `commerce_source.commit` identifies Commerce fixture source
+   `9a55fe4e257376f9db3f877a11b65e3ecc43c661`.
+3. In `tuples[]`, match `method = POST`, `path = /x-kix-contract-only/local-call`,
+   `action`, `machine`, `op`, `subject_field` and `body_schema_sha256`.
+   Compare the SHA-256 of the canonical body schema and read the subject from
+   the named field in `body`. Match `contexts[].context` (`booking-resale`,
+   `booking-admission`, `booking-refund` or `resale-market`), then look up the
+   fixture step in that entry's `steps[step]`. Resolve its vector IDs and match
+   the recorded setup and outcome. For example, `resale-market` / `market-cancel`
+   has distinct vectors for `LISTED` and `BUY_HELD`. `control_vector_ids` supply
+   additional evidence for the listed tuple and context.
+   [Request-to-receipt vectors](../../sdk/conformance/vectors/commerce-fixture-tuple.vectors.json)
+4. For each selected vector, start a fresh in-memory host, apply the `setup`
+   vectors in order and submit the `envelope` verbatim. Keep `operationId`
+   distinct from `body.idempotency_key`. Check the exact schema or business
+   refusal code, or compare typed `receipt_fields` and the full receipt at
+   `receipt_ref` when present. Check the recorded journal expectations. Missing
+   or mismatched evidence leaves the step `HOLD_SEMANTIC`.
+   Fence unresolved `UNKNOWN` outcomes without polling, retry or replacement
+   writes. [Offline replay handoff](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#replay-offline)
+
+The grant covers source-informed, synthetic in-memory evidence. N/N−1
+compatibility, production qualification and stable SDK release remain outside
+its scope. Product TTLs, fees, compensation, market visibility, matching,
+pagination and legal, accounting and provider terms remain `UNDETERMINED`
+with their recorded owners.
 
 ### Commerce calculator
 
@@ -173,8 +229,9 @@ authority and unresolved decision boundaries remain at their contracts.
 
 | Gap | Present evidence and boundary | Prerequisite / recorded owner |
 |---|---|---|
-| Published ticket/finance reads | [Read-query draft](../contracts/READ_MODEL_QUERIES.md), [source map](../contracts/READ_MODEL_SOURCE_MAP.md) and [candidate fixtures](../../reference/read_model/README.md) describe 13 query names absent from both command pins. Local `view` methods and candidate vectors do not publish a read API. `query_digest`, visibility, modeled cursor error codes and open-listing phase predicate remain **NOT_BOUND** where recorded. | Read-model implementation/publication and applicable producer/consumer qualification are still required. Visibility, limits/defaults, cursor lifetime, sort keys, open phases and retention/history values stay **UNDETERMINED — Astra** as recorded in the source map. Do not send a write as a substitute read. |
-| Semantic SDK handoff | BOOTSTRAP binds catalogue/schema bytes only. Semantic SDK consumption remains **HOLD_SEMANTIC** and external consumer acceptance remains **UNVERIFIED**. | Applicable exact tuple qualification and independent consumer evidence. |
+| Published ticket/finance reads | All 13 approved read names remain **NOT_BOUND** and absent from both command pins. `query_digest`, visibility, modeled cursor error codes and the open-listing phase predicate remain **NOT_BOUND** where recorded. [Read-query draft](../contracts/READ_MODEL_QUERIES.md), [source map](../contracts/READ_MODEL_SOURCE_MAP.md), [candidate fixtures](../../reference/read_model/README.md). | Read-model implementation/publication and applicable producer/consumer qualification are still required. Visibility, limits/defaults, cursor lifetime, sort keys, open phases and retention/history values stay **UNDETERMINED — Astra** as recorded in the source map. Do not send a write as a substitute read. |
+| Proposed uncertain-operation recovery lookup | The proposed lookup by operation/trace, subject and source cut remains **NOT_BOUND**. It has no approved query name or route and is separate from the 13 approved reads. [Commerce handoff](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#consumer-handoff). | Keep unresolved `UNKNOWN` fenced without polling, retry or replacement writes. |
+| Semantic SDK handoff outside the grant | The 56 other actions, unlisted contexts or steps and mismatched tuples remain **HOLD_SEMANTIC**. External consumer acceptance remains **UNVERIFIED**. [Scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification). | Applicable exact tuple qualification and independent consumer evidence. |
 | Authenticated observations and durable effects | Local receipts, views, digests and “live” subprocesses supply no authenticated provider/chain source, durable economic transaction or distributed execution authority. | Existing [open inputs](../contracts/FIRST_BATCH_OPEN_INPUTS.md) retain their named User, provider and designated legal/accounting owners; [program locks](../decisions/PROGRAM_DECISIONS_20260928.md) §5 remain. No policy value is selected here. |
 | Finance projection/export and Capital ownership | [Finance completion design](../aiops/FINANCE_COMPLETION_DESIGN_KO.md) is **PENDING / unadopted / execution prohibited**. It proposes protocol finance logic here and financial screens in Commerce, explicitly no third repository/program. Separate Capital product/repository ownership was not established in this worktree; neither consumer repository was inspected. Pool/supply/collateral tools do not implement that architecture or a finance ledger. Unsupported consumer methods remain **NOT_BOUND**, release readiness **HOLD**. | **User/Astra** must reconcile any separate Capital interpretation and adopt applicable contracts/dependencies before integration. Accounting/legal classifications remain with User and designated advisers; no adoption, projection/export completion or consumer verification is claimed. |
 
@@ -193,12 +250,12 @@ journey evidence and exactly one status:
 - 13 read names: **NOT_BOUND**; `read-model-reference` is not merged and the
   candidate vectors are not conformance evidence.
 
-Semantic SDK consumption stays **HOLD_SEMANTIC**; the record grants
-`catalogue-schema-binding only`. External `kix-commerce-apps` expectations stay
-**UNVERIFIED** because that adapter is not in this repository.
-`MOCK_EVIDENCE` covers offline fixtures only. Semantic conformance, N/N−1
-compatibility, production qualification, audit and User approval each require
-their own evidence.
+The binding index records `catalogue-schema-binding only` and retains its
+original **HOLD_SEMANTIC** status. `MOCK_EVIDENCE` covers offline fixtures only.
+Use the separate [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
+for the listed steps and outcomes. External `kix-commerce-apps` acceptance
+stays **UNVERIFIED**. N/N−1 compatibility, production qualification, audit and
+User approval each require their own evidence.
 
 The [checker](../../validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py)
 re-derives the sets, recomputes every pin, cross-checks the producer tuple and
@@ -212,9 +269,12 @@ and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect ten
 Commerce input/outcome pack families (341 steps, including linked purchase and partial
 refund) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
-navigation within the existing binding index and producer tuple. Semantic
-consumption remains `HOLD_SEMANTIC`, all 13 reads remain `NOT_BOUND`, SD1 is
-`OPEN` and User-owned, and external consumer acceptance remains `UNVERIFIED`.
+navigation within the existing binding index and producer tuple. Use the
+[scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
+to determine which steps have semantic evidence. Other steps remain
+`HOLD_SEMANTIC`. The 13 approved reads and the proposed recovery lookup remain
+`NOT_BOUND`, SD1 is `OPEN` and User-owned, and external consumer acceptance
+remains `UNVERIFIED`.
 [Linked refund replay](../../reference/booking_resale_admission/test_commerce_linked_refund_vectors.py)
 
 ## Evidence and non-claims
