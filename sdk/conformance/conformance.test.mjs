@@ -1043,7 +1043,7 @@ function readCommerceGrantRecord(root, manifest, name, path, version) {
   if (record.record_schema_version === version) return record;
 }
 
-function loadCommerceGrant(root, manifestPath, verifierOptions) {
+function loadVerifiedManifest(root, manifestPath, verifierOptions) {
   const absManifestPath = resolve(root, manifestPath);
   const run = runVerifierAt(root, absManifestPath, SEMANTIC, COMMERCE_REVISION, verifierOptions);
   const verdict = readVerifierVerdict(run, run.status === 1 ? 1 : 0, manifestPath);
@@ -1052,7 +1052,14 @@ function loadCommerceGrant(root, manifestPath, verifierOptions) {
   const manifest = parseStrict(manifestBytes);
   if (!verdict.ok || verdict.manifest_sha256 !== sha256Hex(manifestBytes) ||
       manifest.manifest_schema_version !== MANIFEST_SCHEMA_VERSION) return;
+  return { manifest_sha256: verdict.manifest_sha256, manifest };
+}
 
+// Reads the qualification table and every replay file it pins. Callers must
+// compare the consumer's independent manifest digest with the verified
+// manifest first, so a mismatched candidate never reaches this lookup.
+function loadCommerceGrant(root, verified) {
+  const { manifest } = verified;
   const profileBytes = readFileSync(resolve(root, COMMERCE_PROFILE));
   const profile = parseStrict(profileBytes);
   if (sha256Hex(profileBytes) !== manifest.profile_sha256 ||
@@ -1075,7 +1082,7 @@ function loadCommerceGrant(root, manifestPath, verifierOptions) {
   const vectorsById = new Map(corpus.vectors.map((vector) => [vector.id, vector]));
   if (vectorsById.size !== corpus.vectors.length) return;
   return {
-    manifest_sha256: verdict.manifest_sha256,
+    manifest_sha256: verified.manifest_sha256,
     table,
     vectorsById,
     schemaDigests: profile.catalogue.schema_digests,
@@ -1087,13 +1094,18 @@ function sameFixtureJson(left, right) {
     canonicalStringify(left) === canonicalStringify(right);
 }
 
-function selectCommerceGrant(request, expectedManifestSha256, grantFor) {
+function selectCommerceGrant(request, expectedManifestSha256, manifestFor, grantFor) {
   if (request.kind === "read" || request.kind === "proposed_recovery") {
     return { status: "NOT_BOUND", vector_id: null };
   }
   const hold = { status: "HOLD_SEMANTIC", vector_id: null };
+  // The documented order compares the independent consumer digest with the
+  // verified manifest before the qualification table or its replay pins are
+  // read, so a mismatched or missing pin never consults table-pinned files.
+  const verified = manifestFor(request.manifest_path);
+  if (!verified || expectedManifestSha256 !== verified.manifest_sha256) return hold;
   const grant = grantFor(request.manifest_path);
-  if (!grant || expectedManifestSha256 !== grant.manifest_sha256) return hold;
+  if (!grant) return hold;
   if (!sameFixtureJson(request.producer, grant.table.producer)) return hold;
 
   const fields = ["method", "path", "action", "machine", "op", "subject_field", "body_schema_sha256"];
@@ -1123,14 +1135,34 @@ function selectCommerceGrant(request, expectedManifestSha256, grantFor) {
 }
 
 function commerceGrantConsumer(root, verifierOptions) {
+  const manifests = new Map();
   const grants = new Map();
+  let grantLoads = 0;
+
+  function manifestFor(manifestPath) {
+    if (!manifests.has(manifestPath)) {
+      let verified;
+      try {
+        verified = loadVerifiedManifest(root, manifestPath, verifierOptions);
+      } catch (error) {
+        if (!(error instanceof StrictJsonError) && !["open", "read"].includes(error.syscall)) throw error;
+      }
+      manifests.set(manifestPath, verified);
+    }
+    return manifests.get(manifestPath);
+  }
+
   function grantFor(manifestPath) {
     if (!grants.has(manifestPath)) {
       let grant;
-      try {
-        grant = loadCommerceGrant(root, manifestPath, verifierOptions);
-      } catch (error) {
-        if (!(error instanceof StrictJsonError) && !["open", "read"].includes(error.syscall)) throw error;
+      const verified = manifestFor(manifestPath);
+      if (verified) {
+        grantLoads += 1;
+        try {
+          grant = loadCommerceGrant(root, verified);
+        } catch (error) {
+          if (!(error instanceof StrictJsonError) && !["open", "read"].includes(error.syscall)) throw error;
+        }
       }
       grants.set(manifestPath, grant);
     }
@@ -1144,13 +1176,13 @@ function commerceGrantConsumer(root, verifierOptions) {
       throw new Error("Commerce grant lookup called transport");
     } }),
     select: (request, expectedManifestSha256) =>
-      selectCommerceGrant(request, expectedManifestSha256, grantFor),
+      selectCommerceGrant(request, expectedManifestSha256, manifestFor, grantFor),
   };
   function check({ id, request, expect }, expectedManifestSha256) {
     assert.deepEqual(consumer.select(request, expectedManifestSha256), { ...expect }, id);
     assert.equal(transportCalls, 0, id);
   }
-  return { grantFor, check };
+  return { grantFor, check, grantLoads: () => grantLoads };
 }
 
 test("Commerce grant lookup", async (t) => {
@@ -1172,8 +1204,14 @@ test("Commerce grant lookup", async (t) => {
 
   await t.test("requires the consumer manifest digest on every selection", () => {
     check(listed, COMMERCE_MANIFEST_SHA256);
-    check({ ...listed, id: "different consumer digest", expect: hold }, BOOTSTRAP_MANIFEST_SHA256);
-    check({ ...listed, id: "missing consumer digest", expect: hold });
+    // Fresh consumers pin the ordering: a rejected digest must not read the
+    // qualification table or any replay file it pins, even on a cold cache.
+    const different = commerceGrantConsumer(ROOT);
+    different.check({ ...listed, id: "different consumer digest", expect: hold }, BOOTSTRAP_MANIFEST_SHA256);
+    assert.equal(different.grantLoads(), 0, "different consumer digest read the grant");
+    const missing = commerceGrantConsumer(ROOT);
+    missing.check({ ...listed, id: "missing consumer digest", expect: hold });
+    assert.equal(missing.grantLoads(), 0, "missing consumer digest read the grant");
   });
   await t.test("selects only the exact command evidence", () => {
     const commands = document.cases.filter(({ request }) => request.kind === "command");
