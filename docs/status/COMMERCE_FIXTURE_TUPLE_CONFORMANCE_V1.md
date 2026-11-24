@@ -54,6 +54,19 @@ and operation recovery is `NOT_BOUND`. The pair supplements the existing
 manifest grant. [Issuance lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_issuance_lost_reply_v1.json) ·
 [Focused replay](../../reference/booking_resale_admission/test_commerce_issuance_lost_reply.py)
 
+The refund acceptance lost-reply pair replays
+`booking-refund/observe-mock-acceptance` after the same refund binding on two
+fresh in-process hosts. Commerce records the same operation ID and body
+idempotency key, one attempt, `UNKNOWN`, and no receipt in both cases. Before
+dispatch, the refund stays 12,000 KRW outstanding with zero accepted. When
+the successful reply is withheld, the host records 12,000 KRW accepted,
+zero outstanding, and one new settlement journal entry. Both settlements
+remain `CAPTURED` with `funds_executed=false` and `external_return_closed=false`.
+The hidden receipt at `commerce_journey_receipts_v1.json#/steps/38/receipt`
+is harness evidence. With recovery `NOT_BOUND`, Commerce must keep the write
+fenced with zero follow-up calls. [Refund acceptance lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_refund_acceptance_lost_reply_v1.json) ·
+[Focused refund acceptance replay](../../reference/booking_resale_admission/test_commerce_refund_acceptance_lost_reply.py)
+
 An unlisted tuple or context is outside the grant. Keep unresolved `UNKNOWN`
 outcomes fenced. The market, settlement and operation-recovery reads remain
 `NOT_BOUND`. [PR #146 change requests](https://github.com/SUNBURN-Golden/kix-commerce-apps/blob/9a55fe4e257376f9db3f877a11b65e3ecc43c661/docs/kix-resale-journey-binding-change-requests.md)
