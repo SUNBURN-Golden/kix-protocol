@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates thirteen
+read-only discovery metadata for `kix-capital`. It associates fourteen
 consumer pack families and two supporting observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -59,7 +59,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_later_statement | setup_and_history | 13 | 6 |
 | capital_mixed_checkpoint_views | self_contained_comparisons | 4 | 0 |
 | capital_omitted_exposure_members | self_contained_comparisons | 4 | 0 |
-| **Total** | | **459** | **128** |
+| capital_payee_order_recovery | self_contained_comparisons | 2 | 0 |
+| **Total** | | **461** | **128** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -102,14 +103,16 @@ keywords remain `{}`; null, booleans and JSON floating values stay distinct.
 
 Each comparison pack uses one file for both pins. Its entries have
 `case_id`, `input_ref` (whole case) and `result_ref` (complete
-`expected_result` envelope). The case's ordered `view_refs` identify
-individual snapshots in the pinned source files.
+`expected_result` envelope). The exposure comparison cases use ordered
+`view_refs` to identify individual snapshots. The payee order comparison
+uses shared `input_ref` and `baseline_ref` fields within its fixture to
+identify the R1 input and fee-first result in the two pinned source files.
 
 The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the thirteen consumer families.
+evidence, outside the fourteen consumer families.
 
 ### P1 pre-draw rejection and cancellation
 
@@ -183,6 +186,16 @@ group label, limit and selected frozen views in the pinned shared-exposure
 fixture. Callers supply group membership. Completeness applies to the fixture
 scenario and cannot be certified for a real pool by the observer.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_omitted_exposure_members.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-omitted-exposure-members)
+
+### Payee order recovery comparison
+
+`capital_payee_order_recovery` indexes `r1_fee_first` and `r1_residual_first`
+in that order. Each case at `#/cases/{i}` declares its distribution order.
+Its result at `#/cases/{i}/expected_result` records both the full-refund and
+mock-acceptance checkpoints. Each order produces 10,000 KRW of recovery due,
+with different payee attribution. The validator rejects cross-wired result
+pointers even though both resolve to complete envelopes.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_payee_order_recovery.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-payee-order-recovery)
 
 ## Read-only consumption
 

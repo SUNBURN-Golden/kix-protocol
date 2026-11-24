@@ -854,3 +854,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-20 Capital omitted exposure members — 위치 안내만
 
 - Two synthetic F04 §7.12 comparisons show how caller-supplied membership changes reported exposure. Omitting one advance brings E2 within the fixture limit. E1's reported exposure falls while its shared claim still carries the full reservation. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-omitted-exposure-members) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#omitted-exposure-member-comparisons) · [Builder validation](../validation/2026-11-20-plan-capital-omitted-exposure-members/README.md)
+
+## 2026-11-24 Capital payee order recovery — 위치 안내만
+
+- Two synthetic R1 distribution orders assign the same 10,000 KRW recovery due to different payees. The two histories share the post-refund variance and frozen credit and exposure observations. Product waterfall priority remains UNDETERMINED with Astra. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-payee-order-recovery) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#payee-order-recovery-comparison) · [Builder validation](../validation/2026-11-24-plan-capital-payee-order-recovery/README.md)

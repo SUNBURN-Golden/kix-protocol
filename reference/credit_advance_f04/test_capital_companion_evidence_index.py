@@ -76,6 +76,10 @@ PACKS = (
      'capital_omitted_exposure_members_vectors_v1.json', 'capital_omitted_exposure_members_vectors_v1.json',
      'test_capital_omitted_exposure_members.py', 'CapitalOmittedExposureMembersTests.test_membership_pairs',
      'Capital omitted exposure members', ('e1_full', 'e1_omit_second', 'e2_full', 'e2_omit_second'), ()),
+    ('capital_payee_order_recovery', 'self_contained_comparisons',
+     'capital_payee_order_recovery_vectors_v1.json', 'capital_payee_order_recovery_vectors_v1.json',
+     'test_capital_payee_order_recovery.py', 'CapitalPayeeOrderRecoveryTests.test_order_pair',
+     'Capital payee order recovery', ('r1_fee_first', 'r1_residual_first'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -127,6 +131,11 @@ LIMITATIONS = {
     'capital_omitted_exposure_members': [
         'Callers supply group membership. Complete means all views in the fixture scenario. '
         'The observer cannot certify real pool membership, and within_limit grants no exposure authority.',
+    ],
+    'capital_payee_order_recovery': [
+        'The two R1 orders are caller-supplied synthetic inputs. Product waterfall priority remains '
+        'UNDETERMINED with Astra. Recovery due records a fixture obligation. '
+        'Collection and credit repayment are outside this comparison.',
     ],
 }
 SUPPORTING = (
@@ -366,9 +375,9 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 459)
+        self.assertEqual(validate_index(self.document), 461)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -558,6 +567,15 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         ):
             with self.subTest(field=field):
                 self._reject(lambda d: swap(d, collection, field), diagnostic)
+
+    def test_payee_order_crossed_result_references(self):
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == 'capital_payee_order_recovery')
+            fee_first, residual_first = pack['entries']
+            fee_first['result_ref'], residual_first['result_ref'] = (
+                residual_first['result_ref'], fee_first['result_ref'])
+
+        self._reject(swap_results, 'entry membership/association/order/type: capital_payee_order_recovery')
 
     def test_pin_controls(self):
         for i in range(len(PACKS)):
