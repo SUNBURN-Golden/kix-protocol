@@ -21,6 +21,8 @@ GUIDE = 'docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md'
 CONTRACT = 'docs/contracts/CREDIT_ADVANCE_F04.md'
 BASE = 'reference/credit_advance_f04/'
 FIXTURES = BASE + 'fixtures/'
+COMMERCE_RECEIPTS = 'reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json'
+COMMERCE_RECEIPTS_SHA256 = '7181761ec5533cf1a9aab450f4a7f3d32ed6c467713c8d532ceff24a89908839'
 SELF_CONTAINED_SHAPES = {'self_contained_refusals', 'self_contained_comparisons'}
 # Independent fixed family/path, scenario/case identity and section-count inventory.
 PACKS = (
@@ -84,6 +86,10 @@ PACKS = (
      'capital_offsetting_claim_gaps_vectors_v1.json', 'capital_offsetting_claim_gaps_vectors_v1.json',
      'test_capital_offsetting_claim_gaps.py', 'CapitalOffsettingClaimGapsTests.test_claim_pair',
      'Capital offsetting claim gaps', ('v4_claim_gap', 'v6_claim_gap'), ()),
+    ('capital_commerce_refund_checkpoints', 'self_contained_comparisons',
+     'capital_commerce_refund_checkpoints_vectors_v1.json', 'capital_commerce_refund_checkpoints_vectors_v1.json',
+     'test_capital_commerce_refund_checkpoints.py', 'CapitalCommerceRefundCheckpointTests.test_checkpoint_replay',
+     'Capital commerce refund checkpoints', ('commit', 'bind-refund', 'observe-mock-acceptance'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -145,6 +151,11 @@ LIMITATIONS = {
         'The zero sum is diagnostic arithmetic. Each claim remains outside its original synthetic '
         'tolerance with NOT_BOUND, repair=NONE and no exposure authority. '
         'Product thresholds remain UNDETERMINED with Astra.',
+    ],
+    'capital_commerce_refund_checkpoints': [
+        'Three receipts for one purchase share the same frozen F04 face and zero variance. '
+        'Requester refund outstanding and mock acceptance stay separate from F04 exposure and repayment. '
+        'Receipt identity determines the checkpoint. The refund component remains NOT_BOUND.',
     ],
 }
 SUPPORTING = (
@@ -240,6 +251,11 @@ def _expected_associations(spec, source, output):
                              keywords_ref=prefix + '/keywords', result_ref=prefix + '/expected_error')
             else:
                 entry['result_ref'] = prefix + '/expected_result'
+            if family == 'capital_commerce_refund_checkpoints':
+                step = (9, 14, 15)[i]
+                ref = f'{COMMERCE_RECEIPTS}#/cases/0/steps/{step}/receipt'
+                _check(case['receipt_ref'] == ref, 'checkpoint receipt association: ' + case['case_id'])
+                entry['receipt_ref'] = ref
             entries.append(entry)
         return entries, observations
     _check(tuple(s['scenario_id'] for s in source['scenarios']) == ids, 'scenario membership/order')
@@ -322,6 +338,12 @@ def validate_index(document, read=_read):
         _check(_same(pack['entries'], expected), 'entry membership/association/order/type: ' + family)
         _check(_same(pack['observations'], observations), 'supplemental observation association')
         documents = {pack['input']['path']: source, pack['output']['path']: output}
+        if family == 'capital_commerce_refund_checkpoints':
+            pin = {'path': COMMERCE_RECEIPTS, 'sha256': COMMERCE_RECEIPTS_SHA256}
+            _check(_same(source['source_pins'], [pin]), 'Commerce receipt source pin')
+            raw = read(COMMERCE_RECEIPTS)
+            _check(hashlib.sha256(raw).hexdigest() == pin['sha256'], 'Commerce receipt digest drift')
+            documents[COMMERCE_RECEIPTS] = decode_json(raw.decode('utf-8'))
         for entry in pack['entries']:
             for key, ref in entry.items():
                 if key.endswith('_ref'):
@@ -384,9 +406,9 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 463)
+        self.assertEqual(validate_index(self.document), 466)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -497,6 +519,23 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         for field in ('input_ref', 'result_ref'):
             with self.subTest(field=field):
                 self._reject(lambda d: swap(d, field), 'entry membership/association')
+
+    def test_commerce_refund_checkpoints_crossed_references(self):
+        index = next(i for i, pack in enumerate(self.document['packs'])
+                     if pack['id'] == 'capital_commerce_refund_checkpoints')
+
+        def swap(rows, field):
+            bind, acceptance = rows[1:]
+            bind[field], acceptance[field] = acceptance[field], bind[field]
+
+        for field in ('input_ref', 'result_ref', 'receipt_ref'):
+            with self.subTest(field=field):
+                self._reject(lambda d: swap(d['packs'][index]['entries'], field),
+                             'entry membership/association/order/type: capital_commerce_refund_checkpoints')
+        self._detached(index, 'input', lambda d: swap(d['cases'], 'receipt_ref'),
+                       'checkpoint receipt association: bind-refund')
+        with self.assertRaisesRegex(AssertionError, 'Commerce receipt digest drift'):
+            validate_index(self.document, lambda p: _read(p) + b'\n' if p == COMMERCE_RECEIPTS else _read(p))
 
     def test_mixed_checkpoint_crossed_references(self):
         index = next(i for i, pack in enumerate(self.document['packs'])

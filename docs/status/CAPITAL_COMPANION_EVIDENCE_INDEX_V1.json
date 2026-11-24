@@ -5201,6 +5201,54 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_commerce_refund_checkpoints",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json",
+        "sha256": "6d0ac8fb018d5bdb55a388eb8353ab538e533bdb3ad547de72d75de02714085a",
+        "gitBlob": "49cf3276c0a9386b410cd5b0260af84421fe368f"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json",
+        "sha256": "6d0ac8fb018d5bdb55a388eb8353ab538e533bdb3ad547de72d75de02714085a",
+        "gitBlob": "49cf3276c0a9386b410cd5b0260af84421fe368f"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_commerce_refund_checkpoints.py",
+        "symbol": "CapitalCommerceRefundCheckpointTests.test_checkpoint_replay"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital commerce refund checkpoints"
+        }
+      ],
+      "limitations": [
+        "Three receipts for one purchase share the same frozen F04 face and zero variance. Requester refund outstanding and mock acceptance stay separate from F04 exposure and repayment. Receipt identity determines the checkpoint. The refund component remains NOT_BOUND."
+      ],
+      "entries": [
+        {
+          "case_id": "commit",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/0/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/9/receipt"
+        },
+        {
+          "case_id": "bind-refund",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/1/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/14/receipt"
+        },
+        {
+          "case_id": "observe-mock-acceptance",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/2/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/15/receipt"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [

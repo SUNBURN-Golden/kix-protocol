@@ -864,3 +864,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-24 Capital offsetting claim gaps — 위치 안내만
 
 - Two pinned F04 §7.11 claim observations report +40,000 and −40,000 KRW. The diagnostic sum is zero, and both claims remain outside their original synthetic tolerances with `NOT_BOUND` and `repair=NONE`. Product thresholds remain UNDETERMINED with Astra. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-offsetting-claim-gaps) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#offsetting-claim-gap-comparison) · [Builder validation](../validation/2026-11-24-plan-capital-offsetting-claim-gaps/README.md)
+
+## 2026-11-25 Capital commerce refund checkpoints — 위치 안내만
+
+- Three pinned Commerce receipts trace the requester refund from 0 to 4,000 to 2,500 KRW outstanding. The same 10,001 KRW frozen F04 face yields zero variance at every checkpoint, and the credit exposure and repayment history remain fixed. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-commerce-refund-checkpoints) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#commerce-refund-checkpoints) · [Builder validation](../validation/2026-11-25-plan-capital-commerce-refund-checkpoints/README.md)
