@@ -41,6 +41,11 @@ node sdk/compat/verify_compat.mjs \
   --expect-kind SEMANTIC_CONFORMANCE --expect-revision commerce-fixture-8ba7f6c-1
 ```
 
+After a successful verdict, compare its `manifest_sha256` with the digest
+pinned independently by the consumer. A missing or different pin yields
+`HOLD_SEMANTIC` with `vector_id: null`.
+[Consumer handoff](../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#consumer-handoff)
+
 Then match the producer, HTTP method and path, action, machine, operation,
 subject field and body schema digest. Select the exact fixture context, step
 and outcome before consuming the evidence. Keep unresolved `UNKNOWN` fenced

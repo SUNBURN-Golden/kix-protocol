@@ -827,12 +827,15 @@ function snapshotFixtureTree(root) {
   }));
 }
 
+const BOOTSTRAP_MANIFEST_SHA256 = "eec1750532d319ea06d8ae61bafa77316067088a84a9b70d20a1f6966dfba1e0";
+const COMMERCE_MANIFEST_SHA256 = "76ea72c6249ec0f90cb426dfbb8efda8308610f79c4f0ac6ff0a2445cab59a4f";
+
 test("vendored producer manifests return one verdict without changing files", () => {
   for (const { revision, kind, digest, manifestPath, profilePath, missing } of [
     {
       revision: "bootstrap-2",
       kind: "BOOTSTRAP",
-      digest: "eec1750532d319ea06d8ae61bafa77316067088a84a9b70d20a1f6966dfba1e0",
+      digest: BOOTSTRAP_MANIFEST_SHA256,
       manifestPath: MANIFEST_PATH,
       profilePath: PROFILE_PATH,
       missing: "mixed-input",
@@ -840,7 +843,7 @@ test("vendored producer manifests return one verdict without changing files", ()
     {
       revision: COMMERCE_REVISION,
       kind: SEMANTIC,
-      digest: "76ea72c6249ec0f90cb426dfbb8efda8308610f79c4f0ac6ff0a2445cab59a4f",
+      digest: COMMERCE_MANIFEST_SHA256,
       manifestPath: COMMERCE_MANIFEST,
       profilePath: COMMERCE_PROFILE,
       missing: "commerce-fixture-request-to-receipt",
@@ -1051,7 +1054,12 @@ function loadCommerceGrant(manifestPath) {
 
   const vectorsById = new Map(corpus.vectors.map((vector) => [vector.id, vector]));
   if (vectorsById.size !== corpus.vectors.length) return;
-  return { table, vectorsById, schemaDigests: profile.catalogue.schema_digests };
+  return {
+    manifest_sha256: verdict.manifest_sha256,
+    table,
+    vectorsById,
+    schemaDigests: profile.catalogue.schema_digests,
+  };
 }
 
 function sameFixtureJson(left, right) {
@@ -1059,13 +1067,14 @@ function sameFixtureJson(left, right) {
     canonicalStringify(left) === canonicalStringify(right);
 }
 
-function selectCommerceGrant(request, grantFor) {
+function selectCommerceGrant(request, expectedManifestSha256, grantFor) {
   if (request.kind === "read" || request.kind === "proposed_recovery") {
     return { status: "NOT_BOUND", vector_id: null };
   }
   const hold = { status: "HOLD_SEMANTIC", vector_id: null };
   const grant = grantFor(request.manifest_path);
-  if (!grant || !sameFixtureJson(request.producer, grant.table.producer)) return hold;
+  if (!grant || expectedManifestSha256 !== grant.manifest_sha256) return hold;
+  if (!sameFixtureJson(request.producer, grant.table.producer)) return hold;
 
   const fields = ["method", "path", "action", "machine", "op", "subject_field", "body_schema_sha256"];
   const tuples = grant.table.tuples.filter((tuple) =>
@@ -1120,16 +1129,30 @@ test("Commerce grant lookup", async (t) => {
       transportCalls += 1;
       throw new Error("Commerce grant lookup called transport");
     } }),
-    select: (request) => selectCommerceGrant(request, grantFor),
+    select: (request, expectedManifestSha256) =>
+      selectCommerceGrant(request, expectedManifestSha256, grantFor),
   };
-  function check({ id, request, expect }) {
-    assert.deepEqual(consumer.select(request), { ...expect }, id);
+  function check({ id, request, expect }, expectedManifestSha256) {
+    assert.deepEqual(consumer.select(request, expectedManifestSha256), { ...expect }, id);
     assert.equal(transportCalls, 0, id);
   }
 
+  await t.test("requires the consumer manifest digest on every selection", () => {
+    const { request } = document.cases.find(({ id }) => id === "cancel-from-LISTED");
+    assert.deepEqual(consumer.select(request, COMMERCE_MANIFEST_SHA256), {
+      status: SEMANTIC, vector_id: "resale-market/market-cancel-LISTED",
+    });
+    assert.equal(transportCalls, 0);
+
+    const hold = { status: "HOLD_SEMANTIC", vector_id: null };
+    assert.deepEqual(consumer.select(request, BOOTSTRAP_MANIFEST_SHA256), hold);
+    assert.equal(transportCalls, 0);
+    assert.deepEqual(consumer.select(request), hold);
+    assert.equal(transportCalls, 0);
+  });
   await t.test("selects only the exact command evidence", () => {
     const commands = document.cases.filter(({ request }) => request.kind === "command");
-    for (const item of commands) check(item);
+    for (const item of commands) check(item, COMMERCE_MANIFEST_SHA256);
     assert.deepEqual(commands.filter(({ expect }) => expect.status === SEMANTIC)
       .map(({ expect }) => expect.vector_id).sort(), [
       "resale-market/market-cancel-BUY_HELD",
@@ -1181,7 +1204,7 @@ test("Commerce grant lookup", async (t) => {
               id,
               request: commandRequest(tuple, vector, vector.commerce_step),
               expect: { status: SEMANTIC, vector_id: id },
-            });
+            }, COMMERCE_MANIFEST_SHA256);
           }
         }
 
@@ -1204,7 +1227,7 @@ test("Commerce grant lookup", async (t) => {
               id: `${id} offered as ${step}`,
               request: commandRequest(tuple, vector, step),
               expect: { status: "HOLD_SEMANTIC", vector_id: null },
-            });
+            }, COMMERCE_MANIFEST_SHA256);
           }
         }
       }
