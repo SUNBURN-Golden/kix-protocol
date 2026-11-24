@@ -41,6 +41,19 @@ first acceptances, 14 market receipts and ten booking branch receipts cover all
 56 listed first acceptances. Both companions are non-normative. External
 Commerce acceptance remains `UNVERIFIED`.
 
+The issuance lost-reply pair replays `booking-admission/issue-B` on two fresh
+in-process hosts after the same recorded mock payment. Commerce sees the
+same `UNKNOWN` after one attempt in both histories. The producer remains
+`PAYMENT_NOTED` when the request is dropped, and reaches `ISSUED` with a
+version-1 mock right when the successful reply is withheld. Resolve the
+second history's `hidden_receipt_id` as
+`receipts["booking-admission/issue-B"]` in the pinned booking branch receipts.
+That receipt is harness evidence. Commerce must keep the write fenced, with
+zero follow-up calls, because the missing reply leaves issuance unresolved
+and operation recovery is `NOT_BOUND`. The pair supplements the existing
+manifest grant. [Issuance lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_issuance_lost_reply_v1.json) ·
+[Focused replay](../../reference/booking_resale_admission/test_commerce_issuance_lost_reply.py)
+
 An unlisted tuple or context is outside the grant. Keep unresolved `UNKNOWN`
 outcomes fenced. The market, settlement and operation-recovery reads remain
 `NOT_BOUND`. [PR #146 change requests](https://github.com/SUNBURN-Golden/kix-commerce-apps/blob/9a55fe4e257376f9db3f877a11b65e3ecc43c661/docs/kix-resale-journey-binding-change-requests.md)
