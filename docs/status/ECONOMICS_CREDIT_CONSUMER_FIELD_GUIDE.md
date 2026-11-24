@@ -1829,3 +1829,40 @@ The replay suite also exchanges the two attributed signs and variances in
 memory. Both claim checks reject the exchanged values even though the sum is
 still 0 KRW.
 [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#offsetting-claim-gap-comparison) · [Builder validation](../../validation/2026-11-24-plan-capital-offsetting-claim-gaps/README.md)
+
+## Capital commerce refund checkpoints
+
+The synthetic `capital-commerce-refund-checkpoints/1` pack references the
+`linked-purchase-partial-refund` Commerce case. The replay checks the source
+SHA-256 over the raw bytes before decoding. It verifies each receipt pointer,
+its enclosing step ID and action, and the shared identity `claim-1`,
+`trade-claim-1`, and `KRW`.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json) · [Pinned source](../../reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json)
+
+The test passes the entire committed claim as the F04 offer face and checks
+the same claim in the offer journal. A single mock draw freezes an open face
+of 10,001 KRW. The existing F04 §7.11 observer compares each settlement
+claim against that frozen face at an explicit synthetic tolerance of zero.
+Each checkpoint has 10,001 KRW of settlement obligation outstanding and
+zero variance.
+[F04 §7.11](../contracts/CREDIT_ADVANCE_F04.md#711-정산-잔차settlement-variance)
+
+| Checkpoint | Commerce receipt fragment | Bearer policy | Refund face (KRW) | Mock accepted (KRW) | Refund outstanding (KRW) | PG adjustment outstanding (KRW) |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| `commit` | `#/cases/0/steps/9/receipt` | `NONE` | 0 | 0 | 0 | 0 |
+| `bind-refund` | `#/cases/0/steps/14/receipt` | `REQUESTER` | 4,000 | 0 | 4,000 | 0 |
+| `observe-mock-acceptance` | `#/cases/0/steps/15/receipt` | `REQUESTER` | 4,000 | 1,500 | 2,500 | 1,500 |
+
+Requester refund outstanding is a settlement field. The F04 advance retains
+10,000 KRW of drawn and outstanding exposure and zero repayment throughout.
+The replay compares the full credit views, journal and state digest after each
+observation. Exchanging the two refund receipt pointers still yields zero
+variance, and the exact checkpoint association rejects the exchange.
+
+All three observations remain fail-closed with `refund_component=NOT_BOUND`,
+`contract_status=NOT_BOUND`, `repair=NONE`, `mutates_state=false` and
+`authorizes_exposure=false`. External `kix-capital` acceptance remains
+`UNVERIFIED`. Product limits and tolerance policy remain `UNDETERMINED` with
+Astra, netting mechanics with the User, and legal refund liability with
+the User and legal counsel.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#commerce-refund-checkpoints) · [Builder validation](../../validation/2026-11-25-plan-capital-commerce-refund-checkpoints/README.md)

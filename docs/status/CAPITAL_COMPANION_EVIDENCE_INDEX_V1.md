@@ -1,8 +1,8 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates fifteen
-consumer pack families and two supporting observer fixtures. It defines no
+read-only discovery metadata for `kix-capital`. It associates sixteen
+consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
 [F04 contract](../contracts/CREDIT_ADVANCE_F04.md) retain their original scope.
@@ -61,7 +61,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_omitted_exposure_members | self_contained_comparisons | 4 | 0 |
 | capital_payee_order_recovery | self_contained_comparisons | 2 | 0 |
 | capital_offsetting_claim_gaps | self_contained_comparisons | 2 | 0 |
-| **Total** | | **463** | **128** |
+| capital_commerce_refund_checkpoints | self_contained_comparisons | 3 | 0 |
+| **Total** | | **466** | **128** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -215,6 +216,24 @@ synthetic tolerance. `#/diagnostic_sum_krw` records their arithmetic sum.
 original tolerances and complete attributed results. The index validator
 rejects an exchange of the two resolvable result pointers.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_offsetting_claim_gaps.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-offsetting-claim-gaps)
+
+### Commerce refund checkpoints
+
+`capital_commerce_refund_checkpoints` links one frozen F04 claim to three
+Commerce receipts. The input and result fragments are relative to the
+comparison pack. Each `receipt_ref` points into the raw-byte-pinned Commerce
+receipt file.
+
+| Case | Input fragment | Complete result fragment | Commerce receipt fragment |
+| --- | --- | --- | --- |
+| `commit` | `#/cases/0` | `#/cases/0/expected_result` | `#/cases/0/steps/9/receipt` |
+| `bind-refund` | `#/cases/1` | `#/cases/1/expected_result` | `#/cases/0/steps/14/receipt` |
+| `observe-mock-acceptance` | `#/cases/2` | `#/cases/2/expected_result` | `#/cases/0/steps/15/receipt` |
+
+The validator rejects swapped receipt pointers even though both resolve to
+the same claim and produce zero variance. The refund component remains
+`NOT_BOUND`.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json) · [Commerce receipts](../../reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_commerce_refund_checkpoints.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-commerce-refund-checkpoints)
 
 ## Read-only consumption
 
