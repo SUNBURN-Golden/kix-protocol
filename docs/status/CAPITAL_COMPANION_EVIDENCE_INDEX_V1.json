@@ -5161,6 +5161,46 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_offsetting_claim_gaps",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json",
+        "sha256": "a62a473bb69dde93769e9f1c04eb91a408a3d9014c253f4cbab211f9eeebeabe",
+        "gitBlob": "37b5c3632407af78275cff6b143cf3b338358039"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json",
+        "sha256": "a62a473bb69dde93769e9f1c04eb91a408a3d9014c253f4cbab211f9eeebeabe",
+        "gitBlob": "37b5c3632407af78275cff6b143cf3b338358039"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_offsetting_claim_gaps.py",
+        "symbol": "CapitalOffsettingClaimGapsTests.test_claim_pair"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital offsetting claim gaps"
+        }
+      ],
+      "limitations": [
+        "The zero sum is diagnostic arithmetic. Each claim remains outside its original synthetic tolerance with NOT_BOUND, repair=NONE and no exposure authority. Product thresholds remain UNDETERMINED with Astra."
+      ],
+      "entries": [
+        {
+          "case_id": "v4_claim_gap",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "v6_claim_gap",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [

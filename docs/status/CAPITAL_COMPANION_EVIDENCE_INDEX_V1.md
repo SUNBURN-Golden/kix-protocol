@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates fourteen
+read-only discovery metadata for `kix-capital`. It associates fifteen
 consumer pack families and two supporting observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -60,7 +60,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_mixed_checkpoint_views | self_contained_comparisons | 4 | 0 |
 | capital_omitted_exposure_members | self_contained_comparisons | 4 | 0 |
 | capital_payee_order_recovery | self_contained_comparisons | 2 | 0 |
-| **Total** | | **461** | **128** |
+| capital_offsetting_claim_gaps | self_contained_comparisons | 2 | 0 |
+| **Total** | | **463** | **128** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -112,7 +113,7 @@ The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the fourteen consumer families.
+evidence, outside the fifteen consumer families.
 
 ### P1 pre-draw rejection and cancellation
 
@@ -196,6 +197,24 @@ mock-acceptance checkpoints. Each order produces 10,000 KRW of recovery due,
 with different payee attribution. The validator rejects cross-wired result
 pointers even though both resolve to complete envelopes.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_payee_order_recovery.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-payee-order-recovery)
+
+### Offsetting claim gap comparison
+
+`capital_offsetting_claim_gaps` indexes two complete F04 §7.11 observations
+from the pinned settlement-variance fixture. The input and result fragments
+below are relative to the comparison pack.
+
+| Case | Claim / trade | Source scenario | Input fragment | Complete result fragment |
+| --- | --- | --- | --- | --- |
+| `v4_claim_gap` | `claim-v4` / `trade-v4` | `V4_positive_observation_sign` | `#/cases/0` | `#/cases/0/expected_result` |
+| `v6_claim_gap` | `claim-v2` / `trade-v2` | `V6_boundary_plus_one_out_of_tolerance` | `#/cases/1` | `#/cases/1/expected_result` |
+
+The two cases report +40,000 and −40,000 KRW. Each is outside its own
+synthetic tolerance. `#/diagnostic_sum_krw` records their arithmetic sum.
+`CapitalOffsettingClaimGapsTests.test_claim_pair` verifies the pinned views,
+original tolerances and complete attributed results. The index validator
+rejects an exchange of the two resolvable result pointers.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_offsetting_claim_gaps.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-offsetting-claim-gaps)
 
 ## Read-only consumption
 

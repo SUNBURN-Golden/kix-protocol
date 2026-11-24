@@ -1786,3 +1786,46 @@ amounts describe fixture obligations. Collection and credit repayment are
 outside the comparison. External `kix-capital` acceptance remains
 **UNVERIFIED**.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#payee-order-recovery-comparison) · [Builder validation](../../validation/2026-11-24-plan-capital-payee-order-recovery/README.md)
+
+## Capital offsetting claim gaps
+
+The `capital-offsetting-claim-gaps/1` pack pairs two synthetic F04 §7.11
+observations. All amounts in the table are KRW.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json) · [F04 §7.11](../contracts/CREDIT_ADVANCE_F04.md#711-정산-잔차settlement-variance)
+
+| Source scenario | Claim / trade | Settlement outstanding | Frozen credit `open_face` | Source `tolerance` | Signed variance |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `V4_positive_observation_sign` | `claim-v4` / `trade-v4` | 100,000 | 60,000 | 0 | +40,000 |
+| `V6_boundary_plus_one_out_of_tolerance` | `claim-v2` / `trade-v2` | 60,000 | 100,000 | 39,999 | −40,000 |
+
+V4 keeps the settlement observation taken before the 40,000 KRW distribution
+and the credit face frozen after it. V6 keeps the settlement observation after
+distribution and the credit face frozen before it. V6 exceeds its tolerance
+by 1 KRW. Both results carry `within_tolerance=false`, `NOT_BOUND`,
+`repair=NONE`, `refund_component=NOT_BOUND`, `fail_closed=true`,
+`mutates_state=false` and `authorizes_exposure=false`.
+`diagnostic_sum_krw` is the arithmetic sum of the signed variances, 0 KRW.
+The claim rows carry the tolerance and disposition. Product thresholds remain
+**UNDETERMINED with Astra**, and external `kix-capital` acceptance remains
+**UNVERIFIED**.
+
+Verify both raw SHA-256 digests in `source_pins` before replay. For each case,
+follow `settlement_view_ref`, `credit_view_ref` and `tolerance_ref` into
+`settlement_variance_v1.json`. Confirm source scenario indices 3 (V4) and 5 (V6),
+their scenario IDs and the claim/trade identities. V2 and V5 share V6's view
+bytes, so verify the exact scenario and tolerance pointer. Hash each complete
+view using `settlement_variance.canonical` and compare the case's view digests.
+Pass the resolved views and explicit keyword `tolerance` to
+`observe_settlement_variance`. Compare the complete `{"ok": …}` envelope for
+each case before summing the replayed variances.
+[Pinned source](../../reference/credit_advance_f04/fixtures/settlement_variance_v1.json) · [Observer](../../reference/credit_advance_f04/settlement_variance.py)
+
+```sh
+cd reference/credit_advance_f04
+python3 -B -m unittest test_capital_offsetting_claim_gaps
+```
+
+The replay suite also exchanges the two attributed signs and variances in
+memory. Both claim checks reject the exchanged values even though the sum is
+still 0 KRW.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#offsetting-claim-gap-comparison) · [Builder validation](../../validation/2026-11-24-plan-capital-offsetting-claim-gaps/README.md)
