@@ -859,3 +859,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-24 Capital payee order recovery — 위치 안내만
 
 - Two synthetic R1 distribution orders assign the same 10,000 KRW recovery due to different payees. The two histories share the post-refund variance and frozen credit and exposure observations. Product waterfall priority remains UNDETERMINED with Astra. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-payee-order-recovery) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#payee-order-recovery-comparison) · [Builder validation](../validation/2026-11-24-plan-capital-payee-order-recovery/README.md)
+
+## 2026-11-24 Capital offsetting claim gaps — 위치 안내만
+
+- Two pinned F04 §7.11 claim observations report +40,000 and −40,000 KRW. The diagnostic sum is zero, and both claims remain outside their original synthetic tolerances with `NOT_BOUND` and `repair=NONE`. Product thresholds remain UNDETERMINED with Astra. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-offsetting-claim-gaps) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#offsetting-claim-gap-comparison) · [Builder validation](../validation/2026-11-24-plan-capital-offsetting-claim-gaps/README.md)

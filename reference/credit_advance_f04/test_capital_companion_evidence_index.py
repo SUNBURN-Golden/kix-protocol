@@ -80,6 +80,10 @@ PACKS = (
      'capital_payee_order_recovery_vectors_v1.json', 'capital_payee_order_recovery_vectors_v1.json',
      'test_capital_payee_order_recovery.py', 'CapitalPayeeOrderRecoveryTests.test_order_pair',
      'Capital payee order recovery', ('r1_fee_first', 'r1_residual_first'), ()),
+    ('capital_offsetting_claim_gaps', 'self_contained_comparisons',
+     'capital_offsetting_claim_gaps_vectors_v1.json', 'capital_offsetting_claim_gaps_vectors_v1.json',
+     'test_capital_offsetting_claim_gaps.py', 'CapitalOffsettingClaimGapsTests.test_claim_pair',
+     'Capital offsetting claim gaps', ('v4_claim_gap', 'v6_claim_gap'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -136,6 +140,11 @@ LIMITATIONS = {
         'The two R1 orders are caller-supplied synthetic inputs. Product waterfall priority remains '
         'UNDETERMINED with Astra. Recovery due records a fixture obligation. '
         'Collection and credit repayment are outside this comparison.',
+    ],
+    'capital_offsetting_claim_gaps': [
+        'The zero sum is diagnostic arithmetic. Each claim remains outside its original synthetic '
+        'tolerance with NOT_BOUND, repair=NONE and no exposure authority. '
+        'Product thresholds remain UNDETERMINED with Astra.',
     ],
 }
 SUPPORTING = (
@@ -375,9 +384,9 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 461)
+        self.assertEqual(validate_index(self.document), 463)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -576,6 +585,20 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
                 residual_first['result_ref'], fee_first['result_ref'])
 
         self._reject(swap_results, 'entry membership/association/order/type: capital_payee_order_recovery')
+
+    def test_offsetting_claim_gaps_crossed_result_references(self):
+        family = 'capital_offsetting_claim_gaps'
+
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            path = pack['output']['path']
+            documents = {path: decode_json(_read(path).decode('utf-8'))}
+            v4, v6 = pack['entries']
+            v4['result_ref'], v6['result_ref'] = v6['result_ref'], v4['result_ref']
+            self.assertEqual(_resolve(documents, v4['result_ref'])['ok']['claim_id'], 'claim-v2')
+            self.assertEqual(_resolve(documents, v6['result_ref'])['ok']['claim_id'], 'claim-v4')
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
 
     def test_pin_controls(self):
         for i in range(len(PACKS)):
