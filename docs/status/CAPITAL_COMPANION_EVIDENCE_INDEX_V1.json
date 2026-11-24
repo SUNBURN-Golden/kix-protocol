@@ -5121,6 +5121,46 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_payee_order_recovery",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json",
+        "sha256": "28218ee3d63faf2433cf064ef4176bb339eb0320abe95b20892836f0d8031eeb",
+        "gitBlob": "5135ec5a944ebcd8314e2a0be9635c95e8617d66"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json",
+        "sha256": "28218ee3d63faf2433cf064ef4176bb339eb0320abe95b20892836f0d8031eeb",
+        "gitBlob": "5135ec5a944ebcd8314e2a0be9635c95e8617d66"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_payee_order_recovery.py",
+        "symbol": "CapitalPayeeOrderRecoveryTests.test_order_pair"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital payee order recovery"
+        }
+      ],
+      "limitations": [
+        "The two R1 orders are caller-supplied synthetic inputs. Product waterfall priority remains UNDETERMINED with Astra. Recovery due records a fixture obligation. Collection and credit repayment are outside this comparison."
+      ],
+      "entries": [
+        {
+          "case_id": "r1_fee_first",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "r1_residual_first",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [

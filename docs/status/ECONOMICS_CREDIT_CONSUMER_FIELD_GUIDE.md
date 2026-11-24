@@ -1747,3 +1747,42 @@ uses fixture limits. Product exposure limits remain **UNDETERMINED — Astra**,
 legal responsibility **UNDETERMINED — User/legal**, and external
 `kix-capital` acceptance **UNVERIFIED**.
 [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#omitted-exposure-member-comparisons) · [Builder validation](../../validation/2026-11-20-plan-capital-omitted-exposure-members/README.md)
+
+## Capital payee order recovery
+
+The `capital-payee-order-recovery/1` pack compares two caller-supplied
+distribution orders for `R1_full_refund_after_partial_distribution`.
+`input_ref` resolves to `#/scenarios/0` in the R1 input file and
+`baseline_ref` resolves to `#/scenarios/0` in the pinned result file.
+The replay reads the fee-first result from that baseline and runs the
+residual-first order on fresh settlement and credit machines because the
+first accepted distribution freezes the claim's order. The two histories
+use the same committed `claim-r1`, frozen 60,000 and 40,000 KRW draws,
+10,000 KRW of confirmed cash, and 100,000 KRW full refund and mock acceptance.
+[R1 inputs](../../reference/credit_advance_f04/fixtures/capital_refund_composition_v1.json) · [R1 baseline result](../../reference/credit_advance_f04/fixtures/capital_refund_composition_vectors_v1.json) · [Settlement contract §§4–5](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md#4-f02--분할-배정과-호출자-순서)
+
+The following amounts are synthetic KRW. Each row applies at both
+`refund-full` and `accept-full`.
+
+| Case and distribution order | Payee | Face | Distributed | Cancelled unpaid | Recovery due | Outstanding |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `r1_fee_first` (`fee-r1`, `res-r1`) | `fee-r1` | 5,000 | 5,000 | 0 | 5,000 | 0 |
+| `r1_fee_first` (`fee-r1`, `res-r1`) | `res-r1` | 95,000 | 5,000 | 90,000 | 5,000 | 0 |
+| `r1_residual_first` (`res-r1`, `fee-r1`) | `fee-r1` | 5,000 | 0 | 5,000 | 0 | 0 |
+| `r1_residual_first` (`res-r1`, `fee-r1`) | `res-r1` | 95,000 | 10,000 | 85,000 | 10,000 | 0 |
+
+Per payee, distributed cash, cancelled unpaid face and outstanding sum to
+the face, and recovery due equals distributed cash at both refund
+checkpoints. In residual-first, the fee payee's entire 5,000 KRW unpaid
+face is cancelled and remains cancelled through acceptance. Both orders
+produce 10,000 KRW of aggregate recovery due and a variance of −100,000 KRW
+with cash delta 0 and recovery delta 10,000 KRW. The complete frozen credit
+and shared-exposure observations are canonically byte-equal from setup
+through mock acceptance. The replay rejects a swap of the residual-first
+recovery amounts despite the preserved total.
+
+Product waterfall priority remains **UNDETERMINED with Astra**. The recovery
+amounts describe fixture obligations. Collection and credit repayment are
+outside the comparison. External `kix-capital` acceptance remains
+**UNVERIFIED**.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#payee-order-recovery-comparison) · [Builder validation](../../validation/2026-11-24-plan-capital-payee-order-recovery/README.md)
