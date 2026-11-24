@@ -4597,6 +4597,34 @@ This offline companion evidence sits outside the pinned
 `commerce-fixture-8ba7f6c-1` grant. External Commerce acceptance remains
 `UNVERIFIED`. [Scoped fixture qualification](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#scoped-commerce-fixture-qualification)
 
+## Commerce resale transfer lost-reply vectors
+
+Each case starts a fresh in-memory host, replays the pinned market setup
+through `resale-market/market-pay`, then attempts the same
+`resale-market/market-accept` envelope once. Both callers record
+`op-resale-market-market-accept`, body key `key-market-accept`, a null receipt,
+`UNKNOWN`, and zero follow-up calls.
+
+The fixture keeps the shared caller record in `expected_caller` and the
+test-harness diagnostics in each case's `producer_evidence`. Loss before
+dispatch leaves `list-1` at `PAYMENT_NOTED`, with `buyer-1` holding `issue-1`
+at version 1 and all five journals unchanged. Loss after dispatch withholds
+the full pinned market receipt from the caller. The producer shows
+`TRANSFERRED`, `buyer-2` holding `issue-1` at version 2, and one appended
+`accept_resale` entry in the resale journal. Resolve `hidden_receipt_id`
+against the market golden's `receipts` object for producer verification.
+The recovery lookup remains `NOT_BOUND`. Keep the unresolved write fenced
+without polling, retry, or replacement writes. This is non-normative offline
+evidence for Commerce.
+[Paired fixture](fixtures/commerce_transfer_lost_reply_v1.json) ·
+[Market golden](fixtures/commerce_market_full_receipts_v1.json) ·
+[Recovery boundary](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#unavailable-consumer-bindings)
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p 'test_commerce_transfer_lost_reply.py' -v
+```
+
 ## Commerce resale buyer-hold release vectors
 
 `buyer-2` acquires `hold-1` for `list-1`. A release from `buyer-3` returns
