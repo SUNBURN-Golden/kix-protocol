@@ -4,7 +4,7 @@
     "title": "KIX integration-gate local-call transport",
     "version": "0.3-rc1-integration-gate+sha256:ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e",
     "summary": "Non-production loopback integration gate. No production endpoint. No public host.",
-    "description": "Non-production loopback integration gate for the published KIX v0.3-rc1 local call. There is no production endpoint and no public host. Successful local HTTP tests are not production approval.\n\nThe only protocol path is POST /x-kix-contract-only/local-call. The JSON body is the published local-call envelope: operationId, actor, action, and body. action is one of the published command keys. body is validated against that command JSON Schema. A core action is passed to Core.execute(operationId, actor, action, body). An FSM action, named machine_op, is passed to the in-process machine on the same worker. The catalogue does not define a command outside the pinned core set and the pinned FSM REPLAYABLE sets. No REST resource tree is defined for events, tickets, payments, venues, or marketplaces.\n\nDefault state is the in-memory reference model. It is not durable across process restart. An optional process-local file journal can replay committed local-call receipts after a restart of this loopback process. That journal is a readiness runtime. It is not protocol truth and it is not a production conformance claim. Inside one process, and after a recovered journal, the same operationId with the same actor, action, and body replays the stored receipt. A different fingerprint for that operationId is OPERATION_ID_CONFLICT. That rule is the core-command rule. An FSM body idempotency_key is not rewritten from the envelope operationId. An HTTP Idempotency-Key header is not consulted. When a readiness directory is set, FSM actions are refused with READINESS_FSM_REFUSED before any journal append. The spelling of that refusal is the loopback label for the approved fail-closed behavior.\n\nExternal payment, KYC, venue, and bank adapters are not attached. Fixture reject codes from the reference model stay reject codes. GET /health and GET /ready are process probes, not protocol commands. Readiness is not production readiness.\n\nThe contract-only catalogue remains a pin that does not declare a live server. This document only describes the local integration-gate transport."
+    "description": "Non-production loopback integration gate for the published KIX v0.3-rc1 local call. There is no production endpoint and no public host. Successful local HTTP tests are not production approval.\n\nThe protocol command path is POST /x-kix-contract-only/local-call. The JSON body is the published local-call envelope: operationId, actor, action, and body. action is one of the published command keys. body is validated against that command JSON Schema. A core action is passed to Core.execute(operationId, actor, action, body). An FSM action, named machine_op, is passed to the in-process machine on the same worker. The catalogue does not define a command outside the pinned core set and the pinned FSM REPLAYABLE sets. No REST resource tree is defined for events, tickets, payments, venues, or marketplaces.\n\nDefault state is the in-memory reference model. It is not durable across process restart. An optional process-local file journal can replay committed local-call receipts after a restart of this loopback process. That journal is a readiness runtime. It is not protocol truth and it is not a production conformance claim. Inside one process, and after a recovered journal, the same operationId with the same actor, action, and body replays the stored receipt. A different fingerprint for that operationId is OPERATION_ID_CONFLICT. That rule is the core-command rule. An FSM body idempotency_key is not rewritten from the envelope operationId. An HTTP Idempotency-Key header is not consulted. When a readiness directory is set, FSM actions are refused with READINESS_FSM_REFUSED before any journal append. The spelling of that refusal is the loopback label for the approved fail-closed behavior.\n\nExternal payment, KYC, venue, and bank adapters are not attached. Fixture reject codes from the reference model stay reject codes. GET /health and GET /ready are process probes, not protocol commands. Readiness is not production readiness.\n\nSix integration-only fixture reads use POST /x-kix-contract-only/read/. Reads are available on the in-memory worker, enforce fixture actor scope, and run without browser CORS or readiness-directory storage. The contract-only catalogue remains a pin that does not declare a live server. This document only describes the local integration-gate transport."
   },
   "x-kix-contract-status": "integration-gate",
   "x-kix-live-http-server": {
@@ -1355,6 +1355,786 @@
       "description": "Published FSM command, dispatched by the loopback gate to the in-process machine. operationId here is the command name (Python action), not the per-invocation operationId argument and not the body idempotency_key. Not a production operation. Refused when a readiness directory is set."
     }
   ],
+  "components": {
+    "schemas": {
+      "FixtureReadWatermark": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "enum": [
+              "resale",
+              "settlement"
+            ]
+          },
+          "generation": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "journal_entries": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "logical_time_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "token": {
+            "type": "string",
+            "minLength": 64,
+            "maxLength": 64,
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "source",
+          "generation",
+          "journal_entries",
+          "token"
+        ],
+        "if": {
+          "properties": {
+            "source": {
+              "const": "resale"
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "logical_time_ms"
+          ]
+        },
+        "else": {
+          "not": {
+            "required": [
+              "logical_time_ms"
+            ]
+          }
+        }
+      },
+      "FixtureReadError": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "rejected": {
+            "const": true
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "rejected"
+        ]
+      },
+      "FixtureReadAvailabilityError": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "rejected": {
+            "const": true
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "rejected"
+        ]
+      },
+      "FixtureListingSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "listing_id": {
+            "type": "string"
+          },
+          "show_id": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expires_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expired": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "listing_id",
+          "show_id",
+          "phase",
+          "currency",
+          "amount",
+          "expires_ms",
+          "expired"
+        ]
+      },
+      "FixtureListing": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "listing_id": {
+            "type": "string"
+          },
+          "show_id": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expires_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expired": {
+            "type": "boolean"
+          },
+          "provenance": {
+            "const": "MOCK_GATE_ONLY"
+          },
+          "lifecycle_authority": {
+            "const": "IN_MEMORY_FSM"
+          },
+          "external_marketplace": {
+            "const": "UNSUPPORTED"
+          },
+          "role_authenticated": {
+            "const": false
+          },
+          "organizer_authenticated": {
+            "const": false
+          },
+          "chain_grant_current": {
+            "const": false
+          },
+          "durable": {
+            "const": false
+          },
+          "quote_policy_approved": {
+            "const": false
+          },
+          "discount_applied": {
+            "const": false
+          },
+          "provider_fact_live": {
+            "const": false
+          },
+          "funds_executed": {
+            "const": false
+          },
+          "buyer_evidence_available": {
+            "const": false
+          },
+          "chain_owner_current": {
+            "const": false
+          },
+          "cross_channel_exclusive": {
+            "const": false
+          },
+          "admission_routing_production": {
+            "const": false
+          },
+          "private_proof_verified": {
+            "const": false
+          },
+          "compensation_defined": {
+            "const": false
+          },
+          "economic_finality_claimed": {
+            "const": false
+          },
+          "venue_credential_reissued": {
+            "const": false
+          },
+          "right_id": {
+            "type": "string"
+          },
+          "seller_role": {
+            "type": "string"
+          },
+          "recipient_role": {
+            "type": "string"
+          },
+          "holder_role": {
+            "type": "string"
+          },
+          "slot_state": {
+            "type": "string"
+          },
+          "buyer_role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hold_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payment_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "settlement_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transfer_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slot_right_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "current_version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "accepted_entries": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "version_after": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "external_payment": {
+            "const": "UNSUPPORTED"
+          },
+          "settlement_gate": {
+            "enum": [
+              "UNBOUND",
+              "BOUND",
+              "MOCK_COMMIT_OBSERVED"
+            ]
+          },
+          "terminal": {
+            "type": "boolean"
+          },
+          "attached": {
+            "type": "boolean"
+          },
+          "mock_settlement_commit_observed": {
+            "type": "boolean"
+          },
+          "ownership_transferred": {
+            "type": "boolean"
+          },
+          "prior_presentation_valid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "listing_id",
+          "show_id",
+          "phase",
+          "currency",
+          "amount",
+          "expires_ms",
+          "expired",
+          "provenance",
+          "lifecycle_authority",
+          "external_marketplace",
+          "role_authenticated",
+          "organizer_authenticated",
+          "chain_grant_current",
+          "durable",
+          "quote_policy_approved",
+          "discount_applied",
+          "provider_fact_live",
+          "funds_executed",
+          "buyer_evidence_available",
+          "chain_owner_current",
+          "cross_channel_exclusive",
+          "admission_routing_production",
+          "private_proof_verified",
+          "compensation_defined",
+          "economic_finality_claimed",
+          "venue_credential_reissued",
+          "right_id",
+          "seller_role",
+          "recipient_role",
+          "holder_role",
+          "slot_state",
+          "buyer_role",
+          "hold_id",
+          "payment_ref",
+          "settlement_id",
+          "transfer_id",
+          "slot_right_id",
+          "version",
+          "current_version",
+          "generation",
+          "accepted_entries",
+          "version_after",
+          "external_payment",
+          "settlement_gate",
+          "terminal",
+          "attached",
+          "mock_settlement_commit_observed",
+          "ownership_transferred",
+          "prior_presentation_valid"
+        ]
+      },
+      "FixtureRight": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "right_id": {
+            "type": "string"
+          },
+          "show_id": {
+            "type": "string"
+          },
+          "holder_role": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "listing_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "admission_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_payment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_payer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_amount": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "right_id",
+          "show_id",
+          "holder_role",
+          "state",
+          "slot",
+          "version",
+          "generation",
+          "listing_id",
+          "admission_id",
+          "last_payment",
+          "last_payer",
+          "last_amount"
+        ]
+      },
+      "FixtureTicket": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "provenance": {
+            "const": "MOCK_GATE_ONLY"
+          },
+          "lifecycle_authority": {
+            "const": "IN_MEMORY_FSM"
+          },
+          "external_marketplace": {
+            "const": "UNSUPPORTED"
+          },
+          "role_authenticated": {
+            "const": false
+          },
+          "organizer_authenticated": {
+            "const": false
+          },
+          "chain_grant_current": {
+            "const": false
+          },
+          "durable": {
+            "const": false
+          },
+          "quote_policy_approved": {
+            "const": false
+          },
+          "discount_applied": {
+            "const": false
+          },
+          "provider_fact_live": {
+            "const": false
+          },
+          "funds_executed": {
+            "const": false
+          },
+          "buyer_evidence_available": {
+            "const": false
+          },
+          "chain_owner_current": {
+            "const": false
+          },
+          "cross_channel_exclusive": {
+            "const": false
+          },
+          "admission_routing_production": {
+            "const": false
+          },
+          "private_proof_verified": {
+            "const": false
+          },
+          "compensation_defined": {
+            "const": false
+          },
+          "economic_finality_claimed": {
+            "const": false
+          },
+          "venue_credential_reissued": {
+            "const": false
+          },
+          "right_id": {
+            "type": "string"
+          },
+          "show_id": {
+            "type": "string"
+          },
+          "holder_role": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sale_phase": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reservation_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "active_listing_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "eligible": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "provenance",
+          "lifecycle_authority",
+          "external_marketplace",
+          "role_authenticated",
+          "organizer_authenticated",
+          "chain_grant_current",
+          "durable",
+          "quote_policy_approved",
+          "discount_applied",
+          "provider_fact_live",
+          "funds_executed",
+          "buyer_evidence_available",
+          "chain_owner_current",
+          "cross_channel_exclusive",
+          "admission_routing_production",
+          "private_proof_verified",
+          "compensation_defined",
+          "economic_finality_claimed",
+          "venue_credential_reissued",
+          "right_id",
+          "show_id",
+          "holder_role",
+          "slot",
+          "version",
+          "sale_phase",
+          "reservation_id",
+          "active_listing_id",
+          "eligible"
+        ]
+      },
+      "FixtureClaim": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "legal_debtor_bound": {
+            "const": false
+          },
+          "admission_granted": {
+            "const": false
+          },
+          "right_cancelled": {
+            "const": false
+          },
+          "bank_debit_observed": {
+            "const": false
+          },
+          "external_return_closed": {
+            "const": false
+          },
+          "funds_executed": {
+            "const": false
+          },
+          "provenance": {
+            "const": "MOCK_SETTLEMENT_ONLY"
+          },
+          "claim_id": {
+            "type": "string"
+          },
+          "trade_id": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "debtor_role": {
+            "type": "string"
+          },
+          "refund_bearer_policy": {
+            "type": "string"
+          },
+          "policy": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "residual_payee": {
+                "type": "string"
+              },
+              "fee_payee": {
+                "type": "string"
+              },
+              "fee_bps": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "kind",
+              "residual_payee",
+              "fee_payee",
+              "fee_bps"
+            ]
+          },
+          "obligations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "payee": {
+                  "type": "string"
+                },
+                "face": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "distributed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cancelled_unpaid": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "recovery_due": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "outstanding": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "payee",
+                "face",
+                "distributed",
+                "cancelled_unpaid",
+                "recovery_due",
+                "outstanding"
+              ]
+            }
+          },
+          "gross": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "receivable_open": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "confirmed_cash": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "non_cash_accounted": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "distributed_cash": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "undistributed_cash": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "refund_face": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "refund_accepted": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "refund_outstanding": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pg_adjustment_outstanding": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "recovery_due": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "distribution_order": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "refund_beneficiary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fixture_reclassified": {
+            "type": "boolean"
+          },
+          "distribution_blocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "legal_debtor_bound",
+          "admission_granted",
+          "right_cancelled",
+          "bank_debit_observed",
+          "external_return_closed",
+          "funds_executed",
+          "provenance",
+          "claim_id",
+          "trade_id",
+          "currency",
+          "debtor_role",
+          "refund_bearer_policy",
+          "policy",
+          "obligations",
+          "gross",
+          "receivable_open",
+          "confirmed_cash",
+          "non_cash_accounted",
+          "distributed_cash",
+          "undistributed_cash",
+          "refund_face",
+          "refund_accepted",
+          "refund_outstanding",
+          "pg_adjustment_outstanding",
+          "recovery_due",
+          "distribution_order",
+          "refund_beneficiary",
+          "fixture_reclassified",
+          "distribution_blocked"
+        ]
+      }
+    }
+  },
   "paths": {
     "/x-kix-contract-only/local-call": {
       "post": {
@@ -1405,6 +2185,2026 @@
           },
           "503": {
             "description": "Process is up but the in-memory core is not accepting calls. Not production readiness."
+          }
+        }
+      }
+    },
+    "/x-kix-contract-only/read/list_open_listings": {
+      "post": {
+        "operationId": "list_open_listings",
+        "x-kix-transport": "integration-gate",
+        "x-kix-production-endpoint": false,
+        "description": "Attached, unexpired LISTED fixture summaries. Sort by first accepted listing position, then listing ID. Cursors bind actor, page size, ordering and snapshot. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "minimum_watermark": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "generation": {
+                        "type": "string",
+                        "minLength": 32,
+                        "maxLength": 32
+                      },
+                      "journal_entries": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "logical_time_ms": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "token": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "generation",
+                      "journal_entries",
+                      "token"
+                    ]
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20
+                  },
+                  "cursor": {
+                    "type": "string",
+                    "minLength": 54,
+                    "maxLength": 54
+                  }
+                },
+                "required": [
+                  "actor"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fixture observation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "read_schema_version": {
+                      "const": "0.1"
+                    },
+                    "fixture_mode": {
+                      "const": "REFERENCE_IN_MEMORY"
+                    },
+                    "query_digest": {
+                      "type": "string",
+                      "minLength": 64,
+                      "maxLength": 64,
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "accepted_through": {
+                      "$ref": "#/components/schemas/FixtureReadWatermark"
+                    },
+                    "body": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "entries": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/FixtureListingSummary"
+                          },
+                          "maxItems": 100
+                        },
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 54,
+                          "maxLength": 54
+                        },
+                        "truncated": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "entries",
+                        "next_cursor",
+                        "truncated"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "read_schema_version",
+                    "fixture_mode",
+                    "query_digest",
+                    "accepted_through",
+                    "body"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid fixture fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route or unavailable subject.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Only POST is allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Request timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Content-Length is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "414": {
+            "description": "Request URI is too long.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Expected application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "417": {
+            "description": "Expect is unsupported.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unmet watermark, refused cursor, FSM rejection, or readiness-directory mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "431": {
+            "description": "Request headers exceed the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal gate error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Worker unavailable or admission limit reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadAvailabilityError"
+                }
+              }
+            }
+          },
+          "505": {
+            "description": "Unsupported HTTP version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/x-kix-contract-only/read/get_listing": {
+      "post": {
+        "operationId": "get_listing",
+        "x-kix-transport": "integration-gate",
+        "x-kix-production-endpoint": false,
+        "description": "Listing visible to its seller and, after transfer, the current holder. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "listing_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "minimum_watermark": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "generation": {
+                        "type": "string",
+                        "minLength": 32,
+                        "maxLength": 32
+                      },
+                      "journal_entries": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "logical_time_ms": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "token": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "generation",
+                      "journal_entries",
+                      "token"
+                    ]
+                  }
+                },
+                "required": [
+                  "actor",
+                  "listing_id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fixture observation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "read_schema_version": {
+                      "const": "0.1"
+                    },
+                    "fixture_mode": {
+                      "const": "REFERENCE_IN_MEMORY"
+                    },
+                    "query_digest": {
+                      "type": "string",
+                      "minLength": 64,
+                      "maxLength": 64,
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "accepted_through": {
+                      "$ref": "#/components/schemas/FixtureReadWatermark"
+                    },
+                    "body": {
+                      "$ref": "#/components/schemas/FixtureListing"
+                    }
+                  },
+                  "required": [
+                    "read_schema_version",
+                    "fixture_mode",
+                    "query_digest",
+                    "accepted_through",
+                    "body"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid fixture fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route or unavailable subject.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Only POST is allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Request timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Content-Length is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "414": {
+            "description": "Request URI is too long.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Expected application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "417": {
+            "description": "Expect is unsupported.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unmet watermark, refused cursor, FSM rejection, or readiness-directory mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "431": {
+            "description": "Request headers exceed the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal gate error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Worker unavailable or admission limit reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadAvailabilityError"
+                }
+              }
+            }
+          },
+          "505": {
+            "description": "Unsupported HTTP version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/x-kix-contract-only/read/get_right": {
+      "post": {
+        "operationId": "get_right",
+        "x-kix-transport": "integration-gate",
+        "x-kix-production-endpoint": false,
+        "description": "Separate ticket and right views visible to the current holder. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "right_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "minimum_watermark": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "generation": {
+                        "type": "string",
+                        "minLength": 32,
+                        "maxLength": 32
+                      },
+                      "journal_entries": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "logical_time_ms": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "token": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "generation",
+                      "journal_entries",
+                      "token"
+                    ]
+                  }
+                },
+                "required": [
+                  "actor",
+                  "right_id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fixture observation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "read_schema_version": {
+                      "const": "0.1"
+                    },
+                    "fixture_mode": {
+                      "const": "REFERENCE_IN_MEMORY"
+                    },
+                    "query_digest": {
+                      "type": "string",
+                      "minLength": 64,
+                      "maxLength": 64,
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "accepted_through": {
+                      "$ref": "#/components/schemas/FixtureReadWatermark"
+                    },
+                    "body": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "provenance": {
+                          "const": "MOCK_GATE_ONLY"
+                        },
+                        "lifecycle_authority": {
+                          "const": "IN_MEMORY_FSM"
+                        },
+                        "external_marketplace": {
+                          "const": "UNSUPPORTED"
+                        },
+                        "role_authenticated": {
+                          "const": false
+                        },
+                        "organizer_authenticated": {
+                          "const": false
+                        },
+                        "chain_grant_current": {
+                          "const": false
+                        },
+                        "durable": {
+                          "const": false
+                        },
+                        "quote_policy_approved": {
+                          "const": false
+                        },
+                        "discount_applied": {
+                          "const": false
+                        },
+                        "provider_fact_live": {
+                          "const": false
+                        },
+                        "funds_executed": {
+                          "const": false
+                        },
+                        "buyer_evidence_available": {
+                          "const": false
+                        },
+                        "chain_owner_current": {
+                          "const": false
+                        },
+                        "cross_channel_exclusive": {
+                          "const": false
+                        },
+                        "admission_routing_production": {
+                          "const": false
+                        },
+                        "private_proof_verified": {
+                          "const": false
+                        },
+                        "compensation_defined": {
+                          "const": false
+                        },
+                        "economic_finality_claimed": {
+                          "const": false
+                        },
+                        "venue_credential_reissued": {
+                          "const": false
+                        },
+                        "duplicate": {
+                          "const": false
+                        },
+                        "applied": {
+                          "const": "view_right"
+                        },
+                        "logical_time_ms": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "external_payment": {
+                          "const": "UNSUPPORTED"
+                        },
+                        "right": {
+                          "$ref": "#/components/schemas/FixtureRight"
+                        },
+                        "ticket": {
+                          "$ref": "#/components/schemas/FixtureTicket"
+                        }
+                      },
+                      "required": [
+                        "provenance",
+                        "lifecycle_authority",
+                        "external_marketplace",
+                        "role_authenticated",
+                        "organizer_authenticated",
+                        "chain_grant_current",
+                        "durable",
+                        "quote_policy_approved",
+                        "discount_applied",
+                        "provider_fact_live",
+                        "funds_executed",
+                        "buyer_evidence_available",
+                        "chain_owner_current",
+                        "cross_channel_exclusive",
+                        "admission_routing_production",
+                        "private_proof_verified",
+                        "compensation_defined",
+                        "economic_finality_claimed",
+                        "venue_credential_reissued",
+                        "duplicate",
+                        "applied",
+                        "logical_time_ms",
+                        "external_payment",
+                        "right",
+                        "ticket"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "read_schema_version",
+                    "fixture_mode",
+                    "query_digest",
+                    "accepted_through",
+                    "body"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid fixture fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route or unavailable subject.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Only POST is allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Request timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Content-Length is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "414": {
+            "description": "Request URI is too long.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Expected application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "417": {
+            "description": "Expect is unsupported.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unmet watermark, refused cursor, FSM rejection, or readiness-directory mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "431": {
+            "description": "Request headers exceed the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal gate error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Worker unavailable or admission limit reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadAvailabilityError"
+                }
+              }
+            }
+          },
+          "505": {
+            "description": "Unsupported HTTP version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/x-kix-contract-only/read/get_presentation": {
+      "post": {
+        "operationId": "get_presentation",
+        "x-kix-transport": "integration-gate",
+        "x-kix-production-endpoint": false,
+        "description": "Current holder only. A valid historical comparison may return matches_current_right false. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "right_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "holder_role": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "minimum_watermark": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "generation": {
+                        "type": "string",
+                        "minLength": 32,
+                        "maxLength": 32
+                      },
+                      "journal_entries": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "logical_time_ms": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "token": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "generation",
+                      "journal_entries",
+                      "token"
+                    ]
+                  }
+                },
+                "required": [
+                  "actor",
+                  "right_id",
+                  "version",
+                  "holder_role"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fixture observation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "read_schema_version": {
+                      "const": "0.1"
+                    },
+                    "fixture_mode": {
+                      "const": "REFERENCE_IN_MEMORY"
+                    },
+                    "query_digest": {
+                      "type": "string",
+                      "minLength": 64,
+                      "maxLength": 64,
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "accepted_through": {
+                      "$ref": "#/components/schemas/FixtureReadWatermark"
+                    },
+                    "body": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "provenance": {
+                          "const": "MOCK_GATE_ONLY"
+                        },
+                        "lifecycle_authority": {
+                          "const": "IN_MEMORY_FSM"
+                        },
+                        "external_marketplace": {
+                          "const": "UNSUPPORTED"
+                        },
+                        "role_authenticated": {
+                          "const": false
+                        },
+                        "organizer_authenticated": {
+                          "const": false
+                        },
+                        "chain_grant_current": {
+                          "const": false
+                        },
+                        "durable": {
+                          "const": false
+                        },
+                        "quote_policy_approved": {
+                          "const": false
+                        },
+                        "discount_applied": {
+                          "const": false
+                        },
+                        "provider_fact_live": {
+                          "const": false
+                        },
+                        "funds_executed": {
+                          "const": false
+                        },
+                        "buyer_evidence_available": {
+                          "const": false
+                        },
+                        "chain_owner_current": {
+                          "const": false
+                        },
+                        "cross_channel_exclusive": {
+                          "const": false
+                        },
+                        "admission_routing_production": {
+                          "const": false
+                        },
+                        "private_proof_verified": {
+                          "const": false
+                        },
+                        "compensation_defined": {
+                          "const": false
+                        },
+                        "economic_finality_claimed": {
+                          "const": false
+                        },
+                        "venue_credential_reissued": {
+                          "const": false
+                        },
+                        "duplicate": {
+                          "const": false
+                        },
+                        "applied": {
+                          "const": "view_presentation"
+                        },
+                        "logical_time_ms": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "external_payment": {
+                          "const": "UNSUPPORTED"
+                        },
+                        "right": {
+                          "$ref": "#/components/schemas/FixtureRight"
+                        },
+                        "presentation": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "right_id": {
+                              "type": "string"
+                            },
+                            "holder_role": {
+                              "type": "string"
+                            },
+                            "current_holder_role": {
+                              "type": "string"
+                            },
+                            "version": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "current_version": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "matches_current_right": {
+                              "type": "boolean"
+                            },
+                            "venue_credential_reissued": {
+                              "const": false
+                            },
+                            "admission_routing_production": {
+                              "const": false
+                            }
+                          },
+                          "required": [
+                            "right_id",
+                            "holder_role",
+                            "current_holder_role",
+                            "version",
+                            "current_version",
+                            "matches_current_right",
+                            "venue_credential_reissued",
+                            "admission_routing_production"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "provenance",
+                        "lifecycle_authority",
+                        "external_marketplace",
+                        "role_authenticated",
+                        "organizer_authenticated",
+                        "chain_grant_current",
+                        "durable",
+                        "quote_policy_approved",
+                        "discount_applied",
+                        "provider_fact_live",
+                        "funds_executed",
+                        "buyer_evidence_available",
+                        "chain_owner_current",
+                        "cross_channel_exclusive",
+                        "admission_routing_production",
+                        "private_proof_verified",
+                        "compensation_defined",
+                        "economic_finality_claimed",
+                        "venue_credential_reissued",
+                        "duplicate",
+                        "applied",
+                        "logical_time_ms",
+                        "external_payment",
+                        "right",
+                        "presentation"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "read_schema_version",
+                    "fixture_mode",
+                    "query_digest",
+                    "accepted_through",
+                    "body"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid fixture fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route or unavailable subject.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Only POST is allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Request timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Content-Length is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "414": {
+            "description": "Request URI is too long.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Expected application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "417": {
+            "description": "Expect is unsupported.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unmet watermark, refused cursor, FSM rejection, or readiness-directory mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "431": {
+            "description": "Request headers exceed the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal gate error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Worker unavailable or admission limit reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadAvailabilityError"
+                }
+              }
+            }
+          },
+          "505": {
+            "description": "Unsupported HTTP version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/x-kix-contract-only/read/get_settlement": {
+      "post": {
+        "operationId": "get_settlement",
+        "x-kix-transport": "integration-gate",
+        "x-kix-production-endpoint": false,
+        "description": "Follow the listing binding. Visible to the show organizer and settlement debtor fixture. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "listing_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "minimum_watermark": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "generation": {
+                        "type": "string",
+                        "minLength": 32,
+                        "maxLength": 32
+                      },
+                      "journal_entries": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "logical_time_ms": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "token": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "generation",
+                      "journal_entries",
+                      "token"
+                    ]
+                  }
+                },
+                "required": [
+                  "actor",
+                  "listing_id"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fixture observation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "read_schema_version": {
+                      "const": "0.1"
+                    },
+                    "fixture_mode": {
+                      "const": "REFERENCE_IN_MEMORY"
+                    },
+                    "query_digest": {
+                      "type": "string",
+                      "minLength": 64,
+                      "maxLength": 64,
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "accepted_through": {
+                      "$ref": "#/components/schemas/FixtureReadWatermark"
+                    },
+                    "body": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "legal_debtor_bound": {
+                          "const": false
+                        },
+                        "admission_granted": {
+                          "const": false
+                        },
+                        "right_cancelled": {
+                          "const": false
+                        },
+                        "bank_debit_observed": {
+                          "const": false
+                        },
+                        "external_return_closed": {
+                          "const": false
+                        },
+                        "funds_executed": {
+                          "const": false
+                        },
+                        "provenance": {
+                          "const": "MOCK_SETTLEMENT_ONLY"
+                        },
+                        "lifecycle_authority": {
+                          "const": "IN_MEMORY_FSM"
+                        },
+                        "external_payment": {
+                          "const": "UNSUPPORTED"
+                        },
+                        "settlement_id": {
+                          "type": "string"
+                        },
+                        "phase": {
+                          "type": "string"
+                        },
+                        "trade_id": {
+                          "type": "string"
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "debtor_role": {
+                          "type": "string"
+                        },
+                        "policy": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "kind": {
+                              "type": "string"
+                            },
+                            "residual_payee": {
+                              "type": "string"
+                            },
+                            "fee_payee": {
+                              "type": "string"
+                            },
+                            "fee_bps": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "residual_payee",
+                            "fee_payee",
+                            "fee_bps"
+                          ]
+                        },
+                        "gross": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "accepted_entries": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "terminal": {
+                          "type": "boolean"
+                        },
+                        "mock_authorized": {
+                          "type": "boolean"
+                        },
+                        "commit_movement_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "failure_reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "cancel_reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "provider_authorization_executed": {
+                          "const": false
+                        },
+                        "durable": {
+                          "const": false
+                        },
+                        "claim": {
+                          "oneOf": [
+                            {
+                              "$ref": "#/components/schemas/FixtureClaim"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "legal_debtor_bound",
+                        "admission_granted",
+                        "right_cancelled",
+                        "bank_debit_observed",
+                        "external_return_closed",
+                        "funds_executed",
+                        "provenance",
+                        "lifecycle_authority",
+                        "external_payment",
+                        "settlement_id",
+                        "phase",
+                        "trade_id",
+                        "currency",
+                        "debtor_role",
+                        "policy",
+                        "gross",
+                        "accepted_entries",
+                        "terminal",
+                        "mock_authorized",
+                        "commit_movement_id",
+                        "failure_reason",
+                        "cancel_reason",
+                        "provider_authorization_executed",
+                        "durable",
+                        "claim"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "read_schema_version",
+                    "fixture_mode",
+                    "query_digest",
+                    "accepted_through",
+                    "body"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid fixture fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route or unavailable subject.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Only POST is allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Request timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Content-Length is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "414": {
+            "description": "Request URI is too long.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Expected application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "417": {
+            "description": "Expect is unsupported.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unmet watermark, refused cursor, FSM rejection, or readiness-directory mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "431": {
+            "description": "Request headers exceed the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal gate error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Worker unavailable or admission limit reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadAvailabilityError"
+                }
+              }
+            }
+          },
+          "505": {
+            "description": "Unsupported HTTP version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/x-kix-contract-only/read/get_operation_recovery": {
+      "post": {
+        "operationId": "get_operation_recovery",
+        "x-kix-transport": "integration-gate",
+        "x-kix-production-endpoint": false,
+        "description": "Resolve positive retained acceptance for resale or settlement using exactly one identity and a source cut. All evidence failures return UNKNOWN. No retry is granted. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "actor": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "subject": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "field": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "field",
+                      "id"
+                    ]
+                  },
+                  "through": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "generation": {
+                        "type": "string",
+                        "minLength": 32,
+                        "maxLength": 32
+                      },
+                      "journal_entries": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "logical_time_ms": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "token": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "source",
+                      "generation",
+                      "journal_entries",
+                      "token"
+                    ]
+                  },
+                  "operation_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "trace_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                },
+                "required": [
+                  "actor",
+                  "subject",
+                  "through"
+                ],
+                "oneOf": [
+                  {
+                    "required": [
+                      "operation_id"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "trace_id"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fixture observation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "read_schema_version": {
+                          "const": "0.1"
+                        },
+                        "fixture_mode": {
+                          "const": "REFERENCE_IN_MEMORY"
+                        },
+                        "query_digest": {
+                          "type": "string",
+                          "minLength": 64,
+                          "maxLength": 64,
+                          "pattern": "^[0-9a-f]{64}$"
+                        },
+                        "accepted_through": {
+                          "$ref": "#/components/schemas/FixtureReadWatermark"
+                        },
+                        "body": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "status": {
+                              "const": "ACCEPTED"
+                            },
+                            "retry_granted": {
+                              "const": false
+                            },
+                            "receipt": {
+                              "type": "object",
+                              "description": "Immutable first FSM receipt for the requested action and subject."
+                            }
+                          },
+                          "required": [
+                            "status",
+                            "retry_granted",
+                            "receipt"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "read_schema_version",
+                        "fixture_mode",
+                        "query_digest",
+                        "accepted_through",
+                        "body"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "status": {
+                          "const": "UNKNOWN"
+                        },
+                        "retry_granted": {
+                          "const": false
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "retry_granted"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid fixture fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown route or unavailable subject.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Only POST is allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Request timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "411": {
+            "description": "Content-Length is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "414": {
+            "description": "Request URI is too long.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Expected application/json.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "417": {
+            "description": "Expect is unsupported.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unmet watermark, refused cursor, FSM rejection, or readiness-directory mode.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "431": {
+            "description": "Request headers exceed the gate limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal gate error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Worker unavailable or admission limit reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadAvailabilityError"
+                }
+              }
+            }
+          },
+          "505": {
+            "description": "Unsupported HTTP version.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureReadError"
+                }
+              }
+            }
           }
         }
       }

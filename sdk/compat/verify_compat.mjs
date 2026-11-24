@@ -62,10 +62,15 @@ function readExact(path, errors, label) {
 
 function main() {
   const manifestArg = argument("--manifest");
+  const integrationGateInput = argument("--integration-gate-input");
   const expectKind = argument("--expect-kind");
   const expectRevision = argument("--expect-revision");
   if (!manifestArg) {
     finish(false, { errors: ["--manifest is required"] });
+  }
+  if (process.argv.includes("--integration-gate-input") &&
+      (!integrationGateInput || integrationGateInput.startsWith("--"))) {
+    finish(false, { errors: ["--integration-gate-input requires a path"] });
   }
   const errors = [];
   const manifestPath = resolve(manifestArg);
@@ -167,7 +172,9 @@ function main() {
       errors.push(`${label} path drift`);
       continue;
     }
-    const bytes = readExact(resolve(ROOT, ref.path), errors, label);
+    const explicitInput = label === "integration_gate" && ref.path ===
+      "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json" && integrationGateInput;
+    const bytes = readExact(explicitInput ? resolve(explicitInput) : resolve(ROOT, ref.path), errors, label);
     if (!bytes) {
       continue;
     }

@@ -44,13 +44,15 @@ from integration_gate.constants import (
 )
 from integration_gate.openapi_doc import validate as validate_gate_document
 from integration_gate.recovery import replay_core
+from integration_gate.resale_reads import READ_PATHS, ReadRefused, ResaleReads
+from integration_gate.read_schema import parse_read
 from integration_gate.schema import EnvelopeError, parse_envelope
 from readiness.codec import receipt_digest
 from readiness.migrate import SCHEMA_VERSION
 from readiness.policy import AdmitGate
 from readiness.store import ReadinessStore, StoreError
 
-ALLOWED_PATHS = frozenset({HEALTH_PATH, READY_PATH, LOCAL_CALL_PATH})
+ALLOWED_PATHS = frozenset({HEALTH_PATH, READY_PATH, LOCAL_CALL_PATH, *READ_PATHS})
 TRACE_TOKEN = re.compile(r'[A-Za-z0-9._:-]{1,64}')
 REASONS = {
     200: 'OK',
@@ -110,6 +112,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         self.max_journal_bytes = max_journal_bytes
         self.core = None
         self.fsm = None
+        self.resale_reads = None
         self.Rejected = None
         self._accepting = False
         self._core_failed = False
@@ -180,6 +183,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         core = Core()
         try:
             fsm = FsmHost()
+            resale_reads = ResaleReads(fsm.machines, self.catalogue.fsm['commands'])
         except Exception as exc:
             self._fail_unpublished(core)
             raise GateStartupError('CORE_UNAVAILABLE') from exc
@@ -203,6 +207,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
             self.Rejected = Rejected
             self.core = core
             self.fsm = fsm
+            self.resale_reads = resale_reads
             if not self._draining and not self._diverged and not self._core_failed:
                 self._accepting = True
 
@@ -272,15 +277,18 @@ class GateServer(ThreadingMixIn, HTTPServer):
                 return
             self._accepting = bool(value)
 
-    def perform(self, operation_id, actor, action, body):
+    def perform(self, operation_id, actor, action, body, trace_id=None):
         observation = _journal_observation('not_attempted', self.store)
         self._ensure_core_on_worker()
         if not self.commands_enabled():
             observation['journalDecision'] = 'not_attempted'
             observation['admit'] = 'NOT_READY'
             return 503, _not_ready(), observation
+        identities = ()
+        if self.store is None:
+            identities = self.resale_reads.note_attempt(operation_id, trace_id, actor, action, body)
         if action in self.catalogue.fsm_name_set:
-            return self._perform_fsm(action, body, observation)
+            return self._perform_fsm(action, body, actor, identities, observation)
         fresh = self.store is None or not self.store.has_operation(operation_id)
         if self.store is not None and fresh:
             code, limit = self.store.budget_decision(
@@ -334,7 +342,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         observation['journalDecision'] = 'appended'
         return 200, receipt, observation
 
-    def _perform_fsm(self, action, body, observation):
+    def _perform_fsm(self, action, body, actor, identities, observation):
         """FSM calls stay on this worker. A readiness journal refuses them.
 
         The envelope operationId is not copied into idempotency_key.
@@ -343,7 +351,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
             observation['journalDecision'] = 'not_attempted'
             return 422, _error(READINESS_FSM_REFUSED), observation
         try:
-            result = self.fsm.call(action, body)
+            result = self.resale_reads.call_fsm(self.fsm.call, action, body, actor, identities)
         except FsmRejected as exc:
             observation['journalDecision'] = 'inactive'
             return 422, _error(exc.code), observation
@@ -353,6 +361,18 @@ class GateServer(ThreadingMixIn, HTTPServer):
             return 500, _error('INTERNAL_ERROR'), observation
         observation['journalDecision'] = 'inactive'
         return 200, result, observation
+
+    def perform_read(self, query, request):
+        observation = _journal_observation('not_attempted', self.store)
+        if not self.commands_enabled():
+            return 503, _not_ready(), observation
+        if self.store is not None:
+            return 422, _error(READINESS_FSM_REFUSED), observation
+        observation['journalDecision'] = 'read_only'
+        try:
+            return 200, self.resale_reads.read(query, request), observation
+        except ReadRefused as exc:
+            return exc.status, _error(exc.code), observation
 
     def ready_view(self):
         self._ensure_core_on_worker()
@@ -491,7 +511,7 @@ class GateHandler(BaseHTTPRequestHandler):
         if self.headers.get('Expect'):
             self._send(417, _error('EXPECTATION_FAILED'))
             return
-        if _origin_is_allowed(self.headers, self.server.browser_origin):
+        if path not in READ_PATHS and _origin_is_allowed(self.headers, self.server.browser_origin):
             self._cors = True
         method = self.command
         if method == 'OPTIONS' and self.server.browser_origin is not None:
@@ -510,7 +530,7 @@ class GateHandler(BaseHTTPRequestHandler):
         if method != 'POST':
             self._send(405, _error('METHOD_NOT_ALLOWED'), allow='POST')
             return
-        self._local_call()
+        self._local_call(READ_PATHS.get(path))
 
     def send_error(self, code, message=None, explain=None):
         mapped = {
@@ -573,7 +593,7 @@ class GateHandler(BaseHTTPRequestHandler):
             body['journalRecords'] = journal_records
         self._send(200, body)
 
-    def _local_call(self):
+    def _local_call(self, read_query):
         decision = self.server.try_admit()
         admitted = self.server.admit.view()
         self._observation = {
@@ -619,21 +639,27 @@ class GateHandler(BaseHTTPRequestHandler):
                 self._send(400, _error('INVALID_JSON'))
                 return
             try:
-                operation_id, actor, action, body = parse_envelope(payload, self.server.catalogue.commands)
+                if read_query is None:
+                    operation_id, actor, action, body = parse_envelope(payload, self.server.catalogue.commands)
+                    self._operation_id = operation_id
+                    self._action = action
+                    job = lambda: self.server.perform(operation_id, actor, action, body, self.request_id)
+                else:
+                    request = parse_read(read_query, payload)
+                    self._action = read_query
+                    job = lambda: self.server.perform_read(read_query, request)
             except EnvelopeError as exc:
                 body_out = _error(exc.error)
                 if exc.detail:
                     body_out['detail'] = exc.detail[:500]
                 self._send(400, body_out)
                 return
-            self._operation_id = operation_id
-            self._action = action
             if self.server.blocked():
                 self._send(503, _not_ready())
                 return
             try:
                 status, response, observation = self.server.on_core(
-                    lambda: self.server.perform(operation_id, actor, action, body),
+                    job,
                     self.server.request_timeout_seconds,
                 )
                 observation['admit'] = 'OK'
@@ -859,7 +885,7 @@ def _requested_headers_allowed(headers):
 
 
 def _preflight_acceptable(headers, path, browser_origin):
-    if not _origin_is_allowed(headers, browser_origin):
+    if path in READ_PATHS or not _origin_is_allowed(headers, browser_origin):
         return False
     expected = 'POST' if path == LOCAL_CALL_PATH else 'GET'
     if _one_header(headers, 'Access-Control-Request-Method') != expected:

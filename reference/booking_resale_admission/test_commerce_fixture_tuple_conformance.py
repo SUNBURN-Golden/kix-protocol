@@ -29,7 +29,13 @@ EXTERNAL_FLAGS = {"external_payment", "external_admission", "external_marketplac
 
 
 def read(path):
-    return (ROOT / path).read_bytes()
+    # Reproduce the producer's pinned gate files from the historical input
+    # set. The current gate is checked by its own integration tests.
+    archived = {
+        INTEGRATION_GATE_OPENAPI: "sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json",
+        "integration_gate/server.py": "sdk/compat/inputs/server.commerce-fixture-8ba7f6c-1.py.txt",
+    }
+    return (ROOT / archived.get(path, path)).read_bytes()
 
 
 def snapshot(host):

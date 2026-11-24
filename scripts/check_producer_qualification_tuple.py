@@ -2,8 +2,8 @@
 """Recompute the non-normative BOOTSTRAP producer-qualification tuple identity.
 
 The record at ``docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.json`` pins the
-current contract-only OpenAPI document, its FSM command contract, the
-integration-gate OpenAPI document, the generated SDK catalogue, the generator,
+contract-only OpenAPI document, its FSM command contract, the historical
+bootstrap-2 integration-gate OpenAPI bytes, the generated SDK catalogue, the generator,
 the toolchain, the BOOTSTRAP profile/manifest/sidecar, both conformance
 vectors and the candidate read-model fixtures. It also maps every command to
 its core or FSM source and gate route, marks the 13 owner-decided read query
@@ -46,6 +46,7 @@ PROTOCOL_PATH = 'reference/v0.3-rc1/protocol_contract.json'
 FSM_PATH = 'docs/contracts/openapi/fsm-command-contract.json'
 CONTRACT_ONLY_PATH = 'docs/contracts/openapi/kix-protocol.contract-only.openapi.json'
 GATE_PATH = 'docs/contracts/openapi/kix-protocol.integration-gate.openapi.json'
+HISTORICAL_GATE_INPUT = 'sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json'
 CATALOGUE_PATH = 'sdk/generated/catalogue.ts'
 GENERATOR_PATH = 'sdk/generate/generate_client.mjs'
 TOOLCHAINS_PATH = 'toolchains.json'
@@ -136,7 +137,8 @@ def load_artifacts(record, root=ROOT):
         if not isinstance(path, str):
             continue
         try:
-            loaded[path] = (root / path).read_bytes()
+            source = HISTORICAL_GATE_INPUT if path == GATE_PATH else path
+            loaded[path] = (root / source).read_bytes()
         except OSError:
             continue
     return loaded

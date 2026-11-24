@@ -51,6 +51,7 @@ PROTOCOL_PATH = 'reference/v0.3-rc1/protocol_contract.json'
 FSM_PATH = 'docs/contracts/openapi/fsm-command-contract.json'
 CONTRACT_ONLY_PATH = 'docs/contracts/openapi/kix-protocol.contract-only.openapi.json'
 GATE_PATH = 'docs/contracts/openapi/kix-protocol.integration-gate.openapi.json'
+HISTORICAL_GATE_INPUT = 'sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json'
 PROFILE_PATH = 'sdk/compat/profiles/bootstrap-2.profile.json'
 MANIFEST_PATH = 'sdk/compat/manifests/manifest.bootstrap-2.json'
 SIDECAR_PATH = 'sdk/compat/manifests/manifest.bootstrap-2.json.sha256'
@@ -280,7 +281,8 @@ def load_artefacts(record, root=ROOT):
     loaded = {}
     for path in sorted(paths):
         try:
-            loaded[path] = (root / path).read_bytes()
+            source = HISTORICAL_GATE_INPUT if path == GATE_PATH else path
+            loaded[path] = (root / source).read_bytes()
         except OSError:
             continue
     return loaded

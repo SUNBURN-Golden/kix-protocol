@@ -103,7 +103,7 @@ class OfflineLimitsTests(unittest.TestCase):
         self.assertIn('기본 바인드는 `127.0.0.1`과 포트 `8765`다.', readme)
 
 
-EXPECTED_GATE_OPENAPI_SHA256 = 'd05beb48c234b924af086b886ce9bb524dc34407ad2e4a57f1e8af84255820f6'
+EXPECTED_GATE_OPENAPI_SHA256 = '3786cdf8c41552ec9954e5afba70fc6be7e78f6548309f053a007561382b894e'
 
 
 class OfflineGapTests(unittest.TestCase):
@@ -166,7 +166,7 @@ class OfflineGapTests(unittest.TestCase):
             self.headers, self.server.server_address[1]):
             self._send(400, _error('BAD_REQUEST'))
             return""")
-        contains(classes['GateHandler']['route'], """if _origin_is_allowed(self.headers, self.server.browser_origin):
+        contains(classes['GateHandler']['route'], """if path not in READ_PATHS and _origin_is_allowed(self.headers, self.server.browser_origin):
             self._cors = True""")
         contains(classes['GateHandler']['route'], """if method == 'OPTIONS' and self.server.browser_origin is not None:
             if self._preflight(path):
@@ -178,7 +178,7 @@ class OfflineGapTests(unittest.TestCase):
         contains(funcs['_origin_is_allowed'], """if browser_origin is None:
             return False""")
         contains(funcs['_origin_is_allowed'], 'return _one_header(headers, ORIGIN_HEADER) == browser_origin')
-        contains(funcs['_preflight_acceptable'], """if not _origin_is_allowed(headers, browser_origin):
+        contains(funcs['_preflight_acceptable'], """if path in READ_PATHS or not _origin_is_allowed(headers, browser_origin):
             return False""")
         validators = [node for node in ast.walk(server) if isinstance(node, ast.Call)
                       and isinstance(node.func, ast.Name) and node.func.id == 'validate_gate_document']
@@ -191,7 +191,8 @@ class OfflineGapTests(unittest.TestCase):
             if isinstance(node, ast.ImportFrom):
                 self.assertEqual(node.level, 0)
                 self.assertIn(node.module, ('__future__', 'pathlib',
-                                           'integration_gate.catalogue', 'integration_gate.constants'))
+                                           'integration_gate.catalogue', 'integration_gate.constants',
+                                           'integration_gate.read_schema'))
                 self.assertFalse(any('browser' in alias.name.lower() or alias.name == '*'
                                      for alias in node.names))
         self.assertFalse(any(isinstance(node, ast.Name) and

@@ -19,6 +19,7 @@ const EXPECTED_SOURCE_BLOB = "619ae21c82ca3df5661bd3831613f15fa65225ff";
 
 const CONTRACT_PATH = "docs/contracts/openapi/kix-protocol.contract-only.openapi.json";
 const GATE_PATH = "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json";
+const HISTORICAL_GATE_INPUT = "sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json";
 const SOURCE_PATH = "reference/v0.3-rc1/protocol_contract.json";
 const FSM_PATH = "docs/contracts/openapi/fsm-command-contract.json";
 const GENERATOR_PATH = "sdk/generate/generate_client.mjs";
@@ -67,7 +68,10 @@ function main() {
   const outRoot = argument("--out-root", ROOT);
   const sourceBytes = readBytes(SOURCE_PATH);
   const contractBytes = readBytes(CONTRACT_PATH);
-  const gateBytes = readBytes(GATE_PATH);
+  const gateBytes = readBytes(HISTORICAL_GATE_INPUT);
+  if (sha256(gateBytes) !== "d05beb48c234b924af086b886ce9bb524dc34407ad2e4a57f1e8af84255820f6") {
+    fail("historical bootstrap-2 gate bytes drift");
+  }
   const fsmBytes = readBytes(FSM_PATH);
   const generatorBytes = readBytes(GENERATOR_PATH);
   const catalogueBytes = readBytes(CATALOGUE_PATH);

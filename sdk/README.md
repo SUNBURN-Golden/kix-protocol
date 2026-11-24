@@ -81,3 +81,11 @@ npm --prefix sdk run verify-compat
 ```
 
 Node는 `toolchains.json`의 `nodeMajor` 24다.
+
+The historical `verify-compat` script selects the archived `bootstrap-2`
+integration gate bytes. To verify another manifest for the original gate,
+pass `--integration-gate-input sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json`
+from the repository root. The verifier still checks the archive's Git blob
+and SHA-256 against the manifest. The local read transport has its own tuple
+and does not add commands to this TypeScript client.
+[Read transport handoff](../docs/status/COMMERCE_RESALE_READ_TRANSPORT.md)

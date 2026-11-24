@@ -33,6 +33,8 @@ const NEGATIVE_VECTOR_PATH = "sdk/conformance/vectors/manifest-verifier-negative
 const VERIFIER_PATH = "sdk/compat/verify_compat.mjs";
 const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
+const LIVE_GATE_PATH = "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json";
+const HISTORICAL_GATE_INPUT = "sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json";
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
 const COMMERCE_REVISION = "commerce-fixture-8ba7f6c-1";
 const COMMERCE_MANIFEST = `sdk/compat/manifests/manifest.${COMMERCE_REVISION}.json`;
@@ -60,7 +62,7 @@ const NEGATIVE_FIXTURES = [
   "sdk/conformance/vectors/canonical-encoding.vectors.json",
   "sdk/conformance/vectors/mixed-input.vectors.json",
   "docs/contracts/openapi/kix-protocol.contract-only.openapi.json",
-  "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json",
+  LIVE_GATE_PATH,
   "docs/contracts/openapi/fsm-command-contract.json",
 ];
 
@@ -73,6 +75,7 @@ const POSITIVE_ARTIFACTS = [
   "sdk/conformance/vectors/canonical-encoding.vectors.json",
   "sdk/conformance/vectors/mixed-input.vectors.json",
   "sdk/generated/catalogue.ts",
+  HISTORICAL_GATE_INPUT,
   VERIFIER_PATH,
 ];
 
@@ -171,7 +174,7 @@ function independentCanonical(value) {
   return `{${keys.map((key) => `${JSON.stringify(key)}:${independentCanonical(value[key])}`).join(",")}}`;
 }
 
-function runVerifier(manifestPath, kind = "BOOTSTRAP", revision = "bootstrap-2") {
+function runVerifier(manifestPath, kind = "BOOTSTRAP", revision = "bootstrap-2", gateInput = HISTORICAL_GATE_INPUT) {
   return spawnSync(
     process.execPath,
     [
@@ -182,6 +185,8 @@ function runVerifier(manifestPath, kind = "BOOTSTRAP", revision = "bootstrap-2")
       kind,
       "--expect-revision",
       revision,
+      "--integration-gate-input",
+      resolve(ROOT, gateInput),
     ],
     { cwd: ROOT, encoding: "utf8" },
   );
@@ -571,6 +576,14 @@ test("mixed-input vectors and the committed manifest", () => {
   const sidecar = readFileSync(`${manifestPath}.sha256`, "utf8");
   assert.equal(sidecar, `${verdict.manifest_sha256}\n`);
   assert.equal(readFileSync(manifestPath, "utf8").includes(verdict.manifest_sha256), false);
+  for (const [path, kind, revision] of [
+    [manifestPath, "BOOTSTRAP", "bootstrap-2"],
+    [COMMERCE_MANIFEST, SEMANTIC, COMMERCE_REVISION],
+  ]) {
+    const mixedGate = runVerifier(path, kind, revision, LIVE_GATE_PATH);
+    assert.equal(mixedGate.status, 1);
+    assert.deepEqual(JSON.parse(mixedGate.stdout).errors, ["integration_gate bytes drift"]);
+  }
 
   const original = parseStrict(readFileSync(manifestPath));
   const mixed = parseStrict(read(resolve(ROOT, "sdk/conformance/vectors/mixed-input.vectors.json")));
@@ -652,7 +665,7 @@ function copyFixtures(targetRoot) {
   for (const relative of NEGATIVE_FIXTURES) {
     const target = resolve(targetRoot, relative);
     mkdirSync(dirname(target), { recursive: true });
-    cpSync(resolve(ROOT, relative), target);
+    cpSync(resolve(ROOT, relative === LIVE_GATE_PATH ? HISTORICAL_GATE_INPUT : relative), target);
   }
 }
 
@@ -748,7 +761,7 @@ test("manifest-v1 verifier negative vectors reject exactly one fault each", () =
 
   const before = digestSnapshot();
 
-  const happy = runVerifierAt(ROOT, resolve(ROOT, MANIFEST_PATH), document.expect.kind, document.expect.revision);
+  const happy = runVerifier(resolve(ROOT, MANIFEST_PATH), document.expect.kind, document.expect.revision);
   assert.equal(happy.status, 0, happy.stderr || happy.stdout);
   const verdict = JSON.parse(happy.stdout);
   assert.equal(verdict.ok, true);
