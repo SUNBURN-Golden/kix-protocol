@@ -6,6 +6,27 @@ task document under `docs/tasks/`. The starting branch
 `agent/kix-plan-commerce-issuance-lost-reply` and cached `origin/main` both
 resolved to `651ca55d268b7d13445ed4c89fde2913cf4ac58a`.
 
+## Reviewed head and delivery state
+
+The supervisor committed this implementation at
+`33652367f78c0327a77609cf071e7d5db5512928` on
+`agent/kix-plan-commerce-issuance-lost-reply` and opened PR #504
+(`https://github.com/SUNBURN-Golden/kix-protocol/pull/504`). The builder
+summary embedded in the PR description was captured before that commit. Its
+sentences about an uncommitted worktree patch and pending exact-head CI are
+superseded by this section and the delivery section below.
+
+The supervisor's exact-head CI gate recorded PASS for
+`33652367f78c0327a77609cf071e7d5db5512928`: every completed check run on
+that head was success, skipped or neutral, with at least one success. The
+per-workflow run IDs are not retained in the local loop state, and this
+builder session has no GitHub access, so this record cannot itself show the
+KTX kernel and KIX protocol run IDs. The PR closure record must carry the
+run ID, status and conclusion of both workflows for that head. The
+fix-round commit that adds this section changes only this validation record,
+so its own exact-head CI applies to the new head and belongs in the PR
+closure record rather than in a further repository commit (AGENTS.md §11).
+
 ## Coverage
 
 | Requirement | Existing coverage | Paired replay evidence |
@@ -63,13 +84,43 @@ Commands ran from the repository root. `bra` denotes
 | `git hash-object` on the locked files, `git rev-parse` on the frozen reference tree, and `git diff --exit-code HEAD` and `git ls-files --others` on protected paths | Both blobs and the tree matched the recorded identities. Protected paths had zero content differences or additions. |
 | `git diff --check` and a `python3.12 -B -` whitespace check on the three new files | Both exited 0. |
 
+Fix round 1 reran the four required suites on the reviewed tree:
+`test_commerce_issuance_lost_reply.py` (1 test), `test_commerce_admission_lost_reply.py`
+(2 tests), `test_commerce_transfer_lost_reply.py` (1 test) and
+`test_commerce_fixture_tuple_conformance.py` (9 tests) all exited 0. Standard
+discovery over all of `reference/booking_resale_admission`, including the
+local loopback admission test, ran 1,084 tests and exited 0. The docs index,
+CI test discovery and Commerce consumer binding checks and their self-tests
+also exited 0. Fix round 1 rechecked both locked kernel blobs (`69564b16…`
+and `b607996c…`) and the `reference/v0.3-rc1/` tree (`a6ecb124…`); all three
+matched, and `git diff --check` was clean.
+
 ## Delivery and preservation
 
 The supervisor's offline instruction superseded the routine fetch. Remote
-freshness is unverified. This delivery is an uncommitted worktree patch.
-Implementation and final commit SHAs, A2 non-author review, and exact-head KTX
-kernel and KIX protocol CI run IDs, statuses and conclusions await supervisor
-delivery. Merge SHA and post-merge CI are inapplicable.
+freshness is unverified. The supervisor owns commits, pushes, CI observation
+and the PR closure record; this builder session performs no Git or GitHub
+operation.
+
+### Merge authorization
+
+This is a loop-proposed node outside central AIOPS program mode. There is no
+ASTRA signer or gate, and this record asserts no merge authorization of its
+own. AGENTS.md §12 applies: the builder neither merges nor marks a draft
+ready nor declares the PR merge-ready.
+
+The sentence about `state/AUTO_MERGE` in the PR description is unattended
+loop boilerplate that describes the supervisor's delivery mechanism. It is
+not a builder claim and it does not by itself authorize a merge. The only
+human authorization known to this record is the User's standing order of
+2026-10-08 13:32 KST, recorded at `/workspace/kix-run/state/AUTO_MERGE` and
+in the loop operator notes. Under that order the supervisor may merge only
+after an independent review verdict of PASS and exact-head KTX kernel and KIX
+protocol CI success, using an ordinary merge commit pinned to the reviewed
+head. If that standing order is not treated as explicit human authorization
+for this loop-proposed node, the PR must stay unmerged pending explicit
+human authorization. Merge SHA and post-merge CI are inapplicable until a
+merge happens.
 
 The workspace Cargo resolution failure was outside the changed paths. The
 two-crate offline run covered the KTX kernel tests and lints. The full Rust
