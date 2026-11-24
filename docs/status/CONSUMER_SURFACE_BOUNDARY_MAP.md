@@ -72,9 +72,15 @@ as follows.
 
 1. Verify the manifest with its [SHA-256 sidecar](../../sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json.sha256)
    and [profile](../../sdk/compat/profiles/commerce-fixture-8ba7f6c-1.profile.json).
-   Require `manifest_schema_version = kix-compat-manifest/1`,
-   `profile_kind = SEMANTIC_CONFORMANCE` and
-   `profile_revision = commerce-fixture-8ba7f6c-1`. The profile's
+   Require `manifest_schema_version = kix-compat-manifest/1`, verifier exit 0,
+   and a verdict with `ok: true`, `profile_kind: "SEMANTIC_CONFORMANCE"` and
+   `profile_revision: "commerce-fixture-8ba7f6c-1"`. Before looking up the
+   qualification table, compare the verdict's `manifest_sha256` with the
+   consumer's expected digest
+   `76ea72c6249ec0f90cb426dfbb8efda8308610f79c4f0ac6ff0a2445cab59a4f`.
+   Store the pin independently of the candidate manifest and sidecar, and
+   compare it on every selection. A missing or different expected digest
+   yields `HOLD_SEMANTIC` with `vector_id: null`. The profile's
    `catalogue.schema_digests` identifies all 84 schemas. Its `grants` points to
    the qualification table for the narrower semantic scope.
    [Verifier invocation](../../sdk/README.md#scoped-commerce-fixture-qualification)

@@ -10,11 +10,14 @@ against Protocol `8ba7f6c36373ac0ec49246f51f7471c164ac3a28`
 ## Consumer handoff
 
 After this evidence merges, Commerce can replay and bind manifest revision
-`commerce-fixture-8ba7f6c-1` in its own consumer change. Match the producer and
-file pins, then check the method, path, action, machine, operation, subject
-field, schema digest, context and step in the table. The manifest carries the
-full 84-command catalogue for identity verification. Its grant covers the 28
-listed actions only. `bootstrap-2` continues to grant schema binding.
+`commerce-fixture-8ba7f6c-1` in its own consumer change. First compare the
+verifier's `manifest_sha256` with the independently held consumer pin using
+step 1 of the [scoped qualification procedure](CONSUMER_SURFACE_BOUNDARY_MAP.md#scoped-commerce-fixture-qualification).
+On a match, check the producer and file pins, then match the method, path,
+action, machine, operation, subject field, schema digest, context, step and
+outcome in the fixture evidence. The manifest carries the full 84-command
+catalogue for identity verification. Its grant covers the 28 listed actions
+only. `bootstrap-2` continues to grant schema binding.
 
 | Context | Qualified behavior |
 | --- | --- |
