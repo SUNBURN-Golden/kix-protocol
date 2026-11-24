@@ -459,6 +459,51 @@ test("Commerce semantic envelopes preserve the request and stop schema refusals 
   assert.equal(calls.length, vectors.filter(({ expected }) => expected.kind !== "schema-reject").length);
 });
 
+test("Commerce payment body bytes reject duplicate keys before dispatch", () => {
+  const { vectors } = parseStrict(read(COMMERCE_VECTORS));
+  const matches = vectors.filter(({ id }) => id === "booking-admission/payment-B");
+  assert.equal(matches.length, 1, "booking-admission/payment-B must identify one pinned vector");
+  const pinned = matches[0].envelope;
+  const canonicalBody = Buffer.from(
+    '{"amount":12000,"idempotency_key":"key-payment-B","order_id":"order-B","payment_ref":"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2"}',
+    "utf8",
+  );
+  const duplicateAmount = Buffer.from(
+    '{"amount":12000,"amount":12001,"idempotency_key":"key-payment-B","order_id":"order-B","payment_ref":"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2"}',
+    "utf8",
+  );
+  const duplicateIdempotencyKey = Buffer.from(
+    '{"amount":12000,"idempotency_key":"key-payment-B","idempotency_key":"key-payment-B-alt","order_id":"order-B","payment_ref":"b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2"}',
+    "utf8",
+  );
+  assert.deepEqual(canonicalBody, Buffer.from(canonicalStringify(pinned.body), "utf8"));
+
+  const calls = [];
+  const client = createLocalCallClient({
+    transport(envelope) {
+      calls.push(structuredClone(envelope));
+    },
+  });
+  const dispatch = (bytes) => client.invoke({ ...pinned, body: parseStrict(bytes) });
+  const expected = canonicalStringify(pinned);
+
+  dispatch(canonicalBody);
+  assert.deepEqual(calls.map(canonicalStringify), [expected]);
+  calls.length = 0;
+
+  for (const [field, bytes] of [["amount", duplicateAmount], ["idempotency_key", duplicateIdempotencyKey]]) {
+    assert.throws(
+      () => dispatch(bytes),
+      (error) => error instanceof StrictJsonError && error.reason === "duplicate-key",
+      field,
+    );
+    assert.equal(calls.length, 0, field);
+  }
+
+  dispatch(canonicalBody);
+  assert.deepEqual(calls.map(canonicalStringify), [expected]);
+});
+
 test("envelope, identifier, and transport rules stay local to one call", async () => {
   let calls = 0;
   const client = createLocalCallClient({
