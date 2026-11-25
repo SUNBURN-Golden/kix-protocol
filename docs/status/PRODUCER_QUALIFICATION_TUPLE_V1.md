@@ -62,6 +62,12 @@ exact byte identity and the bootstrap-2 manifest digest so the order result
 can be traced to the verifier and manifest tested together.
 See the [SD1 handoff validation record](../../validation/2026-11-19-plan-producer-sd1-evidence-handoff/README.md).
 
+On detached copies of `bootstrap-2` and `commerce-fixture-8ba7f6c-1`, the
+recorded verifier reported `extension_profile bytes drift` after `profile bytes drift`
+in the profile pair and after `sdk_output bytes drift` in the SDK output pair.
+The §4 interpretation remains `UNDETERMINED` with JunTae.
+See the [verifier identity and six verdicts](../../validation/2026-11-25-plan-producer-extension-order-evidence/README.md).
+
 Semantic SDK consumption remains `HOLD_SEMANTIC`. The BOOTSTRAP profile
 binds catalogue/schema bytes only. External consumer acceptance remains
 `UNVERIFIED`. See the [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).

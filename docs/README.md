@@ -66,6 +66,8 @@ path/digest rebinding, preserving all qualification statuses and SD1 ownership.
 links the October stop, JunTae's authorization, the checked-in verifier and the §4 regression.
 [Offline producer manifest verdicts and local validation](../validation/2026-11-20-plan-offline-manifest-verdicts/README.md)
 covers the exact JSON verdicts and file preservation for Bootstrap-2 and the Commerce fixture manifest without Git access.
+[Paired FSM extension digest verdicts](../validation/2026-11-25-plan-producer-extension-order-evidence/README.md)
+records the observed diagnostic order for both revisions and JunTae's open §4 interpretation.
 [Canonical producer manifest byte boundaries and local validation](../validation/2026-11-20-plan-producer-canonical-byte-edges/README.md)
 covers Unicode key order, string escaping, safe-integer bounds and the parser's container depth limit.
 
