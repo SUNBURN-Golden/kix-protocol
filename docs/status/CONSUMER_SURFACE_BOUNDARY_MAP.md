@@ -113,6 +113,26 @@ as follows.
    Fence unresolved `UNKNOWN` outcomes without polling, retry or replacement
    writes. [Offline replay handoff](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#replay-offline)
 
+The resale delivery fixtures replay pinned envelopes on fresh in-process hosts.
+Producer evidence comes from the replay harness.
+
+| Vector and delivery case | Commerce observation | Producer evidence |
+|---|---|---|
+| `booking-resale/accept-A-before-commit` · refusal delivered | `business-reject` with `SETTLEMENT_NOT_COMMITTED` | One refused dispatch. |
+| `booking-resale/accept-A-before-commit` · request dropped before dispatch | `UNKNOWN` with a null receipt | Zero dispatches. |
+| `booking-resale/accept-A-before-commit` · refusal withheld after dispatch | The same `UNKNOWN` record as the pre-dispatch drop | One refused dispatch with `SETTLEMENT_NOT_COMMITTED`. |
+| `resale-market/market-accept` · reply lost | `UNKNOWN` with a null receipt whether the request was dropped or the successful reply was withheld | Zero dispatches leave the seller at version 1. One successful dispatch transfers ownership to the buyer at version 2. |
+
+Both pre-commit losses keep the original `operationId` and body
+`idempotency_key`, with one attempt and zero follow-up calls. All three
+pre-commit cases preserve the recorded resale payment, seller ownership,
+right version 1 and all five accepted journals. Recovery remains `NOT_BOUND`.
+[Pre-commit refusal fixture](../../reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json) ·
+[Pre-commit refusal replay](../../reference/booking_resale_admission/test_commerce_withheld_resale_refusal.py) ·
+[Transfer lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_transfer_lost_reply_v1.json) ·
+[Transfer lost-reply replay](../../reference/booking_resale_admission/test_commerce_transfer_lost_reply.py) ·
+[Recovery boundary](#unavailable-consumer-bindings)
+
 The grant covers source-informed, synthetic in-memory evidence. N/N−1
 compatibility, production qualification and stable SDK release remain outside
 its scope. Product TTLs, fees, compensation, market visibility, matching,

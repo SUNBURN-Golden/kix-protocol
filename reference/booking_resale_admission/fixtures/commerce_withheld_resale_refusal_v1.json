@@ -1,0 +1,105 @@
+{
+  "record_schema_version": "kix-commerce-withheld-resale-refusal/1",
+  "normative": false,
+  "source_vector": {
+    "id": "booking-resale/accept-A-before-commit",
+    "path": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
+    "sha256": "c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22",
+    "gitBlob": "0095e53801921e87c5417dd86920a625c2fede78"
+  },
+  "source_journey_receipts": {
+    "path": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json",
+    "sha256": "6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998",
+    "gitBlob": "e9f34b8f35ed7f6a0867f1d2036bda521ee15eab"
+  },
+  "source_booking_branch_receipts": {
+    "path": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json",
+    "sha256": "1268382cdce28c931e160e253a6cafdac0f74de4124a53df1c78bd625f4b82c4",
+    "gitBlob": "ab98cce8492b21b29871c4c1ad4ccda1a722d9ed"
+  },
+  "recovery_lookup": "NOT_BOUND",
+  "cases": [
+    {
+      "id": "refusal-delivered",
+      "fault_point": "none",
+      "expected_caller": {
+        "operationId": "op-booking-resale-accept-A-before-commit",
+        "idempotency_key": "key-accept-1",
+        "receipt": null,
+        "outcome": "business-reject",
+        "rejection_code": "SETTLEMENT_NOT_COMMITTED",
+        "attempts": 1,
+        "follow_up_calls": 0
+      },
+      "producer_evidence": {
+        "dispatches": 1,
+        "refusal_codes": ["SETTLEMENT_NOT_COMMITTED"],
+        "listing": {
+          "listing_id": "listing-A",
+          "phase": "PAYMENT_NOTED",
+          "amount": 12000,
+          "payment_ref": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "ownership_transferred": false,
+          "settlement_gate": "BOUND"
+        },
+        "right": {"right_id": "issue-A", "holder_role": "buyer-A", "version": 1},
+        "settlement": {"settlement_id": "settle-resale", "phase": "CAPTURED"},
+        "journal_delta": {"reservation": 0, "resale": 0, "settlement": 0, "admission": 0, "credit": 0}
+      }
+    },
+    {
+      "id": "loss-before-dispatch",
+      "fault_point": "before_dispatch",
+      "expected_caller": {
+        "operationId": "op-booking-resale-accept-A-before-commit",
+        "idempotency_key": "key-accept-1",
+        "receipt": null,
+        "outcome": "UNKNOWN",
+        "attempts": 1,
+        "follow_up_calls": 0
+      },
+      "producer_evidence": {
+        "dispatches": 0,
+        "refusal_codes": [],
+        "listing": {
+          "listing_id": "listing-A",
+          "phase": "PAYMENT_NOTED",
+          "amount": 12000,
+          "payment_ref": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "ownership_transferred": false,
+          "settlement_gate": "BOUND"
+        },
+        "right": {"right_id": "issue-A", "holder_role": "buyer-A", "version": 1},
+        "settlement": {"settlement_id": "settle-resale", "phase": "CAPTURED"},
+        "journal_delta": {"reservation": 0, "resale": 0, "settlement": 0, "admission": 0, "credit": 0}
+      }
+    },
+    {
+      "id": "refusal-withheld-after-dispatch",
+      "fault_point": "after_dispatch",
+      "expected_caller": {
+        "operationId": "op-booking-resale-accept-A-before-commit",
+        "idempotency_key": "key-accept-1",
+        "receipt": null,
+        "outcome": "UNKNOWN",
+        "attempts": 1,
+        "follow_up_calls": 0
+      },
+      "producer_evidence": {
+        "dispatches": 1,
+        "refusal_codes": ["SETTLEMENT_NOT_COMMITTED"],
+        "listing": {
+          "listing_id": "listing-A",
+          "phase": "PAYMENT_NOTED",
+          "amount": 12000,
+          "payment_ref": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "ownership_transferred": false,
+          "settlement_gate": "BOUND"
+        },
+        "right": {"right_id": "issue-A", "holder_role": "buyer-A", "version": 1},
+        "settlement": {"settlement_id": "settle-resale", "phase": "CAPTURED"},
+        "journal_delta": {"reservation": 0, "resale": 0, "settlement": 0, "admission": 0, "credit": 0}
+      }
+    }
+  ]
+}
