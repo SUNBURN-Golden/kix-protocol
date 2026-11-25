@@ -1,0 +1,99 @@
+{
+  "record_schema_version": "kix-commerce-payment-observation-lost-reply/1",
+  "normative": false,
+  "source_vector": {
+    "id": "booking-admission/payment-B",
+    "path": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
+    "sha256": "c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22",
+    "gitBlob": "0095e53801921e87c5417dd86920a625c2fede78"
+  },
+  "source_booking_branch_receipts": {
+    "path": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json",
+    "sha256": "1268382cdce28c931e160e253a6cafdac0f74de4124a53df1c78bd625f4b82c4",
+    "gitBlob": "ab98cce8492b21b29871c4c1ad4ccda1a722d9ed"
+  },
+  "source_journey_receipts": {
+    "path": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json",
+    "sha256": "6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998",
+    "gitBlob": "e9f34b8f35ed7f6a0867f1d2036bda521ee15eab"
+  },
+  "recovery_lookup": "NOT_BOUND",
+  "expected_caller": {
+    "operationId": "op-booking-admission-payment-B",
+    "idempotency_key": "key-payment-B",
+    "attempts": 1,
+    "outcome": "UNKNOWN",
+    "receipt": null,
+    "follow_up_calls": 0
+  },
+  "cases": [
+    {
+      "id": "loss-before-dispatch",
+      "fault_point": "before_dispatch",
+      "producer_evidence": {
+        "dispatches": 0,
+        "hidden_receipt_id": null,
+        "reservation": {
+          "reservation_id": "reserve-B",
+          "phase": "CONFIRMED",
+          "payment_ref": null,
+          "slot": 1,
+          "slot_state": "RESERVED",
+          "issuance_id": null,
+          "slot_right_id": null,
+          "right": null,
+          "admission_id": null,
+          "consume_id": null
+        },
+        "journal_delta": {
+          "admission": 0,
+          "reservation": 0,
+          "resale": 0,
+          "settlement": 0,
+          "credit": 0
+        },
+        "appended_journal_entries": {}
+      }
+    },
+    {
+      "id": "loss-after-dispatch",
+      "fault_point": "after_dispatch",
+      "producer_evidence": {
+        "dispatches": 1,
+        "hidden_receipt_id": "booking-admission/payment-B",
+        "reservation": {
+          "reservation_id": "reserve-B",
+          "phase": "PAYMENT_NOTED",
+          "payment_ref": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "slot": 1,
+          "slot_state": "RESERVED",
+          "issuance_id": null,
+          "slot_right_id": null,
+          "right": null,
+          "admission_id": null,
+          "consume_id": null
+        },
+        "journal_delta": {
+          "admission": 0,
+          "reservation": 1,
+          "resale": 0,
+          "settlement": 0,
+          "credit": 0
+        },
+        "appended_journal_entries": {
+          "reservation": [
+            {
+              "op": "observe_payment",
+              "subject_id": "order-B",
+              "idempotency_key": "key-payment-B",
+              "body": {
+                "amount": 12000,
+                "payment_ref": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
