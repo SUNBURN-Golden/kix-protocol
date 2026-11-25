@@ -5249,6 +5249,56 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_overlapping_exposure_groups",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json",
+        "sha256": "9912b49d7474fab34870e512850f1aa40a49e6dbfed1c83b74c12e8ddc50810e",
+        "gitBlob": "86cb4246daff384ee97c5667dc4be193eef3b723"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json",
+        "sha256": "9912b49d7474fab34870e512850f1aa40a49e6dbfed1c83b74c12e8ddc50810e",
+        "gitBlob": "86cb4246daff384ee97c5667dc4be193eef3b723"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_overlapping_exposure_groups.py",
+        "symbol": "CapitalOverlappingExposureGroupsTests.test_overlapping_groups"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital overlapping exposure groups"
+        }
+      ],
+      "limitations": [
+        "Separate caller groups count the same defaulted advance. The distinct-member union counts it once, and a repeated advance within a single call returns VIEW_INVALID. The 90,000 KRW limit is fixture-only. Product limits remain UNDETERMINED with Astra."
+      ],
+      "entries": [
+        {
+          "case_id": "e3_ab",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "e3_bc",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/1/expected_result"
+        },
+        {
+          "case_id": "e3_abc",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/2/expected_result"
+        },
+        {
+          "case_id": "e3_duplicate_b",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/3/expected_result"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [

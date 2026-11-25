@@ -868,3 +868,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-25 Capital commerce refund checkpoints — 위치 안내만
 
 - Three pinned Commerce receipts trace the requester refund from 0 to 4,000 to 2,500 KRW outstanding. The same 10,001 KRW frozen F04 face yields zero variance at every checkpoint, and the credit exposure and repayment history remain fixed. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-commerce-refund-checkpoints) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#commerce-refund-checkpoints) · [Builder validation](../validation/2026-11-25-plan-capital-commerce-refund-checkpoints/README.md)
+
+## 2026-11-25 Capital overlapping exposure groups — 위치 안내만
+
+- At one pinned E3 checkpoint, A+B reports 70,000 KRW and B+C reports 50,000 KRW outstanding. The distinct-member union reports 90,000 KRW. Both groups count the same defaulted advance B, and including B twice in one call returns `VIEW_INVALID`. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-overlapping-exposure-groups) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#overlapping-exposure-group-comparisons) · [Builder validation](../validation/2026-11-25-plan-capital-overlapping-exposure-groups/README.md)

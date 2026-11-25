@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates sixteen
+read-only discovery metadata for `kix-capital`. It associates seventeen
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -62,7 +62,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_payee_order_recovery | self_contained_comparisons | 2 | 0 |
 | capital_offsetting_claim_gaps | self_contained_comparisons | 2 | 0 |
 | capital_commerce_refund_checkpoints | self_contained_comparisons | 3 | 0 |
-| **Total** | | **466** | **128** |
+| capital_overlapping_exposure_groups | self_contained_comparisons | 4 | 0 |
+| **Total** | | **470** | **128** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -234,6 +235,24 @@ The validator rejects swapped receipt pointers even though both resolve to
 the same claim and produce zero variance. The refund component remains
 `NOT_BOUND`.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json) · [Commerce receipts](../../reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_commerce_refund_checkpoints.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-commerce-refund-checkpoints)
+
+### Overlapping exposure group comparisons
+
+`capital_overlapping_exposure_groups` indexes four complete outcomes at the
+same E3 checkpoint. Both artifact pins identify the comparison pack. Each
+case points to ordered views, the group label and the limit in the pinned E3
+fixture. The fragments below are relative to the comparison pack.
+
+| Case | Input fragment | Complete result fragment |
+| --- | --- | --- |
+| `e3_ab` | `#/cases/0` | `#/cases/0/expected_result` |
+| `e3_bc` | `#/cases/1` | `#/cases/1/expected_result` |
+| `e3_abc` | `#/cases/2` | `#/cases/2/expected_result` |
+| `e3_duplicate_b` | `#/cases/3` | `#/cases/3/expected_result` |
+
+The replay verifies the 30,000 KRW overlap and the `VIEW_INVALID` refusal.
+The index validator rejects exchanges of valid case or result pointers.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_overlapping_exposure_groups.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-overlapping-exposure-groups)
 
 ## Read-only consumption
 
