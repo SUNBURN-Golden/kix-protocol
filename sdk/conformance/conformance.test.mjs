@@ -23,6 +23,7 @@ import {
   StrictJsonError,
   canonicalStringify,
   parseStrict,
+  validateSchema,
 } from "../src/jsonschema.ts";
 import { MANIFEST_SCHEMA_VERSION, canonicalBytes, gitBlobId, sha256Hex } from "../src/manifest.ts";
 
@@ -1303,6 +1304,52 @@ test("Commerce grant lookup", async (t) => {
       "resale-market": { accept: 14, "business-reject": 0, controls: 14 },
     });
     assert.deepEqual([...listedIds, ...controlIds].sort(), [...vectorsById.keys()].sort());
+  });
+  await t.test("holds every catalogue action outside the Commerce qualification table", () => {
+    check(listed, COMMERCE_MANIFEST_SHA256);
+    const grant = grantFor(COMMERCE_MANIFEST);
+    assert.ok(grant, "Commerce fixture grant must verify");
+    const { table, schemaDigests } = grant;
+
+    const catalogue = new Set(COMMANDS);
+    assert.equal(COMMANDS.length, 84);
+    assert.equal(catalogue.size, COMMANDS.length);
+    assert.deepEqual(Object.keys(schemaDigests).sort(), [...COMMANDS].sort());
+
+    const listedActions = new Set(table.tuples.map(({ action }) => action));
+    assert.equal(table.tuples.length, 28);
+    assert.equal(listedActions.size, table.tuples.length);
+    for (const { action, level } of table.tuples) {
+      assert.ok(catalogue.has(action), action);
+      assert.equal(level, SEMANTIC, action);
+    }
+
+    const { commands: fsmCommands } = JSON.parse(read(OPENAPI_PIN.fsmSourcePath));
+    const ungrantedActions = COMMANDS.filter((action) => !listedActions.has(action));
+    const checkedActions = [];
+    for (const action of ungrantedActions) {
+      const schema = COMMAND_SCHEMAS[action];
+      const digest = sha256Hex(canonicalBytes(schema));
+      assert.equal(digest, schemaDigests[action], action);
+      const body = minimalBody(schema);
+      validateSchema(body, schema, action);
+
+      // Core actions offer the listed Commerce tuple; FSM actions use their published metadata.
+      const { machine, op, subject_field } = fsmCommands[action] ?? listed.request;
+      const request = {
+        ...listed.request,
+        action,
+        machine,
+        op,
+        subject_field,
+        body_schema_sha256: digest,
+        envelope: { ...listed.request.envelope, action, body },
+      };
+      check({ id: action, request, expect: hold }, COMMERCE_MANIFEST_SHA256);
+      checkedActions.push(action);
+    }
+    assert.equal(checkedActions.length, 56);
+    assert.deepEqual([...listedActions, ...checkedActions].sort(), [...COMMANDS].sort());
   });
   await t.test("preserves the unbound reads and proposed recovery lookup", () => {
     const { readQueries } = JSON.parse(read(COMMERCE_BINDING_INDEX));
