@@ -1899,3 +1899,34 @@ observations carry `SHARED_EXPOSURE_NOT_BOUND`, `contract_status=NOT_BOUND`,
 **UNDETERMINED — Astra**, legal responsibility **UNDETERMINED — User/legal**,
 and external `kix-capital` acceptance **UNVERIFIED**.
 [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#overlapping-exposure-group-comparisons) · [Builder validation](../../validation/2026-11-25-plan-capital-overlapping-exposure-groups/README.md)
+
+## Capital resale distribution checkpoints
+
+The `capital-resale-distribution-checkpoints/1` pack pins the raw bytes of
+the Commerce SDK tuple, journey receipt pack and journey input. It binds
+the ordered `booking-resale` vectors `#/vectors/19` through `#/vectors/21`
+to these first mock receipts for `settle-resale` and `trade-resale-A`.
+
+| Case | Receipt fragment | Organizer / platform outstanding (fixture KRW) | §7.11 variance (fixture KRW) |
+| --- | --- | ---: | ---: |
+| `settle-resale-commit` | `#/steps/23/receipt` | 11,880 / 120 | 0 |
+| `accept-A` | `#/steps/24/receipt` | — | — |
+| `distribute-resale` | `#/steps/25/receipt` | 0 / 0 | −12,000 |
+
+The commit and distribution receipts each supply their `settlement.claim`
+obligations. The replay passes the entire commit claim into F04 and freezes
+its 12,000 KRW face once. The intervening `accept-A` receipt supplies the
+mock ownership record for `listing-A`, transfer `transfer-A-2`, and right
+`issue-A` held by `buyer-B` at version 2. The replay invokes the observer
+only on the two settlement claims. Distribution records 12,000 fixture KRW
+in `distributed_cash`. The frozen claim, credit view, journal and state
+digest retain the same bytes across all three checkpoints. The mock advance
+has 10,000 KRW drawn and outstanding, zero repaid and no repayment entries.
+
+The caller's fixture tolerance is zero. The commit is within tolerance and
+the distribution is outside it. Both observations carry `NOT_BOUND`,
+`repair=NONE`, `fail_closed=true`, `mutates_state=false` and
+`authorizes_exposure=false`. External `kix-capital` acceptance remains
+`UNVERIFIED`. Product limits and tolerance policy remain `UNDETERMINED`
+with Astra, and legal responsibility remains `UNDETERMINED` with User/legal.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json) · [F04 §7.11](../contracts/CREDIT_ADVANCE_F04.md#711-정산-잔차settlement-variance) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#resale-distribution-checkpoints) · [Builder validation](../../validation/2026-11-25-plan-capital-resale-distribution-checkpoints/README.md)
