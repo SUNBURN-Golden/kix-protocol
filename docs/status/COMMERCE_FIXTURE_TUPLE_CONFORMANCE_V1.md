@@ -41,6 +41,21 @@ first acceptances, 14 market receipts and ten booking branch receipts cover all
 56 listed first acceptances. Both companions are non-normative. External
 Commerce acceptance remains `UNVERIFIED`.
 
+The payment-observation lost-reply pair replays `booking-admission/payment-B`
+after the same order confirmation on two fresh in-process hosts. Commerce
+records the same operation ID and body idempotency key, one attempt, `UNKNOWN`,
+and no receipt in both histories. If the request is dropped before dispatch,
+the reservation stays `CONFIRMED` with no payment reference or journal append.
+If the successful reply is withheld, the reservation reaches `PAYMENT_NOTED`
+with the pinned payment reference and one reservation journal append. Both
+histories leave the slot `RESERVED` with no right or admission credential.
+The harness resolves the hidden receipt as `receipts["booking-admission/payment-B"]`
+in the pinned booking branch receipts. With recovery `NOT_BOUND`, Commerce
+keeps the unresolved write fenced with zero follow-up calls. The pair supplies
+companion evidence for `commerce-fixture-8ba7f6c-1`.
+[Payment-observation lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_payment_observation_lost_reply_v1.json) ·
+[Focused payment-observation replay](../../reference/booking_resale_admission/test_commerce_payment_observation_lost_reply.py)
+
 The issuance lost-reply pair replays `booking-admission/issue-B` on two fresh
 in-process hosts after the same recorded mock payment. Commerce sees the
 same `UNKNOWN` after one attempt in both histories. The producer remains
