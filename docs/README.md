@@ -873,3 +873,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-25 Capital overlapping exposure groups — 위치 안내만
 
 - At one pinned E3 checkpoint, A+B reports 70,000 KRW and B+C reports 50,000 KRW outstanding. The distinct-member union reports 90,000 KRW. Both groups count the same defaulted advance B, and including B twice in one call returns `VIEW_INVALID`. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-overlapping-exposure-groups) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#overlapping-exposure-group-comparisons) · [Builder validation](../validation/2026-11-25-plan-capital-overlapping-exposure-groups/README.md)
+
+## 2026-11-25 Capital resale distribution checkpoints — 위치 안내만
+
+- Three pinned Commerce receipts trace `settle-resale` through commit, mock ownership transfer to `buyer-B` at version 2, and distribution. Two §7.11 observations report zero and −12,000 KRW of variance against the same frozen F04 face, with the exposure and repayment journal byte-identical across checkpoints. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-resale-distribution-checkpoints) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#resale-distribution-checkpoints) · [Builder validation](../validation/2026-11-25-plan-capital-resale-distribution-checkpoints/README.md)

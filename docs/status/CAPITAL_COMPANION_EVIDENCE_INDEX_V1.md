@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates seventeen
+read-only discovery metadata for `kix-capital`. It associates eighteen
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -63,7 +63,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_offsetting_claim_gaps | self_contained_comparisons | 2 | 0 |
 | capital_commerce_refund_checkpoints | self_contained_comparisons | 3 | 0 |
 | capital_overlapping_exposure_groups | self_contained_comparisons | 4 | 0 |
-| **Total** | | **470** | **128** |
+| capital_resale_distribution_checkpoints | self_contained_comparisons | 3 | 0 |
+| **Total** | | **473** | **128** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -253,6 +254,25 @@ fixture. The fragments below are relative to the comparison pack.
 The replay verifies the 30,000 KRW overlap and the `VIEW_INVALID` refusal.
 The index validator rejects exchanges of valid case or result pointers.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_overlapping_exposure_groups.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-overlapping-exposure-groups)
+
+### Resale distribution checkpoints
+
+`capital_resale_distribution_checkpoints` pairs three ordered Commerce
+receipts with complete results. The input and result fragments are relative
+to the same pinned comparison pack. Receipt fragments point into the pinned
+booking-resale journey receipts.
+
+| Case | Input fragment | Complete result fragment | Commerce receipt fragment |
+| --- | --- | --- | --- |
+| `settle-resale-commit` | `#/cases/0` | `#/cases/0/expected_result` | `#/steps/23/receipt` |
+| `accept-A` | `#/cases/1` | `#/cases/1/expected_result` | `#/steps/24/receipt` |
+| `distribute-resale` | `#/cases/2` | `#/cases/2/expected_result` | `#/steps/25/receipt` |
+
+The two settlement receipts supply outstanding obligations for the same
+frozen F04 claim. The middle receipt records ownership. The index rejects
+an exchange of the commit and distribution receipt pointers even when both
+resolve and the detached pack has matching new digests.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json) · [Commerce receipts](../../reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_resale_distribution_checkpoints.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-resale-distribution-checkpoints)
 
 ## Read-only consumption
 

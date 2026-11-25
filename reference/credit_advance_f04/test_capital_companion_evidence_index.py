@@ -23,6 +23,14 @@ BASE = 'reference/credit_advance_f04/'
 FIXTURES = BASE + 'fixtures/'
 COMMERCE_RECEIPTS = 'reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json'
 COMMERCE_RECEIPTS_SHA256 = '7181761ec5533cf1a9aab450f4a7f3d32ed6c467713c8d532ceff24a89908839'
+RESALE_SDK_VECTORS = 'sdk/conformance/vectors/commerce-fixture-tuple.vectors.json'
+RESALE_JOURNEY_RECEIPTS = 'reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json'
+RESALE_JOURNEY_INPUT = 'reference/booking_resale_admission/fixtures/commerce_journey_conformance_v1.json'
+RESALE_SOURCE_PINS = (
+    (RESALE_SDK_VECTORS, 'c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22'),
+    (RESALE_JOURNEY_RECEIPTS, '6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998'),
+    (RESALE_JOURNEY_INPUT, 'f9555d84790b91eafe74c71453a2dbd301fae43566a5f0a3a47e19059151e9cc'),
+)
 SELF_CONTAINED_SHAPES = {'self_contained_refusals', 'self_contained_comparisons'}
 # Independent fixed family/path, scenario/case identity and section-count inventory.
 PACKS = (
@@ -94,6 +102,10 @@ PACKS = (
      'capital_overlapping_exposure_groups_vectors_v1.json', 'capital_overlapping_exposure_groups_vectors_v1.json',
      'test_capital_overlapping_exposure_groups.py', 'CapitalOverlappingExposureGroupsTests.test_overlapping_groups',
      'Capital overlapping exposure groups', ('e3_ab', 'e3_bc', 'e3_abc', 'e3_duplicate_b'), ()),
+    ('capital_resale_distribution_checkpoints', 'self_contained_comparisons',
+     'capital_resale_distribution_checkpoints_vectors_v1.json', 'capital_resale_distribution_checkpoints_vectors_v1.json',
+     'test_capital_resale_distribution_checkpoints.py', 'CapitalResaleDistributionCheckpointTests.test_checkpoint_replay',
+     'Capital resale distribution checkpoints', ('settle-resale-commit', 'accept-A', 'distribute-resale'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -166,6 +178,11 @@ LIMITATIONS = {
         'it once, and a repeated advance within a single call returns VIEW_INVALID. '
         'The 90,000 KRW limit is fixture-only. Product limits remain UNDETERMINED with Astra.',
     ],
+    'capital_resale_distribution_checkpoints': [
+        'Commit and distribution supply settlement obligations for two observations of one frozen F04 face. '
+        'The intervening resale receipt supplies mock ownership evidence only. '
+        'The zero tolerance is fixture-only. Both observations retain NOT_BOUND and repair=NONE.',
+    ],
 }
 SUPPORTING = (
     ('settlement_variance', 'SettlementVarianceContractTests', '7.11 정산 잔차(settlement variance)'),
@@ -205,6 +222,17 @@ def _pin_check(pin, path, read):
     raw = read(path)
     _check(_same(pin, _pin(path, raw)), 'pin digest drift: ' + path)
     return decode_json(raw.decode('utf-8'))
+
+
+def _resale_checkpoint_sources(pins, read):
+    expected = [{'path': path, 'sha256': digest} for path, digest in RESALE_SOURCE_PINS]
+    _check(_same(pins, expected), 'resale checkpoint source pins')
+    raw_sources = {}
+    for path, digest in RESALE_SOURCE_PINS:
+        raw = read(path)
+        _check(hashlib.sha256(raw).hexdigest() == digest, 'resale checkpoint source digest drift: ' + path)
+        raw_sources[path] = raw
+    return {path: decode_json(raw.decode('utf-8')) for path, raw in raw_sources.items()}
 
 
 def _resolve(documents, ref):
@@ -263,6 +291,11 @@ def _expected_associations(spec, source, output):
             if family == 'capital_commerce_refund_checkpoints':
                 step = (9, 14, 15)[i]
                 ref = f'{COMMERCE_RECEIPTS}#/cases/0/steps/{step}/receipt'
+                _check(case['receipt_ref'] == ref, 'checkpoint receipt association: ' + case['case_id'])
+                entry['receipt_ref'] = ref
+            if family == 'capital_resale_distribution_checkpoints':
+                step = (23, 24, 25)[i]
+                ref = f'{RESALE_JOURNEY_RECEIPTS}#/steps/{step}/receipt'
                 _check(case['receipt_ref'] == ref, 'checkpoint receipt association: ' + case['case_id'])
                 entry['receipt_ref'] = ref
             entries.append(entry)
@@ -353,6 +386,8 @@ def validate_index(document, read=_read):
             raw = read(COMMERCE_RECEIPTS)
             _check(hashlib.sha256(raw).hexdigest() == pin['sha256'], 'Commerce receipt digest drift')
             documents[COMMERCE_RECEIPTS] = decode_json(raw.decode('utf-8'))
+        if family == 'capital_resale_distribution_checkpoints':
+            documents.update(_resale_checkpoint_sources(source['source_pins'], read))
         for entry in pack['entries']:
             for key, ref in entry.items():
                 if key.endswith('_ref'):
@@ -415,10 +450,10 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 470)
-        self.assertEqual(len(self.document['packs']), 17)
+        self.assertEqual(validate_index(self.document), 473)
+        self.assertEqual(len(self.document['packs']), 18)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -546,6 +581,19 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
                        'checkpoint receipt association: bind-refund')
         with self.assertRaisesRegex(AssertionError, 'Commerce receipt digest drift'):
             validate_index(self.document, lambda p: _read(p) + b'\n' if p == COMMERCE_RECEIPTS else _read(p))
+
+    def test_resale_distribution_crossed_receipt_references(self):
+        family = 'capital_resale_distribution_checkpoints'
+        index = next(i for i, pack in enumerate(self.document['packs']) if pack['id'] == family)
+
+        def swap(rows):
+            commit, _, distribution = rows
+            commit['receipt_ref'], distribution['receipt_ref'] = distribution['receipt_ref'], commit['receipt_ref']
+
+        self._reject(lambda d: swap(d['packs'][index]['entries']),
+                     'entry membership/association/order/type: ' + family)
+        self._detached(index, 'input', lambda d: swap(d['cases']),
+                       'checkpoint receipt association: settle-resale-commit')
 
     def test_mixed_checkpoint_crossed_references(self):
         index = next(i for i, pack in enumerate(self.document['packs'])

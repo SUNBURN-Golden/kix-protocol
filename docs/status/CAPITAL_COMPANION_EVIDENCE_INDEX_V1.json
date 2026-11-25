@@ -5299,6 +5299,54 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_resale_distribution_checkpoints",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json",
+        "sha256": "ed4c3f4385283f1cf0fc63b51806afa27973a43d38ad87aa58c428f20cc12385",
+        "gitBlob": "3277a2bf77eb1f429a2b7d779dee8622fd773603"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json",
+        "sha256": "ed4c3f4385283f1cf0fc63b51806afa27973a43d38ad87aa58c428f20cc12385",
+        "gitBlob": "3277a2bf77eb1f429a2b7d779dee8622fd773603"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_resale_distribution_checkpoints.py",
+        "symbol": "CapitalResaleDistributionCheckpointTests.test_checkpoint_replay"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital resale distribution checkpoints"
+        }
+      ],
+      "limitations": [
+        "Commit and distribution supply settlement obligations for two observations of one frozen F04 face. The intervening resale receipt supplies mock ownership evidence only. The zero tolerance is fixture-only. Both observations retain NOT_BOUND and repair=NONE."
+      ],
+      "entries": [
+        {
+          "case_id": "settle-resale-commit",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/0/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/23/receipt"
+        },
+        {
+          "case_id": "accept-A",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/1/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/24/receipt"
+        },
+        {
+          "case_id": "distribute-resale",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/2/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/25/receipt"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [
