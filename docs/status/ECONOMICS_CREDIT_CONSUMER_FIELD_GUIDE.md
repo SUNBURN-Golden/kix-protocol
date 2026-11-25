@@ -1866,3 +1866,36 @@ All three observations remain fail-closed with `refund_component=NOT_BOUND`,
 Astra, netting mechanics with the User, and legal refund liability with
 the User and legal counsel.
 [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#commerce-refund-checkpoints) · [Builder validation](../../validation/2026-11-25-plan-capital-commerce-refund-checkpoints/README.md)
+
+## Capital overlapping exposure groups
+
+The `capital-overlapping-exposure-groups/1` pack selects from the three
+frozen views in `E3_pool_three_claims_default_still_aggregates`. Verify the
+source SHA-256 over the raw bytes and resolve each case's `group_id_ref`,
+`limit_ref` and ordered `view_refs`. All four calls use the same checkpoint,
+`pool-e3` label and 90,000 KRW fixture limit. Submit each list as recorded,
+including both B references in the final case, and compare the entire observer
+result envelope with `expected_result`.
+[Pinned source](../../reference/credit_advance_f04/fixtures/shared_exposure_v1.json) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_overlapping_exposure_groups.py) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure)
+
+| Case | Caller-selected views | Advances / claims | Outstanding (KRW) | `within_limit` |
+| --- | --- | ---: | ---: | --- |
+| `e3_ab` | A + B | 2 / 2 | 70,000 | `true` |
+| `e3_bc` | B + C | 2 / 2 | 50,000 | `true` |
+| `e3_abc` | A + B + C | 3 / 3 | 90,000 | `true` at the inclusive limit |
+| `e3_duplicate_b` | A + B + B + C | — | `VIEW_INVALID` | — |
+
+B is `adv-e3-b` on `claim-e3-b`, with phase `DEFAULTED` and 30,000 KRW
+outstanding. It is the sole shared advance in A+B and B+C. Adding those
+reports gives 120,000 KRW because each includes B. The distinct-member union
+counts B once and reports 90,000 KRW. Repeating B within a single call returns
+the reference-only `VIEW_INVALID` refusal.
+
+Inputs are byte-equivalent before and after all four calls. Successful
+observations carry `SHARED_EXPOSURE_NOT_BOUND`, `contract_status=NOT_BOUND`,
+`refund_component=NOT_BOUND`, `repair=NONE`, `fail_closed=true`,
+`mutates_state=false`, `authorizes_exposure=false` and
+`legal_debtor_bound=false`. Product exposure limits remain
+**UNDETERMINED — Astra**, legal responsibility **UNDETERMINED — User/legal**,
+and external `kix-capital` acceptance **UNVERIFIED**.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#overlapping-exposure-group-comparisons) · [Builder validation](../../validation/2026-11-25-plan-capital-overlapping-exposure-groups/README.md)

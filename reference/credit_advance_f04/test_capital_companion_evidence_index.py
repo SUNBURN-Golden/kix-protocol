@@ -90,6 +90,10 @@ PACKS = (
      'capital_commerce_refund_checkpoints_vectors_v1.json', 'capital_commerce_refund_checkpoints_vectors_v1.json',
      'test_capital_commerce_refund_checkpoints.py', 'CapitalCommerceRefundCheckpointTests.test_checkpoint_replay',
      'Capital commerce refund checkpoints', ('commit', 'bind-refund', 'observe-mock-acceptance'), ()),
+    ('capital_overlapping_exposure_groups', 'self_contained_comparisons',
+     'capital_overlapping_exposure_groups_vectors_v1.json', 'capital_overlapping_exposure_groups_vectors_v1.json',
+     'test_capital_overlapping_exposure_groups.py', 'CapitalOverlappingExposureGroupsTests.test_overlapping_groups',
+     'Capital overlapping exposure groups', ('e3_ab', 'e3_bc', 'e3_abc', 'e3_duplicate_b'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -156,6 +160,11 @@ LIMITATIONS = {
         'Three receipts for one purchase share the same frozen F04 face and zero variance. '
         'Requester refund outstanding and mock acceptance stay separate from F04 exposure and repayment. '
         'Receipt identity determines the checkpoint. The refund component remains NOT_BOUND.',
+    ],
+    'capital_overlapping_exposure_groups': [
+        'Separate caller groups count the same defaulted advance. The distinct-member union counts '
+        'it once, and a repeated advance within a single call returns VIEW_INVALID. '
+        'The 90,000 KRW limit is fixture-only. Product limits remain UNDETERMINED with Astra.',
     ],
 }
 SUPPORTING = (
@@ -406,9 +415,10 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 466)
+        self.assertEqual(validate_index(self.document), 470)
+        self.assertEqual(len(self.document['packs']), 17)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -566,6 +576,18 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
                 with self.subTest(pair=prefix, field=field):
                     self._reject(lambda d: swap(d, prefix, field),
                                  'entry membership/association/order/type: capital_omitted_exposure_members')
+
+    def test_overlapping_exposure_groups_crossed_references(self):
+        family = 'capital_overlapping_exposure_groups'
+
+        def swap(document, field):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            ab, bc = pack['entries'][:2]
+            ab[field], bc[field] = bc[field], ab[field]
+
+        for field in ('input_ref', 'result_ref'):
+            with self.subTest(field=field):
+                self._reject(lambda d: swap(d, field), f'entry membership/association/order/type: {family}')
 
     def test_reconcile_freshness_crossed_references(self):
         def swap(document, target, collection, field):
