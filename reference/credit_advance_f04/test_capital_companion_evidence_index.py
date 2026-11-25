@@ -106,6 +106,10 @@ PACKS = (
      'capital_resale_distribution_checkpoints_vectors_v1.json', 'capital_resale_distribution_checkpoints_vectors_v1.json',
      'test_capital_resale_distribution_checkpoints.py', 'CapitalResaleDistributionCheckpointTests.test_checkpoint_replay',
      'Capital resale distribution checkpoints', ('settle-resale-commit', 'accept-A', 'distribute-resale'), ()),
+    ('capital_group_sum_boundary', 'self_contained_comparisons',
+     'capital_group_sum_boundary_vectors_v1.json', 'capital_group_sum_boundary_vectors_v1.json',
+     'test_capital_group_sum_boundary.py', 'CapitalGroupSumBoundaryTests.test_group_sum_boundary',
+     'Capital group sum boundary', ('at_total', 'one_below', 'single_view_overflow'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -182,6 +186,11 @@ LIMITATIONS = {
         'Commit and distribution supply settlement obligations for two observations of one frozen F04 face. '
         'The intervening resale receipt supplies mock ownership evidence only. '
         'The zero tolerance is fixture-only. Both observations retain NOT_BOUND and repair=NONE.',
+    ],
+    'capital_group_sum_boundary': [
+        'The group sum can exceed the per-view ceiling. Both limits are synthetic caller inputs. '
+        'Product limits remain UNDETERMINED with Astra. Within-limit status grants no exposure authority '
+        'and the refund component remains NOT_BOUND.',
     ],
 }
 SUPPORTING = (
@@ -299,6 +308,13 @@ def _expected_associations(spec, source, output):
                 _check(case['receipt_ref'] == ref, 'checkpoint receipt association: ' + case['case_id'])
                 entry['receipt_ref'] = ref
             entries.append(entry)
+        if family == 'capital_group_sum_boundary':
+            views = source['credit_views']
+            _check(type(views) is list and len(views) == 2, 'source credit-view membership')
+            refs = [f'{ipath}#/credit_views/{i}' for i in range(len(views))]
+            for case, expected_refs in zip(source['cases'], (refs, refs, refs[:1]), strict=True):
+                _check(_same(case['view_refs'], expected_refs), 'group sum case view association: ' + case['case_id'])
+            observations = [{'kind': 'source_credit_view', 'ref': ref} for ref in refs]
         return entries, observations
     _check(tuple(s['scenario_id'] for s in source['scenarios']) == ids, 'scenario membership/order')
     _check(tuple(s['scenario_id'] for s in output['scenarios']) == ids, 'output scenario membership/order')
@@ -450,11 +466,11 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 473)
-        self.assertEqual(len(self.document['packs']), 18)
+        self.assertEqual(validate_index(self.document), 476)
+        self.assertEqual(len(self.document['packs']), 19)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3])
-        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 128)
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3])
+        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 130)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
     def test_membership_controls(self):
@@ -708,6 +724,31 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             self.assertEqual(_resolve(documents, v6['result_ref'])['ok']['claim_id'], 'claim-v4')
 
         self._reject(swap_results, 'entry membership/association/order/type: ' + family)
+
+    def test_group_sum_boundary_crossed_references(self):
+        family = 'capital_group_sum_boundary'
+        i = next(i for i, pack in enumerate(self.document['packs']) if pack['id'] == family)
+        path = self.document['packs'][i]['input']['path']
+        documents = {path: decode_json(_read(path).decode('utf-8'))}
+
+        def swap_refs(document, section, key):
+            first, second = document['packs'][i][section][:2]
+            first[key], second[key] = second[key], first[key]
+            return _resolve(documents, first[key]), _resolve(documents, second[key])
+
+        def swap_results(document):
+            first, second = swap_refs(document, 'entries', 'result_ref')
+            self.assertIs(first['ok']['within_limit'], False)
+            self.assertIs(second['ok']['within_limit'], True)
+
+        def swap_observations(document):
+            first, second = swap_refs(document, 'observations', 'ref')
+            self.assertEqual([first['amount'], second['amount']], [1, 1_000_000_000_000])
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
+        self._reject(swap_observations, 'supplemental observation association')
+        self._detached(i, 'input', lambda pack: pack['cases'][0]['view_refs'].reverse(),
+                       'group sum case view association: at_total')
 
     def test_pin_controls(self):
         for i in range(len(PACKS)):

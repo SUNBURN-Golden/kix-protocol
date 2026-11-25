@@ -880,3 +880,5 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-25 Capital resale distribution checkpoints — 위치 안내만
 
 - Three pinned Commerce receipts trace `settle-resale` through commit, mock ownership transfer to `buyer-B` at version 2, and distribution. Two §7.11 observations report zero and −12,000 KRW of variance against the same frozen F04 face, with the exposure and repayment journal byte-identical across checkpoints. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-resale-distribution-checkpoints) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#resale-distribution-checkpoints) · [Builder validation](../validation/2026-11-25-plan-capital-resale-distribution-checkpoints/README.md)
+
+- Two frozen F04 §7.12 views sum to 1,000,000,000,001 fixture KRW. The group is within limit at that total and outside it one unit below. A detached view at the same total returns `VIEW_INVALID`. [Capital group sum boundary evidence](../validation/2026-11-26-plan-capital-group-sum-boundary/README.md)

@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates eighteen
+read-only discovery metadata for `kix-capital`. It associates nineteen
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -64,7 +64,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_commerce_refund_checkpoints | self_contained_comparisons | 3 | 0 |
 | capital_overlapping_exposure_groups | self_contained_comparisons | 4 | 0 |
 | capital_resale_distribution_checkpoints | self_contained_comparisons | 3 | 0 |
-| **Total** | | **473** | **128** |
+| capital_group_sum_boundary | self_contained_comparisons | 3 | 2 |
+| **Total** | | **476** | **130** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -116,7 +117,7 @@ The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the fifteen consumer families.
+evidence, outside the nineteen consumer families.
 
 ### P1 pre-draw rejection and cancellation
 
@@ -273,6 +274,26 @@ frozen F04 claim. The middle receipt records ownership. The index rejects
 an exchange of the commit and distribution receipt pointers even when both
 resolve and the detached pack has matching new digests.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json) · [Commerce receipts](../../reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_resale_distribution_checkpoints.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-resale-distribution-checkpoints)
+
+### Group sum boundary
+
+`capital_group_sum_boundary` uses the same pinned file for input and output.
+Its ordered `source_credit_view` observations point to the complete frozen
+views at `#/credit_views/0` (1,000,000,000,000 fixture KRW drawn) and
+`#/credit_views/1` (1 fixture KRW drawn).
+
+| Case | Input fragment | Complete result fragment |
+| --- | --- | --- |
+| `at_total` | `#/cases/0` | `#/cases/0/expected_result` |
+| `one_below` | `#/cases/1` | `#/cases/1/expected_result` |
+| `single_view_overflow` | `#/cases/2` | `#/cases/2/expected_result` |
+
+Both success cases reference the same views in the same order and record
+1,000,000,000,001 fixture KRW drawn and outstanding. The refusal references
+the first view and supplies the overrides for a detached copy. The validator
+rejects exchanged success-result pointers and exchanged source-view pointers.
+Replay symbol `CapitalGroupSumBoundaryTests.test_group_sum_boundary`.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_group_sum_boundary.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-group-sum-boundary)
 
 ## Read-only consumption
 
