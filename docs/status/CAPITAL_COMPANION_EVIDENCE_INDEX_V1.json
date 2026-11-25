@@ -5347,6 +5347,60 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_group_sum_boundary",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json",
+        "sha256": "2b94f8c629794d021b76c129d8aa364707557c353c0d46016474b7c3a6e85e57",
+        "gitBlob": "6cb7bfabccb73c4dc133223be3d0f53d2200c90b"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json",
+        "sha256": "2b94f8c629794d021b76c129d8aa364707557c353c0d46016474b7c3a6e85e57",
+        "gitBlob": "6cb7bfabccb73c4dc133223be3d0f53d2200c90b"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_group_sum_boundary.py",
+        "symbol": "CapitalGroupSumBoundaryTests.test_group_sum_boundary"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital group sum boundary"
+        }
+      ],
+      "limitations": [
+        "The group sum can exceed the per-view ceiling. Both limits are synthetic caller inputs. Product limits remain UNDETERMINED with Astra. Within-limit status grants no exposure authority and the refund component remains NOT_BOUND."
+      ],
+      "entries": [
+        {
+          "case_id": "at_total",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "one_below",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/1/expected_result"
+        },
+        {
+          "case_id": "single_view_overflow",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/2/expected_result"
+        }
+      ],
+      "observations": [
+        {
+          "kind": "source_credit_view",
+          "ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/credit_views/0"
+        },
+        {
+          "kind": "source_credit_view",
+          "ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/credit_views/1"
+        }
+      ]
     }
   ],
   "supporting_evidence": [

@@ -1930,3 +1930,43 @@ the distribution is outside it. Both observations carry `NOT_BOUND`,
 `UNVERIFIED`. Product limits and tolerance policy remain `UNDETERMINED`
 with Astra, and legal responsibility remains `UNDETERMINED` with User/legal.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json) · [F04 §7.11](../contracts/CREDIT_ADVANCE_F04.md#711-정산-잔차settlement-variance) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#resale-distribution-checkpoints) · [Builder validation](../../validation/2026-11-25-plan-capital-resale-distribution-checkpoints/README.md)
+
+## Capital group sum boundary
+
+The `capital-group-sum-boundary/1` pack contains two setup rows, two frozen
+source views and three complete F04 §7.12 results. For each row, recognize its
+distinct claim and trade in `MockSettlement` with the fixture policy, debtor
+role and gross. Use the resulting `MockSettlement.view(claim_id)` as the face
+for `offer`, then `approve` and `draw` the stated amount on one
+`CreditMachine`. The replay uses the fixture beneficiary role and the
+`offer-`, `approve-` and `draw-` prefixes on each advance ID for the
+idempotency keys. The draw ID uses the same `draw-` prefix. After both draws,
+read the two `CreditMachine.view(advance_id)` dictionaries in setup order and
+compare them to `#/credit_views/0` and `#/credit_views/1`.
+
+Call `observe_shared_exposure(group_id, views, limit=...)` using each case's
+ordered `view_refs` and explicit limit. For the third case, deep-copy the
+first view and apply the case's overrides before calling the observer.
+
+| Case | View amounts (fixture KRW) | Caller limit (fixture KRW) | Outcome |
+| --- | --- | ---: | --- |
+| `at_total` | 1,000,000,000,000 and 1 | 1,000,000,000,001 | `within_limit=true` |
+| `one_below` | 1,000,000,000,000 and 1 | 1,000,000,000,000 | `within_limit=false` |
+| `single_view_overflow` | 1,000,000,000,001 in one detached view | 1,000,000,000,001 | `SharedExposureError` with `VIEW_INVALID` |
+
+Both successful records count two advances and two distinct claims. Drawn and
+outstanding exposure, open face and reserved capacity each total
+1,000,000,000,001 fixture KRW. Repaid exposure and residual capacity are zero.
+Each claim contributes its capacity once. The detached control preserves both
+amount identities with zero repayment and residual capacity, while its amount
+fields exceed the per-view ceiling.
+
+All calls preserve argument bytes, and both machine views retain their
+captured bytes. The successful records are fail-closed and carry
+`authorizes_exposure=false`, `mutates_state=false`,
+`legal_debtor_bound=false`, `refund_component=NOT_BOUND` and
+`SHARED_EXPOSURE_NOT_BOUND` with `contract_status=NOT_BOUND` and
+`repair=NONE`. Product exposure limits remain **UNDETERMINED — Astra**,
+legal responsibility **UNDETERMINED — User/legal**, and external
+`kix-capital` acceptance **UNVERIFIED**.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#group-sum-boundary) · [Builder validation](../../validation/2026-11-26-plan-capital-group-sum-boundary/README.md)
