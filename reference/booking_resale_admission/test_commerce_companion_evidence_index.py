@@ -22,6 +22,7 @@ import test_commerce_linked_refund_vectors as linked_refund
 import test_commerce_late_payment_after_cancel_vectors as late_payment
 import test_commerce_payment_ref_scope_vectors as payment_ref_scope
 import test_commerce_resale_buyer_release_vectors as resale_buyer_release
+import test_commerce_admission_replay_after_resale_vectors as admission_replay
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -47,8 +48,10 @@ PACKS = (
      'test_complete_output_bytes_and_references', 16),
     ('resale_buyer_release', resale_buyer_release, 'CommerceResaleBuyerReleaseVectorTests',
      'test_complete_output_bytes_and_references', 16),
+    ('admission_replay_after_resale', admission_replay, 'CommerceAdmissionReplayAfterResaleVectorTests',
+     'test_complete_output_bytes_and_references', 18),
 )
-TOTAL_ENTRIES = 389
+TOTAL_ENTRIES = 407
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -94,6 +97,10 @@ LIMITATIONS = {
     'resale_buyer_release': [
         'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The resale_release_hold binding is BOOTSTRAP_SCHEMA_BOUND.',
         'The release replay preserves its first LISTED receipt while the current listing retains the fresh BUY_HELD hold. Payment observation and transfer are separate mock effects.',
+    ],
+    'admission_replay_after_resale': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The replay is a first receipt and gives no current admission authority.',
+        'The fresh version-1 consume returns STALE_VERSION. Current ownership and accepted journals are test-harness evidence from one in-process host.',
     ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
@@ -378,6 +385,21 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
             self.assertTrue(_same(_resolve(documents, release['input_ref']),
                                   _resolve(documents, replay['input_ref'])))
             release['outcome_ref'], replay['outcome_ref'] = replay['outcome_ref'], release['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
+
+    def test_admission_replay_crossed_outcome_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'admission_replay_after_resale')
+
+        def swap(document):
+            entries = {entry['step_id']: entry for entry in document['packs'][p]['entries']}
+            original, replay = entries['authorize'], entries['replay-authorize']
+            self.assertEqual(original['action'], replay['action'])
+            inputs = admission_replay.FIXTURE
+            documents = {inputs: journey._decode(_read(inputs))}
+            self.assertTrue(_same(_resolve(documents, original['input_ref']),
+                                  _resolve(documents, replay['input_ref'])))
+            original['outcome_ref'], replay['outcome_ref'] = replay['outcome_ref'], original['outcome_ref']
 
         self._reject(swap, 'outcome_ref association')
 
