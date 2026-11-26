@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates nineteen
+read-only discovery metadata for `kix-capital`. It associates twenty
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -65,7 +65,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_overlapping_exposure_groups | self_contained_comparisons | 4 | 0 |
 | capital_resale_distribution_checkpoints | self_contained_comparisons | 3 | 0 |
 | capital_group_sum_boundary | self_contained_comparisons | 3 | 2 |
-| **Total** | | **476** | **130** |
+| capital_draw_refusal_after_restore | self_contained_comparisons | 2 | 0 |
+| **Total** | | **478** | **130** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -117,7 +118,7 @@ The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the nineteen consumer families.
+evidence, outside the twenty consumer families.
 
 ### P1 pre-draw rejection and cancellation
 
@@ -294,6 +295,23 @@ the first view and supplies the overrides for a detached copy. The validator
 rejects exchanged success-result pointers and exchanged source-view pointers.
 Replay symbol `CapitalGroupSumBoundaryTests.test_group_sum_boundary`.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_group_sum_boundary.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-group-sum-boundary)
+
+### Draw refusal after restore
+
+`capital_draw_refusal_after_restore` uses the same pinned file for input and
+output. Both cases start at `#/before`, with identical accepted journals and
+zero exposure after S1's `s1-commit`.
+
+| Case | Input fragment | Complete result fragment | Outcome |
+| --- | --- | --- | --- |
+| `original` | `#/cases/0` | `#/cases/0/expected_result` | `CreditError` with `SETTLEMENT_NOT_COMMITTED`, zero appends |
+| `restored` | `#/cases/1` | `#/cases/1/expected_result` | New mock draw of 10,000 fixture KRW, one append |
+
+Refused calls leave no accepted journal entry. Equal journals and state
+digests cannot establish whether the original received a refused call.
+The validator rejects exchanged result pointers even when both resolve.
+Replay symbol `CapitalDrawRefusalAfterRestoreTests.test_draw_refusal_pair`.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_draw_refusal_after_restore.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-draw-refusal-after-restore)
 
 ## Read-only consumption
 

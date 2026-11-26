@@ -110,6 +110,10 @@ PACKS = (
      'capital_group_sum_boundary_vectors_v1.json', 'capital_group_sum_boundary_vectors_v1.json',
      'test_capital_group_sum_boundary.py', 'CapitalGroupSumBoundaryTests.test_group_sum_boundary',
      'Capital group sum boundary', ('at_total', 'one_below', 'single_view_overflow'), ()),
+    ('capital_draw_refusal_after_restore', 'self_contained_comparisons',
+     'capital_draw_refusal_after_restore_vectors_v1.json', 'capital_draw_refusal_after_restore_vectors_v1.json',
+     'test_capital_draw_refusal_after_restore.py', 'CapitalDrawRefusalAfterRestoreTests.test_draw_refusal_pair',
+     'Capital draw refusal after restore', ('original', 'restored'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -191,6 +195,10 @@ LIMITATIONS = {
         'The group sum can exceed the per-view ceiling. Both limits are synthetic caller inputs. '
         'Product limits remain UNDETERMINED with Astra. Within-limit status grants no exposure authority '
         'and the refund component remains NOT_BOUND.',
+    ],
+    'capital_draw_refusal_after_restore': [
+        'Refused calls leave no accepted journal entry. Equal journals and state digests cannot establish '
+        'whether the original received a refused call. The restored draw is an offline mock diagnostic only.',
     ],
 }
 SUPPORTING = (
@@ -466,10 +474,10 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 476)
-        self.assertEqual(len(self.document['packs']), 19)
+        self.assertEqual(validate_index(self.document), 478)
+        self.assertEqual(len(self.document['packs']), 20)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 130)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -749,6 +757,21 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         self._reject(swap_observations, 'supplemental observation association')
         self._detached(i, 'input', lambda pack: pack['cases'][0]['view_refs'].reverse(),
                        'group sum case view association: at_total')
+
+    def test_draw_refusal_after_restore_crossed_result_references(self):
+        family = 'capital_draw_refusal_after_restore'
+
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            path = pack['output']['path']
+            documents = {path: decode_json(_read(path).decode('utf-8'))}
+            original, restored = pack['entries']
+            original['result_ref'], restored['result_ref'] = restored['result_ref'], original['result_ref']
+            self.assertEqual(_resolve(documents, original['result_ref'])['ok']['applied'], 'draw')
+            self.assertEqual(_resolve(documents, restored['result_ref'])['error']['code'],
+                             'SETTLEMENT_NOT_COMMITTED')
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
 
     def test_pin_controls(self):
         for i in range(len(PACKS)):
