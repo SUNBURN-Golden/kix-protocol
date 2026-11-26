@@ -82,6 +82,21 @@ is harness evidence. With recovery `NOT_BOUND`, Commerce must keep the write
 fenced with zero follow-up calls. [Refund acceptance lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_refund_acceptance_lost_reply_v1.json) ·
 [Focused refund acceptance replay](../../reference/booking_resale_admission/test_commerce_refund_acceptance_lost_reply.py)
 
+The cancellation lost-reply pair replays `booking-refund/cancel-C` after
+confirming the same unpaid reservation on two fresh in-process hosts. Commerce
+records the original operation ID and body idempotency key, one attempt,
+`UNKNOWN`, a null receipt and zero follow-up calls in both histories. A drop
+before dispatch leaves `reserve-C` `CONFIRMED` and slot 2 `RESERVED` with no
+journal append. Withholding the successful reply leaves `reserve-C` `CANCELLED`
+and slot 2 `FREE` with one reservation journal append. Both histories end
+without recording payment, issuance or refund. The harness compares the hidden
+receipt with `receipts["booking-refund/cancel-C"]` in the pinned booking branch
+receipts. Slot availability remains unresolved for Commerce, so it keeps the
+cancellation fenced with recovery `NOT_BOUND`.
+[Cancellation lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json) ·
+[Focused cancellation replay](../../reference/booking_resale_admission/test_commerce_cancel_lost_reply.py) ·
+[Delivery evidence index](COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json)
+
 An unlisted tuple or context is outside the grant. Keep unresolved `UNKNOWN`
 outcomes fenced. The market, settlement and operation-recovery reads remain
 `NOT_BOUND`. [PR #146 change requests](https://github.com/SUNBURN-Golden/kix-commerce-apps/blob/9a55fe4e257376f9db3f877a11b65e3ecc43c661/docs/kix-resale-journey-binding-change-requests.md)
@@ -113,6 +128,13 @@ For the booking branch receipt comparison and its mutation checks, run
 ```sh
 python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -p 'test_commerce_fixture_tuple_conformance.py' -k booking_branch -v
+```
+
+For the paired cancellation replay and delivery index checks, run
+
+```sh
+PYTHONPATH=reference/booking_resale_admission python3.12 -B -m unittest -v \
+  test_commerce_cancel_lost_reply test_commerce_delivery_evidence_index
 ```
 
 Use the manifest and vectors with their referenced files. For each target,

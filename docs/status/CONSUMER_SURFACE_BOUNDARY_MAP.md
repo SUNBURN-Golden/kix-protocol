@@ -113,7 +113,7 @@ as follows.
    Fence unresolved `UNKNOWN` outcomes without polling, retry or replacement
    writes. [Offline replay handoff](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#replay-offline)
 
-The resale delivery fixtures replay pinned envelopes on fresh in-process hosts.
+The delivery fixtures replay pinned envelopes on fresh in-process hosts.
 Producer evidence comes from the replay harness.
 
 | Vector and delivery case | Commerce observation | Producer evidence |
@@ -122,11 +122,13 @@ Producer evidence comes from the replay harness.
 | `booking-resale/accept-A-before-commit` · request dropped before dispatch | `UNKNOWN` with a null receipt | Zero dispatches. |
 | `booking-resale/accept-A-before-commit` · refusal withheld after dispatch | The same `UNKNOWN` record as the pre-dispatch drop | One refused dispatch with `SETTLEMENT_NOT_COMMITTED`. |
 | `resale-market/market-accept` · reply lost | `UNKNOWN` with a null receipt whether the request was dropped or the successful reply was withheld | Zero dispatches leave the seller at version 1. One successful dispatch transfers ownership to the buyer at version 2. |
+| `booking-refund/cancel-C` · reply lost | `UNKNOWN` with a null receipt in both histories | Zero dispatches leave the unpaid reservation `CONFIRMED` and slot 2 `RESERVED`. One successful dispatch leaves it `CANCELLED` and the slot `FREE`. |
 
-The non-normative delivery evidence index covers all 13 cases across payment
-observation, issuance, transfer, admission consumption, refund acceptance and
-the pre-commit resale refusal. Follow `caller_observation_ref` for what Commerce
-received. Use `producer_evidence_ref` for offline replay diagnostics only.
+The non-normative delivery evidence index covers 15 cases across seven fixtures
+for payment observation, issuance, transfer, admission consumption, refund
+acceptance, the pre-commit resale refusal and reservation cancellation. Follow
+`caller_observation_ref` for what Commerce received. Use `producer_evidence_ref`
+for offline replay diagnostics only.
 [Delivery evidence index](COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json)
 
 Both pre-commit losses keep the original `operationId` and body
@@ -138,6 +140,12 @@ right version 1 and all five accepted journals. Recovery remains `NOT_BOUND`.
 [Transfer lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_transfer_lost_reply_v1.json) ·
 [Transfer lost-reply replay](../../reference/booking_resale_admission/test_commerce_transfer_lost_reply.py) ·
 [Recovery boundary](#unavailable-consumer-bindings)
+
+Commerce keeps `cancel-C` fenced with the original operation ID and body key,
+one attempt and zero follow-up calls. The slot state is available to the
+offline harness, and recovery remains `NOT_BOUND`.
+[Cancellation lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json) ·
+[Cancellation lost-reply replay](../../reference/booking_resale_admission/test_commerce_cancel_lost_reply.py)
 
 The grant covers source-informed, synthetic in-memory evidence. N/N−1
 compatibility, production qualification and stable SDK release remain outside
