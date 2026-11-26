@@ -1,0 +1,33 @@
+{
+  "profile_revision": "commerce-fixture-8ba7f6c-1",
+  "cases": [
+    {"action": "admission_adopt_issued", "vector_id": "booking-admission/adopt-B", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "admission_authorize_admission", "vector_id": "booking-admission/authorize-B", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "admission_consume", "vector_id": "booking-admission/consume-B", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "admission_set_clock", "vector_id": "booking-admission/admission-clock", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "resale_accept_resale", "vector_id": "booking-resale/accept-A", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "resale_adopt_issued", "vector_id": "booking-resale/adopt-A", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "resale_bind_settlement", "vector_id": "booking-resale/bind-resale", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "resale_cancel_listing", "vector_id": "resale-market/market-cancel-BUY_HELD", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "resale_hold_buy", "vector_id": "booking-resale/hold-A", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "resale_list_resale", "vector_id": "booking-resale/list-A", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "resale_observe_resale_payment", "vector_id": "booking-resale/resale-payment-A", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "resale_set_clock", "vector_id": "booking-resale/resale-clock", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "reservation_cancel", "vector_id": "booking-admission/cancel-after-payment", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "reservation_confirm", "vector_id": "booking-admission/order-B", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "reservation_hold", "vector_id": "booking-admission/reserve-B", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "reservation_issue", "vector_id": "booking-admission/issue-B", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "reservation_observe_payment", "vector_id": "booking-admission/payment-B", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "reservation_register_show", "vector_id": "booking-admission/register-show", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "reservation_set_clock", "vector_id": "booking-admission/reservation-clock", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_authorize", "vector_id": "booking-refund/settle-refund-authorize", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_bind_refund", "vector_id": "booking-refund/bind-refund", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_cancel", "vector_id": "booking-refund/settle-cancel", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_capture", "vector_id": "booking-refund/settle-refund-capture", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_commit", "vector_id": "booking-resale/settle-resale-commit", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_distribute", "vector_id": "booking-resale/distribute-resale", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_fail", "vector_id": "booking-refund/settle-fail", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_initiate", "vector_id": "booking-refund/settle-cancel-initiate", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}},
+    {"action": "settlement_observe_mock_cancel_acceptance", "vector_id": "booking-refund/observe-mock-acceptance", "status": 422, "payload": {"error": "READINESS_FSM_REFUSED", "rejected": true}}
+  ]
+}

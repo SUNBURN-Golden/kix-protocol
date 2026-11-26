@@ -1,4 +1,4 @@
-"""Offline default/AST evidence; never build or start the integration gate."""
+"""Offline gate evidence without starting listeners or workers."""
 import ast
 from collections import Counter
 from copy import deepcopy
@@ -7,11 +7,16 @@ import json
 from pathlib import Path
 import re
 import socket
+from tempfile import TemporaryDirectory
+from threading import Lock
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMERCE_FIXTURES = ROOT / 'reference/booking_resale_admission/fixtures'
 COMMERCE_BINDING_INDEX = ROOT / 'docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json'
+COMMERCE_VECTORS = ROOT / 'sdk/conformance/vectors'
+COMMERCE_REVISION = 'commerce-fixture-8ba7f6c-1'
 _SOCKET_ORIGINALS = {}
 
 
@@ -418,6 +423,127 @@ class CommerceJourneyEnvelopeTests(unittest.TestCase):
         parsed = parse_envelope(baseline, self.commands)
         self.assertEqual(parsed, expected)
         self.assertEqual(json.dumps(parsed[3], sort_keys=True), json.dumps(expected[3], sort_keys=True))
+
+
+class CommerceReadinessTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from integration_gate.catalogue import load_catalogue
+
+        table_path = ROOT / 'docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json'
+        cls.table = json.loads(table_path.read_bytes())
+        cls.corpus = json.loads(
+            (COMMERCE_VECTORS / 'commerce-fixture-tuple.vectors.json').read_bytes()
+        )
+        cls.catalogue = load_catalogue(ROOT)
+
+    def _listed_vectors(self):
+        self.assertEqual(
+            self.table['record_schema_version'], 'kix-commerce-fixture-tuple-conformance/1'
+        )
+        self.assertEqual(self.corpus['record_schema_version'], 'kix-commerce-fixture-vectors/1')
+        by_id = {vector['id']: vector for vector in self.corpus['vectors']}
+        self.assertEqual(len(by_id), len(self.corpus['vectors']))
+
+        tuples = self.table['tuples']
+        self.assertEqual(len(tuples), 28)
+        selected = {}
+        for row in sorted(tuples, key=lambda row: row['action']):
+            action = row['action']
+            control_ids = {
+                vector_id for entry in row['contexts'] for vector_id in entry['control_vector_ids']
+            }
+            vector_id, context, step = min(
+                (vector_id, entry['context'], step)
+                for entry in row['contexts']
+                for step, ids in entry['steps'].items()
+                for vector_id in ids
+                if vector_id not in control_ids
+            )
+            vector = by_id[vector_id]
+            self.assertEqual(
+                (vector['context'], vector['commerce_step'], vector['envelope']['action']),
+                (context, step, action), vector_id
+            )
+            selected[action] = vector
+        self.assertEqual(len(selected), 28)
+        self.assertEqual(len({vector['id'] for vector in selected.values()}), 28)
+        return selected
+
+    def _dispatch_gate(self, store):
+        from integration_gate.server import GateServer
+
+        # Initialize the dispatch state on this thread without opening a listener.
+        gate = GateServer.__new__(GateServer)
+        gate.catalogue = self.catalogue
+        gate.store = store
+        gate.core = None
+        gate._admit_lock = Lock()
+        gate._accepting = gate._core_failed = gate._diverged = gate._draining = False
+        gate._ensure_core_on_worker()
+        self.addCleanup(gate.core.db.close)
+        return gate
+
+    def test_all_listed_actions_refused(self):
+        from integration_gate.schema import parse_envelope
+        from readiness.store import ReadinessStore
+
+        selected = self._listed_vectors()
+        directory = self.enterContext(TemporaryDirectory())
+        store = ReadinessStore.open(directory)
+        self.addCleanup(store.close)
+        committed_bytes = store.committed_bytes
+        gate = self._dispatch_gate(store)
+
+        cases = []
+        with (
+            patch.object(gate.fsm, 'call', wraps=gate.fsm.call) as fsm_call,
+            patch.object(store, 'append', wraps=store.append) as append,
+        ):
+            for action, vector in selected.items():
+                vector_id = vector['id']
+                with self.subTest(action=action, vector_id=vector_id):
+                    envelope = vector['envelope']
+                    expected = deepcopy(tuple(
+                        envelope[field] for field in ('operationId', 'actor', 'action', 'body')
+                    ))
+                    parsed = parse_envelope(envelope, self.catalogue.commands)
+                    self.assertEqual(json.dumps(parsed, sort_keys=True),
+                                     json.dumps(expected, sort_keys=True))
+                    self.assertIn(action, self.catalogue.fsm_name_set)
+                    status, payload, observation = gate.perform(*parsed)
+                    self.assertEqual(status, 422)
+                    self.assertEqual(payload['error'], 'READINESS_FSM_REFUSED')
+                    self.assertIs(payload['rejected'], True)
+                    self.assertEqual(observation['journalDecision'], 'not_attempted')
+                    fsm_call.assert_not_called()
+                    append.assert_not_called()
+                    self.assertEqual(store.records, [])
+                    self.assertEqual(store.committed_bytes, committed_bytes)
+                    cases.append(dict(action=action, vector_id=vector_id,
+                                      status=status, payload=payload))
+
+        record = json.loads((COMMERCE_VECTORS / 'commerce-readiness-refusals.vectors.json').read_bytes())
+        self.assertEqual(record, {'profile_revision': COMMERCE_REVISION, 'cases': cases})
+
+    def test_listed_clock_without_readiness(self):
+        from integration_gate.schema import parse_envelope
+
+        vector = self._listed_vectors()['reservation_set_clock']
+        self.assertEqual(vector['id'], 'booking-admission/reservation-clock')
+        self.assertEqual(vector['setup'], [])
+        receipts = json.loads((COMMERCE_FIXTURES / 'commerce_journey_receipts_v1.json').read_bytes())
+        expected = receipts['steps'][0]['receipt']
+        gate = self._dispatch_gate(store=None)
+
+        parsed = parse_envelope(vector['envelope'], self.catalogue.commands)
+        expected_body = deepcopy(vector['envelope']['body'])
+        with patch.object(gate.fsm, 'call', wraps=gate.fsm.call) as fsm_call:
+            status, receipt, observation = gate.perform(*parsed)
+            fsm_call.assert_called_once_with('reservation_set_clock', expected_body)
+        self.assertEqual(status, 200)
+        self.assertEqual(observation['journalDecision'], 'inactive')
+        self.assertEqual(json.dumps(receipt, sort_keys=True), json.dumps(expected, sort_keys=True))
 
 
 if __name__ == '__main__':

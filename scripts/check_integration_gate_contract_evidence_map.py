@@ -100,6 +100,10 @@ REQUIRED_CITES = {
     'G-NO-PUBLIC': 'integration_gate/openapi_doc.py::validate',
 }
 REQUIRED_OFFLINE_CITES = {
+    'K-READINESS-FSM-REFUSED': (
+        OFFLINE_TEST_PATH + '::CommerceReadinessTests.test_all_listed_actions_refused',
+        OFFLINE_TEST_PATH + '::CommerceReadinessTests.test_listed_clock_without_readiness',
+    ),
     'G-OPENAPI-NO-CORS-CHANGE': (
         OFFLINE_TEST_PATH + '::OfflineGapTests.test_gate_openapi_rendered_bytes_are_pinned',
         OFFLINE_TEST_PATH + '::OfflineGapTests.test_browser_origin_is_transport_only_statically',
