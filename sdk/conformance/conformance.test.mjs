@@ -1223,6 +1223,55 @@ test("Commerce grant lookup", async (t) => {
       "resale-market/market-cancel-LISTED",
     ]);
   });
+  await t.test("holds when one producer or route field changes", () => {
+    const original = listed.request;
+    const snapshot = canonicalStringify(original);
+    check(listed, COMMERCE_MANIFEST_SHA256);
+
+    function checkMismatch(field, request) {
+      const originalValue = getPath(original, field);
+      const changedValue = getPath(request, field);
+      assert.notEqual(originalValue, undefined, `${field} missing from the original request`);
+      assert.notEqual(changedValue, undefined, `${field} missing from the mismatch request`);
+      assert.notEqual(changedValue, originalValue, field);
+
+      const restored = structuredClone(request);
+      setPath(restored, field, originalValue);
+      assert.equal(canonicalStringify(restored), snapshot, `${field} must be the only change`);
+      check({ id: field, request, expect: hold }, COMMERCE_MANIFEST_SHA256);
+    }
+
+    const mismatches = [
+      ["producer.source_commit", "8ba7f6c36373ac0ec49246f51f7471c164ac3a29"],
+      ["producer.repository", "SUNBURN-Golden/kix-protocol-control"],
+      ["producer.protocol_domain", "kix:fixture:lifecycle:0.4"],
+      ["producer.contract_schema_version", "0.3-rc1+sha256:ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1f"],
+      ["method", "GET"],
+      ["path", `${original.path}/`],
+      ["machine", "reservation"],
+      ["op", "hold_buy"],
+      ["subject_field", "seller_role"],
+    ];
+    for (const [field, value] of mismatches) {
+      const request = structuredClone(original);
+      setPath(request, field, value);
+      if (field === "producer.source_commit") {
+        assert.equal(request.producer.source_tree, "d3f5412ef84f64fe83c5d3a3d3ada173921bfbf9", field);
+      }
+      checkMismatch(field, request);
+    }
+
+    for (const [id, field] of [
+      ["wrong-producer-tree", "producer.source_tree"],
+      ["wrong-body-schema-digest", "body_schema_sha256"],
+    ]) {
+      const control = document.cases.find((item) => item.id === id);
+      assert.ok(control, `missing ${id} case`);
+      checkMismatch(field, control.request);
+    }
+
+    assert.equal(canonicalStringify(original), snapshot, `${listed.id} request changed`);
+  });
   await t.test("selects every listed outcome and holds every control-only vector", () => {
     const grant = grantFor(COMMERCE_MANIFEST);
     assert.ok(grant, "Commerce fixture grant must verify");
