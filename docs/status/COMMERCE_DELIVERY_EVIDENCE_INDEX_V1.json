@@ -34,6 +34,11 @@
       "gitBlob": "b5d1aa5f6020fde8aefab795806bfaf2f044592f"
     },
     {
+      "path": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json",
+      "sha256": "46a266a484259c84339b84f890e34d1b054d263e7316f9bb40b848fd0d1c269d",
+      "gitBlob": "0a9c61df31eb43321654564fb6eb5bf96a6f56d4"
+    },
+    {
       "path": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
       "sha256": "c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22",
       "gitBlob": "0095e53801921e87c5417dd86920a625c2fede78"
@@ -167,6 +172,25 @@
           "fault_point": "after_dispatch",
           "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json#/cases/2/expected_caller",
           "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json#/cases/2/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json",
+      "source_vector_id": "booking-refund/cancel-C",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/39",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/cases/1/producer_evidence"
         }
       ]
     }

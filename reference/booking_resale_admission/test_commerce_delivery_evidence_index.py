@@ -17,7 +17,7 @@ ADMISSION = f"{FIXTURE_DIR}/commerce_admission_lost_reply_v1.json"
 REFUSAL = f"{FIXTURE_DIR}/commerce_withheld_resale_refusal_v1.json"
 REFUND = f"{FIXTURE_DIR}/commerce_refund_acceptance_lost_reply_v1.json"
 
-# Source identities and positions come from the six independent fixture replays.
+# Source identities and positions come from the individual fixture replays.
 FIXTURES = {
     f"{FIXTURE_DIR}/commerce_payment_observation_lost_reply_v1.json": (
         "booking-admission/payment-B", 26,
@@ -27,6 +27,7 @@ FIXTURES = {
     ADMISSION: ("booking-admission/consume-B", 32),
     REFUND: ("booking-refund/observe-mock-acceptance", 49),
     REFUSAL: ("booking-resale/accept-A-before-commit", 18),
+    f"{FIXTURE_DIR}/commerce_cancel_lost_reply_v1.json": ("booking-refund/cancel-C", 39),
 }
 RECEIPT_SOURCES = {
     "source_booking_branch_receipts": f"{FIXTURE_DIR}/commerce_booking_branch_receipts_v1.json",
@@ -68,7 +69,7 @@ class CommerceDeliveryEvidenceIndexTests(unittest.TestCase):
         outcomes = Counter()
         for row in rows:
             outcomes.update(self.check_fixture(row, self.documents[row["fixture_path"]]))
-        self.assertEqual(outcomes, {"UNKNOWN": 12, "business-reject": 1})
+        self.assertEqual(outcomes, {"UNKNOWN": 14, "business-reject": 1})
 
     def check_fixture(self, row, fixture):
         self.assertEqual(set(row), {"fixture_path", "source_vector_id", "source_vector_ref", "cases"})
