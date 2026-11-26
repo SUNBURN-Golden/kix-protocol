@@ -38,6 +38,7 @@ const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
 const COMMERCE_BINDING_INDEX = "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json";
+const COMMERCE_DELIVERY_INDEX = "docs/status/COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json";
 const COMMERCE_REVISION = "commerce-fixture-8ba7f6c-1";
 const COMMERCE_MANIFEST = `sdk/compat/manifests/manifest.${COMMERCE_REVISION}.json`;
 const COMMERCE_PROFILE = `sdk/compat/profiles/${COMMERCE_REVISION}.profile.json`;
@@ -1203,6 +1204,25 @@ test("Commerce grant lookup", async (t) => {
   const recovery = document.cases.filter(({ request }) => request.kind === "proposed_recovery");
   const unboundCases = [...reads, ...recovery];
 
+  function commandRequestFields(producer, tuple, vector, commerceStep) {
+    return {
+      kind: "command",
+      manifest_path: COMMERCE_MANIFEST,
+      producer,
+      method: tuple.method,
+      path: tuple.path,
+      action: tuple.action,
+      machine: tuple.machine,
+      op: tuple.op,
+      subject_field: tuple.subject_field,
+      body_schema_sha256: tuple.body_schema_sha256,
+      context: vector.context,
+      commerce_step: commerceStep,
+      envelope: vector.envelope,
+      setup: vector.setup,
+    };
+  }
+
   await t.test("requires the consumer manifest digest on every selection", () => {
     check(listed, COMMERCE_MANIFEST_SHA256);
     // Fresh consumers pin the ordering: a rejected digest must not read the
@@ -1280,26 +1300,6 @@ test("Commerce grant lookup", async (t) => {
     const controlIds = new Set();
     const countsByContext = new Map();
 
-    function commandRequest(tuple, vector, commerceStep) {
-      return {
-        kind: "command",
-        manifest_path: COMMERCE_MANIFEST,
-        producer: table.producer,
-        method: tuple.method,
-        path: tuple.path,
-        action: tuple.action,
-        machine: tuple.machine,
-        op: tuple.op,
-        subject_field: tuple.subject_field,
-        body_schema_sha256: tuple.body_schema_sha256,
-        context: vector.context,
-        commerce_step: commerceStep,
-        envelope: vector.envelope,
-        setup: vector.setup,
-        outcome: vector.expected,
-      };
-    }
-
     for (const tuple of table.tuples) {
       for (const { context, steps, control_vector_ids } of tuple.contexts) {
         const counts = countsByContext.get(context) ?? { accept: 0, "business-reject": 0, controls: 0 };
@@ -1315,7 +1315,7 @@ test("Commerce grant lookup", async (t) => {
             counts[vector.expected.kind] += 1;
             check({
               id,
-              request: commandRequest(tuple, vector, vector.commerce_step),
+              request: { ...commandRequestFields(table.producer, tuple, vector, step), outcome: vector.expected },
               expect: { status: SEMANTIC, vector_id: id },
             }, COMMERCE_MANIFEST_SHA256);
           }
@@ -1338,7 +1338,7 @@ test("Commerce grant lookup", async (t) => {
           for (const step of [unlistedStep, listedStep]) {
             check({
               id: `${id} offered as ${step}`,
-              request: commandRequest(tuple, vector, step),
+              request: { ...commandRequestFields(table.producer, tuple, vector, step), outcome: vector.expected },
               expect: { status: "HOLD_SEMANTIC", vector_id: null },
             }, COMMERCE_MANIFEST_SHA256);
           }
@@ -1353,6 +1353,81 @@ test("Commerce grant lookup", async (t) => {
       "resale-market": { accept: 14, "business-reject": 0, controls: 14 },
     });
     assert.deepEqual([...listedIds, ...controlIds].sort(), [...vectorsById.keys()].sort());
+  });
+  await t.test("selects grants from indexed caller-visible delivery outcomes", () => {
+    const index = JSON.parse(read(COMMERCE_DELIVERY_INDEX));
+    assert.equal(index.record_schema_version, "kix-commerce-delivery-evidence-index/1");
+    assert.equal(index.normative, false);
+    assert.equal(index.fixtures.length, 6);
+    assert.equal(new Set(index.fixtures.map(({ fixture_path }) => fixture_path)).size, 6);
+
+    const grant = grantFor(COMMERCE_MANIFEST);
+    assert.ok(grant, "Commerce fixture grant must verify");
+    const { table, vectorsById } = grant;
+    // The verified map preserves the corpus order used by the index pointers.
+    const vectors = [...vectorsById.values()];
+    const vectorRefPrefix = `${COMMERCE_VECTORS}#/vectors/`;
+    const seenCases = new Set();
+    const refusalVectorId = "booking-resale/accept-A-before-commit";
+    const refusalCases = [];
+    let unknownCount = 0;
+
+    for (const { fixture_path, source_vector_id, source_vector_ref, cases } of index.fixtures) {
+      const position = source_vector_ref.slice(vectorRefPrefix.length);
+      assert.ok(source_vector_ref.startsWith(vectorRefPrefix) && /^(0|[1-9]\d*)$/.test(position), source_vector_ref);
+      const vector = vectors[position];
+      assert.equal(vector?.id, source_vector_id, source_vector_ref);
+      const tuples = table.tuples.filter((tuple) => tuple.action === vector.envelope.action &&
+        tuple.contexts.some(({ context, steps }) => context === vector.context &&
+          steps[vector.commerce_step]?.includes(vector.id)));
+      assert.equal(tuples.length, 1, `${source_vector_id} must have one listed tuple`);
+      const command = commandRequestFields(table.producer, tuples[0], vector, vector.commerce_step);
+      const fixture = JSON.parse(read(fixture_path));
+
+      for (const { case_id, caller_observation_ref } of cases) {
+        const id = `${source_vector_id} ${case_id}`;
+        const caseKey = `${fixture_path}#${case_id}`;
+        assert.ok(!seenCases.has(caseKey), `${id} is indexed twice`);
+        seenCases.add(caseKey);
+
+        const caseIndex = fixture.cases.findIndex(({ id: fixtureId }) => fixtureId === case_id);
+        assert.notEqual(caseIndex, -1, `${id} missing from ${fixture_path}`);
+        const fixtureCase = fixture.cases[caseIndex];
+        const hasCaseObservation = Object.hasOwn(fixtureCase, "expected_caller");
+        const callerPointer = hasCaseObservation ? `/cases/${caseIndex}/expected_caller` : "/expected_caller";
+        assert.equal(caller_observation_ref, `${fixture_path}#${callerPointer}`, `${id} caller pointer`);
+        const caller = (hasCaseObservation ? fixtureCase : fixture).expected_caller;
+        assert.ok(caller, `${id} missing caller observation`);
+        assert.equal(caller.operationId, command.envelope.operationId, id);
+        assert.equal(caller.idempotency_key, command.envelope.body.idempotency_key, id);
+
+        const delivered = case_id === "refusal-delivered";
+        if (delivered || case_id === "refusal-withheld-after-dispatch") {
+          assert.equal(source_vector_id, refusalVectorId, id);
+          refusalCases.push(case_id);
+        }
+
+        const outcome = { kind: caller.outcome };
+        let expect = hold;
+        if (delivered) {
+          assert.equal(caller.outcome, "business-reject", id);
+          assert.equal(caller.rejection_code, "SETTLEMENT_NOT_COMMITTED", id);
+          outcome.code = caller.rejection_code;
+          expect = { status: SEMANTIC, vector_id: refusalVectorId };
+        } else {
+          assert.equal(caller.outcome, "UNKNOWN", id);
+          assert.ok(!Object.hasOwn(caller, "rejection_code"), `${id} exposes a refusal code`);
+          unknownCount += 1;
+        }
+
+        const request = { ...command, outcome };
+        check({ id: `${id}\n${JSON.stringify({ request, caller })}`, request, expect }, COMMERCE_MANIFEST_SHA256);
+      }
+    }
+
+    assert.equal(seenCases.size, 13);
+    assert.equal(unknownCount, 12);
+    assert.deepEqual(refusalCases.sort(), ["refusal-delivered", "refusal-withheld-after-dispatch"]);
   });
   await t.test("holds every catalogue action outside the Commerce qualification table", () => {
     check(listed, COMMERCE_MANIFEST_SHA256);
