@@ -1354,6 +1354,38 @@ test("Commerce grant lookup", async (t) => {
     });
     assert.deepEqual([...listedIds, ...controlIds].sort(), [...vectorsById.keys()].sort());
   });
+  await t.test("holds the readiness refusal for every listed Commerce action", () => {
+    const { profile_revision, cases } = JSON.parse(
+      read("sdk/conformance/vectors/commerce-readiness-refusals.vectors.json"),
+    );
+    assert.equal(profile_revision, COMMERCE_REVISION);
+    const grant = grantFor(COMMERCE_MANIFEST);
+    assert.ok(grant, "Commerce fixture grant must verify");
+    const { table, vectorsById } = grant;
+    const tuplesByAction = new Map(table.tuples.map((tuple) => [tuple.action, tuple]));
+    assert.equal(cases.length, 28);
+    assert.equal(new Set(cases.map(({ vector_id }) => vector_id)).size, 28);
+    assert.deepEqual(cases.map(({ action }) => action), [...tuplesByAction.keys()].sort());
+
+    for (const { action, vector_id: id, status, payload } of cases) {
+      assert.equal(status, 422, id);
+      assert.deepEqual(payload, { error: "READINESS_FSM_REFUSED", rejected: true }, id);
+      const vector = vectorsById.get(id);
+      assert.ok(vector, `missing listed vector ${id}`);
+      assert.equal(vector.envelope.action, action, id);
+      const request = commandRequestFields(table.producer, tuplesByAction.get(action), vector, vector.commerce_step);
+      check({
+        id,
+        request: { ...request, outcome: vector.expected },
+        expect: { status: SEMANTIC, vector_id: id },
+      }, COMMERCE_MANIFEST_SHA256);
+      check({
+        id: `${id} readiness refusal`,
+        request: { ...request, outcome: { kind: "business-reject", code: payload.error } },
+        expect: hold,
+      }, COMMERCE_MANIFEST_SHA256);
+    }
+  });
   await t.test("selects grants from indexed caller-visible delivery outcomes", () => {
     const index = JSON.parse(read(COMMERCE_DELIVERY_INDEX));
     assert.equal(index.record_schema_version, "kix-commerce-delivery-evidence-index/1");
