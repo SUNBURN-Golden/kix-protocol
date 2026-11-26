@@ -5401,6 +5401,46 @@
           "ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/credit_views/1"
         }
       ]
+    },
+    {
+      "id": "capital_draw_refusal_after_restore",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json",
+        "sha256": "06aef555f6c8fb81aef4043d7553493ead55ca5a2035843a170ca2bd732f675b",
+        "gitBlob": "eb7f4717801a86ce67bcbb4b3606acdf3398149b"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json",
+        "sha256": "06aef555f6c8fb81aef4043d7553493ead55ca5a2035843a170ca2bd732f675b",
+        "gitBlob": "eb7f4717801a86ce67bcbb4b3606acdf3398149b"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_draw_refusal_after_restore.py",
+        "symbol": "CapitalDrawRefusalAfterRestoreTests.test_draw_refusal_pair"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital draw refusal after restore"
+        }
+      ],
+      "limitations": [
+        "Refused calls leave no accepted journal entry. Equal journals and state digests cannot establish whether the original received a refused call. The restored draw is an offline mock diagnostic only."
+      ],
+      "entries": [
+        {
+          "case_id": "original",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "restored",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [

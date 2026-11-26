@@ -1970,3 +1970,36 @@ captured bytes. The successful records are fail-closed and carry
 legal responsibility **UNDETERMINED — User/legal**, and external
 `kix-capital` acceptance **UNVERIFIED**.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#group-sum-boundary) · [Builder validation](../../validation/2026-11-26-plan-capital-group-sum-boundary/README.md)
+
+## Capital draw refusal after restore
+
+The `capital-draw-refusal-after-restore/1` pack pins the S1 boundary fixture
+and its delivered results. The replay applies `S1_captured_face_no_derivation`
+through `s1-commit` inclusive, after the early refusal and before `s1-draw-late`.
+It restores a separate `CreditMachine` from the original's accepted journal
+using the same committed settlement. Both machines have `offer`, `approve`
+and `bind_settlement` entries, an identical `APPROVED` view, zero drawn,
+repaid and outstanding exposure, and equal canonical states and digests.
+
+The offline comparison applies the `s1-draw-early` step once per machine
+with advance `adv-cap`, draw ID `drw-s1-early` and key `s1-draw-early`.
+
+| Machine | Result | Exposure and journal |
+| --- | --- | --- |
+| Original | Stored `CreditError` with `SETTLEMENT_NOT_COMMITTED` | `APPROVED`, zero exposure, no append |
+| Restored | `applied=draw`, `duplicate=false` | `DRAWN`, 10,000 fixture KRW drawn and outstanding, one draw entry |
+
+The offer retains the full captured S1 claim, with 100,000 fixture KRW of
+open receivable and zero confirmed cash. The committed settlement shows
+97,000 fixture KRW of confirmed cash. The restored draw still records
+`snapshot_frozen=true` and `confirmed_cash_on_face=0`. The settlement view,
+journal, canonical state and digest stay equal to the post-commit checkpoint
+after restoration and after each diagnostic.
+
+F04 §7.3 retains the first refusal in process. §7.4 restores accepted entries
+only, so equal journals and state digests cannot establish whether a refused
+call occurred. §7.5 gates the restored mock draw on the current settlement
+view. This diagnostic supplies no authority to retry a financial operation.
+External `kix-capital` acceptance remains **UNVERIFIED**, product limits
+**UNDETERMINED — Astra**, and legal responsibility **UNDETERMINED — User/legal**.
+[F04 §7.3](../contracts/CREDIT_ADVANCE_F04.md#73-멱등키) · [§7.4](../contracts/CREDIT_ADVANCE_F04.md#74-재생) · [§7.5](../contracts/CREDIT_ADVANCE_F04.md#75-정산-게이트) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#draw-refusal-after-restore)
