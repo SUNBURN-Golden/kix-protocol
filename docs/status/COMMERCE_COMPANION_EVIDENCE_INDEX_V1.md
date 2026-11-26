@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects thirteen input/outcome pack families (389 steps) to replay tests
+It connects fourteen input/outcome pack families (407 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -28,6 +28,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `late_payment_after_cancel` | `commerce_late_payment_after_cancel_inputs_v1.json` | `commerce_late_payment_after_cancel_receipts_v1.json` | `test_commerce_late_payment_after_cancel_vectors.py` | 1 / 16 |
 | `payment_ref_scope` | `commerce_payment_ref_scope_inputs_v1.json` | `commerce_payment_ref_scope_receipts_v1.json` | `test_commerce_payment_ref_scope_vectors.py` | 1 / 16 |
 | `resale_buyer_release` | `commerce_resale_buyer_release_inputs_v1.json` | `commerce_resale_buyer_release_receipts_v1.json` | `test_commerce_resale_buyer_release_vectors.py` | 1 / 16 |
+| `admission_replay_after_resale` | `commerce_admission_replay_after_resale_inputs_v1.json` | `commerce_admission_replay_after_resale_receipts_v1.json` | `test_commerce_admission_replay_after_resale_vectors.py` | 1 / 18 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -260,3 +261,20 @@ release calls retain `BOOTSTRAP_SCHEMA_BOUND`. The exact replay symbol is
 `CommerceResaleBuyerReleaseVectorTests.test_complete_output_bytes_and_references`.
 [Replay suite](../../reference/booking_resale_admission/test_commerce_resale_buyer_release_vectors.py) ·
 [Coverage and local verification](../../validation/2026-11-20-plan-commerce-resale-buyer-release/README.md)
+
+## Admission replay after resale
+
+The authorization for `buyer-1` at version 1 expires before the resale
+payment and transfer. After `buyer-2` acquires the right at version 2,
+the same authorization key and body return the first `admit-1` receipt with
+`duplicate: true` and `applied: null`. The fresh version-1 consume returns
+`STALE_VERSION`. Neither call appends to an accepted journal or records
+consumption. The current mock resale holder stays `buyer-2` at version 2.
+
+The pack carries `HOLD_SEMANTIC`. Its current-state observations are
+test-harness evidence. The exact replay symbol is
+`CommerceAdmissionReplayAfterResaleVectorTests.test_complete_output_bytes_and_references`.
+[Inputs and evidence pointers](../../reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json) ·
+[Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json) ·
+[Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-admission-replay-after-resale-vectors) ·
+[Coverage and local verification](../../validation/2026-11-26-plan-commerce-admission-replay-after-resale/README.md)

@@ -4639,7 +4639,7 @@ current listing stays `BUY_HELD` under `hold-2`. The replay compares the full
 first receipt and checks that current state, digests, journals and views match
 their pre-replay values. An explicit payment observation records `PAYMENT_NOTED`
 without moving funds. The separate transfer moves `issue-1` to `buyer-2` at
-version 2. The companion index covers thirteen families and 389 steps.
+version 2.
 [Canonical inputs](fixtures/commerce_resale_buyer_release_inputs_v1.json) ·
 [Complete outcomes](fixtures/commerce_resale_buyer_release_receipts_v1.json) ·
 [Replay suite](test_commerce_resale_buyer_release_vectors.py) ·
@@ -4657,3 +4657,39 @@ compensation remain `UNDETERMINED` with Astra and JunTae. Provider and legal
 terms retain their existing owners.
 [Scoped fixture qualification](../../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md) ·
 [Coverage and local verification](../../validation/2026-11-20-plan-commerce-resale-buyer-release/README.md)
+
+## Commerce admission replay after resale vectors
+
+This 18-step in-process history records reservation, primary payment,
+issuance of `issue-1`, and authorization `admit-1` for `buyer-1` at version 1.
+The fixture advances the linked admission and reservation clocks to the
+authorization's `expires_ms` (1,120,000), then advances the independent resale
+clock to the same value. The expired authorization has no live `admission_id`
+before listing. The distinct resale payment leaves ownership at version 1.
+The explicit transfer `transfer-1` moves the right to `buyer-2` at version 2.
+
+Replaying the original authorization with the exact body and key returns its
+first receipt with `duplicate: true` and `applied: null`. It preserves the
+original holder, version, gate, admission ID, and expiry as historical facts.
+A fresh consume using the original version, gate and request returns
+`STALE_VERSION`. Both calls preserve all five machines' accepted journals,
+canonical states, digests and available views at their respective checkpoints.
+The resale right stays with `buyer-2` at version 2, and both the reservation and
+credential views have a null `consume_id`.
+
+The input's `evidence_refs` gives exact repository-relative JSON pointers to the
+three request bodies, the two receipts, and the refusal code.
+`diagnostic_snapshot` contains detached test-harness evidence. The pack carries
+`HOLD_SEMANTIC`, all 13 reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and
+external acceptance is `UNVERIFIED`. Fixture amounts and clocks are synthetic.
+Product TTLs, fees and compensation remain `UNDETERMINED` with Astra and JunTae.
+Provider and legal terms retain their existing owners.
+[Canonical inputs](fixtures/commerce_admission_replay_after_resale_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_admission_replay_after_resale_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#admission-replay-after-resale) ·
+[Coverage and local verification](../../validation/2026-11-26-plan-commerce-admission-replay-after-resale/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_admission_replay_after_resale_vectors.py -v
+```
