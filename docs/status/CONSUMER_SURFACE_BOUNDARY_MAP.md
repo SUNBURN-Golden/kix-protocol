@@ -123,6 +123,12 @@ Producer evidence comes from the replay harness.
 | `booking-resale/accept-A-before-commit` · refusal withheld after dispatch | The same `UNKNOWN` record as the pre-dispatch drop | One refused dispatch with `SETTLEMENT_NOT_COMMITTED`. |
 | `resale-market/market-accept` · reply lost | `UNKNOWN` with a null receipt whether the request was dropped or the successful reply was withheld | Zero dispatches leave the seller at version 1. One successful dispatch transfers ownership to the buyer at version 2. |
 
+The non-normative delivery evidence index covers all 13 cases across payment
+observation, issuance, transfer, admission consumption, refund acceptance and
+the pre-commit resale refusal. Follow `caller_observation_ref` for what Commerce
+received. Use `producer_evidence_ref` for offline replay diagnostics only.
+[Delivery evidence index](COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json)
+
 Both pre-commit losses keep the original `operationId` and body
 `idempotency_key`, with one attempt and zero follow-up calls. All three
 pre-commit cases preserve the recorded resale payment, seller ownership,
