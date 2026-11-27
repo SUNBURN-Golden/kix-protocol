@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects fifteen input/outcome pack families (422 steps) to replay tests
+It connects sixteen input/outcome pack families (424 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -30,6 +30,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `resale_buyer_release` | `commerce_resale_buyer_release_inputs_v1.json` | `commerce_resale_buyer_release_receipts_v1.json` | `test_commerce_resale_buyer_release_vectors.py` | 1 / 16 |
 | `admission_replay_after_resale` | `commerce_admission_replay_after_resale_inputs_v1.json` | `commerce_admission_replay_after_resale_receipts_v1.json` | `test_commerce_admission_replay_after_resale_vectors.py` | 1 / 18 |
 | `replaced_admission_binding` | `commerce_replaced_admission_binding_inputs_v1.json` | `commerce_replaced_admission_binding_receipts_v1.json` | `test_commerce_replaced_admission_binding_vectors.py` | 1 / 15 |
+| `admission_journal_after_transfer` | `commerce_admission_journal_after_transfer_inputs_v1.json` | `commerce_admission_journal_after_transfer_receipts_v1.json` | `test_commerce_admission_journal_after_transfer_vectors.py` | 2 / 2 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -299,3 +300,23 @@ payment and issuance receipts separately. The replay symbol is
 [Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json) ·
 [Replay command](../../reference/booking_resale_admission/README.md#commerce-replacement-admission-binding-vectors) ·
 [Coverage and local verification](../../validation/2026-11-27-plan-commerce-replaced-admission-binding/README.md)
+
+## Admission journal after transfer
+
+Both cases pin the same accepted four-entry admission journal. The entry for
+`matching-ownership` points to the `resale-expiry-clock` receipt
+(`resale_set_clock`). With `buyer-1` at version 1, local restore reproduces
+the pinned digest and fresh reconciliation reports `matched: true` after the
+authorization has expired. The entry for `transferred-ownership` points to
+the explicit `transfer-1` receipt (`resale_accept_resale`). With `buyer-2`
+at version 2, both diagnostics return `STALE_VERSION` and record zero new
+consumptions.
+
+Both published checkpoint actions carry `MOCK_EVIDENCE`. The pack carries
+`HOLD_SEMANTIC` and stores restore and reconciliation in separate
+`TEST_HARNESS_EVIDENCE` snapshots. A journal match records historical
+replay equality and grants no admission authority.
+[Canonical inputs](../../reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_inputs_v1.json) ·
+[Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_receipts_v1.json) ·
+[Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-admission-journal-after-transfer-vectors) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-admission-journal-after-transfe/README.md)
