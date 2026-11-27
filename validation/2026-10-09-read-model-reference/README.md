@@ -1,5 +1,70 @@
 # Validation — read-model-reference
 
+## PR #178 fix round 3
+
+The node brief in the session input governs this round. The approved scope is
+the ten point queries. The three list queries remain deferred under the owner
+decision recorded below.
+
+| Evidence | Round 3 result |
+|---|---|
+| Cached `origin/main` | `7b84c6912f4db44aeb94e62f4f52575e076c035a`. The branch and cached main diverge by three commits each from `dcbfef2826908985fc223ed0e2e07653105e9aa3`. The offline supervisor instruction precluded fetching. |
+| Reviewed head and committed producer source | `33e20f30bba3587d52c49e323de236467746e298`, tree `09d4d0f7a5ccd1c20324df7170ad64f8ca29053d` |
+| Round 3 delivery head | Pending supervisor commit |
+| Reviewed manifest SHA-256 | `94b63b8b938769e08c2469f1a67ed8ac82cbb3408c8890473d879a0853b613c8`, from `git show HEAD:sdk/compat/manifests/manifest.bootstrap-3.json` |
+| Regenerated manifest SHA-256 | `c2cde918f061678bd45ddcbfc647633f536524cdc9738a91f1eac0356e442a92`. The sidecar contains this digest. |
+| Profile and SDK output | The regenerated files matched the reviewed bytes. Profile SHA-256 `7adf7ccea9af9659a864140cee110880420fb5a26c306bc3597a3eed3c20326d`. SDK catalogue SHA-256 `65cef827fa82b137e46b66f4302f2673f512ec26484910cf5de9d9f65f387b9a`. |
+| Source binding | `git rev-parse <source>^{tree}` matched the manifest. `git show <source>:<path>` matched the working bytes for both OpenAPIs, both source contracts, the client generator, generated catalogue, both vectors, `toolchains.json`, and `sdk/sdk-pin.json`. SHA-256 and Git blob matched every corresponding manifest field. A scoped `git diff --exit-code <source>` also matched the gate, reference and SDK implementation paths. |
+| KTX kernel verification | Run ID, status and conclusion unavailable for the reviewed head. Delivery-head evidence pending. |
+| KIX protocol verification | Run ID, status and conclusion unavailable for the reviewed head. Delivery-head evidence pending. |
+
+The supervisor's local state records an aggregate `PASS` at the reviewed head.
+The exact workflow records belong in the PR evidence for their respective
+heads. The manifest binds producer inputs, and the supervisor binds the
+delivery head outside the manifest. Qualification and User approval require
+their own evidence.
+
+A merge preview against cached main reproduced three failures in the new
+`CommerceGateDispatchTests`. That class read the current FSM catalogue while
+checking the historical Commerce tuple. Using
+`read_bootstrap_2_input(path, root=ROOT)` for the historical table's non-vector
+paths passed all 16 offline-gate tests and all nine direct Commerce tuple
+tests in the preview. The preview retained the original SHA-256 and blob
+assertions, and the dispatch ran against the live in-memory catalogue. The
+supervisor owns integration of the newer base and the test adjustment in
+`CommerceGateDispatchTests._verified_evidence`.
+
+| Local check | Result |
+|---|---|
+| `npm --prefix sdk run generate`, `verify-compat`, and `conformance` | Generated successfully, verified the new digest, 30 conformance tests passed. |
+| `python3.12 scripts/check_sdk_client.py`, `check_openapi_contract.py`, `check_integration_gate_openapi.py`, each with and without `--self-test` | Passed. Both OpenAPIs had 94 actions, including ten point queries. |
+| Protocol workflow's Python check scripts, including source, evidence map, and documentation checks | Passed. The gate evidence map and self-test passed on rerun after restoring the replay anchor text. |
+| `python3.12 -m unittest integration_gate.test_http_gate readiness.test_faults integration_gate.test_offline_limits` | 156 tests passed on the branch and 159 in the merge preview with the test fix. |
+| `python3.12 -m unittest discover -s reference/<suite> -t reference/<suite>` for the eight protocol workflow suites | All passed. Settlement 225, booking/resale/admission 1,098, credit 338, delegation 182, token reward 397, provider facts 86, payment effects 28, and economics 99. |
+| Three FSM `test_accepted_through.py` discovery runs | One test per module passed. Existing tests cover the source views, read envelopes, and non-mutation. The Git source byte audit fills the manifest binding gap. |
+| Rust workspace format, architecture verifier, and architecture tests | Passed. |
+| Offline Rust workspace and package test, Clippy, and dependency tree commands | Cargo exited 101 during dependency resolution because the local registry lacked `duckdb`. |
+| Offline two-crate KTX reproduction using the checked-in `kix-kernel` and `kix-types` sources and matching lock entries | 139 kernel tests passed. Kernel Clippy and the normal dependency tree check passed. |
+| Locked and frozen inputs | Both required kernel blobs and the frozen contract blob matched before and after. All 108 frozen worktree files matched tree `a6ecb124dc2b2267ca6be19e39fbe2aef143074b`. The OpenAPI check found no server or security keys. |
+
+The [OpenAPI companion README](../../docs/contracts/openapi/README.md#비운영-통합-관문)
+describes HTTP 200 command and point-query responses. Updating the generated
+gate OpenAPI description requires a committed source containing those new
+bytes and a new producer manifest.
+
+Round 3 worktree paths
+
+- `docs/contracts/openapi/README.md`
+- `docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md`
+- `sdk/compat/manifests/manifest.bootstrap-3.json`
+- `sdk/compat/manifests/manifest.bootstrap-3.json.sha256`
+- `sdk/generate/generate_manifest.mjs`
+- `validation/2026-10-09-read-model-reference/README.md`
+
+## Original builder record (2026-10-13)
+
+The round 3 table above supplies the current source and artifact identities.
+
 Slice A only: the ten approved point queries. The three list queries are not in the catalogue. The owner decision for this node chose option (a): ship the ten point queries in the existing second pin, and bind the list values for the change that gives the lists their catalogue entry. There is no `DECISION_REQUIRED.md`.
 
 This directory records local evidence from the builder session. It is not exact-head CI, not qualification, and not a merge authorization. No commit, push, PR, issue or comment was made in this session. The directory keeps the name of the earlier stopped build (`2026-10-09-…`); the evidence below is from 2026-10-13.

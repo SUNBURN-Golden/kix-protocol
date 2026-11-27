@@ -574,6 +574,7 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
 
     def _verified_evidence(self):
         from integration_gate.catalogue import git_blob_id
+        from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 
         manifest_path = ROOT / f'sdk/compat/manifests/manifest.{COMMERCE_REVISION}.json'
         raw = manifest_path.read_bytes()
@@ -609,7 +610,7 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
         for group in ('producer', 'earlier_evidence'):
             for pin in table['pins'][group]:
                 path = pin['path']
-                data = files[path] if path in files else (ROOT / path).read_bytes()
+                data = files[path] if path in files else read_bootstrap_2_input(path, root=ROOT)
                 self.assertEqual(hashlib.sha256(data).hexdigest(), pin['sha256'], path)
                 self.assertEqual(git_blob_id(data), pin['gitBlob'], path)
         return table, files, profile['catalogue']['schema_digests']

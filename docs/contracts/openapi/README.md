@@ -140,7 +140,9 @@ python3 -m integration_gate --port 8765 --browser-origin http://127.0.0.1:5173
 
 거절은 HTTP 200으로 숨기지 않는다. 스키마·봉투 오류는 4xx이고, `Core.execute`가 `Rejected`를 던지면 422에 그 코드가 담긴다. 본문 상한은 65536바이트, 요청 시간 상한은 5초, 헤더 상한은 8192바이트다.
 
-같은 프로세스 안에서는 참조 모형 그대로, 같은 `operationId`와 같은 actor·action·body 지문이면 저장 영수증을 다시 주고, 지문이 다르면 `OPERATION_ID_CONFLICT`다. HTTP `Idempotency-Key`는 보지 않는다. 기본 프로세스를 다시 시작하면 인메모리 상태와 그 재생은 사라진다. `--readiness-dir`가 있을 때만 커밋된 호출을 그 디렉터리의 파일에서 재생하며, 재생은 효과를 다시 적용하지 않는다. 이 재생을 운영 내구성이나 운영 적합으로 읽지 않는다. 기본 바인드는 계속 `127.0.0.1`이다.
+핵심 명령의 HTTP 200은 `Core.execute` 영수증이다. 같은 프로세스에서 같은 `operationId`와 같은 actor·action·body 지문이면 저장 영수증을 다시 주고, 지문이 다르면 `OPERATION_ID_CONFLICT`다. FSM 명령은 기존 FSM 핸들러 결과를 반환하며 본문 `idempotency_key`에 해당 기계의 재생 규칙을 적용한다. HTTP `Idempotency-Key`는 보지 않는다. 기본 프로세스를 다시 시작하면 인메모리 상태와 그 재생은 사라진다. `--readiness-dir`가 있을 때만 커밋된 호출을 그 디렉터리의 파일에서 재생하며, 재생은 효과를 다시 적용하지 않는다. 이 재생을 운영 내구성이나 운영 적합으로 읽지 않는다. 기본 바인드는 계속 `127.0.0.1`이다.
+
+점 조회의 HTTP 200은 `read_schema_version`, `query`, `query_digest`, `fixture_mode`, `accepted_through`, `result`를 담은 조회 봉투다. 매번 현재 참조 뷰를 읽으며 영수증 순번과 명령 재생 규칙은 적용되지 않는다.
 
 `actor`는 픽스처 문자열이다. 인증 결과가 아니다. 외부 PG·KYC·공연장·은행 어댑터는 붙이지 않는다. 성공한 로컬 호출은 실자금·실입장·운영 적합성의 증거가 아니다.
 

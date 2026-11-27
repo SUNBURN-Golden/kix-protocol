@@ -1,7 +1,7 @@
 /**
  * Writes the BOOTSTRAP profile, manifest-v1, and the manifest digest sidecar.
  *
- * source_commit is the catalogue input commit, not the delivery head.
+ * source_commit identifies the committed reference, gate, catalogue, and SDK inputs.
  * The manifest digest is written only to the sidecar.
  */
 import { createHash } from "node:crypto";
@@ -12,8 +12,8 @@ import { fileURLToPath } from "node:url";
 import { canonicalStringify, compareCodePoints } from "../src/jsonschema.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
-const SOURCE_COMMIT = "b6a39e66f56a8df2ad792afd5ea811e127bbd823";
-const SOURCE_TREE = "aaeeb0096292c134fea095632b5ad4587318f2f8";
+const SOURCE_COMMIT = "33e20f30bba3587d52c49e323de236467746e298";
+const SOURCE_TREE = "09d4d0f7a5ccd1c20324df7170ad64f8ca29053d";
 const EXPECTED_SOURCE_SHA256 = "ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e";
 const EXPECTED_SOURCE_BLOB = "619ae21c82ca3df5661bd3831613f15fa65225ff";
 
