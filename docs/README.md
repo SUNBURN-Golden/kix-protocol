@@ -897,3 +897,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-27 Capital equal-gross claim binding — 위치 안내만
 
 - Two committed claims share a 100,000 KRW fixture gross. Both F04 branches offer the S2 claim. The S2 binding accepts one mock draw of 10,000 KRW, and the S1 binding returns `SETTLEMENT_BINDING_CONFLICT` with zero exposure. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-equal-gross-claim-binding) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#equal-gross-claim-binding) · [Builder validation](../validation/2026-11-27-plan-capital-equal-gross-claim-binding/README.md)
+
+## 2026-11-27 Capital refund versus repayment — 위치 안내만
+
+- A 1,500 KRW mock cancellation acceptance leaves 2,500 KRW refund outstanding and 10,000 KRW credit outstanding. A separate 1,500 KRW F04 repayment note from the same checkpoint leaves 4,000 KRW refund outstanding and 8,500 KRW credit outstanding. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-refund-versus-repayment) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#refund-versus-repayment) · [Builder validation](../validation/2026-11-27-plan-capital-refund-versus-repayment/README.md)

@@ -118,6 +118,10 @@ PACKS = (
      'capital_equal_gross_claim_binding_vectors_v1.json', 'capital_equal_gross_claim_binding_vectors_v1.json',
      'test_capital_equal_gross_claim_binding.py', 'CapitalEqualGrossClaimBindingTests.test_equal_gross_claim_binding',
      'Capital equal-gross claim binding', ('matching', 'crossed'), ()),
+    ('capital_refund_versus_repayment', 'self_contained_comparisons',
+     'capital_refund_versus_repayment_vectors_v1.json', 'capital_refund_versus_repayment_vectors_v1.json',
+     'test_capital_refund_versus_repayment.py', 'CapitalRefundVersusRepaymentTests.test_refund_versus_repayment',
+     'Capital refund versus repayment', ('mock_acceptance', 'repayment_note'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -207,6 +211,10 @@ LIMITATIONS = {
     'capital_equal_gross_claim_binding': [
         'The F04 mock draw requires the committed settlement to match the offered claim identity '
         'even when currency and gross agree. Both settlement journals are preserved.',
+    ],
+    'capital_refund_versus_repayment': [
+        'Equal fixture amounts affect separate balances and journals. Both outcomes preserve the committed '
+        'offer face. Shared exposure uses the credit view from each branch and a caller-supplied fixture limit.',
     ],
 }
 SUPPORTING = (
@@ -482,10 +490,10 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 480)
-        self.assertEqual(len(self.document['packs']), 21)
+        self.assertEqual(validate_index(self.document), 482)
+        self.assertEqual(len(self.document['packs']), 22)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2])
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2, 2])
         self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 130)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
@@ -793,6 +801,21 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             self.assertEqual(_resolve(documents, matching['result_ref'])['error']['code'],
                              'SETTLEMENT_BINDING_CONFLICT')
             self.assertEqual(_resolve(documents, crossed['result_ref'])['ok']['applied'], 'draw')
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
+
+    def test_refund_versus_repayment_crossed_result_references(self):
+        family = 'capital_refund_versus_repayment'
+
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            path = pack['output']['path']
+            documents = {path: decode_json(_read(path).decode('utf-8'))}
+            acceptance, repayment = pack['entries']
+            acceptance['result_ref'], repayment['result_ref'] = repayment['result_ref'], acceptance['result_ref']
+            self.assertEqual(_resolve(documents, acceptance['result_ref'])['ok']['applied'], 'repay')
+            self.assertEqual(_resolve(documents, repayment['result_ref'])['ok']['applied'],
+                             'observe_mock_cancel_acceptance')
 
         self._reject(swap_results, 'entry membership/association/order/type: ' + family)
 
