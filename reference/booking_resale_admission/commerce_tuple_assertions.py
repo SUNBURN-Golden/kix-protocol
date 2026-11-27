@@ -39,6 +39,7 @@ def check_journal(test, spec, body, before, after, deltas):
             test.assertEqual(state, old_state, name)
     entry = after[machine][1][-1]
     test.assertEqual(entry["op"], spec["op"])
-    test.assertEqual(entry["idempotency_key"], body["idempotency_key"])
+    test.assertEqual(entry["idempotency_key"], body["idempotency_key"],
+                     f"{machine} journal idempotency key")
     subject_key = "settlement_id" if machine == "settlement" else "subject_id"
     test.assertEqual(entry[subject_key], body[spec["subject_field"]])

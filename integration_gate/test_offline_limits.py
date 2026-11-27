@@ -673,12 +673,13 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
     def _check_dispatch(self, gate, vector):
         from integration_gate.schema import parse_envelope
 
-        envelope = deepcopy(vector['envelope'])
-        self.assertNotEqual(envelope['operationId'], envelope['body']['idempotency_key'])
+        fixture_envelope = vector['envelope']
+        fixture_body = fixture_envelope['body']
+        self.assertNotEqual(fixture_envelope['operationId'], fixture_body['idempotency_key'])
         expected_args = commerce.canonical(tuple(
-            envelope[field] for field in ('operationId', 'actor', 'action', 'body')
+            fixture_envelope[field] for field in ('operationId', 'actor', 'action', 'body')
         ))
-        parsed = parse_envelope(envelope, self.catalogue.commands)
+        parsed = parse_envelope(deepcopy(fixture_envelope), self.catalogue.commands)
         self.assertEqual(commerce.canonical(parsed), expected_args)
 
         before = commerce.snapshot(gate.fsm)
@@ -696,10 +697,9 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
                     f'{name} journal on refusal',
                 )
         else:
-            _, _, action, body = parsed
-            spec = self.catalogue.fsm['commands'][action]
+            spec = self.catalogue.fsm['commands'][fixture_envelope['action']]
             commerce.check_journal(
-                self, spec, body, before, after, vector['expected']['journal_delta'],
+                self, spec, fixture_body, before, after, vector['expected']['journal_delta'],
             )
         return status, payload
 
@@ -732,6 +732,22 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
             ('booking-refund', 200): 14, ('booking-refund', 422): 1,
             ('resale-market', 200): 14,
         })
+
+    def test_rewritten_fsm_idempotency_key_fails(self):
+        from integration_gate.server import GateServer
+
+        vector = self.targets['resale-market/market-cancel-LISTED']
+        target_operation_id = vector['envelope']['operationId']
+        perform = GateServer.perform
+
+        def rewrite_key(gate, operation_id, actor, action, body):
+            if operation_id == target_operation_id:
+                body['idempotency_key'] = operation_id
+            return perform(gate, operation_id, actor, action, body)
+
+        with patch.object(GateServer, 'perform', rewrite_key):
+            with self.assertRaisesRegex(AssertionError, 'journal idempotency key'):
+                self._replay_target(vector)
 
     def test_swapped_outcomes_fail(self):
         for left, right in (
