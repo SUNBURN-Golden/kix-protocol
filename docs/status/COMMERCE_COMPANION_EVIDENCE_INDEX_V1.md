@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects sixteen input/outcome pack families (424 steps) to replay tests
+It connects seventeen input/outcome pack families (426 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -31,6 +31,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `admission_replay_after_resale` | `commerce_admission_replay_after_resale_inputs_v1.json` | `commerce_admission_replay_after_resale_receipts_v1.json` | `test_commerce_admission_replay_after_resale_vectors.py` | 1 / 18 |
 | `replaced_admission_binding` | `commerce_replaced_admission_binding_inputs_v1.json` | `commerce_replaced_admission_binding_receipts_v1.json` | `test_commerce_replaced_admission_binding_vectors.py` | 1 / 15 |
 | `admission_journal_after_transfer` | `commerce_admission_journal_after_transfer_inputs_v1.json` | `commerce_admission_journal_after_transfer_receipts_v1.json` | `test_commerce_admission_journal_after_transfer_vectors.py` | 2 / 2 |
+| `cross_order_issuance` | `commerce_cross_order_issuance_inputs_v1.json` | `commerce_cross_order_issuance_receipts_v1.json` | `test_commerce_cross_order_issuance_vectors.py` | 2 / 2 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -320,3 +321,22 @@ replay equality and grants no admission authority.
 [Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_receipts_v1.json) ·
 [Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-admission-journal-after-transfer-vectors) ·
 [Coverage and local verification](../../validation/2026-11-28-plan-commerce-admission-journal-after-transfe/README.md)
+
+## Cross-order issuance
+
+`cross_order_issuance` replays the pinned `payment-2` checkpoint separately
+for each case. `distinct-issuance` appends one reservation `issue` for `issue-2`
+and gives `buyer-3` a version-1 right on `show-2`. `issuance-collision` returns
+`ISSUANCE_BINDING_CONFLICT` for `issue-1`, preserves all five accepted journals,
+and leaves `order-2` at `PAYMENT_NOTED` with no right. Both branches preserve
+`buyer-2` as holder of the version-2 right on `show-1` and record zero admission
+consumptions.
+
+Both `reservation_issue` entries carry `MOCK_EVIDENCE` under `HOLD_SEMANTIC`.
+Each entry points to its complete outcome with detached `TEST_HARNESS_EVIDENCE`.
+The index validator rejects exchanging either the two input references or the
+two outcome references.
+[Pinned checkpoint and branch inputs](../../reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_inputs_v1.json) ·
+[Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_receipts_v1.json) ·
+[Replay command](../../reference/booking_resale_admission/README.md#commerce-cross-order-issuance-vectors) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-cross-order-issuance/README.md)
