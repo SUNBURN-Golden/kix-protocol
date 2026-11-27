@@ -2003,3 +2003,31 @@ view. This diagnostic supplies no authority to retry a financial operation.
 External `kix-capital` acceptance remains **UNVERIFIED**, product limits
 **UNDETERMINED — Astra**, and legal responsibility **UNDETERMINED — User/legal**.
 [F04 §7.3](../contracts/CREDIT_ADVANCE_F04.md#73-멱등키) · [§7.4](../contracts/CREDIT_ADVANCE_F04.md#74-재생) · [§7.5](../contracts/CREDIT_ADVANCE_F04.md#75-정산-게이트) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#draw-refusal-after-restore)
+
+## Capital equal-gross claim binding
+
+The `capital-equal-gross-claim-binding/1` pack pins the S1 and S2 settlement
+checkpoints and both source artifacts. S1 at `s1-commit` and S2 at
+`s2-settlement-committed` are both `COMMITTED` at 100,000 fixture KRW gross.
+Their claim IDs are `stl-s1` and `stl-s2`.
+
+Start with the ordered `#/setup_steps` on two fresh F04 machines. Each
+receives the full S2 claim at `#/setup_steps/0/arguments/face` and the same
+10,000 KRW offer and approval. Bind one machine to its matching S2
+settlement. For the crossed machine, use the S1 settlement and change only
+the bind's `settlement_id`. Both binds are accepted in `APPROVED`.
+Send `#/draw_step` once to each machine.
+
+| Case | Complete draw result | After the draw request |
+| --- | --- | --- |
+| `matching` | `#/cases/0/expected_result` | `DRAWN`, 10,000 fixture KRW outstanding, one added draw entry |
+| `crossed` | `#/cases/1/expected_result` | `SETTLEMENT_BINDING_CONFLICT`, `APPROVED`, zero exposure and zero appends |
+
+Compare `before/journal/0/body/face` and `after/journal/0/body/face` in each
+case to see the full S2 claim retained in the offer. The accepted note sets
+`snapshot_frozen=true` in the matching case. In the crossed case the offer
+still carries the S2 claim and `snapshot_frozen=false`. Both settlement
+journals match `#/settlement_journals` before and after the draw requests.
+External `kix-capital` acceptance remains **UNVERIFIED**, product limits
+**UNDETERMINED — Astra**, and legal responsibility **UNDETERMINED — User/legal**.
+[F04 §7.5](../contracts/CREDIT_ADVANCE_F04.md#75-정산-게이트) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#equal-gross-claim-binding)
