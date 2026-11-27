@@ -1,0 +1,253 @@
+{
+  "record_schema_version": "kix-commerce-full-receipt-index/1",
+  "normative": false,
+  "consumer": "kix-commerce-apps",
+  "manifest": {
+    "path": "sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json",
+    "profile_revision": "commerce-fixture-8ba7f6c-1",
+    "sha256": "76ea72c6249ec0f90cb426dfbb8efda8308610f79c4f0ac6ff0a2445cab59a4f"
+  },
+  "sources": [
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json",
+      "sha256": "6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998",
+      "gitBlob": "e9f34b8f35ed7f6a0867f1d2036bda521ee15eab"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json",
+      "sha256": "1dcb767f71d8aeb4d06009c007702ac2e976a420159ea4ffe25d328a15239ff6",
+      "gitBlob": "8c36da8f304d22ade9616534a69de34843e6a77b"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json",
+      "sha256": "1268382cdce28c931e160e253a6cafdac0f74de4124a53df1c78bd625f4b82c4",
+      "gitBlob": "ab98cce8492b21b29871c4c1ad4ccda1a722d9ed"
+    }
+  ],
+  "receipts": {
+    "booking-admission/admission-clock": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/26/receipt"
+    },
+    "booking-admission/adopt-B": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/27/receipt"
+    },
+    "booking-admission/authorize-B": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/28/receipt"
+    },
+    "booking-admission/consume-B": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/29/receipt"
+    },
+    "booking-admission/issue-B": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-admission~1issue-B"
+    },
+    "booking-admission/order-B": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-admission~1order-B"
+    },
+    "booking-admission/payment-B": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-admission~1payment-B"
+    },
+    "booking-admission/register-show": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/1/receipt"
+    },
+    "booking-admission/reservation-clock": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/0/receipt"
+    },
+    "booking-admission/reserve-B": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-admission~1reserve-B"
+    },
+    "booking-refund/bind-refund": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/37/receipt"
+    },
+    "booking-refund/cancel-C": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-refund~1cancel-C"
+    },
+    "booking-refund/observe-mock-acceptance": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/38/receipt"
+    },
+    "booking-refund/order-C": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-refund~1order-C"
+    },
+    "booking-refund/register-show": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/1/receipt"
+    },
+    "booking-refund/reservation-clock": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/0/receipt"
+    },
+    "booking-refund/reserve-C": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-refund~1reserve-C"
+    },
+    "booking-refund/settle-cancel": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/31/receipt"
+    },
+    "booking-refund/settle-cancel-initiate": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/30/receipt"
+    },
+    "booking-refund/settle-fail": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/33/receipt"
+    },
+    "booking-refund/settle-fail-initiate": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/32/receipt"
+    },
+    "booking-refund/settle-refund-authorize": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/35/receipt"
+    },
+    "booking-refund/settle-refund-capture": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/36/receipt"
+    },
+    "booking-refund/settle-refund-initiate": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/34/receipt"
+    },
+    "booking-resale/accept-A": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/24/receipt"
+    },
+    "booking-resale/adopt-A": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/14/receipt"
+    },
+    "booking-resale/bind-resale": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/21/receipt"
+    },
+    "booking-resale/distribute-resale": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/25/receipt"
+    },
+    "booking-resale/hold-A": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/16/receipt"
+    },
+    "booking-resale/issue-A": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-resale~1issue-A"
+    },
+    "booking-resale/list-A": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/15/receipt"
+    },
+    "booking-resale/order-A": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-resale~1order-A"
+    },
+    "booking-resale/payment-A": {
+      "source_kind": "booking_branch_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json#/receipts/booking-resale~1payment-A"
+    },
+    "booking-resale/register-show": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/1/receipt"
+    },
+    "booking-resale/resale-clock": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/13/receipt"
+    },
+    "booking-resale/resale-payment-A": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/17/receipt"
+    },
+    "booking-resale/reservation-clock": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/0/receipt"
+    },
+    "booking-resale/reserve-A": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/2/receipt"
+    },
+    "booking-resale/settle-resale-authorize": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/19/receipt"
+    },
+    "booking-resale/settle-resale-capture": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/20/receipt"
+    },
+    "booking-resale/settle-resale-commit": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/23/receipt"
+    },
+    "booking-resale/settle-resale-initiate": {
+      "source_kind": "direct",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/18/receipt"
+    },
+    "resale-market/market-accept": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-accept"
+    },
+    "resale-market/market-adopt": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-adopt"
+    },
+    "resale-market/market-cancel-BUY_HELD": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-cancel-BUY_HELD"
+    },
+    "resale-market/market-cancel-LISTED": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-cancel-LISTED"
+    },
+    "resale-market/market-hold": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-hold"
+    },
+    "resale-market/market-issue": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-issue"
+    },
+    "resale-market/market-list": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-list"
+    },
+    "resale-market/market-order": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-order"
+    },
+    "resale-market/market-pay": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-pay"
+    },
+    "resale-market/market-primary-payment": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-primary-payment"
+    },
+    "resale-market/market-reserve": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-reserve"
+    },
+    "resale-market/market-show": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1market-show"
+    },
+    "resale-market/resale-clock": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1resale-clock"
+    },
+    "resale-market/reservation-clock": {
+      "source_kind": "market_companion",
+      "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json#/receipts/resale-market~1reservation-clock"
+    }
+  }
+}
