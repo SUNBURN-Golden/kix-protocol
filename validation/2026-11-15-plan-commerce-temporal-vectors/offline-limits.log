@@ -1,0 +1,8 @@
+$ /home/box/.local/bin/python3.12 -B -m unittest integration_gate.test_offline_limits
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.204s
+
+OK
+
+EXIT: 0

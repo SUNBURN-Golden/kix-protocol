@@ -20,6 +20,46 @@
 
 7번의 "아래 절"은 OpenAPI README의 통합 관문 절이다. 이 SDK는 그 프로세스를 띄우지 않는다.
 
+### Scoped Commerce fixture qualification
+
+`bootstrap-2` grants catalogue and schema binding for 84 commands (40 core and
+44 FSM). `commerce-fixture-8ba7f6c-1` grants `SEMANTIC_CONFORMANCE` for the
+listed synthetic in-memory fixture steps and outcomes across 28 actions at
+producer `8ba7f6c36373ac0ec49246f51f7471c164ac3a28`. The other 56 actions,
+unlisted contexts or steps and mismatched tuples remain `HOLD_SEMANTIC`.
+The Commerce fixture grant leaves all 13 approved read names and the
+proposed uncertain-operation recovery lookup at `NOT_BOUND`. External `kix-commerce-apps` acceptance
+remains `UNVERIFIED`.
+[Qualification table](../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json) ·
+[Semantic manifest](compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json)
+
+Run the verifier with Node 24 from the root of the historical producer file set,
+with every input at its pinned path.
+
+```sh
+node sdk/compat/verify_compat.mjs \
+  --manifest sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json \
+  --expect-kind SEMANTIC_CONFORMANCE --expect-revision commerce-fixture-8ba7f6c-1
+```
+
+The conformance suite verifies the historical `bootstrap-2` and Commerce
+manifests offline. It reads the archived UTF-8 inputs from
+`conformance/fixtures/bootstrap-2-inputs.json.gz` and verifies them against the
+original pins. The archive contains the pinned paths that changed in this
+merge, with bytes copied from the pre-merge main tree. Other inputs come from
+their original paths in the checkout.
+
+After a successful verdict, compare its `manifest_sha256` with the digest
+pinned independently by the consumer. A missing or different pin yields
+`HOLD_SEMANTIC` with `vector_id: null`.
+[Consumer handoff](../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#consumer-handoff)
+
+Then match the producer, HTTP method and path, action, machine, operation,
+subject field and body schema digest. Select the exact fixture context, step
+and outcome before consuming the evidence. Keep unresolved `UNKNOWN` fenced
+without polling, retry or replacement writes. The caller supplies the SDK's
+transport. [Consumer lookup and offline replay](../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#scoped-commerce-fixture-qualification)
+
 ## 생성물
 
 | 파일 | 역할 |
@@ -29,12 +69,45 @@
 | `sdk-pin.json` | OpenAPI·원본 계약의 git blob과 sha256 |
 | `src/client.ts` | `createLocalCallClient({ transport })` |
 | `src/jsonschema.ts` | 엄격 JSON과 스키마 부분집합 |
-| `compat/` | manifest-v1, BOOTSTRAP profile, 최소 검증기 |
+| `compat/` | manifest-v1, BOOTSTRAP 및 Commerce fixture profile, 최소 검증기 |
 | `conformance/` | 명령별 적합성과 golden vectors |
 
-호환 형식은 [docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)에 있다. 현재 생성물은 `bootstrap-3`다. `bootstrap-1`은 40개 명령 역사 핀이고 `bootstrap-2`는 84개 명령 역사 핀이다. 둘 다 트리에 남아 있고 다시 생성하지 않는다. 셋 다 카탈로그 스키마 결합만 부여한다. 의미 적합성, N/N−1, 운영 적합, 감사 통과, 사용자 승인이 아니다. 의미 적합의 소비자는 HOLD다.
+현재 생성물은 `bootstrap-3`다. `bootstrap-1`은 40개 명령 역사 핀이고 `bootstrap-2`는 84개 명령 역사 핀이다. 둘 다 트리에 남아 있고 다시 생성하지 않는다. 셋 다 카탈로그 스키마 결합만 부여한다. 의미 적합성, N/N−1, 운영 적합, 감사 통과, 사용자 승인이 아니다. 의미 적합의 소비자는 HOLD다. [호환 manifest 형식](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)
+
+N/N−1 compatibility, production qualification, stable release, audit and User
+approval remain outside the scoped grant. The consumer surface map documents
+the local-call, calculator, ticket and token-tool envelopes.
+[Consumer surface map](../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md)
 
 타입 검사는 Node 24의 타입 제거로 돌린다. `tsc`와 패키지 의존성은 없다. 지울 수 있는 구문만 쓴다.
+
+## Manifest-v1 verifier negative vectors
+
+`conformance/vectors/manifest-verifier-negative.vectors.json` is a companion to
+the current `bootstrap-3` manifest. It is tracked independently of the
+manifest’s pinned vectors. `conformance/conformance.test.mjs` copies
+the verifier and its fixtures into a temporary root, applies exactly one
+mutation per case to the manifest, the `bootstrap-3` profile or the manifest
+sidecar, and requires a non-zero exit with the exact expected error set.
+
+Where one fault makes several checks fail, the test compares the whole error
+set after sorting. This companion suite covers unordered error sets for
+BOOTSTRAP catalogue-schema binding.
+
+## SD1 verifier check order
+
+JunTae's November 18 option 1 authorization (`[pt224u]`) answered the October
+SD1 class C stop. See the [October stop](../docs/status/OPEN_USER_DECISIONS_20261026_SDK_COMPAT_ADDENDUM.md)
+and the [owner decision record](../docs/decisions/SDK_COMPAT_CHECK_ORDER_OWNER_DECISION_20261118.md).
+
+The current verifier checks the profile byte hash before either OpenAPI
+reference. The ordered regression asserts canonical parse gating and the
+contract's diagnostic sequence. See [manifest contract §4](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md#4-최소-검증기),
+the [profile hash block](compat/verify_compat.mjs#L146-L150) and
+[`manifest verifier reports failures in contract order`](conformance/conformance.test.mjs#L619).
+
+The producer tuple records the October `OPEN` / `User` snapshot. Formal
+ledger disposition belongs to JunTae. See the [producer handoff and byte evidence](../docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.md#sd1-verifier-evidence-and-ledger-status).
 
 ## 재생과 검사
 

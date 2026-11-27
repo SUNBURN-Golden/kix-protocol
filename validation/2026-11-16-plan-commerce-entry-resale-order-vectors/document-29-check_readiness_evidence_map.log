@@ -1,0 +1,4 @@
+$ python3.12 -B scripts/check_readiness_evidence_map.py
+readiness runtime evidence map ok: rows=36 expected=36 citations=186 EXERCISED=27 PARTIAL=0 NOT_EXERCISED=0 OPEN=9
+
+EXIT: 0

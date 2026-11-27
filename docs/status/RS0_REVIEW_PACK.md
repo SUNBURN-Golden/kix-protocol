@@ -40,6 +40,7 @@ accept, confirm or merge anything, and it does not unblock `rs-1`.
   `--self-test`) counts each RS-C/IM id used as a first-column table key on
   both documents. It is a convenience check, not a contract gate, and is not
   wired into CI.
+- Amendment 2026-10-26: `scripts/check_rs_profile_traceability.py` is now wired, plain and `--self-test`, into the `Stdlib offline document checks` step of `.github/workflows/protocol.yml` by #170; the "not wired into CI" wording above records the state when this pack was written.
 
 ## 1. Traceability table — RS-C01..RS-C17 and IM-01..IM-30
 
@@ -300,6 +301,7 @@ that declares itself unconfirmed does not confirm it (`:29`).
 - `scripts/check_rs_profile_traceability.py` is a mechanical convenience
   check on first-cell table keys. It does not judge semantics, is not wired
   into CI, and its pass is not a contract gate.
+- Amendment 2026-10-26: `scripts/check_rs_profile_traceability.py` is now wired, plain and `--self-test`, into the `Stdlib offline document checks` step of `.github/workflows/protocol.yml` by #170; the "not wired into CI" wording above records the state when this pack was written.
 - Local command results are recorded in
   `validation/2026-10-12-rs0-review-pack/README.md`. They are not exact-head
   CI and are not independent verification.

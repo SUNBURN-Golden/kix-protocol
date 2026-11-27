@@ -41,7 +41,7 @@ OpenAPI 핀 파일 자체는 기존 pretty JSON이다. 이 정규 형식은 mani
 | `vectors` | `{name, path, sha256}` 배열 |
 | `source_references` | `fixture_profile`은 `reference/v0.3-rc1/protocol_contract.json`. `bootstrap-1`의 `extension_profile`은 `false`다. `bootstrap-2`와 `bootstrap-3`의 `extension_profile`은 `docs/contracts/openapi/fsm-command-contract.json`의 `path`, `gitBlob`, `sha256`이다. `bootstrap-3`은 그 두 번째 핀에 `queries`를 더한 바이트를 가리킨다. 별도 세 번째 핀 파일은 없다 |
 
-`bootstrap-1`의 `producer.source_commit`과 `source_tree`는 그 40개 명령 입력이 있던 커밋 `7481b0e16ce9b903abbffa62249bb91cd9e63cfe`와 그 트리 `8495c7651e456cead3a8812b9e6fb183f818acd2`다. `bootstrap-2`의 값은 생성기에 적힌 베이스 `c2cde86e21a6e5ba6f24a56548636db6d0a34c6f`와 트리 `394084b15e01bbe4a5612aeb3431f3278c43dd85`다. `bootstrap-3`의 값은 이 노드의 베이스 `ab42cfef43a40c6b86fd3f22b69f00e134cc472e`와 그 트리 `4e10dfda71896d385a4ff37cd8588e1ae13e8fb4`다. 검증기는 그 커밋을 git에서 풀지 않는다. 확대 카탈로그의 바이트 결합은 OpenAPI 두 파일과 FSM 원본 해시다. 전달 HEAD가 아니다.
+`bootstrap-1`의 `producer.source_commit`과 `source_tree`는 그 40개 명령 입력이 있던 커밋 `7481b0e16ce9b903abbffa62249bb91cd9e63cfe`와 그 트리 `8495c7651e456cead3a8812b9e6fb183f818acd2`다. `bootstrap-2`의 값은 생성기에 적힌 베이스 `c2cde86e21a6e5ba6f24a56548636db6d0a34c6f`와 트리 `394084b15e01bbe4a5612aeb3431f3278c43dd85`다. `bootstrap-3`의 값은 이 노드의 베이스 `b6a39e66f56a8df2ad792afd5ea811e127bbd823`와 그 트리 `aaeeb0096292c134fea095632b5ad4587318f2f8`다. 검증기는 그 커밋을 git에서 풀지 않는다. 확대 카탈로그의 바이트 결합은 OpenAPI 두 파일과 FSM 원본 해시다. 전달 HEAD가 아니다.
 
 `manifest_digest`는 정규 manifest 바이트의 SHA-256이다. `manifest.bootstrap-1.json.sha256`에 소문자 hex와 newline으로만 둔다. manifest 본문에 넣지 않는다.
 

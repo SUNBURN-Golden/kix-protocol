@@ -28,11 +28,13 @@ missing in pack, duplicated in pack, extra in pack, and unresolved
 exactly once on both sides, no extra ids are present, and every section
 reference resolves; exits 1 printing each discrepancy otherwise.
 
-Standard library only. Convenience check, not a contract gate; not wired
-into CI — wiring is a follow-up candidate (the RS-profile checker was wired
-by a separate merged node). ``--self-test`` mutates in-memory copies and
-requires each check to catch its break (a removed id or a dangling section
-reference must be reported).
+Standard library only. Convenience check, not a contract gate. Wired into
+the ``Stdlib offline document checks`` step of
+``.github/workflows/protocol.yml``, which has no docs_only or
+verified-tree guard: it runs on every non-draft execution including
+docs-only and same-tree-skip runs. ``--self-test`` mutates in-memory
+copies and requires each check to catch its break (a removed id or a
+dangling section reference must be reported).
 """
 import re
 import sys

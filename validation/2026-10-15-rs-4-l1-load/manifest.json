@@ -1,0 +1,124 @@
+{
+ "record": "kix-rs4-l1-load",
+ "version": "kix-rs4-l1-load-v1",
+ "packageId": "0x8583ddbb3bc6c2e9bda938f3da9064dfeaf12e48a6580e12d575e3e345627965",
+ "chain": "CUJRbSWxatpHjaHxGQuLr5xbZYsn7KhibbqTmvnY7NUt",
+ "scenarioFingerprint": "556ac60b01fcfcaa5a7b46bcc1623b3eaa70ec8c577ffa1558a6ae41bed83785",
+ "settings": {
+  "seed": 20261014,
+  "show": {
+   "seated": 1024,
+   "ga": 0,
+   "page_size": 64
+  },
+  "shards": {
+   "public": 4,
+   "private": 1,
+   "delegated": 4
+  },
+  "zk": {
+   "depth": 10,
+   "root_history_k": 4,
+   "nullifier_shards": 4,
+   "challenge_shards": 4
+  },
+  "closed_loop": true,
+  "arrival_rate": 0,
+  "shield_count": 1024,
+  "consume_count": 32,
+  "invalidation_count": 8,
+  "transfers": 8,
+  "admissions": 8,
+  "refunds": 16,
+  "revokes": 16,
+  "reissues": 2,
+  "reservations": 2,
+  "concurrency_probes": [
+   {
+    "path": "public",
+    "name": "same_page_issues",
+    "k": 2,
+    "expect": "any"
+   },
+   {
+    "path": "public",
+    "name": "duplicate_slot_race",
+    "k": 2,
+    "expect": "one_wins"
+   },
+   {
+    "path": "public",
+    "name": "same_shard_attests",
+    "k": 2,
+    "expect": "any"
+   },
+   {
+    "path": "public",
+    "name": "cross_shard_attests",
+    "k": 2,
+    "expect": "any"
+   },
+   {
+    "path": "public",
+    "name": "bundle_race",
+    "k": 2,
+    "expect": "one_wins"
+   },
+   {
+    "path": "private",
+    "name": "concurrent_revokes",
+    "k": 2,
+    "expect": "one_wins"
+   },
+   {
+    "path": "delegated",
+    "name": "shared_grant_reads",
+    "k": 2,
+    "expect": "any"
+   }
+  ]
+ },
+ "requested": {
+  "seats_per_show": 1024,
+  "shield_count": 1024,
+  "consume_count": 32,
+  "invalidation_count": 8
+ },
+ "artifacts": {
+  "hash": "97b44886b9b7c0cbe7441da63d6ebe48aeccdf9d59b7d51acb3089cd30bd0547",
+  "format": "kix-zk-artifacts-v2",
+  "depth": 10,
+  "rootHistoryK": 4,
+  "constraints": {
+   "mint_scale": 912,
+   "spend_scale": 13439
+  },
+  "ptauPower": 14,
+  "phase1": "REUSED_CACHED_LOCAL_FIXTURE",
+  "setup": "INSECURE_SINGLE_PARTY_LOCAL_FIXTURE"
+ },
+ "files": {
+  "delegated/probes.csv": "7e48d3aaf920ca30f2801097d6f4a4a7a9fb378687dce4922bad189160f8706c",
+  "delegated/samples.csv": "ad6bc294fa562ce114e796156aabbc76c6baf5d3e76cff4b3f6d84eb3318aea2",
+  "delegated/summary.json": "7b5f725dab9c26821ad43b290ccac31933349898ac54361407420fdd60e54b21",
+  "host.json": "73edabd8696a7ba8d0b4ded25743d3f7a4588a527ed384bbe8218f339f0b4fe6",
+  "load-report.json": "642f54cc905292768e1b1067d9764bd17c2de187622dcad7c9e0c9eb7294b547",
+  "load-scenarios.json": "556ac60b01fcfcaa5a7b46bcc1623b3eaa70ec8c577ffa1558a6ae41bed83785",
+  "private/probes.csv": "592bbf06c12c98a56b8f56e3e318f6dc3a4accf9ebd86c581e6cdb358c273aa6",
+  "private/samples.csv": "ada1e1fe9744361935b138ee5ca8f0b34d44b9fb518508609e10fdf0a79d08cf",
+  "private/summary.json": "c10504a95ba849c7ce5946cd0e94493a313a29c26af1a82a4e5f2dbcd430ec48",
+  "public/probes.csv": "9e82bf8207f64f1d4d58f1b0468879066851ee783f1f287056d0fe0ef76ecbe7",
+  "public/samples.csv": "d303f5b2464f0957b9690c4db703367fe7611e6ce4d4c52bc84acf938cd2c234",
+  "public/summary.json": "a8ae705842c2f5401513020b927f8f37c9e70af320676cd992d3749d99bef7a4",
+  "receipt.json": "995a128d9a6626a19d5fd82d0cc9bf24b7d9c51434b2087f7ba0329dd7e9a7e1"
+ },
+ "status": "PASSED_MEASUREMENT",
+ "explorationData": true,
+ "nonClaims": [
+  "no SLO",
+  "not product TPS",
+  "no production readiness",
+  "no durability or fault-tolerance claims",
+  "fixture values are test values, not protocol values"
+ ]
+}

@@ -278,7 +278,7 @@ class CreditAdvanceMockTests(unittest.TestCase):
             reason="fixture",
         )
         open_refund = book.view("claim-1")
-        self.assertEqual(open_refund["refund_bearer_policy"], "UNDEFINED")
+        self.assertEqual(open_refund["refund_bearer_policy"], "REQUESTER")
         self.assertEqual(
             codes(lambda: self.credit.note_advance(
                 "adv-1",

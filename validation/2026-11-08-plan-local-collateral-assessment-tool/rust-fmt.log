@@ -1,0 +1,5 @@
+$ cargo fmt --manifest-path runtime/Cargo.toml --all -- --check
+exit: 0
+stdout:
+
+stderr:

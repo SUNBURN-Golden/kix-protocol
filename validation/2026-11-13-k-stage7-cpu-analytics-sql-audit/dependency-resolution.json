@@ -1,0 +1,49 @@
+{
+  "note": "Shared engine transitive pins follow the owner-provisioned offline bundle; all baseline checks rerun for this graph",
+  "changes": [
+    {
+      "package": "cfg-if",
+      "before": "1.0.4",
+      "after": [
+        "1.0.5"
+      ],
+      "inEngineGraph": true
+    },
+    {
+      "package": "const-oid",
+      "before": "0.10.2",
+      "after": [
+        "0.10.3"
+      ],
+      "inEngineGraph": true
+    },
+    {
+      "package": "libc",
+      "before": "0.2.189",
+      "after": [
+        "0.2.191"
+      ],
+      "inEngineGraph": true
+    },
+    {
+      "package": "syn",
+      "before": "3.0.5",
+      "after": [
+        "2.0.119",
+        "3.0.10"
+      ],
+      "inEngineGraph": true
+    },
+    {
+      "package": "unicode-ident",
+      "before": "1.0.24",
+      "after": [
+        "1.0.27"
+      ],
+      "inEngineGraph": true
+    }
+  ],
+  "additionalPolarsFeatures": {
+    "round_series": "integer floor division for U64 multiplication overflow guard; resolved with --offline --locked"
+  }
+}

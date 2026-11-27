@@ -12,8 +12,8 @@ import { fileURLToPath } from "node:url";
 import { canonicalStringify, compareCodePoints } from "../src/jsonschema.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
-const SOURCE_COMMIT = "ab42cfef43a40c6b86fd3f22b69f00e134cc472e";
-const SOURCE_TREE = "4e10dfda71896d385a4ff37cd8588e1ae13e8fb4";
+const SOURCE_COMMIT = "b6a39e66f56a8df2ad792afd5ea811e127bbd823";
+const SOURCE_TREE = "aaeeb0096292c134fea095632b5ad4587318f2f8";
 const EXPECTED_SOURCE_SHA256 = "ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e";
 const EXPECTED_SOURCE_BLOB = "619ae21c82ca3df5661bd3831613f15fa65225ff";
 

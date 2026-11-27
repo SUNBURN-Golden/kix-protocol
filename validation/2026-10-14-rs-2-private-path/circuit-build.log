@@ -1,0 +1,24 @@
+template instances: 77
+non-linear constraints: 399
+linear constraints: 513
+public inputs: 4
+private inputs: 2
+public outputs: 0
+wires: 915
+labels: 1435
+Written successfully: ../mint_scale.r1cs
+Written successfully: ../mint_scale.sym
+Written successfully: ../mint_scale_js/mint_scale.wasm
+Everything went okay
+template instances: 151
+non-linear constraints: 6416
+linear constraints: 7023
+public inputs: 6
+private inputs: 39
+public outputs: 0
+wires: 13451
+labels: 20081
+Written successfully: ../spend_scale.r1cs
+Written successfully: ../spend_scale.sym
+Written successfully: ../spend_scale_js/spend_scale.wasm
+Everything went okay

@@ -1,0 +1,11 @@
+test_association_controls (test_commerce_companion_evidence_index.CommerceCompanionEvidenceIndexTests.test_association_controls) ... ok
+test_complete_index (test_commerce_companion_evidence_index.CommerceCompanionEvidenceIndexTests.test_complete_index) ... ok
+test_coverage_controls (test_commerce_companion_evidence_index.CommerceCompanionEvidenceIndexTests.test_coverage_controls) ... ok
+test_digest_and_reference_controls (test_commerce_companion_evidence_index.CommerceCompanionEvidenceIndexTests.test_digest_and_reference_controls) ... ok
+test_qualification_controls (test_commerce_companion_evidence_index.CommerceCompanionEvidenceIndexTests.test_qualification_controls) ... ok
+test_strict_json_controls (test_commerce_companion_evidence_index.CommerceCompanionEvidenceIndexTests.test_strict_json_controls) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 10.046s
+
+OK

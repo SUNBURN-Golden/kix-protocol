@@ -11,6 +11,8 @@ Every regular file under the active document subtrees
 - ``docs/adr/**``
 - ``docs/reviews/**``
 - ``docs/blueprints/**/README.md``
+- ``validation/*/README.md``          (record pointers only; the evidence
+                                      artifacts beside them stay out)
 
 must be the target of at least one markdown link (``](target)``) in
 ``docs/README.md`` or ``docs/DEVELOPMENT_PLAN.md``, unless it is named in
@@ -20,13 +22,17 @@ ignored, and matching is exact-file only — a link to a directory or a
 bare name in prose does not index a file. The index files themselves are
 not in the scanned subtrees. Intentionally unindexed material
 (historical root docs, ``docs/tasks/``, ``docs/status/release-bodies/``,
-evidence snapshots) sits outside the scan patterns rather than in the
-allowlist.
+evidence snapshots, and the artifacts beside a validation README) sits
+outside the scan patterns rather than in the allowlist; the allowlist
+additionally holds the validation records that predate the scan itself
+(KIX audit #6, 2026-10) as preserved evidence instead of retroactive
+index entries.
 
 Reports each of: a scanned file no index link reaches, an allowlist
-entry that names a file outside the scanned set, and a resolved index
-link that points into a scanned subtree at a target that does not exist
-(a renamed or deleted document).
+entry that names a file outside the scanned set, an allowlist entry that
+an index link also reaches (``allowlisted but indexed``; the allowlist
+stays minimal), and a resolved index link that points into a scanned
+subtree at a target that does not exist (a renamed or deleted document).
 
 Exits 0 when there is nothing to report; exits 1 printing each problem
 otherwise. Standard library only. Wired into the ``Stdlib offline
@@ -54,11 +60,17 @@ SCAN_PATTERNS = (
     'docs/adr/**/*',
     'docs/reviews/**/*',
     'docs/blueprints/**/README.md',
+    'validation/*/README.md',
 )
 # Scanned files deliberately not index-linked: machine-readable pins
 # reached through the linked human-readable docs/contracts/openapi/README.md
 # and checked mechanically by scripts/check_openapi_contract.py and
 # scripts/check_integration_gate_openapi.py.
+# Validation records that predate the validation-record scan (KIX audit
+# #6, 2026-10) are kept below as preserved evidence rather than
+# retroactively indexed. The rule is enforced: a node that links one of
+# them from an index file must also drop its entry here, otherwise the
+# checker reports 'allowlisted but indexed'.
 ALLOWLIST = {
     'docs/contracts/openapi/fsm-command-contract.json':
         'machine-readable command pin next to the linked openapi README',
@@ -66,12 +78,109 @@ ALLOWLIST = {
         'machine-readable OpenAPI pin next to the linked openapi README',
     'docs/contracts/openapi/kix-protocol.integration-gate.openapi.json':
         'machine-readable OpenAPI pin next to the linked openapi README',
+    'validation/2026-09-11/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-13/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-14/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-14-archive/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-14-commerce/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-14-foundation/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-14-recovery/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-14-storage/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-15-audit-fix/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-15-ktx-r1-audit-fix/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-15-r1-observation-slots/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-18-contract-edge-cases/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-19-task-002-lifecycle-precedence/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-19-task-003a-e4-model-schema/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-19-task-003b-e4-property-expansion/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-21-task-003c1-evidence-gates/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-23-cp-boundary-003/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-26-prod-readiness-infra/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-26-wave2-rights-issuance/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-26-wave3-settlement-f01-f03/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-26-wave4-booking-resale-admission/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-26-wave5-credit-f04-mock/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-09-28-main-state-catchup/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-05-k1-e4-residual-review/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-09-audit3-tl-docs-plan-index-sync/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-09-audit4-audit4-plan-s5-index-f04-criteria-toss-p/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-09-audit4-tl-plan-index-register-sync/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-12-register-nontl-rows-sync/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-12-rs0-review-pack/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-13-astra-decision-sheets-listvalues-v5-rs0/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-13-i12-review-pack/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
+    'validation/2026-10-13-offline-doc-checks-ci/README.md':
+        'historical record pre-dating the validation-record scan '
+        '(KIX audit #6); not retroactively indexed',
 }
 # Prefixes a resolved link target must sit under for the missing-target
 # (broken index link) check.
 SCANNED_PREFIXES = (
     'docs/contracts/', 'docs/decisions/', 'docs/status/',
     'docs/operations/', 'docs/adr/', 'docs/reviews/', 'docs/blueprints/',
+    'validation/',
 )
 LINK_TARGET = re.compile(r'\]\(([^)\s]+)\)')
 
@@ -117,6 +226,8 @@ def find_problems(scanned, referenced, broken_links, allowlist):
     for path in sorted(allowlist - scanned):
         problems.append(
             'allowlist names a file outside the scanned set: ' + path)
+    for path in sorted(allowlist & referenced):
+        problems.append('allowlisted but indexed: ' + path)
     for path in sorted(broken_links):
         problems.append('broken index link: ' + path)
     return problems
@@ -148,6 +259,12 @@ def self_test(scanned, referenced):
     cases.append(('unindexed scanned file ' + injected,
                   grown, referenced, set(ALLOWLIST),
                   'not indexed: ' + injected))
+    record = 'validation/SELFTEST_UNINDEXED/README.md'
+    grown = set(scanned)
+    grown.add(record)
+    cases.append(('unindexed validation record ' + record,
+                  grown, referenced, set(ALLOWLIST),
+                  'not indexed: ' + record))
     dropped = sorted(ALLOWLIST)[0]
     cases.append(('dropped allowlist entry ' + dropped,
                   scanned, referenced, set(ALLOWLIST) - {dropped},
@@ -156,6 +273,9 @@ def self_test(scanned, referenced):
                   scanned - {dropped}, referenced, set(ALLOWLIST),
                   'allowlist names a file outside the scanned set: '
                   + dropped))
+    cases.append(('allowlisted entry also index-linked ' + dropped,
+                  scanned, referenced | {dropped}, set(ALLOWLIST),
+                  'allowlisted but indexed: ' + dropped))
     fake_link = 'docs/status/SELFTEST_MISSING_TARGET.md'
     cases.append(('broken index link ' + fake_link,
                   scanned, referenced | {fake_link}, set(ALLOWLIST),

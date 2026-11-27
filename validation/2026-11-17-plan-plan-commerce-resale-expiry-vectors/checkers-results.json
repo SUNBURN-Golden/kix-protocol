@@ -1,0 +1,169 @@
+[
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_openapi_contract.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.064,
+    "log": "checkers-01.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_openapi_contract.py",
+      "--self-test"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.165,
+    "log": "checkers-02.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_integration_gate_openapi.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.042,
+    "log": "checkers-03.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_integration_gate_openapi.py",
+      "--self-test"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.073,
+    "log": "checkers-04.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_docs_index.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.045,
+    "log": "checkers-05.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_docs_index.py",
+      "--self-test"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.053,
+    "log": "checkers-06.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_ci_test_discovery.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.13,
+    "log": "checkers-07.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_ci_test_discovery.py",
+      "--self-test"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.082,
+    "log": "checkers-08.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_ci_checker_wiring.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.05,
+    "log": "checkers-09.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_ci_checker_wiring.py",
+      "--self-test"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.022,
+    "log": "checkers-10.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_producer_qualification_tuple.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.05,
+    "log": "checkers-11.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/check_producer_qualification_tuple.py",
+      "--self-test"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.667,
+    "log": "checkers-12.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.048,
+    "log": "checkers-13.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "validation/2026-11-10-plan-commerce-consumer-binding-index/check_consumer_binding_index.py",
+      "--self-test"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.078,
+    "log": "checkers-14.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/verify_runtime_architecture.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.042,
+    "log": "checkers-15.log"
+  },
+  {
+    "command": [
+      "/home/box/.local/bin/python3.12",
+      "-B",
+      "scripts/test_runtime_architecture.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.351,
+    "log": "checkers-16.log"
+  }
+]

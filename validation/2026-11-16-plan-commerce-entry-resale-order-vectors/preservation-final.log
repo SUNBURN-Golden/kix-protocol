@@ -1,0 +1,12 @@
+$ python3.12 -B validation/2026-11-16-plan-commerce-entry-resale-order-vectors/check_preservation.py
+Protected tracked inputs unchanged: 527
+runtime/crates/kix-kernel/src/lib.rs 69564b166f0c27f9af5d8422f0a466b18d74c20f MATCH
+runtime/crates/kix-kernel/tests/quarantine_capacity.rs b607996c83a119c349f1cc90469ac1ba82764e20 MATCH
+reference/booking_resale_admission/fixtures/commerce_entry_resale_order_inputs_v1.json artifact MATCH
+reference/booking_resale_admission/fixtures/commerce_entry_resale_order_receipts_v1.json artifact MATCH
+reference/booking_resale_admission/test_commerce_entry_resale_order_vectors.py artifact MATCH
+HEAD 4722072b98c7ab4692bafffbb3f2eeefe6e3a142 (origin/main not refreshed)
+origin/main 4722072b98c7ab4692bafffbb3f2eeefe6e3a142 (origin/main not refreshed)
+No protected-tree additions; git diff --check PASS
+
+EXIT: 0

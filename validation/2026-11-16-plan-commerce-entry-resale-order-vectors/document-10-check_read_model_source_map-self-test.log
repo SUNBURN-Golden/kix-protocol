@@ -1,0 +1,20 @@
+$ python3.12 -B scripts/check_read_model_source_map.py --self-test
+self-test: detected anchor line moved (A01: reference/booking_resale_admission/mock_gates.py:96 lacks self._shows (token at lines 97,148,170,657,905))
+self-test: detected anchor line out of range (A01: reference/booking_resale_admission/mock_gates.py has 936 lines, cited 99999)
+self-test: detected anchor token changed (A01: reference/booking_resale_admission/mock_gates.py:97 lacks self._nope)
+self-test: detected query row dropped (missing query row: get_show)
+self-test: detected query row duplicated (duplicated query row: get_show (2))
+self-test: detected unknown query row (unknown query row: get_zilch)
+self-test: detected status flipped (status drift for list_shows: declared SOURCE_FOUND but absence anchors remain: A04,A05)
+self-test: detected source label on missing query (status drift for list_shows: declared SOURCE_MISSING but `list_shows 원천` anchors exist: A03)
+self-test: detected absence anchors dropped (status drift for list_shows: declared SOURCE_MISSING but no def list_shows( absence anchor)
+self-test: detected catalogue expectation flipped (catalogue C02: query name get_show must be in docs/contracts/openapi/fsm-command-contract.json commands)
+self-test: detected catalogue row dropped (missing catalogue expectation for reference/v0.3-rc1/protocol_contract.json)
+self-test: detected rmq cite out of range (citation out of range: docs/contracts/READ_MODEL_QUERIES.md:99999 (405 lines))
+self-test: detected blob id mismatch (READ_MODEL_QUERIES.md blob drift: doc cites 0000000000000000000000000000000000000000, actual 06b9ec68f9dc9dd4af4d70c236360be964a84ae1)
+self-test: detected cited surface renamed (A06: reference/booking_resale_admission/reservation_fsm.py:705 lacks def view_show()
+self-test: detected absent surface added (A04: def list_shows( must not appear in reference/booking_resale_admission/mock_gates.py)
+self-test: detected query in core catalogue (catalogue C01: query name now in reference/v0.3-rc1/protocol_contract.json commands: get_show)
+self-test: pass
+
+EXIT: 0

@@ -1,0 +1,215 @@
+$ cargo test --manifest-path runtime/Cargo.toml -p kix-kernel --locked
+   Compiling kix-types v0.0.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-types)
+   Compiling kix-kernel v0.1.0 (/workspace/kix-run/wt/plan-commerce-receipt-goldens/runtime/crates/kix-kernel)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.89s
+     Running unittests src/lib.rs (runtime/target/debug/deps/kix_kernel-09a846946f2bc4a0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/contract_edge_cases.rs (runtime/target/debug/deps/contract_edge_cases-eca76c6a276f4888)
+
+running 39 tests
+test bound_quarantine_survives_owner_change_expiry_and_cancellation ... ok
+test altered_payload_conflicts_when_its_operation_is_quarantined ... ok
+test class_b_bundle_limit_value_and_ga_scope ... ok
+test altered_payload_conflicts_after_local_cancellation ... ok
+test class_b_return_required_inventory_is_reusable ... ok
+test class_b_cancelled_identity_reuse_remains_fenced ... ok
+test class_b_command_and_order_limits_are_independent ... ok
+test free_contiguous_range_inside_one_actual_segment_is_held ... ok
+test altered_payload_conflicts_when_its_selection_is_unavailable ... ok
+test altered_payload_conflicts_before_fence_and_clock_guards ... ok
+test altered_payload_conflicts_without_touching_an_unknown_payment ... ok
+test full_command_capacity_backpressures_after_local_cancellation ... ok
+test full_command_capacity_backpressures_before_a_quarantine_rejection ... ok
+test expiry_instant_is_treated_consistently_by_every_entry_point ... ok
+test regressed_time_records_no_unavailable_rejection ... ok
+test full_command_capacity_backpressures_before_an_unavailable_rejection ... ok
+test inventory_released_by_expiry_is_reusable_by_a_new_command ... ok
+test rejection_replay_stays_immutable_after_the_blocking_hold_is_released ... ok
+test replay_lookup_is_guarded_by_scope_and_semantics_only ... ok
+test retained_unbound_conflict_bans_the_identity_for_any_future_order ... ok
+test return_required_is_stable_under_further_late_evidence ... ok
+test seats_and_general_admission_are_held_up_to_exact_remaining_capacity ... ok
+test stale_execution_fence_applies_no_quarantine ... ok
+test stale_execution_fence_neither_sends_nor_captures_an_unknown_payment ... ok
+test stale_execution_fence_records_no_unavailable_rejection ... ok
+test success_follows_unrelated_rejections_errors_and_replays ... ok
+test unknown_retry_after_the_deadline_keeps_the_reservation_and_its_slot ... ok
+test unsupported_semantics_applies_no_quarantine ... ok
+test unsupported_semantics_neither_sends_nor_captures_an_unknown_payment ... ok
+test unsupported_semantics_records_no_unavailable_rejection ... ok
+test unsupported_semantics_records_nothing_after_local_cancellation ... ok
+test word_crossing_range_inside_one_segment_is_held_between_neighbours ... ok
+test last_command_and_order_slots_admit_a_reservation_after_a_recorded_rejection ... ok
+test regressed_time_applies_no_capture_to_an_unknown_payment ... ok
+test regressed_time_applies_no_quarantine ... ok
+test class_b_unavailable_selection_preserves_observed_rejection_precedence ... ok
+test altered_payload_conflicts_at_full_command_capacity ... ok
+test regressed_time_records_nothing_after_local_cancellation ... ok
+test smallest_positive_price_and_one_millisecond_ttl_are_held ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/contract_invariants.rs (runtime/target/debug/deps/contract_invariants-91fe6d246b04f660)
+
+running 5 tests
+test contract_predicates_reject_corrupted_observations_not_kernel_mutations ... ok
+test reply_oracle_rejects_deliberately_wrong_expected_replies ... ok
+test inv3_replay_predicate_rejects_corrupted_observer_views_not_kernel_mutations ... ok
+test contract_test_source_identity_and_format_diagnostic ... ok
+test five_contract_invariants_on_kernel_only_generated_histories ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.94s
+
+     Running tests/e4_state_model.rs (runtime/target/debug/deps/e4_state_model-cb64108b62334d6d)
+
+running 12 tests
+test model_schema_relations_are_explicit_and_corruption_is_detected ... ok
+test oracle_sensitivity_detects_and_shrinks_missing_full_budget_quarantine ... ok
+test exact_read_only_gate_detects_public_api_clock_only_perturbation ... ok
+test altered_payload_matrix_excludes_multiple_fields_and_other_payload_changes ... ok
+test capacity_two_sequence_is_observed_not_repaired ... ok
+test relation_properties_detect_model_only_quarantine_omission_and_shrink ... ok
+test history_gates_reject_missing_or_wrong_causal_provenance ... ok
+test locked_sources_and_new_harness_sources_are_identified ... ok
+test locked_v4_matches_independent_state_model ... ok
+test relation_aware_generated_traces_reach_every_property_family ... ok
+test baseline_corpus_relation_coverage_is_inventoried_not_retuned ... ok
+whole_kernel_read_only_checks relation=36069 baseline=85775
+gate=altered_expiry_normal relation=551 baseline=1192 first=P1/config0/seed2: step=6
+gate=altered_expiry_regressed_clock_only relation=212 baseline=45 first=P1/config0/seed1: step=41
+gate=altered_expiry_stale_fence_only relation=193 baseline=47 first=P1/config0/seed1: step=28
+gate=altered_operation_normal relation=477 baseline=0 first=P1/config0/seed1: step=40
+gate=altered_operation_regressed_clock_only relation=222 baseline=0 first=P1/config0/seed4: step=22
+gate=altered_operation_stale_fence_only relation=179 baseline=0 first=P1/config0/seed1: step=34
+gate=altered_order_id_normal relation=422 baseline=0 first=P1/config0/seed1: step=38
+gate=altered_order_id_regressed_clock_only relation=234 baseline=0 first=P1/config0/seed1: step=36
+gate=altered_order_id_stale_fence_only relation=188 baseline=0 first=P1/config0/seed1: step=10
+gate=altered_selection_normal relation=341 baseline=1090 first=P1/config0/seed1: step=24
+gate=altered_selection_regressed_clock_only relation=166 baseline=38 first=P1/config0/seed1: step=44
+gate=altered_selection_stale_fence_only relation=162 baseline=52 first=P1/config0/seed3: step=2
+gate=retained_two_bound_owner_expiry_cancel_send_sequence relation=9 baseline=2 first=P5/config0/seed15: order=KixId([252, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+gate=return_duplicate_mismatch_reviewed_send_sequence relation=11 baseline=3 first=P6/config0/seed30: order=KixId([7, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+gate=unknown_deadline_retry_then_late_capture relation=22 baseline=73 first=P3/config0/seed12: order=KixId([249, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+test task_001_deterministic_edge_cases_are_cross_validated_by_generated_witnesses ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.94s
+
+     Running tests/observation_slots.rs (runtime/target/debug/deps/observation_slots-60507b6e88ce5f34)
+
+running 11 tests
+test previous_semantics_version_is_rejected_without_silent_replay_change ... ok
+test captured_operation_does_not_reserve_again_and_exact_event_replay_needs_no_slot ... ok
+test fresh_unbound_capture_remains_unstored_and_later_binding_is_not_reconciled ... ok
+test full_budget_new_conflict_quarantines_without_retaining_evidence ... ok
+test conflicting_event_cannot_spend_slot_reserved_for_capture ... ok
+test accepted_conflict_keeps_slot_until_fresh_capture_preserves_reviewed_fact ... ok
+test mismatched_amount_uses_reserved_slot_and_preserves_actual_capture_for_review ... ok
+test repeated_unknown_reserves_once_and_other_operation_cannot_take_slot ... ok
+test full_observation_budget_blocks_first_unknown_without_state_change ... ok
+test reserved_slot_survives_expiry_check_owner_change_and_cancellation ... ok
+test unrelated_event_flood_cannot_starve_promised_capture ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/performance_harness.rs (runtime/target/debug/deps/performance_harness-f84949e66fd0a568)
+
+running 32 tests
+test evidence_binding_records_budgets_toolchain_and_non_claims ... ok
+test goodput_matches_fixed_integer_expectations ... ok
+test evidence_binding_serializes_tree_probe_toolchain_host_and_files ... ok
+test elapsed_ns_covers_every_row_and_scheduled_wait ... ok
+test conflict_saturation_ignores_command_limit ... ok
+test low_load_uniform_is_distinct_from_hot_seat_retry_and_saturation ... ok
+test capacity_json_is_top_level_and_separate_from_business_reject ... ok
+test nearest_rank_p99_matches_fixed_expectations ... ok
+test other_outcomes_count_real_reserve_error_and_applied_capture ... ok
+test other_outcomes_json_matches_measured_calls ... ok
+test each_workload_and_low_load_run_constructs_exactly_one_kernel ... ok
+test outcome_summaries_do_not_label_mixed_p99_as_success ... ok
+test perf_probe_routes_kernel_new_through_one_helper ... ok
+test csv_rows_keep_service_inside_call_window_and_latency_arithmetic ... ok
+test retry_comparison_rejects_corrupted_captured_original ... ok
+test outcome_count_json_keys_are_top_level_per_workload ... ok
+test injected_kernel_reconstruction_is_counted_and_reported ... ok
+test first_capacity_index_json_is_zero_based_or_null ... ok
+test retry_replays_complete_first_result ... ok
+test scheduled_csv_uses_fixed_origin_i_over_rate ... ok
+test timing_boundaries_rate_zero ... ok
+test timing_boundaries_reject_included_preparation ... ok
+test timing_boundaries_scheduled ... ok
+test timing_boundaries_late_driver ... ok
+test workload_report_json_names_budgets_samples_and_rate ... ok
+test memory_probe_reports_saturation_without_recreating_kernel ... ok
+test smoke_final_remaining_matches_v4_smoke_signature ... ok
+test timing_boundaries_exclude_setup_and_formatting ... ok
+test uniform_selections_wrap_past_4096_despite_order_saturation ... ok
+test inventory_is_4096_seats_all_reservable_by_uniform ... ok
+test other_stays_zero_for_every_reachable_probe_input ... ok
+test summary_p99_matches_raw_csv_by_outcome ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests/quarantine_capacity.rs (runtime/target/debug/deps/quarantine_capacity-5da24c3fb2f0d16d)
+
+running 8 tests
+test retained_unbound_conflict_blocks_future_binding_without_expanding_bound_set ... ok
+test full_budget_quarantine_preserves_the_already_promised_capture_slot ... ok
+test full_evidence_budget_still_quarantines_both_bound_operations ... ok
+test many_unbound_conflicts_trip_bounded_scope_quarantine_without_losing_slots ... ok
+test rejected_evidence_that_quarantines_also_advances_logical_time ... ok
+test unretained_unbound_conflict_creates_no_speculative_binding_ban ... ok
+test v3_inputs_are_rejected_before_any_state_change ... ok
+test original_event_and_command_replays_never_clear_quarantine ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/transitions.rs (runtime/target/debug/deps/transitions-eaa6479f51a88906)
+
+running 32 tests
+test bounded_records_backpressure_without_evicting_old_results ... ok
+test accepted_duplicate_observation_advances_time_without_reapplying_capture ... ok
+test accepted_expiry_check_advances_time_but_reservation_result_lookup_does_not ... ok
+test actual_segment_boundary_is_an_aisle ... ok
+test conflict_naming_unbound_operation_blocks_future_binding_without_changing_replays ... ok
+test expired_hold_retry_keeps_original_result_and_separate_current_state ... ok
+test general_admission_never_overdraws_and_expiry_is_single_release ... ok
+test historical_capture_after_owner_change_is_not_discarded ... ok
+test event_deduplication_and_economic_effect_deduplication_are_separate ... ok
+test identical_id_with_changed_payload_is_a_conflict ... ok
+test invalid_inventory_configuration_is_rejected ... ok
+test overflow_empty_and_oversize_selections_fail_without_inventory_change ... ok
+test late_capture_after_expiry_and_resale_does_not_release_new_buyer ... ok
+test overlapping_bundle_rejection_never_partially_allocates ... ok
+test local_cancellation_blocks_new_reservations_but_not_original_results ... ok
+test ownership_generation_does_not_change_command_identity ... ok
+test late_capture_after_cancellation_creates_return_marker_not_resurrection ... ok
+test mismatched_asset_or_registry_is_recorded_for_review_not_paid ... ok
+test duplicate_external_operation_cannot_fund_two_orders ... ok
+test event_conflict_quarantines_both_bound_orders_and_blocks_payment_sending ... ok
+test conflict_capacity_failure_keeps_quarantine_and_original_evidence ... ok
+test replaying_ordered_inputs_reconstructs_identical_state ... ok
+test reviewed_order_preserves_matching_capture_without_normal_confirmation ... ok
+test same_event_different_payload_preserves_conflicting_evidence ... ok
+test unknown_semantics_and_regressed_time_are_not_applied ... ok
+test sixty_four_bit_word_boundary_is_not_an_aisle ... ok
+test reviewed_late_capture_keeps_return_marker_and_review_requirement ... ok
+test retained_cross_order_conflict_replays_at_capacity_without_duplicate_evidence ... ok
+test response_loss_retry_returns_original_before_availability_check ... ok
+test reservation_has_inventory_order_and_stable_external_intent ... ok
+test unknown_payment_is_not_released_by_ttl ... ok
+test u128_max_is_not_narrowed ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+   Doc-tests kix_kernel
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+EXIT: 0

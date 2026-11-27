@@ -7,6 +7,7 @@ node -e 'if (Number(process.versions.node.split(".")[0]) !== 24) throw Error("No
 python3 -m venv .venv
 .venv/bin/python -m pip install --disable-pip-version-check --timeout 20 --retries 1 -r requirements-dev.txt
 npm --prefix reference/v0.3-rc1/client ci --ignore-scripts --no-audit --no-fund
+npm --prefix reference/rights_scale/client ci --ignore-scripts --no-audit --no-fund
 python3 scripts/install_sui.py
 python3 scripts/configure_local.py
 source scripts/env.sh

@@ -4,8 +4,7 @@
 이 세션에서 확인한 `origin/main`: `cb59612b847fc2e6ef71810202be5e2ca5f76724`. 작업 시작 HEAD도 같은 SHA다.
 읽는 계약: [READ_MODEL_QUERIES.md](READ_MODEL_QUERIES.md) 초안 0.1, git blob `06b9ec68f9dc9dd4af4d70c236360be964a84ae1`.
 상태: **입력 자료. 결정 문서가 아니다.** 소비자는 `read-model-reference` 노드(`.aiops/program.json`의 노드 id), commerce `bind-list-read`, 후속 `ps-02-query-contract`다 (READ_MODEL_QUERIES.md:32).
-이 문서의 파일:줄 앵커는 위 작업 시작 SHA의 작업 트리 기준이다. 소스가 움직이면 §6 검사가 낡은 앵커를 알린다.
-갱신 기록: `read-model-reference` 노드가 점 조회 10개를 카탈로그에 넣은 같은 변경에서 §6 줄 앵커를 새 작업 트리에 맞췄고, §2 카탈로그 상태, §3.2, §4, §5, §7을 고쳤다. 그 노드의 베이스는 `origin/main` `ab42cfef43a40c6b86fd3f22b69f00e134cc472e`다. `UNDETERMINED` 값은 이 갱신도 정하지 않았다. 읽는 계약 `READ_MODEL_QUERIES.md`는 바꾸지 않았다.
+이 문서의 파일:줄 앵커는 read-model-reference 병합 작업 트리 기준이다. 소스가 움직이면 §6 검사가 낡은 앵커를 알린다.
 
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 
@@ -28,7 +27,7 @@
 
 ## 2. 쿼리별 원천 지도
 
-이름은 사용자 결정(2026-10-08, 선택지 A)으로 정해져 있다 (READ_MODEL_QUERIES.md:15, :377-378). 점 조회 10개는 `read-model-reference`에서 두 번째 핀 `fsm-command-contract.json`의 `queries` 키로 카탈로그에 들어갔다 (§4.3). 목록 3개는 `NOT_IN_CATALOGUE`다. 검사기는 두 카탈로그 JSON의 `commands` 키만 대조하며, 거기에는 13개 이름이 모두 없다 (§5).
+이름은 사용자 결정(2026-10-08, 선택지 A)으로 정해져 있다 (READ_MODEL_QUERIES.md:15, :377-378). 점 조회 10개는 `read-model-reference`에서 두 번째 핀 `fsm-command-contract.json`의 `queries` 키로 카탈로그에 들어갔다. 목록 3개는 `NOT_IN_CATALOGUE`다 (§5, §6).
 
 | 쿼리 이름 | 종류 | 상태 | 원천 표면 (file:line) | 모집단·중첩 | RMQ 앵커 |
 |---|---|---|---|---|---|
@@ -42,7 +41,7 @@
 | `get_listing` | point | SOURCE_FOUND | `ResaleMachine.view` `resale_fsm.py:656` → `_listing_view` `resale_fsm.py:1097` | 권리·슬롯 필드는 `_public_right` `resale_fsm.py:1045`의 중첩 관찰 | READ_MODEL_QUERIES.md:186-195 |
 | `get_admission` | point | SOURCE_FOUND | `AdmissionMachine.view` `admission_fsm.py:512` → `_credential_view` `admission_fsm.py:1033` | 권리·슬롯 필드는 `_local_right`/`_local_show`가 묶인 게이트에서 읽는다 | READ_MODEL_QUERIES.md:197-207 |
 | `get_credential` | point | SOURCE_FOUND | `AdmissionMachine.view_credential` `admission_fsm.py:515` | 중첩 `credential`은 `_credential_view` `admission_fsm.py:1033`; 원천 불능 코드는 `decision`으로 보고된다 (READ_MODEL_QUERIES.md:218) | READ_MODEL_QUERIES.md:209-219 |
-| `get_settlement` | point | SOURCE_FOUND | `SettlementMachine.view` `settlement_fsm.py:476` → `_view` `settlement_fsm.py:638` | 중첩 `claim`은 `MockSettlement.view` `mock_settlement.py:289` → `_view` `mock_settlement.py:298`. `CAPTURED`/`COMMITTED`에서만 채운다 (READ_MODEL_QUERIES.md:225) | READ_MODEL_QUERIES.md:221-233 |
+| `get_settlement` | point | SOURCE_FOUND | `SettlementMachine.view` `settlement_fsm.py:476` → `_view` `settlement_fsm.py:638` | 중첩 `claim`은 `MockSettlement.view` `mock_settlement.py:287` → `_view` `mock_settlement.py:296`. `CAPTURED`/`COMMITTED`에서만 채운다 (READ_MODEL_QUERIES.md:225) | READ_MODEL_QUERIES.md:221-233 |
 | `get_credit_advance` | point | SOURCE_FOUND | `CreditMachine.view` `credit_fsm.py:523` → `_view` `credit_fsm.py:763` | 비변경 감시 `_witness` `credit_fsm.py:833` / `_guard` `credit_fsm.py:842` | READ_MODEL_QUERIES.md:235-247 |
 | `get_credit_claim` | point | SOURCE_FOUND | `CreditMachine.view_claim` `credit_fsm.py:530` → `_mock_claim` `credit_fsm.py:623` → `MockCredit.view_claim` `mock_credit.py:264` → `_view_claim` `mock_credit.py:290` | 이 dict에는 `lifecycle_authority`가 없다 (READ_MODEL_QUERIES.md:253) | READ_MODEL_QUERIES.md:249-259 |
 
@@ -74,9 +73,9 @@
 
 | 기계 | `canonical_state` | `export_journal` | `logical_time_ms` |
 |---|---|---|---|
-| `ReservationMachine` | `reservation_fsm.py:716` | `reservation_fsm.py:713` | 시계 있음 (`reservation_fsm.py:718`, 봉투 `:889`) |
-| `ResaleMachine` | `resale_fsm.py:701` | `resale_fsm.py:698` | 시계 있음 (`resale_fsm.py:704`, 봉투 `:1023`) |
-| `AdmissionMachine` | `admission_fsm.py:555` | `admission_fsm.py:552` | 시계 있음 (`admission_fsm.py:557`, 봉투 `:998`) |
+| `ReservationMachine` | `reservation_fsm.py:716` | `reservation_fsm.py:713` | 시계 있음 (`reservation_fsm.py:718`, 봉투 `:892`) |
+| `ResaleMachine` | `resale_fsm.py:701` | `resale_fsm.py:698` | 시계 있음 (`resale_fsm.py:704`, 봉투 `:1026`) |
+| `AdmissionMachine` | `admission_fsm.py:555` | `admission_fsm.py:552` | 시계 있음 (`admission_fsm.py:557`, 봉투 `:1001`) |
 | `SettlementMachine` | `settlement_fsm.py:488` | `settlement_fsm.py:485` | 시계 없음. 파일에 `logical_time_ms`가 없다 (READ_MODEL_QUERIES.md:226) |
 | `CreditMachine` | `credit_fsm.py:546` | `credit_fsm.py:543` | 시계 없음 (READ_MODEL_QUERIES.md:239). `_guard` `credit_fsm.py:842`는 `_witness` `credit_fsm.py:833`가 읽은 묶인 소유권 `canonical_state` 전후 동등을 강제한다 (READ_MODEL_QUERIES.md:362) |
 | `MockGates` | 없음 (관측, 분류 B) | 없음 (관측, 분류 B) | `_env`가 `logical_time_ms`를 낸다 `mock_gates.py:726`; `set_clock` `mock_gates.py:107` |
@@ -100,33 +99,26 @@
 
 ## 4. 게이트·카탈로그 기작 노트
 
-점 조회 10개의 삽입은 `read-model-reference`가 했다. §4.1과 §4.2는 삽입 전 기작을, §4.3은 삽입된 모양을 적는다. 목록 3개는 삽입하지 않았다.
+이 절은 기존 게이트·카탈로그 기작과 `read-model-reference`에서 추가된 점 조회를 기록한다.
 
 ### 4.1 두 층의 명령 집합
 
 - **잠금 핵심.** `reference/v0.3-rc1/protocol_contract.json`의 `commands`는 40개 (`constants.py:20`의 `CORE_COMMAND_COUNT`). 그 안에 `list_*`/`get_*`/`view_*`/`read_*`는 없다 (READ_MODEL_QUERIES.md:36-39). 이 파일은 `reference/v0.3-rc1/**` 잠금 아래 바이트 고정이며, 조회는 여기에 못 들어간다.
-- **가산 FSM 핀.** `docs/contracts/openapi/fsm-command-contract.json`의 44개 `<machine>_<op>` 명령은 `canonical_fsm_document()` (`fsm_contract.py:209-274`)가 `MACHINE_TABLE` (`fsm_contract.py:26-84`)의 `replayable` 튜플에서 생성한다. view 연산은 어느 `REPLAYABLE`에도 없어 44개 전부 쓰기다. `drift_problems` (`fsm_contract.py:277-381`)는 `commands` 집합의 정확한 동등을 요구한다 (`fsm_contract.py:339`). 읽기는 `commands`가 아니라 같은 파일의 `queries` 키로 들어갔다 (§4.3). 이 파일의 바이트가 바뀌었으므로 두 번째 핀의 git blob과 sha256이 바뀌었다.
-- **동조 범프.** 그 변경에서 함께 움직인 것: `READ_COMMAND_COUNT` (`constants.py:22`)와 `COMMAND_COUNT` 94, OpenAPI 핀의 `commandCount` 94와 `readCommandCount` 10 (`generate_client.mjs:150-155`), `components/schemas`·`x-kix-action-body-map`·봉투 `action` enum (`generate_client.mjs:171-200`), 재생성 `sdk/generated/catalogue.ts`와 `sdk-pin.json` (`check_sdk_client.py`의 바이트 동등), `check_openapi_contract.py`, `check_integration_gate_openapi.py`. 어느 하나만 바꾸는 삽입은 드리프트 검사에서 거절된다.
+- **가산 FSM 핀.** `docs/contracts/openapi/fsm-command-contract.json`의 44개 `<machine>_<op>` 명령은 `canonical_fsm_document()` (`fsm_contract.py:209-274`)가 `MACHINE_TABLE` (`fsm_contract.py:26-84`)의 `replayable` 튜플에서 생성한다. view 연산은 어느 `REPLAYABLE`에도 없어 44개 전부 쓰기다. `drift_problems` (`fsm_contract.py:277-381`)는 명령 집합의 정확한 동등을 요구한다 (`fsm_contract.py:339`). 점 조회는 같은 핀의 `queries` 키에 둔다.
+- **동조 범프.** 점 조회를 포함한 OpenAPI 핀은 `commandCount` 94 및 `readCommandCount` 10을 기록한다 (`generate_client.mjs:150-155`). 함께 검증하는 항목은 `components/schemas`·`x-kix-action-body-map`·봉투 `action` enum (`generate_client.mjs:171-200`), 재생성 `sdk/generated/catalogue.ts`와 `sdk-pin.json` (`check_sdk_client.py`의 바이트 동등), `check_openapi_contract.py`, `check_integration_gate_openapi.py`. 어느 하나만 바꾸는 삽입은 드리프트 검사에서 거절된다.
 
 ### 4.2 이름과 디스패치
 
 - `_reject_names` (`catalogue.py:63-68`)는 소문자 식별자만 받는다. 13개 이름은 모두 그 규칙에 맞다.
-- 디스패치는 `server.py:282`가 조회 이름을 `_perform_read` (`server.py:359-378`)로, `server.py:284`가 FSM 이름을 `_perform_fsm` (`server.py:339-357`)으로 돌린다. FSM 호출은 readiness 저널에 닿지 않고 저널이 켜져 있으면 `READINESS_FSM_REFUSED`로 거절된다 (`server.py:346`). `_perform_read`도 같은 모양을 물려받아 저널을 쓰지 않는다 (§4.3).
-- `FsmHost.call` (`fsm_host.py:84-96`)은 쓰기 명령을, `FsmHost.read` (`fsm_host.py:98-123`)는 조회를 `machine.op(subject, **kwargs)` 모양으로 부른다. `subject`는 첫 파라미터다 (`fsm_contract.py:138-139`). 기존 view 시그니처(단일 subject, `view_presentation`/`view_credential`의 `version`·`holder_role` kwargs)는 이 호출 모양에 맞는다.
-- 조회 이름은 `<machine>_<op>` 접두 없이 사용자 결정의 이름 그대로 와이어 이름이 되었다 (READ_MODEL_QUERIES.md:378). 이름이 핵심 40개·FSM 44개와 겹치지 않고 `_reject_names`를 통과함을 `catalogue.py:100-107`이 확인한다.
+- 디스패치는 `server.py:284`가 FSM 이름을 `_perform_fsm` (`server.py:339-357`)으로 돌린다. FSM 호출은 readiness 저널에 닿지 않고 저널이 켜져 있으면 `READINESS_FSM_REFUSED`로 거절된다 (`server.py:346`). 점 조회는 `server.py:282`에서 `_perform_read` (`server.py:359-378`)로 분기한다.
+- `FsmHost.call` (`fsm_host.py:84-96`)은 `machine.op(subject, **kwargs)`를 부른다. `subject`는 첫 파라미터다 (`fsm_contract.py:138-139`). 기존 view 시그니처(단일 subject, `view_presentation`/`view_credential`의 `version`·`holder_role` kwargs)는 이 호출 모양에 맞는다.
+- 점 조회는 사용자 결정의 `get_show` 등 승인된 이름을 그대로 사용한다 (READ_MODEL_QUERIES.md:378).
 
-### 4.3 점 조회 삽입 모양 (`read-model-reference`)
-
-- **표.** `QUERY_TABLE` (`fsm_contract.py:88`)이 조회 이름마다 기계·메서드·subject 필드를 적는다. `live_query_signatures` (`fsm_contract.py:165`)가 라이브 `view*` 서명을 읽고, `canonical_fsm_document()`가 `queries` 키를 만든다 (`fsm_contract.py:273`). 스키마는 `additionalProperties: false`이고 `idempotency_key`가 없다.
-- **쓰기 도달 불가.** `drift_problems`가 조회 메서드가 `view`로 시작하고 어느 `REPLAYABLE`에도 없음을 요구한다 (`fsm_contract.py:361`, `fsm_contract.py:365`). 쓰기 메서드는 조회 이름에서 닿지 않는다.
-- **디스패치.** `FsmHost.read` (`fsm_host.py:98`)는 기존 `view*`만 부르고 저널에 쓰지 않는다. 응답은 `read_schema_version`, `query`, `query_digest`, `fixture_mode`, `accepted_through`, `result`다. `result`는 기존 view dict 그대로이고, `fresh: false`·`matches_current_right: false`·원천 불능 코드도 `result` 안에서 HTTP 200으로 남는다. 핸들러 오류는 기존 코드(`UNKNOWN_*`, `INVALID_ID`)로 HTTP 422이며 새 코드는 없다.
-- **봉투.** 조회는 봉투 `operationId`와 `actor`를 무시한다. 핵심 행도 FSM 저널도 쓰지 않는다. `actor`는 픽스처 문자열이고 접근 통제가 없다. 가시성 행렬 값은 Astra의 `UNDETERMINED`로 남아 있고 `ReadObservationV1` 필드는 예약이다.
-- **readiness.** `--readiness-dir`가 있으면 조회도 `READINESS_FSM_REFUSED`로 거절되고 기계를 건드리지 않는다 (`server.py:367`).
-- **시험.** 카탈로그 결합·와이어·비변경·HTTP는 `test_http_gate.py`의 `ReadQueryHostTests`와 `ReadQueryLoopbackTests`가 다룬다. `accepted_through()`는 각 참조 스위트의 `test_accepted_through.py`가 다룬다.
+`FsmHost.read` (`fsm_host.py:98`)는 기존 `view*`와 `accepted_through()`를 호출한다.
 
 ## 5. 카탈로그 부재 확인
 
-`protocol_contract.json`(40개)과 `fsm-command-contract.json`(44개)의 `commands` 키 어느 쪽에도 13개 조회 이름이 없다. `check_read_model_source_map.py`가 아래 표의 `기대`대로 각 JSON의 `commands`를 대조하고, 세 목록 이름의 `def`가 해당 모듈에 없음도 §6 앵커로 확인한다. 점 조회 10개는 `fsm-command-contract.json`의 별도 `queries` 키에 있다. 이 검사기는 그 키를 읽지 않으므로 C02의 `ABSENT`는 `commands`에 한한 말이다. `queries` 키는 `check_openapi_contract.py`, `check_integration_gate_openapi.py`, `check_sdk_client.py`, 게이트 시험이 대조한다.
+`protocol_contract.json`(40개)과 `fsm-command-contract.json`(44개)의 `commands` 키 어느 쪽에도 13개 조회 이름이 없다. `check_read_model_source_map.py`가 아래 표의 `기대`대로 각 JSON의 `commands`를 대조하고, 세 목록 이름의 `def`가 해당 모듈에 없음도 §6 앵커로 확인한다. C02의 `ABSENT`는 `commands`에 한한다. 별도 `queries` 키의 점 조회 10개는 OpenAPI 핀 검사와 게이트 시험이 대조한다.
 
 아래 표가 검사기가 파싱하는 카탈로그 기대다. `기대`가 `ABSENT`이면 그 파일의 `commands`에 13개 이름이 하나도 없어야 하고, `PRESENT: <이름>[, <이름>…]`이면 적힌 이름만 들어 있고 나머지 13개 이름은 없어야 한다. 후속 노드가 조회 이름을 새 카탈로그 파일에 넣으면 행을 하나 추가한다.
 
@@ -169,8 +161,8 @@
 | A26 | `get_credential` 원천 | reference/booking_resale_admission/admission_fsm.py | 515 | `def view_credential(` |
 | A27 | `get_settlement` 원천 | reference/settlement_f01_f03/settlement_fsm.py | 476 | `def view(` |
 | A28 | `get_settlement` view | reference/settlement_f01_f03/settlement_fsm.py | 638 | `def _view(` |
-| A29 | `get_settlement` 중첩 claim | reference/settlement_f01_f03/mock_settlement.py | 289 | `def view(` |
-| A30 | `get_settlement` claim view | reference/settlement_f01_f03/mock_settlement.py | 298 | `def _view(` |
+| A29 | `get_settlement` 중첩 claim | reference/settlement_f01_f03/mock_settlement.py | 287 | `def view(` |
+| A30 | `get_settlement` claim view | reference/settlement_f01_f03/mock_settlement.py | 296 | `def _view(` |
 | A31 | `get_credit_advance` 원천 | reference/credit_advance_f04/credit_fsm.py | 523 | `def view(` |
 | A32 | `get_credit_advance` view | reference/credit_advance_f04/credit_fsm.py | 763 | `def _view(` |
 | A33 | `get_credit_advance` 감시 | reference/credit_advance_f04/credit_fsm.py | 833 | `def _witness(` |
@@ -238,17 +230,6 @@
 | G19 | 생성기 action enum | sdk/generate/generate_client.mjs | 189 | `actionEnum` |
 | G20 | OpenAPI fixture 라벨 | docs/contracts/openapi/README.md | 70 | `FIXTURE_ONLY` |
 | G21 | OpenAPI 비인증 설명 | docs/contracts/openapi/README.md | 52 | `FIXTURE_ONLY` |
-| G22 | 조회 개수 상수 | integration_gate/constants.py | 22 | `READ_COMMAND_COUNT = 10` |
-| G23 | 조회 표 | integration_gate/fsm_contract.py | 88 | `QUERY_TABLE = (` |
-| G24 | 조회 서명 | integration_gate/fsm_contract.py | 165 | `def live_query_signatures(` |
-| G25 | 조회 카탈로그 키 | integration_gate/fsm_contract.py | 273 | `'queries': queries` |
-| G26 | 조회는 쓰기 메서드 아님 | integration_gate/fsm_contract.py | 361 | `fsm query method is replayable` |
-| G27 | 조회는 view 메서드 | integration_gate/fsm_contract.py | 365 | `fsm query live method is not a read` |
-| G28 | host 조회 | integration_gate/fsm_host.py | 98 | `def read(` |
-| G29 | 조회 디스패치 | integration_gate/server.py | 282 | `read_name_set` |
-| G30 | 조회 수행 | integration_gate/server.py | 359 | `def _perform_read(` |
-| G31 | 조회 저널 거절 | integration_gate/server.py | 367 | `READINESS_FSM_REFUSED` |
-| G32 | 생성기 조회 개수 | sdk/generate/generate_client.mjs | 208 | `readNames.length !== 10` |
 | R01 | 13개 이름 | docs/contracts/READ_MODEL_QUERIES.md | 15 | `list_shows` |
 | R02 | `list_shows` 명세 | docs/contracts/READ_MODEL_QUERIES.md | 91 | `list_shows` |
 | R03 | `get_show` 명세 | docs/contracts/READ_MODEL_QUERIES.md | 105 | `get_show` |
@@ -288,9 +269,8 @@
 
 ## 7. 남은 불확실과 분류
 
-- `NONE` 뒷받침 목록 3개는 이번 변경에 들어가지 않았다. 새 열거 view를 어느 기계·목에 두는지는 목록 변경이 정한다. 이 문서는 모집단이 존재함만 기록한다. 소유자가 목록 값(한도, 커서, 정렬 키, 열린 단계, 요약 키, 보존, 가시성, 오류 이름)을 이 노드의 입력에서 묶었으나 계약 문서 `READ_MODEL_QUERIES.md`에는 아직 반영되지 않았고, 이 문서도 그 값을 옮겨 적지 않는다. 값의 인용은 `validation/2026-10-09-read-model-reference/README.md`에 있다.
+- `NONE` 뒷받침 목록 3개의 구현 모양 (새 열거 view를 어느 기계·목에 두는지)은 후속 목록 변경에서 정한다. 이 문서는 모집단이 존재함만 기록한다.
 - commerce 메서드 시그니처는 RMQ §0.2대로 UNVERIFIED다 (READ_MODEL_QUERIES.md:53-59). 이 문서도 그 한계를 계승한다.
 - 목( mock )의 비변경 표면은 계약 미정의 관측이다 (§1, 분류 B). 목에 `canonical_state`/`export_journal`를 새로 요구하지 않는다.
-- `CreditMachine`의 `view`와 `view_claim`, 그리고 `MockCredit._view_claim`은 `open_terms` 키를 낸다. `READ_MODEL_QUERIES.md`의 해당 절(§2.12, §2.13)은 이 키를 적지 않는다. 분류 B(계약 미정의)로 기록하고, 시험은 라이브 키 집합을 단언하며, 계약 문서는 고치지 않았다.
-- 기존 커버리지: 점 조회 표면은 각 FSM 시험이 이미 다룬다 (예 `test_reservation_fsm.py:283,307`). 점 조회의 카탈로그·와이어·비변경 시험은 §4.3이 적는다. 목록·커서·가시성 행렬은 구현 전이며 시험도 없다 (READ_MODEL_QUERIES.md:403). 이 문서는 시험을 추가하지 않고 존재 검사(`check_read_model_source_map.py`) 하나만 둔다.
+- 기존 커버리지: 점 조회 표면은 각 FSM 시험이 이미 다룬다 (예 `test_reservation_fsm.py:283,307`). 목록·커서·가시성 행렬은 구현 전이며 시험도 없다 (READ_MODEL_QUERIES.md:403). 이 문서는 시험을 추가하지 않고 존재 검사(`check_read_model_source_map.py`) 하나만 둔다.
 - 이 문서는 운영 준비, 체인 최종성, 은행 exactly-once, 내구 현재성, 프로토콜 검증 완료를 주장하지 않는다 (READ_MODEL_QUERIES.md:393-405 계승).

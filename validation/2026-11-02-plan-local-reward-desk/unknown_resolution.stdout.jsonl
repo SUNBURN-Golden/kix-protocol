@@ -1,0 +1,4 @@
+{"error":{"code":"UNKNOWN_REWARD"},"operation":"reconcile_unknown","provenance":"MOCK_TOKEN_REWARD_ONLY"}
+{"error":{"code":"UNKNOWN_REWARD"},"operation":"reconcile_unknown","provenance":"MOCK_TOKEN_REWARD_ONLY"}
+{"error":{"code":"UNKNOWN_REWARD"},"operation":"view","provenance":"MOCK_TOKEN_REWARD_ONLY"}
+{"operation":"pool_view","pool_view":{"balances":{"CUSTOMER_DEPOSIT":0,"ORGANIZER_SETTLEMENT":0,"PROTOCOL_REVENUE":500,"REFUND_RESERVE":0,"TOKEN_TREASURY_REWARD":500},"credits":[{"amount":0,"pool":"CUSTOMER_DEPOSIT","source_ref":"OPENING"},{"amount":0,"pool":"ORGANIZER_SETTLEMENT","source_ref":"OPENING"},{"amount":0,"pool":"REFUND_RESERVE","source_ref":"OPENING"},{"amount":500,"pool":"PROTOCOL_REVENUE","source_ref":"OPENING"},{"amount":500,"pool":"TOKEN_TREASURY_REWARD","source_ref":"OPENING"}],"spends":[]},"provenance":"MOCK_TOKEN_REWARD_ONLY"}

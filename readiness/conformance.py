@@ -16,17 +16,28 @@ from pathlib import Path
 
 # The semantic oracle remains the existing public reference FSMs.
 ROOT = Path(__file__).resolve().parents[1]
-for suite in ("settlement_f01_f03", "booking_resale_admission", "credit_advance_f04"):
+for suite in (
+    "settlement_f01_f03",
+    "booking_resale_admission",
+    "credit_advance_f04",
+    "ai_delegation",
+    "token_reward",
+):
     path = str(ROOT / "reference" / suite)
     if path not in sys.path:
         sys.path.insert(0, path)
 
 from admission_fsm import AdmissionError  # noqa: E402
+from ai_delegation_mock import AiDelegationError  # noqa: E402
 from credit_fsm import CreditError  # noqa: E402
 from mock_gates import ADMISSION_WINDOW_MS, OFFER_WINDOW_MS  # noqa: E402
 from reservation_fsm import ReservationError  # noqa: E402
 from resale_fsm import ResaleError  # noqa: E402
 from settlement_fsm import SettlementMachine  # noqa: E402
+from token_reward_model import POOLS, TokenRewardError, reward_id  # noqa: E402
+
+from readiness.ai_delegation_wrap import WrapError  # noqa: E402
+from readiness.reward_wrap import WrapError as RewardWrapError  # noqa: E402
 
 PAY = 'ab' * 32
 SALE_PAY = 'cd' * 32
@@ -123,6 +134,81 @@ def code(fn, error_type):
     except error_type as exc:
         return exc.code
     raise AssertionError('expected ' + error_type.__name__)
+
+
+AI_ISSUER = 'human-issuer'
+AI_AGENT = 'agent-1'
+AI_GRANT = 'g1'
+
+
+def ai_delegation_issue(machine):
+    return machine.issue_grant(
+        AI_ISSUER,
+        AI_GRANT,
+        AI_AGENT,
+        ['QUERY', 'PROPOSE'],
+        {'surfaces': ['surface-a']},
+        {
+            'per_action_max': 100,
+            'cumulative_max': 1000,
+            'count_max': 5,
+            'currency': 'KRW',
+        },
+        {'not_before': 10, 'not_after': 20},
+    )
+
+
+def reward_opening():
+    base = {pool: 7 for pool in POOLS}
+    base['PROTOCOL_REVENUE'] = 50
+    base['TOKEN_TREASURY_REWARD'] = 50
+    return base
+
+
+def reward_key():
+    return {
+        'program': 'program-1',
+        'source_op_id': 'op-1',
+        'recipient': 'recipient-1',
+        'kind': 'participation',
+    }
+
+
+def reward_source_view():
+    return {
+        'phase': 'COMMITTED',
+        'currency': 'KRW',
+        'funds_executed': False,
+        'bank_debit_observed': False,
+        'legal_debtor_bound': False,
+        'external_return_closed': False,
+        'durable': False,
+    }
+
+
+def reward_rid():
+    return reward_id(**reward_key())
+
+
+def reward_observe(machine):
+    return machine.observe(
+        reward_key(),
+        idempotency_key='obs-1',
+        source_view=reward_source_view(),
+        rule_version='rule-v1',
+        amount=4,
+        source_kind='SETTLEMENT',
+    )
+
+
+def reward_mark_eligible(machine):
+    return machine.mark_eligible(
+        reward_rid(),
+        idempotency_key='elig-1',
+        window_closed=True,
+        source_view=reward_source_view(),
+        abuse_clear=True,
+    )
 
 
 class BackendConformance:
@@ -589,6 +675,237 @@ class BackendConformance:
             finally:
                 recovered.close()
 
+    def test_ai_delegation_registry_opens_once_and_issue_replays_across_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                opened = self._ai_delegation_opened(boundary)
+                self.assertIs(opened['opened'], True)
+                self.assertIs(opened['durable'], False)
+                self.assertIs(opened['execution_enabled'], False)
+                issued = boundary.call('ai_delegation', ai_delegation_issue)
+                self.assertFalse(issued['duplicate'])
+                self.assertIs(issued['grant']['durable'], False)
+                self.assertIs(issued['grant']['execution_enabled'], False)
+                digest = boundary.machine('ai_delegation').state_digest()
+                journal = boundary.machine('ai_delegation').export_journal()
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('ai_delegation')
+                self.assertEqual(machine.state_digest(), digest)
+                self.assertEqual(machine.export_journal(), journal)
+                self.assertEqual(machine.view_grant(AI_GRANT)['phase'], 'ACTIVE')
+                replay = recovered.call('ai_delegation', ai_delegation_issue)
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(replay['grant'], issued['grant'])
+                # open_registry carries no idempotency key: the wrap refuses a
+                # second open instead of returning a duplicate result (class B).
+                self.assertEqual(
+                    code(
+                        lambda: recovered.call('ai_delegation', self._ai_delegation_open_call()),
+                        WrapError,
+                    ),
+                    'ALREADY_OPEN',
+                )
+                self.assertEqual(machine.state_digest(), digest)
+                self.assertEqual(machine.export_journal(), journal)
+            finally:
+                recovered.close()
+
+    def test_ai_delegation_torn_revoke_recovers_and_replays_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._ai_delegation_opened(boundary)
+                boundary.call('ai_delegation', ai_delegation_issue)
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call(
+                        'ai_delegation',
+                        lambda machine: machine.revoke_grant(AI_ISSUER, AI_GRANT, 'fixture-reason'),
+                        fault='partial',
+                    )
+                self.assertEqual(raised.exception.code, 'PARTIAL_WRITE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('ai_delegation')
+                self.assertEqual(machine.view_grant(AI_GRANT)['phase'], 'ACTIVE')
+                self.assertIs(machine.view_grant(AI_GRANT)['durable'], False)
+                revoked = recovered.call(
+                    'ai_delegation',
+                    lambda machine: machine.revoke_grant(AI_ISSUER, AI_GRANT, 'fixture-reason'),
+                )
+                self.assertFalse(revoked['duplicate'])
+                self.assertEqual(revoked['grant']['phase'], 'REVOKED')
+                self.assertIs(revoked['grant']['durable'], False)
+                self.assertIs(revoked['grant']['execution_enabled'], False)
+                replay = recovered.call(
+                    'ai_delegation',
+                    lambda machine: machine.revoke_grant(AI_ISSUER, AI_GRANT, 'fixture-reason'),
+                )
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(replay['grant']['phase'], 'REVOKED')
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open_registry', 'issue_grant', 'revoke_grant'],
+                )
+                self.assertEqual(
+                    code(lambda: machine.attempt_execution(AI_ISSUER, 'p1'), AiDelegationError),
+                    'DELEGATED_EXECUTION_DISABLED',
+                )
+            finally:
+                recovered.close()
+
+    def test_ai_delegation_crash_before_durable_issue_leaves_no_grant(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._ai_delegation_opened(boundary)
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call('ai_delegation', ai_delegation_issue, fault='crash_before_durable')
+                self.assertEqual(raised.exception.code, 'CRASH_BEFORE_DURABLE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('ai_delegation')
+                self.assertEqual(
+                    code(lambda: machine.view_grant(AI_GRANT), AiDelegationError),
+                    'UNKNOWN_GRANT',
+                )
+                issued = recovered.call('ai_delegation', ai_delegation_issue)
+                self.assertFalse(issued['duplicate'])
+                self.assertIs(issued['grant']['durable'], False)
+                replay = recovered.call('ai_delegation', ai_delegation_issue)
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(replay['grant'], issued['grant'])
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open_registry', 'issue_grant'],
+                )
+            finally:
+                recovered.close()
+
+    def test_reward_open_observe_and_hold_replay_across_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                opened = self._reward_opened(boundary)
+                self.assertIs(opened['opened'], True)
+                self.assertIs(opened['durable'], False)
+                observed = boundary.call('reward', reward_observe)
+                self.assertFalse(observed['duplicate'])
+                self.assertIs(observed['reward']['durable'], False)
+                held = boundary.call(
+                    'reward',
+                    lambda machine: machine.hold(reward_rid(), idempotency_key='hold-1'),
+                )
+                self.assertFalse(held['duplicate'])
+                self.assertEqual(held['reward']['phase'], 'HELD')
+                digest = boundary.machine('reward').state_digest()
+                journal = boundary.machine('reward').export_journal()
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('reward')
+                self.assertEqual(machine.state_digest(), digest)
+                self.assertEqual(machine.export_journal(), journal)
+                self.assertEqual(machine.view(reward_rid())['phase'], 'HELD')
+                replay = recovered.call(
+                    'reward',
+                    lambda machine: machine.hold(reward_rid(), idempotency_key='hold-1'),
+                )
+                self.assertTrue(replay['duplicate'])
+                self.assertIsNone(replay['applied'])
+                self.assertEqual(replay['reward'], held['reward'])
+                # open carries no idempotency key: the wrap refuses a second
+                # open instead of returning a duplicate result (class B).
+                self.assertEqual(
+                    code(
+                        lambda: recovered.call('reward', self._reward_open_call()),
+                        RewardWrapError,
+                    ),
+                    'ALREADY_OPEN',
+                )
+                self.assertEqual(machine.state_digest(), digest)
+                self.assertEqual(machine.export_journal(), journal)
+            finally:
+                recovered.close()
+
+    def test_reward_torn_mark_eligible_recovers_and_replays_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._reward_opened(boundary)
+                boundary.call('reward', reward_observe)
+                boundary.call(
+                    'reward',
+                    lambda machine: machine.hold(reward_rid(), idempotency_key='hold-1'),
+                )
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call('reward', reward_mark_eligible, fault='partial')
+                self.assertEqual(raised.exception.code, 'PARTIAL_WRITE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('reward')
+                self.assertEqual(machine.view(reward_rid())['phase'], 'HELD')
+                self.assertIs(machine.view(reward_rid())['durable'], False)
+                eligible = recovered.call('reward', reward_mark_eligible)
+                self.assertFalse(eligible['duplicate'])
+                self.assertEqual(eligible['reward']['phase'], 'ELIGIBLE')
+                self.assertIs(eligible['reward']['durable'], False)
+                replay = recovered.call('reward', reward_mark_eligible)
+                self.assertTrue(replay['duplicate'])
+                self.assertIsNone(replay['applied'])
+                self.assertEqual(replay['reward'], eligible['reward'])
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open', 'observe', 'hold', 'mark_eligible'],
+                )
+                self.assertIs(machine.view(reward_rid())['durable'], False)
+                self.assertEqual(
+                    code(lambda: machine.reject_external('TRANSFER'), TokenRewardError),
+                    'EXTERNAL_EXECUTION_UNSUPPORTED',
+                )
+            finally:
+                recovered.close()
+
+    def test_reward_crash_before_durable_observe_leaves_no_reward(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            boundary = self.backend.open_boundary(tmp)
+            try:
+                self._reward_opened(boundary)
+                with self.assertRaises(self.backend.fault_error) as raised:
+                    boundary.call('reward', reward_observe, fault='crash_before_durable')
+                self.assertEqual(raised.exception.code, 'CRASH_BEFORE_DURABLE')
+            finally:
+                boundary.close()
+            recovered = self.backend.open_boundary(tmp)
+            try:
+                machine = recovered.machine('reward')
+                self.assertEqual(
+                    code(lambda: machine.view(reward_rid()), TokenRewardError),
+                    'UNKNOWN_REWARD',
+                )
+                observed = recovered.call('reward', reward_observe)
+                self.assertFalse(observed['duplicate'])
+                self.assertIs(observed['reward']['durable'], False)
+                replay = recovered.call('reward', reward_observe)
+                self.assertTrue(replay['duplicate'])
+                self.assertEqual(replay['reward'], observed['reward'])
+                self.assertEqual(
+                    [entry['op'] for entry in machine.export_journal()],
+                    ['open', 'observe'],
+                )
+            finally:
+                recovered.close()
+
     def test_crash_before_durable_leaves_the_attempt_out_of_the_record_budget(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = self.backend.open_store(tmp)
@@ -775,6 +1092,18 @@ class BackendConformance:
             gate_role='gate-a',
             request=REQ,
         )
+
+    def _ai_delegation_open_call(self):
+        return lambda machine: machine.open_registry([AI_ISSUER], [AI_AGENT])
+
+    def _ai_delegation_opened(self, boundary):
+        return boundary.call('ai_delegation', self._ai_delegation_open_call())
+
+    def _reward_open_call(self):
+        return lambda machine: machine.open(reward_opening())
+
+    def _reward_opened(self, boundary):
+        return boundary.call('reward', self._reward_open_call())
 
 
 def assert_budget_rejection(test, ready_call, command_call, domain):

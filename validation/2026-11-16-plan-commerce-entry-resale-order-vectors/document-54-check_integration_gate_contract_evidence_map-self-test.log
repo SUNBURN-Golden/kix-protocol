@@ -1,0 +1,104 @@
+$ python3.12 -B scripts/check_integration_gate_contract_evidence_map.py --self-test
+self-test: detected missing row
+self-test: detected duplicate row
+self-test: detected invented row
+self-test: detected row width
+self-test: detected table header
+self-test: detected counts
+self-test: detected duplicate map heading
+self-test: detected section coverage
+self-test: detected fabricated method alone
+self-test: detected fabricated method mixed
+self-test: detected fabricated offline method alone
+self-test: detected fabricated offline method mixed
+self-test: detected module helper alone
+self-test: detected module helper mixed
+self-test: detected wrong class alone
+self-test: detected wrong class mixed
+self-test: detected bare path alone
+self-test: detected bare path mixed
+self-test: detected empty symbol alone
+self-test: detected empty symbol mixed
+self-test: detected absolute path alone
+self-test: detected absolute path mixed
+self-test: detected traversal alone
+self-test: detected traversal mixed
+self-test: detected backslash path alone
+self-test: detected backslash path mixed
+self-test: detected reference path alone
+self-test: detected reference path mixed
+self-test: detected outside path alone
+self-test: detected outside path mixed
+self-test: detected wrong column alone
+self-test: detected wrong column mixed
+self-test: detected prose alone
+self-test: detected prose mixed
+self-test: detected missing file
+self-test: detected non-UTF8 file
+self-test: detected syntax error
+self-test: detected fabricated checker
+self-test: detected nested checker
+self-test: detected bare checker
+self-test: detected checker wrong column
+self-test: detected wrapper import removed
+self-test: detected section cell
+self-test: detected empty clause
+self-test: detected bad status
+self-test: detected covered gap
+self-test: detected covered owner
+self-test: detected partial no gap
+self-test: detected partial no owner
+self-test: detected uncovered has tests
+self-test: detected uncovered has checkers
+self-test: detected uncovered no gap
+self-test: detected uncovered no owner
+self-test: detected unknown owner
+self-test: detected empty gap
+self-test: detected backticks gap
+self-test: detected covered no citations
+self-test: detected partial no citations
+self-test: detected pinned status I-GATE-ROUTING
+self-test: detected pinned owner I-GATE-ROUTING
+self-test: detected pinned status CHK-HTTP-SUITE
+self-test: detected pinned owner CHK-HTTP-SUITE
+self-test: detected required citation K-READINESS-FSM-REFUSED
+self-test: detected required citation R-7
+self-test: detected required citation G-LOOPBACK-BIND
+self-test: detected required citation G-NO-PUBLIC
+self-test: detected deleted offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_gate_openapi_rendered_bytes_are_pinned
+self-test: detected fabricated offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_gate_openapi_rendered_bytes_are_pinned
+self-test: detected deleted offline method integration_gate/test_offline_limits.py::OfflineGapTests.test_gate_openapi_rendered_bytes_are_pinned
+self-test: detected deleted offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_browser_origin_is_transport_only_statically
+self-test: detected fabricated offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_browser_origin_is_transport_only_statically
+self-test: detected deleted offline method integration_gate/test_offline_limits.py::OfflineGapTests.test_browser_origin_is_transport_only_statically
+self-test: detected deleted offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_core_actor_only_conflict_preserves_receipt
+self-test: detected fabricated offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_core_actor_only_conflict_preserves_receipt
+self-test: detected deleted offline method integration_gate/test_offline_limits.py::OfflineGapTests.test_core_actor_only_conflict_preserves_receipt
+self-test: detected deleted offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_core_action_only_conflict_preserves_receipt
+self-test: detected fabricated offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_core_action_only_conflict_preserves_receipt
+self-test: detected deleted offline method integration_gate/test_offline_limits.py::OfflineGapTests.test_core_action_only_conflict_preserves_receipt
+self-test: detected deleted offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_unprefixed_admission_names_are_not_dispatchable
+self-test: detected fabricated offline citation integration_gate/test_offline_limits.py::OfflineGapTests.test_unprefixed_admission_names_are_not_dispatchable
+self-test: detected deleted offline method integration_gate/test_offline_limits.py::OfflineGapTests.test_unprefixed_admission_names_are_not_dispatchable
+self-test: detected anchor drift
+self-test: detected added heading
+self-test: detected duplicate heading
+self-test: detected read item 7 removed
+self-test: detected workflow command missing
+self-test: detected open gap not implemented in this node
+self-test: detected open gap OPEN_USER_DECISIONS_20261023_ADDENDUM.md#plan-plan-gate-fsm-seeded-journey-differentia
+self-test: detected open gap owner
+self-test: detected non-claim runs only where loopback is permitted
+self-test: detected non-claim no production endpoint
+self-test: detected non-claim no gate behavior change
+self-test: detected non-claim no grade change
+self-test: detected locked blob runtime/crates/kix-kernel/src/lib.rs
+self-test: detected locked blob runtime/crates/kix-kernel/tests/quarantine_capacity.rs
+self-test: detected forbidden import socket
+self-test: detected forbidden import subprocess
+self-test: detected forbidden import http
+self-test: detected forbidden import integration_gate
+self-test: detected forbidden from import
+self-test: pass (100 negative controls; injected positive and valid status controls)
+
+EXIT: 0

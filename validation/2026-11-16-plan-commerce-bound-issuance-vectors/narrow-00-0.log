@@ -1,0 +1,16 @@
+test_bound_issue_checks_gross_and_replays_only_with_the_commit_view (test_reservation_fsm.ReservationFsmTests.test_bound_issue_checks_gross_and_replays_only_with_the_commit_view) ... ok
+test_cancel_after_issue_and_duplicate_consume (test_reservation_fsm.ReservationFsmTests.test_cancel_after_issue_and_duplicate_consume) ... ok
+test_cancel_before_payment_frees_and_payment_blocks_compensation (test_reservation_fsm.ReservationFsmTests.test_cancel_before_payment_frees_and_payment_blocks_compensation) ... ok
+test_expired_admission_can_be_replaced_and_consumed_once (test_reservation_fsm.ReservationFsmTests.test_expired_admission_can_be_replaced_and_consumed_once) ... ok
+test_expiry_does_not_release_until_an_explicit_release (test_reservation_fsm.ReservationFsmTests.test_expiry_does_not_release_until_an_explicit_release) ... ok
+test_external_attempts_do_not_journal_and_resale_is_absent (test_reservation_fsm.ReservationFsmTests.test_external_attempts_do_not_journal_and_resale_is_absent) ... ok
+test_overlapping_holds_and_replay_do_not_double_book (test_reservation_fsm.ReservationFsmTests.test_overlapping_holds_and_replay_do_not_double_book) ... ok
+test_restore_replays_a_lost_success_and_omits_rejections (test_reservation_fsm.ReservationFsmTests.test_restore_replays_a_lost_success_and_omits_rejections) ... ok
+test_same_key_conflict_does_not_move_phase (test_reservation_fsm.ReservationFsmTests.test_same_key_conflict_does_not_move_phase) ... ok
+test_settlement_gate_refuses_uncommitted_finality (test_reservation_fsm.ReservationFsmTests.test_settlement_gate_refuses_uncommitted_finality) ... ok
+test_unbound_issue_is_memory_evidence_without_economic_finality (test_reservation_fsm.ReservationFsmTests.test_unbound_issue_is_memory_evidence_without_economic_finality) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.033s
+
+OK

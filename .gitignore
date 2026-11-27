@@ -17,6 +17,9 @@ build/
 *.vkey.json
 reference/v0.3-rc1/zk/artifacts/*
 !reference/v0.3-rc1/zk/artifacts/README.md
+reference/rights_scale/zk/artifacts/*
+!reference/rights_scale/zk/artifacts/README.md
+reference/rights_scale/results/
 reference/v0.3-rc1/results/localnet/
 reference/v0.3-rc1/results/private-localnet/
 *.keystore

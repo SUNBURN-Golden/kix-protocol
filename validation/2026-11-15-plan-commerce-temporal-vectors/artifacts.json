@@ -1,0 +1,17 @@
+{
+  "reference/booking_resale_admission/fixtures/commerce_temporal_inputs_v1.json": {
+    "bytes": 30600,
+    "sha256": "e4908638e90776c4dec9e95ed934faf74b6a81d354e54ce49bfc60706d0114e2",
+    "gitBlob": "2d97cc52314624e903e06d26b5c5b56d746221a5"
+  },
+  "reference/booking_resale_admission/fixtures/commerce_temporal_receipts_v1.json": {
+    "bytes": 67968,
+    "sha256": "95151db08cf216973c879c4603bb300d9207119570c41aa62e325d12472c004d",
+    "gitBlob": "7e8a2e075e08503346b237c04e28463036f38f2e"
+  },
+  "reference/booking_resale_admission/test_commerce_temporal_vectors.py": {
+    "bytes": 17648,
+    "sha256": "0cdd9393c89cbde9add8d1a44254bfc60817fa67596b7deface06634d88f3dd9",
+    "gitBlob": "e8ffedeaa691f80768849162541c3552b2a2a808"
+  }
+}

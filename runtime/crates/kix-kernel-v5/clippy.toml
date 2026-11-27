@@ -1,0 +1,23 @@
+# R1 deterministic kernel boundary. Ordered inputs carry time and entropy.
+disallowed-types = [
+    { path = "std::collections::HashMap", reason = "Use deterministic ordered collections in kernel state." },
+    { path = "std::collections::HashSet", reason = "Use deterministic ordered collections in kernel state." },
+    { path = "std::collections::hash_map::RandomState", reason = "No randomly seeded hashing in the kernel." },
+]
+
+disallowed-methods = [
+    { path = "std::time::SystemTime::now", reason = "Time must be supplied by the ordered input." },
+    { path = "std::time::Instant::now", reason = "Time must be supplied by the ordered input." },
+    { path = "std::env::var", reason = "Environment must not influence kernel transitions." },
+    { path = "std::env::var_os", reason = "Environment must not influence kernel transitions." },
+    { path = "std::env::vars", reason = "Environment must not influence kernel transitions." },
+    { path = "std::env::vars_os", reason = "Environment must not influence kernel transitions." },
+    { path = "std::fs::read", reason = "File I/O belongs outside the kernel." },
+    { path = "std::fs::read_to_string", reason = "File I/O belongs outside the kernel." },
+    { path = "std::fs::write", reason = "File I/O belongs outside the kernel." },
+    { path = "std::fs::File::open", reason = "File I/O belongs outside the kernel." },
+    { path = "std::fs::File::create", reason = "File I/O belongs outside the kernel." },
+    { path = "std::net::TcpStream::connect", reason = "Network I/O belongs outside the kernel." },
+    { path = "std::thread::sleep", reason = "Scheduling belongs outside the kernel." },
+    { path = "std::thread::spawn", reason = "Scheduling belongs outside the kernel." },
+]

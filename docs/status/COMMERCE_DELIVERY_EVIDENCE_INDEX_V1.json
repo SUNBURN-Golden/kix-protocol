@@ -1,0 +1,224 @@
+{
+  "record_schema_version": "kix-commerce-delivery-evidence-index/1",
+  "normative": false,
+  "consumer": "kix-commerce-apps",
+  "pins": [
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_payment_observation_lost_reply_v1.json",
+      "sha256": "bed5ea758ebf94da028dd7707e5e209aeb4f409fde606bd17a8d9c3f6ad97839",
+      "gitBlob": "d98575be3bd8b4aa82b8a54ea8a01c860ac98b3f"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_issuance_lost_reply_v1.json",
+      "sha256": "4b6b86d27425e631c6461f5840e3577a5d78e1efbc32f954a10629ccfd79f52b",
+      "gitBlob": "27e282909c0afe8259fe3988fd97e48b21493642"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_transfer_lost_reply_v1.json",
+      "sha256": "b3745176bb07970360d3cb180f52f9893fbf43b42c9d18843d838e2406dcc287",
+      "gitBlob": "b7dc81e3f9e0058df946400826a7dd10a751f9bc"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_admission_lost_reply_v1.json",
+      "sha256": "75991706cbfd0ba579fe67a301e7b9beaa237ac2ceafc81205c344684ee9fa4f",
+      "gitBlob": "c5ebd931c06603dfd2dd5ad72c17a9130e50b5b1"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_refund_acceptance_lost_reply_v1.json",
+      "sha256": "6c24d7726993b339e212554e75f97b61df98b681b29c0b1f1794a84c93205cc4",
+      "gitBlob": "420adf1bfe9957181a2158ab7ccffa7fb495aec6"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json",
+      "sha256": "a1474b1d4b27dc93329d6a3827ad106ada9ab0375897fc418ff1feb13e55a936",
+      "gitBlob": "b5d1aa5f6020fde8aefab795806bfaf2f044592f"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json",
+      "sha256": "46a266a484259c84339b84f890e34d1b054d263e7316f9bb40b848fd0d1c269d",
+      "gitBlob": "0a9c61df31eb43321654564fb6eb5bf96a6f56d4"
+    },
+    {
+      "path": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json",
+      "sha256": "e7d0b544cb9e2ab715b8facac60bb2aab403b0807da3df9a58e49cfe97d9fa07",
+      "gitBlob": "100942709a1763eb8e58a0773916e81d4599b787"
+    },
+    {
+      "path": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
+      "sha256": "c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22",
+      "gitBlob": "0095e53801921e87c5417dd86920a625c2fede78"
+    },
+    {
+      "path": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json",
+      "sha256": "41a27ed9230c9103fe137999ee61a3a0bd88a473a2e47e33019108248b7ef6c2",
+      "gitBlob": "04a40c0de2634455c6bf76ae549e154ad9f1d0e6"
+    },
+    {
+      "path": "sdk/conformance/vectors/producer-grant-selection.vectors.json",
+      "sha256": "28dbb37f77aa8fef26a401721028e02849b32c0544fed2077f026cb953ac2ff7",
+      "gitBlob": "50473eac7e3206011e014ec8dcba1760947db04e"
+    }
+  ],
+  "fixtures": [
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_payment_observation_lost_reply_v1.json",
+      "source_vector_id": "booking-admission/payment-B",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/26",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_payment_observation_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_payment_observation_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_payment_observation_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_payment_observation_lost_reply_v1.json#/cases/1/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_issuance_lost_reply_v1.json",
+      "source_vector_id": "booking-admission/issue-B",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/28",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_issuance_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_issuance_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_issuance_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_issuance_lost_reply_v1.json#/cases/1/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_transfer_lost_reply_v1.json",
+      "source_vector_id": "resale-market/market-accept",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/63",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_transfer_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_transfer_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_transfer_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_transfer_lost_reply_v1.json#/cases/1/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_admission_lost_reply_v1.json",
+      "source_vector_id": "booking-admission/consume-B",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/32",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_admission_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_admission_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_admission_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_admission_lost_reply_v1.json#/cases/1/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_refund_acceptance_lost_reply_v1.json",
+      "source_vector_id": "booking-refund/observe-mock-acceptance",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/49",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_refund_acceptance_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_refund_acceptance_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_refund_acceptance_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_refund_acceptance_lost_reply_v1.json#/cases/1/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json",
+      "source_vector_id": "booking-resale/accept-A-before-commit",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/18",
+      "cases": [
+        {
+          "case_id": "refusal-delivered",
+          "fault_point": "none",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json#/cases/0/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json#/cases/1/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json#/cases/1/producer_evidence"
+        },
+        {
+          "case_id": "refusal-withheld-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json#/cases/2/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_withheld_resale_refusal_v1.json#/cases/2/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json",
+      "source_vector_id": "booking-refund/cancel-C",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/39",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/cases/1/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json",
+      "source_vector_id": "booking-resale/settle-resale-commit",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/19",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json#/cases/1/producer_evidence"
+        }
+      ]
+    }
+  ],
+  "unpublished_reads_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/readQueries/items",
+  "recovery_ref": "sdk/conformance/vectors/producer-grant-selection.vectors.json#/cases/27"
+}

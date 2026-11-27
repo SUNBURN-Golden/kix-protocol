@@ -80,3 +80,468 @@ review, required Fable audits, draft publication, and successful exact-head KTX
 and KIX hosted checks before delivery readiness. User-only merge and post-merge
 verification remain required. Local Python checks do not supply those gates or
 prove production durability, chain finality, or external exactly-once behavior.
+
+## Journal byte sweep: observed limits
+
+`readiness.test_faults.JournalByteSweepTests` sweeps the current wrapper's
+`journal.v1` byte by byte. It is a current-wrapper test of that file format. It
+is not part of `BackendConformance`, and it is not a requirement for a
+different file format. The record is
+`validation/2026-10-17-readiness-journal-byte-sweep/README.md` (#205).
+
+A 4-frame, 839-byte journal is written through `ReadinessStore.append`. Each
+mutated copy is opened with `ReadinessStore.open`. The property checked is that
+`open()` raises `StoreError`, or the recovered records are an exact prefix of
+the originals. No altered, reordered or fabricated record was seen. Five
+families:
+
+- T: truncation at every offset 16..839 (824 cases).
+- H: header truncation to 0..15 bytes and header byte flips (32 cases).
+- F: payload and CRC byte flips (807 cases).
+- L: length-prefix byte flips (16 cases).
+- R: four CRC-consistent re-framed payload edits (4 cases).
+
+Observed characterizations (AGENTS §8 class B, builder reading; the contract
+does not define them):
+
+- A damaged length prefix on a non-final frame (above `MAX_RECORD_BYTES`, or
+  pointing past EOF) is parsed as a torn tail. `open()` truncates the file
+  there and silently drops the later complete, acknowledged frames; restoring
+  the byte does not bring them back. In the L family, 9 of 16 cases drop later
+  frames, 3 final-frame cases look exactly like a torn tail, and the 4 cases at
+  length byte 3 give `CHECKSUM_MISMATCH`.
+- A 0-byte `journal.v1` is reinitialised: the header is written and the store
+  is empty. 1..15 bytes give `JOURNAL_HEADER`.
+- A clean truncation at a frame boundary is undetectable: `open()` returns the
+  shorter prefix with no error.
+
+The Astra ruling on `docs/contracts/READINESS_RUNTIME.md` line 21 is pending.
+That line defines only a trailing incomplete frame and a complete frame with a
+bad checksum. The suite is therefore not evidence of fail-closed behaviour for
+mid-file length damage.
+
+This section changes no `readiness/*.py`, no journal format and no contract,
+and decides no classification. It makes no power-loss, OS-crash, `fsync` or
+production durability claim.
+
+## Command-level crash-point sweep
+
+`readiness/test_faults.py` `CrashPointSweepTests` takes the command sequence of
+each `BackendConformance` scenario (settlement 5, reservation 3, resale 5,
+credit 3, admission 4, ai_delegation 3, reward 6 commands) and, for every
+command index and both fault kinds (`partial`, `crash_before_durable`), injects
+the fault through `FsmBoundary.call(..., fault=...)`, closes, reopens and
+checks: the recovered digest and journal equal the prefix only; the resend
+applies once and returns the uninterrupted result; finishing the sequence
+reaches the uninterrupted final digest; the record count equals the accepted
+commands and the false truth labels stay false. After the fault the same
+boundary also refuses further calls with `READINESS_CLOSED`. That is 58 cases
+over 29 commands.
+
+It uses the public adapter surface only. The existing fault cases are kept; the
+sweep reaches the same cells (the module test
+`test_sweep_cells_subsume_the_existing_fault_cases` pins eleven of them).
+
+Class B characterizations (the contract does not define them): byte-equal
+result on the first resend; digest equality across independent in-process
+instances; every command emits exactly one journal entry, so the "fault on the
+first entry only" rule is not exercised for multi-entry commands. The
+`ai_delegation` `open_registry` and the `reward` `open` carry no idempotency
+key and return no `duplicate` flag: their resends raise each wrap's own
+`WrapError('ALREADY_OPEN')` instead of a duplicate result (the two wraps
+define distinct `WrapError` classes; the sweep's `REPLAY_ERRORS` cells pin
+both; the journal and digest assertions afterwards are unchanged). The reward
+wrap journals a command only when the state digest changed; all six commands
+in the sweep sequence change it. The AI delegation mock's duplicate results
+carry no `applied` key.
+
+Not claimed: power loss, OS crash, `fsync`, a lost acknowledgement after a
+durable append, concurrency, rejected commands, any backend adoption, any
+production durability. Single process, single
+writer, local files. Records:
+`validation/2026-10-18-readiness-crash-point-sweep/README.md`,
+`validation/2026-10-20-ai-delegation-wrap-conformance/README.md`,
+`validation/2026-10-21-reward-wrap-conformance/README.md`.
+
+`BackendConformance` also covers the `ai_delegation` wrap with three
+scenarios through the same adapter surface: the registry opens once across a
+restart and a journaled `issue_grant` resend returns `duplicate` with the
+identical grant view while a resent `open_registry` raises `ALREADY_OPEN`; a
+torn `revoke_grant` recovers as still `ACTIVE`, applies once on resend and
+replays `duplicate`, with `attempt_execution` still refused as
+`DELEGATED_EXECUTION_DISABLED`; and a `crash_before_durable` `issue_grant`
+leaves no grant (`UNKNOWN_GRANT` on view) until the resend applies it once.
+`durable` and `execution_enabled` stay false throughout. The two dedicated
+`ExtensionTests` cases are kept: they additionally pin `last_observation`
+fields the mixin does not.
+
+| AI delegation fault / behavior | BackendConformance case | Sweep cells |
+|---|---|---|
+| Registry opens once; issue replay across restart | `test_ai_delegation_registry_opens_once_and_issue_replays_across_restart` | `open_registry` with both faults; repeat open raises `ALREADY_OPEN` without changing journal/digest |
+| Torn revoke recovers ACTIVE; resend revokes once | `test_ai_delegation_torn_revoke_recovers_and_replays_once` | `revoke_grant` with `partial` and `crash_before_durable` |
+| Crash before issue leaves no grant; resend issues once | `test_ai_delegation_crash_before_durable_issue_leaves_no_grant` | `issue_grant` with `partial` and `crash_before_durable` |
+
+`BackendConformance` also covers the `reward` wrap with three scenarios
+through the same adapter surface: the wrap opens once across a restart and a
+journaled `hold` resend returns `duplicate` with the identical reward view
+while a resent `open` raises `ALREADY_OPEN`; a torn `mark_eligible` recovers
+as still `HELD`, applies once on resend and replays `duplicate`, with
+`reject_external` still refused as `EXTERNAL_EXECUTION_UNSUPPORTED`; and a
+`crash_before_durable` `observe` leaves no reward (`UNKNOWN_REWARD` on view)
+until the resend applies it once. `durable` stays false throughout. The three
+dedicated `RewardWrapTests` cases are kept: they additionally pin the
+`restore(export_journal())` canonical-state round-trip and the
+`last_observation` fields the mixin does not.
+
+| Reward fault / behavior | BackendConformance case | Sweep cells |
+|---|---|---|
+| Wrap opens once; hold replay across restart | `test_reward_open_observe_and_hold_replay_across_restart` | `open` with both faults; repeat open raises `ALREADY_OPEN` without changing journal/digest |
+| Torn mark_eligible recovers HELD; resend applies once | `test_reward_torn_mark_eligible_recovers_and_replays_once` | `mark_eligible` with `partial` and `crash_before_durable` |
+| Crash before observe leaves no reward; resend observes once | `test_reward_crash_before_durable_observe_leaves_no_reward` | `observe` with `partial` and `crash_before_durable` |
+
+## Injected local-wrapper mutation guards
+
+`readiness/test_faults.py::BoundaryMutationGuardTests` is source-informed
+characterization of `FsmBoundary.call`, outside `BackendConformance`
+requirements. Prior coverage was sufficient for append faults
+(`CrashPointSweepTests._sweep_case`) and faulty-adapter sensitivity
+(`ConformanceSensitivityTests`), partial for fencing/recovery and nonmutating
+calls, and absent for callback journal rewriting or digest-only mutation.
+
+| Injected behavior | Test | Expected observation / raised error |
+|---|---|---|
+| Successful callback rewrites an existing prefix entry, unchanged digest | `test_journal_rewrite_fences_without_persisting` | `fault`, `JOURNAL_REWRITE` / `ReadinessError('JOURNAL_REWRITE')` |
+| Successful callback changes digest without a new journal entry | `test_unjournaled_mutation_fences_without_persisting` | `fault`, `UNJOURNALED_MUTATION` / `ReadinessError('UNJOURNALED_MUTATION')` |
+| Either mutation followed by a callback exception | `test_mutation_then_exception_preserves_original_and_fences` | `fault`, `UNJOURNALED_MUTATION` for both subtests / the identical original callback exception |
+| Nonmutating success or exception | `test_nonmutating_success_keeps_boundary_usable`, `test_nonmutating_exception_keeps_boundary_usable` | `unchanged`, `appendedEntries=0`; original return/exception identity retained, then a valid hold commits |
+
+Each mutation starts from a real nonempty committed reservation prefix. A
+test-local journal/digest double replaces only that boundary's reservation
+machine. Persisted bytes, full records/count and committed-byte accounting
+stay unchanged. Later calls on reservation and settlement raise
+`READINESS_CLOSED` without invoking their callbacks. After close, an ordinary
+boundary restores the original committed journal/digest and records/bytes.
+Observation schema and false durable/production/truth labels are checked.
+
+The callback-exception observation code, including its use for a rewritten
+journal, is current local-wrapper characterization, not a new contract.
+These injected tests do not assert rollback of the failed in-memory object,
+power-loss/OS-crash recovery, physical-media/fsync behavior, production
+durability, distributed fencing or backend conformance. Existing recovery
+uncertainties and product-policy values remain UNDETERMINED; no evidence-map
+grade or open decision changes. Record:
+`validation/2026-10-29-plan-plan-readiness-mutation-guard-tests/README.md`.
+
+## Token reward wrap
+
+`readiness/reward_wrap.py` wraps `reference/token_reward/reward_fsm.py`'s
+`RewardMachine` as the `reward` machine (`store.py` `FSM_MACHINES`,
+`machines.py`). It follows the AI delegation wrap: an explicit `open` records
+the caller-supplied `opening_balances` so restore is deterministic, then each
+public command whose state digest changed is journaled and replayed through
+the same public methods. `RewardWrapTests` in `readiness/test_faults.py`
+covers a torn write replayed once, a crash-before-durable observe that leaves
+no reward, and a `restore(export_journal())` round-trip of
+`canonical_state` and `state_digest`.
+
+Same bounds: single process, single writer, one local file, off unless
+`--readiness-dir`. `durable`, `protocolTruth` and the production labels stay
+false and `reject_external` still refuses. `MOCK_TOKEN_REWARD_ONLY`
+provenance passes through unchanged: a matched replay is not a payout, a
+bank debit or chain finality. The reward machine now shares
+`BackendConformance` and the crash-point sweep through the same adapter
+surface (see the sweep section above), and this section is not an independent
+verification of TK-4, TK-7, TK-8, TK-12 or V6. Records:
+`validation/2026-10-20-token-reward-readiness-wrap/README.md`,
+`validation/2026-10-21-reward-wrap-conformance/README.md`.
+
+## Malformed wrapper journal restoration
+
+`readiness/test_faults.py::WrapperRestoreRejectionTests` exercises only the
+public `AiDelegationWrap.restore` and `RewardWrap.restore` APIs and public
+construction/command/view/export methods. These are source-informed class-B
+characterizations (AGENTS §8): exact malformed-input errors are undefined by
+the contracts, and these tests introduce no standardized error requirement.
+No implementation or common `BackendConformance` predicate changes.
+
+Coverage mapped before adding this class:
+
+| Path / requirement | Existing evidence and prior classification | New test / observed exception |
+|---|---|---|
+| Valid reward state/digest/journal recovery | Sufficient: `RewardWrapTests.test_reward_restore_round_trips_canonical_state_and_digest` | Reused unchanged; `test_valid_controls` pairs the minimal malformed-history baselines |
+| Valid AI recovery and disabled execution | Sufficient: `ExtensionTests.test_ai_delegation_torn_revoke_replays_once_and_execution_stays_off`, `test_ai_delegation_crash_before_issue_does_not_create_the_grant` | Reused unchanged |
+| Crash-prefix replay in both wrappers | Sufficient: `CrashPointSweepTests.test_crash_point_sweep_ai_delegation`, `test_crash_point_sweep_reward` | Reused unchanged |
+| Open once and restart/replay | Sufficient for live behavior: `readiness/conformance.py::BackendConformance.test_ai_delegation_registry_opens_once_and_issue_replays_across_restart`, `test_reward_open_observe_and_hold_replay_across_restart`; partial for malformed restore | `test_repeated_open`: each wrapper's `WrapError('RECOVERY_DIVERGENCE')`, rather than live `ALREADY_OPEN` |
+| Valid fingerprint equivalence | Sufficient: `reference/ai_delegation/test_restore_fingerprint_equivalence.py` (wrapper), `reference/token_reward/test_restore_fingerprint_equivalence.py` (inner reward FSM) | Reused; reward FSM journals/errors do not cover the readiness wrapper |
+| Non-list journals | Not covered directly | `test_non_list_journals`: `None`, `{}`, `''`, `0` → wrapper-specific `WrapError('RECOVERY_DIVERGENCE')` |
+| Malformed entries / missing or non-string `op` | Not covered directly | `test_malformed_entries_and_ops`: `None`, `[]`, `''`, `0`, `{}`, and `op` of `None`, `0`, `[]`, `{}`, alone and after valid opening → wrapper-specific `RECOVERY_DIVERGENCE` |
+| Unknown or public non-replay operations | Not covered directly | `test_unknown_operations`: `unknown_operation`, `state_digest`, alone and after opening → wrapper-specific `RECOVERY_DIVERGENCE` |
+| Missing opening fields | Not covered directly | `test_missing_open_fields`: AI raises exact `KeyError`, `.args == ('humans',)` or `('agents',)`; reward raises `RewardWrapError('RECOVERY_DIVERGENCE')` for absent `opening_balances` |
+| Commands before opening | Not covered directly for restore | `test_commands_before_open`: valid grant/observation without opening → wrapper-specific `RECOVERY_DIVERGENCE`, rather than live `NOT_OPEN` |
+| Invalid arguments | Live domain rejection covered in reference tests; partial for restore wrapping | `test_invalid_arguments`: missing command `actor` / `idempotency_key`, unexpected command keyword, opening `humans` / `opening_balances` set to `None`, AI `limits.per_action_max=0` / reward `amount=0` → wrapper-specific `RECOVERY_DIVERGENCE` |
+| Restored export-journal equality guard | Not covered directly | `test_redundant_entries`: duplicate accepted command or extra nested opening field → wrapper-specific `RECOVERY_DIVERGENCE` |
+| Caller input unchanged on every selected malformed fixture | Not covered directly | Shared `_assert_restore_rejected`: full nested JSON snapshot equality in `finally`, exact exception class and `.code` / `KeyError.args`, no successful restore accepted |
+| Paired minimal histories, empty input, false labels | Broad positives sufficient above; minimal pairing partial | `test_valid_controls`: unchanged input/export/digest, canonical state for opened wrappers, false view flags and reward provenance |
+
+`AiDelegationWrapError` and `RewardWrapError` are aliases for distinct classes
+defined by the two wrappers. All selected errors other than the AI missing-field
+`KeyError`s have code `RECOVERY_DIVERGENCE`; no broad exception or alternative
+error tuple is accepted. Missing AI opening fields escape because that restore
+does not catch `KeyError`, whereas reward restore catches it. This difference
+is an observed class-B detail, not an explicit contract violation or a proposal
+to standardize errors.
+
+Each fixture starts from a fresh JSON-compatible copy. Accepted histories are
+`open_registry(['human-issuer'], ['agent-1'])` plus `ai_delegation_issue`, and
+`open(reward_opening())` plus `reward_observe`, using the existing synthetic
+conformance helpers. These are flat wrapper command entries, not store frames
+or inner reward FSM journal records. Before artificially appending a duplicate,
+the same public command returns `duplicate=True` and preserves journal/digest.
+Opening ignores the extra field during replay; export equality still rejects
+the extended input. No private state or monkeypatch is used.
+
+Paired controls preserve AI grant `durable`, `execution_enabled`,
+`funds_executed`, and reward view `durable`, `token_issued`, `onchain_recorded`,
+`funds_executed`, `krw_paid`, `chain_finality` as exactly `False`. Reward
+provenance stays `MOCK_TOKEN_REWARD_ONLY`. Empty journals are valid unopened
+controls with equal exports/digests; no unopened canonical-state claim is made.
+
+No contract, workflow, evidence grade, product-policy value, owner decision or
+recovery uncertainty changes. The blocked AI tool-check-order question remains
+excluded. This is no independent A2 review, backend acceptance, durability,
+external execution, payout or finality proof. Record:
+[wrapper restore rejections](../validation/2026-10-29-plan-readiness-wrap-restore-rejections/README.md).
+
+## Negative controls (fault sensitivity)
+
+`readiness/test_conformance_sensitivity.py` binds `BackendConformance` to
+deliberately faulty `LocalReadinessAdapter` subclasses. Each adapter breaks
+one property, is run through its mapped case programmatically, and must fail;
+the same case on the unmodified adapter must pass. Before this addition,
+positive coverage for these properties was sufficient in the cases below,
+but sensitivity to deliberately wrong adapters was not covered. The new tests
+fill that gap without duplicating or changing the conformance scenarios.
+Semantic mutants must produce one assertion failure in the mapped case, with
+no runner errors, skips, expected failures or unexpected successes;
+the handle leak must produce precisely `JOURNAL_LOCKED`. A separate control
+runs every existing common-suite case on the unmodified adapter, also without
+skips, expected failures or unexpected successes. Each paired case runs once.
+
+| Injected fault | Adapter | Catching case | What the case detects |
+|---|---|---|---|
+| Reopen drops the last acknowledged record | `DropOnReopenAdapter` | `test_budget_rejection_preserves_records_and_replay_identity` | recovered `records` no longer equals the accepted set |
+| Replayed distribution is dispatched again under a fresh identity and appends a second application | `ReplayTwiceAdapter` | `test_settlement_cash_survives_restart_and_a_torn_commit` | replay incorrectly reports `duplicate=False` |
+| A torn/`partial` attempt consumes a record slot | `PartialSlotAdapter` | `test_partial_attempt_does_not_consume_a_record_slot` | live record count includes the torn attempt; actual torn-file recovery is unchanged |
+| A `crash_before_durable` attempt survives recovery | `CrashDurableAdapter` | `test_crash_before_durable_leaves_the_attempt_out_of_the_record_budget` | live accounting excludes the attempt, but recovery finds `op-crashed` |
+| Ignore record budget or byte budget (separate subtests) | `BudgetBlindAdapter` | `test_budget_rejection_preserves_records_and_replay_identity` | `can_accept` returns True at the ignored cap; the other cap still works |
+| Two concurrent holds on one slot both report success | `DoubleHoldAdapter` | `test_concurrent_reservation_holds_occupy_the_slot_once` | losing hold returns a false success, so no worker reports `SLOT_OCCUPIED` |
+| Handle left open after an injected fault | `LeakyHandleAdapter` | `test_settlement_cash_survives_restart_and_a_torn_commit` | next `open_boundary` raises `JOURNAL_LOCKED`; outer test cleanup then releases the handle |
+| `ai_drop_acknowledged`: recovery loses acknowledged `issue_grant` | `DropAcknowledgedBoundaryAdapter('ai_delegation')` | `test_ai_delegation_registry_opens_once_and_issue_replays_across_restart` | recovered digest differs from acknowledged digest |
+| `ai_partial_retained`: recovery retains the revoke requested as torn | `PersistFaultAttemptAdapter('ai_delegation', 'partial')` | `test_ai_delegation_torn_revoke_recovers_and_replays_once` | recovered phase is `REVOKED`, violating `ACTIVE` |
+| `ai_crash_attempt_durable`: recovery retains crashed issue | `PersistFaultAttemptAdapter('ai_delegation', 'crash_before_durable')` | `test_ai_delegation_crash_before_durable_issue_leaves_no_grant` | grant exists; recovery's `code(...)` assertion reports `expected AiDelegationError` instead of observing `UNKNOWN_GRANT` |
+| `reward_drop_acknowledged`: recovery loses acknowledged `hold` | `DropAcknowledgedBoundaryAdapter('reward')` | `test_reward_open_observe_and_hold_replay_across_restart` | recovered digest differs from acknowledged digest |
+| `reward_partial_retained`: recovery retains eligibility requested as torn | `PersistFaultAttemptAdapter('reward', 'partial')` | `test_reward_torn_mark_eligible_recovers_and_replays_once` | recovered phase is `ELIGIBLE`, violating `HELD` |
+| `reward_crash_attempt_durable`: recovery retains crashed observation | `PersistFaultAttemptAdapter('reward', 'crash_before_durable')` | `test_reward_crash_before_durable_observe_leaves_no_reward` | reward exists; recovery's `code(...)` assertion reports `expected TokenRewardError` instead of observing `UNKNOWN_REWARD` |
+
+The six wrapper rows supplement the earlier negative controls using unchanged
+`BackendConformance` assertions and fixtures. The drop adapter removes only
+the selected machine's last `fsm_commit` from that handle's recovered records
+before ordinary `_recover()`. The persist adapter wraps only that handle's
+store append: it appends normally, then raises the requested fault so ordinary
+boundary fencing and restart replay run. Its `partial` mutant incorrectly
+commits the whole attempt requested as torn; it does not simulate physical
+media tearing. Other machines and fault kinds follow normal append behavior.
+The six outer tests pin the intended recovery assertion in the captured
+traceback; an omitted injection or setup error cannot satisfy them.
+
+Run it directly:
+
+```text
+python3 -m unittest readiness.test_conformance_sensitivity
+```
+
+The owner-approved single import of `ConformanceSensitivityTests` in
+`readiness.test_faults` makes the unchanged CI command above run the negative
+controls too. The concurrency case uses its existing barrier and joins;
+the new tests use no sleeps or scheduling-dependent winner assertions.
+
+Documented gaps — properties this document describes with no
+`BackendConformance` case that would catch a faulty adapter:
+
+- Journal file format, schema version/migration, checksum mismatch,
+  exclusion of a second simultaneous writer, refusal of `core_commit` in an FSM journal, and the
+  `protocolTruth`/`productionConformance` label refusal are checked only by
+  the current-wrapper tests in `readiness.test_faults`. The common suite is
+  backend-neutral and contains no case for them.
+- `boundary.last_observation` fields are asserted only in
+  `readiness.test_faults`, not in the common suite.
+- Named budget-limit diagnostics and overload admission are wrapper/gate
+  coverage only; the common suite tests the store's boolean budget predicate.
+- `assert_budget_rejection` runs through the loopback HTTP gate, not inside
+  `BackendConformance`; the store-level predicate is covered, but command-level
+  rejection over a non-HTTP adapter has no common-suite case.
+
+The faulty adapters are test doubles, not candidate backends. Their failures
+show the suite notices the injected faults; this is not a power-loss proof,
+not a PostgreSQL or other candidate-backend test, and not a backend adoption.
+The six wrapper mappings demonstrate sensitivity only to the listed recovery
+mutants, not independent verification or backend acceptance. All false
+durability, execution and production/truth labels and `MOCK_TOKEN_REWARD_ONLY`
+provenance remain unchanged. Existing recovery uncertainties and policy values
+remain UNDETERMINED. Record:
+`validation/2026-10-29-plan-readiness-wrap-fault-sensitivity/README.md`.
+
+## JSON codec regressions
+
+`readiness/test_faults.py::JsonCodecRegressionTests` characterizes the current
+`readiness/codec.py` through its public helpers and `ReadinessStore` with
+synthetic entries and temporary local files. These are source-informed local
+wrapper expectations, outside `BackendConformance`, not protocol encoding or
+new contract requirements. Entries here never pass through FSM replay.
+
+Coverage mapped before adding the regressions (all symbols below are in
+`readiness/test_faults.py`):
+
+| Requirement | Existing evidence | Prior coverage / addition |
+|---|---|---|
+| Small schema-1 store round trip | `StoreTests.test_version_one_roundtrip_and_explicit_migration_only` | Sufficient; reused unchanged. |
+| Checksum and torn-tail behavior | `StoreTests.test_torn_tail_is_discarded_and_a_bad_checksum_fails_closed`, `JournalByteSweepTests` | Sufficient; reused unchanged. |
+| Invalid UTF-8 and top-level duplicate keys with valid CRC | `JournalByteSweepTests.test_crc_consistent_damage_is_rejected_not_repaired` | Sufficient; reused unchanged. |
+| ASCII/multibyte byte ceilings and oversized rejection atomicity | Both `RecordSizeBoundaryTests` methods | Sufficient; reused unchanged, no duplicate size matrix. |
+| BOM, nested duplicate keys, bare NaN/Infinity/-Infinity, malformed JSON | No dedicated cases | Not covered; `test_complete_frames_reject_invalid_json_without_rewriting`. |
+| Paired valid Unicode, finite-number, distinct-key and quoted-constant controls | Store and size round trips | Partially covered; `test_valid_json_controls_roundtrip`. |
+| Serialization error type/code and append rejection atomicity/reuse | Other store rejection paths only | Not covered for this codec path; `test_serialization_failures_report_journal_record`. |
+| Literal canonical Unicode bytes and independent digest expectations | Size tests use stdlib serialization; gate receipt checks reuse `receipt_digest` | Partially covered; `test_canonical_unicode_bytes_and_receipt_digests`. |
+| Nested dictionary insertion-order invariance and content sensitivity | No explicit paired fixtures | Not covered; same canonical-byte/digest test. |
+
+The rejection matrix constructs ten payloads directly: BOM, duplicate keys in
+a nested object and in an array element, all three bare nonstandard constants,
+missing value, trailing comma, unterminated string, and trailing text. Each
+has an in-range length and recomputed CRC in a complete frame, following an
+accepted prefix, both at EOF and before a valid suffix. `strict_loads` raises
+`CodecError('JOURNAL_CORRUPT')`; `ReadinessStore.open` raises
+`StoreError('JOURNAL_CORRUPT')` and preserves the entire file byte-for-byte.
+Valid controls parse, append and reopen with the expected records/accounting.
+
+Nested nonfinite floats, a set and a circular container give
+`CodecError('JOURNAL_RECORD')` from `canonical_json`, `receipt_digest`, and
+the current `append` path (which propagates `CodecError`, not `StoreError`).
+Failed appends preserve bytes, deep-copied records and committed accounting;
+a valid append on the same handle and subsequent reopen succeed.
+Literal UTF-8 expectations include accented Latin, Korean and emoji; SHA-256
+is calculated from those literal bytes, independently of codec output.
+Reversing insertion order at both dictionary levels preserves bytes/digest;
+changing receipt content matches separate expected bytes and changes digest.
+
+This is source-informed characterization of contract-undefined codec details
+(AGENTS §8 B), not a Unicode normalization policy or a backend encoding rule.
+All evidence grades, false production/truth/durable labels, nine readiness-map
+OPEN rows, owners and recovery uncertainties remain unchanged. No production
+durability, stage-5 acceptance, clean-room independence, power-loss, OS-crash,
+physical-media/fsync, external exactly-once or chain-finality claim. Record:
+`validation/2026-10-29-plan-plan-readiness-json-codec-regressions/README.md`.
+
+## Record-envelope rejection and preservation
+
+`readiness/test_faults.py::RecordEnvelopeTests` exercises public
+`ReadinessStore.append/open` with synthetic entries and temporary local files.
+Valid controls cover all seven accepted FSM machines and a core envelope,
+checking complete stamped records, false truth/production labels, frame-byte
+accounting and unchanged bytes across reopen. These controls accept envelopes;
+they do not replay entries or authenticate receipt digests.
+
+The shared rejection matrix covers each missing caller/persisted field, extra
+and cross-kind fields, unknown kind/machine, mismatched machine/kind,
+non-object entry/body, empty/non-string core identifiers, digest length and
+lowercase hexadecimal alphabet. Append also refuses each caller-supplied
+reserved stamp even with its otherwise correct value. Every append rejection
+checks exact `StoreError('JOURNAL_RECORD')`, unchanged bytes, deep-copied records
+and committed accounting, then a valid append on the same handle and reopen.
+Every invalid persisted envelope is valid JSON in a complete, in-range,
+checksum-valid frame after an accepted prefix, both at EOF and before a valid
+suffix. Open gives exact `StoreError('JOURNAL_CORRUPT')` and preserves the entire
+file byte-for-byte.
+
+These source-defined details are AGENTS §8 class B characterizations, not new
+contract semantics or `BackendConformance` requirements. Prior coverage and
+actual commands are in the
+[validation record](../validation/2026-10-29-plan-readiness-record-envelope-tests/README.md).
+`JsonCodecRegressionTests` retains JSON syntax/serialization coverage;
+`WrapperRestoreRejectionTests` retains wrapper entry semantics. Neither is
+changed. No runtime source, contract, evidence-map grade, open decision or
+recovery uncertainty changes. In particular, mid-frame length damage, zero-byte
+reinitialization and frame-boundary cuts remain open. No production durability,
+power-loss, OS-crash, physical-media/fsync proof, independent verification,
+external exactly-once, chain-finality or backend-adoption claim follows.
+
+
+## 2026-10-29 — Completed append with acknowledgement loss
+
+`readiness/test_faults.py::PostAppendAckLossTests` adds seven positive local-wrapper
+regressions for a completed append whose acknowledgement does not reach the
+boundary caller. The historical sweep's lost-acknowledgement exclusion above
+remains a statement about that sweep. This addition covers only controlled
+in-process acknowledgement loss: an instance-scoped test wrapper calls the real
+`store.append` normally, records its successful completion, then raises the same
+preconstructed `_PostAppendAckLost(StoreError)` with code
+`TEST_POST_APPEND_ACK_LOST`. It is a test-only signal, not a protocol error,
+production fault hook or new `fault=` option.
+
+Existing coverage mapped before this addition:
+
+| Requirement | Prior evidence | Prior coverage |
+|---|---|---|
+| Recover only the accepted prefix after an incomplete/absent attempt | `CrashPointSweepTests`, `BackendConformance` fault cases | Sufficient for their boundary: `partial` leaves an incomplete frame; `crash_before_durable` writes no target frame. Neither completes the real append before raising. |
+| Failed-boundary fencing, restart and idempotent replay | `CrashPointSweepTests`, `BoundaryMutationGuardTests`, `BackendConformance` | Partially covered for this task; no positive retained-command acknowledgement-loss case. |
+| Recovery tests detect attempts incorrectly retained under absent-attempt expectations | `readiness/test_conformance_sensitivity.py::PersistFaultAttemptAdapter`, six AI/reward mappings | Sufficient negative controls. This adapter already appends then raises, but mapped tests intentionally fail because they expect absence; it does not establish positive retained-result replay for seven machines. |
+| Completed append, caller receives exception, recovery retains target exactly once and deliberate replay appends nothing | No positive seven-machine regression | Not covered; seven `PostAppendAckLossTests.test_post_append_ack_loss_<machine>` cases below. |
+
+| Machine | Existing target (zero-based sequence index) | Retained business state |
+|---|---|---|
+| settlement | 4: `distribute`, `dist-1` | Confirmed/distributed cash 97,000; distribution effect organizer 92,000/platform 5,000; obligations preserved. |
+| reservation | 2: `hold`, `hold-1` | HELD reservation, RESERVED slot. |
+| resale | 4: `accept_resale`, `transfer-1` | Holder `buyer-2`, current version 2. |
+| credit | 2: `draw`, `draw-1` | Outstanding exposure 80,000. |
+| admission | 3: `consume`, `consume-1` | CONSUMED, version 2. |
+| ai_delegation | 1: `issue_grant`, grant `g1` with identical binding | ACTIVE, generation 1; no invented idempotency key. |
+| reward | 5: `observe_transfer_effects`, `fx-1` | One payout effect and identical pool state (reward treasury fixture balance 46). |
+
+Each test directly reuses `CrashPointSweepTests._build_sequences()` without
+inheriting its tests. An uninterrupted separate-directory control supplies the
+complete result, canonical state, digest, public view, exported journal, stamped
+records, committed-byte count and file bytes. The target must add exactly one
+entry. The injection must invoke/complete exactly one real append, propagate the
+exact exception object/code, and emit the expected fault observation. Subsequent
+`call` and `machine` access must give `ReadinessClosed('READINESS_CLOSED')`;
+a sentinel proves no callback runs. Recovery is compared with the complete
+control before any replay. One deliberate identical replay changes only
+`duplicate=True` and (except AI) `applied=None`, preserves every remaining result
+field, and invokes append zero times. All state/accounting/bytes remain equal,
+including after another close/reopen. AI replay precedes any revocation; no
+historical ACTIVE-result claim after revocation follows. Keyless opening calls
+are not injection targets.
+
+Schema-1 `fsm_commit` envelopes and false record labels are pinned explicitly.
+Required public-view/result flags are indexed so missing fields fail, including
+FSM `durable`, the applicable sweep flags, AI `FALSE_FLAGS` and reward
+`ALWAYS_FALSE_FLAGS`. Fault/replay observations require all four truth/production
+flags plus `fsmDurable` exactly false. Reward provenance stays
+`MOCK_TOKEN_REWARD_ONLY`.
+
+Contract-defined matching behavior (AGENTS §8 A): local boundary refusal after
+store failure, replay idempotence, retained economic state and false labels.
+Source-informed class-B characterizations: exact cross-instance result/state/
+digest/byte equality, selected fixtures' one-entry transitions and duplicate
+response shapes. No explicit contract violation was found. No contract, evidence
+grade, backend requirement, owner decision or policy value changes. Existing
+recovery uncertainties remain UNDETERMINED.
+
+This is single-process, single-writer, local-file evidence; reopening and replay
+are deliberate test actions, with no automatic retry. It proves no OS crash,
+power loss, physical-media/fsync durability, external exactly-once execution,
+bank/PG/chain acceptance, production readiness or backend adoption. The boundary
+caller received an exception despite a completed local append; that fact supplies
+no new external execution authority. Non-author exact-HEAD review at A2 and
+successful exact-head KTX/KIX workflows remain delivery gates. Actual commands
+and protected-path verification:
+[validation record](../validation/2026-10-29-plan-readiness-post-append-ack-loss/README.md).

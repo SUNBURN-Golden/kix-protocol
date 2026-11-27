@@ -281,14 +281,17 @@ class AiDelegationMock:
         _require(type(actor) is str and actor in self._agents, "UNKNOWN_ACTOR")
         grant_id = _ident(grant_id)
         _require(type(tool) is str, "INVALID_ID")
+        # An existing grant's binding is checked before tool-list rejection (§7).
+        # Missing grants still reach the original UNKNOWN_GRANT check below.
+        grant = self._grants.get(grant_id)
+        if grant is not None:
+            _require(grant["agent_id"] == actor, "UNKNOWN_ACTOR")
         if tool in DENYLIST:
             raise AiDelegationError(DENYLIST[tool])
         _require(tool in ALLOWLIST, "TOOL_NOT_ALLOWED")
         now = _logical(now)
         _require(type(args) is dict, "INVALID_ID")
-        grant = self._grants.get(grant_id)
         _require(grant is not None, "UNKNOWN_GRANT")
-        _require(grant["agent_id"] == actor, "UNKNOWN_ACTOR")
         if tool == "withdraw_proposal":
             return self._withdraw(grant, args)
         if tool == "propose_action":
