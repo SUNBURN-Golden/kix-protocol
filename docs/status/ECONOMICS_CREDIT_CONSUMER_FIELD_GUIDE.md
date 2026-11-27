@@ -2077,3 +2077,27 @@ External `kix-capital` acceptance remains `UNVERIFIED`. Product limits remain
 `UNDETERMINED` with Astra. Legal liability remains `UNDETERMINED` with the User
 and legal counsel.
 [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure) · [Builder validation](../../validation/2026-11-27-plan-capital-refund-versus-repayment/README.md)
+
+## Capital draw lost reply
+
+Both synthetic histories submit `s2-draw` once with advance `adv-com`, draw
+`drw-s2` and idempotency key `s2-draw`. They use the literal committed `stl-s2`
+offer face and the matching binding and draw step from the equal-gross pack.
+Each `expected_caller` record has the same canonical bytes with `UNKNOWN`, a
+null receipt and zero follow-up calls. Caller observations reflect only the
+missing reply. Recovery lookup remains `NOT_BOUND`.
+[Equal-gross claim binding](#capital-equal-gross-claim-binding) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json)
+
+| Harness history | Dispatches | Credit phase | Snapshot frozen | Outstanding (fixture KRW) | Draw journal appends |
+| --- | ---: | --- | --- | ---: | ---: |
+| `loss-before-dispatch` | 0 | `APPROVED` | false | 0 | 0 |
+| `loss-after-dispatch` | 1 | `DRAWN` | true | 10,000 | 1 |
+
+The harness verifies the withheld envelope against the pinned matching case
+and records a `hidden_receipt_ref` to its accepted result. Both histories
+preserve the complete `stl-s1` and `stl-s2` settlement journals. The companion
+index links the caller record and the supplemental harness record for each
+case. This is source-informed Class B evidence. External Capital acceptance
+remains `UNVERIFIED`. Product limits and financial terms are `UNDETERMINED`
+with Astra. Legal responsibility is `UNDETERMINED` with User/legal.
+[F04 §7.5](../contracts/CREDIT_ADVANCE_F04.md#75-정산-게이트) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#draw-lost-reply) · [Builder validation](../../validation/2026-11-28-plan-capital-draw-lost-reply/README.md)

@@ -31,7 +31,9 @@ RESALE_SOURCE_PINS = (
     (RESALE_JOURNEY_RECEIPTS, '6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998'),
     (RESALE_JOURNEY_INPUT, 'f9555d84790b91eafe74c71453a2dbd301fae43566a5f0a3a47e19059151e9cc'),
 )
-SELF_CONTAINED_SHAPES = {'self_contained_refusals', 'self_contained_comparisons'}
+SELF_CONTAINED_SHAPES = {
+    'self_contained_refusals', 'self_contained_comparisons', 'self_contained_delivery_histories',
+}
 # Independent fixed family/path, scenario/case identity and section-count inventory.
 PACKS = (
     ('settlement_credit_boundary', 'ordered_steps', 'settlement_credit_boundary_v1.json', 'settlement_credit_boundary_vectors_v1.json',
@@ -122,6 +124,10 @@ PACKS = (
      'capital_refund_versus_repayment_vectors_v1.json', 'capital_refund_versus_repayment_vectors_v1.json',
      'test_capital_refund_versus_repayment.py', 'CapitalRefundVersusRepaymentTests.test_refund_versus_repayment',
      'Capital refund versus repayment', ('mock_acceptance', 'repayment_note'), ()),
+    ('capital_draw_lost_reply', 'self_contained_delivery_histories',
+     'capital_draw_lost_reply_vectors_v1.json', 'capital_draw_lost_reply_vectors_v1.json',
+     'test_capital_draw_lost_reply.py', 'CapitalDrawLostReplyTests.test_draw_lost_reply_pair',
+     'Capital draw lost reply', ('loss-before-dispatch', 'loss-after-dispatch'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -215,6 +221,10 @@ LIMITATIONS = {
     'capital_refund_versus_repayment': [
         'Equal fixture amounts affect separate balances and journals. Both outcomes preserve the committed '
         'offer face. Shared exposure uses the credit view from each branch and a caller-supplied fixture limit.',
+    ],
+    'capital_draw_lost_reply': [
+        'Both caller records end at UNKNOWN after one draw attempt. Only the replay harness sees '
+        'the credit and settlement journals or the withheld receipt. Recovery lookup remains NOT_BOUND.',
     ],
 }
 SUPPORTING = (
@@ -319,6 +329,10 @@ def _expected_associations(spec, source, output):
             if shape == 'self_contained_refusals':
                 entry.update(observer=case['observer'], arguments_ref=prefix + '/arguments',
                              keywords_ref=prefix + '/keywords', result_ref=prefix + '/expected_error')
+            elif shape == 'self_contained_delivery_histories':
+                entry['result_ref'] = prefix + '/expected_caller'
+                observations.append({'case_id': case['case_id'], 'kind': 'producer_evidence',
+                                     'ref': prefix + '/producer_evidence'})
             else:
                 entry['result_ref'] = prefix + '/expected_result'
             if family == 'capital_commerce_refund_checkpoints':
@@ -432,7 +446,11 @@ def validate_index(document, read=_read):
             for key, ref in entry.items():
                 if key.endswith('_ref'):
                     _resolve(documents, ref)
-            if shape != 'self_contained_refusals':
+            if shape == 'self_contained_delivery_histories':
+                caller = _resolve(documents, entry['result_ref'])
+                _fields(caller, 'operation advance_id draw_id idempotency_key attempts outcome receipt follow_up_calls',
+                        'caller observation')
+            elif shape != 'self_contained_refusals':
                 result = _resolve(documents, entry['result_ref'])
                 _check(type(result) is dict and set(result) in ({'ok'}, {'error'}), 'complete result envelope')
         for observation in observations:
@@ -490,11 +508,11 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 482)
-        self.assertEqual(len(self.document['packs']), 22)
+        self.assertEqual(validate_index(self.document), 484)
+        self.assertEqual(len(self.document['packs']), 23)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2, 2])
-        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 130)
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2, 2, 2])
+        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 132)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
     def test_membership_controls(self):
@@ -818,6 +836,36 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
                              'observe_mock_cancel_acceptance')
 
         self._reject(swap_results, 'entry membership/association/order/type: ' + family)
+
+    def test_draw_lost_reply_crossed_references(self):
+        family = 'capital_draw_lost_reply'
+        i = next(i for i, pack in enumerate(self.document['packs']) if pack['id'] == family)
+        path = self.document['packs'][i]['input']['path']
+        documents = {path: decode_json(_read(path).decode('utf-8'))}
+
+        def swap(document, section, key):
+            first, second = document['packs'][i][section]
+            first[key], second[key] = second[key], first[key]
+            before, after = (_resolve(documents, row[key]) for row in (first, second))
+            if key == 'result_ref':
+                self.assertTrue(_same(before, after))
+                self.assertEqual(before['outcome'], 'UNKNOWN')
+            elif key == 'input_ref':
+                self.assertEqual([before['case_id'], after['case_id']],
+                                 ['loss-after-dispatch', 'loss-before-dispatch'])
+            else:
+                self.assertEqual([before['dispatches'], after['dispatches']], [1, 0])
+
+        for section, key, diagnostic in (
+            ('entries', 'input_ref', 'entry membership/association/order/type: ' + family),
+            ('entries', 'result_ref', 'entry membership/association/order/type: ' + family),
+            ('observations', 'ref', 'supplemental observation association'),
+        ):
+            with self.subTest(section=section, key=key):
+                self._reject(lambda document: swap(document, section, key), diagnostic)
+
+        self._detached(i, 'output', lambda pack: pack['cases'][1]['expected_caller'].update(phase='DRAWN'),
+                       'caller observation requires')
 
     def test_pin_controls(self):
         for i in range(len(PACKS)):

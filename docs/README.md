@@ -903,3 +903,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-27 Capital refund versus repayment — 위치 안내만
 
 - A 1,500 KRW mock cancellation acceptance leaves 2,500 KRW refund outstanding and 10,000 KRW credit outstanding. A separate 1,500 KRW F04 repayment note from the same checkpoint leaves 4,000 KRW refund outstanding and 8,500 KRW credit outstanding. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-refund-versus-repayment) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#refund-versus-repayment) · [Builder validation](../validation/2026-11-27-plan-capital-refund-versus-repayment/README.md)
+
+## 2026-11-28 Capital draw lost reply — 위치 안내만
+
+- One matching F04 draw attempt yields the same `UNKNOWN` caller observation in both histories. The harness records zero outstanding when the request is dropped and 10,000 fixture KRW outstanding when the accepted reply is withheld. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-draw-lost-reply) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#draw-lost-reply) · [Builder validation](../validation/2026-11-28-plan-capital-draw-lost-reply/README.md)
