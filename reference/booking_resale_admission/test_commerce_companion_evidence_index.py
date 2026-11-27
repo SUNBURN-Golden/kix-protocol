@@ -25,6 +25,7 @@ import test_commerce_resale_buyer_release_vectors as resale_buyer_release
 import test_commerce_admission_replay_after_resale_vectors as admission_replay
 import test_commerce_replaced_admission_binding_vectors as replaced_admission
 import test_commerce_admission_journal_after_transfer_vectors as admission_journal
+import test_commerce_cross_order_issuance_vectors as cross_order_issuance
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -56,8 +57,10 @@ PACKS = (
      'test_complete_output_bytes_and_references', 15),
     ('admission_journal_after_transfer', admission_journal, 'CommerceAdmissionJournalAfterTransferVectorTests',
      'test_complete_output_bytes_and_references', 2),
+    ('cross_order_issuance', cross_order_issuance, 'CommerceCrossOrderIssuanceVectorTests',
+     'test_complete_output_bytes_and_references', 2),
 )
-TOTAL_ENTRIES = 424
+TOTAL_ENTRIES = 426
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -115,6 +118,10 @@ LIMITATIONS = {
     'admission_journal_after_transfer': [
         'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Both entries index published checkpoint receipts with separate local diagnostics.',
         'A journal match records historical replay equality only. The explicit transfer makes both diagnostics return STALE_VERSION with zero new consumptions.',
+    ],
+    'cross_order_issuance': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Each branch replays the same pinned payment-2 checkpoint in a fresh in-process host.',
+        'The receipt and refusal describe local issuance binding. Both preserve the transferred resale right and record zero admission consumption.',
     ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
@@ -378,6 +385,20 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                 refused, recorded = entries['reuse-primary'], entries['resale-payment']
                 self.assertEqual(refused['action'], recorded['action'])
                 refused[field], recorded[field] = recorded[field], refused[field]
+
+            with self.subTest(field=field):
+                self._reject(swap, field + ' association')
+
+    def test_cross_order_issuance_swapped_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'cross_order_issuance')
+        issued, refused = self.document['packs'][p]['entries']
+        self.assertEqual(issued['action'], refused['action'])
+        self.assertEqual(issued['step_id'], refused['step_id'])
+        self.assertEqual((issued['outcome_kind'], refused['outcome_kind']), ('receipt', 'rejection_code'))
+        for field in ('outcome_ref', 'input_ref'):
+            def swap(document):
+                left, right = document['packs'][p]['entries']
+                left[field], right[field] = right[field], left[field]
 
             with self.subTest(field=field):
                 self._reject(swap, field + ' association')

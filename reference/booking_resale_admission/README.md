@@ -4753,3 +4753,31 @@ grants no admission authority. The pack carries `HOLD_SEMANTIC`, and all
 PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -t reference/booking_resale_admission -p test_commerce_admission_journal_after_transfer_vectors.py -v
 ```
+
+## Commerce cross-order issuance vectors
+
+Both cases replay the 16-step `payment-ref-scope` history through `payment-2`
+in separate in-process hosts. At that checkpoint `order-2` is `PAYMENT_NOTED`
+on `show-2`. On `show-1`, `transfer-1` has moved `issue-1` to `buyer-2` at
+version 2. Each case submits one `reservation_issue` with a fresh key.
+
+| Case | Issuance ID | Outcome for `order-2` |
+|---|---|---|
+| `distinct-issuance` | `issue-2` | One right for `buyer-3` at version 1 on `show-2`. The reservation journal appends one `issue`. |
+| `issuance-collision` | `issue-1` | `ISSUANCE_BINDING_CONFLICT`. The paid reservation retains its `RESERVED` slot and has no right. All five accepted journals are preserved. |
+
+Both branches preserve the transferred resale right and record zero admission
+consumptions. The input pins the checkpoint files and references. Each indexed
+outcome contains the full receipt or refusal and a detached test-harness snapshot.
+The pack carries `HOLD_SEMANTIC` and the existing `MOCK_EVIDENCE` binding.
+[Checkpoint input](fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/15/body) ·
+[Checkpoint outcome](fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/15) ·
+[Canonical inputs](fixtures/commerce_cross_order_issuance_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_cross_order_issuance_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#cross-order-issuance) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-cross-order-issuance/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_cross_order_issuance_vectors.py
+```
