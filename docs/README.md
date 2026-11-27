@@ -892,3 +892,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-27 Capital draw refusal after restore — 위치 안내만
 
 - At S1's mock settlement commit, two credit machines share the same accepted journal and zero exposure. The original returns its stored `SETTLEMENT_NOT_COMMITTED` refusal. The restored mock accepts the identical draw and records 10,000 fixture KRW of exposure against the captured face. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-draw-refusal-after-restore) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#draw-refusal-after-restore) · [Builder validation](../validation/2026-11-27-plan-capital-draw-refusal-after-restore/README.md)
+
+## 2026-11-27 Capital equal-gross claim binding — 위치 안내만
+
+- Two committed claims share a 100,000 KRW fixture gross. Both F04 branches offer the S2 claim. The S2 binding accepts one mock draw of 10,000 KRW, and the S1 binding returns `SETTLEMENT_BINDING_CONFLICT` with zero exposure. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-equal-gross-claim-binding) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#equal-gross-claim-binding) · [Builder validation](../validation/2026-11-27-plan-capital-equal-gross-claim-binding/README.md)
