@@ -7,6 +7,7 @@ import unittest
 from collections import Counter, defaultdict
 
 import test_commerce_journey_conformance as journey
+from test_commerce_companion_evidence_index import _resolve
 from test_commerce_journey_receipts import _decode, _pin
 from integration_gate.catalogue import git_blob_id, load_catalogue
 from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
@@ -14,15 +15,25 @@ from integration_gate.constants import CONTRACT_ONLY_OPENAPI, INTEGRATION_GATE_O
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import EnvelopeError, parse_envelope
 from mock_gates import NON_CLAIMS, _canonical
+from reference.booking_resale_admission.commerce_tuple_assertions import (
+    BOOKING_BRANCH_RECEIPTS,
+    INPUTS,
+    MARKET_RECEIPTS,
+    RECEIPTS,
+    TABLE,
+    VECTORS,
+    check_journal,
+    resolve_receipt_ref,
+    snapshot,
+)
 
 ROOT = journey.ROOT
-TABLE = "docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json"
-VECTORS = "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json"
 MANIFEST = "sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json"
-INPUTS = "reference/booking_resale_admission/fixtures/commerce_journey_conformance_v1.json"
-RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json"
-MARKET_RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json"
-BOOKING_BRANCH_RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json"
+MANIFEST_REVISION = "commerce-fixture-8ba7f6c-1"
+MANIFEST_SHA256 = "76ea72c6249ec0f90cb426dfbb8efda8308610f79c4f0ac6ff0a2445cab59a4f"
+CONSUMER_SURFACE_MAP = "docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md"
+FULL_RECEIPT_INDEX = "docs/status/COMMERCE_FULL_RECEIPT_INDEX_V1.json"
+RECEIPT_SOURCES = (RECEIPTS, MARKET_RECEIPTS, BOOKING_BRANCH_RECEIPTS)
 BOOKING_BRANCH_SCHEMA = "kix-commerce-booking-branch-receipts/1"
 BOOKING_BRANCH_STEPS = {
     "booking-resale": {"order-A", "payment-A", "issue-A"},
@@ -42,13 +53,6 @@ EXTERNAL_FLAGS = {"external_payment", "external_admission", "external_marketplac
 
 def read(path):
     return (ROOT / path).read_bytes()
-
-
-def snapshot(host):
-    return {
-        name: (machine.canonical_state(), machine.export_journal())
-        for name, machine in host.machines.items()
-    }
 
 
 class CommerceFixtureTupleTests(unittest.TestCase):
@@ -402,11 +406,36 @@ class CommerceFixtureTupleTests(unittest.TestCase):
             ):
                 self.compare_booking_branch_receipts(_canonical(document).encode("utf-8"))
 
-    def test_all_first_acceptances_resolve(self):
+    def check_full_receipt_index(self, index, source_bytes):
+        self.assertEqual(set(index), {
+            "record_schema_version", "normative", "consumer", "manifest", "sources", "receipts",
+        })
+        self.assertEqual(index["record_schema_version"], "kix-commerce-full-receipt-index/1")
+        self.assertIs(index["normative"], False)
+        self.assertEqual(index["consumer"], "kix-commerce-apps")
+        self.assertIn(f"`{MANIFEST_SHA256}`", read(CONSUMER_SURFACE_MAP).decode("utf-8"))
+        manifest_raw = read(MANIFEST)
+        self.assertEqual(hashlib.sha256(manifest_raw).hexdigest(), MANIFEST_SHA256)
+        self.assertEqual(_decode(manifest_raw)["profile_revision"], MANIFEST_REVISION)
+        self.assertEqual(index["manifest"], {
+            "path": MANIFEST, "profile_revision": MANIFEST_REVISION, "sha256": MANIFEST_SHA256,
+        })
+
+        self.assertEqual(
+            Counter(pin["path"] for pin in index["sources"]), Counter(RECEIPT_SOURCES),
+            "receipt source paths differ",
+        )
+        documents = {}
+        for pin in index["sources"]:
+            path = pin["path"]
+            raw = source_bytes[path]
+            self.assertEqual(pin, _pin(path, raw), f"receipt source digest differs for {path}")
+            documents[path] = _decode(raw)
+
         targets = self.first_acceptances()
         direct_ids = {vid for vid, vector in targets.items() if "receipt_ref" in vector["expected"]}
-        market = _decode(read(MARKET_RECEIPTS))["receipts"]
-        booking = _decode(read(BOOKING_BRANCH_RECEIPTS))["receipts"]
+        market = documents[MARKET_RECEIPTS]["receipts"]
+        booking = documents[BOOKING_BRANCH_RECEIPTS]["receipts"]
         self.assertEqual(len(targets), 56)
         self.assertEqual((len(direct_ids), len(market), len(booking)), (32, 14, 10))
         self.assertEqual(
@@ -414,18 +443,53 @@ class CommerceFixtureTupleTests(unittest.TestCase):
             Counter(targets.keys()),
             "each first acceptance must have exactly one receipt source",
         )
-        companions = market | booking
+        indexed = index["receipts"]
+        self.assertEqual(indexed.keys(), targets.keys(), "indexed receipt IDs differ")
         for vid, vector in targets.items():
-            with self.subTest(vector=vid, setup=vector["setup"]):
-                expected = self.resolve_receipt_ref(vector) if vid in direct_ids else companions[vid]
-                self.assertEqual(_canonical(self.replay_target(vector)[vid]), _canonical(expected))
+            if vid in direct_ids:
+                kind = "direct"
+                expected_ref = vector["expected"]["receipt_ref"]
+            else:
+                if vector["context"] == "resale-market":
+                    kind, path = "market_companion", MARKET_RECEIPTS
+                else:
+                    kind, path = "booking_branch_companion", BOOKING_BRANCH_RECEIPTS
+                token = vid.replace("~", "~0").replace("/", "~1")
+                expected_ref = f"{path}#/receipts/{token}"
+            entry = indexed[vid]
+            self.assertEqual(set(entry), {"source_kind", "receipt_ref"}, vid)
+            self.assertEqual(entry["source_kind"], kind, f"receipt source kind differs for {vid}")
+            self.assertEqual(entry["receipt_ref"], expected_ref, f"receipt pointer differs for {vid}")
+            self.assertEqual(
+                _canonical(_resolve(documents, entry["receipt_ref"])),
+                _canonical(self.replay_target(vector)[vid]),
+                f"indexed receipt differs from replay for {vid} at {expected_ref}",
+            )
 
-    def resolve_receipt_ref(self, vector):
-        index = vector["input_index"]
-        self.assertEqual(vector["expected"]["receipt_ref"], f"{RECEIPTS}#/steps/{index}/receipt")
-        golden = self.golden_steps[index]
-        self.assertEqual(golden["action"], vector["envelope"]["action"])
-        return golden["receipt"]
+    def test_all_first_acceptances_resolve(self):
+        self.check_full_receipt_index(
+            _decode(read(FULL_RECEIPT_INDEX)), {path: read(path) for path in RECEIPT_SOURCES},
+        )
+
+    def test_full_receipt_index_controls(self):
+        index = _decode(read(FULL_RECEIPT_INDEX))
+        source_bytes = {path: read(path) for path in RECEIPT_SOURCES}
+
+        missing = copy.deepcopy(index)
+        del missing["receipts"]["booking-admission/order-B"]
+        with self.assertRaisesRegex(AssertionError, "indexed receipt IDs differ"):
+            self.check_full_receipt_index(missing, source_bytes)
+
+        swapped = copy.deepcopy(index)
+        listed = swapped["receipts"]["resale-market/market-cancel-LISTED"]
+        held = swapped["receipts"]["resale-market/market-cancel-BUY_HELD"]
+        listed["receipt_ref"], held["receipt_ref"] = held["receipt_ref"], listed["receipt_ref"]
+        with self.assertRaisesRegex(AssertionError, "receipt pointer differs for resale-market/market-cancel"):
+            self.check_full_receipt_index(swapped, source_bytes)
+
+        changed_sources = {**source_bytes, MARKET_RECEIPTS: source_bytes[MARKET_RECEIPTS] + b" "}
+        with self.assertRaisesRegex(AssertionError, "receipt source digest differs"):
+            self.check_full_receipt_index(index, changed_sources)
 
     def replay(self, host, vector, receipts):
         envelope = vector["envelope"]
@@ -487,28 +551,12 @@ class CommerceFixtureTupleTests(unittest.TestCase):
         for path, value in expected["receipt_fields"].items():
             self.assertEqual(_canonical(journey._resolve(receipt, path)), _canonical(value), path)
         if "receipt_ref" in expected:
-            self.assertEqual(_canonical(receipt), _canonical(self.resolve_receipt_ref(vector)))
+            self.assertEqual(_canonical(receipt),
+                             _canonical(resolve_receipt_ref(self, vector, self.golden_steps)))
         if kind == "duplicate":
             self.assertEqual(snapshot(host), before)
             first = receipts[vector["replay_of"]]
             self.assertEqual(_canonical(receipt), _canonical({**first, "duplicate": True, "applied": None}))
         else:
-            self.check_journal(host, spec, body, before, expected["journal_delta"])
+            check_journal(self, spec, body, before, snapshot(host), expected["journal_delta"])
         receipts[vector["id"]] = receipt
-
-    def check_journal(self, host, spec, body, before, deltas):
-        machine = spec["machine"]
-        self.assertEqual(deltas.get(machine), 1)
-        after = snapshot(host)
-        self.assertTrue(deltas.keys() <= after.keys())
-        for name, (state, journal) in after.items():
-            old_state, old_journal = before[name]
-            self.assertEqual(len(journal) - len(old_journal), deltas.get(name, 0), name)
-            self.assertEqual(journal[:len(old_journal)], old_journal, name)
-            if name not in deltas:
-                self.assertEqual(state, old_state, name)
-        entry = after[machine][1][-1]
-        self.assertEqual(entry["op"], spec["op"])
-        self.assertEqual(entry["idempotency_key"], body["idempotency_key"])
-        subject_key = "settlement_id" if machine == "settlement" else "subject_id"
-        self.assertEqual(entry[subject_key], body[spec["subject_field"]])

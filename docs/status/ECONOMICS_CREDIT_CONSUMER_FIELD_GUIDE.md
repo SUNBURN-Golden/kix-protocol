@@ -2031,3 +2031,49 @@ journals match `#/settlement_journals` before and after the draw requests.
 External `kix-capital` acceptance remains **UNVERIFIED**, product limits
 **UNDETERMINED — Astra**, and legal responsibility **UNDETERMINED — User/legal**.
 [F04 §7.5](../contracts/CREDIT_ADVANCE_F04.md#75-정산-게이트) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#equal-gross-claim-binding)
+
+## Capital refund versus repayment
+
+Both fresh replays start with the same linked purchase, `claim-1` on
+`trade-claim-1` in KRW. The replay uses the whole claim from the Commerce
+`commit` receipt as the F04 offer face. The common `before` snapshot has a
+4,000 KRW requester refund bound, 10,000 KRW of drawn and outstanding credit,
+and five settlement and four credit journal entries.
+
+| Commerce checkpoint | Receipt fragment |
+| --- | --- |
+| `commit` | `#/cases/0/steps/9/receipt` |
+| `bind-refund` | `#/cases/0/steps/14/receipt` |
+| `observe-mock-acceptance` | `#/cases/0/steps/15/receipt` |
+
+The replay checks the three receipt associations against the merged Capital
+checkpoints. It resolves the settlement command bodies through the Commerce
+steps' `input_ref` values. The acceptance uses the Commerce command verbatim.
+The repayment records note `repayment-note-1` at sequence 1 on
+`advance-commerce-checkpoints`.
+[Commerce receipts](../../reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json) · [Capital checkpoints](#capital-commerce-refund-checkpoints)
+
+| Command | Refund accepted (fixture KRW) | Refund outstanding (fixture KRW) | Credit repaid (fixture KRW) | Credit outstanding (fixture KRW) | Journal append |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `observe_mock_cancel_acceptance` | 1,500 | 2,500 | 0 | 10,000 | Settlement only |
+| `repay` | 0 | 4,000 | 1,500 | 8,500 | Credit only |
+
+The pack stores the complete receipts at `#/cases/0/expected_result` and
+`#/cases/1/expected_result` and the complete branch snapshots under each case's
+`after` field. Both histories preserve the frozen offer-face bytes and
+10,001 KRW of confirmed settlement cash. PG adjustment outstanding is 1,500
+KRW after mock acceptance and zero after the repayment note.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#refund-versus-repayment)
+
+Each resulting F04 view supplies one shared-exposure observation at the same
+explicit 10,000 KRW fixture limit. Group outstanding exposure is 10,000 KRW
+after acceptance and 8,500 KRW after repayment. Open, reserved and residual
+capacity are 10,001, 10,000 and 1 KRW in both histories. The observations retain
+`SHARED_EXPOSURE_NOT_BOUND`, `refund_component=NOT_BOUND`, `repair=NONE` and
+`fail_closed=true`. State mutation, exposure authorization, funds execution and
+actual repayment flags are false where defined.
+
+External `kix-capital` acceptance remains `UNVERIFIED`. Product limits remain
+`UNDETERMINED` with Astra. Legal liability remains `UNDETERMINED` with the User
+and legal counsel.
+[F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure) · [Builder validation](../../validation/2026-11-27-plan-capital-refund-versus-repayment/README.md)

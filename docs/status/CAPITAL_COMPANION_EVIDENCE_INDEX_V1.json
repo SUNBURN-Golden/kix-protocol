@@ -5481,6 +5481,46 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_refund_versus_repayment",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json",
+        "sha256": "72b637b7e7209e36303fe4faa890c2339263ef3ae02e256d7e7c6410aef2a5e4",
+        "gitBlob": "75183634816a2c93f2e598bb3e5ccac7bcf83728"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json",
+        "sha256": "72b637b7e7209e36303fe4faa890c2339263ef3ae02e256d7e7c6410aef2a5e4",
+        "gitBlob": "75183634816a2c93f2e598bb3e5ccac7bcf83728"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_refund_versus_repayment.py",
+        "symbol": "CapitalRefundVersusRepaymentTests.test_refund_versus_repayment"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital refund versus repayment"
+        }
+      ],
+      "limitations": [
+        "Equal fixture amounts affect separate balances and journals. Both outcomes preserve the committed offer face. Shared exposure uses the credit view from each branch and a caller-supplied fixture limit."
+      ],
+      "entries": [
+        {
+          "case_id": "mock_acceptance",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "repayment_note",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [

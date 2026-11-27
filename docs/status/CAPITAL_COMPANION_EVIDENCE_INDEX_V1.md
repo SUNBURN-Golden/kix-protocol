@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates twenty-one
+read-only discovery metadata for `kix-capital`. It associates twenty-two
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -67,7 +67,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_group_sum_boundary | self_contained_comparisons | 3 | 2 |
 | capital_draw_refusal_after_restore | self_contained_comparisons | 2 | 0 |
 | capital_equal_gross_claim_binding | self_contained_comparisons | 2 | 0 |
-| **Total** | | **480** | **130** |
+| capital_refund_versus_repayment | self_contained_comparisons | 2 | 0 |
+| **Total** | | **482** | **130** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -119,7 +120,7 @@ The two supporting records pin `settlement_variance_v1.json` and
 `shared_exposure_v1.json`. Each associates six scenario identities with whole
 input scenarios and `/expected` results, existing contract-test symbols,
 F04 §§7.11–7.12 headings and the guide's limitations section. They are supporting
-evidence, outside the twenty consumer families.
+evidence, outside the consumer pack families.
 
 ### P1 pre-draw rejection and cancellation
 
@@ -330,6 +331,23 @@ The replay compares the complete advance views, credit journals, original
 offer faces and both settlement journals. The index validator rejects
 exchanged result pointers even when both resolve.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_equal_gross_claim_binding.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-equal-gross-claim-binding)
+
+### Refund versus repayment
+
+`capital_refund_versus_repayment` pins the same comparison pack for input and
+output. Both cases start at the pack's `before` snapshot, with a 4,000 KRW
+requester refund bound to `claim-1` and a 10,000 KRW mock advance drawn.
+
+| Case | Case fragment | Complete result fragment | Refund outstanding (fixture KRW) | Credit outstanding (fixture KRW) |
+| --- | --- | --- | ---: | ---: |
+| `mock_acceptance` | `#/cases/0` | `#/cases/0/expected_result` | 2,500 | 10,000 |
+| `repayment_note` | `#/cases/1` | `#/cases/1/expected_result` | 4,000 | 8,500 |
+
+Each result reference resolves to the complete accepted command envelope.
+Each case also includes an `after` snapshot with that branch's shared-exposure
+observation and both journals. The index rejects an exchange of the two result
+references even when both resolve to valid envelopes.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_refund_versus_repayment.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-refund-versus-repayment)
 
 ## Read-only consumption
 

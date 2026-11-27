@@ -113,6 +113,26 @@ as follows.
    Fence unresolved `UNKNOWN` outcomes without polling, retry or replacement
    writes. [Offline replay handoff](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#replay-offline)
 
+The pinned grant checks above are sufficient for fixture qualification. The
+non-normative [full receipt index](COMMERCE_FULL_RECEIPT_INDEX_V1.json)
+provides an optional lookup for complete receipts for all 56 listed first
+acceptances. The 32 `direct` entries use the vectors' existing references.
+The 14 `market_companion` and 10 `booking_branch_companion` entries identify
+companion evidence.
+
+To use the index, match its manifest pin to the verified manifest and look up
+`receipts[vectorId]` using the literal vector ID. Verify the referenced source's
+raw bytes against its `sha256` and `gitBlob` pins, then follow the JSON Pointer
+after `#` in `receipt_ref`. Within a JSON Pointer token, encode `~` as `~0`
+before encoding `/` as `~1`.
+
+- `receipts["booking-admission/consume-B"]` has `source_kind: direct` and
+  points to `#/steps/29/receipt` in `commerce_journey_receipts_v1.json`.
+- `receipts["resale-market/market-cancel-LISTED"]` has
+  `source_kind: market_companion` and points to
+  `#/receipts/resale-market~1market-cancel-LISTED` in
+  `commerce_market_full_receipts_v1.json`.
+
 The delivery fixtures replay pinned envelopes on fresh in-process hosts.
 Producer evidence comes from the replay harness.
 
@@ -313,8 +333,8 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect fourteen
-Commerce input/outcome pack families (407 steps) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect sixteen
+Commerce input/outcome pack families (424 steps) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Use the
 [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
@@ -331,6 +351,20 @@ current resale owner and the unchanged accepted journals are detached
 test-harness observations. The right stays with `buyer-2` at version 2 and no
 consumption is recorded.
 [Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-admission-replay-after-resale-vectors)
+
+The admission journal after transfer pack carries `HOLD_SEMANTIC`. With
+matching ownership, restore reproduces the state digest and reconciliation
+matches the same accepted journal. After explicit transfer to `buyer-2` at
+version 2, both local diagnostics return `STALE_VERSION` with zero new
+consumptions. The indexed receipts record the two published checkpoints.
+[Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-admission-journal-after-transfer-vectors)
+
+The replacement admission pack carries `HOLD_SEMANTIC`. The crossed gate
+and request presentations preserve the live replacement, right version 1 and
+accepted journals. The matching presentation records `CONSUMED_ONCE` with
+version 2 and one consume in each bound journal. The original payment and
+issuance receipts have separate references.
+[Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-replacement-admission-binding-vectors)
 
 The late-payment pack covers synthetic command refusal, historical cancellation
 replay after slot reuse, and the replacement booking's separate payment,
