@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates twenty-two
+read-only discovery metadata for `kix-capital`. It associates twenty-three
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -68,7 +68,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_draw_refusal_after_restore | self_contained_comparisons | 2 | 0 |
 | capital_equal_gross_claim_binding | self_contained_comparisons | 2 | 0 |
 | capital_refund_versus_repayment | self_contained_comparisons | 2 | 0 |
-| **Total** | | **482** | **130** |
+| capital_draw_lost_reply | self_contained_delivery_histories | 2 | 2 |
+| **Total** | | **484** | **132** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -348,6 +349,25 @@ Each case also includes an `after` snapshot with that branch's shared-exposure
 observation and both journals. The index rejects an exchange of the two result
 references even when both resolve to valid envelopes.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_refund_versus_repayment.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-refund-versus-repayment)
+
+### Draw lost reply
+
+`capital_draw_lost_reply` pins one `self_contained_delivery_histories` pack
+for input and output. Each supplemental `producer_evidence` observation is
+associated with its case ID and points to the harness's private record.
+
+| Case | Input fragment | Caller result fragment | Harness observation fragment |
+| --- | --- | --- | --- |
+| `loss-before-dispatch` | `#/cases/0` | `#/cases/0/expected_caller` | `#/cases/0/producer_evidence` |
+| `loss-after-dispatch` | `#/cases/1` | `#/cases/1/expected_caller` | `#/cases/1/producer_evidence` |
+
+Both caller fragments resolve to byte-identical `UNKNOWN` observations with
+one attempt, a null receipt and zero follow-up calls. The harness records
+`APPROVED` with zero outstanding when the request is dropped and `DRAWN` with
+10,000 fixture KRW outstanding when the accepted reply is withheld. The index
+rejects exchanged input, result and observation references even though the
+swapped pointers still resolve and the caller values are identical.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_draw_lost_reply.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-draw-lost-reply)
 
 ## Read-only consumption
 

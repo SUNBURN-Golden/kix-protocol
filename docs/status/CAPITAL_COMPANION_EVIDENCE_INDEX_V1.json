@@ -5521,6 +5521,57 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_draw_lost_reply",
+      "shape": "self_contained_delivery_histories",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json",
+        "sha256": "44d5d22ce2a7d57c52e6985fb2c6bb7ff953ffc7173613c933db53b1fc6fa766",
+        "gitBlob": "20b7be80c5ce9291a03de377925b378469effe63"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json",
+        "sha256": "44d5d22ce2a7d57c52e6985fb2c6bb7ff953ffc7173613c933db53b1fc6fa766",
+        "gitBlob": "20b7be80c5ce9291a03de377925b378469effe63"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_draw_lost_reply.py",
+        "symbol": "CapitalDrawLostReplyTests.test_draw_lost_reply_pair"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital draw lost reply"
+        }
+      ],
+      "limitations": [
+        "Both caller records end at UNKNOWN after one draw attempt. Only the replay harness sees the credit and settlement journals or the withheld receipt. Recovery lookup remains NOT_BOUND."
+      ],
+      "entries": [
+        {
+          "case_id": "loss-before-dispatch",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json#/cases/0/expected_caller"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json#/cases/1/expected_caller"
+        }
+      ],
+      "observations": [
+        {
+          "case_id": "loss-before-dispatch",
+          "kind": "producer_evidence",
+          "ref": "reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "kind": "producer_evidence",
+          "ref": "reference/credit_advance_f04/fixtures/capital_draw_lost_reply_vectors_v1.json#/cases/1/producer_evidence"
+        }
+      ]
     }
   ],
   "supporting_evidence": [
