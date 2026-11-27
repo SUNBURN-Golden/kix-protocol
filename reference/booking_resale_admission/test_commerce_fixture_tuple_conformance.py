@@ -13,15 +13,20 @@ from integration_gate.constants import CONTRACT_ONLY_OPENAPI, INTEGRATION_GATE_O
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import EnvelopeError, parse_envelope
 from mock_gates import NON_CLAIMS, _canonical
+from reference.booking_resale_admission.commerce_tuple_assertions import (
+    BOOKING_BRANCH_RECEIPTS,
+    INPUTS,
+    MARKET_RECEIPTS,
+    RECEIPTS,
+    TABLE,
+    VECTORS,
+    check_journal,
+    resolve_receipt_ref,
+    snapshot,
+)
 
 ROOT = journey.ROOT
-TABLE = "docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json"
-VECTORS = "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json"
 MANIFEST = "sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json"
-INPUTS = "reference/booking_resale_admission/fixtures/commerce_journey_conformance_v1.json"
-RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json"
-MARKET_RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json"
-BOOKING_BRANCH_RECEIPTS = "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json"
 BOOKING_BRANCH_SCHEMA = "kix-commerce-booking-branch-receipts/1"
 BOOKING_BRANCH_STEPS = {
     "booking-resale": {"order-A", "payment-A", "issue-A"},
@@ -41,13 +46,6 @@ EXTERNAL_FLAGS = {"external_payment", "external_admission", "external_marketplac
 
 def read(path):
     return (ROOT / path).read_bytes()
-
-
-def snapshot(host):
-    return {
-        name: (machine.canonical_state(), machine.export_journal())
-        for name, machine in host.machines.items()
-    }
 
 
 class CommerceFixtureTupleTests(unittest.TestCase):
@@ -416,15 +414,11 @@ class CommerceFixtureTupleTests(unittest.TestCase):
         companions = market | booking
         for vid, vector in targets.items():
             with self.subTest(vector=vid, setup=vector["setup"]):
-                expected = self.resolve_receipt_ref(vector) if vid in direct_ids else companions[vid]
+                expected = (
+                    resolve_receipt_ref(self, vector, self.golden_steps)
+                    if vid in direct_ids else companions[vid]
+                )
                 self.assertEqual(_canonical(self.replay_target(vector)[vid]), _canonical(expected))
-
-    def resolve_receipt_ref(self, vector):
-        index = vector["input_index"]
-        self.assertEqual(vector["expected"]["receipt_ref"], f"{RECEIPTS}#/steps/{index}/receipt")
-        golden = self.golden_steps[index]
-        self.assertEqual(golden["action"], vector["envelope"]["action"])
-        return golden["receipt"]
 
     def replay(self, host, vector, receipts):
         envelope = vector["envelope"]
@@ -486,28 +480,12 @@ class CommerceFixtureTupleTests(unittest.TestCase):
         for path, value in expected["receipt_fields"].items():
             self.assertEqual(_canonical(journey._resolve(receipt, path)), _canonical(value), path)
         if "receipt_ref" in expected:
-            self.assertEqual(_canonical(receipt), _canonical(self.resolve_receipt_ref(vector)))
+            self.assertEqual(_canonical(receipt),
+                             _canonical(resolve_receipt_ref(self, vector, self.golden_steps)))
         if kind == "duplicate":
             self.assertEqual(snapshot(host), before)
             first = receipts[vector["replay_of"]]
             self.assertEqual(_canonical(receipt), _canonical({**first, "duplicate": True, "applied": None}))
         else:
-            self.check_journal(host, spec, body, before, expected["journal_delta"])
+            check_journal(self, spec, body, before, snapshot(host), expected["journal_delta"])
         receipts[vector["id"]] = receipt
-
-    def check_journal(self, host, spec, body, before, deltas):
-        machine = spec["machine"]
-        self.assertEqual(deltas.get(machine), 1)
-        after = snapshot(host)
-        self.assertTrue(deltas.keys() <= after.keys())
-        for name, (state, journal) in after.items():
-            old_state, old_journal = before[name]
-            self.assertEqual(len(journal) - len(old_journal), deltas.get(name, 0), name)
-            self.assertEqual(journal[:len(old_journal)], old_journal, name)
-            if name not in deltas:
-                self.assertEqual(state, old_state, name)
-        entry = after[machine][1][-1]
-        self.assertEqual(entry["op"], spec["op"])
-        self.assertEqual(entry["idempotency_key"], body["idempotency_key"])
-        subject_key = "settlement_id" if machine == "settlement" else "subject_id"
-        self.assertEqual(entry[subject_key], body[spec["subject_field"]])
