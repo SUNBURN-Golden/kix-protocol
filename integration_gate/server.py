@@ -117,6 +117,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         self._accepting = False
         self._core_failed = False
         self._diverged = False
+        self._writes_fenced = False
         self._draining = False
         self.admit = AdmitGate(max_in_flight)
         self._handlers = 0
@@ -124,6 +125,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         self._admit_lock = threading.Lock()
         self._handler_cv = threading.Condition(self._admit_lock)
         self._jobs = queue.Queue()
+        self._read_jobs = threading.BoundedSemaphore(max_in_flight)
         self.request_queue_size = min(max_in_flight, 16)
         super().__init__(address, handler)
         self._worker = threading.Thread(target=self._core_loop, name='gate-core')
@@ -136,11 +138,15 @@ class GateServer(ThreadingMixIn, HTTPServer):
                 return
             job()
 
-    def on_core(self, fn, timeout):
+    def on_core(self, fn, timeout, *, read_only=False):
         if threading.get_ident() == self._worker.ident:
             return fn()
         if not self._worker.is_alive():
             self._mark_diverged()
+            raise CoreBusy()
+        # A timed-out HTTP read can outlive its handler's admission slot.
+        # Hold a worker slot until that job finishes, even if the worker stalls.
+        if read_only and not self._read_jobs.acquire(blocking=False):
             raise CoreBusy()
         done = threading.Event()
         box = {}
@@ -151,11 +157,19 @@ class GateServer(ThreadingMixIn, HTTPServer):
             except BaseException as exc:
                 box['error'] = exc
             finally:
+                if read_only:
+                    self._read_jobs.release()
                 done.set()
 
         self._jobs.put(job)
         if not done.wait(timeout):
-            self._mark_diverged()
+            if not read_only:
+                with self._admit_lock:
+                    if self.store is None:
+                        self._writes_fenced = True
+                    else:
+                        self._diverged = True
+                    self._accepting = False
             raise CoreBusy()
         if 'error' in box:
             raise box['error']
@@ -208,7 +222,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
             self.core = core
             self.fsm = fsm
             self.resale_reads = resale_reads
-            if not self._draining and not self._diverged and not self._core_failed:
+            if not (self._draining or self._diverged or self._core_failed or self._writes_fenced):
                 self._accepting = True
 
     def _fail_unpublished(self, core):
@@ -226,27 +240,22 @@ class GateServer(ThreadingMixIn, HTTPServer):
 
     def commands_enabled(self):
         with self._admit_lock:
-            return bool(
-                self._accepting
-                and self.core is not None
-                and not self._core_failed
-                and not self._diverged
-                and not self._draining
-            )
+            return self.core is not None and not self._blocked_locked()
 
-    def blocked(self):
-        with self._admit_lock:
-            if self._draining or self._diverged or self._core_failed:
-                return True
-            if self.core is not None and not self._accepting:
-                return True
-            return False
+    def _blocked_locked(self, read_only=False):
+        if self._draining or self._diverged or self._core_failed:
+            return True
+        if self._writes_fenced:
+            return not read_only
+        return self.core is not None and not self._accepting
 
-    def try_admit(self):
+    def blocked(self, *, read_only=False):
         with self._admit_lock:
-            if self._draining or self._diverged or self._core_failed:
-                return 'NOT_READY'
-            if self.core is not None and not self._accepting:
+            return self._blocked_locked(read_only)
+
+    def try_admit(self, *, read_only=False):
+        with self._admit_lock:
+            if self._blocked_locked(read_only):
                 return 'NOT_READY'
             return self.admit.try_admit()
 
@@ -272,7 +281,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
     def set_accepting(self, value):
         """Latch used to separate liveness from readiness. Not an HTTP command."""
         with self._admit_lock:
-            if self._draining or self._diverged or self._core_failed:
+            if self._draining or self._diverged or self._core_failed or self._writes_fenced:
                 self._accepting = False
                 return
             self._accepting = bool(value)
@@ -364,7 +373,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
 
     def perform_read(self, query, request):
         observation = _journal_observation('not_attempted', self.store)
-        if not self.commands_enabled():
+        if self.resale_reads is None or self.blocked(read_only=True):
             return 503, _not_ready(), observation
         if self.store is not None:
             return 422, _error(READINESS_FSM_REFUSED), observation
@@ -594,7 +603,8 @@ class GateHandler(BaseHTTPRequestHandler):
         self._send(200, body)
 
     def _local_call(self, read_query):
-        decision = self.server.try_admit()
+        read_only = read_query is not None
+        decision = self.server.try_admit(read_only=read_only)
         admitted = self.server.admit.view()
         self._observation = {
             'admit': decision,
@@ -654,13 +664,14 @@ class GateHandler(BaseHTTPRequestHandler):
                     body_out['detail'] = exc.detail[:500]
                 self._send(400, body_out)
                 return
-            if self.server.blocked():
+            if self.server.blocked(read_only=read_only):
                 self._send(503, _not_ready())
                 return
             try:
                 status, response, observation = self.server.on_core(
                     job,
                     self.server.request_timeout_seconds,
+                    read_only=read_only,
                 )
                 observation['admit'] = 'OK'
                 observation['inFlight'] = admitted['inFlight']

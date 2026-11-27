@@ -213,9 +213,9 @@
 | G11 | 명령 집합 동등 | integration_gate/fsm_contract.py | 262 | `expected_commands` |
 | G12 | host 호출 | integration_gate/fsm_host.py | 80 | `def call(` |
 | G13 | host 디스패치 | integration_gate/fsm_host.py | 90 | `method(subject, **kwargs)` |
-| G14 | FSM 디스패치 | integration_gate/server.py | 290 | `fsm_name_set` |
-| G15 | FSM 수행 | integration_gate/server.py | 345 | `def _perform_fsm(` |
-| G16 | 저널 거절 | integration_gate/server.py | 352 | `READINESS_FSM_REFUSED` |
+| G14 | FSM 디스패치 | integration_gate/server.py | 299 | `fsm_name_set` |
+| G15 | FSM 수행 | integration_gate/server.py | 354 | `def _perform_fsm(` |
+| G16 | 저널 거절 | integration_gate/server.py | 361 | `READINESS_FSM_REFUSED` |
 | G17 | 생성기 fixture 검사 | sdk/generate/generate_client.mjs | 128 | `FIXTURE_ONLY` |
 | G18 | 생성기 개수 검사 | sdk/generate/generate_client.mjs | 150 | `commandCount` |
 | G19 | 생성기 action enum | sdk/generate/generate_client.mjs | 184 | `actionEnum` |

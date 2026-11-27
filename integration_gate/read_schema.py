@@ -182,8 +182,8 @@ DESCRIPTIONS = {
     'get_listing': 'Listing visible to its seller and, after transfer, the current holder.',
     'get_right': 'Separate ticket and right views visible to the current holder.',
     'get_presentation': 'Current holder only. A valid historical comparison may return matches_current_right false.',
-    'get_settlement': 'Follow the listing binding. Visible to the show organizer and settlement debtor fixture.',
-    RECOVERY: 'Resolve positive retained acceptance for resale or settlement using exactly one identity and a source cut. All evidence failures return UNKNOWN. No retry is granted.',
+    'get_settlement': 'Follow the listing binding when its listing ID matches the settlement trade ID. Visible to the show organizer and settlement debtor fixture.',
+    RECOVERY: 'Resolve positive retained acceptance for resale or settlement using exactly one identity and a source cut. Evidence mismatches return UNKNOWN. In-memory write deadlines fence writes while the same worker can still serve reads. No retry is granted.',
 }
 
 

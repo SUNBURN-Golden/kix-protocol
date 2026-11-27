@@ -191,6 +191,10 @@ class ResaleReads:
             if settlement_id is None:
                 raise _not_found()
             settlement = self._machines['settlement'].view(settlement_id)
+            # bind_settlement records a pointer. The companion fixture uses
+            # the listing ID as the trade subject on the settlement itself.
+            if settlement['trade_id'] != listing['listing_id']:
+                raise _not_found()
             show = self._machines['reservation'].view_show(listing['show_id'])['show']
             organizer = show['organizer_role']
             if actor in (organizer, settlement['debtor_role']):

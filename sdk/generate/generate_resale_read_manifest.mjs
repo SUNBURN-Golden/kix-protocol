@@ -1,4 +1,4 @@
-/** Generate the local read tuple from an already committed producer source. */
+/** Prepare the read profile, then bind the tuple to a committed producer source. */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -11,6 +11,7 @@ const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const BOOTSTRAP = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const HISTORICAL_PROFILE = "sdk/compat/profiles/bootstrap-2.profile.json";
 const REVISION = "commerce-resale-read-transport-1";
+const PROFILE_PATH = `sdk/compat/profiles/${REVISION}.profile.json`;
 const VECTORS = {
   "resale-read-transport": "reference/read_model/vectors/resale-read-transport.json",
   "qualified-market-setup": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
@@ -21,23 +22,60 @@ function git(...args) {
   return execFileSync("git", args, { cwd: ROOT, maxBuffer: 8 * 1024 * 1024 });
 }
 
+function workingBytes(path) {
+  return readFileSync(resolve(ROOT, path));
+}
+
+function makeProfile(readBytes) {
+  const historical = parseStrict(readBytes(HISTORICAL_PROFILE));
+  const vectors = Object.entries(VECTORS).map(([name, path]) => ({
+    name, path, sha256: sha256Hex(readBytes(path)),
+  }));
+  return {
+    ...historical,
+    grants: "local fixture resale reads only",
+    non_claims: ["no write qualification", "no N/N-1 qualification", "no production qualification", "not audit or approval evidence"],
+    profile_kind: "SEMANTIC_CONFORMANCE",
+    profile_revision: REVISION,
+    vectors,
+  };
+}
+
+function writeOutputs(outputs) {
+  for (const [output, bytes] of outputs) {
+    const target = resolve(ROOT, output);
+    if (existsSync(target) && !readFileSync(target).equals(bytes)) {
+      throw new Error(`immutable revision already exists with different bytes: ${output}`);
+    }
+  }
+  for (const [output, bytes] of outputs) {
+    const target = resolve(ROOT, output);
+    if (!existsSync(target)) writeFileSync(target, bytes, { flag: "wx" });
+  }
+}
+
 function main() {
   const [flag, source, ...extra] = process.argv.slice(2);
+  if (flag === "--profile-only" && source === undefined) {
+    const bytes = canonicalBytes(makeProfile(workingBytes));
+    writeOutputs([[PROFILE_PATH, bytes]]);
+    console.log(`${PROFILE_PATH} ${sha256Hex(bytes)}`);
+    return;
+  }
   if (flag !== "--source" || !/^[0-9a-f]{40}$/.test(source ?? "") || extra.length) {
-    throw new Error("use --source with the full producer commit SHA");
+    throw new Error("use --profile-only or --source with the full producer commit SHA");
   }
   const commit = git("rev-parse", "--verify", `${source}^{commit}`).toString().trim();
   if (commit !== source) throw new Error("producer source must be a commit");
   const sourceTree = git("rev-parse", `${commit}^{tree}`).toString().trim();
   function sourceBytes(path) {
     const committed = git("show", `${commit}:${path}`);
-    if (!committed.equals(readFileSync(resolve(ROOT, path)))) {
+    if (!committed.equals(workingBytes(path))) {
       throw new Error(`working bytes differ from source commit: ${path}`);
     }
     return committed;
   }
   const bootstrap = parseStrict(sourceBytes(BOOTSTRAP));
-  const historical = parseStrict(sourceBytes(HISTORICAL_PROFILE));
   const generator = bootstrap.generator;
   const sdkOutput = bootstrap.sdk_output;
   const extension = bootstrap.source_references.extension_profile;
@@ -59,17 +97,7 @@ function main() {
 
   const path = bootstrap.contract.integration_gate.path;
   const gate = sourceBytes(path);
-  const vectors = Object.entries(VECTORS).map(([name, vectorPath]) => ({
-    name, path: vectorPath, sha256: sha256Hex(sourceBytes(vectorPath)),
-  }));
-  const profile = {
-    ...historical,
-    grants: "local fixture resale reads only",
-    non_claims: ["no write qualification", "no N/N-1 qualification", "no production qualification", "not audit or approval evidence"],
-    profile_kind: "SEMANTIC_CONFORMANCE",
-    profile_revision: REVISION,
-    vectors,
-  };
+  const profile = makeProfile(sourceBytes);
   const profileBytes = canonicalBytes(profile);
   const manifest = canonicalBytes({
     ...bootstrap,
@@ -81,25 +109,15 @@ function main() {
     profile_kind: profile.profile_kind,
     profile_revision: REVISION,
     profile_sha256: sha256Hex(profileBytes),
-    vectors,
+    vectors: profile.vectors,
   });
   const digest = sha256Hex(manifest);
   const manifestPath = `sdk/compat/manifests/manifest.${REVISION}.json`;
-  const outputs = [
-    [`sdk/compat/profiles/${REVISION}.profile.json`, profileBytes],
+  writeOutputs([
+    [PROFILE_PATH, profileBytes],
     [manifestPath, manifest],
     [`${manifestPath}.sha256`, Buffer.from(`${digest}\n`)],
-  ];
-  for (const [output, bytes] of outputs) {
-    const target = resolve(ROOT, output);
-    if (existsSync(target) && !readFileSync(target).equals(bytes)) {
-      throw new Error(`immutable revision already exists with different bytes: ${output}`);
-    }
-  }
-  for (const [output, bytes] of outputs) {
-    const target = resolve(ROOT, output);
-    if (!existsSync(target)) writeFileSync(target, bytes, { flag: "wx" });
-  }
+  ]);
   console.log(`${manifestPath} ${digest}`);
 }
 

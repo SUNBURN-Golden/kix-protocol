@@ -15,8 +15,15 @@
     "resale-market/market-pay"
   ],
   "original_transfer": "resale-market/market-accept",
+  "unrelated_settlement": {
+    "initiate_overrides": {"trade_id":"another-listing"},
+    "denied_reads": [
+      {"actor":"organizer","listing_id":"list-1"},
+      {"actor":"buyer-2","listing_id":"list-1"}
+    ]
+  },
   "bound_companion": [
-    {"id":"initiate","action":"settlement_initiate","body":{"settlement_id":"settle-read-1","idempotency_key":"read-initiate","trade_id":"trade-read-1","gross":8000,"debtor_role":"buyer-2","policy":{"kind":"PRIMARY_FEE_BPS","fee_bps":0,"residual_payee":"organizer","fee_payee":"platform"}}},
+    {"id":"initiate","action":"settlement_initiate","body":{"settlement_id":"settle-read-1","idempotency_key":"read-initiate","trade_id":"list-1","gross":8000,"debtor_role":"buyer-2","policy":{"kind":"PRIMARY_FEE_BPS","fee_bps":0,"residual_payee":"organizer","fee_payee":"platform"}}},
     {"id":"authorize","action":"settlement_authorize","body":{"settlement_id":"settle-read-1","idempotency_key":"read-authorize"}},
     {"id":"capture","action":"settlement_capture","body":{"settlement_id":"settle-read-1","idempotency_key":"read-capture"}},
     {"id":"bind","action":"resale_bind_settlement","body":{"listing_id":"list-1","idempotency_key":"read-bind","settlement_id":"settle-read-1"}},
@@ -37,7 +44,7 @@
     {"id":"presentation-current","query":"get_presentation","request":{"actor":"buyer-2","right_id":"issue-1","version":2,"holder_role":"buyer-2"},"expect":{"body.presentation.matches_current_right":true,"body.presentation.venue_credential_reissued":false}},
     {"id":"presentation-old","query":"get_presentation","request":{"actor":"buyer-2","right_id":"issue-1","version":1,"holder_role":"buyer-1"},"expect":{"body.presentation.matches_current_right":false}},
     {"id":"presentation-unauthorized","query":"get_presentation","request":{"actor":"buyer-1","right_id":"issue-1","version":2,"holder_role":"buyer-2"},"status":404,"error":"NOT_FOUND"},
-    {"id":"settlement-organizer","query":"get_settlement","request":{"actor":"organizer","listing_id":"list-1"},"expect":{"body.settlement_id":"settle-read-1","body.phase":"COMMITTED","body.claim.confirmed_cash":8000,"body.funds_executed":false}},
+    {"id":"settlement-organizer","query":"get_settlement","request":{"actor":"organizer","listing_id":"list-1"},"expect":{"body.settlement_id":"settle-read-1","body.trade_id":"list-1","body.phase":"COMMITTED","body.claim.confirmed_cash":8000,"body.funds_executed":false}},
     {"id":"settlement-debtor","query":"get_settlement","request":{"actor":"buyer-2","listing_id":"list-1"},"expect":{"body.settlement_id":"settle-read-1","body.debtor_role":"buyer-2"}},
     {"id":"settlement-seller-denied","query":"get_settlement","request":{"actor":"buyer-1","listing_id":"list-1"},"status":404,"error":"NOT_FOUND"},
     {"id":"settlement-absent","query":"get_settlement","request":{"actor":"organizer","listing_id":"missing"},"status":404,"error":"NOT_FOUND"},

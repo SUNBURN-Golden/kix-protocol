@@ -1270,6 +1270,11 @@ class TransportTests(unittest.TestCase):
                 assert_gate_headers(self, headers)
                 self.assertEqual(status, 503)
                 self.assertEqual(parse_json(raw)['error'], 'NOT_READY')
+                status, raw, headers = exchange(port, 'POST', READ_PREFIX + 'list_open_listings', {
+                    'actor': 'viewer',
+                })
+                assert_gate_headers(self, headers)
+                self.assertEqual((status, parse_json(raw)['error']), (503, 'NOT_READY'))
                 self.assertEqual(httpd.store.records, [])
                 self.assertEqual(journal.read_bytes(), original['bytes'])
 
@@ -1496,6 +1501,25 @@ class ResaleReadTransportTests(unittest.TestCase):
 
         run_with_server(run)
 
+    def test_unrelated_settlement_binding_is_not_visible(self):
+        def run(httpd, port):
+            self.market_setup(port)
+            for step in self.fixture['bound_companion'][:4]:
+                body = step['body']
+                if step['id'] == 'initiate':
+                    body = {**body, **self.fixture['unrelated_settlement']['initiate_overrides']}
+                self.write(port, envelope('unrelated-' + step['id'], 'fixture', step['action'], body))
+            listing = self.read(port, 'get_listing', {'actor': 'buyer-1', 'listing_id': 'list-1'})
+            self.assertEqual(listing['body']['settlement_id'], 'settle-read-1')
+            before = self.machine_states(httpd)
+            for request in self.fixture['unrelated_settlement']['denied_reads']:
+                with self.subTest(request=request):
+                    result = self.read(port, 'get_settlement', request, 404)
+                    self.assertEqual(result, {'error': 'NOT_FOUND', 'rejected': True})
+            self.assertEqual(self.machine_states(httpd), before)
+
+        run_with_server(run)
+
     def test_open_list_pagination_and_cursor_fences(self):
         journey = parse_json((ROOT / 'reference/booking_resale_admission/fixtures/'
                               'commerce_journey_conformance_v1.json').read_bytes())
@@ -1648,6 +1672,60 @@ class ResaleReadTransportTests(unittest.TestCase):
             'integration_gate.resale_reads.RECOVERY_IDENTITIES', 4
         ):
             run_with_server(run)
+
+    def test_write_deadline_fences_writes_but_worker_can_serve_recovery(self):
+        original = self.writes[self.fixture['original_transfer']]
+        trace_id = self.fixture['recovery']['trace_id']
+        public = {'actor': 'viewer'}
+
+        def run(httpd, port):
+            self.market_setup(port)
+            before = self.read(port, 'list_open_listings', public)['accepted_through']
+            started = threading.Event()
+            finish = threading.Event()
+            receipts = []
+            call = httpd.fsm.call
+
+            def delayed_call(action, body):
+                self.assertEqual(action, original['action'])
+                started.set()
+                self.assertTrue(finish.wait(5))
+                receipt = call(action, body)
+                receipts.append(receipt)
+                return receipt
+
+            with (
+                patch.object(httpd.fsm, 'call', delayed_call),
+                patch.object(httpd, 'request_timeout_seconds', 0.25),
+            ):
+                try:
+                    status, raw, _ = exchange(port, 'POST', LOCAL_CALL_PATH, original, {'X-Request-Id': trace_id})
+                    self.assertEqual((status, parse_json(raw)), (503, {'error': 'CORE_BUSY', 'rejected': True}))
+                    self.assertTrue(started.is_set())
+                    self.assertEqual(receipts, [])
+                    busy = self.read(port, 'list_open_listings', public, 503)
+                    self.assertEqual(busy['error'], 'CORE_BUSY')
+                finally:
+                    finish.set()
+                httpd.on_core(lambda: None, 2)  # Work queued after the retained receipt.
+
+            self.assertEqual(exchange(port, 'GET', READY_PATH)[0], 503)
+            status, raw, _ = exchange(port, 'POST', LOCAL_CALL_PATH, original)
+            self.assertEqual((status, parse_json(raw)['error']), (503, 'NOT_READY'))
+            through = self.read(port, 'list_open_listings', public)['accepted_through']
+            self.assertEqual(through['journal_entries'], before['journal_entries'] + 1)
+            state = self.machine_states(httpd)
+            recovery = self.fixture['recovery']
+            self.assertEqual(self.read(port, 'get_operation_recovery', {**recovery, 'through': before}), {
+                'status': 'UNKNOWN', 'retry_granted': False,
+            })
+            request = {'actor': recovery['actor'], 'subject': recovery['subject'], 'through': through}
+            for selector in ({'trace_id': trace_id}, {'operation_id': original['operationId']}):
+                result = self.read(port, 'get_operation_recovery', {**request, **selector})
+                self.assertEqual(result['body'], {'status': 'ACCEPTED', 'retry_granted': False, 'receipt': receipts[0]})
+            self.assertEqual(self.machine_states(httpd), state)
+
+        run_with_server(run)
 
     def test_read_transport_limits_and_browser_scope(self):
         path = READ_PREFIX + 'get_listing'

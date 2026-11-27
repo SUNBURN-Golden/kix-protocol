@@ -3487,7 +3487,7 @@
         "operationId": "get_settlement",
         "x-kix-transport": "integration-gate",
         "x-kix-production-endpoint": false,
-        "description": "Follow the listing binding. Visible to the show organizer and settlement debtor fixture. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "description": "Follow the listing binding when its listing ID matches the settlement trade ID. Visible to the show organizer and settlement debtor fixture. Actor labels are FIXTURE_ONLY. No browser CORS.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3882,7 +3882,7 @@
         "operationId": "get_operation_recovery",
         "x-kix-transport": "integration-gate",
         "x-kix-production-endpoint": false,
-        "description": "Resolve positive retained acceptance for resale or settlement using exactly one identity and a source cut. All evidence failures return UNKNOWN. No retry is granted. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "description": "Resolve positive retained acceptance for resale or settlement using exactly one identity and a source cut. Evidence mismatches return UNKNOWN. In-memory write deadlines fence writes while the same worker can still serve reads. No retry is granted. Actor labels are FIXTURE_ONLY. No browser CORS.",
         "requestBody": {
           "required": true,
           "content": {
