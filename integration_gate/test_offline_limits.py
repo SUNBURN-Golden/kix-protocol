@@ -560,7 +560,8 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
         table, files = self._verified_evidence()
         corpus = json.loads(files[commerce.VECTORS])
         self.assertEqual(corpus['record_schema_version'], 'kix-commerce-fixture-vectors/1')
-        self.targets = self._listed_targets(table, corpus['vectors'])
+        self.targets, self.controls = self._target_inventory(table, corpus['vectors'])
+        self.golden_steps = json.loads(files[commerce.RECEIPTS])['steps']
         self.receipts = self._expected_receipts(files)
         self.catalogue = load_catalogue(ROOT)
 
@@ -597,7 +598,7 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
                 self.assertEqual(git_blob_id(data), pin['gitBlob'], path)
         return table, files
 
-    def _listed_targets(self, table, vectors):
+    def _target_inventory(self, table, vectors):
         from integration_gate.constants import LOCAL_CALL_PATH
 
         by_id = {vector['id']: vector for vector in vectors}
@@ -606,11 +607,19 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
         self.assertEqual(len(rows), 28)
         self.assertEqual(len({row['action'] for row in rows}), 28)
         targets = {}
-        controls = set()
+        controls = {}
         for row in rows:
             self.assertEqual((row['method'], row['path']), ('POST', LOCAL_CALL_PATH))
             for context in row['contexts']:
-                controls.update(context['control_vector_ids'])
+                for vid in context['control_vector_ids']:
+                    self.assertNotIn(vid, controls, f'duplicate control vector ID: {vid}')
+                    vector = by_id[vid]
+                    self.assertEqual(
+                        (vector['context'], vector['envelope']['action']),
+                        (context['context'], row['action']), vid,
+                    )
+                    self.assertNotIn('commerce_step', vector, vid)
+                    controls[vid] = vector
                 for step, ids in context['steps'].items():
                     for vid in ids:
                         self.assertNotIn(vid, targets, 'duplicate listed vector ID')
@@ -621,15 +630,16 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
                         )
                         targets[vid] = vector
         self.assertEqual(len(targets), 63)
-        self.assertTrue(controls.isdisjoint(targets), 'control ID listed as a target')
-        return targets
+        self.assertEqual(len(controls), 53)
+        self.assertFalse(controls.keys() & targets.keys(), 'control ID listed as a target')
+        self.assertEqual(controls.keys() | targets.keys(), by_id.keys())
+        return targets, controls
 
     def _expected_receipts(self, files):
         from integration_gate.catalogue import git_blob_id
 
-        golden_steps = json.loads(files[commerce.RECEIPTS])['steps']
         direct = {
-            vid: commerce.resolve_receipt_ref(self, vector, golden_steps)
+            vid: commerce.resolve_receipt_ref(self, vector, self.golden_steps)
             for vid, vector in self.targets.items() if 'receipt_ref' in vector['expected']
         }
         corpus_raw = files[commerce.VECTORS]
@@ -656,21 +666,20 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
 
     def _expected_outcome(self, vector):
         expected = vector['expected']
-        self.assertIn(expected['kind'], {'accept', 'business-reject'})
+        self.assertIn(expected['kind'], {'accept', 'business-reject', 'duplicate'})
         if expected['kind'] == 'accept':
             return 200, self.receipts[vector['id']]
+        if expected['kind'] == 'duplicate':
+            return 200, commerce.resolve_receipt_ref(self, vector, self.golden_steps)
         return 422, {'error': expected['code'], 'rejected': True}
 
     def _assert_outcome(self, observed, expected):
-        status, payload = observed
-        expected_status, expected_payload = expected
         self.assertEqual(
-            (status, commerce.canonical(payload)),
-            (expected_status, commerce.canonical(expected_payload)),
+            commerce.canonical(observed), commerce.canonical(expected),
             'Commerce dispatch outcome differs',
         )
 
-    def _check_dispatch(self, gate, vector):
+    def _parse_and_dispatch(self, gate, vector):
         from integration_gate.schema import parse_envelope
 
         fixture_envelope = vector['envelope']
@@ -681,44 +690,120 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
         ))
         parsed = parse_envelope(deepcopy(fixture_envelope), self.catalogue.commands)
         self.assertEqual(commerce.canonical(parsed), expected_args)
+        return gate.perform(*parsed)
 
+    def _assert_unchanged(self, vector, before, after):
+        vid = vector['id']
+        self.assertEqual(after.keys(), before.keys(), vid)
+        for name, (state, journal) in after.items():
+            old_state, old_journal = before[name]
+            self.assertEqual(commerce.canonical(journal), commerce.canonical(old_journal),
+                             f'{vid}: {name} journal')
+            self.assertEqual(state, old_state, f'{vid}: {name} state')
+
+    def _check_dispatch(self, gate, vector):
         before = commerce.snapshot(gate.fsm)
-        status, payload, observation = gate.perform(*parsed)
+        status, payload, observation = self._parse_and_dispatch(gate, vector)
         after = commerce.snapshot(gate.fsm)
         self._assert_outcome((status, payload), self._expected_outcome(vector))
         self.assertEqual(observation['journalDecision'], 'inactive')
-        if status == 422:
-            self.assertEqual(after.keys(), before.keys())
-            for name, (state, journal) in after.items():
-                old_state, old_journal = before[name]
-                self.assertEqual(state, old_state, f'{name} state on refusal')
-                self.assertEqual(
-                    commerce.canonical(journal), commerce.canonical(old_journal),
-                    f'{name} journal on refusal',
-                )
-        else:
-            spec = self.catalogue.fsm['commands'][fixture_envelope['action']]
+        if vector['expected']['kind'] == 'accept':
+            envelope = vector['envelope']
+            spec = self.catalogue.fsm['commands'][envelope['action']]
             commerce.check_journal(
-                self, spec, fixture_body, before, after, vector['expected']['journal_delta'],
+                self, spec, envelope['body'], before, after, vector['expected']['journal_delta'],
             )
+        else:
+            self._assert_unchanged(vector, before, after)
         return status, payload
 
-    def _replay_target(self, target):
+    def _replay_setup(self, target):
         gate = self._dispatch_gate(store=None)
-        self.assertEqual(set(gate.fsm.machines), {
-            'reservation', 'resale', 'admission', 'settlement', 'credit',
-        })
         setup = target['setup']
+        outcomes = {}
         for index, vid in enumerate(setup):
+            self.assertIn(vid, self.targets, 'setup must refer to a listed vector')
             entry = self.targets[vid]
             self.assertEqual(entry['context'], target['context'], vid)
             self.assertEqual(entry['setup'], setup[:index], vid)
             try:
-                self._check_dispatch(gate, entry)
+                outcomes[vid] = deepcopy(self._check_dispatch(gate, entry))
             except AssertionError as error:
                 error.add_note(f'Setup vector {vid}, after {setup[:index]}')
                 raise
+        self.assertEqual(set(gate.fsm.machines), {
+            'reservation', 'resale', 'admission', 'settlement', 'credit',
+        }, target['id'])
+        return gate, outcomes
+
+    def _replay_target(self, target):
+        gate, _ = self._replay_setup(target)
         return self._check_dispatch(gate, target)
+
+    def _check_duplicate_consume(self, vector, observed, setup_outcomes):
+        self.assertEqual(vector['id'], 'booking-admission/replay-consume-B')
+        first_id = 'booking-admission/consume-B'
+        refused_id = 'booking-admission/double-consume'
+        self.assertEqual(vector['replay_of'], first_id)
+        self.assertEqual(vector['setup'][-2:], [first_id, refused_id])
+        self._assert_outcome(setup_outcomes[refused_id], (
+            422, {'error': 'ALREADY_CONSUMED', 'rejected': True},
+        ))
+        first = self.targets[first_id]['envelope']
+        replay = vector['envelope']
+        self.assertNotEqual(first['operationId'], replay['operationId'])
+        self.assertEqual(commerce.canonical(replay), commerce.canonical({
+            **first, 'operationId': replay['operationId'],
+        }))
+        self.assertEqual(vector['input_index'], 43)
+        _, first_receipt = setup_outcomes[first_id]
+        self._assert_outcome(observed, (200, {**first_receipt, 'duplicate': True, 'applied': None}))
+
+    def _check_missing_payment_ref(self, gate, vector):
+        from integration_gate.schema import EnvelopeError
+
+        self.assertEqual(vector['id'], 'resale-market/missing-payment-ref')
+        self.assertEqual(vector['envelope']['action'], 'resale_observe_resale_payment')
+        self.assertNotIn('payment_ref', vector['envelope']['body'])
+        with (
+            patch.object(gate, 'perform', wraps=gate.perform) as perform,
+            patch.object(gate.fsm, 'call', wraps=gate.fsm.call) as fsm_call,
+        ):
+            before = commerce.snapshot(gate.fsm)
+            with self.assertRaises(EnvelopeError) as error:
+                self._parse_and_dispatch(gate, vector)
+            after = commerce.snapshot(gate.fsm)
+            self.assertEqual(error.exception.error, 'SCHEMA_REJECTED')
+            self.assertEqual(error.exception.error, vector['expected']['code'])
+            perform.assert_not_called()
+            fsm_call.assert_not_called()
+        self._assert_unchanged(vector, before, after)
+
+    def test_control_outcomes(self):
+        executed = Counter()
+        counts = Counter()
+        for vid, vector in self.controls.items():
+            with self.subTest(vector=vid, setup=vector['setup']):
+                gate, setup_outcomes = self._replay_setup(vector)
+                kind = vector['expected']['kind']
+                if kind == 'schema-reject':
+                    self._check_missing_payment_ref(gate, vector)
+                else:
+                    self.assertIn(kind, {'business-reject', 'duplicate'})
+                    observed = self._check_dispatch(gate, vector)
+                    if kind == 'duplicate':
+                        self._check_duplicate_consume(vector, observed, setup_outcomes)
+                executed[vid] += 1
+                counts[vector['context'], kind] += 1
+        self.assertEqual(executed, Counter(self.controls.keys()))
+        self.assertEqual(counts, {
+            ('booking-resale', 'business-reject'): 17,
+            ('booking-admission', 'business-reject'): 9,
+            ('booking-admission', 'duplicate'): 1,
+            ('booking-refund', 'business-reject'): 12,
+            ('resale-market', 'business-reject'): 13,
+            ('resale-market', 'schema-reject'): 1,
+        })
 
     def test_listed_outcomes(self):
         counts = Counter()
