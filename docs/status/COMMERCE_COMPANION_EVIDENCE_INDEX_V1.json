@@ -4600,6 +4600,49 @@
           "binding_status": "MOCK_EVIDENCE"
         }
       ]
+    },
+    {
+      "id": "admission_journal_after_transfer",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_inputs_v1.json",
+        "sha256": "d21b99b6d449c339191fc4251b1603a86c4142756a49951068429b6e6125d08a",
+        "gitBlob": "9387fcba8253f18cd43854841fbe299bd41d29b4"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_receipts_v1.json",
+        "sha256": "1815f30dfc72023da9ef3227135389f0b3cbe9d8d606a547d7c4d93c65dc5739",
+        "gitBlob": "830b3be6dc31a5cc9a3f2aefb81031235413bb4e"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_admission_journal_after_transfer_vectors.py",
+        "symbol": "CommerceAdmissionJournalAfterTransferVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Both entries index published checkpoint receipts with separate local diagnostics.",
+        "A journal match records historical replay equality only. The explicit transfer makes both diagnostics return STALE_VERSION with zero new consumptions."
+      ],
+      "entries": [
+        {
+          "case_id": "matching-ownership",
+          "step_id": "resale-expiry-clock",
+          "action": "resale_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "transferred-ownership",
+          "step_id": "transfer",
+          "action": "resale_accept_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_inputs_v1.json#/cases/1/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_receipts_v1.json#/cases/1/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/69",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
     }
   ]
 }

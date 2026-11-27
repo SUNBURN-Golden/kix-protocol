@@ -4724,3 +4724,32 @@ existing owners.
 PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -t reference/booking_resale_admission -p test_commerce_replaced_admission_binding_vectors.py
 ```
+
+## Commerce admission journal after transfer vectors
+
+Both cases replay case 0 of the pinned admission-replay-after-resale pack.
+They share the four-entry, 1,009-byte canonical admission journal captured
+after `resale-expiry-clock` at synthetic time 1,120,000. Direct restore in
+each case starts from a fresh copy of the reservation journal captured
+after `resale-adopt`, when the ticket is issued.
+
+| Case | Published checkpoint | Current resale holder and version | Local restore and fresh reconciliation |
+|---|---|---|---|
+| `matching-ownership` | `resale-expiry-clock` | `buyer-1`, 1 | Restore reproduces the pinned state digest. Reconciliation reports `matched: true` for all four entries. |
+| `transferred-ownership` | `transfer` | `buyer-2`, 2 | Both diagnostics return `STALE_VERSION`, with zero new consumptions. |
+
+The matching case ends at source step 12. The transferred case continues to
+step 15. Resale payment at step 14 leaves ownership with `buyer-1` at
+version 1. The explicit `transfer-1` changes ownership. The successful
+match compares historical replay after the authorization has expired and
+grants no admission authority. The pack carries `HOLD_SEMANTIC`, and all
+13 consumer reads remain `NOT_BOUND`.
+[Canonical inputs](fixtures/commerce_admission_journal_after_transfer_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_admission_journal_after_transfer_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#admission-journal-after-transfer) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-admission-journal-after-transfe/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_admission_journal_after_transfer_vectors.py -v
+```

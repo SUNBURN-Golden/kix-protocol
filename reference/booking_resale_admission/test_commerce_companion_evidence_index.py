@@ -24,6 +24,7 @@ import test_commerce_payment_ref_scope_vectors as payment_ref_scope
 import test_commerce_resale_buyer_release_vectors as resale_buyer_release
 import test_commerce_admission_replay_after_resale_vectors as admission_replay
 import test_commerce_replaced_admission_binding_vectors as replaced_admission
+import test_commerce_admission_journal_after_transfer_vectors as admission_journal
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -53,8 +54,10 @@ PACKS = (
      'test_complete_output_bytes_and_references', 18),
     ('replaced_admission_binding', replaced_admission, 'CommerceReplacedAdmissionBindingVectorTests',
      'test_complete_output_bytes_and_references', 15),
+    ('admission_journal_after_transfer', admission_journal, 'CommerceAdmissionJournalAfterTransferVectorTests',
+     'test_complete_output_bytes_and_references', 2),
 )
-TOTAL_ENTRIES = 422
+TOTAL_ENTRIES = 424
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -108,6 +111,10 @@ LIMITATIONS = {
     'replaced_admission_binding': [
         'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The gate and request checks use one replacement authorization and synthetic time.',
         'Detached diagnostics describe one in-process host. Product TTLs, fees and compensation remain UNDETERMINED with Astra and the User, and legal and provider terms retain their existing owners.',
+    ],
+    'admission_journal_after_transfer': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Both entries index published checkpoint receipts with separate local diagnostics.',
+        'A journal match records historical replay equality only. The explicit transfer makes both diagnostics return STALE_VERSION with zero new consumptions.',
     ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
@@ -421,6 +428,30 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
             entries = {entry['step_id']: entry for entry in document['packs'][p]['entries']}
             old_gate, old_request = entries['consume-old-gate'], entries['consume-old-request']
             old_gate['outcome_ref'], old_request['outcome_ref'] = old_request['outcome_ref'], old_gate['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
+
+    def test_admission_journal_checkpoint_associations(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'admission_journal_after_transfer')
+        path = admission_journal.GOLDEN.relative_to(ROOT).as_posix()
+        entries = self.document['packs'][p]['entries']
+        for index, (case_id, step_id, action, binding_index) in enumerate((
+            ('matching-ownership', 'resale-expiry-clock', 'resale_set_clock', 61),
+            ('transferred-ownership', 'transfer', 'resale_accept_resale', 69),
+        )):
+            with self.subTest(case=case_id):
+                pointer = f'#/cases/{index}/steps/0'
+                self.assertEqual(entries[index], {
+                    'case_id': case_id, 'step_id': step_id, 'action': action,
+                    'input_ref': admission_journal.FIXTURE + pointer + '/body',
+                    'outcome_ref': path + pointer, 'outcome_kind': 'receipt',
+                    'binding_ref': BINDING + f'#/commands/items/{binding_index}',
+                    'binding_status': 'MOCK_EVIDENCE',
+                })
+
+        def swap(document):
+            matching, transferred = document['packs'][p]['entries']
+            matching['outcome_ref'], transferred['outcome_ref'] = transferred['outcome_ref'], matching['outcome_ref']
 
         self._reject(swap, 'outcome_ref association')
 
