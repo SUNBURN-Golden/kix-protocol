@@ -1354,6 +1354,84 @@ test("Commerce grant lookup", async (t) => {
     });
     assert.deepEqual([...listedIds, ...controlIds].sort(), [...vectorsById.keys()].sort());
   });
+  await t.test("nullable body fields", () => {
+    // Make the consumer verify its independent pin before reading the grant,
+    // including when this subtest is run on its own.
+    check(listed, COMMERCE_MANIFEST_SHA256);
+    const { table, vectorsById, schemaDigests } = grantFor(COMMERCE_MANIFEST);
+    const { profile_revision, cases } = JSON.parse(read("sdk/conformance/vectors/commerce-nullable-fields.vectors.json"));
+    assert.equal(profile_revision, COMMERCE_REVISION);
+
+    const presentValues = { null: null, string: "fixture-alternate", boolean: true };
+    const representations = ["omitted", ...Object.keys(presentValues)];
+    const positions = new Map();
+    for (const tuple of table.tuples) {
+      const { action, body_schema_sha256: digest } = tuple;
+      const schema = COMMAND_SCHEMAS[action];
+      assert.equal(digest, schemaDigests[action], action);
+      assert.equal(digest, sha256Hex(canonicalBytes(schema)), action);
+      const nullable = Object.entries(schema.properties).filter(([field, property]) =>
+        !schema.required.includes(field) && [property.type].flat().includes("null"));
+      if (nullable.length === 0) continue;
+
+      const [vectorId] = tuple.contexts.flatMap(({ steps }) => Object.values(steps).flat()).sort();
+      const vector = vectorsById.get(vectorId);
+      assert.ok(vector, `missing listed vector ${vectorId}`);
+      const request = {
+        ...commandRequestFields(table.producer, tuple, vector, vector.commerce_step), outcome: vector.expected,
+      };
+      const expect = { status: SEMANTIC, vector_id: vectorId };
+      check({ id: vectorId, request, expect }, COMMERCE_MANIFEST_SHA256);
+      for (const [field, property] of nullable) {
+        const position = `${action}.${field}`;
+        assert.deepEqual([...property.type].sort(), ["null", "string"], position);
+        assert.notEqual(vector.envelope.body[field], presentValues.string, position);
+        positions.set(position, { request, expect });
+      }
+    }
+    assert.equal(positions.size, 10);
+    assert.equal(new Set([...positions.values()].map(({ request }) => request.action)).size, 8);
+    assert.deepEqual(
+      cases.map(({ action, field, representation }) => `${action}.${field}:${representation}`).sort(),
+      [...positions.keys()].flatMap((position) => representations.map((repr) => `${position}:${repr}`)).sort(),
+    );
+
+    const calls = [];
+    const client = createLocalCallClient({ transport: (envelope) => calls.push(structuredClone(envelope)) });
+    let originalCases = 0;
+    for (const { action, vector_id, field, representation, envelope } of cases) {
+      const position = `${action}.${field}`;
+      const id = `${position}:${representation}`;
+      const { request, expect } = positions.get(position);
+      assert.equal(vector_id, expect.vector_id, id);
+      const expected = structuredClone(request.envelope);
+      const omitted = representation === "omitted";
+      if (omitted) delete expected.body[field];
+      else expected.body[field] = presentValues[representation];
+      const snapshot = canonicalStringify(envelope);
+      assert.equal(snapshot, canonicalStringify(expected), id);
+
+      const before = calls.length;
+      if (representation === "boolean") {
+        assert.equal(rejectionCode(() => client.invoke(envelope)), "WRONG_TYPE", id);
+        assert.equal(calls.length, before, id);
+      } else {
+        client.invoke(envelope);
+        assert.equal(calls.length, before + 1, id);
+        assert.equal(Object.hasOwn(calls[before].body, field), !omitted, id);
+        assert.equal(canonicalStringify(calls[before]), snapshot, id);
+      }
+      assert.equal(canonicalStringify(envelope), snapshot, id);
+      const isOriginal = snapshot === canonicalStringify(request.envelope);
+      if (isOriginal) {
+        assert.equal(representation, "omitted", id);
+        originalCases += 1;
+      }
+      check({ id, request: { ...request, envelope }, expect: isOriginal ? expect : hold }, COMMERCE_MANIFEST_SHA256);
+    }
+    assert.equal(calls.length, 30);
+    assert.equal(originalCases, 3);
+  });
   await t.test("holds the readiness refusal for every listed Commerce action", () => {
     const { profile_revision, cases } = JSON.parse(
       read("sdk/conformance/vectors/commerce-readiness-refusals.vectors.json"),
