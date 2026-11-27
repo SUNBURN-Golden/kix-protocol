@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects fourteen input/outcome pack families (407 steps) to replay tests
+It connects fifteen input/outcome pack families (422 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -29,6 +29,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `payment_ref_scope` | `commerce_payment_ref_scope_inputs_v1.json` | `commerce_payment_ref_scope_receipts_v1.json` | `test_commerce_payment_ref_scope_vectors.py` | 1 / 16 |
 | `resale_buyer_release` | `commerce_resale_buyer_release_inputs_v1.json` | `commerce_resale_buyer_release_receipts_v1.json` | `test_commerce_resale_buyer_release_vectors.py` | 1 / 16 |
 | `admission_replay_after_resale` | `commerce_admission_replay_after_resale_inputs_v1.json` | `commerce_admission_replay_after_resale_receipts_v1.json` | `test_commerce_admission_replay_after_resale_vectors.py` | 1 / 18 |
+| `replaced_admission_binding` | `commerce_replaced_admission_binding_inputs_v1.json` | `commerce_replaced_admission_binding_receipts_v1.json` | `test_commerce_replaced_admission_binding_vectors.py` | 1 / 15 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -278,3 +279,23 @@ test-harness evidence. The exact replay symbol is
 [Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json) ·
 [Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-admission-replay-after-resale-vectors) ·
 [Coverage and local verification](../../validation/2026-11-26-plan-commerce-admission-replay-after-resale/README.md)
+
+## Replacement admission binding
+
+`replaced_admission_binding` follows the temporal case through replacement
+and presents three fresh consumes for the same paid, issued right. The old
+gate with the replacement request returns `GATE_MISMATCH`. The replacement
+gate with the old request returns `ADMISSION_REQUEST_MISMATCH`. Each refusal
+preserves `admit-2`, right version 1 and every accepted journal. The matching
+pair returns `CONSUMED_ONCE`, detaches the authorization and advances the
+right to version 2. The bound admission and reservation journals each append
+one consume and the slot stays `ISSUED`.
+
+All three presentations carry the `admission_consume` binding
+`MOCK_EVIDENCE`. The pack carries `HOLD_SEMANTIC` and links the original
+payment and issuance receipts separately. The replay symbol is
+`CommerceReplacedAdmissionBindingVectorTests.test_complete_output_bytes_and_references`.
+[Inputs and receipt pointers](../../reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json) ·
+[Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json) ·
+[Replay command](../../reference/booking_resale_admission/README.md#commerce-replacement-admission-binding-vectors) ·
+[Coverage and local verification](../../validation/2026-11-27-plan-commerce-replaced-admission-binding/README.md)

@@ -313,8 +313,8 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect fourteen
-Commerce input/outcome pack families (407 steps) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect fifteen
+Commerce input/outcome pack families (422 steps) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Use the
 [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
@@ -331,6 +331,13 @@ current resale owner and the unchanged accepted journals are detached
 test-harness observations. The right stays with `buyer-2` at version 2 and no
 consumption is recorded.
 [Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-admission-replay-after-resale-vectors)
+
+The replacement admission pack carries `HOLD_SEMANTIC`. The crossed gate
+and request presentations preserve the live replacement, right version 1 and
+accepted journals. The matching presentation records `CONSUMED_ONCE` with
+version 2 and one consume in each bound journal. The original payment and
+issuance receipts have separate references.
+[Replay guide and command](../../reference/booking_resale_admission/README.md#commerce-replacement-admission-binding-vectors)
 
 The late-payment pack covers synthetic command refusal, historical cancellation
 replay after slot reuse, and the replacement booking's separate payment,

@@ -23,6 +23,7 @@ import test_commerce_late_payment_after_cancel_vectors as late_payment
 import test_commerce_payment_ref_scope_vectors as payment_ref_scope
 import test_commerce_resale_buyer_release_vectors as resale_buyer_release
 import test_commerce_admission_replay_after_resale_vectors as admission_replay
+import test_commerce_replaced_admission_binding_vectors as replaced_admission
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -50,8 +51,10 @@ PACKS = (
      'test_complete_output_bytes_and_references', 16),
     ('admission_replay_after_resale', admission_replay, 'CommerceAdmissionReplayAfterResaleVectorTests',
      'test_complete_output_bytes_and_references', 18),
+    ('replaced_admission_binding', replaced_admission, 'CommerceReplacedAdmissionBindingVectorTests',
+     'test_complete_output_bytes_and_references', 15),
 )
-TOTAL_ENTRIES = 407
+TOTAL_ENTRIES = 422
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -101,6 +104,10 @@ LIMITATIONS = {
     'admission_replay_after_resale': [
         'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The replay is a first receipt and gives no current admission authority.',
         'The fresh version-1 consume returns STALE_VERSION. Current ownership and accepted journals are test-harness evidence from one in-process host.',
+    ],
+    'replaced_admission_binding': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The gate and request checks use one replacement authorization and synthetic time.',
+        'Detached diagnostics describe one in-process host. Product TTLs, fees and compensation remain UNDETERMINED with Astra and the User, and legal and provider terms retain their existing owners.',
     ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
@@ -400,6 +407,20 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
             self.assertTrue(_same(_resolve(documents, original['input_ref']),
                                   _resolve(documents, replay['input_ref'])))
             original['outcome_ref'], replay['outcome_ref'] = replay['outcome_ref'], original['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
+
+    def test_replaced_admission_binding_crossed_outcome_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'replaced_admission_binding')
+        for entry in self.document['packs'][p]['entries'][12:]:
+            with self.subTest(step=entry['step_id']):
+                self.assertEqual(entry['binding_ref'], BINDING + '#/commands/items/74')
+                self.assertEqual(entry['binding_status'], 'MOCK_EVIDENCE')
+
+        def swap(document):
+            entries = {entry['step_id']: entry for entry in document['packs'][p]['entries']}
+            old_gate, old_request = entries['consume-old-gate'], entries['consume-old-request']
+            old_gate['outcome_ref'], old_request['outcome_ref'] = old_request['outcome_ref'], old_gate['outcome_ref']
 
         self._reject(swap, 'outcome_ref association')
 
