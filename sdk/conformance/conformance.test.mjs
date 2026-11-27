@@ -1390,8 +1390,8 @@ test("Commerce grant lookup", async (t) => {
     const index = JSON.parse(read(COMMERCE_DELIVERY_INDEX));
     assert.equal(index.record_schema_version, "kix-commerce-delivery-evidence-index/1");
     assert.equal(index.normative, false);
-    assert.equal(index.fixtures.length, 7);
-    assert.equal(new Set(index.fixtures.map(({ fixture_path }) => fixture_path)).size, 7);
+    assert.equal(index.fixtures.length, 8);
+    assert.equal(new Set(index.fixtures.map(({ fixture_path }) => fixture_path)).size, 8);
 
     const grant = grantFor(COMMERCE_MANIFEST);
     assert.ok(grant, "Commerce fixture grant must verify");
@@ -1457,8 +1457,8 @@ test("Commerce grant lookup", async (t) => {
       }
     }
 
-    assert.equal(seenCases.size, 15);
-    assert.equal(unknownCount, 14);
+    assert.equal(seenCases.size, 17);
+    assert.equal(unknownCount, 16);
     assert.deepEqual(refusalCases.sort(), ["refusal-delivered", "refusal-withheld-after-dispatch"]);
   });
   await t.test("holds every catalogue action outside the Commerce qualification table", () => {

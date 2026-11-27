@@ -39,6 +39,11 @@
       "gitBlob": "0a9c61df31eb43321654564fb6eb5bf96a6f56d4"
     },
     {
+      "path": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json",
+      "sha256": "e7d0b544cb9e2ab715b8facac60bb2aab403b0807da3df9a58e49cfe97d9fa07",
+      "gitBlob": "100942709a1763eb8e58a0773916e81d4599b787"
+    },
+    {
       "path": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
       "sha256": "c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22",
       "gitBlob": "0095e53801921e87c5417dd86920a625c2fede78"
@@ -191,6 +196,25 @@
           "fault_point": "after_dispatch",
           "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/expected_caller",
           "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json#/cases/1/producer_evidence"
+        }
+      ]
+    },
+    {
+      "fixture_path": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json",
+      "source_vector_id": "booking-resale/settle-resale-commit",
+      "source_vector_ref": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json#/vectors/19",
+      "cases": [
+        {
+          "case_id": "loss-before-dispatch",
+          "fault_point": "before_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json#/cases/0/producer_evidence"
+        },
+        {
+          "case_id": "loss-after-dispatch",
+          "fault_point": "after_dispatch",
+          "caller_observation_ref": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json#/expected_caller",
+          "producer_evidence_ref": "reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json#/cases/1/producer_evidence"
         }
       ]
     }

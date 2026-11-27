@@ -121,14 +121,16 @@ Producer evidence comes from the replay harness.
 | `booking-resale/accept-A-before-commit` · refusal delivered | `business-reject` with `SETTLEMENT_NOT_COMMITTED` | One refused dispatch. |
 | `booking-resale/accept-A-before-commit` · request dropped before dispatch | `UNKNOWN` with a null receipt | Zero dispatches. |
 | `booking-resale/accept-A-before-commit` · refusal withheld after dispatch | The same `UNKNOWN` record as the pre-dispatch drop | One refused dispatch with `SETTLEMENT_NOT_COMMITTED`. |
+| `booking-resale/settle-resale-commit` · reply lost | `UNKNOWN` with a null receipt in both histories. The selector returns `HOLD_SEMANTIC`. | Zero dispatches leave settlement `CAPTURED` with no journal append. One successful dispatch leaves it `COMMITTED` with one settlement journal append. Both retain the recorded payment and seller at version 1, with zero cash distributed. |
 | `resale-market/market-accept` · reply lost | `UNKNOWN` with a null receipt whether the request was dropped or the successful reply was withheld | Zero dispatches leave the seller at version 1. One successful dispatch transfers ownership to the buyer at version 2. |
 | `booking-refund/cancel-C` · reply lost | `UNKNOWN` with a null receipt in both histories | Zero dispatches leave the unpaid reservation `CONFIRMED` and slot 2 `RESERVED`. One successful dispatch leaves it `CANCELLED` and the slot `FREE`. |
 
-The non-normative delivery evidence index covers 15 cases across seven fixtures
-for payment observation, issuance, transfer, admission consumption, refund
-acceptance, the pre-commit resale refusal and reservation cancellation. Follow
-`caller_observation_ref` for what Commerce received. Use `producer_evidence_ref`
-for offline replay diagnostics only.
+The non-normative delivery evidence index covers 17 cases across eight fixtures,
+with 16 `UNKNOWN` outcomes and one delivered refusal. The fixtures cover payment
+observation, issuance, transfer, admission consumption, refund acceptance,
+the pre-commit resale refusal, reservation cancellation and resale settlement
+commit. Follow `caller_observation_ref` for what Commerce received. Use
+`producer_evidence_ref` for offline replay diagnostics only.
 [Delivery evidence index](COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json)
 
 Both pre-commit losses keep the original `operationId` and body
@@ -146,6 +148,12 @@ one attempt and zero follow-up calls. The slot state is available to the
 offline harness, and recovery remains `NOT_BOUND`.
 [Cancellation lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_cancel_lost_reply_v1.json) ·
 [Cancellation lost-reply replay](../../reference/booking_resale_admission/test_commerce_cancel_lost_reply.py)
+
+Commerce keeps `settle-resale-commit` fenced with the original operation ID
+and body key, one attempt and zero follow-up calls. Recovery remains
+`NOT_BOUND`. Both histories end before transfer or distribution.
+[Commit lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json) ·
+[Commit lost-reply replay](../../reference/booking_resale_admission/test_commerce_resale_commit_lost_reply.py)
 
 The grant covers source-informed, synthetic in-memory evidence. N/N−1
 compatibility, production qualification and stable SDK release remain outside

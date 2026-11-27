@@ -97,6 +97,21 @@ cancellation fenced with recovery `NOT_BOUND`.
 [Focused cancellation replay](../../reference/booking_resale_admission/test_commerce_cancel_lost_reply.py) ·
 [Delivery evidence index](COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json)
 
+The resale settlement commit pair replays `booking-resale/settle-resale-commit`
+after the pinned pre-commit transfer refusal on two fresh in-process hosts. A
+drop before dispatch leaves `settle-resale` `CAPTURED` with zero new journal
+entries. Withholding the successful reply leaves it `COMMITTED` with one
+settlement `commit` entry and a hidden receipt matching the pinned journey
+receipt at `#/steps/23/receipt`. Both histories retain the recorded resale
+payment and seller ownership at right version 1 and end before transfer or
+distribution. Commerce records the original operation ID and body idempotency
+key, one attempt, `UNKNOWN`, a null receipt and zero follow-up calls in both
+histories. The SDK selector returns `HOLD_SEMANTIC` for each observation.
+Recovery remains `NOT_BOUND`.
+[Resale settlement commit lost-reply fixture](../../reference/booking_resale_admission/fixtures/commerce_resale_commit_lost_reply_v1.json) ·
+[Focused commit replay](../../reference/booking_resale_admission/test_commerce_resale_commit_lost_reply.py) ·
+[Delivery evidence index](COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json)
+
 An unlisted tuple or context is outside the grant. Keep unresolved `UNKNOWN`
 outcomes fenced. The market, settlement and operation-recovery reads remain
 `NOT_BOUND`. [PR #146 change requests](https://github.com/SUNBURN-Golden/kix-commerce-apps/blob/9a55fe4e257376f9db3f877a11b65e3ecc43c661/docs/kix-resale-journey-binding-change-requests.md)
@@ -130,11 +145,13 @@ python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -p 'test_commerce_fixture_tuple_conformance.py' -k booking_branch -v
 ```
 
-For the paired cancellation replay and delivery index checks, run
+For the paired cancellation and resale settlement commit replays and delivery
+index checks, run
 
 ```sh
 PYTHONPATH=reference/booking_resale_admission python3.12 -B -m unittest -v \
-  test_commerce_cancel_lost_reply test_commerce_delivery_evidence_index
+  test_commerce_cancel_lost_reply test_commerce_resale_commit_lost_reply \
+  test_commerce_delivery_evidence_index
 ```
 
 Use the manifest and vectors with their referenced files. For each target,
