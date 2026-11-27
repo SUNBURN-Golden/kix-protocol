@@ -2077,3 +2077,34 @@ External `kix-capital` acceptance remains `UNVERIFIED`. Product limits remain
 `UNDETERMINED` with Astra. Legal liability remains `UNDETERMINED` with the User
 and legal counsel.
 [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure) · [Builder validation](../../validation/2026-11-27-plan-capital-refund-versus-repayment/README.md)
+
+## Capital statement component identity
+
+Replay `L1_later_statement_after_requester_refund` independently through
+`refund-partial` in each branch. At that checkpoint the settlement journal has
+six accepted entries. Both branches then observe `part-2` on `claim-1` with
+`stmt-2`, 40,000 KRW gross, 37,000 KRW cash, and zero tax and adjustment.
+
+| Case | Fee (fixture KRW) | Held (fixture KRW) | Accepted journal entry |
+| --- | ---: | ---: | --- |
+| `fee` | 3,000 | 0 | [`#/cases/0/after/settlement/journal/6`](../../reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0/after/settlement/journal/6) |
+| `held` | 0 | 3,000 | [`#/cases/1/after/settlement/journal/6`](../../reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/after/settlement/journal/6) |
+
+Both observations report 97,000 confirmed cash, 3,000 non-cash accounted, zero
+open receivable, 60,000 distributed cash, 37,000 undistributed cash and 10,000
+requester refund outstanding. The frozen F04 face is 100,000 with 60,000 cash on
+face. Drawn and outstanding exposure are each 15,000, with zero repaid. Variance
+is `(35,000 + 5,000) − 100,000 = −60,000` and the separate `cash_delta` is +37,000.
+
+Each accepted journal preserves its own fee and held amounts. Submitting the
+other split on `part-2` with a fresh command key returns
+`STATEMENT_BINDING_CONFLICT` and leaves both accepted journals and the public
+snapshot intact. Both branches retain `NOT_BOUND`, `repair=NONE` and
+`fail_closed=true` in their variance and shared-exposure observations.
+[Settlement §3](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md#3-정산-명세서--추측하지-않는-구성) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#statement-component-identity)
+
+The 100,000 limit and zero tolerance are fixture inputs. External `kix-capital`
+acceptance remains `UNVERIFIED`. Product limits and tolerances remain
+`UNDETERMINED` with Astra and legal responsibility remains `UNDETERMINED` with
+the User and legal counsel.
+[Replay verifier](../../reference/credit_advance_f04/test_capital_statement_component_identity.py) · [Builder validation](../../validation/2026-11-28-plan-capital-statement-component-identity/README.md)
