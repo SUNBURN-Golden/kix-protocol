@@ -4643,6 +4643,49 @@
           "binding_status": "MOCK_EVIDENCE"
         }
       ]
+    },
+    {
+      "id": "cross_order_issuance",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_inputs_v1.json",
+        "sha256": "7e60aa2daab71d4477c514c4656a3333483a8fcebaf4ee8a13d6f956568bd6cb",
+        "gitBlob": "c360312479717032ac695d4d9bee74c1d6d7407e"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_receipts_v1.json",
+        "sha256": "b32a8274c7aaebd95befc0380ca634562651ad5f321efbc754bb9a2994545262",
+        "gitBlob": "77337b1ee16b09bf2d7c7b1817b85b00f89d9e27"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_cross_order_issuance_vectors.py",
+        "symbol": "CommerceCrossOrderIssuanceVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Each branch replays the same pinned payment-2 checkpoint in a fresh in-process host.",
+        "The receipt and refusal describe local issuance binding. Both preserve the transferred resale right and record zero admission consumption."
+      ],
+      "entries": [
+        {
+          "case_id": "distinct-issuance",
+          "step_id": "issue-order-2",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "issuance-collision",
+          "step_id": "issue-order-2",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_inputs_v1.json#/cases/1/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_receipts_v1.json#/cases/1/steps/0",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
     }
   ]
 }

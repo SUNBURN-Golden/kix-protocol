@@ -333,8 +333,8 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect sixteen
-Commerce input/outcome pack families (424 steps) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect seventeen
+Commerce input/outcome pack families (426 steps) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Use the
 [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
@@ -379,6 +379,14 @@ distinct resale payment and explicit transfer, and a second-show primary
 payment using the original reference bytes. Both shows run in the same
 in-memory host. [Payment-reference replay](../../reference/booking_resale_admission/test_commerce_payment_ref_scope_vectors.py) ·
 [Builder validation](../../validation/2026-11-20-plan-commerce-payment-ref-scope/README.md)
+
+The cross-order issuance pack continues the pinned `payment-2` checkpoint in
+two fresh hosts. Reusing `issue-1` returns `ISSUANCE_BINDING_CONFLICT` and
+leaves `order-2` paid with no right. Using `issue-2` issues one right for
+`buyer-3`. Both branches preserve `buyer-2` at version 2 on `show-1` and
+record zero admission consumptions. Both entries carry `MOCK_EVIDENCE` and
+remain `HOLD_SEMANTIC`.
+[Checkpoint, outcomes and replay](../../reference/booking_resale_admission/README.md#commerce-cross-order-issuance-vectors)
 
 The resale buyer-hold release pack records the `BUYER_MISMATCH` refusal,
 release back to `LISTED`, and historical release replay after the same buyer
