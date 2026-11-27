@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates twenty
+read-only discovery metadata for `kix-capital`. It associates twenty-one
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -66,7 +66,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_resale_distribution_checkpoints | self_contained_comparisons | 3 | 0 |
 | capital_group_sum_boundary | self_contained_comparisons | 3 | 2 |
 | capital_draw_refusal_after_restore | self_contained_comparisons | 2 | 0 |
-| **Total** | | **478** | **130** |
+| capital_equal_gross_claim_binding | self_contained_comparisons | 2 | 0 |
+| **Total** | | **480** | **130** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -312,6 +313,23 @@ digests cannot establish whether the original received a refused call.
 The validator rejects exchanged result pointers even when both resolve.
 Replay symbol `CapitalDrawRefusalAfterRestoreTests.test_draw_refusal_pair`.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_draw_refusal_after_restore.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-draw-refusal-after-restore)
+
+### Equal-gross claim binding
+
+`capital_equal_gross_claim_binding` pins the same comparison pack as input
+and output. Both branches offer the full S2 claim and submit the same draw
+request. F04 §7.5 checks claim identity even when the committed settlements
+share currency and gross.
+
+| Case | Settlement binding | Case fragment | Complete result fragment | Outcome |
+| --- | --- | --- | --- | --- |
+| `matching` | `stl-s2` | `#/cases/0` | `#/cases/0/expected_result` | One mock draw, 10,000 fixture KRW outstanding |
+| `crossed` | `stl-s1` | `#/cases/1` | `#/cases/1/expected_result` | `SETTLEMENT_BINDING_CONFLICT`, zero outstanding and zero appends |
+
+The replay compares the complete advance views, credit journals, original
+offer faces and both settlement journals. The index validator rejects
+exchanged result pointers even when both resolve.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_equal_gross_claim_binding.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-equal-gross-claim-binding)
 
 ## Read-only consumption
 

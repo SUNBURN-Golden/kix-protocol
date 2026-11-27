@@ -5441,6 +5441,46 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_equal_gross_claim_binding",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json",
+        "sha256": "dcce54255062d391faaf2d0ccc2f1f284fae8b0abbafe620162f33e25c740b34",
+        "gitBlob": "c3b425ff42bef595bb9f3a8e1a631794f8fc3117"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json",
+        "sha256": "dcce54255062d391faaf2d0ccc2f1f284fae8b0abbafe620162f33e25c740b34",
+        "gitBlob": "c3b425ff42bef595bb9f3a8e1a631794f8fc3117"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_equal_gross_claim_binding.py",
+        "symbol": "CapitalEqualGrossClaimBindingTests.test_equal_gross_claim_binding"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital equal-gross claim binding"
+        }
+      ],
+      "limitations": [
+        "The F04 mock draw requires the committed settlement to match the offered claim identity even when currency and gross agree. Both settlement journals are preserved."
+      ],
+      "entries": [
+        {
+          "case_id": "matching",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "crossed",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
     }
   ],
   "supporting_evidence": [
