@@ -122,6 +122,10 @@ PACKS = (
      'capital_refund_versus_repayment_vectors_v1.json', 'capital_refund_versus_repayment_vectors_v1.json',
      'test_capital_refund_versus_repayment.py', 'CapitalRefundVersusRepaymentTests.test_refund_versus_repayment',
      'Capital refund versus repayment', ('mock_acceptance', 'repayment_note'), ()),
+    ('capital_statement_component_identity', 'self_contained_comparisons',
+     'capital_statement_component_identity_vectors_v1.json', 'capital_statement_component_identity_vectors_v1.json',
+     'test_capital_statement_component_identity.py', 'CapitalStatementComponentIdentityTests.test_statement_component_identity',
+     'Capital statement component identity', ('fee', 'held'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -215,6 +219,11 @@ LIMITATIONS = {
     'capital_refund_versus_repayment': [
         'Equal fixture amounts affect separate balances and journals. Both outcomes preserve the committed '
         'offer face. Shared exposure uses the credit view from each branch and a caller-supplied fixture limit.',
+    ],
+    'capital_statement_component_identity': [
+        'Equal claim totals and F04 observations can come from distinct statement component splits. '
+        'Each observation identifies its own accepted settlement journal entry. '
+        'The fixture limit and tolerance grant no exposure authority.',
     ],
 }
 SUPPORTING = (
@@ -331,6 +340,13 @@ def _expected_associations(spec, source, output):
                 ref = f'{RESALE_JOURNEY_RECEIPTS}#/steps/{step}/receipt'
                 _check(case['receipt_ref'] == ref, 'checkpoint receipt association: ' + case['case_id'])
                 entry['receipt_ref'] = ref
+            if family == 'capital_statement_component_identity':
+                after_ref = prefix + '/after'
+                # The L1 checkpoint has six accepted settlement entries in both branches.
+                journal_ref = after_ref + '/settlement/journal/6'
+                _check(case['journal_ref'] == journal_ref, 'statement journal association: ' + case['case_id'])
+                observations.append({'case_id': case['case_id'], 'kind': 'statement_observation',
+                                     'ref': after_ref, 'journal_ref': journal_ref})
             entries.append(entry)
         if family == 'capital_group_sum_boundary':
             views = source['credit_views']
@@ -437,6 +453,15 @@ def validate_index(document, read=_read):
                 _check(type(result) is dict and set(result) in ({'ok'}, {'error'}), 'complete result envelope')
         for observation in observations:
             _resolve(documents, observation['ref'])
+            if 'journal_ref' in observation:
+                journal_entry = _resolve(documents, observation['journal_ref'])
+                case_id = observation['case_id']
+                fee, held = (3_000, 0) if case_id == 'fee' else (0, 3_000)
+                _check(_same(journal_entry, {
+                    'op': 'observe_statement', 'settlement_id': 'claim-1', 'idempotency_key': 'stmt-2',
+                    'body': {'movement_id': 'part-2', 'gross': 40_000, 'amount': 37_000,
+                             'fee': fee, 'held': held, 'tax': 0, 'adjustment': 0, 'adjustment_reason': None},
+                }), 'statement journal body association: ' + case_id)
         total += len(expected)
     supporting = document['supporting_evidence']
     _check(type(supporting) is list and [e.get('id') for e in supporting] == [s[0] for s in SUPPORTING],
@@ -490,11 +515,11 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 482)
-        self.assertEqual(len(self.document['packs']), 22)
+        self.assertEqual(validate_index(self.document), 484)
+        self.assertEqual(len(self.document['packs']), 23)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2, 2])
-        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 130)
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2, 2, 2])
+        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 132)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
     def test_membership_controls(self):
@@ -734,6 +759,30 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
                 residual_first['result_ref'], fee_first['result_ref'])
 
         self._reject(swap_results, 'entry membership/association/order/type: capital_payee_order_recovery')
+
+    def test_statement_component_identity_swapped_journal_refs(self):
+        family = 'capital_statement_component_identity'
+        i = next(i for i, pack in enumerate(self.document['packs']) if pack['id'] == family)
+        path = self.document['packs'][i]['input']['path']
+        documents = {path: decode_json(_read(path).decode('utf-8'))}
+
+        def swap_refs(rows):
+            fee, held = rows
+            fee['journal_ref'], held['journal_ref'] = held['journal_ref'], fee['journal_ref']
+
+        def swap_index_refs(document):
+            observations = document['packs'][i]['observations']
+            swap_refs(observations)
+            for observation, held in zip(observations, (3_000, 0), strict=True):
+                self.assertEqual(_resolve(documents, observation['journal_ref'])['body']['held'], held)
+
+        def swap_bodies(source):
+            fee, held = (case['after']['settlement']['journal'][6] for case in source['cases'])
+            fee['body'], held['body'] = held['body'], fee['body']
+
+        self._reject(swap_index_refs, 'supplemental observation association')
+        self._detached(i, 'input', lambda source: swap_refs(source['cases']), 'statement journal association')
+        self._detached(i, 'output', swap_bodies, 'statement journal body association')
 
     def test_offsetting_claim_gaps_crossed_result_references(self):
         family = 'capital_offsetting_claim_gaps'

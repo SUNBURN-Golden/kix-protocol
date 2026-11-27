@@ -905,3 +905,7 @@ SD1(`OPEN`, owner User), A5, RS-4 L2(`FAILED_MEASUREMENT`/HOLD) 및 Stage-5 gate
 ## 2026-11-27 Capital refund versus repayment — 위치 안내만
 
 - A 1,500 KRW mock cancellation acceptance leaves 2,500 KRW refund outstanding and 10,000 KRW credit outstanding. A separate 1,500 KRW F04 repayment note from the same checkpoint leaves 4,000 KRW refund outstanding and 8,500 KRW credit outstanding. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-refund-versus-repayment) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#refund-versus-repayment) · [Builder validation](../validation/2026-11-27-plan-capital-refund-versus-repayment/README.md)
+
+## 2026-11-28 Capital statement component identity — 위치 안내만
+
+- Two synthetic `part-2` observations share 40,000 KRW gross, 37,000 KRW cash and equal F04 observations. The accepted journals record the remaining 3,000 KRW as fee or held. Submitting the other split returns `STATEMENT_BINDING_CONFLICT` with zero accepted appends. [Field guide](status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-statement-component-identity) · [Companion index](status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#statement-component-identity) · [Builder validation](../validation/2026-11-28-plan-capital-statement-component-identity/README.md)

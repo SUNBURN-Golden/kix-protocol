@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates twenty-two
+read-only discovery metadata for `kix-capital`. It associates twenty-three
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -68,7 +68,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_draw_refusal_after_restore | self_contained_comparisons | 2 | 0 |
 | capital_equal_gross_claim_binding | self_contained_comparisons | 2 | 0 |
 | capital_refund_versus_repayment | self_contained_comparisons | 2 | 0 |
-| **Total** | | **482** | **130** |
+| capital_statement_component_identity | self_contained_comparisons | 2 | 2 |
+| **Total** | | **484** | **132** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -348,6 +349,24 @@ Each case also includes an `after` snapshot with that branch's shared-exposure
 observation and both journals. The index rejects an exchange of the two result
 references even when both resolve to valid envelopes.
 [Vector pack](../../reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_refund_versus_repayment.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-refund-versus-repayment)
+
+### Statement component identity
+
+The `capital_statement_component_identity` input and output pins identify the same
+[vector pack](../../reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json).
+Its SHA-256 is `cae9854cc5da29bb1d45bb2c9adf620821c822fafac09e838a1b05bce403a79e`
+and its Git blob is `01e86fe9731f00e5b5ff145f425394437e65cd13`.
+
+| Case | Input fragment | Complete result fragment | Observation fragment | Accepted journal fragment |
+| --- | --- | --- | --- | --- |
+| `fee` | `#/cases/0` | `#/cases/0/expected_result` | `#/cases/0/after` | `#/cases/0/after/settlement/journal/6` |
+| `held` | `#/cases/1` | `#/cases/1/expected_result` | `#/cases/1/after` | `#/cases/1/after/settlement/journal/6` |
+
+Each `statement_observation` binds its case to the accepted `part-2` journal
+entry. The index rejects an exchange of the two `journal_ref` values even
+though both entries resolve and both branches report equal claim totals.
+Replay symbol `CapitalStatementComponentIdentityTests.test_statement_component_identity`.
+[Replay verifier](../../reference/credit_advance_f04/test_capital_statement_component_identity.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-statement-component-identity)
 
 ## Read-only consumption
 
