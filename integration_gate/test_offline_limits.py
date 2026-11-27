@@ -10,7 +10,7 @@ import socket
 from tempfile import TemporaryDirectory
 from threading import Lock
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from reference.booking_resale_admission import commerce_tuple_assertions as commerce
 
@@ -557,9 +557,10 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
     def setUp(self):
         from integration_gate.catalogue import load_catalogue
 
-        table, files = self._verified_evidence()
+        table, files, self.schema_digests = self._verified_evidence()
         corpus = json.loads(files[commerce.VECTORS])
         self.assertEqual(corpus['record_schema_version'], 'kix-commerce-fixture-vectors/1')
+        self.tuples = table['tuples']
         self.targets, self.controls = self._target_inventory(table, corpus['vectors'])
         self.golden_steps = json.loads(files[commerce.RECEIPTS])['steps']
         self.receipts = self._expected_receipts(files)
@@ -571,10 +572,19 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
         manifest_path = ROOT / f'sdk/compat/manifests/manifest.{COMMERCE_REVISION}.json'
         raw = manifest_path.read_bytes()
         self.assertEqual(hashlib.sha256(raw).hexdigest(), self.MANIFEST_SHA256)
+        self.assertEqual(manifest_path.with_suffix('.json.sha256').read_text(encoding='utf-8'),
+                         self.MANIFEST_SHA256 + '\n')
         manifest = json.loads(raw)
         self.assertEqual(manifest['manifest_schema_version'], 'kix-compat-manifest/1')
         self.assertEqual(manifest['profile_kind'], 'SEMANTIC_CONFORMANCE')
         self.assertEqual(manifest['profile_revision'], COMMERCE_REVISION)
+        profile_raw = (ROOT / f'sdk/compat/profiles/{COMMERCE_REVISION}.profile.json').read_bytes()
+        self.assertEqual(hashlib.sha256(profile_raw).hexdigest(), manifest['profile_sha256'])
+        profile = json.loads(profile_raw)
+        for field in ('manifest_schema_version', 'profile_kind', 'profile_revision', 'vectors'):
+            self.assertEqual(profile[field], manifest[field], field)
+        self.assertEqual(profile['grants'],
+                         'commerce-fixture-tuples-only: see commerce-fixture-qualification-table')
         self.assertEqual(Counter((ref['name'], ref['path']) for ref in manifest['vectors']), {
             ('commerce-fixture-qualification-table', commerce.TABLE): 1,
             ('commerce-fixture-request-to-receipt', commerce.VECTORS): 1,
@@ -596,7 +606,7 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
                 data = files[path] if path in files else (ROOT / path).read_bytes()
                 self.assertEqual(hashlib.sha256(data).hexdigest(), pin['sha256'], path)
                 self.assertEqual(git_blob_id(data), pin['gitBlob'], path)
-        return table, files
+        return table, files, profile['catalogue']['schema_digests']
 
     def _target_inventory(self, table, vectors):
         from integration_gate.constants import LOCAL_CALL_PATH
@@ -817,6 +827,72 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
             ('booking-refund', 200): 14, ('booking-refund', 422): 1,
             ('resale-market', 200): 14,
         })
+
+    def test_nullable_body_fields(self):
+        from integration_gate.schema import ENVELOPE_FIELDS, EnvelopeError
+
+        fixture = json.loads((COMMERCE_VECTORS / 'commerce-nullable-fields.vectors.json').read_bytes())
+        self.assertEqual(fixture['profile_revision'], COMMERCE_REVISION)
+        cases = fixture['cases']
+        present_values = {'null': None, 'string': 'fixture-alternate', 'boolean': True}
+        representations = ('omitted', *present_values)
+        positions = {}
+        for row in self.tuples:
+            action = row['action']
+            schema = self.catalogue.commands[action]
+            digest = hashlib.sha256(commerce.canonical(schema).encode('utf-8')).hexdigest()
+            self.assertEqual(digest, row['body_schema_sha256'], action)
+            self.assertEqual(digest, self.schema_digests[action], action)
+            nullable = []
+            for field, spec in schema['properties'].items():
+                declared = spec['type']
+                types = declared if isinstance(declared, list) else [declared]
+                if field not in schema['required'] and 'null' in types:
+                    self.assertCountEqual(types, ('string', 'null'), f'{action}.{field}')
+                    nullable.append(field)
+            if not nullable:
+                continue
+            vector_id = min(vid for vid, vector in self.targets.items()
+                            if vector['envelope']['action'] == action)
+            for field in nullable:
+                positions[action, field] = vector_id
+        self.assertEqual(len(positions), 10)
+        self.assertEqual(len({action for action, _ in positions}), 8)
+        self.assertCountEqual(
+            [(case['action'], case['field'], case['representation']) for case in cases],
+            [(action, field, representation) for action, field in positions
+             for representation in representations],
+        )
+
+        for case in cases:
+            action, field = case['action'], case['field']
+            representation, envelope = case['representation'], case['envelope']
+            with self.subTest(action=action, field=field, representation=representation):
+                vector_id = positions[action, field]
+                self.assertEqual(case['vector_id'], vector_id)
+                expected = deepcopy(self.targets[vector_id]['envelope'])
+                self.assertNotEqual(expected['body'].get(field), present_values['string'])
+                omitted = representation == 'omitted'
+                if omitted:
+                    expected['body'].pop(field, None)
+                else:
+                    expected['body'][field] = present_values[representation]
+                self.assertEqual(commerce.canonical(envelope), commerce.canonical(expected))
+
+                gate = Mock(spec=['perform'])
+                if representation == 'boolean':
+                    with self.assertRaises(EnvelopeError) as caught:
+                        self._parse_and_dispatch(gate, case)
+                    self.assertEqual(caught.exception.error, 'SCHEMA_REJECTED')
+                    self.assertEqual(caught.exception.detail, f'body.{field}: expected string or null')
+                    gate.perform.assert_not_called()
+                else:
+                    self._parse_and_dispatch(gate, case)
+                    expected_args = tuple(expected[key] for key in ENVELOPE_FIELDS)
+                    gate.perform.assert_called_once_with(*expected_args)
+                    args = gate.perform.call_args.args
+                    self.assertEqual(field in args[3], not omitted)
+                    self.assertEqual(commerce.canonical(args), commerce.canonical(expected_args))
 
     def test_rewritten_fsm_idempotency_key_fails(self):
         from integration_gate.server import GateServer
