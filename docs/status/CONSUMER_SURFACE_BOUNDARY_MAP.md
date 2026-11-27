@@ -107,9 +107,27 @@ as follows.
 4. For each selected vector, start a fresh in-memory host, apply the `setup`
    vectors in order and submit the `envelope` verbatim. Keep `operationId`
    distinct from `body.idempotency_key`. Check the exact schema or business
-   refusal code, or compare typed `receipt_fields` and the full receipt at
-   `receipt_ref` when present. Check the recorded journal expectations. Missing
-   or mismatched evidence leaves the step `HOLD_SEMANTIC`.
+   refusal code, or compare typed `receipt_fields` for a successful outcome.
+   After matching the existing grant in steps 1–3, use the non-normative
+   [full receipt index](COMMERCE_FULL_RECEIPT_INDEX_V1.json) to compare complete
+   receipts for the 56 listed first acceptances. Match its manifest pin to the
+   verified manifest, look up `receipts[vectorId]` using the literal vector ID,
+   verify the referenced source's raw bytes against its `sha256` and `gitBlob`
+   pins, then follow the JSON Pointer after `#` in `receipt_ref`.
+
+   - `receipts["booking-admission/consume-B"]` has `source_kind: direct` and
+     points to `#/steps/29/receipt` in `commerce_journey_receipts_v1.json`.
+   - `receipts["resale-market/market-cancel-LISTED"]` has
+     `source_kind: market_companion` and points to
+     `#/receipts/resale-market~1market-cancel-LISTED` in
+     `commerce_market_full_receipts_v1.json`.
+
+   The 32 `direct` entries use the vectors' existing references. The 14
+   `market_companion` and 10 `booking_branch_companion` entries identify
+   companion evidence. Within a JSON Pointer token, encode `~` as `~0` before
+   encoding `/` as `~1`. For other vectors, check any `receipt_ref` in the
+   vector itself. Check the recorded journal expectations. Missing or
+   mismatched evidence leaves the step `HOLD_SEMANTIC`.
    Fence unresolved `UNKNOWN` outcomes without polling, retry or replacement
    writes. [Offline replay handoff](COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#replay-offline)
 
