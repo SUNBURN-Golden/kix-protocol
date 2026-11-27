@@ -16,6 +16,7 @@ FIXTURE_DIR = "reference/booking_resale_admission/fixtures"
 ADMISSION = f"{FIXTURE_DIR}/commerce_admission_lost_reply_v1.json"
 REFUSAL = f"{FIXTURE_DIR}/commerce_withheld_resale_refusal_v1.json"
 REFUND = f"{FIXTURE_DIR}/commerce_refund_acceptance_lost_reply_v1.json"
+RESALE_COMMIT = f"{FIXTURE_DIR}/commerce_resale_commit_lost_reply_v1.json"
 
 # Source identities and positions come from the individual fixture replays.
 FIXTURES = {
@@ -28,6 +29,7 @@ FIXTURES = {
     REFUND: ("booking-refund/observe-mock-acceptance", 49),
     REFUSAL: ("booking-resale/accept-A-before-commit", 18),
     f"{FIXTURE_DIR}/commerce_cancel_lost_reply_v1.json": ("booking-refund/cancel-C", 39),
+    RESALE_COMMIT: ("booking-resale/settle-resale-commit", 19),
 }
 RECEIPT_SOURCES = {
     "source_booking_branch_receipts": f"{FIXTURE_DIR}/commerce_booking_branch_receipts_v1.json",
@@ -69,7 +71,7 @@ class CommerceDeliveryEvidenceIndexTests(unittest.TestCase):
         outcomes = Counter()
         for row in rows:
             outcomes.update(self.check_fixture(row, self.documents[row["fixture_path"]]))
-        self.assertEqual(outcomes, {"UNKNOWN": 14, "business-reject": 1})
+        self.assertEqual(outcomes, {"UNKNOWN": 16, "business-reject": 1})
 
     def check_fixture(self, row, fixture):
         self.assertEqual(set(row), {"fixture_path", "source_vector_id", "source_vector_ref", "cases"})
@@ -177,8 +179,10 @@ class CommerceDeliveryEvidenceIndexTests(unittest.TestCase):
 
     def test_producer_evidence_cannot_replace_caller_observation(self):
         hidden_refund = self.documents[REFUND]["cases"][1]["producer_evidence"]["hidden_receipt_ref"]
+        hidden_commit = self.documents[RESALE_COMMIT]["cases"][1]["producer_evidence"]["hidden_receipt_ref"]
         for path, substitute in (
             (REFUND, hidden_refund),
+            (RESALE_COMMIT, hidden_commit),
             (REFUSAL, f"{REFUSAL}#/cases/2/producer_evidence/refusal_codes/0"),
             (REFUND, f"{ADMISSION}#/expected_caller"),
         ):

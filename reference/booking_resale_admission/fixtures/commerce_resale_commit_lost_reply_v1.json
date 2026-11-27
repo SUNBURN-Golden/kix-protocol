@@ -1,0 +1,89 @@
+{
+  "record_schema_version": "kix-commerce-resale-commit-lost-reply/1",
+  "normative": false,
+  "source_vector": {
+    "id": "booking-resale/settle-resale-commit",
+    "path": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
+    "sha256": "c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22",
+    "gitBlob": "0095e53801921e87c5417dd86920a625c2fede78"
+  },
+  "source_journey_receipts": {
+    "path": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json",
+    "sha256": "6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998",
+    "gitBlob": "e9f34b8f35ed7f6a0867f1d2036bda521ee15eab"
+  },
+  "source_booking_branch_receipts": {
+    "path": "reference/booking_resale_admission/fixtures/commerce_booking_branch_receipts_v1.json",
+    "sha256": "1268382cdce28c931e160e253a6cafdac0f74de4124a53df1c78bd625f4b82c4",
+    "gitBlob": "ab98cce8492b21b29871c4c1ad4ccda1a722d9ed"
+  },
+  "recovery_lookup": "NOT_BOUND",
+  "expected_caller": {
+    "operationId": "op-booking-resale-settle-resale-commit",
+    "idempotency_key": "key-settle-resale-commit",
+    "attempts": 1,
+    "outcome": "UNKNOWN",
+    "receipt": null,
+    "follow_up_calls": 0
+  },
+  "cases": [
+    {
+      "id": "loss-before-dispatch",
+      "fault_point": "before_dispatch",
+      "producer_evidence": {
+        "dispatches": 0,
+        "hidden_receipt_ref": null,
+        "listing": {
+          "listing_id": "listing-A",
+          "phase": "PAYMENT_NOTED",
+          "amount": 12000,
+          "payment_ref": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "ownership_transferred": false,
+          "settlement_gate": "BOUND"
+        },
+        "right": {"right_id": "issue-A", "holder_role": "buyer-A", "version": 1},
+        "settlement": {"settlement_id": "settle-resale", "phase": "CAPTURED", "claim": {"distributed_cash": 0}},
+        "journal_delta": {"reservation": 0, "resale": 0, "settlement": 0, "admission": 0, "credit": 0},
+        "appended_journal_entries": {}
+      }
+    },
+    {
+      "id": "loss-after-dispatch",
+      "fault_point": "after_dispatch",
+      "producer_evidence": {
+        "dispatches": 1,
+        "hidden_receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/23/receipt",
+        "listing": {
+          "listing_id": "listing-A",
+          "phase": "PAYMENT_NOTED",
+          "amount": 12000,
+          "payment_ref": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "ownership_transferred": false,
+          "settlement_gate": "BOUND"
+        },
+        "right": {"right_id": "issue-A", "holder_role": "buyer-A", "version": 1},
+        "settlement": {"settlement_id": "settle-resale", "phase": "COMMITTED", "claim": {"distributed_cash": 0}},
+        "journal_delta": {"reservation": 0, "resale": 0, "settlement": 1, "admission": 0, "credit": 0},
+        "appended_journal_entries": {
+          "settlement": [
+            {
+              "op": "commit",
+              "settlement_id": "settle-resale",
+              "idempotency_key": "key-settle-resale-commit",
+              "body": {
+                "movement_id": "mv-resale",
+                "gross": 12000,
+                "amount": 12000,
+                "fee": 0,
+                "tax": 0,
+                "held": 0,
+                "adjustment": 0,
+                "adjustment_reason": null
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
