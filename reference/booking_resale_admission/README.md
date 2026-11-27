@@ -4693,3 +4693,34 @@ Provider and legal terms retain their existing owners.
 PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -t reference/booking_resale_admission -p test_commerce_admission_replay_after_resale_vectors.py -v
 ```
+
+## Commerce replacement admission binding vectors
+
+This 15-step history replays `expired-authorization-replacement` through
+`replace` in one in-process host. At synthetic time 1,120,000, the replacement
+`admit-2` binds `gate-b` to the replacement request until 1,240,000. The
+three presentations use distinct consume IDs and idempotency keys for the
+same paid, issued right `issue-1` at version 1.
+
+| Presentation | Outcome | Observed effect |
+|---|---|---|
+| Old gate and replacement request | `GATE_MISMATCH` | Replacement, version 1 and accepted journals preserved |
+| Replacement gate and old request | `ADMISSION_REQUEST_MISMATCH` | Replacement, version 1 and accepted journals preserved |
+| Replacement gate and replacement request | `CONSUMED_ONCE` | Version 2, authorization detached, slot `ISSUED` and one consume appended to each bound journal |
+
+The input links the original payment and issuance receipts separately.
+The output records complete canonical outcomes and detached diagnostic
+snapshots. This is source-informed mock evidence under `HOLD_SEMANTIC`.
+All 13 reads remain `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external
+acceptance is `UNVERIFIED`. Product TTLs, fees and compensation remain
+`UNDETERMINED` with Astra and the User. Provider and legal terms retain their
+existing owners.
+[Canonical inputs](fixtures/commerce_replaced_admission_binding_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_replaced_admission_binding_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#replacement-admission-binding) ·
+[Coverage and local verification](../../validation/2026-11-27-plan-commerce-replaced-admission-binding/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_replaced_admission_binding_vectors.py
+```
