@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects eighteen input/outcome pack families (434 steps) to replay tests
+It connects nineteen input/outcome pack families (438 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -33,6 +33,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `admission_journal_after_transfer` | `commerce_admission_journal_after_transfer_inputs_v1.json` | `commerce_admission_journal_after_transfer_receipts_v1.json` | `test_commerce_admission_journal_after_transfer_vectors.py` | 2 / 2 |
 | `cross_order_issuance` | `commerce_cross_order_issuance_inputs_v1.json` | `commerce_cross_order_issuance_receipts_v1.json` | `test_commerce_cross_order_issuance_vectors.py` | 2 / 2 |
 | `two_gate_admission` | `commerce_two_gate_admission_inputs_v1.json` | `commerce_two_gate_admission_receipts_v1.json` | `test_commerce_two_gate_admission_vectors.py` | 2 / 8 |
+| `credential_read_after_resale` | `commerce_credential_read_after_resale_inputs_v1.json` | `commerce_credential_read_after_resale_receipts_v1.json` | `test_commerce_credential_read_after_resale_vectors.py` | 1 / 4 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -80,8 +81,11 @@ The original binding index and
 Later evidence does not upgrade an original **BOOTSTRAP_SCHEMA_BOUND** command
 to **MOCK_EVIDENCE**. BOOTSTRAP is not consumer acceptance.
 
-Semantic consumption remains **HOLD_SEMANTIC**. All **13 reads remain NOT_BOUND**.
-Diagnostic snapshots and local views are observations, not published read APIs.
+Semantic consumption remains **HOLD_SEMANTIC**. All **13 reads remain NOT_BOUND**
+in the historical consumer binding index. The published local-call read profile
+has fixture scope and grants `none`.
+[Read binding by transport](COMMERCE_READ_BINDING_BY_TRANSPORT_V1.json)
+
 SD1 remains **OPEN, User-owned and unresolved**; no option, waiver or verifier
 order is chosen. External `kix-commerce-apps` acceptance is **UNVERIFIED**: its
 adapter is outside this repository and was not invoked.
@@ -360,3 +364,20 @@ detects swapped winning outcome references.
 [Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json) ·
 [Replay command](../../reference/booking_resale_admission/README.md#commerce-two-gate-admission-vectors) ·
 [Coverage and local verification](../../validation/2026-11-28-plan-commerce-two-gate-admission/README.md)
+
+## Credential read after resale
+
+`credential_read_after_resale` pairs the same `get_credential` request for
+`buyer-1`, `issue-1`, version 1 with four existing write receipts. The
+presentation is fresh before listing. Listing sets `LISTING_LOCKED`,
+payment preserves that decision, and transfer sets `STALE_VERSION`. The
+query digest and admission watermark stay fixed. Each read preserves all
+five accepted journals and records zero consumptions.
+
+Each indexed write retains `MOCK_EVIDENCE` under `HOLD_SEMANTIC`. Append
+`/read_envelope` to any of the four `outcome_ref` pointers for the complete
+local-call response.
+[Canonical inputs](../../reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_inputs_v1.json) ·
+[Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_receipts_v1.json) ·
+[Checkpoint table and replay command](../../reference/booking_resale_admission/README.md#commerce-credential-read-after-resale-vectors) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-credential-read-after-resale/README.md)

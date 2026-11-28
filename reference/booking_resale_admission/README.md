@@ -4809,3 +4809,42 @@ under `HOLD_SEMANTIC`. The histories cover sequential calls within each host.
 PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -t reference/booking_resale_admission -p test_commerce_two_gate_admission_vectors.py
 ```
+
+## Commerce credential read after resale vectors
+
+One in-process host replays the pinned `admission-replay-after-resale`
+purchase through `transfer`. Immediately after each checkpoint it submits
+the same local-call request to `FsmHost.read`.
+
+```json
+{"action":"get_credential","body":{"holder_role":"buyer-1","right_id":"issue-1","version":1}}
+```
+
+| Source step | Write action | Presentation `fresh` | Presentation `decision` | Complete read envelope |
+|---|---|---|---|---|
+| 12 `resale-expiry-clock` | `resale_set_clock` | `true` | `null` | [Before listing](fixtures/commerce_credential_read_after_resale_receipts_v1.json#/cases/0/steps/0/read_envelope) |
+| 13 `list` | `resale_list_resale` | `false` | `LISTING_LOCKED` | [After listing](fixtures/commerce_credential_read_after_resale_receipts_v1.json#/cases/0/steps/1/read_envelope) |
+| 14 `resale-payment` | `resale_observe_resale_payment` | `false` | `LISTING_LOCKED` | [After payment](fixtures/commerce_credential_read_after_resale_receipts_v1.json#/cases/0/steps/2/read_envelope) |
+| 15 `transfer` | `resale_accept_resale` | `false` | `STALE_VERSION` | [After transfer](fixtures/commerce_credential_read_after_resale_receipts_v1.json#/cases/0/steps/3/read_envelope) |
+
+All four envelopes share query digest
+`41a806c2bd8f71b1b59aa2a827ed905de3c7d372a3b55a58bbd5586e4fef2165` and
+admission `accepted_through` of four journal entries at logical time
+1,120,000 ms. The read uses current resale ownership, which lets the
+presentation change while the admission watermark holds. Each read
+preserves all five accepted journals byte-for-byte. Detached diagnostics
+record both journal digests, zero consume entries and null consume IDs.
+
+The pack carries `HOLD_SEMANTIC`. `fresh: true` grants no admission.
+The local-call profile grants `none`, and external consumer acceptance
+remains `UNVERIFIED`.
+[Read contract §2.10](../../docs/contracts/READ_MODEL_QUERIES.md#210-get_credential) ·
+[Transport bindings](../../docs/status/COMMERCE_READ_BINDING_BY_TRANSPORT_V1.json) ·
+[Canonical inputs](fixtures/commerce_credential_read_after_resale_inputs_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#credential-read-after-resale) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-credential-read-after-resale/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_credential_read_after_resale_vectors.py -v
+```

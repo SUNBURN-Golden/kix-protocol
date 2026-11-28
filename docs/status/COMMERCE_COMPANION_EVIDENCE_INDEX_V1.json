@@ -4789,6 +4789,69 @@
           "binding_status": "MOCK_EVIDENCE"
         }
       ]
+    },
+    {
+      "id": "credential_read_after_resale",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_inputs_v1.json",
+        "sha256": "8d50fa084433f5ca10582b5a7e47d9aec32233683ce7d0a55c29768a1e0c9624",
+        "gitBlob": "efa9fa16e15f3d49e251911782a273836df4b671"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_receipts_v1.json",
+        "sha256": "904d5d13ed2a09827853e75439b9c187a6cc4fa96ca5e2bc269ebb3d24fe576d",
+        "gitBlob": "0d51137cd352407c5867c63c46e9506d8eb73f21"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_credential_read_after_resale_vectors.py",
+        "symbol": "CommerceCredentialReadAfterResaleVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Four in-process local-call read envelopes accompany existing write receipts under HOLD_SEMANTIC.",
+        "The admission watermark covers the admission machine. Presentation freshness also depends on resale state and grants no admission authority."
+      ],
+      "entries": [
+        {
+          "case_id": "credential-read-after-resale",
+          "step_id": "resale-expiry-clock",
+          "action": "resale_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "credential-read-after-resale",
+          "step_id": "list",
+          "action": "resale_list_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "credential-read-after-resale",
+          "step_id": "resale-payment",
+          "action": "resale_observe_resale_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "credential-read-after-resale",
+          "step_id": "transfer",
+          "action": "resale_accept_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_credential_read_after_resale_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/69",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
     }
   ]
 }
