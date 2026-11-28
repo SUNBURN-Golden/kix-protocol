@@ -186,7 +186,7 @@ DESCRIPTIONS = {
     'get_listing': 'Listing visible to its seller and, after transfer, the current holder.',
     'get_right': 'Separate ticket and right views visible to the current holder.',
     'get_presentation': 'Current holder only. A valid historical comparison may return matches_current_right false.',
-    'get_settlement': 'Follow the listing binding when its listing ID matches the settlement trade ID. Visible to the show organizer and settlement debtor fixture.',
+    'get_settlement': 'Follow the explicit listing settlement binding for a listing trade or the qualified booking-resale fixture association. Visible to the show organizer and settlement debtor fixture.',
     RECOVERY: (
         'Resolve positive retained acceptance for resale or settlement. Supply exactly one identity and '
         'either through for receipt lookup or request_cut: true for a signed source watermark without a receipt. '

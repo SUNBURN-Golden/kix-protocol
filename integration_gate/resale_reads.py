@@ -31,6 +31,8 @@ RECOVERY_RECEIPTS = 128
 RECOVERY_IDENTITIES = 2048
 HEX_64 = re.compile(r'[0-9a-f]{64}')
 CURSOR = re.compile(r'[A-Za-z0-9_-]{54}')
+# Independently named trade in the qualified booking-resale journey.
+QUALIFIED_FIXTURE_TRADE_IDS = {('listing-A', 'settle-resale'): 'trade-resale-A'}
 
 
 class ReadRefused(Exception):
@@ -184,14 +186,16 @@ class ResaleReads:
                 return listing
             raise _not_found()
         if query == 'get_settlement':
-            listing = resale.view(request['listing_id'])
+            listing_id = request['listing_id']
+            listing = resale.view(listing_id)
             settlement_id = listing['settlement_id']
             if settlement_id is None:
                 raise _not_found()
             settlement = self._machines['settlement'].view(settlement_id)
-            # bind_settlement records a pointer. The companion fixture uses
-            # the listing ID as the trade subject on the settlement itself.
-            if settlement['trade_id'] != listing['listing_id']:
+            # The binding is a pointer. Require a listing trade or an exact
+            # association from the qualified booking-resale fixture.
+            qualified_trade_id = QUALIFIED_FIXTURE_TRADE_IDS.get((listing_id, settlement_id))
+            if settlement['trade_id'] not in (listing_id, qualified_trade_id):
                 raise _not_found()
             show = self._machines['reservation'].view_show(listing['show_id'])['show']
             organizer = show['organizer_role']

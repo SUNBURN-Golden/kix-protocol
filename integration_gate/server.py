@@ -144,7 +144,7 @@ class GateServer(ThreadingMixIn, HTTPServer):
         if not self._worker.is_alive():
             self._mark_diverged()
             raise CoreBusy()
-        # A timed-out HTTP read can outlive its handler's admission slot.
+        # A timed-out read or probe can outlive its HTTP handler.
         # Hold a worker slot until that job finishes, even if the worker stalls.
         if read_only and not self._read_jobs.acquire(blocking=False):
             raise CoreBusy()
@@ -582,6 +582,7 @@ class GateHandler(BaseHTTPRequestHandler):
             snapshot, journal_records = self.server.on_core(
                 self.server.ready_view,
                 self.server.request_timeout_seconds,
+                read_only=True,
             )
         except (CoreBusy, GateStartupError, StoreError):
             self._send(503, _not_ready())

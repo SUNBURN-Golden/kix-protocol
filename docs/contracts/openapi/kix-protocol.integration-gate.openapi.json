@@ -3487,7 +3487,7 @@
         "operationId": "get_settlement",
         "x-kix-transport": "integration-gate",
         "x-kix-production-endpoint": false,
-        "description": "Follow the listing binding when its listing ID matches the settlement trade ID. Visible to the show organizer and settlement debtor fixture. Actor labels are FIXTURE_ONLY. No browser CORS.",
+        "description": "Follow the explicit listing settlement binding for a listing trade or the qualified booking-resale fixture association. Visible to the show organizer and settlement debtor fixture. Actor labels are FIXTURE_ONLY. No browser CORS.",
         "requestBody": {
           "required": true,
           "content": {

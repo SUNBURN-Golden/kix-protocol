@@ -1402,7 +1402,8 @@ class ResaleReadTransportTests(unittest.TestCase):
     def setUp(self):
         self.fixture = parse_json((ROOT / 'reference/read_model/vectors/resale-read-transport.json').read_bytes())
         source = parse_json((ROOT / self.fixture['source']).read_bytes())
-        self.writes = {item['id']: item['envelope'] for item in source['vectors']}
+        self.vectors = {item['id']: item for item in source['vectors']}
+        self.writes = {vector_id: item['envelope'] for vector_id, item in self.vectors.items()}
 
     def read(self, port, query, request, expected_status=200):
         status, raw, headers = exchange(port, 'POST', READ_PREFIX + query, request)
@@ -1517,6 +1518,32 @@ class ResaleReadTransportTests(unittest.TestCase):
                 with self.subTest(request=request):
                     result = self.read(port, 'get_settlement', request, 404)
                     self.assertEqual(result, {'error': 'NOT_FOUND', 'rejected': True})
+            self.assertEqual(self.machine_states(httpd), before)
+
+        run_with_server(run)
+
+    def test_qualified_settlement_binding_preserves_distinct_trade_id(self):
+        transfer = self.vectors['booking-resale/accept-A']
+
+        def run(httpd, port):
+            for step_id in transfer['setup']:
+                step = self.vectors[step_id]
+                self.write(port, step['envelope'], step['expected'].get('code'))
+                if step_id == 'booking-resale/bind-resale':
+                    captured = self.read(port, 'get_settlement', {'actor': 'organizer-1', 'listing_id': 'listing-A'})
+                    self.assertEqual(captured['body']['phase'], 'CAPTURED')
+            receipt = self.write(port, transfer['envelope'])
+            self.assertEqual(receipt['listing']['settlement_id'], 'settle-resale')
+            before = self.machine_states(httpd)
+            request = {'listing_id': 'listing-A'}
+            for actor in ('organizer-1', 'buyer-B'):
+                with self.subTest(actor=actor):
+                    result = self.read(port, 'get_settlement', {**request, 'actor': actor})
+                    self.assertEqual(result['body']['settlement_id'], 'settle-resale')
+                    self.assertEqual(result['body']['trade_id'], 'trade-resale-A')
+                    self.assertEqual(result['body']['phase'], 'COMMITTED')
+            refused = self.read(port, 'get_settlement', {**request, 'actor': 'buyer-A'}, 404)
+            self.assertEqual(refused, {'error': 'NOT_FOUND', 'rejected': True})
             self.assertEqual(self.machine_states(httpd), before)
 
         run_with_server(run)
@@ -1725,6 +1752,34 @@ class ResaleReadTransportTests(unittest.TestCase):
                 result = self.read(port, 'get_operation_recovery', {**request, **selector})
                 self.assertEqual(result['body'], {'status': 'ACCEPTED', 'retry_granted': False, 'receipt': receipts[0]})
             self.assertEqual(self.machine_states(httpd), state)
+
+        run_with_server(run)
+
+    def test_ready_timeout_behind_read_preserves_writes(self):
+        def run(httpd, port):
+            started = threading.Event()
+            release = threading.Event()
+            perform_read = httpd.perform_read
+
+            def hold_worker(query, request):
+                started.set()
+                self.assertTrue(release.wait(5))
+                return perform_read(query, request)
+
+            with patch.object(httpd, 'perform_read', hold_worker), ThreadPoolExecutor(max_workers=1) as clients:
+                read = clients.submit(exchange, port, 'POST', READ_PREFIX + 'list_open_listings', {'actor': 'viewer'})
+                try:
+                    self.assertTrue(started.wait(2))
+                    with patch.object(httpd, 'request_timeout_seconds', 0.25):
+                        status, raw, _ = exchange(port, 'GET', READY_PATH)
+                    self.assertEqual((status, parse_json(raw)['error']), (503, 'NOT_READY'))
+                finally:
+                    release.set()
+                self.assertEqual(read.result(timeout=2)[0], 200)
+
+            self.assertEqual(exchange(port, 'GET', READY_PATH)[0], 200)
+            receipt = self.write(port, self.writes[self.fixture['setup'][0]])
+            self.assertFalse(receipt['duplicate'])
 
         run_with_server(run)
 

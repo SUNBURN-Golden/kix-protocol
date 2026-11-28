@@ -22,6 +22,8 @@ For a lost reply or write deadline, call `get_operation_recovery` on the same ru
 
 The historical `resale-market/market-accept` receives `settlement_id: null` and `settlement_gate: UNBOUND`. The bound companion replays the qualified setup, initiates, authorizes, captures, and binds `settle-read-1`, then commits the mock settlement before transfer. Its settlement `trade_id` is `list-1`, the listing subject. It checks refusal for a conflicting binding, acceptance before commit, and reads whose binding points to an unrelated trade. The successful transfer receipt, listing read and settlement read agree on the same non-null ID. [Transport vectors](../../reference/read_model/vectors/resale-read-transport.json)
 
+The existing qualified `booking-resale/accept-A` journey binds `listing-A` to `settle-resale` with the distinct trade ID `trade-resale-A`. The HTTP regression replays the original vectors and checks the captured and committed settlement views, organizer and debtor access, and seller refusal. [Qualified Commerce vectors](../../sdk/conformance/vectors/commerce-fixture-tuple.vectors.json)
+
 ## Source tuple and supervisor handoff
 
 The archived gate OpenAPI bytes in `sdk/compat/inputs/` verify the historical `bootstrap-2` and `commerce-fixture-8ba7f6c-1` tuples. The historical Commerce test also checks the archived server source against its original pin. The verifier defaults to the current tree's gate bytes. Mixing them with either historical manifest yields `integration_gate bytes drift`. Historical checks explicitly select the archived inputs and verify their original blobs and SHA-256 digests.
