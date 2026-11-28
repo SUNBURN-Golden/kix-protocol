@@ -15,6 +15,7 @@ import tempfile
 import threading
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import redirect_stderr
 from http.client import RemoteDisconnected
 from pathlib import Path
@@ -1724,6 +1725,122 @@ class ResaleReadTransportTests(unittest.TestCase):
                 result = self.read(port, 'get_operation_recovery', {**request, **selector})
                 self.assertEqual(result['body'], {'status': 'ACCEPTED', 'retry_granted': False, 'receipt': receipts[0]})
             self.assertEqual(self.machine_states(httpd), state)
+
+        run_with_server(run)
+
+    def test_queued_conflict_that_times_out_fences_recovery_identities(self):
+        vector = self.fixture['deadline_recovery']['queued_conflict']
+        actor, subject = vector['actor'], vector['subject']
+        operation_id, trace_id = vector['operation_id'], vector['trace_id']
+        headers = {'X-Request-Id': trace_id}
+        query = 'get_operation_recovery'
+        unknown = {'status': 'UNKNOWN', 'retry_granted': False}
+
+        def run(httpd, port):
+            first = self.write(port, envelope(operation_id, actor, subject['action'], vector['first_body']),
+                               headers=headers)
+            watermark = self.read(port, 'list_open_listings', {'actor': actor})['accepted_through']
+            request = {'actor': actor, 'subject': subject, 'through': watermark}
+            accepted = self.read(port, query, {**request, 'operation_id': operation_id})
+            self.assertEqual(accepted['body']['receipt'], first)
+            before = self.machine_states(httpd)
+            started = threading.Event()
+            release = threading.Event()
+            perform_read = httpd.perform_read
+
+            def hold_worker(query, request):
+                started.set()
+                self.assertTrue(release.wait(5))
+                return perform_read(query, request)
+
+            with patch.object(httpd, 'perform_read', hold_worker):
+                with ThreadPoolExecutor(max_workers=1) as clients:
+                    pending = clients.submit(exchange, port, 'POST', READ_PREFIX + 'list_open_listings',
+                                             {'actor': actor})
+                    try:
+                        self.assertTrue(started.wait(2))
+                        with patch.object(httpd, 'request_timeout_seconds', 0.25):
+                            conflict = envelope(operation_id, actor, subject['action'], vector['conflicting_body'])
+                            status, raw, _ = exchange(port, 'POST', LOCAL_CALL_PATH, conflict, headers)
+                            self.assertEqual((status, parse_json(raw)['error']), (503, 'CORE_BUSY'))
+                            self.assertEqual(exchange(port, 'GET', READY_PATH)[0], 503)
+                    finally:
+                        release.set()
+                    self.assertEqual(pending.result(timeout=2)[0], 200)
+
+            current = self.read(port, 'list_open_listings', {'actor': actor})['accepted_through']
+            self.assertEqual(current, watermark)
+            for selector in ({'operation_id': operation_id}, {'trace_id': trace_id}):
+                self.assertEqual(self.read(port, query, {**request, **selector}), unknown)
+                self.assertEqual(self.read(port, query, {
+                    'actor': actor, 'subject': subject, 'request_cut': True, **selector,
+                }), unknown)
+            self.assertEqual(self.machine_states(httpd), before)
+
+        run_with_server(run)
+
+    def test_first_settlement_write_can_recover_after_deadline_without_binding(self):
+        vector = self.fixture['deadline_recovery']['unbound_settlement']
+        actor, subject = vector['actor'], vector['subject']
+        operation_id, trace_id = vector['operation_id'], vector['trace_id']
+        initiate, _, _, bind = self.fixture['bound_companion'][:4]
+        query = 'get_operation_recovery'
+        unknown = {'status': 'UNKNOWN', 'retry_granted': False}
+
+        def run(httpd, port):
+            self.market_setup(port)
+            started = threading.Event()
+            finish = threading.Event()
+            receipts = []
+            call = httpd.fsm.call
+
+            def delayed_call(action, body):
+                started.set()
+                self.assertTrue(finish.wait(5))
+                receipt = call(action, body)
+                receipts.append(receipt)
+                return receipt
+
+            with patch.object(httpd.fsm, 'call', delayed_call):
+                try:
+                    with patch.object(httpd, 'request_timeout_seconds', 0.25):
+                        status, raw, _ = exchange(port, 'POST', LOCAL_CALL_PATH,
+                                                  envelope(operation_id, actor, initiate['action'], initiate['body']),
+                                                  {'X-Request-Id': trace_id})
+                    self.assertEqual((status, parse_json(raw)['error']), (503, 'CORE_BUSY'))
+                    self.assertTrue(started.is_set())
+                finally:
+                    finish.set()
+                before_reads = self.machine_states(httpd)
+
+            self.assertEqual(len(receipts), 1)
+            self.assertFalse(receipts[0]['duplicate'])
+            status, raw, _ = exchange(port, 'POST', LOCAL_CALL_PATH,
+                                      envelope('deadline-bind', actor, bind['action'], bind['body']))
+            self.assertEqual((status, parse_json(raw)['error']), (503, 'NOT_READY'))
+            self.assertEqual(self.read(port, 'get_settlement', {
+                'actor': 'organizer', 'listing_id': initiate['body']['trade_id'],
+            }, 404), {'error': 'NOT_FOUND', 'rejected': True})
+
+            base = {'actor': actor, 'subject': subject}
+            for selector in ({'operation_id': operation_id}, {'trace_id': trace_id}):
+                lookup = {**base, **selector}
+                request = {**lookup, 'request_cut': True}
+                for changes in ({'actor': 'organizer'}, {'subject': {**subject, 'id': 'other'}}):
+                    self.assertEqual(self.read(port, query, {**request, **changes}), unknown)
+                cut = self.read(port, query, request)
+                self.assertEqual(cut['body'], {'status': 'CUT_AVAILABLE', 'retry_granted': False})
+                watermark = cut['accepted_through']
+                self.assertEqual((watermark['source'], watermark['journal_entries']), ('settlement', 1))
+                recovery = self.read(port, query, {**lookup, 'through': watermark})
+                self.assertEqual(recovery['accepted_through'], watermark)
+                self.assertEqual(recovery['body'], {
+                    'status': 'ACCEPTED', 'retry_granted': False, 'receipt': receipts[0],
+                })
+                for malformed in ({}, {'request_cut': False}, {'request_cut': True, 'through': watermark}):
+                    result = self.read(port, query, {**lookup, **malformed}, 400)
+                    self.assertEqual(result['error'], 'READ_REQUEST_INVALID')
+            self.assertEqual(self.machine_states(httpd), before_reads)
 
         run_with_server(run)
 

@@ -62,17 +62,20 @@ REQUESTS = {
     'get_presentation': point_request({'right_id': IDENT, 'version': NUMBER, 'holder_role': IDENT}),
     'get_settlement': point_request({'listing_id': IDENT}),
     RECOVERY: obj({
-        'actor': IDENT, 'subject': SUBJECT, 'through': WATERMARK,
+        'actor': IDENT, 'subject': SUBJECT, 'through': WATERMARK, 'request_cut': BOOL,
         'operation_id': IDENT, 'trace_id': {**IDENT, 'maxLength': 64},
-    }, optional=('operation_id', 'trace_id')),
+    }, optional=('through', 'request_cut', 'operation_id', 'trace_id')),
 }
 
 
 def parse_read(query, payload):
     if problems(payload, REQUESTS[query]):
         raise EnvelopeError('READ_REQUEST_INVALID')
-    if query == RECOVERY and ('operation_id' in payload) == ('trace_id' in payload):
-        raise EnvelopeError('READ_REQUEST_INVALID')
+    if query == RECOVERY:
+        if (('operation_id' in payload) == ('trace_id' in payload)
+                or ('through' in payload) == ('request_cut' in payload)
+                or payload.get('request_cut') is False):
+            raise EnvelopeError('READ_REQUEST_INVALID')
     identifiers = [payload[key] for key in (
         'actor', 'listing_id', 'right_id', 'holder_role', 'operation_id', 'trace_id',
     ) if key in payload]
@@ -173,6 +176,7 @@ RESPONSES = {
         envelope(obj({'status': {'const': 'ACCEPTED'}, 'retry_granted': FALSE, 'receipt': {
             'type': 'object', 'description': 'Immutable first FSM receipt for the requested action and subject.',
         }})),
+        envelope(obj({'status': {'const': 'CUT_AVAILABLE'}, 'retry_granted': FALSE})),
         obj({'status': {'const': 'UNKNOWN'}, 'retry_granted': FALSE}),
     ]},
 }
@@ -183,7 +187,13 @@ DESCRIPTIONS = {
     'get_right': 'Separate ticket and right views visible to the current holder.',
     'get_presentation': 'Current holder only. A valid historical comparison may return matches_current_right false.',
     'get_settlement': 'Follow the listing binding when its listing ID matches the settlement trade ID. Visible to the show organizer and settlement debtor fixture.',
-    RECOVERY: 'Resolve positive retained acceptance for resale or settlement using exactly one identity and a source cut. Evidence mismatches return UNKNOWN. In-memory write deadlines fence writes while the same worker can still serve reads. No retry is granted.',
+    RECOVERY: (
+        'Resolve positive retained acceptance for resale or settlement. Supply exactly one identity and '
+        'either through for receipt lookup or request_cut: true for a signed source watermark without a receipt. '
+        'Cut issuance checks the same actor, identity and subject and works before a listing has a settlement '
+        'binding. Evidence mismatches return UNKNOWN. In-memory write deadlines fence writes while the same '
+        'worker can still serve reads. No retry is granted.'
+    ),
 }
 
 
@@ -205,7 +215,14 @@ def read_paths():
     for path, query in READ_PATHS.items():
         schema = REQUESTS[query]
         if query == RECOVERY:
-            schema = {**schema, 'oneOf': [{'required': ['operation_id']}, {'required': ['trace_id']}]}
+            schema = {
+                **schema,
+                'properties': {**schema['properties'], 'request_cut': {**BOOL, 'const': True}},
+                'allOf': [
+                    {'oneOf': [{'required': ['operation_id']}, {'required': ['trace_id']}]},
+                    {'oneOf': [{'required': ['through']}, {'required': ['request_cut']}]},
+                ],
+            }
         elif query == 'list_open_listings':
             props = {**schema['properties'], 'limit': {**LIMIT, 'default': PAGE_DEFAULT}}
             schema = {**schema, 'properties': props}

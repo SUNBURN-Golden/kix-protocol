@@ -289,13 +289,15 @@ class GateServer(ThreadingMixIn, HTTPServer):
     def perform(self, operation_id, actor, action, body, trace_id=None):
         observation = _journal_observation('not_attempted', self.store)
         self._ensure_core_on_worker()
+        identities = ()
+        if self.store is None:
+            # A queued attempt can reach this worker after its HTTP deadline.
+            # Record identity conflicts before the write fence refuses execution.
+            identities = self.resale_reads.note_attempt(operation_id, trace_id, actor, action, body)
         if not self.commands_enabled():
             observation['journalDecision'] = 'not_attempted'
             observation['admit'] = 'NOT_READY'
             return 503, _not_ready(), observation
-        identities = ()
-        if self.store is None:
-            identities = self.resale_reads.note_attempt(operation_id, trace_id, actor, action, body)
         if action in self.catalogue.fsm_name_set:
             return self._perform_fsm(action, body, actor, identities, observation)
         fresh = self.store is None or not self.store.has_operation(operation_id)

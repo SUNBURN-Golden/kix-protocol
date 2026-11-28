@@ -144,14 +144,12 @@ class ResaleReads:
 
     def read(self, query, request):
         if query == 'get_operation_recovery':
-            through = request['through']
-            receipt = self._recover(request, through)
+            recovery = self._recover(request)
             # UNKNOWN has the same body for all missing or unusable evidence.
-            if receipt is None:
+            if recovery is None:
                 return {'status': 'UNKNOWN', 'retry_granted': False}
-            return self._envelope(query, request, through, {
-                'status': 'ACCEPTED', 'retry_granted': False, 'receipt': receipt,
-            })
+            watermark, body = recovery
+            return self._envelope(query, request, watermark, body)
         source = READ_SOURCES[query]
         watermark = self._watermark(source)
         if 'minimum_watermark' in request and not self._covers(watermark, request['minimum_watermark']):
@@ -248,16 +246,13 @@ class ResaleReads:
         raw = offset.to_bytes(8, 'big') + self._sign('cursor', [context, offset])
         return base64.urlsafe_b64encode(raw).decode('ascii').rstrip('=')
 
-    def _recover(self, request, through):
+    def _recover(self, request):
         subject = request['subject']
         command = self._commands.get(subject['action'])
         if (command is None or command['machine'] not in RECOVERY_SOURCES
                 or command['subject_field'] != subject['field']):
             return None
         source = command['machine']
-        current = self._watermark(source)
-        if not self._covers(current, through):
-            return None
         selector = 'operation_id' if 'operation_id' in request else 'trace_id'
         identity = self._identities.get((selector, request[selector]))
         if identity is None or identity.ambiguous:
@@ -267,8 +262,14 @@ class ResaleReads:
             return None
         actor, accepted_subject, position, encoded = record
         if (actor != request['actor'] or accepted_subject != subject
-                or identity.receipt_key[0] != source
+                or identity.receipt_key[0] != source):
+            return None
+        current = self._watermark(source)
+        if 'request_cut' in request:
+            return current, {'status': 'CUT_AVAILABLE', 'retry_granted': False}
+        through = request['through']
+        if (not self._covers(current, through)
                 or through['journal_entries'] < position['journal_entries']
                 or through.get('logical_time_ms', 0) < position.get('logical_time_ms', 0)):
             return None
-        return json.loads(encoded)
+        return through, {'status': 'ACCEPTED', 'retry_granted': False, 'receipt': json.loads(encoded)}

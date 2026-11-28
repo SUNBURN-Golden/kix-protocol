@@ -103,7 +103,7 @@ class OfflineLimitsTests(unittest.TestCase):
         self.assertIn('기본 바인드는 `127.0.0.1`과 포트 `8765`다.', readme)
 
 
-EXPECTED_GATE_OPENAPI_SHA256 = 'b610e37125b4f84717730eaaf674b21c4b13fff7326bb1b52c4cbfec008a60d9'
+EXPECTED_GATE_OPENAPI_SHA256 = '4433872739c75650ce219d0d210e8a2c70530fec7aa814e82c8758806e410c0a'
 
 
 class OfflineGapTests(unittest.TestCase):

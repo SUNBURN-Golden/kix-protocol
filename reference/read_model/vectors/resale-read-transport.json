@@ -54,5 +54,21 @@
     "actor":"commerce-journey-fixture",
     "subject":{"action":"resale_accept_resale","field":"transfer_id","id":"transfer-1"},
     "trace_id":"read-transfer-lost"
+  },
+  "deadline_recovery": {
+    "queued_conflict": {
+      "actor":"fixture",
+      "operation_id":"queued-clock",
+      "trace_id":"queued-clock-trace",
+      "subject":{"action":"resale_set_clock","field":"subject_id","id":"clock"},
+      "first_body":{"subject_id":"clock","idempotency_key":"queued-clock","now_ms":1},
+      "conflicting_body":{"subject_id":"clock","idempotency_key":"queued-clock","now_ms":2}
+    },
+    "unbound_settlement": {
+      "actor":"commerce-journey-fixture",
+      "operation_id":"deadline-initiate",
+      "trace_id":"deadline-initiate-trace",
+      "subject":{"action":"settlement_initiate","field":"settlement_id","id":"settle-read-1"}
+    }
   }
 }
