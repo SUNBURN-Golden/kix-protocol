@@ -5,7 +5,7 @@ import {
   mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import test from "node:test";
 import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
@@ -50,6 +50,7 @@ const RESALE_REVISION = "commerce-resale-read-transport-1";
 const RESALE_MANIFEST = `sdk/compat/manifests/manifest.${RESALE_REVISION}.json`;
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
 const COMMERCE_BINDING_INDEX = "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json";
+const COMMERCE_READ_BINDINGS = "docs/status/COMMERCE_READ_BINDING_BY_TRANSPORT_V1.json";
 const COMMERCE_DELIVERY_INDEX = "docs/status/COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json";
 const COMMERCE_REVISION = "commerce-fixture-8ba7f6c-1";
 const COMMERCE_MANIFEST = `sdk/compat/manifests/manifest.${COMMERCE_REVISION}.json`;
@@ -911,6 +912,188 @@ function readVerifierVerdict(result, exitStatus, context) {
   assert.match(lines[0], /^[^\r\n]+$/u, context);
   return JSON.parse(lines[0]);
 }
+
+test("published read binding lookup", () => {
+  const localPath = "/x-kix-contract-only/local-call";
+  const resalePrefix = "/x-kix-contract-only/read/";
+  const indexDigest = "41a27ed9230c9103fe137999ee61a3a0bd88a473a2e47e33019108248b7ef6c2";
+  const localProfile = {
+    profile_revision: READ_MODEL_REVISION,
+    manifest_path: MANIFEST_PATH,
+    manifest_sha256: "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+    profile_path: PROFILE_PATH,
+    integration_gate_input: READ_MODEL_GATE_INPUT,
+    grants: "none",
+    semanticConsumerStatus: "HOLD_SEMANTIC",
+  };
+  const resaleProfile = {
+    profile_revision: RESALE_REVISION,
+    manifest_path: RESALE_MANIFEST,
+    manifest_sha256: "a3fe9d4a96ee4d27881423f88de104aa77e44000c14890e75662e76f7d205bbe",
+    profile_path: `sdk/compat/profiles/${RESALE_REVISION}.profile.json`,
+    integration_gate_input: LIVE_GATE_PATH,
+    grants: "local fixture resale reads only",
+  };
+  const profiles = [localProfile, resaleProfile];
+  for (const pin of profiles) {
+    const { manifest_path, profile_revision, manifest_sha256, integration_gate_input } = pin;
+    const result = runVerifier(manifest_path, SEMANTIC, profile_revision, integration_gate_input);
+    const verdict = readVerifierVerdict(result, 0, profile_revision);
+    assert.equal(verdict.ok, true);
+    assert.equal(verdict.manifest_sha256, manifest_sha256);
+    const profile = parseStrict(read(pin.profile_path));
+    assert.equal(profile.profile_revision, profile_revision);
+    assert.equal(profile.grants, pin.grants);
+  }
+  assert.equal(sha256Hex(read(COMMERCE_BINDING_INDEX)), indexDigest);
+
+  function pointerValue(document, fragment) {
+    assert.ok(fragment.startsWith("#/"), fragment);
+    return fragment.slice(2).split("/").reduce((value, segment) => {
+      const key = segment.replaceAll("~1", "/").replaceAll("~0", "~");
+      assert.ok(Object.hasOwn(value, key), fragment);
+      return value[key];
+    }, document);
+  }
+
+  const localGate = JSON.parse(read(READ_MODEL_GATE_INPUT));
+  const localSource = localGate["x-kix-source"];
+  assert.deepEqual([
+    localSource.commandCount, localSource.coreCommandCount, localSource.fsmCommandCount, localSource.readCommandCount,
+  ], [94, 40, 44, 10]);
+  assert.ok(localGate.paths[localPath].post);
+  const fsmBytes = read(localSource.fsmSource.path);
+  assert.equal(sha256Hex(fsmBytes), localSource.fsmSource.sha256);
+  const { queries } = JSON.parse(fsmBytes);
+  const catalogue = JSON.parse(read(OPENAPI_PATH));
+  const localResponse = "#/x-kix-read-response-observed";
+  const localOperations = localGate["x-kix-local-call-operations"].filter((op) => op["x-kix-read-only"]);
+  assert.deepEqual(localOperations.map(({ action }) => action).sort(), Object.keys(queries).sort());
+  assert.equal(localOperations.length, 10);
+  const localBindings = localOperations.map((operation) => {
+    const query = operation.action;
+    const { subject_field, schema } = queries[query];
+    assert.equal(operation.operationId, query);
+    assert.equal(operation["x-kix-mutates-state"], false);
+    const [artifact, pointer] = operation.requestBodySchema.split("#");
+    assert.equal(artifact, basename(OPENAPI_PATH));
+    assert.equal(catalogue["x-kix-action-body-map"][query], `#${pointer}`);
+    assert.deepEqual(pointerValue(catalogue, `#${pointer}`), schema, query);
+    assert.ok(schema.required.includes(subject_field), query);
+    return {
+      manifest_sha256: localProfile.manifest_sha256, method: "POST", path: localPath, query,
+      request_subject: `body.${subject_field}`,
+      request_schema_ref: `${OPENAPI_PATH}#${pointer}`,
+      response_envelope: [{ keys: pointerValue(catalogue, localResponse).keys }],
+      response_ref: `${OPENAPI_PATH}${localResponse}`,
+      grants: localProfile.grants,
+    };
+  });
+
+  const resaleGate = JSON.parse(read(LIVE_GATE_PATH));
+  const resaleBindings = Object.entries(resaleGate.paths)
+    .filter(([path]) => path.startsWith(resalePrefix))
+    .map(([path, { post }]) => {
+      const query = post.operationId;
+      assert.equal(path, `${resalePrefix}${query}`);
+      assert.equal(post["x-kix-production-endpoint"], false);
+      const operation = `#/paths/${path.replaceAll("~", "~0").replaceAll("/", "~1")}/post`;
+      const requestPointer = `${operation}/requestBody/content/application~1json/schema`;
+      const responsePointer = `${operation}/responses/200/content/application~1json/schema`;
+      const request = pointerValue(resaleGate, requestPointer);
+      const response = pointerValue(resaleGate, responsePointer);
+      assert.ok(request.required.includes("actor"), query);
+      const subjects = request.required.filter((field) => field.endsWith("_id") || field === "subject");
+      assert.ok(subjects.length <= 1, query);
+      const response_envelope = response.oneOf?.map((branch) => {
+        const payload = branch.properties.body?.properties ?? branch.properties;
+        return { keys: branch.required, status: payload.status.const, retry_granted: payload.retry_granted.const };
+      }) ?? [{ keys: response.required }];
+      return {
+        manifest_sha256: resaleProfile.manifest_sha256, method: "POST", path, query,
+        request_subject: subjects[0] ?? null,
+        request_schema_ref: `${LIVE_GATE_PATH}${requestPointer}`,
+        response_envelope,
+        response_ref: `${LIVE_GATE_PATH}${responsePointer}`,
+        grants: resaleProfile.grants,
+      };
+    });
+  assert.equal(resaleBindings.length, 6);
+
+  const pending = Array.from(read("docs/status/COMMERCE_RESALE_READ_TRANSPORT.md").toString("utf8")
+    .matchAll(/^\| ([^|]+?) \| product decision pending \|/gm), ([, screen_need]) => ({
+    screen_need, status: "NOT_BOUND",
+  }));
+  assert.deepEqual(pending.map(({ screen_need }) => screen_need), [
+    "Product search", "Product detail", "Variant selector", "Bid and ask quotes", "Offers", "Trade history", "Price series",
+  ]);
+
+  const expectedBindings = [...localBindings, ...resaleBindings];
+  assert.equal(new Set(expectedBindings.map(({ query }) => query)).size, 12);
+
+  function lookupKey({ manifest_sha256, method, path, query }) {
+    return JSON.stringify([manifest_sha256, method, path, query]);
+  }
+
+  function validateRecord(record) {
+    const { bindings, ...header } = record;
+    assert.deepEqual(header, {
+      record_schema_version: "kix-commerce-read-binding-by-transport/1",
+      normative: false,
+      binding_index: { path: COMMERCE_BINDING_INDEX, sha256: indexDigest },
+      profiles,
+      pending_product_reads: pending,
+    });
+    const byKey = new Map(bindings.map((binding) => [lookupKey(binding), binding]));
+    assert.equal(byKey.size, bindings.length, "duplicate binding key");
+    assert.equal(byKey.size, expectedBindings.length, "binding coverage");
+    const lookup = (request) => byKey.get(lookupKey(request));
+    for (const expected of expectedBindings) {
+      assert.deepEqual(lookup(expected), expected, lookupKey(expected));
+    }
+    return lookup;
+  }
+
+  const record = JSON.parse(read(COMMERCE_READ_BINDINGS));
+  const lookup = validateRecord(record);
+  const shared = localBindings.map(({ query }) => query)
+    .filter((query) => resaleBindings.some((binding) => binding.query === query));
+  assert.deepEqual(shared.sort(), ["get_listing", "get_presentation", "get_right", "get_settlement"]);
+  for (const query of shared) {
+    const local = localBindings.find((binding) => binding.query === query);
+    const resale = resaleBindings.find((binding) => binding.query === query);
+    for (const [binding, other] of [[local, resale], [resale, local]]) {
+      const found = lookup(binding);
+      const isLocal = binding === local;
+      assert.equal(found.response_envelope[0].keys.includes(isLocal ? "result" : "body"), true);
+      if (query === "get_settlement") {
+        assert.equal(found.request_subject, isLocal ? "body.settlement_id" : "listing_id");
+      }
+      for (const field of ["manifest_sha256", "path"]) {
+        assert.equal(lookup({ ...binding, [field]: other[field] }), undefined, `${query} wrong ${field}`);
+      }
+      assert.equal(lookup({ ...binding, method: "GET" }), undefined, `${query} wrong method`);
+    }
+    assert.equal(lookup({ ...resale, path: `${resalePrefix}list_open_listings` }), undefined, `${query} wrong suffix`);
+  }
+  const recovery = lookup(resaleBindings.find(({ query }) => query === "get_operation_recovery"));
+  assert.equal(recovery.request_subject, "subject");
+  assert.deepEqual(recovery.response_envelope.map(({ status, retry_granted }) => [status, retry_granted]), [
+    ["ACCEPTED", false], ["CUT_AVAILABLE", false], ["UNKNOWN", false],
+  ]);
+  assert.deepEqual(recovery.response_envelope.find(({ status }) => status === "UNKNOWN").keys, ["status", "retry_granted"]);
+
+  const promoted = structuredClone(record);
+  promoted.pending_product_reads[0].status = SEMANTIC;
+  assert.throws(() => validateRecord(promoted), { code: "ERR_ASSERTION" });
+  const broadened = structuredClone(record);
+  broadened.bindings.find(({ query }) => query === "get_operation_recovery").grants = SEMANTIC;
+  assert.throws(() => validateRecord(broadened), { code: "ERR_ASSERTION" });
+
+  const register = read("docs/status/CURRENT_CAPABILITY_REGISTER.md").toString("utf8");
+  const k3 = register.split("\n").find((line) => line.startsWith("| K3 schema·SDK |"));
+  assert.ok(k3?.includes(`[published read bindings](${basename(COMMERCE_READ_BINDINGS)})`));
+});
 
 const BOOTSTRAP_MANIFEST_SHA256 = "eec1750532d319ea06d8ae61bafa77316067088a84a9b70d20a1f6966dfba1e0";
 const COMMERCE_MANIFEST_SHA256 = "76ea72c6249ec0f90cb426dfbb8efda8308610f79c4f0ac6ff0a2445cab59a4f";
