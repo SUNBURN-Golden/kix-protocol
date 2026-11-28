@@ -5521,6 +5521,59 @@
         }
       ],
       "observations": []
+    },
+    {
+      "id": "capital_statement_component_identity",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json",
+        "sha256": "cae9854cc5da29bb1d45bb2c9adf620821c822fafac09e838a1b05bce403a79e",
+        "gitBlob": "01e86fe9731f00e5b5ff145f425394437e65cd13"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json",
+        "sha256": "cae9854cc5da29bb1d45bb2c9adf620821c822fafac09e838a1b05bce403a79e",
+        "gitBlob": "01e86fe9731f00e5b5ff145f425394437e65cd13"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_statement_component_identity.py",
+        "symbol": "CapitalStatementComponentIdentityTests.test_statement_component_identity"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital statement component identity"
+        }
+      ],
+      "limitations": [
+        "Equal claim totals and F04 observations can come from distinct statement component splits. Each observation identifies its own accepted settlement journal entry. The fixture limit and tolerance grant no exposure authority."
+      ],
+      "entries": [
+        {
+          "case_id": "fee",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "held",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": [
+        {
+          "case_id": "fee",
+          "kind": "statement_observation",
+          "ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0/after",
+          "journal_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0/after/settlement/journal/6"
+        },
+        {
+          "case_id": "held",
+          "kind": "statement_observation",
+          "ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/after",
+          "journal_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/after/settlement/journal/6"
+        }
+      ]
     }
   ],
   "supporting_evidence": [

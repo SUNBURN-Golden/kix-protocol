@@ -901,6 +901,72 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
                     self.assertEqual(field in args[3], not omitted)
                     self.assertEqual(commerce.canonical(args), commerce.canonical(expected_args))
 
+    def test_distribution_order(self):
+        from integration_gate.schema import EnvelopeError
+
+        fixture = json.loads(
+            (COMMERCE_VECTORS / 'commerce-distribution-order.vectors.json').read_bytes()
+        )
+        vector_id = 'booking-resale/distribute-resale'
+        self.assertEqual(fixture['profile_revision'], COMMERCE_REVISION)
+        self.assertEqual(fixture['vector_id'], vector_id)
+        self.assertEqual(fixture['cases'], [
+            {'id': 'original', 'order': ['organizer-1', 'platform-1']},
+            {'id': 'string', 'order': 'organizer-1'},
+            {'id': 'duplicate', 'order': ['organizer-1', 'platform-1', 'organizer-1']},
+            {'id': 'missing', 'order': ['organizer-1']},
+            {'id': 'unknown', 'order': ['organizer-1', 'platform-1', 'unknown-1']},
+        ])
+        original = self.targets[vector_id]
+        commit_id = 'booking-resale/settle-resale-commit'
+        self.assertEqual(len(original['setup']), 18)
+        self.assertEqual(original['setup'][-3:], [
+            'booking-resale/accept-A-before-commit', commit_id, 'booking-resale/accept-A',
+        ])
+        self.assertEqual(original['expected']['receipt_ref'], f'{commerce.RECEIPTS}#/steps/25/receipt')
+        self.assertEqual(original['expected']['journal_delta'], {'settlement': 1})
+        refusal_codes = {
+            'duplicate': 'DISTRIBUTION_ORDER_DUPLICATE',
+            'missing': 'DISTRIBUTION_ORDER_MISMATCH',
+            'unknown': 'DISTRIBUTION_ORDER_MISMATCH',
+        }
+
+        for case in fixture['cases']:
+            case_id = case['id']
+            with self.subTest(case=case_id):
+                gate, setup_outcomes = self._replay_setup(original)
+                status, commit = setup_outcomes[commit_id]
+                self.assertEqual(status, 200)
+                self.assertEqual(commit['settlement']['phase'], 'COMMITTED')
+                self.assertIsNone(commit['settlement']['claim']['distribution_order'])
+
+                vector = deepcopy(original)
+                envelope = vector['envelope']
+                envelope['body']['order'] = deepcopy(case['order'])
+                self.assertEqual(envelope == original['envelope'], case_id == 'original')
+                with (
+                    patch.object(gate, 'perform', wraps=gate.perform) as perform,
+                    patch.object(gate.fsm, 'call', wraps=gate.fsm.call) as fsm_call,
+                ):
+                    if case_id == 'string':
+                        before = commerce.snapshot(gate.fsm)
+                        with self.assertRaises(EnvelopeError) as caught:
+                            self._parse_and_dispatch(gate, vector)
+                        self.assertEqual(caught.exception.error, 'SCHEMA_REJECTED')
+                        self.assertEqual(caught.exception.detail, 'body.order: expected array')
+                        perform.assert_not_called()
+                        fsm_call.assert_not_called()
+                        self._assert_unchanged(vector, before, commerce.snapshot(gate.fsm))
+                        continue
+
+                    if case_id in refusal_codes:
+                        vector['expected'] = {'kind': 'business-reject', 'code': refusal_codes[case_id]}
+                    self._check_dispatch(gate, vector)
+                    perform.assert_called_once_with(
+                        envelope['operationId'], envelope['actor'], envelope['action'], envelope['body'],
+                    )
+                    fsm_call.assert_called_once_with(envelope['action'], envelope['body'])
+
     def test_rewritten_fsm_idempotency_key_fails(self):
         from integration_gate.server import GateServer
 
