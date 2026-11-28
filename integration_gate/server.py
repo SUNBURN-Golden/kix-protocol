@@ -635,10 +635,11 @@ class GateHandler(BaseHTTPRequestHandler):
                 return
             try:
                 payload = json.loads(text, object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_constant)
+                _reject_malformed_unicode(payload)
             except DuplicateKey:
                 self._send(400, _error('DUPLICATE_KEY'))
                 return
-            except (json.JSONDecodeError, RecursionError, ValueError):
+            except (json.JSONDecodeError, RecursionError, UnicodeEncodeError, ValueError):
                 self._send(400, _error('INVALID_JSON'))
                 return
             try:
@@ -732,6 +733,20 @@ def _reject_duplicate_keys(pairs):
 
 def _reject_constant(_value):
     raise ValueError('non-standard JSON number')
+
+
+def _reject_malformed_unicode(value):
+    stack = [value]
+    while stack:
+        item = stack.pop()
+        if isinstance(item, str):
+            item.encode('utf-8')
+        elif isinstance(item, dict):
+            for key, child in item.items():
+                key.encode('utf-8')
+                stack.append(child)
+        elif isinstance(item, list):
+            stack.extend(item)
 
 
 def _error(code):

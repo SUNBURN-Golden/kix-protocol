@@ -281,9 +281,16 @@ def build_document(root=None):
                     'responses': {
                         '200': {
                             'description': (
-                                'In-process receipt from Core.execute, including '
-                                'a replay of the same operationId fingerprint. '
-                                'Not evidence of live money movement.'
+                                'For a core or FSM command: an in-process receipt '
+                                'from Core.execute (including a replay of the same '
+                                'operationId fingerprint) or the in-process FSM '
+                                'handler result (using body.idempotency_key replay '
+                                'rules). For a point query: a read envelope '
+                                '(read_schema_version, query, query_digest, '
+                                'fixture_mode, accepted_through, result) returning '
+                                'the current view; envelope operationId and actor '
+                                'are ignored, with no receipt sequencing or command '
+                                'replay. Not evidence of live money movement.'
                             ),
                             'x-kix-production-endpoint': False,
                         },
@@ -445,6 +452,15 @@ def validate(root=None, document=None):
         need(status in responses, 'missing response ' + status)
     need('Not HTTP 200' in (responses.get('422') or {}).get('description', ''),
          '422 must say it is not HTTP 200')
+    desc_200 = (responses.get('200') or {}).get('description', '')
+    need('Core.execute' in desc_200 and 'operationId' in desc_200,
+         '200 must describe command receipts and operationId replay')
+    need('read envelope' in desc_200
+         and 'read_schema_version' in desc_200
+         and 'query_digest' in desc_200
+         and 'accepted_through' in desc_200
+         and 'no receipt sequencing' in desc_200,
+         '200 must describe the point-query read envelope without receipt sequencing')
     for key, value in _walk(document):
         if key in ('servers', 'security', 'securitySchemes', 'url'):
             errors.append('forbidden transport or auth field: ' + key)
@@ -534,6 +550,13 @@ def self_test(root=None):
     broken['info']['description'] += ' See http://example.invalid/gate.'
     if not validate(root, broken):
         print('self-test: endpoint URL was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    broken['paths'][LOCAL_CALL_PATH]['post']['responses']['200']['description'] = (
+        'In-process receipt from Core.execute, including a replay of the same operationId fingerprint.'
+    )
+    if not validate(root, broken):
+        print('self-test: receipt-only 200 description was accepted', file=sys.stderr)
         return 1
     print('self-test: pass')
     return 0

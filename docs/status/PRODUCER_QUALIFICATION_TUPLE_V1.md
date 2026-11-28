@@ -9,8 +9,9 @@ the builder evidence is
 
 ## What is pinned
 
-The record pins the bytes and names of exactly the current BOOTSTRAP producer
-tuple:
+The record pins the bytes and names of the historical `bootstrap-2` BOOTSTRAP
+producer tuple (84-action archived snapshot, distinct from the live 94-action
+`bootstrap-3` catalogue that adds the ten approved point queries):
 
 - the contract-only OpenAPI 3.1 document with 84 local-call operations
   (40 core commands + 44 FSM actions);
@@ -35,10 +36,11 @@ gate route. Every surface carries exactly one status.
 
 ## Read queries stay NOT_BOUND
 
-The 13 owner-decided read query names are listed as `NOT_BOUND` with their
-candidate vector paths because `read-model-reference` is not merged. They are
-**not published**, not added to either catalogue, and the candidate fixtures
-are not conformance evidence.
+In this historical `bootstrap-2` snapshot, the 13 owner-decided read query names
+are listed as `NOT_BOUND` with their candidate vector paths because
+`read-model-reference` was not merged in that 84-action tuple. Within this
+archived tuple they are **not published**, not added to either archived
+84-action catalogue, and the candidate fixtures are not conformance evidence.
 Source: [`docs/contracts/READ_MODEL_QUERIES.md`](../contracts/READ_MODEL_QUERIES.md).
 
 ## SD1 verifier evidence and ledger status
@@ -79,8 +81,10 @@ python3 -B scripts/check_producer_qualification_tuple.py
 python3 -B scripts/check_producer_qualification_tuple.py --self-test
 ```
 
-The checker recomputes every recorded sha256 and Git-blob digest, re-derives the
-84/40/44 command counts and the 44 FSM actions from the pinned artefacts,
+The checker reads the archived `bootstrap-2` inputs (via
+`scripts.bootstrap_2_fixtures.read_bootstrap_2_input`), recomputes every
+recorded sha256 and Git-blob digest, re-derives the 84/40/44 command counts and
+the 44 FSM actions from those pinned artefacts,
 derives unique owners and point/list kinds for the 13 read names from the five
 pinned fixture bodies, cross-checks fixture/manifest/tuple name sets, the exact
 manifest file set, file digests and tuple artifact pins, cross-checks the manifest,

@@ -1,5 +1,128 @@
 # Validation — read-model-reference
 
+## PR #178 fix round 4 / exact-head CI at 42f219e
+
+This section records the exact-head CI and independent producer-source audit for
+the reviewed round 3 delivery head `42f219e337a4757f32f951a0bdf36c17f4d0dcd7`,
+followed by the local fixes and checks for review round 4
+(`read-model-reference.review_r4.md`). Prior history in `## PR #178 fix round 3`
+and `## Original builder record (2026-10-13)` is preserved below.
+
+### Exact-head CI and producer-input audit at `42f219e`
+
+The workflow runs and byte-comparison results in this subsection apply **only**
+to `42f219e337a4757f32f951a0bdf36c17f4d0dcd7` (not to the uncommitted round 4
+edits below; per AGENTS §6 and §10, CI from an earlier SHA does not transfer to
+a later SHA).
+
+| Evidence | Value at `42f219e` |
+|---|---|
+| Reviewed / delivered head | `42f219e337a4757f32f951a0bdf36c17f4d0dcd7` |
+| Delivered tree (`git rev-parse 42f219e^{tree}`) | `574e1cb6175e8a507c2f30a6d9922fb3f4075d85` |
+| Merge parents of `42f219e` | `9e5ebe7d0167782b20e3ee83b010a0396470f5ee` (round 3 fix commit) and `4609a91def3923bc12d4518a646e9e4544b201a2` (post-merge `origin/main` base, PR #533) |
+| Current branch HEAD before round 4 edits | `34edf38aad3064a63159be33e1863f224eea6f9a`, merging `origin/main` `6f2d062d73fd89b8ab9053cfa4912fed85170eb8` (PR #534 `4a01955` and PR #535 `6f2d062`) onto `42f219e` |
+| KTX kernel verification (at `42f219e`) | Run ID `46082725817`, `status=completed`, `conclusion=success`, https://github.com/SUNBURN-Golden/kix-protocol/actions/runs/46082725817 |
+| KIX protocol verification (at `42f219e`) | Run ID `46082725833`, `status=completed`, `conclusion=success`, https://github.com/SUNBURN-Golden/kix-protocol/actions/runs/46082725833 |
+| Manifest at `42f219e` | `sdk/compat/manifests/manifest.bootstrap-3.json` SHA-256 `c2cde918f061678bd45ddcbfc647633f536524cdc9738a91f1eac0356e442a92` (matches sidecar `.sha256`) |
+| Manifest-pinned producer source at `42f219e` | `producer.source_commit` = `33e20f30bba3587d52c49e323de236467746e298`, `producer.source_tree` = `09d4d0f7a5ccd1c20324df7170ad64f8ca29053d` (`git rev-parse 33e20f30bba3587d52c49e323de236467746e298^{tree}` matched) |
+
+Independent verification of delivered producer inputs at `42f219e` outside the
+manifest (`git show 42f219e:<path>` vs `git show 33e20f3:<path>`, plus
+independent SHA-256 and Git-blob recomputation against every matching manifest
+field):
+
+| Path | `42f219e` == `33e20f3` | Manifest match | SHA-256 at `42f219e` | Git blob at `42f219e` |
+|---|---|---|---|---|
+| `docs/contracts/openapi/kix-protocol.contract-only.openapi.json` | exact match | sha256 + gitBlob match | `768aabd8e756d789a20d7b2fb65c20076017eadc8e8dfafe0b9d13ef7ae7f77d` | `f096739d515a9e13e26f4fa1f89cdff421e03763` |
+| `docs/contracts/openapi/kix-protocol.integration-gate.openapi.json` | exact match | sha256 + gitBlob match | `670a540a0d66efe3b62bb845a3ce5f7ead4c42dee9e35da88b967e399f108f06` | `47692773cb4857a69a7cf2286369ae2d6d317e2d` |
+| `docs/contracts/openapi/fsm-command-contract.json` | exact match | sha256 + gitBlob match | `2732173bd7a4fe71cfea4201f53261aaae59b0fe5416f64fe0a4e216ecd73f5f` | `d3eaf469e4b3c1ffda7d7ecd5b52a84524525356` |
+| `reference/v0.3-rc1/protocol_contract.json` | exact match | fixture path + core pin match | `ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e` | `619ae21c82ca3df5661bd3831613f15fa65225ff` |
+| `sdk/generate/generate_client.mjs` | exact match | sha256 match | `227fe42fd039db31a730d975abdfeb509211083464a2e91c92eca50c1e601690` | `7fd433b6e40a949e98ffa4a3afd9c9b4ecc6fdef` |
+| `sdk/generated/catalogue.ts` | exact match | sha256 match | `65cef827fa82b137e46b66f4302f2673f512ec26484910cf5de9d9f65f387b9a` | `09adec22936f2bdc95fcceff96195190a7e330c2` |
+| `sdk/compat/profiles/bootstrap-3.profile.json` | exact match | `profile_sha256` match | `7adf7ccea9af9659a864140cee110880420fb5a26c306bc3597a3eed3c20326d` | `b594b96830dd8da81f3b66a0ec9c58529eb1eecd` |
+| `sdk/conformance/vectors/canonical-encoding.vectors.json` | exact match | vector sha256 match | `3446c13847bb153df06c1d5d3b7f09cd3b1648ac10bb0cc76d7b65c7014e99c2` | `947773687ea9e2226925168129bf0370e20a5a04` |
+| `sdk/conformance/vectors/mixed-input.vectors.json` | exact match | vector sha256 match | `9e2441ddefc22a2f8c7be230436620908b735b128b9445b7a5a916e4d86a2e19` | `74bf25478d57a98c5ee102c362c4870fc8d16456` |
+| `toolchains.json` | exact match | `nodeMajor=24` (`node-24`) match | `f4a37d32d50340db6caf8a1f914b1cceb344d410d6c7a5a6299552bd9764e3b5` | `a8c06bcf91eb385875100a5fecf6a6c46664e4c0` |
+| `sdk/sdk-pin.json` | exact match | OpenAPI/source/FSM pin match | `c82b38e2c3f783272de60eba8401eefd8687bffd57394deaf3639a5ba7511a6a` | `b90feb09ec26691f678c25f761d90eb1fd93465d` |
+
+Additionally, `git diff --stat 33e20f3 42f219e -- 'integration_gate/*.py' ':!integration_gate/test_offline_limits.py' 'reference/*/*fsm*.py' 'reference/*/mock_*.py'`
+was empty; the files differing between `33e20f3` and `42f219e` on the scoped
+gate/SDK/reference trees were only `docs/contracts/openapi/README.md`,
+`integration_gate/test_offline_limits.py`, `sdk/generate/generate_manifest.mjs`,
+and merged `main` test/fixture files under `reference/booking_resale_admission/`
+and `reference/credit_advance_f04/`.
+
+### Round 4 fixes (uncommitted on top of `34edf38`)
+
+1. **Gate OpenAPI HTTP 200 description and manifest regeneration (finding 1).**
+   Updated `integration_gate/openapi_doc.py` (`responses['200']['description']`,
+   `validate()`, and `self_test()`) so HTTP 200 covers both core/FSM command
+   receipts/results and the point-query read envelope
+   (`read_schema_version`, `query`, `query_digest`, `fixture_mode`,
+   `accepted_through`, `result`, current view, ignoring envelope `operationId`
+   and `actor`, no receipt sequencing or command replay). Regenerated
+   `docs/contracts/openapi/kix-protocol.integration-gate.openapi.json` via
+   `python3 -m integration_gate.openapi_doc --write` (new SHA-256
+   `773abae8a27666e9c16467826a9bc4de3e42f8c9256ae4edc908dcfa774ffaa5`, new Git
+   blob `69b2b027b605c71438ee26d5d6c483de600fc959`), updated
+   `EXPECTED_GATE_OPENAPI_SHA256` in `integration_gate/test_offline_limits.py`
+   to the same digest, and regenerated the `bootstrap-3` manifest via
+   `npm --prefix sdk run generate` (working interim manifest SHA-256
+   `f1e9a32fecffe48bbaf12bb260f337aad9e8817d77c14dbd03bda3556d8fb5de`, matching
+   sidecar `.sha256`; `bootstrap-3.profile.json`, `catalogue.ts`, `sdk-pin.json`,
+   `bootstrap-1`, `bootstrap-2`, and `commerce-fixture-8ba7f6c-1` bytes
+   unchanged). `SOURCE_COMMIT` and `SOURCE_TREE` in
+   `sdk/generate/generate_manifest.mjs` keep the prior committed values with a
+   supervisor `TODO`; the supervisor will update them to the commit containing
+   these corrected producer bytes, re-run `npm --prefix sdk run generate`, and
+   fill the next delivery head, final manifest digest, and exact-head CI run IDs
+   after commit.
+2. **Malformed Unicode rejection at the HTTP request boundary (finding 2).**
+   Added `_reject_malformed_unicode` in `integration_gate/server.py` right after
+   `json.loads` in `_local_call` so escaped unpaired Unicode surrogates (in any
+   string key or value) fail closed with HTTP 400 `INVALID_JSON` before
+   dispatch. Added regression coverage in
+   `integration_gate/test_http_gate.py::ReadQueryLoopbackTests.test_get_presentation_rejects_lone_unicode_surrogate`
+   (existing right + raw HTTP JSON `get_presentation` with `\uD800`, `\uDC00`,
+   `\uDC00\uD800`, surrogate object key, and surrogate `operationId` -> 400
+   `INVALID_JSON`, not 500 `INTERNAL_ERROR`; valid surrogate pair `\uD83D\uDE00`
+   still succeeds with HTTP 200 and `matches_current_right: false`).
+3. **Historical labeling of the 84-action producer tuple doc (finding 4).**
+   Updated `docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.md` to label the
+   84-action `bootstrap-2` tuple as a historical archived snapshot distinct from
+   the live 94-action `bootstrap-3` catalogue, keeping the record non-normative
+   and leaving `PRODUCER_QUALIFICATION_TUPLE_V1.json` untouched.
+
+### Round 4 local checks actually run (Python 3.13.5, Node v24.22.1)
+
+| Local check | Result |
+|---|---|
+| `python3 -m integration_gate.openapi_doc --write` | Wrote `docs/contracts/openapi/kix-protocol.integration-gate.openapi.json`; ok (`commands=94 productionEndpoint=false publicHost=false`). |
+| `npm --prefix sdk run generate` | Regenerated `manifest.bootstrap-3.json` and `.sha256` (`f1e9a32f...`); historical `bootstrap-1`, `bootstrap-2`, `commerce-fixture-8ba7f6c-1` untouched. |
+| `python3 scripts/check_openapi_contract.py` and `--self-test` | Exit 0 (`commands=94 core=40 fsm=44 read=10`); `self-test: pass`. |
+| `python3 scripts/check_integration_gate_openapi.py` and `--self-test` | Exit 0 (`commands=94 productionEndpoint=false publicHost=false`); `self-test: pass` (including new receipt-only 200 negative control). |
+| `python3 scripts/check_sdk_client.py` and `--self-test` | Exit 0 (`commands=94 node=24.22.1`); `self-test: pass`. |
+| `npm --prefix sdk run conformance` | Exit 0; 32 tests passed, 0 failed. |
+| `npm --prefix sdk run verify-compat` | Exit 0 (`ok: true`, `profile_kind: BOOTSTRAP`, `profile_revision: bootstrap-3`, `manifest_sha256: f1e9a32fecffe48bbaf12bb260f337aad9e8817d77c14dbd03bda3556d8fb5de`). |
+| `python3 -m unittest integration_gate.test_http_gate readiness.test_faults integration_gate.test_offline_limits` | Exit 0; 163 tests passed (includes new lone-surrogate regression test and merged PR #535 `test_distribution_order`). |
+| `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s reference/<suite> -t reference/<suite>` for all 8 protocol suites | All passed: `settlement_f01_f03` 225, `booking_resale_admission` 1,106, `credit_advance_f04` 342, `ai_delegation` 182, `token_reward` 397, `provider_facts` 86, `payment_effects` 28, `economics` 99. |
+| Stdlib offline document, evidence-map, wiring, and discovery checkers (`check_status_register.py`, `check_producer_qualification_tuple.py`, `check_consumer_binding_index.py`, `check_rs_profile_traceability.py`, `check_read_model_source_map.py`, `check_docs_index.py`, `check_integration_gate_contract_evidence_map.py`, `check_sdk_compat_manifest_evidence_map.py`, `check_evidence_map_rollup.py`, `check_ci_checker_wiring.py`, `check_ci_test_discovery.py`), each plain and `--self-test` | All passed. |
+| Locked kernel & frozen contract blobs (`git hash-object`) | `runtime/crates/kix-kernel/src/lib.rs` = `69564b166f0c27f9af5d8422f0a466b18d74c20f`, `runtime/crates/kix-kernel/tests/quarantine_capacity.rs` = `b607996c83a119c349f1cc90469ac1ba82764e20`, `reference/v0.3-rc1/protocol_contract.json` = `619ae21c82ca3df5661bd3831613f15fa65225ff` (all match). |
+| Delivery head, final `bootstrap-3` manifest digest, and exact-head CI for round 4 | Pending supervisor commit, `SOURCE_COMMIT`/`SOURCE_TREE` update + manifest regeneration, and GitHub Actions run on the resulting final head. |
+
+Round 4 worktree paths
+
+- `docs/contracts/openapi/kix-protocol.integration-gate.openapi.json`
+- `docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.md`
+- `integration_gate/openapi_doc.py`
+- `integration_gate/server.py`
+- `integration_gate/test_http_gate.py`
+- `integration_gate/test_offline_limits.py`
+- `sdk/compat/manifests/manifest.bootstrap-3.json`
+- `sdk/compat/manifests/manifest.bootstrap-3.json.sha256`
+- `sdk/generate/generate_manifest.mjs`
+- `validation/2026-10-09-read-model-reference/README.md`
+
 ## PR #178 fix round 3
 
 The node brief in the session input governs this round. The approved scope is

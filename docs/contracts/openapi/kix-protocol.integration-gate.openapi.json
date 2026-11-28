@@ -1547,7 +1547,7 @@
         },
         "responses": {
           "200": {
-            "description": "In-process receipt from Core.execute, including a replay of the same operationId fingerprint. Not evidence of live money movement.",
+            "description": "For a core or FSM command: an in-process receipt from Core.execute (including a replay of the same operationId fingerprint) or the in-process FSM handler result (using body.idempotency_key replay rules). For a point query: a read envelope (read_schema_version, query, query_digest, fixture_mode, accepted_through, result) returning the current view; envelope operationId and actor are ignored, with no receipt sequencing or command replay. Not evidence of live money movement.",
             "x-kix-production-endpoint": false
           },
           "400": {

@@ -2387,6 +2387,118 @@ class ReadQueryLoopbackTests(unittest.TestCase):
 
         run_with_server(run, browser_origin=BROWSER_ALLOWED_ORIGIN)
 
+    def test_get_presentation_rejects_lone_unicode_surrogate(self):
+        booking = str(ROOT / 'reference' / 'booking_resale_admission')
+        if booking not in sys.path:
+            sys.path.insert(0, booking)
+        from mock_gates import OFFER_WINDOW_MS
+
+        price = 10001
+        now = 1000000
+        expires = now + OFFER_WINDOW_MS
+        pay = 'ab' * 32
+        show = _show_body()
+
+        def post_raw(port, raw_json):
+            body_bytes = raw_json.encode('ascii')
+            request = (
+                b'POST ' + LOCAL_CALL_PATH.encode('ascii') + b' HTTP/1.1\r\n'
+                b'Host: 127.0.0.1\r\n'
+                b'Content-Type: application/json\r\n'
+                b'Content-Length: ' + str(len(body_bytes)).encode('ascii') + b'\r\n'
+                b'Connection: close\r\n\r\n' + body_bytes
+            )
+            status, body, _blob = raw_http(port, request)
+            return status, parse_json(body)
+
+        def run(_httpd, port):
+            steps = [
+                ('reservation_set_clock', {'subject_id': 'clock', 'idempotency_key': 'clock-1', 'now_ms': now}),
+                ('reservation_register_show', dict(show_id='show-1', idempotency_key='show-1', **show)),
+                ('reservation_hold', {
+                    'reservation_id': 'reserve-1', 'idempotency_key': 'hold-1', 'show_id': 'show-1',
+                    'slot': 0, 'buyer_role': 'buyer-1', 'expires_ms': expires,
+                }),
+                ('reservation_confirm', {
+                    'order_id': 'order-1', 'idempotency_key': 'confirm-1', 'reservation_id': 'reserve-1',
+                    'amount': price, 'quote_ref': 'quote-1',
+                }),
+                ('reservation_observe_payment', {
+                    'order_id': 'order-1', 'idempotency_key': 'pay-1', 'payment_ref': pay, 'amount': price,
+                }),
+                ('reservation_issue', {
+                    'issuance_id': 'issue-1', 'idempotency_key': 'issue-1', 'order_id': 'order-1',
+                }),
+                ('resale_set_clock', {'subject_id': 'clock', 'idempotency_key': 'resale-clock', 'now_ms': now}),
+                ('resale_adopt_issued', dict(
+                    right_id='issue-1', idempotency_key='resale-adopt', show_id='show-1', slot=0,
+                    buyer_role='buyer-1', expires_ms=expires, order_id='order-1', amount=price,
+                    payment_ref=pay, reservation_id='reserve-1', quote_ref='quote-1', **show,
+                )),
+            ]
+            for index, (action, body) in enumerate(steps):
+                status, payload, _headers = post_call(port, 'setup-%d' % index, 'operator', action, body)
+                self.assertEqual(status, 200, (action, payload))
+
+            baseline_status, baseline, _headers = post_call(
+                port, 'read-ok', 'fixture-actor', 'get_presentation',
+                {'right_id': 'issue-1', 'version': 1, 'holder_role': 'buyer-1'},
+            )
+            self.assertEqual(baseline_status, 200, baseline)
+            self.assertIs(baseline['result']['presentation']['matches_current_right'], True)
+
+            malformed_cases = (
+                (
+                    'lone-high-surrogate-holder-role',
+                    '{"operationId":"read-surrogate-hi","actor":"fixture-actor",'
+                    '"action":"get_presentation",'
+                    '"body":{"right_id":"issue-1","version":1,"holder_role":"\\uD800"}}',
+                ),
+                (
+                    'lone-low-surrogate-holder-role',
+                    '{"operationId":"read-surrogate-lo","actor":"fixture-actor",'
+                    '"action":"get_presentation",'
+                    '"body":{"right_id":"issue-1","version":1,"holder_role":"\\uDC00"}}',
+                ),
+                (
+                    'reversed-surrogate-pair-holder-role',
+                    '{"operationId":"read-surrogate-rev","actor":"fixture-actor",'
+                    '"action":"get_presentation",'
+                    '"body":{"right_id":"issue-1","version":1,"holder_role":"\\uDC00\\uD800"}}',
+                ),
+                (
+                    'lone-surrogate-object-key',
+                    '{"\\uD800":"bad","operationId":"read-surrogate-key","actor":"fixture-actor",'
+                    '"action":"get_presentation",'
+                    '"body":{"right_id":"issue-1","version":1,"holder_role":"buyer-1"}}',
+                ),
+                (
+                    'lone-surrogate-operation-id',
+                    '{"operationId":"op-\\uD800","actor":"fixture-actor",'
+                    '"action":"get_presentation",'
+                    '"body":{"right_id":"issue-1","version":1,"holder_role":"buyer-1"}}',
+                ),
+            )
+            for label, raw_json in malformed_cases:
+                with self.subTest(case=label):
+                    status, payload = post_raw(port, raw_json)
+                    self.assertEqual(status, 400, (label, payload))
+                    self.assertNotEqual(status, 500, label)
+                    self.assertEqual(payload['error'], 'INVALID_JSON', (label, payload))
+                    self.assertNotEqual(payload['error'], 'INTERNAL_ERROR', label)
+                    self.assertIs(payload['rejected'], True, label)
+
+            valid_pair_status, valid_pair = post_raw(
+                port,
+                '{"operationId":"read-valid-pair","actor":"fixture-actor",'
+                '"action":"get_presentation",'
+                '"body":{"right_id":"issue-1","version":1,"holder_role":"\\uD83D\\uDE00"}}',
+            )
+            self.assertEqual(valid_pair_status, 200, valid_pair)
+            self.assertIs(valid_pair['result']['presentation']['matches_current_right'], False)
+
+        run_with_server(run)
+
 
 if __name__ == '__main__':
     unittest.main()
