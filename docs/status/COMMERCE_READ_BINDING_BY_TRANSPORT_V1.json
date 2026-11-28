@@ -1,0 +1,426 @@
+{
+  "record_schema_version": "kix-commerce-read-binding-by-transport/1",
+  "normative": false,
+  "binding_index": {
+    "path": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json",
+    "sha256": "41a27ed9230c9103fe137999ee61a3a0bd88a473a2e47e33019108248b7ef6c2"
+  },
+  "profiles": [
+    {
+      "profile_revision": "read-model-reference-1",
+      "manifest_path": "sdk/compat/manifests/manifest.read-model-reference-1.json",
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "profile_path": "sdk/compat/profiles/read-model-reference-1.profile.json",
+      "integration_gate_input": "sdk/compat/inputs/integration-gate.read-model-reference-1.openapi.json",
+      "grants": "none",
+      "semanticConsumerStatus": "HOLD_SEMANTIC"
+    },
+    {
+      "profile_revision": "commerce-resale-read-transport-1",
+      "manifest_path": "sdk/compat/manifests/manifest.commerce-resale-read-transport-1.json",
+      "manifest_sha256": "a3fe9d4a96ee4d27881423f88de104aa77e44000c14890e75662e76f7d205bbe",
+      "profile_path": "sdk/compat/profiles/commerce-resale-read-transport-1.profile.json",
+      "integration_gate_input": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json",
+      "grants": "local fixture resale reads only"
+    }
+  ],
+  "bindings": [
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_show",
+      "request_subject": "body.show_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_show",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_booking",
+      "request_subject": "body.reservation_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_booking",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_right",
+      "request_subject": "body.right_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_right",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_presentation",
+      "request_subject": "body.right_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_presentation",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_listing",
+      "request_subject": "body.listing_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_listing",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_admission",
+      "request_subject": "body.right_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_admission",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_credential",
+      "request_subject": "body.right_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_credential",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_settlement",
+      "request_subject": "body.settlement_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_settlement",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_credit_advance",
+      "request_subject": "body.advance_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_credit_advance",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8",
+      "method": "POST",
+      "path": "/x-kix-contract-only/local-call",
+      "query": "get_credit_claim",
+      "request_subject": "body.claim_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/components/schemas/get_credit_claim",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "query",
+            "query_digest",
+            "fixture_mode",
+            "accepted_through",
+            "result"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json#/x-kix-read-response-observed",
+      "grants": "none"
+    },
+    {
+      "manifest_sha256": "a3fe9d4a96ee4d27881423f88de104aa77e44000c14890e75662e76f7d205bbe",
+      "method": "POST",
+      "path": "/x-kix-contract-only/read/list_open_listings",
+      "query": "list_open_listings",
+      "request_subject": null,
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1list_open_listings/post/requestBody/content/application~1json/schema",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "fixture_mode",
+            "query_digest",
+            "accepted_through",
+            "body"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1list_open_listings/post/responses/200/content/application~1json/schema",
+      "grants": "local fixture resale reads only"
+    },
+    {
+      "manifest_sha256": "a3fe9d4a96ee4d27881423f88de104aa77e44000c14890e75662e76f7d205bbe",
+      "method": "POST",
+      "path": "/x-kix-contract-only/read/get_listing",
+      "query": "get_listing",
+      "request_subject": "listing_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_listing/post/requestBody/content/application~1json/schema",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "fixture_mode",
+            "query_digest",
+            "accepted_through",
+            "body"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_listing/post/responses/200/content/application~1json/schema",
+      "grants": "local fixture resale reads only"
+    },
+    {
+      "manifest_sha256": "a3fe9d4a96ee4d27881423f88de104aa77e44000c14890e75662e76f7d205bbe",
+      "method": "POST",
+      "path": "/x-kix-contract-only/read/get_right",
+      "query": "get_right",
+      "request_subject": "right_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_right/post/requestBody/content/application~1json/schema",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "fixture_mode",
+            "query_digest",
+            "accepted_through",
+            "body"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_right/post/responses/200/content/application~1json/schema",
+      "grants": "local fixture resale reads only"
+    },
+    {
+      "manifest_sha256": "a3fe9d4a96ee4d27881423f88de104aa77e44000c14890e75662e76f7d205bbe",
+      "method": "POST",
+      "path": "/x-kix-contract-only/read/get_presentation",
+      "query": "get_presentation",
+      "request_subject": "right_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_presentation/post/requestBody/content/application~1json/schema",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "fixture_mode",
+            "query_digest",
+            "accepted_through",
+            "body"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_presentation/post/responses/200/content/application~1json/schema",
+      "grants": "local fixture resale reads only"
+    },
+    {
+      "manifest_sha256": "a3fe9d4a96ee4d27881423f88de104aa77e44000c14890e75662e76f7d205bbe",
+      "method": "POST",
+      "path": "/x-kix-contract-only/read/get_settlement",
+      "query": "get_settlement",
+      "request_subject": "listing_id",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_settlement/post/requestBody/content/application~1json/schema",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "fixture_mode",
+            "query_digest",
+            "accepted_through",
+            "body"
+          ]
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_settlement/post/responses/200/content/application~1json/schema",
+      "grants": "local fixture resale reads only"
+    },
+    {
+      "manifest_sha256": "a3fe9d4a96ee4d27881423f88de104aa77e44000c14890e75662e76f7d205bbe",
+      "method": "POST",
+      "path": "/x-kix-contract-only/read/get_operation_recovery",
+      "query": "get_operation_recovery",
+      "request_subject": "subject",
+      "request_schema_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_operation_recovery/post/requestBody/content/application~1json/schema",
+      "response_envelope": [
+        {
+          "keys": [
+            "read_schema_version",
+            "fixture_mode",
+            "query_digest",
+            "accepted_through",
+            "body"
+          ],
+          "status": "ACCEPTED",
+          "retry_granted": false
+        },
+        {
+          "keys": [
+            "read_schema_version",
+            "fixture_mode",
+            "query_digest",
+            "accepted_through",
+            "body"
+          ],
+          "status": "CUT_AVAILABLE",
+          "retry_granted": false
+        },
+        {
+          "keys": [
+            "status",
+            "retry_granted"
+          ],
+          "status": "UNKNOWN",
+          "retry_granted": false
+        }
+      ],
+      "response_ref": "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json#/paths/~1x-kix-contract-only~1read~1get_operation_recovery/post/responses/200/content/application~1json/schema",
+      "grants": "local fixture resale reads only"
+    }
+  ],
+  "pending_product_reads": [
+    {
+      "screen_need": "Product search",
+      "status": "NOT_BOUND"
+    },
+    {
+      "screen_need": "Product detail",
+      "status": "NOT_BOUND"
+    },
+    {
+      "screen_need": "Variant selector",
+      "status": "NOT_BOUND"
+    },
+    {
+      "screen_need": "Bid and ask quotes",
+      "status": "NOT_BOUND"
+    },
+    {
+      "screen_need": "Offers",
+      "status": "NOT_BOUND"
+    },
+    {
+      "screen_need": "Trade history",
+      "status": "NOT_BOUND"
+    },
+    {
+      "screen_need": "Price series",
+      "status": "NOT_BOUND"
+    }
+  ]
+}

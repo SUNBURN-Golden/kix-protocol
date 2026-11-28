@@ -35,6 +35,12 @@ semantic SDK consumption stays `HOLD_SEMANTIC`, external `kix-commerce-apps`
 expectations are `UNVERIFIED` and SD1 stays User-owned and `OPEN`.
 [Builder validation and actual local results](../validation/2026-11-10-plan-commerce-consumer-binding-index/README.md).
 
+The published read binding companion indexes the ten local-call point queries and
+six resale fixture routes by manifest digest, method, path and query. Builder
+validation records the offline lookup checks and grant boundaries.
+[Published read bindings](status/COMMERCE_READ_BINDING_BY_TRANSPORT_V1.json) ·
+[Builder validation](../validation/2026-11-28-plan-producer-read-binding-by-transport/README.md)
+
 [Consumer-binding CI wiring and local verification](../validation/2026-11-13-plan-consumer-binding-ci-guard/README.md)
 records the existing checker's plain and self-test invocations in the unguarded
 stdlib document-check step, including documentation-only and same-tree skips.
