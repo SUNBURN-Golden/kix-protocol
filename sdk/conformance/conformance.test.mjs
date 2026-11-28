@@ -36,9 +36,10 @@ const DOMAIN = "kix:fixture:lifecycle:0.3";
 
 const NEGATIVE_VECTOR_PATH = "sdk/conformance/vectors/manifest-verifier-negative.vectors.json";
 const VERIFIER_PATH = "sdk/compat/verify_compat.mjs";
-const BOOTSTRAP_REVISION = "bootstrap-3";
-const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-3.json";
-const PROFILE_PATH = "sdk/compat/profiles/bootstrap-3.profile.json";
+const READ_MODEL_REVISION = "read-model-reference-1";
+const MANIFEST_PATH = `sdk/compat/manifests/manifest.${READ_MODEL_REVISION}.json`;
+const PROFILE_PATH = `sdk/compat/profiles/${READ_MODEL_REVISION}.profile.json`;
+const HISTORICAL_REVISION = "bootstrap-2";
 const HISTORICAL_MANIFEST = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const HISTORICAL_PROFILE = "sdk/compat/profiles/bootstrap-2.profile.json";
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
@@ -59,29 +60,15 @@ const VERIFIER_FIXTURES = [
   "toolchains.json",
 ];
 
-// The copied verifier derives ROOT from its own location.
-const NEGATIVE_FIXTURES = [
-  ...VERIFIER_FIXTURES,
-  "sdk/compat/profiles/bootstrap-1.profile.json",
-  PROFILE_PATH,
-  MANIFEST_PATH,
-  `${MANIFEST_PATH}.sha256`,
-  "sdk/generate/generate_client.mjs",
-  "sdk/generate/generate_manifest.mjs",
-  "sdk/generated/catalogue.ts",
-  "sdk/conformance/vectors/canonical-encoding.vectors.json",
-  "sdk/conformance/vectors/mixed-input.vectors.json",
-  "docs/contracts/openapi/kix-protocol.contract-only.openapi.json",
-  "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json",
-  "docs/contracts/openapi/fsm-command-contract.json",
-];
-
 // Positive artifacts the manifest binds directly or indirectly. The negative
 // matrix must not change any of their bytes.
 const POSITIVE_ARTIFACTS = [
   MANIFEST_PATH,
   `${MANIFEST_PATH}.sha256`,
   PROFILE_PATH,
+  HISTORICAL_MANIFEST,
+  `${HISTORICAL_MANIFEST}.sha256`,
+  HISTORICAL_PROFILE,
   "sdk/conformance/vectors/canonical-encoding.vectors.json",
   "sdk/conformance/vectors/mixed-input.vectors.json",
   "sdk/generated/catalogue.ts",
@@ -92,7 +79,7 @@ function read(path) {
   return readFileSync(resolve(ROOT, path));
 }
 
-// Some inputs moved at bootstrap-3. Older producer verdicts still use their
+// Some inputs changed with the read catalogue. Older producer verdicts still use their
 // original bytes, copied under the paths named by the historical manifests.
 const bootstrap2Inputs = JSON.parse(gunzipSync(read("sdk/conformance/fixtures/bootstrap-2-inputs.json.gz")));
 
@@ -191,7 +178,7 @@ function independentCanonical(value) {
   return `{${keys.map((key) => `${JSON.stringify(key)}:${independentCanonical(value[key])}`).join(",")}}`;
 }
 
-function runVerifier(manifestPath, kind = "BOOTSTRAP", revision = BOOTSTRAP_REVISION) {
+function runVerifier(manifestPath, kind = SEMANTIC, revision = READ_MODEL_REVISION) {
   return runVerifierAt(ROOT, manifestPath, kind, revision);
 }
 
@@ -423,7 +410,7 @@ test("Commerce semantic manifest binds the exact fixture scope and vector bytes"
 
   const schemaOnly = runVerifier(MANIFEST_PATH, SEMANTIC, COMMERCE_REVISION);
   assert.equal(schemaOnly.status, 1);
-  assert.deepEqual(JSON.parse(schemaOnly.stdout).errors, ["profile_kind mismatch", "profile_revision mismatch"]);
+  assert.deepEqual(JSON.parse(schemaOnly.stdout).errors, ["profile_revision mismatch"]);
   const directory = mkdtempSync(join(tmpdir(), "kix-commerce-compat-"));
   try {
     const control = join(directory, "manifest.json");
@@ -669,19 +656,27 @@ test("mixed-input vectors and the committed manifest", () => {
   assert.equal(happy.status, 0, happy.stderr || happy.stdout);
   const verdict = JSON.parse(happy.stdout);
   assert.equal(verdict.ok, true);
-  assert.equal(verdict.profile_kind, "BOOTSTRAP");
-  assert.equal(verdict.profile_revision, BOOTSTRAP_REVISION);
+  assert.equal(verdict.profile_kind, SEMANTIC);
+  assert.equal(verdict.profile_revision, READ_MODEL_REVISION);
+  assert.equal(parseStrict(read(PROFILE_PATH)).grants, "none");
+  const bootstrap = runVerifier(manifestPath, "BOOTSTRAP", HISTORICAL_REVISION);
+  assert.equal(bootstrap.status, 1);
+  assert.deepEqual(JSON.parse(bootstrap.stdout).errors, ["profile_kind mismatch", "profile_revision mismatch"]);
   const sidecar = readFileSync(`${manifestPath}.sha256`, "utf8");
   assert.equal(sidecar, `${verdict.manifest_sha256}\n`);
   assert.equal(readFileSync(manifestPath, "utf8").includes(verdict.manifest_sha256), false);
 
   const original = parseStrict(readFileSync(manifestPath));
-  const mixed = parseStrict(read(resolve(ROOT, "sdk/conformance/vectors/mixed-input.vectors.json")));
+  const historical = parseStrict(read(HISTORICAL_MANIFEST));
+  const mixed = parseStrict(read("sdk/conformance/vectors/mixed-input.vectors.json"));
   assert.equal(mixed.profile, "kix-compat-mixed-input/1");
   const directory = mkdtempSync(join(tmpdir(), "kix-sdk-"));
   try {
+    // The pinned wrong-kind mutation targets the archived BOOTSTRAP profile.
+    copyFixtures(directory, verifierFixtureFiles(HISTORICAL_MANIFEST, HISTORICAL_PROFILE, historical), readBootstrap2Input);
     for (const item of mixed.cases) {
       const target = join(directory, `${item.name}.json`);
+      const againstBootstrap = item.name === "wrong-kind";
       if (item.op === "truncate") {
         writeFileSync(target, readFileSync(manifestPath).subarray(0, -1));
       } else if (item.op === "duplicate-key") {
@@ -692,24 +687,32 @@ test("mixed-input vectors and the committed manifest", () => {
         }
         writeFileSync(target, `{"contract":{},${text.slice(1)}`);
       } else {
-        const copy = parseStrict(canonicalStringify(original));
+        const copy = parseStrict(canonicalStringify(againstBootstrap ? historical : original));
         const parts = item.path.split(".");
         let cursor = copy;
         for (const part of parts.slice(0, -1)) {
           cursor = cursor[part];
         }
         const leaf = parts[parts.length - 1];
-        const value = item.name === "wrong-revision" ? "bootstrap-9" : item.value;
-        cursor[leaf] = item.op === "copy" ? getPath(copy, item.from) : value;
+        cursor[leaf] = item.op === "copy" ? getPath(copy, item.from) : item.value;
         const encoded = canonicalStringify(copy);
         writeFileSync(target, encoded);
         writeFileSync(`${target}.sha256`, `${sha256Hex(encoded)}\n`);
       }
-      const result = runVerifier(target);
+      const result = againstBootstrap
+        ? runVerifierAt(directory, target, "BOOTSTRAP", HISTORICAL_REVISION)
+        : runVerifier(target);
       assert.notEqual(result.status, 0, item.name);
       const body = JSON.parse(result.stdout);
       assert.equal(body.ok, false, item.name);
       assert.ok(body.errors.length > 0, item.name);
+      if (againstBootstrap) {
+        assert.deepEqual(body.errors, ["profile_kind mismatch", "profile identity mismatch"], item.name);
+      }
+      if (item.name === "wrong-revision") {
+        assert.ok(body.errors.includes("profile_revision mismatch"), item.name);
+        assert.equal(body.errors.some((error) => error.startsWith("profile unreadable:")), false, item.name);
+      }
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -751,7 +754,7 @@ function mutateDocument(document, item) {
   }
 }
 
-function copyFixtures(targetRoot, files = NEGATIVE_FIXTURES, readInput = read) {
+function copyFixtures(targetRoot, files, readInput = read) {
   for (const path of files) {
     const target = resolve(targetRoot, path);
     mkdirSync(dirname(target), { recursive: true });
@@ -760,8 +763,8 @@ function copyFixtures(targetRoot, files = NEGATIVE_FIXTURES, readInput = read) {
 }
 
 function writeManifest(targetRoot, manifestBytes) {
-  writeFileSync(resolve(targetRoot, MANIFEST_PATH), manifestBytes);
-  writeFileSync(resolve(targetRoot, `${MANIFEST_PATH}.sha256`), `${sha256Hex(manifestBytes)}\n`);
+  writeFileSync(resolve(targetRoot, HISTORICAL_MANIFEST), manifestBytes);
+  writeFileSync(resolve(targetRoot, `${HISTORICAL_MANIFEST}.sha256`), `${sha256Hex(manifestBytes)}\n`);
 }
 
 function applyManifestCase(targetRoot, pristineManifest, item) {
@@ -791,7 +794,7 @@ function applyProfileCase(targetRoot, pristineManifest, pristineProfile, item) {
   const profile = parseStrict(pristineProfile);
   mutateDocument(profile, item);
   const profileBytes = Buffer.from(canonicalStringify(profile), "utf8");
-  writeFileSync(resolve(targetRoot, PROFILE_PATH), profileBytes);
+  writeFileSync(resolve(targetRoot, HISTORICAL_PROFILE), profileBytes);
   const manifest = parseStrict(pristineManifest);
   manifest.profile_sha256 = sha256Hex(profileBytes);
   writeManifest(targetRoot, Buffer.from(canonicalStringify(manifest), "utf8"));
@@ -799,7 +802,7 @@ function applyProfileCase(targetRoot, pristineManifest, pristineProfile, item) {
 
 function applySidecarCase(targetRoot, pristineManifest, item) {
   writeManifest(targetRoot, pristineManifest);
-  const sidecarPath = resolve(targetRoot, `${MANIFEST_PATH}.sha256`);
+  const sidecarPath = resolve(targetRoot, `${HISTORICAL_MANIFEST}.sha256`);
   if (item.absent === true) {
     rmSync(sidecarPath, { force: true });
   } else if (item.from !== undefined) {
@@ -972,27 +975,31 @@ test("manifest-v1 verifier negative vectors reject exactly one fault each", () =
   assert.equal(document.profile, "kix-compat-manifest-negative/1");
   assert.equal(document.verifier, VERIFIER_PATH);
   assert.equal(canonicalStringify(document), vectorBytes.toString("utf8"));
-  assert.deepEqual({ ...document.expect }, { kind: "BOOTSTRAP", revision: BOOTSTRAP_REVISION });
+  assert.deepEqual({ ...document.expect }, { kind: "BOOTSTRAP", revision: HISTORICAL_REVISION });
   assert.equal(document.cases.length > 0, true);
   assert.equal(new Set(document.cases.map((item) => item.name)).size, document.cases.length);
 
   const before = digestSnapshot();
 
-  const happy = runVerifierAt(ROOT, resolve(ROOT, MANIFEST_PATH), document.expect.kind, document.expect.revision);
-  assert.equal(happy.status, 0, happy.stderr || happy.stdout);
-  const verdict = JSON.parse(happy.stdout);
-  assert.equal(verdict.ok, true);
-  assert.equal(verdict.profile_kind, "BOOTSTRAP");
-  assert.equal(verdict.profile_revision, BOOTSTRAP_REVISION);
-
-  const pristineManifest = readFileSync(resolve(ROOT, MANIFEST_PATH));
-  const pristineProfile = readFileSync(resolve(ROOT, PROFILE_PATH));
+  const pristineManifest = read(HISTORICAL_MANIFEST);
+  const pristineProfile = read(HISTORICAL_PROFILE);
+  const inputs = [
+    ...verifierFixtureFiles(HISTORICAL_MANIFEST, HISTORICAL_PROFILE, parseStrict(pristineManifest)),
+    "sdk/generate/generate_manifest.mjs",
+  ];
   const targetRoot = mkdtempSync(join(tmpdir(), "kix-sdk-negative-"));
   try {
-    copyFixtures(targetRoot);
+    copyFixtures(targetRoot, inputs, readBootstrap2Input);
+    const manifestPath = resolve(targetRoot, HISTORICAL_MANIFEST);
+    const happy = runVerifierAt(targetRoot, manifestPath, document.expect.kind, document.expect.revision);
+    const verdict = readVerifierVerdict(happy, 0, HISTORICAL_REVISION);
+    assert.equal(verdict.ok, true);
+    assert.equal(verdict.profile_kind, "BOOTSTRAP");
+    assert.equal(verdict.profile_revision, HISTORICAL_REVISION);
+
     for (const item of document.cases) {
       writeManifest(targetRoot, pristineManifest);
-      writeFileSync(resolve(targetRoot, PROFILE_PATH), pristineProfile);
+      writeFileSync(resolve(targetRoot, HISTORICAL_PROFILE), pristineProfile);
       if (item.surface === "manifest") {
         applyManifestCase(targetRoot, pristineManifest, item);
       } else if (item.surface === "profile") {
@@ -1004,7 +1011,7 @@ test("manifest-v1 verifier negative vectors reject exactly one fault each", () =
       }
       const result = runVerifierAt(
         targetRoot,
-        resolve(targetRoot, MANIFEST_PATH),
+        manifestPath,
         document.expect.kind,
         document.expect.revision,
       );

@@ -69,10 +69,10 @@ transport. [Consumer lookup and offline replay](../docs/status/CONSUMER_SURFACE_
 | `sdk-pin.json` | OpenAPI·원본 계약의 git blob과 sha256 |
 | `src/client.ts` | `createLocalCallClient({ transport })` |
 | `src/jsonschema.ts` | 엄격 JSON과 스키마 부분집합 |
-| `compat/` | manifest-v1, BOOTSTRAP 및 Commerce fixture profile, 최소 검증기 |
+| `compat/` | manifest-v1, 역사 BOOTSTRAP 및 Commerce fixture profile, 현재 생산자 profile, 최소 검증기 |
 | `conformance/` | 명령별 적합성과 golden vectors |
 
-현재 생성물은 `bootstrap-3`다. `bootstrap-1`은 40개 명령 역사 핀이고 `bootstrap-2`는 84개 명령 역사 핀이다. 둘 다 트리에 남아 있고 다시 생성하지 않는다. 셋 다 카탈로그 스키마 결합만 부여한다. 의미 적합성, N/N−1, 운영 적합, 감사 통과, 사용자 승인이 아니다. 의미 적합의 소비자는 HOLD다. [호환 manifest 형식](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)
+현재 생성물 `read-model-reference-1`은 94개 명령의 생산자 입력을 결합한다. v1의 `SEMANTIC_CONFORMANCE` kind를 사용하며 profile의 `grants`는 `none`이다. 확대 카탈로그의 소비자는 해당 tuple의 의미 적합성 증거가 확보될 때까지 HOLD다. `bootstrap-1`과 `bootstrap-2`는 각각 40개와 84개 명령의 역사 핀이다. [호환 manifest 형식](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)
 
 N/N−1 compatibility, production qualification, stable release, audit and User
 approval remain outside the scoped grant. The consumer surface map documents
@@ -84,10 +84,10 @@ the local-call, calculator, ticket and token-tool envelopes.
 ## Manifest-v1 verifier negative vectors
 
 `conformance/vectors/manifest-verifier-negative.vectors.json` is a companion to
-the current `bootstrap-3` manifest. It is tracked independently of the
+the archived `bootstrap-2` manifest. It is tracked independently of the
 manifest’s pinned vectors. `conformance/conformance.test.mjs` copies
 the verifier and its fixtures into a temporary root, applies exactly one
-mutation per case to the manifest, the `bootstrap-3` profile or the manifest
+mutation per case to the manifest, the `bootstrap-2` profile or the manifest
 sidecar, and requires a non-zero exit with the exact expected error set.
 
 Where one fault makes several checks fail, the test compares the whole error

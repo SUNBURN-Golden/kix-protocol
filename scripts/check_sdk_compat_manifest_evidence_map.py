@@ -35,7 +35,7 @@ VECTORS = {f'sdk/conformance/vectors/{name}.vectors.json'
 CODE = {VERIFIER, 'sdk/generate/generate_client.mjs',
         'sdk/generate/generate_manifest.mjs', 'sdk/package.json'}
 JSON_FILES = {f'sdk/compat/{folder}/{name}.json'
-              for rev in ('bootstrap-1', 'bootstrap-2', 'bootstrap-3')
+              for rev in ('bootstrap-1', 'bootstrap-2')
               for folder, name in (('manifests', f'manifest.{rev}'),
                                    ('profiles', f'{rev}.profile'))}
 EXPECTED = {'C1-PROFILE-NAME': (1, 'kix-canonical-json/1'),
@@ -89,7 +89,7 @@ EXPECTED = {'C1-PROFILE-NAME': (1, 'kix-canonical-json/1'),
  'C4-JSON-ONE-LINE': (4, '판정은 JSON 한 줄이다'),
  'C4-READ-ONLY-NO-ANCESTRY': (4, '검증기는 읽기 전용이다'),
  'C5-GENERATE-CLIENT': (5, 'sdk/generate/generate_client.mjs'),
- 'C5-GENERATE-MANIFEST-B3': (5, '`bootstrap-3` profile·manifest·sidecar를 만든다'),
+ 'C5-GENERATE-MANIFEST': (5, '`read-model-reference-1` profile·manifest·sidecar를 만든다'),
  'C5-B1-NOT-REGENERATED': (5, '역사 핀으로 두고 다시 생성하지 않는다'),
  'C5-SOURCE-PIN-GUARD': (5, 'ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e'),
  'C5-NO-REWRITE-OLD-MANIFEST': (5, '새 바이트에 이전 manifest를 다시 쓰지 않는다')}

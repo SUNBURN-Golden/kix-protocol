@@ -11,7 +11,7 @@ the builder evidence is
 
 The record pins the bytes and names of the historical `bootstrap-2` BOOTSTRAP
 producer tuple (84-action archived snapshot, distinct from the live 94-action
-`bootstrap-3` catalogue that adds the ten approved point queries):
+`read-model-reference-1` catalogue that adds the ten approved point queries):
 
 - the contract-only OpenAPI 3.1 document with 84 local-call operations
   (40 core commands + 44 FSM actions);

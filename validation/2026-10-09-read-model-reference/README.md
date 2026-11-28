@@ -1,5 +1,130 @@
 # Validation — read-model-reference
 
+## PR #178 fix round 1
+
+The supervisor-supplied `read-model-reference` node specification is the task
+document. There is no task issue or node document under `docs/tasks/`. The
+cached `origin/main` and merge base were both
+`6f2d062d73fd89b8ab9053cfa4912fed85170eb8`. The reviewed delivery and worktree
+HEAD were `e136aadcd30771cf4118d5c05ff5d4ebc95ee203` (tree
+`21689224f9d70c59601ae21f77baa25ec3af7683`). This round leaves an uncommitted
+patch for the supervisor. It used local Git refs and objects.
+
+### Producer artifact
+
+`read-model-reference-1` uses the manifest-v1 `SEMANTIC_CONFORMANCE` kind
+with `grants: "none"`. The minimum verifier confirms input byte binding.
+Consumers of the expanded catalogue stay on HOLD pending protected evidence
+for a qualified profile on the exact tuple. This revision supersedes the
+`bootstrap-3` candidate at `e136aad`. The historical `bootstrap-1`,
+`bootstrap-2`, and scoped Commerce artifacts retain their original bytes.
+[Compatibility design §2.1](../../docs/aiops/CONTRACT_RELEASE_AND_COMPLETION_DESIGN_KO.md)
+
+| Artifact | SHA-256 |
+|---|---|
+| `sdk/compat/profiles/read-model-reference-1.profile.json` | `a80f14f0a1ad12ca4c282f2ecf3f81822c567dd936ec20734e0733b3d5e82f00` |
+| `sdk/compat/manifests/manifest.read-model-reference-1.json` | `3b4b8dafb0c9339f4a4e82866b1fb79d55fa61d4e73b0f9923a0e13aef6b2da8` |
+
+### Producer source comparison
+
+`git rev-parse 672b3a9^{tree}` resolved the source commit
+`672b3a9052e4171096295dea84707d7325a542fa` to the manifest's tree
+`57ed7d55d8255427b22adbdfd68414f0761e5d91`. A separate byte comparison read
+`git show <commit>:<path>` for each commit and compared both with the worktree
+file. All ten matched. The comparison independently computed SHA-256 and Git
+blob IDs. The new `python3 scripts/check_sdk_client.py --verify-source`
+option also resolved the commit and tree and matched the ten inputs.
+
+| Path | SHA-256 at source, reviewed delivery, and fix worktree | Git blob |
+|---|---|---|
+| `docs/contracts/openapi/kix-protocol.contract-only.openapi.json` | `768aabd8e756d789a20d7b2fb65c20076017eadc8e8dfafe0b9d13ef7ae7f77d` | `f096739d515a9e13e26f4fa1f89cdff421e03763` |
+| `docs/contracts/openapi/kix-protocol.integration-gate.openapi.json` | `773abae8a27666e9c16467826a9bc4de3e42f8c9256ae4edc908dcfa774ffaa5` | `69b2b027b605c71438ee26d5d6c483de600fc959` |
+| `docs/contracts/openapi/fsm-command-contract.json` | `2732173bd7a4fe71cfea4201f53261aaae59b0fe5416f64fe0a4e216ecd73f5f` | `d3eaf469e4b3c1ffda7d7ecd5b52a84524525356` |
+| `reference/v0.3-rc1/protocol_contract.json` | `ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e` | `619ae21c82ca3df5661bd3831613f15fa65225ff` |
+| `sdk/generate/generate_client.mjs` | `227fe42fd039db31a730d975abdfeb509211083464a2e91c92eca50c1e601690` | `7fd433b6e40a949e98ffa4a3afd9c9b4ecc6fdef` |
+| `sdk/generated/catalogue.ts` | `65cef827fa82b137e46b66f4302f2673f512ec26484910cf5de9d9f65f387b9a` | `09adec22936f2bdc95fcceff96195190a7e330c2` |
+| `sdk/conformance/vectors/canonical-encoding.vectors.json` | `3446c13847bb153df06c1d5d3b7f09cd3b1648ac10bb0cc76d7b65c7014e99c2` | `947773687ea9e2226925168129bf0370e20a5a04` |
+| `sdk/conformance/vectors/mixed-input.vectors.json` | `9e2441ddefc22a2f8c7be230436620908b735b128b9445b7a5a916e4d86a2e19` | `74bf25478d57a98c5ee102c362c4870fc8d16456` |
+| `sdk/sdk-pin.json` | `c82b38e2c3f783272de60eba8401eefd8687bffd57394deaf3639a5ba7511a6a` | `b90feb09ec26691f678c25f761d90eb1fd93465d` |
+| `toolchains.json` | `f4a37d32d50340db6caf8a1f914b1cceb344d410d6c7a5a6299552bd9764e3b5` | `a8c06bcf91eb385875100a5fecf6a6c46664e4c0` |
+
+The same comparisons found zero differences under `integration_gate/`, the
+three FSM reference directories in this node, and `sdk/src/`. The reviewed
+manifest's `bootstrap-3` profile was byte-identical at `672b3a9` and `e136aad`,
+with the profile SHA-256 named by that manifest. Node 24 regenerated the same
+SDK catalogue and SDK pin bytes for the new producer profile.
+
+The two kernel blobs matched before and after the fix
+(`69564b166f0c27f9af5d8422f0a466b18d74c20f` and
+`b607996c83a119c349f1cc90469ac1ba82764e20`). All 108
+`reference/v0.3-rc1/` files matched the archived Git tree
+`a6ecb124dc2b2267ca6be19e39fbe2aef143074b`, including the core contract.
+
+### Coverage and hosted CI
+
+The host and HTTP tests named under [existing coverage](#existing-coverage-and-new-tests-agents-7)
+exercise each approved point query and FSM state, journal and clock
+preservation. The SDK mixed-input test now applies the pinned `bootstrap-2`
+value and requires `profile_revision mismatch` with the profile present. It
+checks that the producer profile grants nothing and that the BOOTSTRAP
+verifier expectation rejects it. The BOOTSTRAP negative matrix exercises all
+56 cases against its original archived file set.
+
+| Delivery evidence | KTX kernel verification | KIX protocol verification |
+|---|---|---|
+| Historical `42f219e` | `46082725817`, completed/success | `46082725833`, completed/success |
+| Reviewed `e136aad` | Run ID and workflow conclusion unavailable locally | Run ID and workflow conclusion unavailable locally |
+| Corrected delivery | Pending supervisor commit and exact-head CI | Pending supervisor commit and exact-head CI |
+
+The supervisor state marks `e136aad` aggregate CI `PASS` without the required
+workflow-level evidence. AGENTS §§10–11 place both workflow records for the
+corrected, committed delivery head in the PR closure evidence. This round
+made no commit or merge.
+
+### Local verification
+
+Python checks below used Python 3.13.5. SDK checks used Node 24.22.1.
+
+| Check run | Result |
+|---|---|
+| `python3 -m unittest` with `ReadQueryHostTests`, `ReadQueryLoopbackTests`, and the three `test_accepted_through` modules | 8 passed. The query tests cover all ten approved point queries through subtests. |
+| `python3 -m unittest integration_gate.test_http_gate readiness.test_faults integration_gate.test_offline_limits` | 163 passed. |
+| `python3 -m unittest discover -s reference/$suite -t reference/$suite` for each of the eight reference suites listed in the protocol workflow | 2,465 passed across the eight passing suite runs. The initial `token_reward` run hit eight subprocess shutdown timeouts. An isolated run of the unchanged suite passed all 397 tests. |
+| `python3 scripts/check_openapi_contract.py` and `python3 scripts/check_integration_gate_openapi.py`, both with and without `--self-test` | Passed. The catalogue has 94 actions, including 10 reads. The gate stays loopback-bound. |
+| `npm --prefix sdk run generate`, `python3 scripts/check_sdk_client.py --verify-source`, and `python3 scripts/check_sdk_client.py --self-test` | Passed. Temporary manifest controls rejected a wrong tree, unknown source commit and mismatched input bytes. |
+| `npm --prefix sdk run conformance` and `npm --prefix sdk run verify-compat` | 32 tests passed and the verifier matched the manifest digest above. |
+| The 69 Python commands under the protocol workflow's **Stdlib offline document checks** step | 69 passed. |
+| `python3 scripts/verify_runtime_architecture.py`, `python3 scripts/test_runtime_architecture.py`, and `cargo fmt --manifest-path runtime/Cargo.toml --all -- --check` | Passed, including seven architecture regression tests. |
+| `cargo test --offline --manifest-path runtime/Cargo.toml -p kix-kernel --locked` and the corresponding `--workspace --locked` run | Exit 101 during dependency resolution. The offline cache lacked `duckdb`, required by `kix-analytics-audit`. |
+| Offline `cargo test -p kix-kernel` and `cargo clippy -p kix-kernel --all-targets -- -D warnings` in a temporary workspace containing byte-identical copies of `kix-kernel` and `kix-types` | 139 kernel tests passed and Clippy passed. This check covered the two-crate subset. |
+
+The producer classification was the contract discrepancy found in this
+review. The new profile addresses it within the existing manifest-v1 format.
+The characterization notes below still apply to the source. The three list
+queries remain deferred. Full hosted verification, including the local-chain
+and proving workflows, is pending with the supervisor. The test scope here
+is local fixture behavior and byte binding.
+
+### Changed paths in this fix round
+
+- `docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md`
+- `docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.md`
+- `docs/status/SDK_COMPAT_MANIFEST_EVIDENCE_MAP.md`
+- `scripts/check_sdk_client.py`
+- `scripts/check_sdk_compat_manifest_evidence_map.py`
+- `sdk/README.md`
+- `sdk/compat/manifests/manifest.bootstrap-3.json` (removed)
+- `sdk/compat/manifests/manifest.bootstrap-3.json.sha256` (removed)
+- `sdk/compat/manifests/manifest.read-model-reference-1.json`
+- `sdk/compat/manifests/manifest.read-model-reference-1.json.sha256`
+- `sdk/compat/profiles/bootstrap-3.profile.json` (removed)
+- `sdk/compat/profiles/read-model-reference-1.profile.json`
+- `sdk/conformance/conformance.test.mjs`
+- `sdk/conformance/vectors/manifest-verifier-negative.vectors.json`
+- `sdk/generate/generate_manifest.mjs`
+- `sdk/package.json`
+- `validation/2026-10-09-read-model-reference/README.md`
+
 ## PR #178 fix round 4 / exact-head CI at 42f219e
 
 This section records the exact-head CI and independent producer-source audit for

@@ -16,9 +16,10 @@ GENERATOR = ROOT / 'sdk/generate/generate_client.mjs'
 MANIFEST_GENERATOR = ROOT / 'sdk/generate/generate_manifest.mjs'
 CATALOGUE_PATH = ROOT / 'sdk/generated/catalogue.ts'
 PIN_PATH = ROOT / 'sdk/sdk-pin.json'
-PROFILE_PATH = ROOT / 'sdk/compat/profiles/bootstrap-3.profile.json'
-MANIFEST_PATH = ROOT / 'sdk/compat/manifests/manifest.bootstrap-3.json'
-SIDECAR_PATH = ROOT / 'sdk/compat/manifests/manifest.bootstrap-3.json.sha256'
+PROFILE_REVISION = 'read-model-reference-1'
+PROFILE_PATH = ROOT / f'sdk/compat/profiles/{PROFILE_REVISION}.profile.json'
+MANIFEST_PATH = ROOT / f'sdk/compat/manifests/manifest.{PROFILE_REVISION}.json'
+SIDECAR_PATH = MANIFEST_PATH.with_suffix('.json.sha256')
 HISTORICAL_BOOTSTRAP_2 = {
     ROOT / 'sdk/compat/profiles/bootstrap-2.profile.json':
         'c356b923997cefc132e63e73a179d5922dd7cb2124b9e9b399c662cd49803b73',
@@ -110,14 +111,50 @@ def compare_outputs(directory):
     expected = {
         CATALOGUE_PATH: catalogue.read_bytes(),
         PIN_PATH: (directory / 'sdk-pin.json').read_bytes(),
-        PROFILE_PATH: (directory / 'sdk/compat/profiles/bootstrap-3.profile.json').read_bytes(),
-        MANIFEST_PATH: (directory / 'sdk/compat/manifests/manifest.bootstrap-3.json').read_bytes(),
-        SIDECAR_PATH: (directory / 'sdk/compat/manifests/manifest.bootstrap-3.json.sha256').read_bytes(),
+        **{
+            path: (directory / path.relative_to(ROOT)).read_bytes()
+            for path in (PROFILE_PATH, MANIFEST_PATH, SIDECAR_PATH)
+        },
     }
     for path, actual in expected.items():
         if not path.is_file() or path.read_bytes() != actual:
             errors.append('byte drift: ' + str(path.relative_to(ROOT)))
     return errors
+
+
+def compare_producer_source():
+    """Compare producer inputs using local Git objects. Requires producer history."""
+    manifest = json.loads(MANIFEST_PATH.read_bytes())
+    commit = manifest['producer']['source_commit']
+
+    def git(*args):
+        return subprocess.run(
+            ['git', '--no-lazy-fetch', *args], cwd=ROOT, capture_output=True, check=True,
+        ).stdout
+
+    paths = [
+        manifest['source_references']['fixture_profile'],
+        manifest['source_references']['extension_profile']['path'],
+        *(ref['path'] for ref in manifest['contract'].values()),
+        manifest['generator']['path'],
+        manifest['sdk_output']['path'],
+        *(ref['path'] for ref in manifest['vectors']),
+        'sdk/sdk-pin.json',
+        'toolchains.json',
+    ]
+    try:
+        if git('cat-file', '-t', commit).strip() != b'commit':
+            return ['producer source is not a commit']
+        actual_tree = git('rev-parse', '--verify', f'{commit}^{{tree}}').decode('ascii').strip()
+        if actual_tree != manifest['producer']['source_tree']:
+            return ['producer source tree drift']
+        return [
+            f'producer source bytes drift: {path}'
+            for path in paths
+            if git('cat-file', 'blob', f'{commit}:{path}') != (ROOT / path).read_bytes()
+        ]
+    except (OSError, subprocess.CalledProcessError) as error:
+        return [f'cannot read producer inputs from local Git objects: {error}']
 
 
 def expect_refusal(document, label):
@@ -177,7 +214,7 @@ def write_outputs():
     if manifest.returncode != 0:
         print(manifest.stderr, file=sys.stderr)
         return manifest.returncode
-    print('wrote sdk client, pin, and bootstrap-3 manifest')
+    print(f'wrote sdk client, pin, and {PROFILE_REVISION} manifest')
     return 0
 
 
@@ -191,12 +228,16 @@ def main(argv):
         return 1
     with tempfile.TemporaryDirectory() as tmp:
         errors = compare_outputs(Path(tmp))
+    if not errors and '--verify-source' in argv:
+        errors = compare_producer_source()
     if errors:
         print('sdk client pin failed:', file=sys.stderr)
         for item in errors:
             print('- ' + item, file=sys.stderr)
         return 1
     print('sdk client pin ok: commands=94 node=%s sourceSha256=%s' % (version, SOURCE_SHA256))
+    if '--verify-source' in argv:
+        print('producer source commit, tree and input bytes match')
     return 0
 
 

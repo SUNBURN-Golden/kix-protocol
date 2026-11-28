@@ -1,5 +1,5 @@
 /**
- * Writes the BOOTSTRAP profile, manifest-v1, and the manifest digest sidecar.
+ * Writes the unqualified producer profile, manifest-v1, and digest sidecar.
  *
  * source_commit identifies the committed reference, gate, catalogue, and SDK inputs.
  * The manifest digest is written only to the sidecar.
@@ -23,9 +23,11 @@ const SOURCE_PATH = "reference/v0.3-rc1/protocol_contract.json";
 const FSM_PATH = "docs/contracts/openapi/fsm-command-contract.json";
 const GENERATOR_PATH = "sdk/generate/generate_client.mjs";
 const CATALOGUE_PATH = "sdk/generated/catalogue.ts";
-const PROFILE_PATH = "sdk/compat/profiles/bootstrap-3.profile.json";
-const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-3.json";
-const SIDECAR_PATH = "sdk/compat/manifests/manifest.bootstrap-3.json.sha256";
+const PROFILE_KIND = "SEMANTIC_CONFORMANCE";
+const PROFILE_REVISION = "read-model-reference-1";
+const PROFILE_PATH = `sdk/compat/profiles/${PROFILE_REVISION}.profile.json`;
+const MANIFEST_PATH = `sdk/compat/manifests/manifest.${PROFILE_REVISION}.json`;
+const SIDECAR_PATH = `${MANIFEST_PATH}.sha256`;
 const CANONICAL_VECTOR = "sdk/conformance/vectors/canonical-encoding.vectors.json";
 const MIXED_VECTOR = "sdk/conformance/vectors/mixed-input.vectors.json";
 
@@ -106,7 +108,7 @@ function main() {
     .filter((name) => name !== "LocalCallEnvelope")
     .sort(compareCodePoints);
   if (names.length !== 94) {
-    fail("command count must stay 94 for bootstrap-3");
+    fail(`command count must stay 94 for ${PROFILE_REVISION}`);
   }
   const schemaDigests = {};
   for (const name of names) {
@@ -132,16 +134,18 @@ function main() {
       openapi_sha256: contractRef.sha256,
       schema_digests: schemaDigests,
     },
-    grants: "catalogue-schema-binding only",
+    grants: "none",
     manifest_schema_version: "kix-compat-manifest/1",
     non_claims: [
+      "producer input binding only",
       "no semantic qualification",
+      "consumers remain on HOLD",
       "no N/N-1 qualification",
       "no production qualification",
       "not audit or approval evidence",
     ],
-    profile_kind: "BOOTSTRAP",
-    profile_revision: "bootstrap-3",
+    profile_kind: PROFILE_KIND,
+    profile_revision: PROFILE_REVISION,
     vectors,
   };
   const profileBytes = Buffer.from(canonicalStringify(profile), "utf8");
@@ -163,8 +167,8 @@ function main() {
       source_commit: SOURCE_COMMIT,
       source_tree: SOURCE_TREE,
     },
-    profile_kind: "BOOTSTRAP",
-    profile_revision: "bootstrap-3",
+    profile_kind: PROFILE_KIND,
+    profile_revision: PROFILE_REVISION,
     profile_sha256: sha256(profileBytes),
     sdk_output: {
       path: CATALOGUE_PATH,
