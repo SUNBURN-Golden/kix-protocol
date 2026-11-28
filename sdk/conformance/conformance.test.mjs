@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -21,8 +23,9 @@ import {
   StrictJsonError,
   canonicalStringify,
   parseStrict,
+  validateSchema,
 } from "../src/jsonschema.ts";
-import { gitBlobId, sha256Hex } from "../src/manifest.ts";
+import { MANIFEST_SCHEMA_VERSION, canonicalBytes, gitBlobId, sha256Hex } from "../src/manifest.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const OPENAPI_PATH = "docs/contracts/openapi/kix-protocol.contract-only.openapi.json";
@@ -36,6 +39,8 @@ const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
 const LIVE_GATE_PATH = "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json";
 const HISTORICAL_GATE_INPUT = "sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json";
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
+const COMMERCE_BINDING_INDEX = "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json";
+const COMMERCE_DELIVERY_INDEX = "docs/status/COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json";
 const COMMERCE_REVISION = "commerce-fixture-8ba7f6c-1";
 const COMMERCE_MANIFEST = `sdk/compat/manifests/manifest.${COMMERCE_REVISION}.json`;
 const COMMERCE_PROFILE = `sdk/compat/profiles/${COMMERCE_REVISION}.profile.json`;
@@ -43,15 +48,17 @@ const COMMERCE_TABLE = "docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json";
 const COMMERCE_VECTORS = "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json";
 const SEMANTIC = "SEMANTIC_CONFORMANCE";
 
-// Byte-identical fixture tree for the negative verifier matrix. The copied
-// verifier derives ROOT from its own location, so these are the only files it
-// reads when it runs against a temporary manifest.
-const NEGATIVE_FIXTURES = [
+const VERIFIER_FIXTURES = [
   VERIFIER_PATH,
   "sdk/src/jsonschema.ts",
   "sdk/src/manifest.ts",
   "sdk/package.json",
   "toolchains.json",
+];
+
+// The copied verifier derives ROOT from its own location.
+const NEGATIVE_FIXTURES = [
+  ...VERIFIER_FIXTURES,
   "sdk/compat/profiles/bootstrap-1.profile.json",
   PROFILE_PATH,
   MANIFEST_PATH,
@@ -321,9 +328,20 @@ test("Commerce journey envelopes reach the transport once per step", () => {
 test("Commerce journey envelope faults are rejected before transport", () => {
   const journey = JSON.parse(read(`${COMMERCE_FIXTURES}/commerce_journey_conformance_v1.json`));
   const fixture = JSON.parse(read(`${COMMERCE_FIXTURES}/commerce_journey_envelope_cases_v1.json`));
+  const { count, items } = JSON.parse(read(COMMERCE_BINDING_INDEX)).readQueries;
+  assert.equal(count, 13);
+  assert.equal(items.length, count);
+  const readNames = items.map(({ name, status }) => {
+    assert.equal(status, "NOT_BOUND", name);
+    return name;
+  });
+  assert.equal(new Set(readNames).size, count);
+  assert.deepEqual([...readNames].sort(), [...journey.final_expect.read_queries].sort());
+
   const baseStep = journey.steps.find((step) => step.id === fixture.base_step);
   assert.ok(baseStep, fixture.base_step);
   const baseline = commerceEnvelope(baseStep, fixture);
+  assert.equal(baseline.action, "reservation_observe_payment");
   const mutations = {
     "/body/idempotency_key": "delete",
     "/body/amount": "set",
@@ -335,13 +353,26 @@ test("Commerce journey envelope faults are rejected before transport", () => {
     fixture.cases.map(({ mutation }) => mutation.path).sort(),
     Object.keys(mutations).sort(),
   );
-  let calls = 0;
-  const client = createLocalCallClient({ transport() { calls += 1; } });
-  for (const { id, mutation, sdk_error: expectedCode } of fixture.cases) {
+  const readCase = fixture.cases.find(({ mutation }) => mutation.path === "/action");
+  assert.equal(readCase.id, "not-bound-read");
+  assert.equal(readCase.sdk_error, "UNKNOWN_ACTION");
+  assert.ok(readNames.includes(readCase.mutation.value), readCase.id);
+  const cases = fixture.cases.filter((fault) => fault !== readCase).concat(
+    readNames.map((name) => ({
+      ...readCase,
+      id: `${readCase.id}:${name}`,
+      mutation: { ...readCase.mutation, value: name },
+    })),
+  );
+
+  const calls = [];
+  const client = createLocalCallClient({
+    transport(envelope) {
+      calls.push(structuredClone(envelope));
+    },
+  });
+  for (const { id, mutation, sdk_error: expectedCode } of cases) {
     assert.equal(mutation.op, mutations[mutation.path], id);
-    if (mutation.path === "/action") {
-      assert.ok(journey.final_expect.read_queries.includes(mutation.value), id);
-    }
     const envelope = structuredClone(baseline);
     const [, field, child] = mutation.path.split("/");
     const target = child === undefined ? envelope : envelope[field];
@@ -352,8 +383,12 @@ test("Commerce journey envelope faults are rejected before transport", () => {
       target[key] = mutation.value;
     }
     assert.equal(rejectionCode(() => client.invoke(envelope)), expectedCode, id);
-    assert.equal(calls, 0, id);
+    assert.equal(calls.length, 0, id);
   }
+
+  const expected = structuredClone(baseline);
+  assert.doesNotThrow(() => client.invoke(baseline), fixture.base_step);
+  assert.deepEqual(calls, [expected], fixture.base_step);
 });
 
 test("Commerce semantic manifest binds the exact fixture scope and vector bytes", () => {
@@ -518,6 +553,67 @@ test("canonical encoding vectors", () => {
   }
 });
 
+test("manifest-v1 bytes use code-point key order", () => {
+  // U+E000 sorts before U+10000 by code point and after it by UTF-16 code unit.
+  const value = { "\u{10000}": 2, "\uE000": 1 };
+  const expected = Buffer.from("7b22ee8080223a312c22f0908080223a327d", "hex");
+  const reversed = Buffer.from("7b22f0908080223a322c22ee8080223a317d", "hex");
+
+  assert.deepEqual(Buffer.from(canonicalBytes(value)), expected);
+  assert.deepEqual({ ...parseStrict(expected) }, value);
+  assert.throws(
+    () => parseStrict(reversed),
+    (error) => error instanceof StrictJsonError && error.reason === "unsorted-keys",
+  );
+});
+
+test("manifest-v1 bytes escape controls quotes and backslashes", () => {
+  const value = "\u0001\"\\";
+  const expected = Buffer.from("225c75303030315c225c5c22", "hex");
+
+  assert.deepEqual(Buffer.from(canonicalBytes(value)), expected);
+  assert.equal(parseStrict(expected), value);
+});
+
+test("manifest-v1 bytes cover safe integer endpoints", () => {
+  for (const [literal, expected] of [
+    ["-9007199254740991", -9007199254740991],
+    ["9007199254740991", 9007199254740991],
+  ]) {
+    const bytes = Buffer.from(literal, "ascii");
+    const value = parseStrict(bytes);
+    assert.equal(value, expected, literal);
+    assert.deepEqual(Buffer.from(canonicalBytes(value)), bytes, literal);
+  }
+  for (const literal of ["-9007199254740992", "9007199254740992"]) {
+    assert.throws(
+      () => parseStrict(Buffer.from(literal, "ascii")),
+      (error) => error instanceof StrictJsonError && error.reason === "integer-range",
+      literal,
+    );
+  }
+});
+
+test("manifest-v1 bytes exercise the parser depth limit", () => {
+  // Each pair adds an array and an object toward the 32-container implementation limit.
+  const pairs = 16;
+  const atLimit = '[{"k":'.repeat(pairs) + "0" + "}]".repeat(pairs);
+  let value = parseStrict(Buffer.from(atLimit, "ascii"));
+  for (let index = 0; index < pairs; index += 1) {
+    assert.ok(Array.isArray(value));
+    assert.equal(value.length, 1);
+    assert.deepEqual(Object.keys(value[0]), ["k"]);
+    value = value[0].k;
+  }
+  assert.equal(value, 0);
+
+  // Characterize the parser diagnostic at 33 containers.
+  assert.throws(
+    () => parseStrict(Buffer.from(`[${atLimit}]`, "ascii")),
+    (error) => error instanceof StrictJsonError && error.reason === "depth",
+  );
+});
+
 test("manifest verifier reports failures in contract order", () => {
   const manifest = parseStrict(read("sdk/compat/manifests/manifest.bootstrap-2.json"));
   const badDigest = "0".repeat(64);
@@ -661,11 +757,11 @@ function mutateDocument(document, item) {
   }
 }
 
-function copyFixtures(targetRoot) {
-  for (const relative of NEGATIVE_FIXTURES) {
-    const target = resolve(targetRoot, relative);
+function copyFixtures(targetRoot, files = NEGATIVE_FIXTURES) {
+  for (const path of files) {
+    const target = resolve(targetRoot, path);
     mkdirSync(dirname(target), { recursive: true });
-    cpSync(resolve(ROOT, relative === LIVE_GATE_PATH ? HISTORICAL_GATE_INPUT : relative), target);
+    cpSync(resolve(ROOT, path === LIVE_GATE_PATH ? HISTORICAL_GATE_INPUT : path), target);
   }
 }
 
@@ -720,10 +816,11 @@ function applySidecarCase(targetRoot, pristineManifest, item) {
   }
 }
 
-function runVerifierAt(root, manifestPath, kind, revision) {
+function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env } = {}) {
   return spawnSync(
     process.execPath,
     [
+      ...nodeArgs,
       resolve(root, VERIFIER_PATH),
       "--manifest",
       manifestPath,
@@ -732,9 +829,135 @@ function runVerifierAt(root, manifestPath, kind, revision) {
       "--expect-revision",
       revision,
     ],
-    { cwd: root, encoding: "utf8" },
+    { cwd: root, encoding: "utf8", env },
   );
 }
+
+function snapshotFixtureTree(root) {
+  const entries = readdirSync(root, { recursive: true, withFileTypes: true });
+  return new Map(entries.map((entry) => {
+    const path = join(entry.parentPath, entry.name);
+    assert.ok(entry.isDirectory() || entry.isFile(), `unexpected entry type: ${path}`);
+    return [relative(root, path), entry.isDirectory() ? null : readFileSync(path)];
+  }));
+}
+
+function verifierFixtureFiles(manifestPath, profilePath, manifest) {
+  return [
+    ...VERIFIER_FIXTURES,
+    manifestPath,
+    `${manifestPath}.sha256`,
+    profilePath,
+    manifest.contract.contract_only.path,
+    manifest.contract.integration_gate.path,
+    manifest.generator.path,
+    manifest.sdk_output.path,
+    manifest.source_references.fixture_profile,
+    manifest.source_references.extension_profile.path,
+    ...manifest.vectors.map((vector) => vector.path),
+  ];
+}
+
+const EMPTY_VERIFIER_PATH = "empty-path";
+
+function detachedVerifierOptions(root) {
+  const fromCheckout = relative(ROOT, root);
+  assert.ok(fromCheckout.startsWith(`..${sep}`) || isAbsolute(fromCheckout), root);
+  const emptyPath = join(root, EMPTY_VERIFIER_PATH);
+  mkdirSync(emptyPath);
+  return {
+    // No child-process permission, including execution by absolute path.
+    nodeArgs: ["--permission", `--allow-fs-read=${root}`, `--allow-fs-write=${root}`],
+    env: { PATH: emptyPath },
+  };
+}
+
+function expectedDetachedFixtureTree(files) {
+  const expected = new Map([[EMPTY_VERIFIER_PATH, null]]);
+  for (const path of files) {
+    const copiedPath = relative(ROOT, resolve(ROOT, path));
+    expected.set(copiedPath, read(path));
+    for (let directory = dirname(copiedPath); directory !== "."; directory = dirname(directory)) {
+      expected.set(directory, null);
+    }
+  }
+  return expected;
+}
+
+function readVerifierVerdict(result, exitStatus, context) {
+  assert.ifError(result.error);
+  assert.equal(result.signal, null, context);
+  assert.equal(result.status, exitStatus, `${context}: ${result.stderr || result.stdout}`);
+  assert.equal(result.stderr, "", context);
+  const lines = result.stdout.split("\n");
+  assert.equal(lines.length, 2, context);
+  assert.equal(lines[1], "", context);
+  assert.match(lines[0], /^[^\r\n]+$/u, context);
+  return JSON.parse(lines[0]);
+}
+
+const BOOTSTRAP_MANIFEST_SHA256 = "eec1750532d319ea06d8ae61bafa77316067088a84a9b70d20a1f6966dfba1e0";
+const COMMERCE_MANIFEST_SHA256 = "76ea72c6249ec0f90cb426dfbb8efda8308610f79c4f0ac6ff0a2445cab59a4f";
+
+test("vendored producer manifests return one verdict without changing files", () => {
+  for (const { revision, kind, digest, manifestPath, profilePath, missing } of [
+    {
+      revision: "bootstrap-2",
+      kind: "BOOTSTRAP",
+      digest: BOOTSTRAP_MANIFEST_SHA256,
+      manifestPath: MANIFEST_PATH,
+      profilePath: PROFILE_PATH,
+      missing: "mixed-input",
+    },
+    {
+      revision: COMMERCE_REVISION,
+      kind: SEMANTIC,
+      digest: COMMERCE_MANIFEST_SHA256,
+      manifestPath: COMMERCE_MANIFEST,
+      profilePath: COMMERCE_PROFILE,
+      missing: "commerce-fixture-request-to-receipt",
+    },
+  ]) {
+    const manifestBytes = read(manifestPath);
+    const sidecarPath = `${manifestPath}.sha256`;
+    assert.equal(sha256Hex(manifestBytes), digest, revision);
+    assert.equal(read(sidecarPath).toString("utf8"), `${digest}\n`, revision);
+    const manifest = parseStrict(manifestBytes);
+    const files = new Set(verifierFixtureFiles(manifestPath, profilePath, manifest));
+    const missingVector = manifest.vectors.find((vector) => vector.name === missing);
+    assert.ok(missingVector, `${revision}: missing test vector binding`);
+
+    const root = mkdtempSync(join(realpathSync(tmpdir()), "kix-sdk-vendored-"));
+    try {
+      const options = detachedVerifierOptions(root);
+      copyFixtures(root, files);
+      const expected = expectedDetachedFixtureTree(files);
+
+      function verdict(exitStatus) {
+        const context = `${revision}, expected exit ${exitStatus}`;
+        const before = snapshotFixtureTree(root);
+        assert.deepEqual(before, expected, `${context}: input inventory and bytes`);
+        const result = runVerifierAt(root, resolve(root, manifestPath), kind, revision, options);
+        assert.deepEqual(snapshotFixtureTree(root), before, `${context}: output inventory and bytes`);
+        return readVerifierVerdict(result, exitStatus, context);
+      }
+
+      assert.deepEqual(verdict(0), {
+        ok: true,
+        manifest_sha256: digest,
+        profile_kind: kind,
+        profile_revision: revision,
+      });
+
+      const missingPath = resolve(root, missingVector.path);
+      rmSync(missingPath);
+      expected.delete(relative(root, missingPath));
+      assert.deepEqual(verdict(1), { ok: false, errors: [`${missing} unreadable: ${missingPath}`] });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
 
 function digestSnapshot() {
   return Object.fromEntries(
@@ -824,4 +1047,683 @@ test("client surface does not carry a URL, credential, or repeat-call API", () =
   assert.equal(pin.openapi.sha256, OPENAPI_PIN.sha256);
   assert.equal(pin.source.sha256, OPENAPI_PIN.sourceSha256);
   assert.equal(createHash("sha256").update(read(OPENAPI_PATH)).digest("hex"), pin.openapi.sha256);
+});
+
+function readCommerceGrantRecord(root, manifest, name, path, version) {
+  const refs = manifest.vectors.filter((ref) => ref.name === name);
+  if (refs.length !== 1 || refs[0].path !== path) return;
+  const bytes = readFileSync(resolve(root, refs[0].path));
+  if (sha256Hex(bytes) !== refs[0].sha256) return;
+  const record = parseStrict(bytes);
+  if (record.record_schema_version === version) return record;
+}
+
+function loadVerifiedManifest(root, manifestPath, verifierOptions) {
+  const absManifestPath = resolve(root, manifestPath);
+  const run = runVerifierAt(root, absManifestPath, SEMANTIC, COMMERCE_REVISION, verifierOptions);
+  const verdict = readVerifierVerdict(run, run.status === 1 ? 1 : 0, manifestPath);
+  if (run.status === 1) return;
+  const manifestBytes = readFileSync(absManifestPath);
+  const manifest = parseStrict(manifestBytes);
+  if (!verdict.ok || verdict.manifest_sha256 !== sha256Hex(manifestBytes) ||
+      manifest.manifest_schema_version !== MANIFEST_SCHEMA_VERSION) return;
+  return { manifest_sha256: verdict.manifest_sha256, manifest };
+}
+
+// Reads the qualification table and every replay file it pins. Callers must
+// compare the consumer's independent manifest digest with the verified
+// manifest first, so a mismatched candidate never reaches this lookup.
+function loadCommerceGrant(root, verified) {
+  const { manifest } = verified;
+  const profileBytes = readFileSync(resolve(root, COMMERCE_PROFILE));
+  const profile = parseStrict(profileBytes);
+  if (sha256Hex(profileBytes) !== manifest.profile_sha256 ||
+      profile.grants !== "commerce-fixture-tuples-only: see commerce-fixture-qualification-table") return;
+
+  const table = readCommerceGrantRecord(
+    root, manifest, "commerce-fixture-qualification-table", COMMERCE_TABLE,
+    "kix-commerce-fixture-tuple-conformance/1",
+  );
+  const corpus = readCommerceGrantRecord(
+    root, manifest, "commerce-fixture-request-to-receipt", COMMERCE_VECTORS,
+    "kix-commerce-fixture-vectors/1",
+  );
+  if (!table || !corpus || !sameFixtureJson(table.producer, manifest.producer)) return;
+  for (const { path, sha256, gitBlob } of Object.values(table.pins).flat()) {
+    const bytes = readFileSync(resolve(root, path));
+    if (sha256Hex(bytes) !== sha256 || gitBlobId(bytes) !== gitBlob) return;
+  }
+
+  const vectorsById = new Map(corpus.vectors.map((vector) => [vector.id, vector]));
+  if (vectorsById.size !== corpus.vectors.length) return;
+  return {
+    manifest_sha256: verified.manifest_sha256,
+    table,
+    vectorsById,
+    schemaDigests: profile.catalogue.schema_digests,
+  };
+}
+
+function sameFixtureJson(left, right) {
+  return left !== undefined && right !== undefined &&
+    canonicalStringify(left) === canonicalStringify(right);
+}
+
+function selectCommerceGrant(request, expectedManifestSha256, manifestFor, grantFor) {
+  if (request.kind === "read" || request.kind === "proposed_recovery") {
+    return { status: "NOT_BOUND", vector_id: null };
+  }
+  const hold = { status: "HOLD_SEMANTIC", vector_id: null };
+  // The documented order compares the independent consumer digest with the
+  // verified manifest before the qualification table or its replay pins are
+  // read, so a mismatched or missing pin never consults table-pinned files.
+  const verified = manifestFor(request.manifest_path);
+  if (!verified || expectedManifestSha256 !== verified.manifest_sha256) return hold;
+  const grant = grantFor(request.manifest_path);
+  if (!grant) return hold;
+  if (!sameFixtureJson(request.producer, grant.table.producer)) return hold;
+
+  const fields = ["method", "path", "action", "machine", "op", "subject_field", "body_schema_sha256"];
+  const tuples = grant.table.tuples.filter((tuple) =>
+    tuple.level === SEMANTIC && fields.every((field) => tuple[field] === request[field]));
+  const { action, body_schema_sha256: digest, envelope, setup, outcome } = request;
+  const schema = COMMAND_SCHEMAS[action];
+  if (tuples.length !== 1 || !schema || digest !== grant.schemaDigests[action] ||
+      digest !== sha256Hex(canonicalBytes(schema)) || envelope?.action !== action) return hold;
+
+  const subjectField = tuples[0].subject_field;
+  const subject = envelope.body?.[subjectField];
+  const contexts = tuples[0].contexts.filter((entry) => entry.context === request.context);
+  const ids = contexts[0]?.steps[request.commerce_step];
+  if (subject === undefined || contexts.length !== 1 || !ids?.length ||
+      new Set(ids).size !== ids.length) return hold;
+
+  const candidates = ids.map((id) => grant.vectorsById.get(id));
+  if (candidates.some((vector) => !vector)) return hold;
+  const matches = candidates.filter((vector) =>
+    vector.context === request.context && vector.commerce_step === request.commerce_step &&
+    sameFixtureJson(vector.envelope.body[subjectField], subject) &&
+    sameFixtureJson(vector.envelope, envelope) && sameFixtureJson(vector.setup, setup) &&
+    sameFixtureJson(vector.expected, outcome));
+  if (matches.length !== 1 || matches[0].setup.some((id) => !grant.vectorsById.has(id))) return hold;
+  return { status: SEMANTIC, vector_id: matches[0].id };
+}
+
+function commerceGrantConsumer(root, verifierOptions) {
+  const manifests = new Map();
+  const grants = new Map();
+  let grantLoads = 0;
+
+  function manifestFor(manifestPath) {
+    if (!manifests.has(manifestPath)) {
+      let verified;
+      try {
+        verified = loadVerifiedManifest(root, manifestPath, verifierOptions);
+      } catch (error) {
+        if (!(error instanceof StrictJsonError) && !["open", "read"].includes(error.syscall)) throw error;
+      }
+      manifests.set(manifestPath, verified);
+    }
+    return manifests.get(manifestPath);
+  }
+
+  function grantFor(manifestPath) {
+    if (!grants.has(manifestPath)) {
+      let grant;
+      const verified = manifestFor(manifestPath);
+      if (verified) {
+        grantLoads += 1;
+        try {
+          grant = loadCommerceGrant(root, verified);
+        } catch (error) {
+          if (!(error instanceof StrictJsonError) && !["open", "read"].includes(error.syscall)) throw error;
+        }
+      }
+      grants.set(manifestPath, grant);
+    }
+    return grants.get(manifestPath);
+  }
+
+  let transportCalls = 0;
+  const consumer = {
+    ...createLocalCallClient({ transport: () => {
+      transportCalls += 1;
+      throw new Error("Commerce grant lookup called transport");
+    } }),
+    select: (request, expectedManifestSha256) =>
+      selectCommerceGrant(request, expectedManifestSha256, manifestFor, grantFor),
+  };
+  function check({ id, request, expect }, expectedManifestSha256) {
+    assert.deepEqual(consumer.select(request, expectedManifestSha256), { ...expect }, id);
+    assert.equal(transportCalls, 0, id);
+  }
+  return { grantFor, check, grantLoads: () => grantLoads };
+}
+
+test("Commerce grant lookup", async (t) => {
+  const bytes = read("sdk/conformance/vectors/producer-grant-selection.vectors.json");
+  const document = parseStrict(bytes);
+  assert.equal(document.record_schema_version, "kix-producer-grant-selection-vectors/1");
+  assert.equal(bytes.toString("utf8"), canonicalStringify(document));
+  assert.equal(new Set(document.cases.map(({ id }) => id)).size, document.cases.length);
+
+  const { grantFor, check } = commerceGrantConsumer(ROOT);
+  const listed = document.cases.find(({ id }) => id === "cancel-from-LISTED");
+  assert.ok(listed, "missing cancel-from-LISTED case");
+  assert.deepEqual({ ...listed.expect }, { status: SEMANTIC, vector_id: "resale-market/market-cancel-LISTED" });
+  const hold = { status: "HOLD_SEMANTIC", vector_id: null };
+  const notBound = { status: "NOT_BOUND", vector_id: null };
+  const reads = document.cases.filter(({ request }) => request.kind === "read");
+  const recovery = document.cases.filter(({ request }) => request.kind === "proposed_recovery");
+  const unboundCases = [...reads, ...recovery];
+
+  function commandRequestFields(producer, tuple, vector, commerceStep) {
+    return {
+      kind: "command",
+      manifest_path: COMMERCE_MANIFEST,
+      producer,
+      method: tuple.method,
+      path: tuple.path,
+      action: tuple.action,
+      machine: tuple.machine,
+      op: tuple.op,
+      subject_field: tuple.subject_field,
+      body_schema_sha256: tuple.body_schema_sha256,
+      context: vector.context,
+      commerce_step: commerceStep,
+      envelope: vector.envelope,
+      setup: vector.setup,
+    };
+  }
+
+  await t.test("requires the consumer manifest digest on every selection", () => {
+    check(listed, COMMERCE_MANIFEST_SHA256);
+    // Fresh consumers pin the ordering: a rejected digest must not read the
+    // qualification table or any replay file it pins, even on a cold cache.
+    const different = commerceGrantConsumer(ROOT);
+    different.check({ ...listed, id: "different consumer digest", expect: hold }, BOOTSTRAP_MANIFEST_SHA256);
+    assert.equal(different.grantLoads(), 0, "different consumer digest read the grant");
+    const missing = commerceGrantConsumer(ROOT);
+    missing.check({ ...listed, id: "missing consumer digest", expect: hold });
+    assert.equal(missing.grantLoads(), 0, "missing consumer digest read the grant");
+  });
+  await t.test("selects only the exact command evidence", () => {
+    const commands = document.cases.filter(({ request }) => request.kind === "command");
+    for (const item of commands) check(item, COMMERCE_MANIFEST_SHA256);
+    assert.deepEqual(commands.filter(({ expect }) => expect.status === SEMANTIC)
+      .map(({ expect }) => expect.vector_id).sort(), [
+      "resale-market/market-cancel-BUY_HELD",
+      "resale-market/market-cancel-LISTED",
+    ]);
+  });
+  await t.test("holds when one producer or route field changes", () => {
+    const original = listed.request;
+    const snapshot = canonicalStringify(original);
+    check(listed, COMMERCE_MANIFEST_SHA256);
+
+    function checkMismatch(field, request) {
+      const originalValue = getPath(original, field);
+      const changedValue = getPath(request, field);
+      assert.notEqual(originalValue, undefined, `${field} missing from the original request`);
+      assert.notEqual(changedValue, undefined, `${field} missing from the mismatch request`);
+      assert.notEqual(changedValue, originalValue, field);
+
+      const restored = structuredClone(request);
+      setPath(restored, field, originalValue);
+      assert.equal(canonicalStringify(restored), snapshot, `${field} must be the only change`);
+      check({ id: field, request, expect: hold }, COMMERCE_MANIFEST_SHA256);
+    }
+
+    const mismatches = [
+      ["producer.source_commit", "8ba7f6c36373ac0ec49246f51f7471c164ac3a29"],
+      ["producer.repository", "SUNBURN-Golden/kix-protocol-control"],
+      ["producer.protocol_domain", "kix:fixture:lifecycle:0.4"],
+      ["producer.contract_schema_version", "0.3-rc1+sha256:ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1f"],
+      ["method", "GET"],
+      ["path", `${original.path}/`],
+      ["machine", "reservation"],
+      ["op", "hold_buy"],
+      ["subject_field", "seller_role"],
+    ];
+    for (const [field, value] of mismatches) {
+      const request = structuredClone(original);
+      setPath(request, field, value);
+      if (field === "producer.source_commit") {
+        assert.equal(request.producer.source_tree, "d3f5412ef84f64fe83c5d3a3d3ada173921bfbf9", field);
+      }
+      checkMismatch(field, request);
+    }
+
+    for (const [id, field] of [
+      ["wrong-producer-tree", "producer.source_tree"],
+      ["wrong-body-schema-digest", "body_schema_sha256"],
+    ]) {
+      const control = document.cases.find((item) => item.id === id);
+      assert.ok(control, `missing ${id} case`);
+      checkMismatch(field, control.request);
+    }
+
+    assert.equal(canonicalStringify(original), snapshot, `${listed.id} request changed`);
+  });
+  await t.test("selects every listed outcome and holds every control-only vector", () => {
+    const grant = grantFor(COMMERCE_MANIFEST);
+    assert.ok(grant, "Commerce fixture grant must verify");
+    const { table, vectorsById } = grant;
+    const listedIds = new Set();
+    const controlIds = new Set();
+    const countsByContext = new Map();
+
+    for (const tuple of table.tuples) {
+      for (const { context, steps, control_vector_ids } of tuple.contexts) {
+        const counts = countsByContext.get(context) ?? { accept: 0, "business-reject": 0, controls: 0 };
+        countsByContext.set(context, counts);
+        for (const [step, ids] of Object.entries(steps)) {
+          for (const id of ids) {
+            assert.ok(!listedIds.has(id), `duplicate listed vector ${id}`);
+            listedIds.add(id);
+            const vector = vectorsById.get(id);
+            assert.ok(vector, `missing listed vector ${id}`);
+            assert.equal(vector.context, context, id);
+            assert.equal(vector.commerce_step, step, id);
+            counts[vector.expected.kind] += 1;
+            check({
+              id,
+              request: { ...commandRequestFields(table.producer, tuple, vector, step), outcome: vector.expected },
+              expect: { status: SEMANTIC, vector_id: id },
+            }, COMMERCE_MANIFEST_SHA256);
+          }
+        }
+
+        const [listedStep] = Object.keys(steps);
+        assert.ok(listedStep, `${context}/${tuple.action} must have a listed step`);
+        for (const id of control_vector_ids) {
+          assert.ok(!controlIds.has(id), `duplicate control vector ${id}`);
+          controlIds.add(id);
+          const vector = vectorsById.get(id);
+          assert.ok(vector, `missing control vector ${id}`);
+          assert.equal(vector.context, context, id);
+          assert.equal(vector.envelope.action, tuple.action, id);
+          assert.equal(vector.commerce_step, undefined, id);
+          assert.ok(id.startsWith(`${context}/`), id);
+          const unlistedStep = id.slice(context.length + 1);
+          assert.ok(!Object.hasOwn(steps, unlistedStep), id);
+          counts.controls += 1;
+          for (const step of [unlistedStep, listedStep]) {
+            check({
+              id: `${id} offered as ${step}`,
+              request: { ...commandRequestFields(table.producer, tuple, vector, step), outcome: vector.expected },
+              expect: { status: "HOLD_SEMANTIC", vector_id: null },
+            }, COMMERCE_MANIFEST_SHA256);
+          }
+        }
+      }
+    }
+
+    assert.deepEqual(Object.fromEntries(countsByContext), {
+      "booking-resale": { accept: 18, "business-reject": 4, controls: 17 },
+      "booking-admission": { accept: 10, "business-reject": 2, controls: 10 },
+      "booking-refund": { accept: 14, "business-reject": 1, controls: 12 },
+      "resale-market": { accept: 14, "business-reject": 0, controls: 14 },
+    });
+    assert.deepEqual([...listedIds, ...controlIds].sort(), [...vectorsById.keys()].sort());
+  });
+  await t.test("nullable body fields", () => {
+    // Make the consumer verify its independent pin before reading the grant,
+    // including when this subtest is run on its own.
+    check(listed, COMMERCE_MANIFEST_SHA256);
+    const { table, vectorsById, schemaDigests } = grantFor(COMMERCE_MANIFEST);
+    const { profile_revision, cases } = JSON.parse(read("sdk/conformance/vectors/commerce-nullable-fields.vectors.json"));
+    assert.equal(profile_revision, COMMERCE_REVISION);
+
+    const presentValues = { null: null, string: "fixture-alternate", boolean: true };
+    const representations = ["omitted", ...Object.keys(presentValues)];
+    const positions = new Map();
+    for (const tuple of table.tuples) {
+      const { action, body_schema_sha256: digest } = tuple;
+      const schema = COMMAND_SCHEMAS[action];
+      assert.equal(digest, schemaDigests[action], action);
+      assert.equal(digest, sha256Hex(canonicalBytes(schema)), action);
+      const nullable = Object.entries(schema.properties).filter(([field, property]) =>
+        !schema.required.includes(field) && [property.type].flat().includes("null"));
+      if (nullable.length === 0) continue;
+
+      const [vectorId] = tuple.contexts.flatMap(({ steps }) => Object.values(steps).flat()).sort();
+      const vector = vectorsById.get(vectorId);
+      assert.ok(vector, `missing listed vector ${vectorId}`);
+      const request = {
+        ...commandRequestFields(table.producer, tuple, vector, vector.commerce_step), outcome: vector.expected,
+      };
+      const expect = { status: SEMANTIC, vector_id: vectorId };
+      check({ id: vectorId, request, expect }, COMMERCE_MANIFEST_SHA256);
+      for (const [field, property] of nullable) {
+        const position = `${action}.${field}`;
+        assert.deepEqual([...property.type].sort(), ["null", "string"], position);
+        assert.notEqual(vector.envelope.body[field], presentValues.string, position);
+        positions.set(position, { request, expect });
+      }
+    }
+    assert.equal(positions.size, 10);
+    assert.equal(new Set([...positions.values()].map(({ request }) => request.action)).size, 8);
+    assert.deepEqual(
+      cases.map(({ action, field, representation }) => `${action}.${field}:${representation}`).sort(),
+      [...positions.keys()].flatMap((position) => representations.map((repr) => `${position}:${repr}`)).sort(),
+    );
+
+    const calls = [];
+    const client = createLocalCallClient({ transport: (envelope) => calls.push(structuredClone(envelope)) });
+    let originalCases = 0;
+    for (const { action, vector_id, field, representation, envelope } of cases) {
+      const position = `${action}.${field}`;
+      const id = `${position}:${representation}`;
+      const { request, expect } = positions.get(position);
+      assert.equal(vector_id, expect.vector_id, id);
+      const expected = structuredClone(request.envelope);
+      const omitted = representation === "omitted";
+      if (omitted) delete expected.body[field];
+      else expected.body[field] = presentValues[representation];
+      const snapshot = canonicalStringify(envelope);
+      assert.equal(snapshot, canonicalStringify(expected), id);
+
+      const before = calls.length;
+      if (representation === "boolean") {
+        assert.equal(rejectionCode(() => client.invoke(envelope)), "WRONG_TYPE", id);
+        assert.equal(calls.length, before, id);
+      } else {
+        client.invoke(envelope);
+        assert.equal(calls.length, before + 1, id);
+        assert.equal(Object.hasOwn(calls[before].body, field), !omitted, id);
+        assert.equal(canonicalStringify(calls[before]), snapshot, id);
+      }
+      assert.equal(canonicalStringify(envelope), snapshot, id);
+      const isOriginal = snapshot === canonicalStringify(request.envelope);
+      if (isOriginal) {
+        assert.equal(representation, "omitted", id);
+        originalCases += 1;
+      }
+      check({ id, request: { ...request, envelope }, expect: isOriginal ? expect : hold }, COMMERCE_MANIFEST_SHA256);
+    }
+    assert.equal(calls.length, 30);
+    assert.equal(originalCases, 3);
+  });
+  await t.test("distribution order", () => {
+    check(listed, COMMERCE_MANIFEST_SHA256);
+    const { table, vectorsById } = grantFor(COMMERCE_MANIFEST);
+    const { profile_revision, vector_id, cases } = JSON.parse(
+      read("sdk/conformance/vectors/commerce-distribution-order.vectors.json"),
+    );
+    const context = "booking-resale";
+    const step = "distribute-resale";
+    assert.equal(profile_revision, COMMERCE_REVISION);
+    assert.equal(vector_id, `${context}/${step}`);
+    assert.deepEqual(cases, [
+      { id: "original", order: ["organizer-1", "platform-1"] },
+      { id: "string", order: "organizer-1" },
+      { id: "duplicate", order: ["organizer-1", "platform-1", "organizer-1"] },
+      { id: "missing", order: ["organizer-1"] },
+      { id: "unknown", order: ["organizer-1", "platform-1", "unknown-1"] },
+    ]);
+
+    const tuple = table.tuples.find((row) =>
+      row.method === "POST" && row.path === "/x-kix-contract-only/local-call" &&
+      row.action === "settlement_distribute" && row.machine === "settlement" &&
+      row.op === "distribute" && row.subject_field === "settlement_id");
+    assert.ok(tuple, "missing settlement distribution tuple");
+    assert.deepEqual(tuple.contexts.find((entry) => entry.context === context)?.steps[step], [vector_id]);
+    const vector = vectorsById.get(vector_id);
+    assert.ok(vector, `missing listed vector ${vector_id}`);
+    const request = { ...commandRequestFields(table.producer, tuple, vector, step), outcome: vector.expected };
+    const original = canonicalStringify(request.envelope);
+    const calls = [];
+    const client = createLocalCallClient({ transport: (envelope) => calls.push(structuredClone(envelope)) });
+    for (const { id, order } of cases) {
+      const envelope = structuredClone(request.envelope);
+      envelope.body.order = structuredClone(order);
+      const snapshot = canonicalStringify(envelope);
+      assert.equal(snapshot === original, id === "original", id);
+
+      const before = calls.length;
+      if (id === "string") {
+        assert.equal(rejectionCode(() => client.invoke(envelope)), "WRONG_TYPE", id);
+        assert.equal(calls.length, before, id);
+      } else {
+        client.invoke(envelope);
+        assert.equal(calls.length, before + 1, id);
+        assert.equal(canonicalStringify(calls[before]), snapshot, id);
+      }
+      assert.equal(canonicalStringify(envelope), snapshot, id);
+      const expect = id === "original" ? { status: SEMANTIC, vector_id } : hold;
+      check({ id, request: { ...request, envelope }, expect }, COMMERCE_MANIFEST_SHA256);
+    }
+  });
+  await t.test("holds the readiness refusal for every listed Commerce action", () => {
+    const { profile_revision, cases } = JSON.parse(
+      read("sdk/conformance/vectors/commerce-readiness-refusals.vectors.json"),
+    );
+    assert.equal(profile_revision, COMMERCE_REVISION);
+    const grant = grantFor(COMMERCE_MANIFEST);
+    assert.ok(grant, "Commerce fixture grant must verify");
+    const { table, vectorsById } = grant;
+    const tuplesByAction = new Map(table.tuples.map((tuple) => [tuple.action, tuple]));
+    assert.equal(cases.length, 28);
+    assert.equal(new Set(cases.map(({ vector_id }) => vector_id)).size, 28);
+    assert.deepEqual(cases.map(({ action }) => action), [...tuplesByAction.keys()].sort());
+
+    for (const { action, vector_id: id, status, payload } of cases) {
+      assert.equal(status, 422, id);
+      assert.deepEqual(payload, { error: "READINESS_FSM_REFUSED", rejected: true }, id);
+      const vector = vectorsById.get(id);
+      assert.ok(vector, `missing listed vector ${id}`);
+      assert.equal(vector.envelope.action, action, id);
+      const request = commandRequestFields(table.producer, tuplesByAction.get(action), vector, vector.commerce_step);
+      check({
+        id,
+        request: { ...request, outcome: vector.expected },
+        expect: { status: SEMANTIC, vector_id: id },
+      }, COMMERCE_MANIFEST_SHA256);
+      check({
+        id: `${id} readiness refusal`,
+        request: { ...request, outcome: { kind: "business-reject", code: payload.error } },
+        expect: hold,
+      }, COMMERCE_MANIFEST_SHA256);
+    }
+  });
+  await t.test("selects grants from indexed caller-visible delivery outcomes", () => {
+    const index = JSON.parse(read(COMMERCE_DELIVERY_INDEX));
+    assert.equal(index.record_schema_version, "kix-commerce-delivery-evidence-index/1");
+    assert.equal(index.normative, false);
+    assert.equal(index.fixtures.length, 8);
+    assert.equal(new Set(index.fixtures.map(({ fixture_path }) => fixture_path)).size, 8);
+
+    const grant = grantFor(COMMERCE_MANIFEST);
+    assert.ok(grant, "Commerce fixture grant must verify");
+    const { table, vectorsById } = grant;
+    // The verified map preserves the corpus order used by the index pointers.
+    const vectors = [...vectorsById.values()];
+    const vectorRefPrefix = `${COMMERCE_VECTORS}#/vectors/`;
+    const seenCases = new Set();
+    const refusalVectorId = "booking-resale/accept-A-before-commit";
+    const refusalCases = [];
+    let unknownCount = 0;
+
+    for (const { fixture_path, source_vector_id, source_vector_ref, cases } of index.fixtures) {
+      const position = source_vector_ref.slice(vectorRefPrefix.length);
+      assert.ok(source_vector_ref.startsWith(vectorRefPrefix) && /^(0|[1-9]\d*)$/.test(position), source_vector_ref);
+      const vector = vectors[position];
+      assert.equal(vector?.id, source_vector_id, source_vector_ref);
+      const tuples = table.tuples.filter((tuple) => tuple.action === vector.envelope.action &&
+        tuple.contexts.some(({ context, steps }) => context === vector.context &&
+          steps[vector.commerce_step]?.includes(vector.id)));
+      assert.equal(tuples.length, 1, `${source_vector_id} must have one listed tuple`);
+      const command = commandRequestFields(table.producer, tuples[0], vector, vector.commerce_step);
+      const fixture = JSON.parse(read(fixture_path));
+
+      for (const { case_id, caller_observation_ref } of cases) {
+        const id = `${source_vector_id} ${case_id}`;
+        const caseKey = `${fixture_path}#${case_id}`;
+        assert.ok(!seenCases.has(caseKey), `${id} is indexed twice`);
+        seenCases.add(caseKey);
+
+        const caseIndex = fixture.cases.findIndex(({ id: fixtureId }) => fixtureId === case_id);
+        assert.notEqual(caseIndex, -1, `${id} missing from ${fixture_path}`);
+        const fixtureCase = fixture.cases[caseIndex];
+        const hasCaseObservation = Object.hasOwn(fixtureCase, "expected_caller");
+        const callerPointer = hasCaseObservation ? `/cases/${caseIndex}/expected_caller` : "/expected_caller";
+        assert.equal(caller_observation_ref, `${fixture_path}#${callerPointer}`, `${id} caller pointer`);
+        const caller = (hasCaseObservation ? fixtureCase : fixture).expected_caller;
+        assert.ok(caller, `${id} missing caller observation`);
+        assert.equal(caller.operationId, command.envelope.operationId, id);
+        assert.equal(caller.idempotency_key, command.envelope.body.idempotency_key, id);
+
+        const delivered = case_id === "refusal-delivered";
+        if (delivered || case_id === "refusal-withheld-after-dispatch") {
+          assert.equal(source_vector_id, refusalVectorId, id);
+          refusalCases.push(case_id);
+        }
+
+        const outcome = { kind: caller.outcome };
+        let expect = hold;
+        if (delivered) {
+          assert.equal(caller.outcome, "business-reject", id);
+          assert.equal(caller.rejection_code, "SETTLEMENT_NOT_COMMITTED", id);
+          outcome.code = caller.rejection_code;
+          expect = { status: SEMANTIC, vector_id: refusalVectorId };
+        } else {
+          assert.equal(caller.outcome, "UNKNOWN", id);
+          assert.ok(!Object.hasOwn(caller, "rejection_code"), `${id} exposes a refusal code`);
+          unknownCount += 1;
+        }
+
+        const request = { ...command, outcome };
+        check({ id: `${id}\n${JSON.stringify({ request, caller })}`, request, expect }, COMMERCE_MANIFEST_SHA256);
+      }
+    }
+
+    assert.equal(seenCases.size, 17);
+    assert.equal(unknownCount, 16);
+    assert.deepEqual(refusalCases.sort(), ["refusal-delivered", "refusal-withheld-after-dispatch"]);
+  });
+  await t.test("holds every catalogue action outside the Commerce qualification table", () => {
+    check(listed, COMMERCE_MANIFEST_SHA256);
+    const grant = grantFor(COMMERCE_MANIFEST);
+    assert.ok(grant, "Commerce fixture grant must verify");
+    const { table, schemaDigests } = grant;
+
+    const catalogue = new Set(COMMANDS);
+    assert.equal(COMMANDS.length, 84);
+    assert.equal(catalogue.size, COMMANDS.length);
+    assert.deepEqual(Object.keys(schemaDigests).sort(), [...COMMANDS].sort());
+
+    const listedActions = new Set(table.tuples.map(({ action }) => action));
+    assert.equal(table.tuples.length, 28);
+    assert.equal(listedActions.size, table.tuples.length);
+    for (const { action, level } of table.tuples) {
+      assert.ok(catalogue.has(action), action);
+      assert.equal(level, SEMANTIC, action);
+    }
+
+    const { commands: fsmCommands } = JSON.parse(read(OPENAPI_PIN.fsmSourcePath));
+    const ungrantedActions = COMMANDS.filter((action) => !listedActions.has(action));
+    const checkedActions = [];
+    for (const action of ungrantedActions) {
+      const schema = COMMAND_SCHEMAS[action];
+      const digest = sha256Hex(canonicalBytes(schema));
+      assert.equal(digest, schemaDigests[action], action);
+      const body = minimalBody(schema);
+      validateSchema(body, schema, action);
+
+      // Core actions offer the listed Commerce tuple; FSM actions use their published metadata.
+      const { machine, op, subject_field } = fsmCommands[action] ?? listed.request;
+      const request = {
+        ...listed.request,
+        action,
+        machine,
+        op,
+        subject_field,
+        body_schema_sha256: digest,
+        envelope: { ...listed.request.envelope, action, body },
+      };
+      check({ id: action, request, expect: hold }, COMMERCE_MANIFEST_SHA256);
+      checkedActions.push(action);
+    }
+    assert.equal(checkedActions.length, 56);
+    assert.deepEqual([...listedActions, ...checkedActions].sort(), [...COMMANDS].sort());
+  });
+  await t.test("preserves the unbound reads and proposed recovery lookup", () => {
+    const { readQueries } = JSON.parse(read(COMMERCE_BINDING_INDEX));
+    assert.equal(reads.length, 13);
+    assert.deepEqual(reads.map(({ request }) => request.name).sort(),
+      readQueries.items.map(({ name }) => name).sort());
+    assert.ok(readQueries.items.every(({ status }) => status === "NOT_BOUND"));
+
+    assert.equal(recovery.length, 1);
+    assert.deepEqual(Object.keys(recovery[0].request).sort(),
+      ["kind", "operation_id", "source_cut", "subject", "trace_id"]);
+    for (const item of unboundCases) {
+      assert.deepEqual({ ...item.expect }, notBound, item.id);
+      check(item, COMMERCE_MANIFEST_SHA256);
+    }
+  });
+
+  await t.test("checks table-pinned replay files in detached copies", async (t) => {
+    const manifest = parseStrict(read(COMMERCE_MANIFEST));
+    const table = parseStrict(read(COMMERCE_TABLE));
+    const pinPaths = Object.values(table.pins).flat().map(({ path }) => path);
+    const host = "integration_gate/fsm_host.py";
+    const settlement = "reference/settlement_f01_f03/settlement_fsm.py";
+    assert.ok(pinPaths.includes(host), host);
+    assert.ok(pinPaths.includes(settlement), settlement);
+    const files = [...new Set([
+      ...verifierFixtureFiles(COMMERCE_MANIFEST, COMMERCE_PROFILE, manifest),
+      ...pinPaths,
+    ])];
+    const pristine = expectedDetachedFixtureTree(files);
+
+    for (const { name, omittedPath, changedPath, expect } of [
+      { name: "intact file set", expect: listed.expect },
+      { name: "missing FSM host", omittedPath: host, expect: hold },
+      { name: "one changed settlement FSM byte", changedPath: settlement, expect: hold },
+    ]) {
+      await t.test(name, () => {
+        const root = mkdtempSync(join(realpathSync(tmpdir()), "kix-sdk-grant-"));
+        try {
+          const options = detachedVerifierOptions(root);
+          copyFixtures(root, files.filter((path) => path !== omittedPath));
+          const expected = new Map(pristine);
+          if (omittedPath) expected.delete(omittedPath);
+          if (changedPath) {
+            const path = resolve(root, changedPath);
+            const original = pristine.get(changedPath);
+            const changed = Buffer.from(original);
+            assert.ok(changed.length > 0, changedPath);
+            changed[0] ^= 1;
+            writeFileSync(path, changed);
+            const actual = readFileSync(path);
+            assert.equal(actual.length, original.length, changedPath);
+            assert.equal(actual.reduce((count, byte, index) => count + Number(byte !== original[index]), 0), 1,
+              changedPath);
+            expected.set(changedPath, changed);
+          }
+
+          const before = snapshotFixtureTree(root);
+          assert.deepEqual(before, expected, "input inventory and bytes");
+          const result = runVerifierAt(root, resolve(root, COMMERCE_MANIFEST), SEMANTIC, COMMERCE_REVISION, options);
+          assert.deepEqual(readVerifierVerdict(result, 0, name), {
+            ok: true,
+            manifest_sha256: COMMERCE_MANIFEST_SHA256,
+            profile_kind: SEMANTIC,
+            profile_revision: COMMERCE_REVISION,
+          });
+
+          const { check } = commerceGrantConsumer(root, options);
+          check({ ...listed, expect }, COMMERCE_MANIFEST_SHA256);
+          for (const item of unboundCases) {
+            check({ ...item, expect: notBound }, COMMERCE_MANIFEST_SHA256);
+          }
+          assert.deepEqual(snapshotFixtureTree(root), before, "output inventory and bytes");
+        } finally {
+          rmSync(root, { recursive: true, force: true });
+        }
+      });
+    }
+  });
 });

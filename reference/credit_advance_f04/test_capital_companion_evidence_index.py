@@ -21,6 +21,17 @@ GUIDE = 'docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md'
 CONTRACT = 'docs/contracts/CREDIT_ADVANCE_F04.md'
 BASE = 'reference/credit_advance_f04/'
 FIXTURES = BASE + 'fixtures/'
+COMMERCE_RECEIPTS = 'reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json'
+COMMERCE_RECEIPTS_SHA256 = '7181761ec5533cf1a9aab450f4a7f3d32ed6c467713c8d532ceff24a89908839'
+RESALE_SDK_VECTORS = 'sdk/conformance/vectors/commerce-fixture-tuple.vectors.json'
+RESALE_JOURNEY_RECEIPTS = 'reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json'
+RESALE_JOURNEY_INPUT = 'reference/booking_resale_admission/fixtures/commerce_journey_conformance_v1.json'
+RESALE_SOURCE_PINS = (
+    (RESALE_SDK_VECTORS, 'c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22'),
+    (RESALE_JOURNEY_RECEIPTS, '6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998'),
+    (RESALE_JOURNEY_INPUT, 'f9555d84790b91eafe74c71453a2dbd301fae43566a5f0a3a47e19059151e9cc'),
+)
+SELF_CONTAINED_SHAPES = {'self_contained_refusals', 'self_contained_comparisons'}
 # Independent fixed family/path, scenario/case identity and section-count inventory.
 PACKS = (
     ('settlement_credit_boundary', 'ordered_steps', 'settlement_credit_boundary_v1.json', 'settlement_credit_boundary_vectors_v1.json',
@@ -63,6 +74,58 @@ PACKS = (
      'test_capital_predraw_terminal_vectors.py', 'CapitalPredrawTerminalVectorTests.test_complete_history_vectors',
      'Capital pre-draw rejection and cancellation companion (P1)',
      ('P1_reject_cancel_before_draw',), ((7, 13),)),
+    ('capital_later_statement', 'setup_and_history', 'capital_later_statement_v1.json', 'capital_later_statement_vectors_v1.json',
+     'test_capital_later_statement_vectors.py', 'CapitalLaterStatementVectorTests.test_complete_history_vectors',
+     'Capital later settlement statement vectors',
+     ('L1_later_statement_after_requester_refund',), ((8, 5),)),
+    ('capital_mixed_checkpoint_views', 'self_contained_comparisons',
+     'capital_mixed_checkpoint_views_vectors_v1.json', 'capital_mixed_checkpoint_views_vectors_v1.json',
+     'test_capital_mixed_checkpoint_views.py', 'CapitalMixedCheckpointViewsTests.test_checkpoint_pairs',
+     'Capital mixed-checkpoint views', ('repay_mixed', 'repay_same', 'close_mixed', 'close_same'), ()),
+    ('capital_omitted_exposure_members', 'self_contained_comparisons',
+     'capital_omitted_exposure_members_vectors_v1.json', 'capital_omitted_exposure_members_vectors_v1.json',
+     'test_capital_omitted_exposure_members.py', 'CapitalOmittedExposureMembersTests.test_membership_pairs',
+     'Capital omitted exposure members', ('e1_full', 'e1_omit_second', 'e2_full', 'e2_omit_second'), ()),
+    ('capital_payee_order_recovery', 'self_contained_comparisons',
+     'capital_payee_order_recovery_vectors_v1.json', 'capital_payee_order_recovery_vectors_v1.json',
+     'test_capital_payee_order_recovery.py', 'CapitalPayeeOrderRecoveryTests.test_order_pair',
+     'Capital payee order recovery', ('r1_fee_first', 'r1_residual_first'), ()),
+    ('capital_offsetting_claim_gaps', 'self_contained_comparisons',
+     'capital_offsetting_claim_gaps_vectors_v1.json', 'capital_offsetting_claim_gaps_vectors_v1.json',
+     'test_capital_offsetting_claim_gaps.py', 'CapitalOffsettingClaimGapsTests.test_claim_pair',
+     'Capital offsetting claim gaps', ('v4_claim_gap', 'v6_claim_gap'), ()),
+    ('capital_commerce_refund_checkpoints', 'self_contained_comparisons',
+     'capital_commerce_refund_checkpoints_vectors_v1.json', 'capital_commerce_refund_checkpoints_vectors_v1.json',
+     'test_capital_commerce_refund_checkpoints.py', 'CapitalCommerceRefundCheckpointTests.test_checkpoint_replay',
+     'Capital commerce refund checkpoints', ('commit', 'bind-refund', 'observe-mock-acceptance'), ()),
+    ('capital_overlapping_exposure_groups', 'self_contained_comparisons',
+     'capital_overlapping_exposure_groups_vectors_v1.json', 'capital_overlapping_exposure_groups_vectors_v1.json',
+     'test_capital_overlapping_exposure_groups.py', 'CapitalOverlappingExposureGroupsTests.test_overlapping_groups',
+     'Capital overlapping exposure groups', ('e3_ab', 'e3_bc', 'e3_abc', 'e3_duplicate_b'), ()),
+    ('capital_resale_distribution_checkpoints', 'self_contained_comparisons',
+     'capital_resale_distribution_checkpoints_vectors_v1.json', 'capital_resale_distribution_checkpoints_vectors_v1.json',
+     'test_capital_resale_distribution_checkpoints.py', 'CapitalResaleDistributionCheckpointTests.test_checkpoint_replay',
+     'Capital resale distribution checkpoints', ('settle-resale-commit', 'accept-A', 'distribute-resale'), ()),
+    ('capital_group_sum_boundary', 'self_contained_comparisons',
+     'capital_group_sum_boundary_vectors_v1.json', 'capital_group_sum_boundary_vectors_v1.json',
+     'test_capital_group_sum_boundary.py', 'CapitalGroupSumBoundaryTests.test_group_sum_boundary',
+     'Capital group sum boundary', ('at_total', 'one_below', 'single_view_overflow'), ()),
+    ('capital_draw_refusal_after_restore', 'self_contained_comparisons',
+     'capital_draw_refusal_after_restore_vectors_v1.json', 'capital_draw_refusal_after_restore_vectors_v1.json',
+     'test_capital_draw_refusal_after_restore.py', 'CapitalDrawRefusalAfterRestoreTests.test_draw_refusal_pair',
+     'Capital draw refusal after restore', ('original', 'restored'), ()),
+    ('capital_equal_gross_claim_binding', 'self_contained_comparisons',
+     'capital_equal_gross_claim_binding_vectors_v1.json', 'capital_equal_gross_claim_binding_vectors_v1.json',
+     'test_capital_equal_gross_claim_binding.py', 'CapitalEqualGrossClaimBindingTests.test_equal_gross_claim_binding',
+     'Capital equal-gross claim binding', ('matching', 'crossed'), ()),
+    ('capital_refund_versus_repayment', 'self_contained_comparisons',
+     'capital_refund_versus_repayment_vectors_v1.json', 'capital_refund_versus_repayment_vectors_v1.json',
+     'test_capital_refund_versus_repayment.py', 'CapitalRefundVersusRepaymentTests.test_refund_versus_repayment',
+     'Capital refund versus repayment', ('mock_acceptance', 'repayment_note'), ()),
+    ('capital_statement_component_identity', 'self_contained_comparisons',
+     'capital_statement_component_identity_vectors_v1.json', 'capital_statement_component_identity_vectors_v1.json',
+     'test_capital_statement_component_identity.py', 'CapitalStatementComponentIdentityTests.test_statement_component_identity',
+     'Capital statement component identity', ('fee', 'held'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -79,7 +142,7 @@ NON_CLAIMS = [
     'Product limits remain UNDETERMINED—Astra; legal responsibility UNDETERMINED—User/legal.',
     'Frozen faces are not revalued by later settlement refunds, distribution or acceptance.',
     'Refund obligations, recovery, PG adjustment and credit repayment remain separate; no netting is defined.',
-    'Shared exposure counts capacity once per distinct claim, requires same-point compatible views and an explicit synthetic limit.',
+    'Shared exposure counts capacity once per distinct claim, checks same-claim binding agreement and requires an explicit synthetic limit. Callers select the checkpoints.',
     'Within tolerance or limit is not acceptance, reconciliation completion or exposure authority.',
     'Observations and refund components remain NOT_BOUND; repair=NONE; all execution flags remain false.',
     'Snapshots and restore checks are supplemental observations, not published reads or new input commands.',
@@ -101,6 +164,66 @@ LIMITATIONS = {
         'In this synthetic, process-local history, rejection and cancellation precede the first credit note. '
         'Replays preserve historical outcomes. The separate full-capacity draw is mock evidence. '
         'Pre-draw shared-exposure grouping remains contract-undefined. A null shared_exposure records that the observer was skipped.',
+    ],
+    'capital_later_statement': [
+        'The original statement key replays its first receipt without adding cash. '
+        'The next distribution uses only new confirmed cash in the original fixture order. '
+        'The requester refund and frozen credit remain separate. Cash delta is diagnostic and does not enter variance.',
+    ],
+    'capital_mixed_checkpoint_views': [
+        'Mixing the initial and partial-repayment checkpoints can preserve same-claim binding agreement and report stale exposure. '
+        'Mixing the initial and close checkpoints conflicts on reservation. Callers select the checkpoints.',
+    ],
+    'capital_omitted_exposure_members': [
+        'Callers supply group membership. Complete means all views in the fixture scenario. '
+        'The observer cannot certify real pool membership, and within_limit grants no exposure authority.',
+    ],
+    'capital_payee_order_recovery': [
+        'The two R1 orders are caller-supplied synthetic inputs. Product waterfall priority remains '
+        'UNDETERMINED with Astra. Recovery due records a fixture obligation. '
+        'Collection and credit repayment are outside this comparison.',
+    ],
+    'capital_offsetting_claim_gaps': [
+        'The zero sum is diagnostic arithmetic. Each claim remains outside its original synthetic '
+        'tolerance with NOT_BOUND, repair=NONE and no exposure authority. '
+        'Product thresholds remain UNDETERMINED with Astra.',
+    ],
+    'capital_commerce_refund_checkpoints': [
+        'Three receipts for one purchase share the same frozen F04 face and zero variance. '
+        'Requester refund outstanding and mock acceptance stay separate from F04 exposure and repayment. '
+        'Receipt identity determines the checkpoint. The refund component remains NOT_BOUND.',
+    ],
+    'capital_overlapping_exposure_groups': [
+        'Separate caller groups count the same defaulted advance. The distinct-member union counts '
+        'it once, and a repeated advance within a single call returns VIEW_INVALID. '
+        'The 90,000 KRW limit is fixture-only. Product limits remain UNDETERMINED with Astra.',
+    ],
+    'capital_resale_distribution_checkpoints': [
+        'Commit and distribution supply settlement obligations for two observations of one frozen F04 face. '
+        'The intervening resale receipt supplies mock ownership evidence only. '
+        'The zero tolerance is fixture-only. Both observations retain NOT_BOUND and repair=NONE.',
+    ],
+    'capital_group_sum_boundary': [
+        'The group sum can exceed the per-view ceiling. Both limits are synthetic caller inputs. '
+        'Product limits remain UNDETERMINED with Astra. Within-limit status grants no exposure authority '
+        'and the refund component remains NOT_BOUND.',
+    ],
+    'capital_draw_refusal_after_restore': [
+        'Refused calls leave no accepted journal entry. Equal journals and state digests cannot establish '
+        'whether the original received a refused call. The restored draw is an offline mock diagnostic only.',
+    ],
+    'capital_equal_gross_claim_binding': [
+        'The F04 mock draw requires the committed settlement to match the offered claim identity '
+        'even when currency and gross agree. Both settlement journals are preserved.',
+    ],
+    'capital_refund_versus_repayment': [
+        'Equal fixture amounts affect separate balances and journals. Both outcomes preserve the committed '
+        'offer face. Shared exposure uses the credit view from each branch and a caller-supplied fixture limit.',
+    ],
+    'capital_statement_component_identity': [
+        'Equal claim totals and F04 observations can come from distinct statement component splits. '
+        'Each observation identifies its own accepted settlement journal entry. '
+        'The fixture limit and tolerance grant no exposure authority.',
     ],
 }
 SUPPORTING = (
@@ -141,6 +264,17 @@ def _pin_check(pin, path, read):
     raw = read(path)
     _check(_same(pin, _pin(path, raw)), 'pin digest drift: ' + path)
     return decode_json(raw.decode('utf-8'))
+
+
+def _resale_checkpoint_sources(pins, read):
+    expected = [{'path': path, 'sha256': digest} for path, digest in RESALE_SOURCE_PINS]
+    _check(_same(pins, expected), 'resale checkpoint source pins')
+    raw_sources = {}
+    for path, digest in RESALE_SOURCE_PINS:
+        raw = read(path)
+        _check(hashlib.sha256(raw).hexdigest() == digest, 'resale checkpoint source digest drift: ' + path)
+        raw_sources[path] = raw
+    return {path: decode_json(raw.decode('utf-8')) for path, raw in raw_sources.items()}
 
 
 def _resolve(documents, ref):
@@ -186,13 +320,41 @@ def _expected_associations(spec, source, output):
     family, shape, input_name, output_name, *_rest, ids, counts = spec
     ipath, opath = FIXTURES + input_name, FIXTURES + output_name
     entries, observations = [], []
-    if shape == 'self_contained_refusals':
+    if shape in SELF_CONTAINED_SHAPES:
         _check(tuple(c['case_id'] for c in source['cases']) == ids, 'case membership/order')
         for i, case in enumerate(source['cases']):
             prefix = ipath + '#/cases/' + str(i)
-            entries.append({'case_id': case['case_id'], 'observer': case['observer'],
-                            'input_ref': prefix, 'arguments_ref': prefix + '/arguments',
-                            'keywords_ref': prefix + '/keywords', 'result_ref': prefix + '/expected_error'})
+            entry = {'case_id': case['case_id'], 'input_ref': prefix}
+            if shape == 'self_contained_refusals':
+                entry.update(observer=case['observer'], arguments_ref=prefix + '/arguments',
+                             keywords_ref=prefix + '/keywords', result_ref=prefix + '/expected_error')
+            else:
+                entry['result_ref'] = prefix + '/expected_result'
+            if family == 'capital_commerce_refund_checkpoints':
+                step = (9, 14, 15)[i]
+                ref = f'{COMMERCE_RECEIPTS}#/cases/0/steps/{step}/receipt'
+                _check(case['receipt_ref'] == ref, 'checkpoint receipt association: ' + case['case_id'])
+                entry['receipt_ref'] = ref
+            if family == 'capital_resale_distribution_checkpoints':
+                step = (23, 24, 25)[i]
+                ref = f'{RESALE_JOURNEY_RECEIPTS}#/steps/{step}/receipt'
+                _check(case['receipt_ref'] == ref, 'checkpoint receipt association: ' + case['case_id'])
+                entry['receipt_ref'] = ref
+            if family == 'capital_statement_component_identity':
+                after_ref = prefix + '/after'
+                # The L1 checkpoint has six accepted settlement entries in both branches.
+                journal_ref = after_ref + '/settlement/journal/6'
+                _check(case['journal_ref'] == journal_ref, 'statement journal association: ' + case['case_id'])
+                observations.append({'case_id': case['case_id'], 'kind': 'statement_observation',
+                                     'ref': after_ref, 'journal_ref': journal_ref})
+            entries.append(entry)
+        if family == 'capital_group_sum_boundary':
+            views = source['credit_views']
+            _check(type(views) is list and len(views) == 2, 'source credit-view membership')
+            refs = [f'{ipath}#/credit_views/{i}' for i in range(len(views))]
+            for case, expected_refs in zip(source['cases'], (refs, refs, refs[:1]), strict=True):
+                _check(_same(case['view_refs'], expected_refs), 'group sum case view association: ' + case['case_id'])
+            observations = [{'kind': 'source_credit_view', 'ref': ref} for ref in refs]
         return entries, observations
     _check(tuple(s['scenario_id'] for s in source['scenarios']) == ids, 'scenario membership/order')
     _check(tuple(s['scenario_id'] for s in output['scenarios']) == ids, 'output scenario membership/order')
@@ -264,16 +426,24 @@ def validate_index(document, read=_read):
         _check(_same(pack['limitations'], LIMITATIONS[family]), 'pack limitations claim/type')
         source = _pin_check(pack['input'], FIXTURES + input_name, read)
         output = _pin_check(pack['output'], FIXTURES + output_name, read)
-        if shape != 'self_contained_refusals':
-            _check(output['fixture_sha256'] == pack['input']['sha256'], 'output fixture association')
+        if shape in SELF_CONTAINED_SHAPES:
+            _check(_same(pack['input'], pack['output']), 'self-contained artifact association')
         else:
-            _check(_same(pack['input'], pack['output']), 'refusal self-contained association')
+            _check(output['fixture_sha256'] == pack['input']['sha256'], 'output fixture association')
         _symbol_check(pack['replay_test'], BASE + test, symbol, read)
         _guide_check(pack['guide_refs'], [{'path': GUIDE, 'heading': heading}], read)
         expected, observations = _expected_associations(spec, source, output)
         _check(_same(pack['entries'], expected), 'entry membership/association/order/type: ' + family)
         _check(_same(pack['observations'], observations), 'supplemental observation association')
         documents = {pack['input']['path']: source, pack['output']['path']: output}
+        if family == 'capital_commerce_refund_checkpoints':
+            pin = {'path': COMMERCE_RECEIPTS, 'sha256': COMMERCE_RECEIPTS_SHA256}
+            _check(_same(source['source_pins'], [pin]), 'Commerce receipt source pin')
+            raw = read(COMMERCE_RECEIPTS)
+            _check(hashlib.sha256(raw).hexdigest() == pin['sha256'], 'Commerce receipt digest drift')
+            documents[COMMERCE_RECEIPTS] = decode_json(raw.decode('utf-8'))
+        if family == 'capital_resale_distribution_checkpoints':
+            documents.update(_resale_checkpoint_sources(source['source_pins'], read))
         for entry in pack['entries']:
             for key, ref in entry.items():
                 if key.endswith('_ref'):
@@ -283,6 +453,15 @@ def validate_index(document, read=_read):
                 _check(type(result) is dict and set(result) in ({'ok'}, {'error'}), 'complete result envelope')
         for observation in observations:
             _resolve(documents, observation['ref'])
+            if 'journal_ref' in observation:
+                journal_entry = _resolve(documents, observation['journal_ref'])
+                case_id = observation['case_id']
+                fee, held = (3_000, 0) if case_id == 'fee' else (0, 3_000)
+                _check(_same(journal_entry, {
+                    'op': 'observe_statement', 'settlement_id': 'claim-1', 'idempotency_key': 'stmt-2',
+                    'body': {'movement_id': 'part-2', 'gross': 40_000, 'amount': 37_000,
+                             'fee': fee, 'held': held, 'tax': 0, 'adjustment': 0, 'adjustment_reason': None},
+                }), 'statement journal body association: ' + case_id)
         total += len(expected)
     supporting = document['supporting_evidence']
     _check(type(supporting) is list and [e.get('id') for e in supporting] == [s[0] for s in SUPPORTING],
@@ -329,15 +508,18 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         source = decode_json(_read(path).decode('utf-8'))
         mutate(source)
         raw = canonical(source)
-        pack[side] = _pin(path, raw)
+        for pin_side in ('input', 'output'):
+            if pack[pin_side]['path'] == path:
+                pack[pin_side] = _pin(path, raw)
         with self.assertRaisesRegex(AssertionError, diagnostic):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 438)
+        self.assertEqual(validate_index(self.document), 484)
+        self.assertEqual(len(self.document['packs']), 23)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20])
-        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 122)
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2, 2, 2])
+        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 132)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
     def test_membership_controls(self):
@@ -366,7 +548,7 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
                             else:
                                 entries[position], entries[position + 1] = entries[position + 1], entries[position]
                         self._reject(mutate, 'entry membership')
-            if original['shape'] != 'self_contained_refusals':
+            if original['shape'] not in SELF_CONTAINED_SHAPES:
                 def remove_scenario(d):
                     entries = d['packs'][i]['entries']
                     sid = entries[0]['scenario_id']
@@ -448,6 +630,78 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             with self.subTest(field=field):
                 self._reject(lambda d: swap(d, field), 'entry membership/association')
 
+    def test_commerce_refund_checkpoints_crossed_references(self):
+        index = next(i for i, pack in enumerate(self.document['packs'])
+                     if pack['id'] == 'capital_commerce_refund_checkpoints')
+
+        def swap(rows, field):
+            bind, acceptance = rows[1:]
+            bind[field], acceptance[field] = acceptance[field], bind[field]
+
+        for field in ('input_ref', 'result_ref', 'receipt_ref'):
+            with self.subTest(field=field):
+                self._reject(lambda d: swap(d['packs'][index]['entries'], field),
+                             'entry membership/association/order/type: capital_commerce_refund_checkpoints')
+        self._detached(index, 'input', lambda d: swap(d['cases'], 'receipt_ref'),
+                       'checkpoint receipt association: bind-refund')
+        with self.assertRaisesRegex(AssertionError, 'Commerce receipt digest drift'):
+            validate_index(self.document, lambda p: _read(p) + b'\n' if p == COMMERCE_RECEIPTS else _read(p))
+
+    def test_resale_distribution_crossed_receipt_references(self):
+        family = 'capital_resale_distribution_checkpoints'
+        index = next(i for i, pack in enumerate(self.document['packs']) if pack['id'] == family)
+
+        def swap(rows):
+            commit, _, distribution = rows
+            commit['receipt_ref'], distribution['receipt_ref'] = distribution['receipt_ref'], commit['receipt_ref']
+
+        self._reject(lambda d: swap(d['packs'][index]['entries']),
+                     'entry membership/association/order/type: ' + family)
+        self._detached(index, 'input', lambda d: swap(d['cases']),
+                       'checkpoint receipt association: settle-resale-commit')
+
+    def test_mixed_checkpoint_crossed_references(self):
+        index = next(i for i, pack in enumerate(self.document['packs'])
+                     if pack['id'] == 'capital_mixed_checkpoint_views')
+
+        def swap(document, case_id, field):
+            entries = {entry['case_id']: entry for entry in document['packs'][index]['entries']}
+            mixed, same = entries[case_id + '_mixed'], entries[case_id + '_same']
+            mixed[field], same[field] = same[field], mixed[field]
+
+        for case_id in ('repay', 'close'):
+            for field in ('input_ref', 'result_ref'):
+                with self.subTest(case=case_id, field=field):
+                    self._reject(lambda d: swap(d, case_id, field), 'entry membership/association')
+        self._detached(index, 'input', lambda d: d['cases'].reverse(), 'case membership/order')
+        self._detached(index, 'input', lambda d: d['cases'][0].__setitem__('expected_result', {}),
+                       'complete result envelope')
+
+    def test_omitted_exposure_members_crossed_references(self):
+        def swap(document, prefix, field):
+            pack = next(p for p in document['packs'] if p['id'] == 'capital_omitted_exposure_members')
+            entries = {entry['case_id']: entry for entry in pack['entries']}
+            full, subset = entries[prefix + '_full'], entries[prefix + '_omit_second']
+            full[field], subset[field] = subset[field], full[field]
+
+        for prefix in ('e1', 'e2'):
+            for field in ('input_ref', 'result_ref'):
+                with self.subTest(pair=prefix, field=field):
+                    self._reject(lambda d: swap(d, prefix, field),
+                                 'entry membership/association/order/type: capital_omitted_exposure_members')
+
+    def test_overlapping_exposure_groups_crossed_references(self):
+        family = 'capital_overlapping_exposure_groups'
+
+        def swap(document, field):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            ab, bc = pack['entries'][:2]
+            ab[field], bc[field] = bc[field], ab[field]
+
+        for field in ('input_ref', 'result_ref'):
+            with self.subTest(field=field):
+                self._reject(lambda d: swap(d, field), f'entry membership/association/order/type: {family}')
+
     def test_reconcile_freshness_crossed_references(self):
         def swap(document, target, collection, field):
             pack = next(p for p in document['packs'] if p['id'] == 'capital_reconcile_freshness')
@@ -479,6 +733,140 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             ):
                 with self.subTest(step_id=step_id, field=field):
                     self._reject(lambda d: swap(d, step_id, collection, field), diagnostic)
+
+    def test_later_statement_crossed_references(self):
+        # Both snapshots and both call argument sets are equal. Position still
+        # distinguishes the first accepted observation from its replay.
+        def swap(document, collection, field):
+            pack = next(p for p in document['packs'] if p['id'] == 'capital_later_statement')
+            rows = {row.get('step_id'): row for row in pack[collection]}
+            first, replayed = rows['statement-later'], rows['statement-replay']
+            first[field], replayed[field] = replayed[field], first[field]
+
+        for collection, field, diagnostic in (
+            ('entries', 'input_ref', 'entry membership/association'),
+            ('entries', 'result_ref', 'entry membership/association'),
+            ('observations', 'ref', 'supplemental observation association'),
+        ):
+            with self.subTest(field=field):
+                self._reject(lambda d: swap(d, collection, field), diagnostic)
+
+    def test_payee_order_crossed_result_references(self):
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == 'capital_payee_order_recovery')
+            fee_first, residual_first = pack['entries']
+            fee_first['result_ref'], residual_first['result_ref'] = (
+                residual_first['result_ref'], fee_first['result_ref'])
+
+        self._reject(swap_results, 'entry membership/association/order/type: capital_payee_order_recovery')
+
+    def test_statement_component_identity_swapped_journal_refs(self):
+        family = 'capital_statement_component_identity'
+        i = next(i for i, pack in enumerate(self.document['packs']) if pack['id'] == family)
+        path = self.document['packs'][i]['input']['path']
+        documents = {path: decode_json(_read(path).decode('utf-8'))}
+
+        def swap_refs(rows):
+            fee, held = rows
+            fee['journal_ref'], held['journal_ref'] = held['journal_ref'], fee['journal_ref']
+
+        def swap_index_refs(document):
+            observations = document['packs'][i]['observations']
+            swap_refs(observations)
+            for observation, held in zip(observations, (3_000, 0), strict=True):
+                self.assertEqual(_resolve(documents, observation['journal_ref'])['body']['held'], held)
+
+        def swap_bodies(source):
+            fee, held = (case['after']['settlement']['journal'][6] for case in source['cases'])
+            fee['body'], held['body'] = held['body'], fee['body']
+
+        self._reject(swap_index_refs, 'supplemental observation association')
+        self._detached(i, 'input', lambda source: swap_refs(source['cases']), 'statement journal association')
+        self._detached(i, 'output', swap_bodies, 'statement journal body association')
+
+    def test_offsetting_claim_gaps_crossed_result_references(self):
+        family = 'capital_offsetting_claim_gaps'
+
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            path = pack['output']['path']
+            documents = {path: decode_json(_read(path).decode('utf-8'))}
+            v4, v6 = pack['entries']
+            v4['result_ref'], v6['result_ref'] = v6['result_ref'], v4['result_ref']
+            self.assertEqual(_resolve(documents, v4['result_ref'])['ok']['claim_id'], 'claim-v2')
+            self.assertEqual(_resolve(documents, v6['result_ref'])['ok']['claim_id'], 'claim-v4')
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
+
+    def test_group_sum_boundary_crossed_references(self):
+        family = 'capital_group_sum_boundary'
+        i = next(i for i, pack in enumerate(self.document['packs']) if pack['id'] == family)
+        path = self.document['packs'][i]['input']['path']
+        documents = {path: decode_json(_read(path).decode('utf-8'))}
+
+        def swap_refs(document, section, key):
+            first, second = document['packs'][i][section][:2]
+            first[key], second[key] = second[key], first[key]
+            return _resolve(documents, first[key]), _resolve(documents, second[key])
+
+        def swap_results(document):
+            first, second = swap_refs(document, 'entries', 'result_ref')
+            self.assertIs(first['ok']['within_limit'], False)
+            self.assertIs(second['ok']['within_limit'], True)
+
+        def swap_observations(document):
+            first, second = swap_refs(document, 'observations', 'ref')
+            self.assertEqual([first['amount'], second['amount']], [1, 1_000_000_000_000])
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
+        self._reject(swap_observations, 'supplemental observation association')
+        self._detached(i, 'input', lambda pack: pack['cases'][0]['view_refs'].reverse(),
+                       'group sum case view association: at_total')
+
+    def test_draw_refusal_after_restore_crossed_result_references(self):
+        family = 'capital_draw_refusal_after_restore'
+
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            path = pack['output']['path']
+            documents = {path: decode_json(_read(path).decode('utf-8'))}
+            original, restored = pack['entries']
+            original['result_ref'], restored['result_ref'] = restored['result_ref'], original['result_ref']
+            self.assertEqual(_resolve(documents, original['result_ref'])['ok']['applied'], 'draw')
+            self.assertEqual(_resolve(documents, restored['result_ref'])['error']['code'],
+                             'SETTLEMENT_NOT_COMMITTED')
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
+
+    def test_equal_gross_claim_binding_crossed_result_references(self):
+        family = 'capital_equal_gross_claim_binding'
+
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            path = pack['output']['path']
+            documents = {path: decode_json(_read(path).decode('utf-8'))}
+            matching, crossed = pack['entries']
+            matching['result_ref'], crossed['result_ref'] = crossed['result_ref'], matching['result_ref']
+            self.assertEqual(_resolve(documents, matching['result_ref'])['error']['code'],
+                             'SETTLEMENT_BINDING_CONFLICT')
+            self.assertEqual(_resolve(documents, crossed['result_ref'])['ok']['applied'], 'draw')
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
+
+    def test_refund_versus_repayment_crossed_result_references(self):
+        family = 'capital_refund_versus_repayment'
+
+        def swap_results(document):
+            pack = next(p for p in document['packs'] if p['id'] == family)
+            path = pack['output']['path']
+            documents = {path: decode_json(_read(path).decode('utf-8'))}
+            acceptance, repayment = pack['entries']
+            acceptance['result_ref'], repayment['result_ref'] = repayment['result_ref'], acceptance['result_ref']
+            self.assertEqual(_resolve(documents, acceptance['result_ref'])['ok']['applied'], 'repay')
+            self.assertEqual(_resolve(documents, repayment['result_ref'])['ok']['applied'],
+                             'observe_mock_cancel_acceptance')
+
+        self._reject(swap_results, 'entry membership/association/order/type: ' + family)
 
     def test_pin_controls(self):
         for i in range(len(PACKS)):

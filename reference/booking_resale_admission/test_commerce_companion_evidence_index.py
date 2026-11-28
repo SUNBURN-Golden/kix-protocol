@@ -19,6 +19,13 @@ import test_commerce_resale_expiry_vectors as expiry
 import test_commerce_admission_cancellation_vectors as cancellation
 import test_commerce_hold_release_vectors as hold_release
 import test_commerce_linked_refund_vectors as linked_refund
+import test_commerce_late_payment_after_cancel_vectors as late_payment
+import test_commerce_payment_ref_scope_vectors as payment_ref_scope
+import test_commerce_resale_buyer_release_vectors as resale_buyer_release
+import test_commerce_admission_replay_after_resale_vectors as admission_replay
+import test_commerce_replaced_admission_binding_vectors as replaced_admission
+import test_commerce_admission_journal_after_transfer_vectors as admission_journal
+import test_commerce_cross_order_issuance_vectors as cross_order_issuance
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -38,8 +45,22 @@ PACKS = (
     ('admission_cancellation', cancellation, 'CommerceAdmissionCancellationVectorTests', 'test_complete_output_bytes_and_references', 26),
     ('hold_release', hold_release, 'CommerceHoldReleaseVectorTests', 'test_complete_output_bytes_and_references', 30),
     ('linked_refund', linked_refund, 'CommerceLinkedRefundVectorTests', 'test_complete_output_bytes_and_references', 18),
+    ('late_payment_after_cancel', late_payment, 'CommerceLatePaymentAfterCancelVectorTests',
+     'test_complete_output_bytes_and_references', 16),
+    ('payment_ref_scope', payment_ref_scope, 'CommercePaymentRefScopeVectorTests',
+     'test_complete_output_bytes_and_references', 16),
+    ('resale_buyer_release', resale_buyer_release, 'CommerceResaleBuyerReleaseVectorTests',
+     'test_complete_output_bytes_and_references', 16),
+    ('admission_replay_after_resale', admission_replay, 'CommerceAdmissionReplayAfterResaleVectorTests',
+     'test_complete_output_bytes_and_references', 18),
+    ('replaced_admission_binding', replaced_admission, 'CommerceReplacedAdmissionBindingVectorTests',
+     'test_complete_output_bytes_and_references', 15),
+    ('admission_journal_after_transfer', admission_journal, 'CommerceAdmissionJournalAfterTransferVectorTests',
+     'test_complete_output_bytes_and_references', 2),
+    ('cross_order_issuance', cross_order_issuance, 'CommerceCrossOrderIssuanceVectorTests',
+     'test_complete_output_bytes_and_references', 2),
 )
-TOTAL_ENTRIES = 341
+TOTAL_ENTRIES = 426
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -74,6 +95,34 @@ LIMITATIONS = {
     'admission_cancellation': ['Synthetic cancellation/adoption ordering preserves issued credentials; rejected-key retention is process-local and legal effects remain UNDETERMINED—User/legal.'],
     'hold_release': ['Synthetic expired HELD reservations retain their slot until explicit release; historical replay preserves current reuse and rejected-key retention is process-local.'],
     'linked_refund': ['Partial mock cancellation acceptance adjusts the linked settlement while preserving cash and the issued right. Compensation policy is UNDETERMINED with Astra and JunTae. Legal refund liability is UNDETERMINED with JunTae and legal counsel.'],
+    'late_payment_after_cancel': [
+        'The refusals apply to the synthetic reservation command. Actual provider facts remain subject to STATE_LIFECYCLE.md §3.',
+        'Compensation is UNDETERMINED with Astra and JunTae. Refund liability and actual late-fact custody are outside this history.',
+    ],
+    'payment_ref_scope': [
+        'Payment reference scope is observed across two shows in one in-process mock host. Cross-channel exclusivity, provider identity and funds finality are outside this evidence.',
+        'Rejected-key retention is process-local. Product TTLs, fees and compensation remain UNDETERMINED with Astra and JunTae, and provider and legal terms remain with their existing owners.',
+    ],
+    'resale_buyer_release': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The resale_release_hold binding is BOOTSTRAP_SCHEMA_BOUND.',
+        'The release replay preserves its first LISTED receipt while the current listing retains the fresh BUY_HELD hold. Payment observation and transfer are separate mock effects.',
+    ],
+    'admission_replay_after_resale': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The replay is a first receipt and gives no current admission authority.',
+        'The fresh version-1 consume returns STALE_VERSION. Current ownership and accepted journals are test-harness evidence from one in-process host.',
+    ],
+    'replaced_admission_binding': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The gate and request checks use one replacement authorization and synthetic time.',
+        'Detached diagnostics describe one in-process host. Product TTLs, fees and compensation remain UNDETERMINED with Astra and the User, and legal and provider terms retain their existing owners.',
+    ],
+    'admission_journal_after_transfer': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Both entries index published checkpoint receipts with separate local diagnostics.',
+        'A journal match records historical replay equality only. The explicit transfer makes both diagnostics return STALE_VERSION with zero new consumptions.',
+    ],
+    'cross_order_issuance': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Each branch replays the same pinned payment-2 checkpoint in a fresh in-process host.',
+        'The receipt and refusal describe local issuance binding. Both preserve the transferred resale right and record zero admission consumption.',
+    ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
               'outcome_kind', 'binding_ref', 'binding_status'}
@@ -313,6 +362,119 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
                 target[field] = entries['bind-refund'][field]
             with self.subTest(field=field):
                 self._reject(cross, field + ' association')
+
+    def test_late_payment_crossed_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'late_payment_after_cancel')
+        entries = self.document['packs'][p]['entries']
+        original = next(i for i, entry in enumerate(entries) if entry['step_id'] == 'late-payment-a')
+        for step_id in ('replay-late-payment-a', 'payment-b'):
+            other = next(entry for entry in entries if entry['step_id'] == step_id)
+            self.assertEqual(other['action'], entries[original]['action'])
+            for field in ('input_ref', 'outcome_ref'):
+                with self.subTest(step=step_id, field=field):
+                    self._reject(
+                        lambda d: d['packs'][p]['entries'][original].update({field: other[field]}),
+                        field + ' association',
+                    )
+
+    def test_payment_ref_scope_crossed_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'payment_ref_scope')
+        for field in ('input_ref', 'outcome_ref'):
+            def swap(d):
+                entries = {entry['step_id']: entry for entry in d['packs'][p]['entries']}
+                refused, recorded = entries['reuse-primary'], entries['resale-payment']
+                self.assertEqual(refused['action'], recorded['action'])
+                refused[field], recorded[field] = recorded[field], refused[field]
+
+            with self.subTest(field=field):
+                self._reject(swap, field + ' association')
+
+    def test_cross_order_issuance_swapped_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'cross_order_issuance')
+        issued, refused = self.document['packs'][p]['entries']
+        self.assertEqual(issued['action'], refused['action'])
+        self.assertEqual(issued['step_id'], refused['step_id'])
+        self.assertEqual((issued['outcome_kind'], refused['outcome_kind']), ('receipt', 'rejection_code'))
+        for field in ('outcome_ref', 'input_ref'):
+            def swap(document):
+                left, right = document['packs'][p]['entries']
+                left[field], right[field] = right[field], left[field]
+
+            with self.subTest(field=field):
+                self._reject(swap, field + ' association')
+
+    def test_resale_buyer_release_crossed_outcome_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'resale_buyer_release')
+        entries = {entry['step_id']: entry for entry in self.document['packs'][p]['entries']}
+        for step_id in ('release-wrong-buyer', 'release-hold', 'replay-release-hold'):
+            with self.subTest(step=step_id):
+                self.assertEqual(entries[step_id]['binding_ref'], BINDING + '#/commands/items/65')
+                self.assertEqual(entries[step_id]['binding_status'], 'BOOTSTRAP_SCHEMA_BOUND')
+
+        def swap(document):
+            entries = {entry['step_id']: entry for entry in document['packs'][p]['entries']}
+            release, replay = entries['release-hold'], entries['replay-release-hold']
+            self.assertEqual(release['action'], replay['action'])
+            inputs = resale_buyer_release.FIXTURE
+            documents = {inputs: journey._decode(_read(inputs))}
+            self.assertTrue(_same(_resolve(documents, release['input_ref']),
+                                  _resolve(documents, replay['input_ref'])))
+            release['outcome_ref'], replay['outcome_ref'] = replay['outcome_ref'], release['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
+
+    def test_admission_replay_crossed_outcome_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'admission_replay_after_resale')
+
+        def swap(document):
+            entries = {entry['step_id']: entry for entry in document['packs'][p]['entries']}
+            original, replay = entries['authorize'], entries['replay-authorize']
+            self.assertEqual(original['action'], replay['action'])
+            inputs = admission_replay.FIXTURE
+            documents = {inputs: journey._decode(_read(inputs))}
+            self.assertTrue(_same(_resolve(documents, original['input_ref']),
+                                  _resolve(documents, replay['input_ref'])))
+            original['outcome_ref'], replay['outcome_ref'] = replay['outcome_ref'], original['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
+
+    def test_replaced_admission_binding_crossed_outcome_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'replaced_admission_binding')
+        for entry in self.document['packs'][p]['entries'][12:]:
+            with self.subTest(step=entry['step_id']):
+                self.assertEqual(entry['binding_ref'], BINDING + '#/commands/items/74')
+                self.assertEqual(entry['binding_status'], 'MOCK_EVIDENCE')
+
+        def swap(document):
+            entries = {entry['step_id']: entry for entry in document['packs'][p]['entries']}
+            old_gate, old_request = entries['consume-old-gate'], entries['consume-old-request']
+            old_gate['outcome_ref'], old_request['outcome_ref'] = old_request['outcome_ref'], old_gate['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
+
+    def test_admission_journal_checkpoint_associations(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'admission_journal_after_transfer')
+        path = admission_journal.GOLDEN.relative_to(ROOT).as_posix()
+        entries = self.document['packs'][p]['entries']
+        for index, (case_id, step_id, action, binding_index) in enumerate((
+            ('matching-ownership', 'resale-expiry-clock', 'resale_set_clock', 61),
+            ('transferred-ownership', 'transfer', 'resale_accept_resale', 69),
+        )):
+            with self.subTest(case=case_id):
+                pointer = f'#/cases/{index}/steps/0'
+                self.assertEqual(entries[index], {
+                    'case_id': case_id, 'step_id': step_id, 'action': action,
+                    'input_ref': admission_journal.FIXTURE + pointer + '/body',
+                    'outcome_ref': path + pointer, 'outcome_kind': 'receipt',
+                    'binding_ref': BINDING + f'#/commands/items/{binding_index}',
+                    'binding_status': 'MOCK_EVIDENCE',
+                })
+
+        def swap(document):
+            matching, transferred = document['packs'][p]['entries']
+            matching['outcome_ref'], transferred['outcome_ref'] = transferred['outcome_ref'], matching['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
 
     def test_digest_and_reference_controls(self):
         for p in range(len(PACKS)):

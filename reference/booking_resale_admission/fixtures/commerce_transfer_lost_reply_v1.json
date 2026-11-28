@@ -1,0 +1,84 @@
+{
+  "record_schema_version": "kix-commerce-transfer-lost-reply/1",
+  "normative": false,
+  "source_vector": {
+    "id": "resale-market/market-accept",
+    "path": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
+    "sha256": "c9fbeee6a04da371dd054a325c9435a401b9694a1619ac9939de38f257495e22",
+    "gitBlob": "0095e53801921e87c5417dd86920a625c2fede78"
+  },
+  "source_market_receipts": {
+    "path": "reference/booking_resale_admission/fixtures/commerce_market_full_receipts_v1.json",
+    "sha256": "1dcb767f71d8aeb4d06009c007702ac2e976a420159ea4ffe25d328a15239ff6",
+    "gitBlob": "8c36da8f304d22ade9616534a69de34843e6a77b"
+  },
+  "recovery_lookup": "NOT_BOUND",
+  "expected_caller": {
+    "operationId": "op-resale-market-market-accept",
+    "idempotency_key": "key-market-accept",
+    "receipt": null,
+    "outcome": "UNKNOWN",
+    "attempts": 1,
+    "follow_up_calls": 0
+  },
+  "cases": [
+    {
+      "id": "loss-before-dispatch",
+      "fault_point": "before_dispatch",
+      "producer_evidence": {
+        "dispatches": 0,
+        "hidden_receipt_id": null,
+        "listing": {
+          "listing_id": "list-1",
+          "phase": "PAYMENT_NOTED",
+          "payment_ref": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+          "ownership_transferred": false
+        },
+        "right": {
+          "right_id": "issue-1",
+          "holder_role": "buyer-1",
+          "version": 1
+        },
+        "journal_delta": {
+          "admission": 0,
+          "reservation": 0,
+          "resale": 0,
+          "settlement": 0,
+          "credit": 0
+        },
+        "appended_journal_entries": {}
+      }
+    },
+    {
+      "id": "loss-after-dispatch",
+      "fault_point": "after_dispatch",
+      "producer_evidence": {
+        "dispatches": 1,
+        "hidden_receipt_id": "resale-market/market-accept",
+        "listing": {
+          "listing_id": "list-1",
+          "phase": "TRANSFERRED",
+          "payment_ref": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+          "ownership_transferred": true
+        },
+        "right": {
+          "right_id": "issue-1",
+          "holder_role": "buyer-2",
+          "version": 2
+        },
+        "journal_delta": {
+          "admission": 0,
+          "reservation": 0,
+          "resale": 1,
+          "settlement": 0,
+          "credit": 0
+        },
+        "appended_journal_entries": {
+          "resale": [
+            {"op": "accept_resale", "subject_id": "transfer-1", "idempotency_key": "key-market-accept"}
+          ]
+        }
+      }
+    }
+  ]
+}

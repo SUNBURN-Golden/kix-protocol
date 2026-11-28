@@ -1629,3 +1629,482 @@ Product tolerance and netting remain **UNDETERMINED — Astra**. Legal liability
 remains **UNDETERMINED — JunTae and legal counsel**. The history is
 source-informed, process-local Class B evidence. External `kix-capital`
 acceptance remains **UNVERIFIED**. [Settlement contract](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md) · [F04 contract](../contracts/CREDIT_ADVANCE_F04.md) · [Replay and builder evidence](../../validation/2026-11-20-plan-capital-reconcile-freshness-vectors/README.md)
+
+## Capital later settlement statement vectors
+
+`capital-later-statement/1` captures `L1_later_statement_after_requester_refund`
+as one synthetic, source-informed F01–F04 history. The input contains eight
+setup calls, five history calls and independent checkpoint arithmetic. The
+output preserves each complete receipt envelope and six snapshots with public
+views, both journals, canonical states, state digests and both observers.
+[Inputs](../../reference/credit_advance_f04/fixtures/capital_later_statement_v1.json) · [Complete results](../../reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#l1-later-settlement-statement-after-a-requester-refund)
+
+The synthetic KRW 100,000 claim uses `PRIMARY_FEE_BPS` at 500 bps, opening
+organizer and platform obligations of 95,000 and 5,000. The first statement
+`part-1` commits 60,000 in cash. The F04 offer copies the entire committed
+claim, then the bound mock draw freezes a 100,000 open face with 60,000
+confirmed cash on face and 15,000 outstanding exposure. The caller supplies a
+fixture group limit of 100,000 and variance tolerance of zero.
+
+| Checkpoint | Receivable open | Confirmed cash | Undistributed cash | Organizer / platform outstanding | Refund outstanding | Variance | `cash_delta` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Frozen after `part-1` | 40,000 | 60,000 | 60,000 | 95,000 / 5,000 | 0 | 0 | 0 |
+| Initial distribution | 40,000 | 60,000 | 0 | 35,000 / 5,000 | 0 | −60,000 | 0 |
+| Partial refund binding | 40,000 | 60,000 | 0 | 35,000 / 5,000 | 10,000 | −60,000 | 0 |
+| Observe `part-2` | 0 | 97,000 | 37,000 | 35,000 / 5,000 | 10,000 | −60,000 | +37,000 |
+| Original-key replay | 0 | 97,000 | 37,000 | 35,000 / 5,000 | 10,000 | −60,000 | +37,000 |
+| Later distribution | 0 | 97,000 | 0 | 0 / 3,000 | 10,000 | −97,000 | +37,000 |
+
+`observe_statement` records 37,000 cash and 3,000 explicit non-cash fee
+against 40,000 gross. The settlement stays `COMMITTED` with
+`commit_movement_id=part-1`. The original key returns the first observation's
+receipt with `duplicate=true` and `applied=null`, leaving the full snapshot
+identical. Both distributions use the fixture order `["organizer", "platform"]`.
+The initial distribution allocates 60,000 and 0. The later distribution
+allocates the newly available 37,000 as 35,000 and 2,000.
+
+The 10,000 partial refund remains a separate `REQUESTER` obligation with zero
+accepted, recovery and PG adjustment. Reclassification and distribution-block
+flags remain false. The F04 snapshot and shared-exposure observation stay
+byte-identical throughout the history. Variance subtracts the frozen open face
+from summed payee outstanding. `cash_delta` separately subtracts frozen
+confirmed cash on face from current confirmed cash. Both observers stay
+`NOT_BOUND` with `repair=NONE` and `fail_closed=true`. Mutation, exposure
+authorization and execution flags remain false.
+
+External `kix-capital` acceptance remains **UNVERIFIED**. Product tolerance,
+exposure limits, waterfall and netting terms remain **UNDETERMINED — Astra**.
+Legal responsibility remains **UNDETERMINED — JunTae and legal counsel**.
+[Replay verifier](../../reference/credit_advance_f04/test_capital_later_statement_vectors.py) · [Builder validation](../../validation/2026-11-20-plan-capital-later-statement-vectors/README.md)
+
+## Capital mixed-checkpoint views
+
+The `capital-mixed-checkpoint-views/1` pack compares four ordered pairs of
+`adv-1` and `adv-2` views from `T1_repay_close_capacity_reuse`. Verify both
+`source_pins` against the raw source files, then resolve `group_id_ref`,
+`limit_ref` and each case's `view_refs` in order. The input fixture supplies
+`fixture-terminal-pool-1` and the synthetic 70,000 KRW limit. Each
+`expected_result` records the full §7.12 observation or the typed reference
+error. [Vector pack](../../reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure)
+
+| Case | `adv-1` checkpoint | `adv-2` checkpoint | Drawn / repaid / outstanding (KRW) | Open face / reserved / residual (KRW) |
+| --- | --- | --- | ---: | ---: |
+| `repay_mixed` | Initial | `repay-part` | 70,000 / 0 / 70,000 | 100,000 / 70,000 / 30,000 |
+| `repay_same` | `repay-part` | `repay-part` | 70,000 / 15,000 / 55,000 | 100,000 / 70,000 / 30,000 |
+| `close_mixed` | Initial | `close-fresh` | `VIEW_BINDING_CONFLICT` | Inputs reserve 70,000 and 30,000 |
+| `close_same` | `close-fresh` | `close-fresh` | 70,000 / 40,000 / 30,000 | 100,000 / 30,000 / 70,000 |
+
+Partial repayment lowers `adv-1` exposure while preserving the claim's
+reservation. The mixed repayment pair therefore passes the binding checks
+and carries 15,000 KRW of stale exposure, exactly reaching the synthetic limit.
+The initial and `repay-part` views for `adv-2` have identical values, so preserve
+the exact checkpoint references when comparing the pairs. Closing `adv-1`
+releases its reservation and makes the mixed close pair conflict.
+
+The caller selects the checkpoints and establishes their freshness. Each
+successful observation counts `claim-1` once, reports `within_limit=true`,
+and carries `NOT_BOUND`, `repair=NONE`, `fail_closed=true`,
+`mutates_state=false` and `authorizes_exposure=false`. Product exposure limits
+remain **UNDETERMINED — Astra**, legal responsibility **UNDETERMINED — User/legal**,
+and external `kix-capital` acceptance **UNVERIFIED**.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#mixed-checkpoint-comparisons) · [Builder validation](../../validation/2026-11-20-plan-capital-mixed-checkpoint-views/README.md)
+
+## Capital omitted exposure members
+
+The `capital-omitted-exposure-members/1` pack reuses frozen views from E1
+and E2. Each pair uses one fixture checkpoint, group label and limit. The
+complete case includes all views listed in that scenario. The subset keeps
+only the first view. Callers supply group membership, so the observer cannot
+certify that the input list includes every member of a real pool. [Vector pack](../../reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure)
+
+Read the source path in `source_pins` and verify its SHA-256 against the raw
+bytes before parsing. For each case, resolve `group_id_ref`, `limit_ref` and
+the ordered `view_refs` by opening the repository-relative file before `#`
+and following the JSON pointer after it. Scenario indices 0 and 1 identify
+E1 and E2 respectively. Verify the scenario's `id` and preserve the exact
+view pointers even when views elsewhere have identical values. Pass the
+resolved group label, list of views and keyword `limit` to
+`observe_shared_exposure` and compare the entire `{"ok": …}` envelope with
+`expected_result`. [Pinned source](../../reference/credit_advance_f04/fixtures/shared_exposure_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_omitted_exposure_members.py)
+
+| Case | Group / limit (KRW) | Advances / claims | Outstanding (KRW) | Open face / reserved / residual (KRW) | `within_limit` |
+| --- | --- | ---: | ---: | ---: | --- |
+| `e1_full` | `group-e1` / 70,000 | 2 / 1 | 70,000 | 100,000 / 70,000 / 30,000 | `true` |
+| `e1_omit_second` | `group-e1` / 70,000 | 1 / 1 | 40,000 | 100,000 / 70,000 / 30,000 | `true` |
+| `e2_full` | `debtor-e2` / 100,000 | 2 / 2 | 110,000 | 200,000 / 110,000 / 90,000 | `false` |
+| `e2_omit_second` | `debtor-e2` / 100,000 | 1 / 1 | 60,000 | 100,000 / 60,000 / 40,000 | `true` |
+
+Drawn equals outstanding and repaid is zero in every case. In E1, omitting
+`adv-e1-2` removes 30,000 KRW from the advance-level sum. The retained view
+still reports the shared claim's full 70,000 KRW reservation. In E2, omitting
+`adv-e2-b` removes 50,000 KRW and its distinct claim from the observation,
+flipping `within_limit` to `true`.
+
+All observations and refund components remain `NOT_BOUND` with
+`repair=NONE`, `fail_closed=true`, `mutates_state=false`,
+`authorizes_exposure=false` and `legal_debtor_bound=false`. The comparison
+uses fixture limits. Product exposure limits remain **UNDETERMINED — Astra**,
+legal responsibility **UNDETERMINED — User/legal**, and external
+`kix-capital` acceptance **UNVERIFIED**.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#omitted-exposure-member-comparisons) · [Builder validation](../../validation/2026-11-20-plan-capital-omitted-exposure-members/README.md)
+
+## Capital payee order recovery
+
+The `capital-payee-order-recovery/1` pack compares two caller-supplied
+distribution orders for `R1_full_refund_after_partial_distribution`.
+`input_ref` resolves to `#/scenarios/0` in the R1 input file and
+`baseline_ref` resolves to `#/scenarios/0` in the pinned result file.
+The replay reads the fee-first result from that baseline and runs the
+residual-first order on fresh settlement and credit machines because the
+first accepted distribution freezes the claim's order. The two histories
+use the same committed `claim-r1`, frozen 60,000 and 40,000 KRW draws,
+10,000 KRW of confirmed cash, and 100,000 KRW full refund and mock acceptance.
+[R1 inputs](../../reference/credit_advance_f04/fixtures/capital_refund_composition_v1.json) · [R1 baseline result](../../reference/credit_advance_f04/fixtures/capital_refund_composition_vectors_v1.json) · [Settlement contract §§4–5](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md#4-f02--분할-배정과-호출자-순서)
+
+The following amounts are synthetic KRW. Each row applies at both
+`refund-full` and `accept-full`.
+
+| Case and distribution order | Payee | Face | Distributed | Cancelled unpaid | Recovery due | Outstanding |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `r1_fee_first` (`fee-r1`, `res-r1`) | `fee-r1` | 5,000 | 5,000 | 0 | 5,000 | 0 |
+| `r1_fee_first` (`fee-r1`, `res-r1`) | `res-r1` | 95,000 | 5,000 | 90,000 | 5,000 | 0 |
+| `r1_residual_first` (`res-r1`, `fee-r1`) | `fee-r1` | 5,000 | 0 | 5,000 | 0 | 0 |
+| `r1_residual_first` (`res-r1`, `fee-r1`) | `res-r1` | 95,000 | 10,000 | 85,000 | 10,000 | 0 |
+
+Per payee, distributed cash, cancelled unpaid face and outstanding sum to
+the face, and recovery due equals distributed cash at both refund
+checkpoints. In residual-first, the fee payee's entire 5,000 KRW unpaid
+face is cancelled and remains cancelled through acceptance. Both orders
+produce 10,000 KRW of aggregate recovery due and a variance of −100,000 KRW
+with cash delta 0 and recovery delta 10,000 KRW. The complete frozen credit
+and shared-exposure observations are canonically byte-equal from setup
+through mock acceptance. The replay rejects a swap of the residual-first
+recovery amounts despite the preserved total.
+
+Product waterfall priority remains **UNDETERMINED with Astra**. The recovery
+amounts describe fixture obligations. Collection and credit repayment are
+outside the comparison. External `kix-capital` acceptance remains
+**UNVERIFIED**.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#payee-order-recovery-comparison) · [Builder validation](../../validation/2026-11-24-plan-capital-payee-order-recovery/README.md)
+
+## Capital offsetting claim gaps
+
+The `capital-offsetting-claim-gaps/1` pack pairs two synthetic F04 §7.11
+observations. All amounts in the table are KRW.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json) · [F04 §7.11](../contracts/CREDIT_ADVANCE_F04.md#711-정산-잔차settlement-variance)
+
+| Source scenario | Claim / trade | Settlement outstanding | Frozen credit `open_face` | Source `tolerance` | Signed variance |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `V4_positive_observation_sign` | `claim-v4` / `trade-v4` | 100,000 | 60,000 | 0 | +40,000 |
+| `V6_boundary_plus_one_out_of_tolerance` | `claim-v2` / `trade-v2` | 60,000 | 100,000 | 39,999 | −40,000 |
+
+V4 keeps the settlement observation taken before the 40,000 KRW distribution
+and the credit face frozen after it. V6 keeps the settlement observation after
+distribution and the credit face frozen before it. V6 exceeds its tolerance
+by 1 KRW. Both results carry `within_tolerance=false`, `NOT_BOUND`,
+`repair=NONE`, `refund_component=NOT_BOUND`, `fail_closed=true`,
+`mutates_state=false` and `authorizes_exposure=false`.
+`diagnostic_sum_krw` is the arithmetic sum of the signed variances, 0 KRW.
+The claim rows carry the tolerance and disposition. Product thresholds remain
+**UNDETERMINED with Astra**, and external `kix-capital` acceptance remains
+**UNVERIFIED**.
+
+Verify both raw SHA-256 digests in `source_pins` before replay. For each case,
+follow `settlement_view_ref`, `credit_view_ref` and `tolerance_ref` into
+`settlement_variance_v1.json`. Confirm source scenario indices 3 (V4) and 5 (V6),
+their scenario IDs and the claim/trade identities. V2 and V5 share V6's view
+bytes, so verify the exact scenario and tolerance pointer. Hash each complete
+view using `settlement_variance.canonical` and compare the case's view digests.
+Pass the resolved views and explicit keyword `tolerance` to
+`observe_settlement_variance`. Compare the complete `{"ok": …}` envelope for
+each case before summing the replayed variances.
+[Pinned source](../../reference/credit_advance_f04/fixtures/settlement_variance_v1.json) · [Observer](../../reference/credit_advance_f04/settlement_variance.py)
+
+```sh
+cd reference/credit_advance_f04
+python3 -B -m unittest test_capital_offsetting_claim_gaps
+```
+
+The replay suite also exchanges the two attributed signs and variances in
+memory. Both claim checks reject the exchanged values even though the sum is
+still 0 KRW.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#offsetting-claim-gap-comparison) · [Builder validation](../../validation/2026-11-24-plan-capital-offsetting-claim-gaps/README.md)
+
+## Capital commerce refund checkpoints
+
+The synthetic `capital-commerce-refund-checkpoints/1` pack references the
+`linked-purchase-partial-refund` Commerce case. The replay checks the source
+SHA-256 over the raw bytes before decoding. It verifies each receipt pointer,
+its enclosing step ID and action, and the shared identity `claim-1`,
+`trade-claim-1`, and `KRW`.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json) · [Pinned source](../../reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json)
+
+The test passes the entire committed claim as the F04 offer face and checks
+the same claim in the offer journal. A single mock draw freezes an open face
+of 10,001 KRW. The existing F04 §7.11 observer compares each settlement
+claim against that frozen face at an explicit synthetic tolerance of zero.
+Each checkpoint has 10,001 KRW of settlement obligation outstanding and
+zero variance.
+[F04 §7.11](../contracts/CREDIT_ADVANCE_F04.md#711-정산-잔차settlement-variance)
+
+| Checkpoint | Commerce receipt fragment | Bearer policy | Refund face (KRW) | Mock accepted (KRW) | Refund outstanding (KRW) | PG adjustment outstanding (KRW) |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| `commit` | `#/cases/0/steps/9/receipt` | `NONE` | 0 | 0 | 0 | 0 |
+| `bind-refund` | `#/cases/0/steps/14/receipt` | `REQUESTER` | 4,000 | 0 | 4,000 | 0 |
+| `observe-mock-acceptance` | `#/cases/0/steps/15/receipt` | `REQUESTER` | 4,000 | 1,500 | 2,500 | 1,500 |
+
+Requester refund outstanding is a settlement field. The F04 advance retains
+10,000 KRW of drawn and outstanding exposure and zero repayment throughout.
+The replay compares the full credit views, journal and state digest after each
+observation. Exchanging the two refund receipt pointers still yields zero
+variance, and the exact checkpoint association rejects the exchange.
+
+All three observations remain fail-closed with `refund_component=NOT_BOUND`,
+`contract_status=NOT_BOUND`, `repair=NONE`, `mutates_state=false` and
+`authorizes_exposure=false`. External `kix-capital` acceptance remains
+`UNVERIFIED`. Product limits and tolerance policy remain `UNDETERMINED` with
+Astra, netting mechanics with the User, and legal refund liability with
+the User and legal counsel.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#commerce-refund-checkpoints) · [Builder validation](../../validation/2026-11-25-plan-capital-commerce-refund-checkpoints/README.md)
+
+## Capital overlapping exposure groups
+
+The `capital-overlapping-exposure-groups/1` pack selects from the three
+frozen views in `E3_pool_three_claims_default_still_aggregates`. Verify the
+source SHA-256 over the raw bytes and resolve each case's `group_id_ref`,
+`limit_ref` and ordered `view_refs`. All four calls use the same checkpoint,
+`pool-e3` label and 90,000 KRW fixture limit. Submit each list as recorded,
+including both B references in the final case, and compare the entire observer
+result envelope with `expected_result`.
+[Pinned source](../../reference/credit_advance_f04/fixtures/shared_exposure_v1.json) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json) · [Replay verifier](../../reference/credit_advance_f04/test_capital_overlapping_exposure_groups.py) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure)
+
+| Case | Caller-selected views | Advances / claims | Outstanding (KRW) | `within_limit` |
+| --- | --- | ---: | ---: | --- |
+| `e3_ab` | A + B | 2 / 2 | 70,000 | `true` |
+| `e3_bc` | B + C | 2 / 2 | 50,000 | `true` |
+| `e3_abc` | A + B + C | 3 / 3 | 90,000 | `true` at the inclusive limit |
+| `e3_duplicate_b` | A + B + B + C | — | `VIEW_INVALID` | — |
+
+B is `adv-e3-b` on `claim-e3-b`, with phase `DEFAULTED` and 30,000 KRW
+outstanding. It is the sole shared advance in A+B and B+C. Adding those
+reports gives 120,000 KRW because each includes B. The distinct-member union
+counts B once and reports 90,000 KRW. Repeating B within a single call returns
+the reference-only `VIEW_INVALID` refusal.
+
+Inputs are byte-equivalent before and after all four calls. Successful
+observations carry `SHARED_EXPOSURE_NOT_BOUND`, `contract_status=NOT_BOUND`,
+`refund_component=NOT_BOUND`, `repair=NONE`, `fail_closed=true`,
+`mutates_state=false`, `authorizes_exposure=false` and
+`legal_debtor_bound=false`. Product exposure limits remain
+**UNDETERMINED — Astra**, legal responsibility **UNDETERMINED — User/legal**,
+and external `kix-capital` acceptance **UNVERIFIED**.
+[Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#overlapping-exposure-group-comparisons) · [Builder validation](../../validation/2026-11-25-plan-capital-overlapping-exposure-groups/README.md)
+
+## Capital resale distribution checkpoints
+
+The `capital-resale-distribution-checkpoints/1` pack pins the raw bytes of
+the Commerce SDK tuple, journey receipt pack and journey input. It binds
+the ordered `booking-resale` vectors `#/vectors/19` through `#/vectors/21`
+to these first mock receipts for `settle-resale` and `trade-resale-A`.
+
+| Case | Receipt fragment | Organizer / platform outstanding (fixture KRW) | §7.11 variance (fixture KRW) |
+| --- | --- | ---: | ---: |
+| `settle-resale-commit` | `#/steps/23/receipt` | 11,880 / 120 | 0 |
+| `accept-A` | `#/steps/24/receipt` | — | — |
+| `distribute-resale` | `#/steps/25/receipt` | 0 / 0 | −12,000 |
+
+The commit and distribution receipts each supply their `settlement.claim`
+obligations. The replay passes the entire commit claim into F04 and freezes
+its 12,000 KRW face once. The intervening `accept-A` receipt supplies the
+mock ownership record for `listing-A`, transfer `transfer-A-2`, and right
+`issue-A` held by `buyer-B` at version 2. The replay invokes the observer
+only on the two settlement claims. Distribution records 12,000 fixture KRW
+in `distributed_cash`. The frozen claim, credit view, journal and state
+digest retain the same bytes across all three checkpoints. The mock advance
+has 10,000 KRW drawn and outstanding, zero repaid and no repayment entries.
+
+The caller's fixture tolerance is zero. The commit is within tolerance and
+the distribution is outside it. Both observations carry `NOT_BOUND`,
+`repair=NONE`, `fail_closed=true`, `mutates_state=false` and
+`authorizes_exposure=false`. External `kix-capital` acceptance remains
+`UNVERIFIED`. Product limits and tolerance policy remain `UNDETERMINED`
+with Astra, and legal responsibility remains `UNDETERMINED` with User/legal.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json) · [F04 §7.11](../contracts/CREDIT_ADVANCE_F04.md#711-정산-잔차settlement-variance) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#resale-distribution-checkpoints) · [Builder validation](../../validation/2026-11-25-plan-capital-resale-distribution-checkpoints/README.md)
+
+## Capital group sum boundary
+
+The `capital-group-sum-boundary/1` pack contains two setup rows, two frozen
+source views and three complete F04 §7.12 results. For each row, recognize its
+distinct claim and trade in `MockSettlement` with the fixture policy, debtor
+role and gross. Use the resulting `MockSettlement.view(claim_id)` as the face
+for `offer`, then `approve` and `draw` the stated amount on one
+`CreditMachine`. The replay uses the fixture beneficiary role and the
+`offer-`, `approve-` and `draw-` prefixes on each advance ID for the
+idempotency keys. The draw ID uses the same `draw-` prefix. After both draws,
+read the two `CreditMachine.view(advance_id)` dictionaries in setup order and
+compare them to `#/credit_views/0` and `#/credit_views/1`.
+
+Call `observe_shared_exposure(group_id, views, limit=...)` using each case's
+ordered `view_refs` and explicit limit. For the third case, deep-copy the
+first view and apply the case's overrides before calling the observer.
+
+| Case | View amounts (fixture KRW) | Caller limit (fixture KRW) | Outcome |
+| --- | --- | ---: | --- |
+| `at_total` | 1,000,000,000,000 and 1 | 1,000,000,000,001 | `within_limit=true` |
+| `one_below` | 1,000,000,000,000 and 1 | 1,000,000,000,000 | `within_limit=false` |
+| `single_view_overflow` | 1,000,000,000,001 in one detached view | 1,000,000,000,001 | `SharedExposureError` with `VIEW_INVALID` |
+
+Both successful records count two advances and two distinct claims. Drawn and
+outstanding exposure, open face and reserved capacity each total
+1,000,000,000,001 fixture KRW. Repaid exposure and residual capacity are zero.
+Each claim contributes its capacity once. The detached control preserves both
+amount identities with zero repayment and residual capacity, while its amount
+fields exceed the per-view ceiling.
+
+All calls preserve argument bytes, and both machine views retain their
+captured bytes. The successful records are fail-closed and carry
+`authorizes_exposure=false`, `mutates_state=false`,
+`legal_debtor_bound=false`, `refund_component=NOT_BOUND` and
+`SHARED_EXPOSURE_NOT_BOUND` with `contract_status=NOT_BOUND` and
+`repair=NONE`. Product exposure limits remain **UNDETERMINED — Astra**,
+legal responsibility **UNDETERMINED — User/legal**, and external
+`kix-capital` acceptance **UNVERIFIED**.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json) · [F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#group-sum-boundary) · [Builder validation](../../validation/2026-11-26-plan-capital-group-sum-boundary/README.md)
+
+## Capital draw refusal after restore
+
+The `capital-draw-refusal-after-restore/1` pack pins the S1 boundary fixture
+and its delivered results. The replay applies `S1_captured_face_no_derivation`
+through `s1-commit` inclusive, after the early refusal and before `s1-draw-late`.
+It restores a separate `CreditMachine` from the original's accepted journal
+using the same committed settlement. Both machines have `offer`, `approve`
+and `bind_settlement` entries, an identical `APPROVED` view, zero drawn,
+repaid and outstanding exposure, and equal canonical states and digests.
+
+The offline comparison applies the `s1-draw-early` step once per machine
+with advance `adv-cap`, draw ID `drw-s1-early` and key `s1-draw-early`.
+
+| Machine | Result | Exposure and journal |
+| --- | --- | --- |
+| Original | Stored `CreditError` with `SETTLEMENT_NOT_COMMITTED` | `APPROVED`, zero exposure, no append |
+| Restored | `applied=draw`, `duplicate=false` | `DRAWN`, 10,000 fixture KRW drawn and outstanding, one draw entry |
+
+The offer retains the full captured S1 claim, with 100,000 fixture KRW of
+open receivable and zero confirmed cash. The committed settlement shows
+97,000 fixture KRW of confirmed cash. The restored draw still records
+`snapshot_frozen=true` and `confirmed_cash_on_face=0`. The settlement view,
+journal, canonical state and digest stay equal to the post-commit checkpoint
+after restoration and after each diagnostic.
+
+F04 §7.3 retains the first refusal in process. §7.4 restores accepted entries
+only, so equal journals and state digests cannot establish whether a refused
+call occurred. §7.5 gates the restored mock draw on the current settlement
+view. This diagnostic supplies no authority to retry a financial operation.
+External `kix-capital` acceptance remains **UNVERIFIED**, product limits
+**UNDETERMINED — Astra**, and legal responsibility **UNDETERMINED — User/legal**.
+[F04 §7.3](../contracts/CREDIT_ADVANCE_F04.md#73-멱등키) · [§7.4](../contracts/CREDIT_ADVANCE_F04.md#74-재생) · [§7.5](../contracts/CREDIT_ADVANCE_F04.md#75-정산-게이트) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#draw-refusal-after-restore)
+
+## Capital equal-gross claim binding
+
+The `capital-equal-gross-claim-binding/1` pack pins the S1 and S2 settlement
+checkpoints and both source artifacts. S1 at `s1-commit` and S2 at
+`s2-settlement-committed` are both `COMMITTED` at 100,000 fixture KRW gross.
+Their claim IDs are `stl-s1` and `stl-s2`.
+
+Start with the ordered `#/setup_steps` on two fresh F04 machines. Each
+receives the full S2 claim at `#/setup_steps/0/arguments/face` and the same
+10,000 KRW offer and approval. Bind one machine to its matching S2
+settlement. For the crossed machine, use the S1 settlement and change only
+the bind's `settlement_id`. Both binds are accepted in `APPROVED`.
+Send `#/draw_step` once to each machine.
+
+| Case | Complete draw result | After the draw request |
+| --- | --- | --- |
+| `matching` | `#/cases/0/expected_result` | `DRAWN`, 10,000 fixture KRW outstanding, one added draw entry |
+| `crossed` | `#/cases/1/expected_result` | `SETTLEMENT_BINDING_CONFLICT`, `APPROVED`, zero exposure and zero appends |
+
+Compare `before/journal/0/body/face` and `after/journal/0/body/face` in each
+case to see the full S2 claim retained in the offer. The accepted note sets
+`snapshot_frozen=true` in the matching case. In the crossed case the offer
+still carries the S2 claim and `snapshot_frozen=false`. Both settlement
+journals match `#/settlement_journals` before and after the draw requests.
+External `kix-capital` acceptance remains **UNVERIFIED**, product limits
+**UNDETERMINED — Astra**, and legal responsibility **UNDETERMINED — User/legal**.
+[F04 §7.5](../contracts/CREDIT_ADVANCE_F04.md#75-정산-게이트) · [Vector pack](../../reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#equal-gross-claim-binding)
+
+## Capital refund versus repayment
+
+Both fresh replays start with the same linked purchase, `claim-1` on
+`trade-claim-1` in KRW. The replay uses the whole claim from the Commerce
+`commit` receipt as the F04 offer face. The common `before` snapshot has a
+4,000 KRW requester refund bound, 10,000 KRW of drawn and outstanding credit,
+and five settlement and four credit journal entries.
+
+| Commerce checkpoint | Receipt fragment |
+| --- | --- |
+| `commit` | `#/cases/0/steps/9/receipt` |
+| `bind-refund` | `#/cases/0/steps/14/receipt` |
+| `observe-mock-acceptance` | `#/cases/0/steps/15/receipt` |
+
+The replay checks the three receipt associations against the merged Capital
+checkpoints. It resolves the settlement command bodies through the Commerce
+steps' `input_ref` values. The acceptance uses the Commerce command verbatim.
+The repayment records note `repayment-note-1` at sequence 1 on
+`advance-commerce-checkpoints`.
+[Commerce receipts](../../reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json) · [Capital checkpoints](#capital-commerce-refund-checkpoints)
+
+| Command | Refund accepted (fixture KRW) | Refund outstanding (fixture KRW) | Credit repaid (fixture KRW) | Credit outstanding (fixture KRW) | Journal append |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `observe_mock_cancel_acceptance` | 1,500 | 2,500 | 0 | 10,000 | Settlement only |
+| `repay` | 0 | 4,000 | 1,500 | 8,500 | Credit only |
+
+The pack stores the complete receipts at `#/cases/0/expected_result` and
+`#/cases/1/expected_result` and the complete branch snapshots under each case's
+`after` field. Both histories preserve the frozen offer-face bytes and
+10,001 KRW of confirmed settlement cash. PG adjustment outstanding is 1,500
+KRW after mock acceptance and zero after the repayment note.
+[Vector pack](../../reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#refund-versus-repayment)
+
+Each resulting F04 view supplies one shared-exposure observation at the same
+explicit 10,000 KRW fixture limit. Group outstanding exposure is 10,000 KRW
+after acceptance and 8,500 KRW after repayment. Open, reserved and residual
+capacity are 10,001, 10,000 and 1 KRW in both histories. The observations retain
+`SHARED_EXPOSURE_NOT_BOUND`, `refund_component=NOT_BOUND`, `repair=NONE` and
+`fail_closed=true`. State mutation, exposure authorization, funds execution and
+actual repayment flags are false where defined.
+
+External `kix-capital` acceptance remains `UNVERIFIED`. Product limits remain
+`UNDETERMINED` with Astra. Legal liability remains `UNDETERMINED` with the User
+and legal counsel.
+[F04 §7.12](../contracts/CREDIT_ADVANCE_F04.md#712-공유-노출shared-exposure) · [Builder validation](../../validation/2026-11-27-plan-capital-refund-versus-repayment/README.md)
+
+## Capital statement component identity
+
+Replay `L1_later_statement_after_requester_refund` independently through
+`refund-partial` in each branch. At that checkpoint the settlement journal has
+six accepted entries. Both branches then observe `part-2` on `claim-1` with
+`stmt-2`, 40,000 KRW gross, 37,000 KRW cash, and zero tax and adjustment.
+
+| Case | Fee (fixture KRW) | Held (fixture KRW) | Accepted journal entry |
+| --- | ---: | ---: | --- |
+| `fee` | 3,000 | 0 | [`#/cases/0/after/settlement/journal/6`](../../reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0/after/settlement/journal/6) |
+| `held` | 0 | 3,000 | [`#/cases/1/after/settlement/journal/6`](../../reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/after/settlement/journal/6) |
+
+Both observations report 97,000 confirmed cash, 3,000 non-cash accounted, zero
+open receivable, 60,000 distributed cash, 37,000 undistributed cash and 10,000
+requester refund outstanding. The frozen F04 face is 100,000 with 60,000 cash on
+face. Drawn and outstanding exposure are each 15,000, with zero repaid. Variance
+is `(35,000 + 5,000) − 100,000 = −60,000` and the separate `cash_delta` is +37,000.
+
+Each accepted journal preserves its own fee and held amounts. Submitting the
+other split on `part-2` with a fresh command key returns
+`STATEMENT_BINDING_CONFLICT` and leaves both accepted journals and the public
+snapshot intact. Both branches retain `NOT_BOUND`, `repair=NONE` and
+`fail_closed=true` in their variance and shared-exposure observations.
+[Settlement §3](../contracts/SETTLEMENT_DISTRIBUTION_F01_F03.md#3-정산-명세서--추측하지-않는-구성) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#statement-component-identity)
+
+The 100,000 limit and zero tolerance are fixture inputs. External `kix-capital`
+acceptance remains `UNVERIFIED`. Product limits and tolerances remain
+`UNDETERMINED` with Astra and legal responsibility remains `UNDETERMINED` with
+the User and legal counsel.
+[Replay verifier](../../reference/credit_advance_f04/test_capital_statement_component_identity.py) · [Builder validation](../../validation/2026-11-28-plan-capital-statement-component-identity/README.md)

@@ -3675,6 +3675,1017 @@
           "binding_status": "MOCK_EVIDENCE"
         }
       ]
+    },
+    {
+      "id": "late_payment_after_cancel",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json",
+        "sha256": "41a3ab590bef5904f7b21fca9d4dcd2a3554b425907ac74eea4bd3d7e8ae8f3f",
+        "gitBlob": "43565c1d9c9ce14bb83fd4276a13a282cccf2603"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json",
+        "sha256": "cee760691f668669342bc399da969b3222e15a2c209d2a42306296d7307838cb",
+        "gitBlob": "34180c097934bd4bfd85b56656d78982cb602105"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_late_payment_after_cancel_vectors.py",
+        "symbol": "CommerceLatePaymentAfterCancelVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "The refusals apply to the synthetic reservation command. Actual provider facts remain subject to STATE_LIFECYCLE.md §3.",
+        "Compensation is UNDETERMINED with Astra and JunTae. Refund liability and actual late-fact custody are outside this history."
+      ],
+      "entries": [
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "reservation-clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "hold-a",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "confirm-a",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "cancel-a",
+          "action": "reservation_cancel",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/4",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/55",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "hold-b",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/5",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "confirm-b",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "late-payment-a",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/7",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "replay-late-payment-a",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/8",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "replay-cancel-a",
+          "action": "reservation_cancel",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/9",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/55",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "payment-b",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/10",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "issue-b",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "admission-clock",
+          "action": "admission_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/12",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "adopt-b",
+          "action": "admission_adopt_issued",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/13",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/72",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "authorize-b",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/14",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "late-payment-after-cancel",
+          "step_id": "consume-b",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_inputs_v1.json#/cases/0/steps/15/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_late_payment_after_cancel_receipts_v1.json#/cases/0/steps/15",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
+    },
+    {
+      "id": "payment_ref_scope",
+      "input": {
+        "gitBlob": "a923e6041fb801012950d9d8ebd81dd4af1dde6c",
+        "path": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json",
+        "sha256": "a3f879f954b858117bd3cc73499456d3da59564064afcf5c9c6a7379e6a4779f"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json",
+        "sha256": "1f98e7a32ec749b0f8bac4a28210e3c3eb74398f68f3ca4b579e21b50799d88b",
+        "gitBlob": "dce42838bb24018e54271560f520ce984a8b6dc3"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_payment_ref_scope_vectors.py",
+        "symbol": "CommercePaymentRefScopeVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Payment reference scope is observed across two shows in one in-process mock host. Cross-channel exclusivity, provider identity and funds finality are outside this evidence.",
+        "Rejected-key retention is process-local. Product TTLs, fees and compensation remain UNDETERMINED with Astra and JunTae, and provider and legal terms remain with their existing owners."
+      ],
+      "entries": [
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "reservation-clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "hold",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "confirm",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "payment",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/4",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "issue",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/5",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "resale-clock",
+          "action": "resale_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "resale-adopt",
+          "action": "resale_adopt_issued",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/7",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/62",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "list",
+          "action": "resale_list_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/8",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "reuse-primary",
+          "action": "resale_observe_resale_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/9",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "resale-payment",
+          "action": "resale_observe_resale_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/10",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "transfer",
+          "action": "resale_accept_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/69",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "show-2",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/12",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "hold-2",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/13",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "confirm-2",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/14",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "payment-ref-scope",
+          "step_id": "payment-2",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/15/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/15",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
+    },
+    {
+      "id": "resale_buyer_release",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json",
+        "sha256": "c2dadf11af8a793f7435235e36d8ae39ed610b28579173eb1cd185bf081303a2",
+        "gitBlob": "5bf705a2f30b47ad14c8cba03135b270abb5b2f5"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json",
+        "sha256": "d4aa095c38c81ed3dc4164b4edc8dbcc845f0a5657f21b36f92acb5917a80ac6",
+        "gitBlob": "f869974e4f0c9d87a2745b2b1aa3cc6d2b9356c2"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_resale_buyer_release_vectors.py",
+        "symbol": "CommerceResaleBuyerReleaseVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The resale_release_hold binding is BOOTSTRAP_SCHEMA_BOUND.",
+        "The release replay preserves its first LISTED receipt while the current listing retains the fresh BUY_HELD hold. Payment observation and transfer are separate mock effects."
+      ],
+      "entries": [
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "reservation-clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "hold",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "confirm",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "payment",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/4",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "issue",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/5",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-clock",
+          "action": "resale_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-adopt",
+          "action": "resale_adopt_issued",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/7",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/62",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "list",
+          "action": "resale_list_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/8",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-hold",
+          "action": "resale_hold_buy",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/9",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/64",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "release-wrong-buyer",
+          "action": "resale_release_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/10",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/65",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "release-hold",
+          "action": "resale_release_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/65",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-hold-fresh",
+          "action": "resale_hold_buy",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/12",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/64",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "replay-release-hold",
+          "action": "resale_release_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/13",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/65",
+          "binding_status": "BOOTSTRAP_SCHEMA_BOUND"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "resale-payment",
+          "action": "resale_observe_resale_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/14",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "resale-buyer-release",
+          "step_id": "transfer",
+          "action": "resale_accept_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_inputs_v1.json#/cases/0/steps/15/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_resale_buyer_release_receipts_v1.json#/cases/0/steps/15",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/69",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
+    },
+    {
+      "id": "admission_replay_after_resale",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json",
+        "sha256": "d37011eb1c62cec56b8be8fb3a68ab9e3e6b20dbdc64a4c8adcab9f0fb2585df",
+        "gitBlob": "341079f211a033534c21614ee9ed1b4a2902243c"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json",
+        "sha256": "fd9a4c4cb3b3b493dec39c079d78b5b9ece1c298e7a5f755aac8170948c06439",
+        "gitBlob": "0e21731f525a6bd53ebd9d1cd606bd9eca800ec9"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_admission_replay_after_resale_vectors.py",
+        "symbol": "CommerceAdmissionReplayAfterResaleVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The replay is a first receipt and gives no current admission authority.",
+        "The fresh version-1 consume returns STALE_VERSION. Current ownership and accepted journals are test-harness evidence from one in-process host."
+      ],
+      "entries": [
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "reservation-clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "hold",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "confirm",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "payment",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/4",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "issue",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/5",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "resale-clock",
+          "action": "resale_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "resale-adopt",
+          "action": "resale_adopt_issued",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/7",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/62",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "admission-clock",
+          "action": "admission_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/8",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "admission-adopt",
+          "action": "admission_adopt_issued",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/9",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/72",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "authorize",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/10",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "admission-expiry-clock",
+          "action": "admission_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "resale-expiry-clock",
+          "action": "resale_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/12",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "list",
+          "action": "resale_list_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/13",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/63",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "resale-payment",
+          "action": "resale_observe_resale_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/14",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/67",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "transfer",
+          "action": "resale_accept_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/15/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/15",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/69",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "replay-authorize",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/16/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/16",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "admission-replay-after-resale",
+          "step_id": "consume-old-after-resale",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_inputs_v1.json#/cases/0/steps/17/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_replay_after_resale_receipts_v1.json#/cases/0/steps/17",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
+    },
+    {
+      "id": "replaced_admission_binding",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json",
+        "sha256": "f101e5864f5be643a2c6cc32cf58acc605b49ccac752b16465d8d030101a9468",
+        "gitBlob": "f98dc38e7aef07683e3f1a3a88f4d4303e5199dc"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json",
+        "sha256": "82447798f29bcb7d6a299707b82a0123e3abada62bc4f9a962dddee0228703a4",
+        "gitBlob": "04d54cb94bec6516f964329545d53080ceef6a99"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_replaced_admission_binding_vectors.py",
+        "symbol": "CommerceReplacedAdmissionBindingVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. The gate and request checks use one replacement authorization and synthetic time.",
+        "Detached diagnostics describe one in-process host. Product TTLs, fees and compensation remain UNDETERMINED with Astra and the User, and legal and provider terms retain their existing owners."
+      ],
+      "entries": [
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "reservation-clock",
+          "action": "reservation_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/50",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "show",
+          "action": "reservation_register_show",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/51",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "hold",
+          "action": "reservation_hold",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/52",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "confirm",
+          "action": "reservation_confirm",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/54",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "payment",
+          "action": "reservation_observe_payment",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/4/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/4",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/56",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "issue",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/5/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/5",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "admission-clock",
+          "action": "admission_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/6/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/6",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "admission-adopt",
+          "action": "admission_adopt_issued",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/7/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/7",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/72",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "authorize",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/8/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/8",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "admission-expire",
+          "action": "admission_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/9/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/9",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/71",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "consume-late",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/10/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/10",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "replace",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/11/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/11",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "consume-old-gate",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/12/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/12",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "consume-old-request",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/13/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/13",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "replaced-admission-binding",
+          "step_id": "consume",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_inputs_v1.json#/cases/0/steps/14/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_replaced_admission_binding_receipts_v1.json#/cases/0/steps/14",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
+    },
+    {
+      "id": "admission_journal_after_transfer",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_inputs_v1.json",
+        "sha256": "d21b99b6d449c339191fc4251b1603a86c4142756a49951068429b6e6125d08a",
+        "gitBlob": "9387fcba8253f18cd43854841fbe299bd41d29b4"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_receipts_v1.json",
+        "sha256": "1815f30dfc72023da9ef3227135389f0b3cbe9d8d606a547d7c4d93c65dc5739",
+        "gitBlob": "830b3be6dc31a5cc9a3f2aefb81031235413bb4e"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_admission_journal_after_transfer_vectors.py",
+        "symbol": "CommerceAdmissionJournalAfterTransferVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Both entries index published checkpoint receipts with separate local diagnostics.",
+        "A journal match records historical replay equality only. The explicit transfer makes both diagnostics return STALE_VERSION with zero new consumptions."
+      ],
+      "entries": [
+        {
+          "case_id": "matching-ownership",
+          "step_id": "resale-expiry-clock",
+          "action": "resale_set_clock",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/61",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "transferred-ownership",
+          "step_id": "transfer",
+          "action": "resale_accept_resale",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_inputs_v1.json#/cases/1/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_admission_journal_after_transfer_receipts_v1.json#/cases/1/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/69",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
+    },
+    {
+      "id": "cross_order_issuance",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_inputs_v1.json",
+        "sha256": "7e60aa2daab71d4477c514c4656a3333483a8fcebaf4ee8a13d6f956568bd6cb",
+        "gitBlob": "c360312479717032ac695d4d9bee74c1d6d7407e"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_receipts_v1.json",
+        "sha256": "b32a8274c7aaebd95befc0380ca634562651ad5f321efbc754bb9a2994545262",
+        "gitBlob": "77337b1ee16b09bf2d7c7b1817b85b00f89d9e27"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_cross_order_issuance_vectors.py",
+        "symbol": "CommerceCrossOrderIssuanceVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Each branch replays the same pinned payment-2 checkpoint in a fresh in-process host.",
+        "The receipt and refusal describe local issuance binding. Both preserve the transferred resale right and record zero admission consumption."
+      ],
+      "entries": [
+        {
+          "case_id": "distinct-issuance",
+          "step_id": "issue-order-2",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "issuance-collision",
+          "step_id": "issue-order-2",
+          "action": "reservation_issue",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_inputs_v1.json#/cases/1/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_receipts_v1.json#/cases/1/steps/0",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/58",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
     }
   ]
 }

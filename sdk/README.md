@@ -20,6 +20,38 @@
 
 7번의 "아래 절"은 OpenAPI README의 통합 관문 절이다. 이 SDK는 그 프로세스를 띄우지 않는다.
 
+### Scoped Commerce fixture qualification
+
+`bootstrap-2` grants catalogue and schema binding for 84 commands (40 core and
+44 FSM). `commerce-fixture-8ba7f6c-1` grants `SEMANTIC_CONFORMANCE` for the
+listed synthetic in-memory fixture steps and outcomes across 28 actions at
+producer `8ba7f6c36373ac0ec49246f51f7471c164ac3a28`. The other 56 actions,
+unlisted contexts or steps and mismatched tuples remain `HOLD_SEMANTIC`.
+The 13 approved read names and the separate proposed uncertain-operation
+recovery lookup remain `NOT_BOUND`. External `kix-commerce-apps` acceptance
+remains `UNVERIFIED`.
+[Qualification table](../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json) ·
+[Semantic manifest](compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json)
+
+From the repository root, verify the manifest and its pinned files with Node 24.
+
+```sh
+node sdk/compat/verify_compat.mjs \
+  --manifest sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json \
+  --expect-kind SEMANTIC_CONFORMANCE --expect-revision commerce-fixture-8ba7f6c-1
+```
+
+After a successful verdict, compare its `manifest_sha256` with the digest
+pinned independently by the consumer. A missing or different pin yields
+`HOLD_SEMANTIC` with `vector_id: null`.
+[Consumer handoff](../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md#consumer-handoff)
+
+Then match the producer, HTTP method and path, action, machine, operation,
+subject field and body schema digest. Select the exact fixture context, step
+and outcome before consuming the evidence. Keep unresolved `UNKNOWN` fenced
+without polling, retry or replacement writes. The caller supplies the SDK's
+transport. [Consumer lookup and offline replay](../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#scoped-commerce-fixture-qualification)
+
 ## 생성물
 
 | 파일 | 역할 |
@@ -29,15 +61,15 @@
 | `sdk-pin.json` | OpenAPI·원본 계약의 git blob과 sha256 |
 | `src/client.ts` | `createLocalCallClient({ transport })` |
 | `src/jsonschema.ts` | 엄격 JSON과 스키마 부분집합 |
-| `compat/` | manifest-v1, BOOTSTRAP profile, 최소 검증기 |
+| `compat/` | manifest-v1, BOOTSTRAP 및 Commerce fixture profile, 최소 검증기 |
 | `conformance/` | 명령별 적합성과 golden vectors |
 
-호환 형식은 [docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)에 있다. 현재 생성물은 `bootstrap-2`다. `bootstrap-1`은 40개 명령 역사 핀으로 트리에 남아 있고 다시 생성하지 않는다. 둘 다 카탈로그 스키마 결합만 부여한다. 의미 적합성, N/N−1, 운영 적합, 감사 통과, 사용자 승인이 아니다. 의미 적합의 소비자는 HOLD다.
+현재 생성물은 `bootstrap-2`다. `bootstrap-1`은 40개 명령 역사 핀으로 트리에 남아 있고 다시 생성하지 않는다. 둘 다 카탈로그 스키마 결합만 부여한다. [호환 manifest 형식](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)
 
-The [non-normative consumer surface map](../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md)
-separates this local-call client from calculator, ticket and token-tool envelopes.
-BOOTSTRAP grants catalogue-schema binding only. Semantic SDK consumption
-remains `HOLD_SEMANTIC`.
+N/N−1 compatibility, production qualification, stable release, audit and User
+approval remain outside the scoped grant. The consumer surface map documents
+the local-call, calculator, ticket and token-tool envelopes.
+[Consumer surface map](../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md)
 
 타입 검사는 Node 24의 타입 제거로 돌린다. `tsc`와 패키지 의존성은 없다. 지울 수 있는 구문만 쓴다.
 

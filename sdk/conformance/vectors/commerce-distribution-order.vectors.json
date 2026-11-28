@@ -1,0 +1,11 @@
+{
+  "profile_revision": "commerce-fixture-8ba7f6c-1",
+  "vector_id": "booking-resale/distribute-resale",
+  "cases": [
+    { "id": "original", "order": ["organizer-1", "platform-1"] },
+    { "id": "string", "order": "organizer-1" },
+    { "id": "duplicate", "order": ["organizer-1", "platform-1", "organizer-1"] },
+    { "id": "missing", "order": ["organizer-1"] },
+    { "id": "unknown", "order": ["organizer-1", "platform-1", "unknown-1"] }
+  ]
+}

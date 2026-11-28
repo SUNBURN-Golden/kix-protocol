@@ -28,7 +28,7 @@
     "Product limits remain UNDETERMINED—Astra; legal responsibility UNDETERMINED—User/legal.",
     "Frozen faces are not revalued by later settlement refunds, distribution or acceptance.",
     "Refund obligations, recovery, PG adjustment and credit repayment remain separate; no netting is defined.",
-    "Shared exposure counts capacity once per distinct claim, requires same-point compatible views and an explicit synthetic limit.",
+    "Shared exposure counts capacity once per distinct claim, checks same-claim binding agreement and requires an explicit synthetic limit. Callers select the checkpoints.",
     "Within tolerance or limit is not acceptance, reconciliation completion or exposure authority.",
     "Observations and refund components remain NOT_BOUND; repair=NONE; all execution flags remain false.",
     "Snapshots and restore checks are supplemental observations, not published reads or new input commands.",
@@ -4836,6 +4836,742 @@
           "scenario_id": "P1_reject_cancel_before_draw",
           "kind": "initial_snapshot",
           "ref": "reference/credit_advance_f04/fixtures/capital_predraw_terminal_vectors_v1.json#/scenarios/0/initial_snapshot"
+        }
+      ]
+    },
+    {
+      "id": "capital_later_statement",
+      "shape": "setup_and_history",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json",
+        "sha256": "1d0e7e806258b3bdaca08da0d4486fcdaf119fdb41470ac48f4df4602821ae4b",
+        "gitBlob": "5cd80de37aad4c4ed8aca10208606f79e7856e49"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json",
+        "sha256": "8d9949eec525ade2369437dde20f11f3aaa0a70b1d0a387af36bd64f33294317",
+        "gitBlob": "bbbd19e8ba7db7f7617a5fe0742e1663aa336cff"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_later_statement_vectors.py",
+        "symbol": "CapitalLaterStatementVectorTests.test_complete_history_vectors"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital later settlement statement vectors"
+        }
+      ],
+      "limitations": [
+        "The original statement key replays its first receipt without adding cash. The next distribution uses only new confirmed cash in the original fixture order. The requester refund and frozen credit remain separate. Cash delta is diagnostic and does not enter variance."
+      ],
+      "entries": [
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "initiate",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/0/result",
+          "operation": "initiate",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "authorize",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/1/result",
+          "operation": "authorize",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "capture",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/2/result",
+          "operation": "capture",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "commit",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/3/result",
+          "operation": "commit",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "offer",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/4",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/4/result",
+          "operation": "offer",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "approve",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/5",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/5/result",
+          "operation": "approve",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "bind_settlement",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/6",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/6/result",
+          "operation": "bind_settlement",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "setup_steps",
+          "step_id": "draw",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/setup_steps/7",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/setup_results/7/result",
+          "operation": "draw",
+          "target": "credit"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "distribute-initial",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/0/result",
+          "operation": "distribute",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "refund-partial",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/1/result",
+          "operation": "bind_refund",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "statement-later",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/2/result",
+          "operation": "observe_statement",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "statement-replay",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/3/result",
+          "operation": "observe_statement",
+          "target": "settlement"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "section": "steps",
+          "step_id": "distribute-later",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_v1.json#/scenarios/0/steps/4",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/4/result",
+          "operation": "distribute",
+          "target": "settlement"
+        }
+      ],
+      "observations": [
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "distribute-initial",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/0/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "refund-partial",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/1/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "statement-later",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/2/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "statement-replay",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/3/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "step_snapshot",
+          "step_id": "distribute-later",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/history/4/snapshot"
+        },
+        {
+          "scenario_id": "L1_later_statement_after_requester_refund",
+          "kind": "initial_snapshot",
+          "ref": "reference/credit_advance_f04/fixtures/capital_later_statement_vectors_v1.json#/scenarios/0/initial_snapshot"
+        }
+      ]
+    },
+    {
+      "id": "capital_mixed_checkpoint_views",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json",
+        "sha256": "eb7daed7e620f9a2852ec51bf57a12651ad112ea8ef85529eae94f82c3692114",
+        "gitBlob": "d6b486b5beabefb93ff1c5897aa8d3cd24d42f14"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json",
+        "sha256": "eb7daed7e620f9a2852ec51bf57a12651ad112ea8ef85529eae94f82c3692114",
+        "gitBlob": "d6b486b5beabefb93ff1c5897aa8d3cd24d42f14"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_mixed_checkpoint_views.py",
+        "symbol": "CapitalMixedCheckpointViewsTests.test_checkpoint_pairs"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital mixed-checkpoint views"
+        }
+      ],
+      "limitations": [
+        "Mixing the initial and partial-repayment checkpoints can preserve same-claim binding agreement and report stale exposure. Mixing the initial and close checkpoints conflicts on reservation. Callers select the checkpoints."
+      ],
+      "entries": [
+        {
+          "case_id": "repay_mixed",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "repay_same",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/1/expected_result"
+        },
+        {
+          "case_id": "close_mixed",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/2/expected_result"
+        },
+        {
+          "case_id": "close_same",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_mixed_checkpoint_views_vectors_v1.json#/cases/3/expected_result"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_omitted_exposure_members",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json",
+        "sha256": "946ed152019d3674049d6fd823f961dac47da19556b0d065ce5cacad3b8f9211",
+        "gitBlob": "7eb99a026071327349163268bafad512ab1869f7"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json",
+        "sha256": "946ed152019d3674049d6fd823f961dac47da19556b0d065ce5cacad3b8f9211",
+        "gitBlob": "7eb99a026071327349163268bafad512ab1869f7"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_omitted_exposure_members.py",
+        "symbol": "CapitalOmittedExposureMembersTests.test_membership_pairs"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital omitted exposure members"
+        }
+      ],
+      "limitations": [
+        "Callers supply group membership. Complete means all views in the fixture scenario. The observer cannot certify real pool membership, and within_limit grants no exposure authority."
+      ],
+      "entries": [
+        {
+          "case_id": "e1_full",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "e1_omit_second",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/1/expected_result"
+        },
+        {
+          "case_id": "e2_full",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/2/expected_result"
+        },
+        {
+          "case_id": "e2_omit_second",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_omitted_exposure_members_vectors_v1.json#/cases/3/expected_result"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_payee_order_recovery",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json",
+        "sha256": "28218ee3d63faf2433cf064ef4176bb339eb0320abe95b20892836f0d8031eeb",
+        "gitBlob": "5135ec5a944ebcd8314e2a0be9635c95e8617d66"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json",
+        "sha256": "28218ee3d63faf2433cf064ef4176bb339eb0320abe95b20892836f0d8031eeb",
+        "gitBlob": "5135ec5a944ebcd8314e2a0be9635c95e8617d66"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_payee_order_recovery.py",
+        "symbol": "CapitalPayeeOrderRecoveryTests.test_order_pair"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital payee order recovery"
+        }
+      ],
+      "limitations": [
+        "The two R1 orders are caller-supplied synthetic inputs. Product waterfall priority remains UNDETERMINED with Astra. Recovery due records a fixture obligation. Collection and credit repayment are outside this comparison."
+      ],
+      "entries": [
+        {
+          "case_id": "r1_fee_first",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "r1_residual_first",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_payee_order_recovery_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_offsetting_claim_gaps",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json",
+        "sha256": "a62a473bb69dde93769e9f1c04eb91a408a3d9014c253f4cbab211f9eeebeabe",
+        "gitBlob": "37b5c3632407af78275cff6b143cf3b338358039"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json",
+        "sha256": "a62a473bb69dde93769e9f1c04eb91a408a3d9014c253f4cbab211f9eeebeabe",
+        "gitBlob": "37b5c3632407af78275cff6b143cf3b338358039"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_offsetting_claim_gaps.py",
+        "symbol": "CapitalOffsettingClaimGapsTests.test_claim_pair"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital offsetting claim gaps"
+        }
+      ],
+      "limitations": [
+        "The zero sum is diagnostic arithmetic. Each claim remains outside its original synthetic tolerance with NOT_BOUND, repair=NONE and no exposure authority. Product thresholds remain UNDETERMINED with Astra."
+      ],
+      "entries": [
+        {
+          "case_id": "v4_claim_gap",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "v6_claim_gap",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_offsetting_claim_gaps_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_commerce_refund_checkpoints",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json",
+        "sha256": "6d0ac8fb018d5bdb55a388eb8353ab538e533bdb3ad547de72d75de02714085a",
+        "gitBlob": "49cf3276c0a9386b410cd5b0260af84421fe368f"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json",
+        "sha256": "6d0ac8fb018d5bdb55a388eb8353ab538e533bdb3ad547de72d75de02714085a",
+        "gitBlob": "49cf3276c0a9386b410cd5b0260af84421fe368f"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_commerce_refund_checkpoints.py",
+        "symbol": "CapitalCommerceRefundCheckpointTests.test_checkpoint_replay"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital commerce refund checkpoints"
+        }
+      ],
+      "limitations": [
+        "Three receipts for one purchase share the same frozen F04 face and zero variance. Requester refund outstanding and mock acceptance stay separate from F04 exposure and repayment. Receipt identity determines the checkpoint. The refund component remains NOT_BOUND."
+      ],
+      "entries": [
+        {
+          "case_id": "commit",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/0/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/9/receipt"
+        },
+        {
+          "case_id": "bind-refund",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/1/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/14/receipt"
+        },
+        {
+          "case_id": "observe-mock-acceptance",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_commerce_refund_checkpoints_vectors_v1.json#/cases/2/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_linked_refund_receipts_v1.json#/cases/0/steps/15/receipt"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_overlapping_exposure_groups",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json",
+        "sha256": "9912b49d7474fab34870e512850f1aa40a49e6dbfed1c83b74c12e8ddc50810e",
+        "gitBlob": "86cb4246daff384ee97c5667dc4be193eef3b723"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json",
+        "sha256": "9912b49d7474fab34870e512850f1aa40a49e6dbfed1c83b74c12e8ddc50810e",
+        "gitBlob": "86cb4246daff384ee97c5667dc4be193eef3b723"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_overlapping_exposure_groups.py",
+        "symbol": "CapitalOverlappingExposureGroupsTests.test_overlapping_groups"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital overlapping exposure groups"
+        }
+      ],
+      "limitations": [
+        "Separate caller groups count the same defaulted advance. The distinct-member union counts it once, and a repeated advance within a single call returns VIEW_INVALID. The 90,000 KRW limit is fixture-only. Product limits remain UNDETERMINED with Astra."
+      ],
+      "entries": [
+        {
+          "case_id": "e3_ab",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "e3_bc",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/1/expected_result"
+        },
+        {
+          "case_id": "e3_abc",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/2/expected_result"
+        },
+        {
+          "case_id": "e3_duplicate_b",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/3",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_overlapping_exposure_groups_vectors_v1.json#/cases/3/expected_result"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_resale_distribution_checkpoints",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json",
+        "sha256": "ed4c3f4385283f1cf0fc63b51806afa27973a43d38ad87aa58c428f20cc12385",
+        "gitBlob": "3277a2bf77eb1f429a2b7d779dee8622fd773603"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json",
+        "sha256": "ed4c3f4385283f1cf0fc63b51806afa27973a43d38ad87aa58c428f20cc12385",
+        "gitBlob": "3277a2bf77eb1f429a2b7d779dee8622fd773603"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_resale_distribution_checkpoints.py",
+        "symbol": "CapitalResaleDistributionCheckpointTests.test_checkpoint_replay"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital resale distribution checkpoints"
+        }
+      ],
+      "limitations": [
+        "Commit and distribution supply settlement obligations for two observations of one frozen F04 face. The intervening resale receipt supplies mock ownership evidence only. The zero tolerance is fixture-only. Both observations retain NOT_BOUND and repair=NONE."
+      ],
+      "entries": [
+        {
+          "case_id": "settle-resale-commit",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/0/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/23/receipt"
+        },
+        {
+          "case_id": "accept-A",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/1/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/24/receipt"
+        },
+        {
+          "case_id": "distribute-resale",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_resale_distribution_checkpoints_vectors_v1.json#/cases/2/expected_result",
+          "receipt_ref": "reference/booking_resale_admission/fixtures/commerce_journey_receipts_v1.json#/steps/25/receipt"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_group_sum_boundary",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json",
+        "sha256": "2b94f8c629794d021b76c129d8aa364707557c353c0d46016474b7c3a6e85e57",
+        "gitBlob": "6cb7bfabccb73c4dc133223be3d0f53d2200c90b"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json",
+        "sha256": "2b94f8c629794d021b76c129d8aa364707557c353c0d46016474b7c3a6e85e57",
+        "gitBlob": "6cb7bfabccb73c4dc133223be3d0f53d2200c90b"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_group_sum_boundary.py",
+        "symbol": "CapitalGroupSumBoundaryTests.test_group_sum_boundary"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital group sum boundary"
+        }
+      ],
+      "limitations": [
+        "The group sum can exceed the per-view ceiling. Both limits are synthetic caller inputs. Product limits remain UNDETERMINED with Astra. Within-limit status grants no exposure authority and the refund component remains NOT_BOUND."
+      ],
+      "entries": [
+        {
+          "case_id": "at_total",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "one_below",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/1/expected_result"
+        },
+        {
+          "case_id": "single_view_overflow",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/2",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/cases/2/expected_result"
+        }
+      ],
+      "observations": [
+        {
+          "kind": "source_credit_view",
+          "ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/credit_views/0"
+        },
+        {
+          "kind": "source_credit_view",
+          "ref": "reference/credit_advance_f04/fixtures/capital_group_sum_boundary_vectors_v1.json#/credit_views/1"
+        }
+      ]
+    },
+    {
+      "id": "capital_draw_refusal_after_restore",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json",
+        "sha256": "06aef555f6c8fb81aef4043d7553493ead55ca5a2035843a170ca2bd732f675b",
+        "gitBlob": "eb7f4717801a86ce67bcbb4b3606acdf3398149b"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json",
+        "sha256": "06aef555f6c8fb81aef4043d7553493ead55ca5a2035843a170ca2bd732f675b",
+        "gitBlob": "eb7f4717801a86ce67bcbb4b3606acdf3398149b"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_draw_refusal_after_restore.py",
+        "symbol": "CapitalDrawRefusalAfterRestoreTests.test_draw_refusal_pair"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital draw refusal after restore"
+        }
+      ],
+      "limitations": [
+        "Refused calls leave no accepted journal entry. Equal journals and state digests cannot establish whether the original received a refused call. The restored draw is an offline mock diagnostic only."
+      ],
+      "entries": [
+        {
+          "case_id": "original",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "restored",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_draw_refusal_after_restore_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_equal_gross_claim_binding",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json",
+        "sha256": "dcce54255062d391faaf2d0ccc2f1f284fae8b0abbafe620162f33e25c740b34",
+        "gitBlob": "c3b425ff42bef595bb9f3a8e1a631794f8fc3117"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json",
+        "sha256": "dcce54255062d391faaf2d0ccc2f1f284fae8b0abbafe620162f33e25c740b34",
+        "gitBlob": "c3b425ff42bef595bb9f3a8e1a631794f8fc3117"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_equal_gross_claim_binding.py",
+        "symbol": "CapitalEqualGrossClaimBindingTests.test_equal_gross_claim_binding"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital equal-gross claim binding"
+        }
+      ],
+      "limitations": [
+        "The F04 mock draw requires the committed settlement to match the offered claim identity even when currency and gross agree. Both settlement journals are preserved."
+      ],
+      "entries": [
+        {
+          "case_id": "matching",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "crossed",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_equal_gross_claim_binding_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_refund_versus_repayment",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json",
+        "sha256": "72b637b7e7209e36303fe4faa890c2339263ef3ae02e256d7e7c6410aef2a5e4",
+        "gitBlob": "75183634816a2c93f2e598bb3e5ccac7bcf83728"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json",
+        "sha256": "72b637b7e7209e36303fe4faa890c2339263ef3ae02e256d7e7c6410aef2a5e4",
+        "gitBlob": "75183634816a2c93f2e598bb3e5ccac7bcf83728"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_refund_versus_repayment.py",
+        "symbol": "CapitalRefundVersusRepaymentTests.test_refund_versus_repayment"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital refund versus repayment"
+        }
+      ],
+      "limitations": [
+        "Equal fixture amounts affect separate balances and journals. Both outcomes preserve the committed offer face. Shared exposure uses the credit view from each branch and a caller-supplied fixture limit."
+      ],
+      "entries": [
+        {
+          "case_id": "mock_acceptance",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "repayment_note",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_refund_versus_repayment_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": []
+    },
+    {
+      "id": "capital_statement_component_identity",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json",
+        "sha256": "cae9854cc5da29bb1d45bb2c9adf620821c822fafac09e838a1b05bce403a79e",
+        "gitBlob": "01e86fe9731f00e5b5ff145f425394437e65cd13"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json",
+        "sha256": "cae9854cc5da29bb1d45bb2c9adf620821c822fafac09e838a1b05bce403a79e",
+        "gitBlob": "01e86fe9731f00e5b5ff145f425394437e65cd13"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_statement_component_identity.py",
+        "symbol": "CapitalStatementComponentIdentityTests.test_statement_component_identity"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital statement component identity"
+        }
+      ],
+      "limitations": [
+        "Equal claim totals and F04 observations can come from distinct statement component splits. Each observation identifies its own accepted settlement journal entry. The fixture limit and tolerance grant no exposure authority."
+      ],
+      "entries": [
+        {
+          "case_id": "fee",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "held",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": [
+        {
+          "case_id": "fee",
+          "kind": "statement_observation",
+          "ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0/after",
+          "journal_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/0/after/settlement/journal/6"
+        },
+        {
+          "case_id": "held",
+          "kind": "statement_observation",
+          "ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/after",
+          "journal_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/after/settlement/journal/6"
         }
       ]
     }

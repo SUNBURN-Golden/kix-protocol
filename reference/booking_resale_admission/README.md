@@ -4485,8 +4485,8 @@ receipt records `CONSUMED_ONCE` and right version `2`.
 The replay validates command bodies against the published FSM schema, then
 compares canonical bytes for the complete receipts, refusal code, exact input
 pointers and detached diagnostics. The receipt file pins input and source bytes
-with SHA-256 and Git blob IDs. The companion index lists this tenth family and
-341 steps in total.
+with SHA-256 and Git blob IDs. This tenth family brought the companion index to
+341 steps.
 [Inputs](fixtures/commerce_linked_refund_inputs_v1.json) ·
 [Complete outcomes](fixtures/commerce_linked_refund_receipts_v1.json) ·
 [Replay suite](test_commerce_linked_refund_vectors.py) ·
@@ -4501,3 +4501,283 @@ liability is **UNDETERMINED** with JunTae and legal counsel. Semantic consumptio
 is `HOLD_SEMANTIC`, all 13 reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned,
 and external consumer acceptance is `UNVERIFIED`.
 [Coverage and local verification](../../validation/2026-11-20-plan-commerce-linked-refund-vectors/README.md)
+
+## Commerce late payment after booking cancellation vectors
+
+The 16-step history runs through the in-process `FsmHost`. Buyer 1 cancels
+confirmed unpaid `order-1`. Buyer 2 confirms `order-2` for the same
+`show-1` slot 0. The late synthetic payment for `order-1` and its exact replay
+both return `TERMINAL_IMMUTABLE`. The replay test compares both reservation
+views, the show, and the canonical state, digest and accepted journal of all
+five machines before, between and after the refusals. Cancellation replay
+returns the original `FREE` slot in the receipt while buyer 2 still holds it.
+[Booking contract §9](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md#9-예약발행-수락-상태-기계)
+
+Buyer 2's payment records its own reference without issuing a right. Explicit
+issuance creates active version-1 `issue-2` with an `UNBOUND` settlement gate.
+Admission adopts that right, authorizes it and consumes it in distinct
+receipts, ending at version 2 with `CONSUMED_ONCE`. The input and complete
+outcomes make up the eleventh companion family, bringing the index to 357 steps.
+[Inputs](fixtures/commerce_late_payment_after_cancel_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_late_payment_after_cancel_receipts_v1.json) ·
+[Replay suite](test_commerce_late_payment_after_cancel_vectors.py) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_late_payment_after_cancel_vectors.py
+```
+
+Compensation is **UNDETERMINED** with Astra and JunTae. The refusal describes the
+synthetic reservation command. Actual provider facts remain subject to the
+state lifecycle contract. Refund liability and actual late-fact custody are
+outside this history. Semantic consumption is `HOLD_SEMANTIC`, all 13 reads
+are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external acceptance is
+`UNVERIFIED`.
+[State lifecycle §3](../../docs/contracts/STATE_LIFECYCLE.md#3-lc-fact--늦은-사실-보존) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-late-payment-after-cancel/README.md)
+
+## Commerce payment reference scope vectors
+
+One 16-step history runs both shows in the same in-memory `FsmHost`. On
+`show-1`, the buyer confirms a reservation, records the primary payment,
+issues `issue-1`, and lists the right for resale. Presenting the primary
+reference for that listing returns `PAYMENT_BINDING_CONFLICT`. The listing
+stays `LISTED` with null payment and transfer references, and `buyer-1`
+retains version 1 of `issue-1`. The replay compares canonical business state,
+digests, accepted journals, and local views across the refusal.
+[Booking and resale contract §§3–4](../../docs/contracts/BOOKING_RESALE_ADMISSION_GATES.md)
+
+A fresh key with a distinct reference advances the listing to `PAYMENT_NOTED`
+while the seller retains version 1. A separate `resale_accept_resale` command
+transfers `issue-1` to `buyer-2` at version 2. Each command appends one resale
+journal entry. The final command records the original primary reference for
+`order-2` on `show-2`. A local snapshot shows both primary payments.
+
+The replay checks the published command schema, complete canonical outcomes,
+and exact input pointers. This twelfth family brought the index to 373 steps.
+[Canonical inputs](fixtures/commerce_payment_ref_scope_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_payment_ref_scope_receipts_v1.json) ·
+[Replay suite](test_commerce_payment_ref_scope_vectors.py) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission -t reference/booking_resale_admission -p test_commerce_payment_ref_scope_vectors.py
+```
+
+The pack records synthetic in-process behavior under `HOLD_SEMANTIC`. All 13
+reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external acceptance is
+`UNVERIFIED`. The separate semantic grant covers its listed steps and outcomes.
+Product TTLs, fees, and compensation are `UNDETERMINED` with Astra and JunTae.
+Provider and legal terms retain their existing owners. [Scoped fixture qualification](../../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-payment-ref-scope/README.md)
+
+## Commerce admission lost-reply vectors
+
+Two fresh in-memory hosts replay the same nine setup calls through
+`booking-admission/authorize-B`, then each attempts the pinned
+`booking-admission/consume-B` envelope once. Commerce observes the same
+`operationId` and body `idempotency_key`, a missing receipt, and terminal
+`UNKNOWN` with zero follow-up calls.
+
+The fixture's `producer_evidence` records test diagnostics. Loss before
+dispatch leaves `admit-B` authorized at version 1 and all five journals
+unchanged. Loss after dispatch discards the successful receipt. The admission
+and reservation views show the consumed right at version 2, and each journal
+appends one consume entry. The recovery lookup remains `NOT_BOUND`. The
+diagnostics confer no authority to query, poll, retry, or replace the write.
+[Paired fixture](fixtures/commerce_admission_lost_reply_v1.json) ·
+[Replay suite](test_commerce_admission_lost_reply.py)
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_admission_lost_reply.py
+```
+
+This offline companion evidence sits outside the pinned
+`commerce-fixture-8ba7f6c-1` grant. External Commerce acceptance remains
+`UNVERIFIED`. [Scoped fixture qualification](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#scoped-commerce-fixture-qualification)
+
+## Commerce resale transfer lost-reply vectors
+
+Each case starts a fresh in-memory host, replays the pinned market setup
+through `resale-market/market-pay`, then attempts the same
+`resale-market/market-accept` envelope once. Both callers record
+`op-resale-market-market-accept`, body key `key-market-accept`, a null receipt,
+`UNKNOWN`, and zero follow-up calls.
+
+The fixture keeps the shared caller record in `expected_caller` and the
+test-harness diagnostics in each case's `producer_evidence`. Loss before
+dispatch leaves `list-1` at `PAYMENT_NOTED`, with `buyer-1` holding `issue-1`
+at version 1 and all five journals unchanged. Loss after dispatch withholds
+the full pinned market receipt from the caller. The producer shows
+`TRANSFERRED`, `buyer-2` holding `issue-1` at version 2, and one appended
+`accept_resale` entry in the resale journal. Resolve `hidden_receipt_id`
+against the market golden's `receipts` object for producer verification.
+The recovery lookup remains `NOT_BOUND`. Keep the unresolved write fenced
+without polling, retry, or replacement writes. This is non-normative offline
+evidence for Commerce.
+[Paired fixture](fixtures/commerce_transfer_lost_reply_v1.json) ·
+[Market golden](fixtures/commerce_market_full_receipts_v1.json) ·
+[Recovery boundary](../../docs/status/CONSUMER_SURFACE_BOUNDARY_MAP.md#unavailable-consumer-bindings)
+
+```bash
+python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p 'test_commerce_transfer_lost_reply.py' -v
+```
+
+## Commerce resale buyer-hold release vectors
+
+`buyer-2` acquires `hold-1` for `list-1`. A release from `buyer-3` returns
+`BUYER_MISMATCH`. The replay compares canonical state, digests, accepted journals
+and public views across the refusal. The valid release clears the hold and
+returns `LISTED`, with `issue-1` still held by `buyer-1` at version 1 and the
+resale payment reference still null.
+
+After `buyer-2` acquires `hold-2`, replaying the original release key returns
+the first `LISTED` receipt with `duplicate: true` and `applied: null`. The
+current listing stays `BUY_HELD` under `hold-2`. The replay compares the full
+first receipt and checks that current state, digests, journals and views match
+their pre-replay values. An explicit payment observation records `PAYMENT_NOTED`
+without moving funds. The separate transfer moves `issue-1` to `buyer-2` at
+version 2.
+[Canonical inputs](fixtures/commerce_resale_buyer_release_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_resale_buyer_release_receipts_v1.json) ·
+[Replay suite](test_commerce_resale_buyer_release_vectors.py) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_resale_buyer_release_vectors.py
+```
+
+This non-normative mock evidence carries `HOLD_SEMANTIC`. The `resale_release_hold`
+binding is `BOOTSTRAP_SCHEMA_BOUND`, all 13 reads are `NOT_BOUND`, SD1 is `OPEN`
+and User-owned, and external acceptance is `UNVERIFIED`. Product TTLs, fees and
+compensation remain `UNDETERMINED` with Astra and JunTae. Provider and legal
+terms retain their existing owners.
+[Scoped fixture qualification](../../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.md) ·
+[Coverage and local verification](../../validation/2026-11-20-plan-commerce-resale-buyer-release/README.md)
+
+## Commerce admission replay after resale vectors
+
+This 18-step in-process history records reservation, primary payment,
+issuance of `issue-1`, and authorization `admit-1` for `buyer-1` at version 1.
+The fixture advances the linked admission and reservation clocks to the
+authorization's `expires_ms` (1,120,000), then advances the independent resale
+clock to the same value. The expired authorization has no live `admission_id`
+before listing. The distinct resale payment leaves ownership at version 1.
+The explicit transfer `transfer-1` moves the right to `buyer-2` at version 2.
+
+Replaying the original authorization with the exact body and key returns its
+first receipt with `duplicate: true` and `applied: null`. It preserves the
+original holder, version, gate, admission ID, and expiry as historical facts.
+A fresh consume using the original version, gate and request returns
+`STALE_VERSION`. Both calls preserve all five machines' accepted journals,
+canonical states, digests and available views at their respective checkpoints.
+The resale right stays with `buyer-2` at version 2, and both the reservation and
+credential views have a null `consume_id`.
+
+The input's `evidence_refs` gives exact repository-relative JSON pointers to the
+three request bodies, the two receipts, and the refusal code.
+`diagnostic_snapshot` contains detached test-harness evidence. The pack carries
+`HOLD_SEMANTIC`, all 13 reads are `NOT_BOUND`, SD1 is `OPEN` and User-owned, and
+external acceptance is `UNVERIFIED`. Fixture amounts and clocks are synthetic.
+Product TTLs, fees and compensation remain `UNDETERMINED` with Astra and JunTae.
+Provider and legal terms retain their existing owners.
+[Canonical inputs](fixtures/commerce_admission_replay_after_resale_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_admission_replay_after_resale_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#admission-replay-after-resale) ·
+[Coverage and local verification](../../validation/2026-11-26-plan-commerce-admission-replay-after-resale/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_admission_replay_after_resale_vectors.py -v
+```
+
+## Commerce replacement admission binding vectors
+
+This 15-step history replays `expired-authorization-replacement` through
+`replace` in one in-process host. At synthetic time 1,120,000, the replacement
+`admit-2` binds `gate-b` to the replacement request until 1,240,000. The
+three presentations use distinct consume IDs and idempotency keys for the
+same paid, issued right `issue-1` at version 1.
+
+| Presentation | Outcome | Observed effect |
+|---|---|---|
+| Old gate and replacement request | `GATE_MISMATCH` | Replacement, version 1 and accepted journals preserved |
+| Replacement gate and old request | `ADMISSION_REQUEST_MISMATCH` | Replacement, version 1 and accepted journals preserved |
+| Replacement gate and replacement request | `CONSUMED_ONCE` | Version 2, authorization detached, slot `ISSUED` and one consume appended to each bound journal |
+
+The input links the original payment and issuance receipts separately.
+The output records complete canonical outcomes and detached diagnostic
+snapshots. This is source-informed mock evidence under `HOLD_SEMANTIC`.
+All 13 reads remain `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external
+acceptance is `UNVERIFIED`. Product TTLs, fees and compensation remain
+`UNDETERMINED` with Astra and the User. Provider and legal terms retain their
+existing owners.
+[Canonical inputs](fixtures/commerce_replaced_admission_binding_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_replaced_admission_binding_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#replacement-admission-binding) ·
+[Coverage and local verification](../../validation/2026-11-27-plan-commerce-replaced-admission-binding/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_replaced_admission_binding_vectors.py
+```
+
+## Commerce admission journal after transfer vectors
+
+Both cases replay case 0 of the pinned admission-replay-after-resale pack.
+They share the four-entry, 1,009-byte canonical admission journal captured
+after `resale-expiry-clock` at synthetic time 1,120,000. Direct restore in
+each case starts from a fresh copy of the reservation journal captured
+after `resale-adopt`, when the ticket is issued.
+
+| Case | Published checkpoint | Current resale holder and version | Local restore and fresh reconciliation |
+|---|---|---|---|
+| `matching-ownership` | `resale-expiry-clock` | `buyer-1`, 1 | Restore reproduces the pinned state digest. Reconciliation reports `matched: true` for all four entries. |
+| `transferred-ownership` | `transfer` | `buyer-2`, 2 | Both diagnostics return `STALE_VERSION`, with zero new consumptions. |
+
+The matching case ends at source step 12. The transferred case continues to
+step 15. Resale payment at step 14 leaves ownership with `buyer-1` at
+version 1. The explicit `transfer-1` changes ownership. The successful
+match compares historical replay after the authorization has expired and
+grants no admission authority. The pack carries `HOLD_SEMANTIC`, and all
+13 consumer reads remain `NOT_BOUND`.
+[Canonical inputs](fixtures/commerce_admission_journal_after_transfer_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_admission_journal_after_transfer_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#admission-journal-after-transfer) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-admission-journal-after-transfe/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_admission_journal_after_transfer_vectors.py -v
+```
+
+## Commerce cross-order issuance vectors
+
+Both cases replay the 16-step `payment-ref-scope` history through `payment-2`
+in separate in-process hosts. At that checkpoint `order-2` is `PAYMENT_NOTED`
+on `show-2`. On `show-1`, `transfer-1` has moved `issue-1` to `buyer-2` at
+version 2. Each case submits one `reservation_issue` with a fresh key.
+
+| Case | Issuance ID | Outcome for `order-2` |
+|---|---|---|
+| `distinct-issuance` | `issue-2` | One right for `buyer-3` at version 1 on `show-2`. The reservation journal appends one `issue`. |
+| `issuance-collision` | `issue-1` | `ISSUANCE_BINDING_CONFLICT`. The paid reservation retains its `RESERVED` slot and has no right. All five accepted journals are preserved. |
+
+Both branches preserve the transferred resale right and record zero admission
+consumptions. The input pins the checkpoint files and references. Each indexed
+outcome contains the full receipt or refusal and a detached test-harness snapshot.
+The pack carries `HOLD_SEMANTIC` and the existing `MOCK_EVIDENCE` binding.
+[Checkpoint input](fixtures/commerce_payment_ref_scope_inputs_v1.json#/cases/0/steps/15/body) ·
+[Checkpoint outcome](fixtures/commerce_payment_ref_scope_receipts_v1.json#/cases/0/steps/15) ·
+[Canonical inputs](fixtures/commerce_cross_order_issuance_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_cross_order_issuance_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#cross-order-issuance) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-cross-order-issuance/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_cross_order_issuance_vectors.py
+```
