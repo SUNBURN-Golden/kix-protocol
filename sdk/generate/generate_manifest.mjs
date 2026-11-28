@@ -19,6 +19,10 @@ const EXPECTED_SOURCE_BLOB = "619ae21c82ca3df5661bd3831613f15fa65225ff";
 
 const CONTRACT_PATH = "docs/contracts/openapi/kix-protocol.contract-only.openapi.json";
 const GATE_PATH = "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json";
+// The live gate document later gained the resale read routes. This revision keeps
+// binding the gate bytes it was generated from.
+const HISTORICAL_GATE_INPUT = "sdk/compat/inputs/integration-gate.read-model-reference-1.openapi.json";
+const HISTORICAL_GATE_SHA256 = "773abae8a27666e9c16467826a9bc4de3e42f8c9256ae4edc908dcfa774ffaa5";
 const SOURCE_PATH = "reference/v0.3-rc1/protocol_contract.json";
 const FSM_PATH = "docs/contracts/openapi/fsm-command-contract.json";
 const GENERATOR_PATH = "sdk/generate/generate_client.mjs";
@@ -69,7 +73,10 @@ function main() {
   const outRoot = argument("--out-root", ROOT);
   const sourceBytes = readBytes(SOURCE_PATH);
   const contractBytes = readBytes(CONTRACT_PATH);
-  const gateBytes = readBytes(GATE_PATH);
+  const gateBytes = readBytes(HISTORICAL_GATE_INPUT);
+  if (sha256(gateBytes) !== HISTORICAL_GATE_SHA256) {
+    fail(`historical ${PROFILE_REVISION} gate bytes drift`);
+  }
   const fsmBytes = readBytes(FSM_PATH);
   const generatorBytes = readBytes(GENERATOR_PATH);
   const catalogueBytes = readBytes(CATALOGUE_PATH);

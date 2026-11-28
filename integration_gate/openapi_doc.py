@@ -31,12 +31,13 @@ from integration_gate.constants import (
     READINESS_FSM_REFUSED,
     READ_COMMAND_COUNT,
 )
+from integration_gate.read_schema import READ_PATHS, read_components, read_paths
 
 DESCRIPTION = (
     'Non-production loopback integration gate for the published KIX v0.3-rc1 '
     'local call. There is no production endpoint and no public host. '
     'Successful local HTTP tests are not production approval.\n\n'
-    'The only protocol path is POST /x-kix-contract-only/local-call. '
+    'The protocol command path is POST /x-kix-contract-only/local-call. '
     'The JSON body is the published local-call envelope: operationId, actor, '
     'action, and body. action is one of the published command keys. body is '
     'validated against that command JSON Schema. A core action is passed to '
@@ -67,6 +68,9 @@ DESCRIPTION = (
     'reject codes from the reference model stay reject codes. GET /health and '
     'GET /ready are process probes, not protocol commands. Readiness is not '
     'production readiness.\n\n'
+    'Six integration-only fixture reads use POST /x-kix-contract-only/read/. '
+    'Reads are available on the in-memory worker, enforce fixture actor scope, '
+    'and run without browser CORS or readiness-directory storage. '
     'The contract-only catalogue remains a pin that does not declare a live '
     'server. This document only describes the local integration-gate transport.'
 )
@@ -248,6 +252,7 @@ def build_document(root=None):
             },
         },
         'x-kix-local-call-operations': operations,
+        'components': read_components(),
         'paths': {
             LOCAL_CALL_PATH: {
                 'post': {
@@ -336,6 +341,7 @@ def build_document(root=None):
                     },
                 },
             },
+            **read_paths(),
         },
     }
 
@@ -442,7 +448,15 @@ def validate(root=None, document=None):
         else:
             need('x-kix-read-only' not in item, 'write operation marked read-only: ' + str(operation_id))
     paths = document.get('paths') or {}
-    need(list(paths) == [LOCAL_CALL_PATH], 'protocol path set drift')
+    need(list(paths) == [LOCAL_CALL_PATH, *READ_PATHS], 'integration path set drift')
+    expected_reads = read_paths()
+    need(all(paths.get(path) == item for path, item in expected_reads.items()), 'read routes drift')
+    need(document.get('components') == read_components(), 'read components drift')
+    # Loopback resale read routes are addressed by path, not by the local-call
+    # envelope action. They may share a name with an approved point query, but
+    # never with a write command.
+    write_names = [name for name in names if name not in catalogue.read_name_set]
+    need(set(READ_PATHS.values()).isdisjoint(write_names), 'read and write operationIds collide')
     need('/health' not in paths and '/ready' not in paths, 'probes must not be protocol paths')
     post = (paths.get(LOCAL_CALL_PATH) or {}).get('post') or {}
     need(post.get('operationId') == GENERIC_OPERATION_ID, 'generic operationId drift')
@@ -537,6 +551,17 @@ def self_test(root=None):
     broken['paths']['/events'] = {'get': {'operationId': 'listEvents'}}
     if not validate(root, broken):
         print('self-test: extra path was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    read = broken['paths'][next(iter(READ_PATHS))]
+    read['get'] = read.pop('post')
+    if not validate(root, broken):
+        print('self-test: wrong read method was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    broken['components']['schemas']['FixtureReadWatermark']['required'] = ['source']
+    if not validate(root, broken):
+        print('self-test: weakened read schema was accepted', file=sys.stderr)
         return 1
     broken = copy.deepcopy(document)
     broken['x-kix-local-call-operations'] = list(broken['x-kix-local-call-operations']) + [

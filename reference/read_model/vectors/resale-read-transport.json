@@ -1,0 +1,74 @@
+{
+  "fixture_version": 1,
+  "source": "sdk/conformance/vectors/commerce-fixture-tuple.vectors.json",
+  "setup": [
+    "resale-market/reservation-clock",
+    "resale-market/market-show",
+    "resale-market/resale-clock",
+    "resale-market/market-reserve",
+    "resale-market/market-order",
+    "resale-market/market-primary-payment",
+    "resale-market/market-issue",
+    "resale-market/market-adopt",
+    "resale-market/market-list",
+    "resale-market/market-hold",
+    "resale-market/market-pay"
+  ],
+  "original_transfer": "resale-market/market-accept",
+  "unrelated_settlement": {
+    "initiate_overrides": {"trade_id":"another-listing"},
+    "denied_reads": [
+      {"actor":"organizer","listing_id":"list-1"},
+      {"actor":"buyer-2","listing_id":"list-1"}
+    ]
+  },
+  "bound_companion": [
+    {"id":"initiate","action":"settlement_initiate","body":{"settlement_id":"settle-read-1","idempotency_key":"read-initiate","trade_id":"list-1","gross":8000,"debtor_role":"buyer-2","policy":{"kind":"PRIMARY_FEE_BPS","fee_bps":0,"residual_payee":"organizer","fee_payee":"platform"}}},
+    {"id":"authorize","action":"settlement_authorize","body":{"settlement_id":"settle-read-1","idempotency_key":"read-authorize"}},
+    {"id":"capture","action":"settlement_capture","body":{"settlement_id":"settle-read-1","idempotency_key":"read-capture"}},
+    {"id":"bind","action":"resale_bind_settlement","body":{"listing_id":"list-1","idempotency_key":"read-bind","settlement_id":"settle-read-1"}},
+    {"id":"conflicting-bind","action":"resale_bind_settlement","body":{"listing_id":"list-1","idempotency_key":"read-bind-other","settlement_id":"settle-other"},"error":"SETTLEMENT_BINDING_CONFLICT"},
+    {"id":"before-commit","action":"resale_accept_resale","body":{"transfer_id":"transfer-1","idempotency_key":"read-accept-early","listing_id":"list-1"},"error":"SETTLEMENT_NOT_COMMITTED"},
+    {"id":"commit","action":"settlement_commit","body":{"settlement_id":"settle-read-1","idempotency_key":"read-commit","movement_id":"move-read-1","gross":8000,"amount":8000,"fee":0,"tax":0,"held":0,"adjustment":0}},
+    {"id":"accept","action":"resale_accept_resale","body":{"transfer_id":"transfer-1","idempotency_key":"read-accept","listing_id":"list-1"}}
+  ],
+  "bound_reads": [
+    {"id":"seller-listing","query":"get_listing","request":{"actor":"buyer-1","listing_id":"list-1"},"expect":{"body.settlement_id":"settle-read-1","body.settlement_gate":"MOCK_COMMIT_OBSERVED","body.holder_role":"buyer-2"}},
+    {"id":"holder-listing","query":"get_listing","request":{"actor":"buyer-2","listing_id":"list-1"},"expect":{"body.ownership_transferred":true,"body.current_version":2}},
+    {"id":"listing-unauthorized","query":"get_listing","request":{"actor":"outsider","listing_id":"list-1"},"status":404,"error":"NOT_FOUND"},
+    {"id":"listing-absent","query":"get_listing","request":{"actor":"outsider","listing_id":"missing"},"status":404,"error":"NOT_FOUND"},
+    {"id":"right-holder","query":"get_right","request":{"actor":"buyer-2","right_id":"issue-1"},"expect":{"body.ticket.version":2,"body.right.holder_role":"buyer-2","body.right.version":2}},
+    {"id":"right-former-holder","query":"get_right","request":{"actor":"buyer-1","right_id":"issue-1"},"status":404,"error":"NOT_FOUND"},
+    {"id":"right-stale-watermark","query":"get_right","request":{"actor":"buyer-2","right_id":"issue-1"},"watermark":"future","status":422,"error":"READ_WATERMARK_UNMET"},
+    {"id":"right-wrong-source","query":"get_right","request":{"actor":"buyer-2","right_id":"issue-1"},"watermark":"settlement","status":422,"error":"READ_WATERMARK_UNMET"},
+    {"id":"presentation-current","query":"get_presentation","request":{"actor":"buyer-2","right_id":"issue-1","version":2,"holder_role":"buyer-2"},"expect":{"body.presentation.matches_current_right":true,"body.presentation.venue_credential_reissued":false}},
+    {"id":"presentation-old","query":"get_presentation","request":{"actor":"buyer-2","right_id":"issue-1","version":1,"holder_role":"buyer-1"},"expect":{"body.presentation.matches_current_right":false}},
+    {"id":"presentation-unauthorized","query":"get_presentation","request":{"actor":"buyer-1","right_id":"issue-1","version":2,"holder_role":"buyer-2"},"status":404,"error":"NOT_FOUND"},
+    {"id":"settlement-organizer","query":"get_settlement","request":{"actor":"organizer","listing_id":"list-1"},"expect":{"body.settlement_id":"settle-read-1","body.trade_id":"list-1","body.phase":"COMMITTED","body.claim.confirmed_cash":8000,"body.funds_executed":false}},
+    {"id":"settlement-debtor","query":"get_settlement","request":{"actor":"buyer-2","listing_id":"list-1"},"expect":{"body.settlement_id":"settle-read-1","body.debtor_role":"buyer-2"}},
+    {"id":"settlement-seller-denied","query":"get_settlement","request":{"actor":"buyer-1","listing_id":"list-1"},"status":404,"error":"NOT_FOUND"},
+    {"id":"settlement-absent","query":"get_settlement","request":{"actor":"organizer","listing_id":"missing"},"status":404,"error":"NOT_FOUND"},
+    {"id":"market-empty-after-transfer","query":"list_open_listings","request":{"actor":"viewer"},"expect":{"body.entries":[],"body.next_cursor":null,"body.truncated":false}}
+  ],
+  "recovery": {
+    "actor":"commerce-journey-fixture",
+    "subject":{"action":"resale_accept_resale","field":"transfer_id","id":"transfer-1"},
+    "trace_id":"read-transfer-lost"
+  },
+  "deadline_recovery": {
+    "queued_conflict": {
+      "actor":"fixture",
+      "operation_id":"queued-clock",
+      "trace_id":"queued-clock-trace",
+      "subject":{"action":"resale_set_clock","field":"subject_id","id":"clock"},
+      "first_body":{"subject_id":"clock","idempotency_key":"queued-clock","now_ms":1},
+      "conflicting_body":{"subject_id":"clock","idempotency_key":"queued-clock","now_ms":2}
+    },
+    "unbound_settlement": {
+      "actor":"commerce-journey-fixture",
+      "operation_id":"deadline-initiate",
+      "trace_id":"deadline-initiate-trace",
+      "subject":{"action":"settlement_initiate","field":"settlement_id","id":"settle-read-1"}
+    }
+  }
+}

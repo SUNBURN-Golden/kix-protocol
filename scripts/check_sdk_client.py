@@ -132,15 +132,26 @@ def compare_producer_source():
             ['git', '--no-lazy-fetch', *args], cwd=ROOT, capture_output=True, check=True,
         ).stdout
 
-    paths = [
-        manifest['source_references']['fixture_profile'],
-        manifest['source_references']['extension_profile']['path'],
-        *(ref['path'] for ref in manifest['contract'].values()),
-        manifest['generator']['path'],
-        manifest['sdk_output']['path'],
-        *(ref['path'] for ref in manifest['vectors']),
-        'sdk/sdk-pin.json',
-        'toolchains.json',
+    gate_local = (
+        'sdk/compat/inputs/integration-gate.read-model-reference-1.openapi.json'
+        if manifest.get('profile_revision') == 'read-model-reference-1'
+        else manifest['contract']['integration_gate']['path']
+    )
+    comparisons = [
+        (manifest['source_references']['fixture_profile'], manifest['source_references']['fixture_profile']),
+        (
+            manifest['source_references']['extension_profile']['path'],
+            manifest['source_references']['extension_profile']['path'],
+        ),
+        *(
+            (ref['path'], gate_local if name == 'integration_gate' else ref['path'])
+            for name, ref in manifest['contract'].items()
+        ),
+        (manifest['generator']['path'], manifest['generator']['path']),
+        (manifest['sdk_output']['path'], manifest['sdk_output']['path']),
+        *((ref['path'], ref['path']) for ref in manifest['vectors']),
+        ('sdk/sdk-pin.json', 'sdk/sdk-pin.json'),
+        ('toolchains.json', 'toolchains.json'),
     ]
     try:
         if git('cat-file', '-t', commit).strip() != b'commit':
@@ -149,9 +160,13 @@ def compare_producer_source():
         if actual_tree != manifest['producer']['source_tree']:
             return ['producer source tree drift']
         return [
-            f'producer source bytes drift: {path}'
-            for path in paths
-            if git('cat-file', 'blob', f'{commit}:{path}') != (ROOT / path).read_bytes()
+            (
+                f'producer source bytes drift: {source_path}'
+                if local_path == source_path
+                else f'producer source bytes drift: {source_path} (archived at {local_path})'
+            )
+            for source_path, local_path in comparisons
+            if git('cat-file', 'blob', f'{commit}:{source_path}') != (ROOT / local_path).read_bytes()
         ]
     except (OSError, subprocess.CalledProcessError) as error:
         return [f'cannot read producer inputs from local Git objects: {error}']

@@ -42,6 +42,12 @@ const PROFILE_PATH = `sdk/compat/profiles/${READ_MODEL_REVISION}.profile.json`;
 const HISTORICAL_REVISION = "bootstrap-2";
 const HISTORICAL_MANIFEST = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const HISTORICAL_PROFILE = "sdk/compat/profiles/bootstrap-2.profile.json";
+// The live gate document later gained the resale read routes. The
+// read-model-reference-1 tuple is verified against the gate bytes it bound.
+const LIVE_GATE_PATH = "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json";
+const READ_MODEL_GATE_INPUT = "sdk/compat/inputs/integration-gate.read-model-reference-1.openapi.json";
+const RESALE_REVISION = "commerce-resale-read-transport-1";
+const RESALE_MANIFEST = `sdk/compat/manifests/manifest.${RESALE_REVISION}.json`;
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
 const COMMERCE_BINDING_INDEX = "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json";
 const COMMERCE_DELIVERY_INDEX = "docs/status/COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json";
@@ -178,8 +184,12 @@ function independentCanonical(value) {
   return `{${keys.map((key) => `${JSON.stringify(key)}:${independentCanonical(value[key])}`).join(",")}}`;
 }
 
-function runVerifier(manifestPath, kind = SEMANTIC, revision = READ_MODEL_REVISION) {
-  return runVerifierAt(ROOT, manifestPath, kind, revision);
+function originalGateSha256(manifestPath) {
+  return parseStrict(readFileSync(manifestPath)).contract.integration_gate.sha256;
+}
+
+function runVerifier(manifestPath, kind = SEMANTIC, revision = READ_MODEL_REVISION, gateInput = READ_MODEL_GATE_INPUT) {
+  return runVerifierAt(ROOT, manifestPath, kind, revision, { gateInput });
 }
 
 test("catalogue pin matches the contract-only OpenAPI and the source contract", () => {
@@ -665,6 +675,14 @@ test("mixed-input vectors and the committed manifest", () => {
   const sidecar = readFileSync(`${manifestPath}.sha256`, "utf8");
   assert.equal(sidecar, `${verdict.manifest_sha256}\n`);
   assert.equal(readFileSync(manifestPath, "utf8").includes(verdict.manifest_sha256), false);
+  assert.equal(sha256Hex(read(READ_MODEL_GATE_INPUT)), originalGateSha256(manifestPath));
+  const mixedGate = runVerifier(manifestPath, SEMANTIC, READ_MODEL_REVISION, LIVE_GATE_PATH);
+  assert.equal(mixedGate.status, 1);
+  assert.deepEqual(JSON.parse(mixedGate.stdout).errors, ["integration_gate bytes drift"]);
+  // The resale read tuple binds the live gate document directly.
+  const resale = runVerifier(resolve(ROOT, RESALE_MANIFEST), SEMANTIC, RESALE_REVISION, null);
+  assert.equal(resale.status, 0, resale.stderr || resale.stdout);
+  assert.equal(JSON.parse(resale.stdout).ok, true);
 
   const original = parseStrict(readFileSync(manifestPath));
   const historical = parseStrict(read(HISTORICAL_MANIFEST));
@@ -813,7 +831,7 @@ function applySidecarCase(targetRoot, pristineManifest, item) {
   }
 }
 
-function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env } = {}) {
+function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env, gateInput } = {}) {
   return spawnSync(
     process.execPath,
     [
@@ -825,6 +843,7 @@ function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env 
       kind,
       "--expect-revision",
       revision,
+      ...(gateInput ? ["--integration-gate-input", resolve(ROOT, gateInput)] : []),
     ],
     { cwd: root, encoding: "utf8", env },
   );

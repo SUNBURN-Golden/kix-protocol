@@ -120,3 +120,13 @@ npm --prefix sdk run verify-compat
 ```
 
 Node는 `toolchains.json`의 `nodeMajor` 24다.
+
+The `verify-compat` script checks `read-model-reference-1` against the gate
+bytes it bound, archived at
+`sdk/compat/inputs/integration-gate.read-model-reference-1.openapi.json`. The
+live gate document later gained the resale read routes. The verifier still
+checks the archive's Git blob and SHA-256 against the manifest. Historical
+`bootstrap-2` inputs stay in `sdk/conformance/fixtures/bootstrap-2-inputs.json.gz`.
+The local read transport has its own tuple and does not add commands to this
+TypeScript client.
+[Read transport handoff](../docs/status/COMMERCE_RESALE_READ_TRANSPORT.md)

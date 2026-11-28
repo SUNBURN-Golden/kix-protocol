@@ -10,6 +10,6 @@
   "scripts": {
     "generate": "node generate/generate_client.mjs && node generate/generate_manifest.mjs",
     "conformance": "node --test conformance/conformance.test.mjs",
-    "verify-compat": "node compat/verify_compat.mjs --manifest compat/manifests/manifest.read-model-reference-1.json --expect-kind SEMANTIC_CONFORMANCE --expect-revision read-model-reference-1"
+    "verify-compat": "node compat/verify_compat.mjs --manifest compat/manifests/manifest.read-model-reference-1.json --expect-kind SEMANTIC_CONFORMANCE --expect-revision read-model-reference-1 --integration-gate-input compat/inputs/integration-gate.read-model-reference-1.openapi.json"
   }
 }
