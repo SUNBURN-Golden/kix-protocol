@@ -27,6 +27,7 @@ import test_commerce_replaced_admission_binding_vectors as replaced_admission
 import test_commerce_admission_journal_after_transfer_vectors as admission_journal
 import test_commerce_cross_order_issuance_vectors as cross_order_issuance
 import test_commerce_two_gate_admission_vectors as two_gate_admission
+import test_commerce_credential_read_after_resale_vectors as credential_read
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -62,8 +63,10 @@ PACKS = (
      'test_complete_output_bytes_and_references', 2),
     ('two_gate_admission', two_gate_admission, 'CommerceTwoGateAdmissionVectorTests',
      'test_complete_output_bytes_and_references', 8),
+    ('credential_read_after_resale', credential_read, 'CommerceCredentialReadAfterResaleVectorTests',
+     'test_complete_output_bytes_and_references', 4),
 )
-TOTAL_ENTRIES = 434
+TOTAL_ENTRIES = 438
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -129,6 +132,10 @@ LIMITATIONS = {
     'two_gate_admission': [
         'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Both gate orders start from the same paid, issued and unconsumed checkpoint in fresh in-process hosts.',
         'The first gate consumes once at a synthetic pre-expiry clock. The evidence covers sequential calls within each host. Cross-host fencing, venue admission and production clock policy are outside its scope.',
+    ],
+    'credential_read_after_resale': [
+        'Four in-process local-call read envelopes accompany existing write receipts under HOLD_SEMANTIC.',
+        'The admission watermark covers the admission machine. Presentation freshness also depends on resale state and grants no admission authority.',
     ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
@@ -286,6 +293,40 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
 
     def test_complete_index(self):
         self.assertEqual(validate_index(self.document), TOTAL_ENTRIES)
+
+    def test_credential_reads_resolve_to_source_checkpoints(self):
+        pack = next(p for p in self.document['packs'] if p['id'] == 'credential_read_after_resale')
+        input_path = pack['input']['path']
+        output_path = pack['output']['path']
+        source_inputs = admission_replay.FIXTURE
+        source_receipts = admission_replay.GOLDEN_PATH
+        documents = {
+            path: journey._decode(_read(path))
+            for path in (input_path, output_path, source_inputs, source_receipts)
+        }
+        self.assertEqual(len(pack['entries']), len(credential_read.CHECKPOINTS))
+        for i, (entry, (source_index, checkpoint)) in enumerate(zip(pack['entries'], credential_read.CHECKPOINTS.items())):
+            step_id, action, fresh, decision = checkpoint
+            with self.subTest(step=step_id):
+                pointer = f'#/cases/0/steps/{i}'
+                source_pointer = f'#/cases/0/steps/{source_index}'
+                self.assertEqual((entry['step_id'], entry['action']), (step_id, action))
+                self.assertEqual(entry['binding_status'], 'MOCK_EVIDENCE')
+                self.assertEqual(entry['outcome_kind'], 'receipt')
+                self.assertEqual(entry['input_ref'], input_path + pointer + '/body')
+                self.assertEqual(entry['outcome_ref'], output_path + pointer)
+                step = _resolve(documents, input_path + pointer)
+                self.assertEqual(step['source_step_ref'], source_inputs + source_pointer)
+                self.assertEqual(step['source_receipt_ref'], source_receipts + source_pointer + '/receipt')
+                source = _resolve(documents, step['source_step_ref'])
+                self.assertEqual((source['id'], source['action']), (step_id, action))
+                self.assertTrue(_same(step['body'], source['body']))
+                outcome = _resolve(documents, entry['outcome_ref'])
+                self.assertTrue(_same(outcome['receipt'], _resolve(documents, step['source_receipt_ref'])))
+                envelope = _resolve(documents, entry['outcome_ref'] + '/read_envelope')
+                self.assertEqual(envelope['query'], 'get_credential')
+                self.assertIs(envelope['result']['presentation']['fresh'], fresh)
+                self.assertEqual(envelope['result']['presentation']['decision'], decision)
 
     def test_coverage_controls(self):
         for mutate in (

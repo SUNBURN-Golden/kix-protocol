@@ -333,16 +333,25 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect eighteen
-Commerce input/outcome pack families (434 steps) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect nineteen
+Commerce input/outcome pack families (438 steps) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Use the
 [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
 to determine which steps have semantic evidence. Other steps remain
-`HOLD_SEMANTIC`. The 13 approved reads and the proposed recovery lookup remain
-`NOT_BOUND`, SD1 is `OPEN` and User-owned, and external consumer acceptance
-remains `UNVERIFIED`.
+`HOLD_SEMANTIC`. In the historical binding index, the 13 reads and the
+proposed recovery lookup remain `NOT_BOUND`. SD1 is `OPEN` and User-owned,
+and external consumer acceptance remains `UNVERIFIED`.
 [Linked refund replay](../../reference/booking_resale_admission/test_commerce_linked_refund_vectors.py)
+
+The credential read after resale pack carries `HOLD_SEMANTIC`. One
+`get_credential` request returns a fresh presentation before listing,
+`LISTING_LOCKED` after listing and payment, and `STALE_VERSION` after transfer.
+The admission watermark stays fixed while resale changes the presentation.
+The published local-call binding has grants `none`.
+[Indexed checkpoints](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#credential-read-after-resale) ·
+[Read binding by transport](COMMERCE_READ_BINDING_BY_TRANSPORT_V1.json) ·
+[Builder validation](../../validation/2026-11-28-plan-commerce-credential-read-after-resale/README.md)
 
 The two-gate admission pack carries `HOLD_SEMANTIC`. Each order starts
 from the same paid, issued and unconsumed `issue-B`. The first gate
