@@ -10,6 +10,7 @@ import test_commerce_journey_conformance as journey
 from test_commerce_companion_evidence_index import _resolve
 from test_commerce_journey_receipts import _decode, _pin
 from integration_gate.catalogue import git_blob_id, load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 from integration_gate.constants import CONTRACT_ONLY_OPENAPI, INTEGRATION_GATE_OPENAPI, LOCAL_CALL_PATH
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import EnvelopeError, parse_envelope
@@ -210,7 +211,7 @@ class CommerceFixtureTupleTests(unittest.TestCase):
         for group in pins.values():
             for ref in group:
                 with self.subTest(path=ref["path"]):
-                    raw = read(ref["path"])
+                    raw = read_bootstrap_2_input(ref["path"])
                     self.assertEqual(git_blob_id(raw), ref["gitBlob"])
                     self.assertEqual(hashlib.sha256(raw).hexdigest(), ref["sha256"])
 

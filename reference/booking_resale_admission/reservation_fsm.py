@@ -707,6 +707,9 @@ class ReservationMachine:
         _require(normalized in self._shows, "UNKNOWN_SHOW")
         return self._envelope(applied="view_show", show=self._show_snapshot(normalized))
 
+    def accepted_through(self) -> dict:
+        return {"journal_entries": len(self._journal), "logical_time_ms": self._now}
+
     def export_journal(self) -> list:
         return _copy(self._journal)
 

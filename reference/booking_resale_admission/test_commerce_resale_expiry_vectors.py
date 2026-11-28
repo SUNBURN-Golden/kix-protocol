@@ -13,6 +13,7 @@ import test_commerce_journey_conformance as journey
 import test_commerce_journey_receipts as goldens
 import test_commerce_historical_receipt_vectors as historical
 from integration_gate.catalogue import load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import problems
 from mock_gates import NON_CLAIMS, _canonical
@@ -50,7 +51,7 @@ _assert_views = historical._assert_views
 
 
 def _read(path):
-    return (ROOT / path).read_bytes()
+    return read_bootstrap_2_input(path)
 
 
 def _validate(fixture):
@@ -205,7 +206,7 @@ class CommerceResaleExpiryVectorTests(unittest.TestCase):
         catalogue, host = load_catalogue(ROOT), FsmHost()
         self.assertEqual(len(journey.READ_MODEL_QUERY_NAMES), 13)
         for name in journey.READ_MODEL_QUERY_NAMES:
-            self.assertNotIn(name, catalogue.names)
+            self.assertNotIn(name, catalogue.core_names + catalogue.fsm_names)
             self.assertNotIn(name, host._commands)
         # Atomicity tests are dynamically installed; validate their executable symbol.
         import test_resale_rejection_atomicity as atomicity

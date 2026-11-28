@@ -3,6 +3,8 @@ import copy
 from pathlib import Path
 import unittest
 
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
+
 from credit_fixture import exact_fields
 from settlement_credit_boundary_vectors import PROVENANCE, replay_scenario_with_state
 from settlement_fsm import SettlementError
@@ -180,7 +182,7 @@ class CapitalRefundIdentityVectorTests(unittest.TestCase):
         self.assertEqual(sha(VECTORS.read_bytes()), VECTORS_SHA256)
         exact_fields(self.vectors, {'vector_version', 'fixture_sha256', 'source_pins', 'scenarios'}, 'vectors')
         same([VERSION, FIXTURE_SHA256], [self.vectors['vector_version'], self.vectors['fixture_sha256']])
-        same([{'path': path, 'sha256': sha((ROOT / path).read_bytes())} for path in SOURCE_PATHS],
+        same([{'path': path, 'sha256': sha(read_bootstrap_2_input(path))} for path in SOURCE_PATHS],
              self.vectors['source_pins'])
         exact_fields(self.fixture, {'fixture_version', 'fixture_kind', 'synthetic_only', 'provenance',
                                     'scenarios'}, 'fixture')

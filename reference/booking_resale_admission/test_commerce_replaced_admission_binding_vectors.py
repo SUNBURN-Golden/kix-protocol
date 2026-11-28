@@ -7,6 +7,7 @@ import unittest
 import test_commerce_journey_receipts as goldens
 import test_commerce_temporal_vectors as temporal
 from integration_gate.catalogue import load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import problems
 from mock_gates import _canonical
@@ -185,7 +186,7 @@ class CommerceReplacedAdmissionBindingVectorTests(unittest.TestCase):
         raw = GOLDEN.read_bytes()
         golden = goldens._decode(raw)
         fixture_pin = goldens._pin(FIXTURE, fixture_raw)
-        sources = [goldens._pin(path, (ROOT / path).read_bytes()) for path in sorted(SOURCE_PATHS)]
+        sources = [goldens._pin(path, read_bootstrap_2_input(path, ROOT)) for path in sorted(SOURCE_PATHS)]
         self.assertEqual(golden["fixture"], fixture_pin)
         self.assertEqual(golden["sources"], sources)
 

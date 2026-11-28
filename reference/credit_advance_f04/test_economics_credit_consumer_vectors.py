@@ -13,6 +13,8 @@ from pathlib import Path
 import sys
 import unittest
 
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
+
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 for path in (ROOT, HERE):
@@ -185,7 +187,7 @@ def _actual_vectors(fixture):
     return {
         'vector_version': 'economics-credit-consumer/1',
         'fixture_sha256': _sha(FIXTURE_PATH.read_bytes()),
-        'source_pins': [{'path': path, 'sha256': _sha((ROOT / path).read_bytes())}
+        'source_pins': [{'path': path, 'sha256': _sha(read_bootstrap_2_input(path))}
                         for path in SOURCE_PATHS],
         'scenarios': [_replay(scenario) for scenario in fixture['scenarios']],
     }

@@ -195,10 +195,11 @@ def validate_index(document, read=_read):
            [r['name'] for r in reads['items']] == sorted(journey.journey.READ_MODEL_QUERY_NAMES) and
            all(r['status'] == 'NOT_BOUND' for r in reads['items']), 'source read claim')
     catalogue = load_catalogue(ROOT)
-    _check(not set(journey.journey.READ_MODEL_QUERY_NAMES) & set(catalogue.names), 'published read claim')
+    write_names = set(catalogue.core_names + catalogue.fsm_names)
+    _check(not set(journey.journey.READ_MODEL_QUERY_NAMES) & write_names, 'write catalogue read claim')
     commands = binding['commands']['items']
     actions = [item['action'] for item in commands]
-    _check(len(actions) == len(set(actions)) and set(actions) == set(catalogue.names), 'binding action coverage')
+    _check(len(actions) == len(set(actions)) and set(actions) == write_names, 'binding action coverage')
     packs = document['packs']
     _check(type(packs) is list and [p.get('id') for p in packs] == [s[0] for s in PACKS],
            'pack coverage/order')

@@ -1,7 +1,7 @@
 /**
- * Writes the BOOTSTRAP profile, manifest-v1, and the manifest digest sidecar.
+ * Writes the unqualified producer profile, manifest-v1, and digest sidecar.
  *
- * source_commit is the catalogue input commit, not the delivery head.
+ * source_commit identifies the committed reference, gate, catalogue, and SDK inputs.
  * The manifest digest is written only to the sidecar.
  */
 import { createHash } from "node:crypto";
@@ -12,8 +12,8 @@ import { fileURLToPath } from "node:url";
 import { canonicalStringify, compareCodePoints } from "../src/jsonschema.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
-const SOURCE_COMMIT = "c2cde86e21a6e5ba6f24a56548636db6d0a34c6f";
-const SOURCE_TREE = "394084b15e01bbe4a5612aeb3431f3278c43dd85";
+const SOURCE_COMMIT = "672b3a9052e4171096295dea84707d7325a542fa";
+const SOURCE_TREE = "57ed7d55d8255427b22adbdfd68414f0761e5d91";
 const EXPECTED_SOURCE_SHA256 = "ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e";
 const EXPECTED_SOURCE_BLOB = "619ae21c82ca3df5661bd3831613f15fa65225ff";
 
@@ -23,9 +23,11 @@ const SOURCE_PATH = "reference/v0.3-rc1/protocol_contract.json";
 const FSM_PATH = "docs/contracts/openapi/fsm-command-contract.json";
 const GENERATOR_PATH = "sdk/generate/generate_client.mjs";
 const CATALOGUE_PATH = "sdk/generated/catalogue.ts";
-const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
-const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
-const SIDECAR_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json.sha256";
+const PROFILE_KIND = "SEMANTIC_CONFORMANCE";
+const PROFILE_REVISION = "read-model-reference-1";
+const PROFILE_PATH = `sdk/compat/profiles/${PROFILE_REVISION}.profile.json`;
+const MANIFEST_PATH = `sdk/compat/manifests/manifest.${PROFILE_REVISION}.json`;
+const SIDECAR_PATH = `${MANIFEST_PATH}.sha256`;
 const CANONICAL_VECTOR = "sdk/conformance/vectors/canonical-encoding.vectors.json";
 const MIXED_VECTOR = "sdk/conformance/vectors/mixed-input.vectors.json";
 
@@ -105,8 +107,8 @@ function main() {
   const names = Object.keys(schemas)
     .filter((name) => name !== "LocalCallEnvelope")
     .sort(compareCodePoints);
-  if (names.length !== 84) {
-    fail("command count must stay 84 for bootstrap-2");
+  if (names.length !== 94) {
+    fail(`command count must stay 94 for ${PROFILE_REVISION}`);
   }
   const schemaDigests = {};
   for (const name of names) {
@@ -132,16 +134,18 @@ function main() {
       openapi_sha256: contractRef.sha256,
       schema_digests: schemaDigests,
     },
-    grants: "catalogue-schema-binding only",
+    grants: "none",
     manifest_schema_version: "kix-compat-manifest/1",
     non_claims: [
+      "producer input binding only",
       "no semantic qualification",
+      "consumers remain on HOLD",
       "no N/N-1 qualification",
       "no production qualification",
       "not audit or approval evidence",
     ],
-    profile_kind: "BOOTSTRAP",
-    profile_revision: "bootstrap-2",
+    profile_kind: PROFILE_KIND,
+    profile_revision: PROFILE_REVISION,
     vectors,
   };
   const profileBytes = Buffer.from(canonicalStringify(profile), "utf8");
@@ -163,8 +167,8 @@ function main() {
       source_commit: SOURCE_COMMIT,
       source_tree: SOURCE_TREE,
     },
-    profile_kind: "BOOTSTRAP",
-    profile_revision: "bootstrap-2",
+    profile_kind: PROFILE_KIND,
+    profile_revision: PROFILE_REVISION,
     profile_sha256: sha256(profileBytes),
     sdk_output: {
       path: CATALOGUE_PATH,

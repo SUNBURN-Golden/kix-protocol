@@ -4,7 +4,7 @@
     "title": "KIX protocol local-call catalogue (contract-only)",
     "version": "0.3-rc1+sha256:ed827de1a8bfe7c48612473965793dcaab65137e575f862761fd160f77ae4c1e",
     "summary": "Contract-only. No live HTTP server. No production endpoint.",
-    "description": "CONTRACT-ONLY catalogue of the KIX v0.3-rc1 local call. There is no live HTTP server and no production endpoint. The version is pinned to the sha256 of reference/v0.3-rc1/protocol_contract.json.\n\nThis document does not publish a REST resource tree, an authentication scheme, a retry policy, or a transport guarantee. The single path exists only so this file is an OpenAPI document. It is marked x-kix-transport: contract-only-placeholder and is not protocol law. POST is an OpenAPI grammar slot, not a published HTTP method of the protocol.\n\nThe authoritative local call is Core.execute(operationId, actor, action, body). Each command key is one action. The body schema is that command JSON Schema, copied under components.schemas. x-kix-local-call-operations[].operationId is the command name. unknownFields, sourceAuthentication, handlerConstraints, and additionalProperties false are preserved from the source. The exported catalogue is not a full business validator.\n\nSpecification envelope fields are protocolDomain, operationId, actorContext, action, and body. The Python function takes operationId, actor, action, and body, and checks body.domain. A caller-supplied actor string must not be treated as authority.\n\nThe 40 core command schemas are copied from protocol_contract.json. The FSM command schemas are copied from docs/contracts/openapi/fsm-command-contract.json. Wire names are machine_op. consume_admission is not a catalogue name. Queries, reconcile, export_journal, restore, reject, and attempt_execution are not in this catalogue. There is still no live HTTP server and no production endpoint."
+    "description": "CONTRACT-ONLY catalogue of the KIX v0.3-rc1 local call. There is no live HTTP server and no production endpoint. The version is pinned to the sha256 of reference/v0.3-rc1/protocol_contract.json.\n\nThis document does not publish a REST resource tree, an authentication scheme, a retry policy, or a transport guarantee. The single path exists only so this file is an OpenAPI document. It is marked x-kix-transport: contract-only-placeholder and is not protocol law. POST is an OpenAPI grammar slot, not a published HTTP method of the protocol.\n\nThe authoritative local call is Core.execute(operationId, actor, action, body). Each command key is one action. The body schema is that command JSON Schema, copied under components.schemas. x-kix-local-call-operations[].operationId is the command name. unknownFields, sourceAuthentication, handlerConstraints, and additionalProperties false are preserved from the source. The exported catalogue is not a full business validator.\n\nSpecification envelope fields are protocolDomain, operationId, actorContext, action, and body. The Python function takes operationId, actor, action, and body, and checks body.domain. A caller-supplied actor string must not be treated as authority.\n\nThe 40 core command schemas are copied from protocol_contract.json. The FSM command schemas are copied from docs/contracts/openapi/fsm-command-contract.json. Wire names are machine_op. consume_admission is not a catalogue name. The ten approved point queries are in this catalogue. Each is marked x-kix-read-only and does not mutate state. The envelope actor is a fixture actor with no access control. List queries, reconcile, export_journal, restore, reject, and attempt_execution are not in this catalogue. There is still no live HTTP server and no production endpoint."
   },
   "x-kix-contract-status": "contract-only",
   "x-kix-live-http-server": false,
@@ -18,12 +18,13 @@
     "unknownFields": "REJECT",
     "sourceAuthentication": "FIXTURE_ONLY",
     "handlerConstraints": "Positive monetary postings, enums, actor scopes, policy checks, current versions, balances and conditional bindings are additionally enforced in handlers. This exported catalog alone is not a full business validator.",
-    "commandCount": 84,
+    "commandCount": 94,
     "coreCommandCount": 40,
+    "readCommandCount": 10,
     "fsmSource": {
       "path": "docs/contracts/openapi/fsm-command-contract.json",
-      "gitBlob": "3771a8739b906a478b54c597df37e27d1afc5f21",
-      "sha256": "342e97cb37b199622d7bb436ca9164690d969b797058aaa539ff417cab01411c",
+      "gitBlob": "d3eaf469e4b3c1ffda7d7ecd5b52a84524525356",
+      "sha256": "2732173bd7a4fe71cfea4201f53261aaae59b0fe5416f64fe0a4e216ecd73f5f",
       "domain": "kix:fixture:fsm-catalogue:0.3",
       "unknownFields": "REJECT",
       "sourceAuthentication": "FIXTURE_ONLY",
@@ -138,7 +139,17 @@
     "credit_draw": "#/components/schemas/credit_draw",
     "credit_repay": "#/components/schemas/credit_repay",
     "credit_close": "#/components/schemas/credit_close",
-    "credit_default": "#/components/schemas/credit_default"
+    "credit_default": "#/components/schemas/credit_default",
+    "get_show": "#/components/schemas/get_show",
+    "get_booking": "#/components/schemas/get_booking",
+    "get_right": "#/components/schemas/get_right",
+    "get_presentation": "#/components/schemas/get_presentation",
+    "get_listing": "#/components/schemas/get_listing",
+    "get_admission": "#/components/schemas/get_admission",
+    "get_credential": "#/components/schemas/get_credential",
+    "get_settlement": "#/components/schemas/get_settlement",
+    "get_credit_advance": "#/components/schemas/get_credit_advance",
+    "get_credit_claim": "#/components/schemas/get_credit_claim"
   },
   "x-kix-local-call-operations": [
     {
@@ -1316,6 +1327,166 @@
         "body"
       ],
       "description": "Local-call analogue of this command. Not bound to an HTTP path. operationId here is the command name (Python action), not the per-invocation operationId argument."
+    },
+    {
+      "operationId": "get_show",
+      "action": "get_show",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_show",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_booking",
+      "action": "get_booking",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_booking",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_right",
+      "action": "get_right",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_right",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_presentation",
+      "action": "get_presentation",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_presentation",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_listing",
+      "action": "get_listing",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_listing",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_admission",
+      "action": "get_admission",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_admission",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_credential",
+      "action": "get_credential",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_credential",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_settlement",
+      "action": "get_settlement",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_settlement",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_credit_advance",
+      "action": "get_credit_advance",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_credit_advance",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
+    },
+    {
+      "operationId": "get_credit_claim",
+      "action": "get_credit_claim",
+      "x-kix-transport": "contract-only-placeholder",
+      "x-kix-not-a-published-http-service": true,
+      "x-kix-read-only": true,
+      "x-kix-mutates-state": false,
+      "requestBodySchema": "#/components/schemas/get_credit_claim",
+      "localCallParameters": [
+        "operationId",
+        "actor",
+        "action",
+        "body"
+      ],
+      "description": "Local-call analogue of this read-only point query. Not bound to an HTTP path. operationId here is the query name, not the per-invocation operationId argument. The envelope operationId and actor are ignored. The actor is a fixture actor with no access control. The query does not mutate state."
     }
   ],
   "x-kix-reference-receipt-observed": {
@@ -1331,6 +1502,17 @@
       "result"
     ],
     "note": "The specification says a receipt carries domain, operationId, sequence, action, and result. The reference model stores that in-process receipt. result is handler-specific and is not in protocol_contract.json, so this catalogue does not schema it. The specification also says an external consumer stores its own cursor and receipt id. No message broker or consumer is defined. These keys are not an HTTP response contract."
+  },
+  "x-kix-read-response-observed": {
+    "keys": [
+      "read_schema_version",
+      "query",
+      "query_digest",
+      "fixture_mode",
+      "accepted_through",
+      "result"
+    ],
+    "note": "A successful point query returns these keys. result is the existing view dict and is not schemaed here. query_digest is sha256 over canonical JSON of {action, body}, using the machines canonical encoding. The envelope actor is a fixture actor with no access control. fresh, matches_current_right, and source-unavailable decision codes stay inside result. These keys are not an HTTP response contract. ReadObservationV1 fields are not in this envelope."
   },
   "paths": {
     "/x-kix-contract-only/local-call": {
@@ -4306,6 +4488,142 @@
           }
         }
       },
+      "get_show": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "show_id"
+        ],
+        "properties": {
+          "show_id": {
+            "type": "string"
+          }
+        }
+      },
+      "get_booking": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reservation_id"
+        ],
+        "properties": {
+          "reservation_id": {
+            "type": "string"
+          }
+        }
+      },
+      "get_right": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "right_id"
+        ],
+        "properties": {
+          "right_id": {
+            "type": "string"
+          }
+        }
+      },
+      "get_presentation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "right_id",
+          "version",
+          "holder_role"
+        ],
+        "properties": {
+          "right_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "holder_role": {
+            "type": "string"
+          }
+        }
+      },
+      "get_listing": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "listing_id"
+        ],
+        "properties": {
+          "listing_id": {
+            "type": "string"
+          }
+        }
+      },
+      "get_admission": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "right_id"
+        ],
+        "properties": {
+          "right_id": {
+            "type": "string"
+          }
+        }
+      },
+      "get_credential": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "right_id",
+          "version",
+          "holder_role"
+        ],
+        "properties": {
+          "right_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "holder_role": {
+            "type": "string"
+          }
+        }
+      },
+      "get_settlement": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "settlement_id"
+        ],
+        "properties": {
+          "settlement_id": {
+            "type": "string"
+          }
+        }
+      },
+      "get_credit_advance": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "advance_id"
+        ],
+        "properties": {
+          "advance_id": {
+            "type": "string"
+          }
+        }
+      },
+      "get_credit_claim": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim_id"
+        ],
+        "properties": {
+          "claim_id": {
+            "type": "string"
+          }
+        }
+      },
       "LocalCallEnvelope": {
         "type": "object",
         "additionalProperties": false,
@@ -4425,9 +4743,19 @@
               "credit_draw",
               "credit_repay",
               "credit_close",
-              "credit_default"
+              "credit_default",
+              "get_show",
+              "get_booking",
+              "get_right",
+              "get_presentation",
+              "get_listing",
+              "get_admission",
+              "get_credential",
+              "get_settlement",
+              "get_credit_advance",
+              "get_credit_claim"
             ],
-            "description": "Command name. Third argument of Core.execute. Selects the body schema. Equal to a core command key or an FSM catalogue key of the form machine_op."
+            "description": "Command or point-query name. Third argument of the local-call envelope. Selects the body schema. Equal to a core command key, an FSM catalogue key of the form machine_op, or an approved point query. For a point query the envelope operationId and actor are ignored. The actor is a fixture actor with no access control."
           },
           "body": {
             "description": "Fourth argument of Core.execute. Validate it against components.schemas[action]. Several actions share an identical body schema, so the action name is the discriminator. unknownFields REJECT is the exported catalogue rule."
@@ -6026,6 +6354,196 @@
               "properties": {
                 "body": {
                   "$ref": "#/components/schemas/credit_default"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_show"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_show"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_booking"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_booking"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_right"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_right"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_presentation"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_presentation"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_listing"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_listing"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_admission"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_admission"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_credential"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_credential"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_settlement"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_settlement"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_credit_advance"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_credit_advance"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "action": {
+                  "const": "get_credit_claim"
+                }
+              },
+              "required": [
+                "action"
+              ]
+            },
+            "then": {
+              "properties": {
+                "body": {
+                  "$ref": "#/components/schemas/get_credit_claim"
                 }
               }
             }

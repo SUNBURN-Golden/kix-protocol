@@ -8,6 +8,7 @@ import test_commerce_historical_receipt_vectors as historical
 import test_commerce_journey_conformance as journey
 import test_commerce_journey_receipts as goldens
 from integration_gate.catalogue import load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import problems
 from mock_gates import NON_CLAIMS, _canonical
@@ -153,7 +154,7 @@ def _observe():
         'record_kind': 'IN_PROCESS_MOCK_RECEIPT_VECTORS',
         'normative': False,
         'fixture': goldens._pin(FIXTURE, fixture_raw),
-        'sources': [goldens._pin(path, (ROOT / path).read_bytes()) for path in sorted(SOURCE_PATHS)],
+        'sources': [goldens._pin(path, read_bootstrap_2_input(path)) for path in sorted(SOURCE_PATHS)],
         'cases': [{'id': CASE_ID, 'steps': _drive(fixture['cases'][0])}],
     }
 

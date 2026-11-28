@@ -5,19 +5,20 @@
 // No base URL. Actor is not an authentication result. No delivery inference.
 
 export const OPENAPI_PIN = {
-  "commandCount": 84,
+  "commandCount": 94,
   "contractStatus": "contract-only",
   "coreCommandCount": 40,
   "domain": "kix:fixture:lifecycle:0.3",
   "fsmCommandCount": 44,
-  "fsmSourceGitBlob": "3771a8739b906a478b54c597df37e27d1afc5f21",
+  "fsmSourceGitBlob": "d3eaf469e4b3c1ffda7d7ecd5b52a84524525356",
   "fsmSourcePath": "docs/contracts/openapi/fsm-command-contract.json",
-  "fsmSourceSha256": "342e97cb37b199622d7bb436ca9164690d969b797058aaa539ff417cab01411c",
-  "gitBlob": "ed23b98fde4ce02607ffda2ba9488ed510645de2",
+  "fsmSourceSha256": "2732173bd7a4fe71cfea4201f53261aaae59b0fe5416f64fe0a4e216ecd73f5f",
+  "gitBlob": "f096739d515a9e13e26f4fa1f89cdff421e03763",
   "liveHttpServer": false,
   "openapiPath": "docs/contracts/openapi/kix-protocol.contract-only.openapi.json",
   "productionEndpoint": false,
-  "sha256": "2248ff67aa0f43cb98bdd492f63b36fce64c53def6a403a97a7987a128b2d2dc",
+  "readCommandCount": 10,
+  "sha256": "768aabd8e756d789a20d7b2fb65c20076017eadc8e8dfafe0b9d13ef7ae7f77d",
   "sourceAuthentication": "FIXTURE_ONLY",
   "sourceGitBlob": "619ae21c82ca3df5661bd3831613f15fa65225ff",
   "sourcePath": "reference/v0.3-rc1/protocol_contract.json",
@@ -112,6 +113,16 @@ export const COMMANDS = [
   "credit_repay",
   "credit_close",
   "credit_default",
+  "get_show",
+  "get_booking",
+  "get_right",
+  "get_presentation",
+  "get_listing",
+  "get_admission",
+  "get_credential",
+  "get_settlement",
+  "get_credit_advance",
+  "get_credit_claim",
 ] as const;
 
 export type CommandName = (typeof COMMANDS)[number];
@@ -201,6 +212,16 @@ export const ACTION_BODY_MAP = {
   "credit_repay": "#/components/schemas/credit_repay",
   "credit_close": "#/components/schemas/credit_close",
   "credit_default": "#/components/schemas/credit_default",
+  "get_show": "#/components/schemas/get_show",
+  "get_booking": "#/components/schemas/get_booking",
+  "get_right": "#/components/schemas/get_right",
+  "get_presentation": "#/components/schemas/get_presentation",
+  "get_listing": "#/components/schemas/get_listing",
+  "get_admission": "#/components/schemas/get_admission",
+  "get_credential": "#/components/schemas/get_credential",
+  "get_settlement": "#/components/schemas/get_settlement",
+  "get_credit_advance": "#/components/schemas/get_credit_advance",
+  "get_credit_claim": "#/components/schemas/get_credit_claim",
 } as const;
 
 export const COMMAND_SCHEMAS = {
@@ -3148,6 +3169,142 @@ export const COMMAND_SCHEMAS = {
       }
     }
   },
+  "get_show": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "show_id"
+    ],
+    "properties": {
+      "show_id": {
+        "type": "string"
+      }
+    }
+  },
+  "get_booking": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "reservation_id"
+    ],
+    "properties": {
+      "reservation_id": {
+        "type": "string"
+      }
+    }
+  },
+  "get_right": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "right_id"
+    ],
+    "properties": {
+      "right_id": {
+        "type": "string"
+      }
+    }
+  },
+  "get_presentation": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "right_id",
+      "version",
+      "holder_role"
+    ],
+    "properties": {
+      "right_id": {
+        "type": "string"
+      },
+      "version": {
+        "type": "integer"
+      },
+      "holder_role": {
+        "type": "string"
+      }
+    }
+  },
+  "get_listing": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "listing_id"
+    ],
+    "properties": {
+      "listing_id": {
+        "type": "string"
+      }
+    }
+  },
+  "get_admission": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "right_id"
+    ],
+    "properties": {
+      "right_id": {
+        "type": "string"
+      }
+    }
+  },
+  "get_credential": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "right_id",
+      "version",
+      "holder_role"
+    ],
+    "properties": {
+      "right_id": {
+        "type": "string"
+      },
+      "version": {
+        "type": "integer"
+      },
+      "holder_role": {
+        "type": "string"
+      }
+    }
+  },
+  "get_settlement": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "settlement_id"
+    ],
+    "properties": {
+      "settlement_id": {
+        "type": "string"
+      }
+    }
+  },
+  "get_credit_advance": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "advance_id"
+    ],
+    "properties": {
+      "advance_id": {
+        "type": "string"
+      }
+    }
+  },
+  "get_credit_claim": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "claim_id"
+    ],
+    "properties": {
+      "claim_id": {
+        "type": "string"
+      }
+    }
+  },
 } as const;
 
 export const FSM_COMMAND_MACHINES = {
@@ -3195,4 +3352,17 @@ export const FSM_COMMAND_MACHINES = {
   "credit_repay": "credit",
   "credit_close": "credit",
   "credit_default": "credit",
+} as const;
+
+export const READ_COMMAND_MACHINES = {
+  "get_show": "reservation",
+  "get_booking": "reservation",
+  "get_right": "resale",
+  "get_presentation": "resale",
+  "get_listing": "resale",
+  "get_admission": "admission",
+  "get_credential": "admission",
+  "get_settlement": "settlement",
+  "get_credit_advance": "credit",
+  "get_credit_claim": "credit",
 } as const;

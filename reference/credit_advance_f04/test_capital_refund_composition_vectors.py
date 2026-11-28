@@ -11,6 +11,8 @@ from pathlib import Path
 import sys
 import unittest
 
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
+
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 if str(HERE) not in sys.path:
@@ -144,7 +146,7 @@ def validate_fixture(fixture):
 
 
 def verify_sources(pins, reader=None):
-    reader = (lambda path: (ROOT / path).read_bytes()) if reader is None else reader
+    reader = read_bootstrap_2_input if reader is None else reader
     assert type(pins) is list
     same(list(SOURCE_PATHS), [pin['path'] for pin in pins])
     for pin in pins:
@@ -394,7 +396,7 @@ class CapitalRefundCompositionVectorTests(unittest.TestCase):
         for path in SOURCE_PATHS:
             with self.subTest(source=path):
                 def reader(candidate):
-                    raw = (ROOT / candidate).read_bytes()
+                    raw = read_bootstrap_2_input(candidate)
                     return raw + b'\n' if candidate == path else raw
                 with self.assertRaises(AssertionError):
                     verify_sources(self.vectors['source_pins'], reader)
