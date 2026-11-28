@@ -2,7 +2,7 @@
 
 The [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) is a
 **non-normative, builder-authored navigation record** for `kix-commerce-apps`.
-It connects seventeen input/outcome pack families (426 steps) to replay tests
+It connects eighteen input/outcome pack families (434 steps) to replay tests
 and the unchanged [consumer binding index](COMMERCE_CONSUMER_BINDING_INDEX_V1.json).
 It adds no contract, protocol interface, adapter, runtime behavior or consumer
 integration. The [development plan](../DEVELOPMENT_PLAN.md),
@@ -32,6 +32,7 @@ directory. The JSON records complete repository-relative paths and test symbols.
 | `replaced_admission_binding` | `commerce_replaced_admission_binding_inputs_v1.json` | `commerce_replaced_admission_binding_receipts_v1.json` | `test_commerce_replaced_admission_binding_vectors.py` | 1 / 15 |
 | `admission_journal_after_transfer` | `commerce_admission_journal_after_transfer_inputs_v1.json` | `commerce_admission_journal_after_transfer_receipts_v1.json` | `test_commerce_admission_journal_after_transfer_vectors.py` | 2 / 2 |
 | `cross_order_issuance` | `commerce_cross_order_issuance_inputs_v1.json` | `commerce_cross_order_issuance_receipts_v1.json` | `test_commerce_cross_order_issuance_vectors.py` | 2 / 2 |
+| `two_gate_admission` | `commerce_two_gate_admission_inputs_v1.json` | `commerce_two_gate_admission_receipts_v1.json` | `test_commerce_two_gate_admission_vectors.py` | 2 / 8 |
 
 The original replay symbol is
 `CommerceJourneyReceiptTests.test_complete_output_bytes`. Later replay classes
@@ -340,3 +341,22 @@ two outcome references.
 [Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_cross_order_issuance_receipts_v1.json) ·
 [Replay command](../../reference/booking_resale_admission/README.md#commerce-cross-order-issuance-vectors) ·
 [Coverage and local verification](../../validation/2026-11-28-plan-commerce-cross-order-issuance/README.md)
+
+## Two-gate admission
+
+`gate-1-first` and `gate-2-first` each replay the pinned
+`booking-admission/adopt-B` checkpoint in a fresh host. The first gate
+authorizes `issue-B` at version 1. The second gate receives
+`ADMISSION_LOCKED` on authorization and `GATE_MISMATCH` on consume.
+Both refusals preserve all five accepted journals. The first gate then
+receives `CONSUMED_ONCE`, advances the right to version 2 and leaves
+slot 1 `ISSUED`. The admission and reservation journals each append
+one consume.
+
+All eight entries carry `MOCK_EVIDENCE` under `HOLD_SEMANTIC`.
+The replay detects swapped winning receipts, and the index validator
+detects swapped winning outcome references.
+[Checkpoint and case inputs](../../reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json) ·
+[Complete outcomes](../../reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json) ·
+[Replay command](../../reference/booking_resale_admission/README.md#commerce-two-gate-admission-vectors) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-two-gate-admission/README.md)

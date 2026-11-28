@@ -4686,6 +4686,109 @@
           "binding_status": "MOCK_EVIDENCE"
         }
       ]
+    },
+    {
+      "id": "two_gate_admission",
+      "input": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json",
+        "sha256": "2546f223c0140013bcb251a76988be40be46d54301a0d2eccae978f75774cd7a",
+        "gitBlob": "01837a28528f00eda9f4d0ca5cd45efd71d6e160"
+      },
+      "output": {
+        "path": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json",
+        "sha256": "02d0ea8df7709380fbde65ba901e3ab33eaaf608ed9e5e90d0ee525ba83fb57a",
+        "gitBlob": "2a9b7f1279d4f6b8cf57b1a047d8a0b074c4bc52"
+      },
+      "replay_test": {
+        "path": "reference/booking_resale_admission/test_commerce_two_gate_admission_vectors.py",
+        "symbol": "CommerceTwoGateAdmissionVectorTests.test_complete_output_bytes_and_references"
+      },
+      "limitations": [
+        "Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Both gate orders start from the same paid, issued and unconsumed checkpoint in fresh in-process hosts.",
+        "The first gate consumes once at a synthetic pre-expiry clock. The evidence covers sequential calls within each host. Cross-host fencing, venue admission and production clock policy are outside its scope."
+      ],
+      "entries": [
+        {
+          "case_id": "gate-1-first",
+          "step_id": "authorize-B",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json#/cases/0/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json#/cases/0/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "gate-1-first",
+          "step_id": "authorize-B-gate-2",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json#/cases/0/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json#/cases/0/steps/1",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "gate-1-first",
+          "step_id": "consume-B-gate-2",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json#/cases/0/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json#/cases/0/steps/2",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "gate-1-first",
+          "step_id": "consume-B",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json#/cases/0/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json#/cases/0/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "gate-2-first",
+          "step_id": "authorize-B-gate-2",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json#/cases/1/steps/0/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json#/cases/1/steps/0",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "gate-2-first",
+          "step_id": "authorize-B",
+          "action": "admission_authorize_admission",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json#/cases/1/steps/1/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json#/cases/1/steps/1",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/73",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "gate-2-first",
+          "step_id": "consume-B",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json#/cases/1/steps/2/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json#/cases/1/steps/2",
+          "outcome_kind": "rejection_code",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        },
+        {
+          "case_id": "gate-2-first",
+          "step_id": "consume-B-gate-2",
+          "action": "admission_consume",
+          "input_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_inputs_v1.json#/cases/1/steps/3/body",
+          "outcome_ref": "reference/booking_resale_admission/fixtures/commerce_two_gate_admission_receipts_v1.json#/cases/1/steps/3",
+          "outcome_kind": "receipt",
+          "binding_ref": "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json#/commands/items/74",
+          "binding_status": "MOCK_EVIDENCE"
+        }
+      ]
     }
   ]
 }
