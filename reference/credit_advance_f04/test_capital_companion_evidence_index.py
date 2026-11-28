@@ -14,6 +14,7 @@ import unittest
 
 from credit_fixture import decode_json, exact_fields, FixtureError
 from settlement_credit_boundary_vectors import canonical
+from test_capital_cross_claim_history_vectors import FIXTURE_SHA256, VECTORS_SHA256
 
 ROOT = Path(__file__).resolve().parents[2]
 INDEX = 'docs/status/CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json'
@@ -31,6 +32,12 @@ RESALE_SOURCE_PINS = (
     (RESALE_JOURNEY_RECEIPTS, '6819d46a7b86e1a16bae83be90666560bb45aa66d3d6f0d5e050e03e7a952998'),
     (RESALE_JOURNEY_INPUT, 'f9555d84790b91eafe74c71453a2dbd301fae43566a5f0a3a47e19059151e9cc'),
 )
+H1_INPUT = FIXTURES + 'capital_cross_claim_history_v1.json'
+H1_OUTPUT = FIXTURES + 'capital_cross_claim_history_vectors_v1.json'
+REPAYMENT_TARGETS = {
+    'repay_a1': ('adv-h1-a1', 'claim-h1-a', 11),
+    'repay_b1': ('adv-h1-b1', 'claim-h1-b', 19),
+}
 SELF_CONTAINED_SHAPES = {'self_contained_refusals', 'self_contained_comparisons'}
 # Independent fixed family/path, scenario/case identity and section-count inventory.
 PACKS = (
@@ -126,6 +133,10 @@ PACKS = (
      'capital_statement_component_identity_vectors_v1.json', 'capital_statement_component_identity_vectors_v1.json',
      'test_capital_statement_component_identity.py', 'CapitalStatementComponentIdentityTests.test_statement_component_identity',
      'Capital statement component identity', ('fee', 'held'), ()),
+    ('capital_repayment_attribution', 'self_contained_comparisons',
+     'capital_repayment_attribution_vectors_v1.json', 'capital_repayment_attribution_vectors_v1.json',
+     'test_capital_repayment_attribution.py', 'CapitalRepaymentAttributionTests.test_repayment_attribution',
+     'Capital repayment attribution', ('repay_a1', 'repay_b1'), ()),
 )
 QUALIFICATION = {
     'externalConsumerAcceptance': 'UNVERIFIED',
@@ -225,6 +236,10 @@ LIMITATIONS = {
         'Each observation identifies its own accepted settlement journal entry. '
         'The fixture limit and tolerance grant no exposure authority.',
     ],
+    'capital_repayment_attribution': [
+        'Equal group outstanding exposure can hide different repayment targets. The accepted mock journal '
+        'binds the repayment to its advance. The fixture supplies the intended target and synthetic limit.',
+    ],
 }
 SUPPORTING = (
     ('settlement_variance', 'SettlementVarianceContractTests', '7.11 정산 잔차(settlement variance)'),
@@ -275,6 +290,24 @@ def _resale_checkpoint_sources(pins, read):
         _check(hashlib.sha256(raw).hexdigest() == digest, 'resale checkpoint source digest drift: ' + path)
         raw_sources[path] = raw
     return {path: decode_json(raw.decode('utf-8')) for path, raw in raw_sources.items()}
+
+
+def _repayment_sources(source, read):
+    pins = [{'path': H1_INPUT, 'sha256': FIXTURE_SHA256}, {'path': H1_OUTPUT, 'sha256': VECTORS_SHA256}]
+    _check(_same(source['source_pins'], pins), 'repayment source pins')
+    documents = {}
+    for pin in pins:
+        path = pin['path']
+        raw = read(path)
+        _check(hashlib.sha256(raw).hexdigest() == pin['sha256'], 'repayment source digest drift: ' + path)
+        documents[path] = decode_json(raw.decode('utf-8'))
+    for key, ref in (
+        ('checkpoint_ref', H1_OUTPUT + '#/scenarios/0/initial_snapshot'),
+        ('repayment_ref', H1_INPUT + '#/scenarios/0/steps/0'),
+    ):
+        _check(source[key] == ref, 'repayment source association: ' + key)
+        _resolve(documents, ref)
+    return documents
 
 
 def _resolve(documents, ref):
@@ -347,6 +380,21 @@ def _expected_associations(spec, source, output):
                 _check(case['journal_ref'] == journal_ref, 'statement journal association: ' + case['case_id'])
                 observations.append({'case_id': case['case_id'], 'kind': 'statement_observation',
                                      'ref': after_ref, 'journal_ref': journal_ref})
+            if family == 'capital_repayment_attribution':
+                _, claim_id, draw = REPAYMENT_TARGETS[case['case_id']]
+                h1 = H1_OUTPUT + '#/scenarios/0'
+                after_ref = prefix + '/after'
+                observations.append({
+                    'case_id': case['case_id'], 'kind': 'repayment_observation',
+                    'claim_a_commit_ref': h1 + '/setup_results/3/result',
+                    'claim_b_commit_ref': h1 + '/setup_results/7/result',
+                    'target_draw_ref': h1 + f'/setup_results/{draw}/result',
+                    'original_a1_repayment_ref': h1 + '/history/0/result',
+                    'frozen_claim_ref': after_ref + '/credit/claims/' + claim_id,
+                    'journal_ref': after_ref + '/credit/journal/12',
+                    'ref': after_ref + '/shared_exposure',
+                    'conflict_ref': prefix + '/conflict/expected_result',
+                })
             entries.append(entry)
         if family == 'capital_group_sum_boundary':
             views = source['credit_views']
@@ -408,6 +456,21 @@ def _expected_associations(spec, source, output):
     return entries, observations
 
 
+def _validate_repayment_observation(case_id, resolved, original):
+    advance_id, claim_id, _ = REPAYMENT_TARGETS[case_id]
+    journal = {'op': 'repay', 'advance_id': advance_id, 'idempotency_key': original['idempotency_key'],
+               'body': {key: original[key] for key in ('repay_id', 'sequence', 'amount')}}
+    _check(_same(journal, resolved['journal_ref']), 'repayment journal association: ' + case_id)
+    claim = resolved['frozen_claim_ref']
+    _check(claim['claim_id'] == claim_id and claim['snapshot_frozen'] is True,
+           'repayment frozen claim association: ' + case_id)
+    exposure = resolved['ref']
+    _check(_same([exposure['group_id'], exposure['limit'], exposure['observable']['group_outstanding_exposure']],
+                 ['synthetic-h1-pool', 120_000, 110_000]), 'repayment exposure association: ' + case_id)
+    _check(_same(resolved['conflict_ref'], {'error': {'type': 'CreditError', 'code': 'IDEMPOTENCY_CONFLICT'}}),
+           'repayment conflict association: ' + case_id)
+
+
 def validate_index(document, read=_read):
     """Validate associations without executing consumers or re-running economic models."""
     _fields(document, 'record_schema_version record_kind normative consumer qualification nonClaims packs supporting_evidence', 'record')
@@ -444,6 +507,8 @@ def validate_index(document, read=_read):
             documents[COMMERCE_RECEIPTS] = decode_json(raw.decode('utf-8'))
         if family == 'capital_resale_distribution_checkpoints':
             documents.update(_resale_checkpoint_sources(source['source_pins'], read))
+        if family == 'capital_repayment_attribution':
+            documents.update(_repayment_sources(source, read))
         for entry in pack['entries']:
             for key, ref in entry.items():
                 if key.endswith('_ref'):
@@ -452,16 +517,19 @@ def validate_index(document, read=_read):
                 result = _resolve(documents, entry['result_ref'])
                 _check(type(result) is dict and set(result) in ({'ok'}, {'error'}), 'complete result envelope')
         for observation in observations:
-            _resolve(documents, observation['ref'])
-            if 'journal_ref' in observation:
-                journal_entry = _resolve(documents, observation['journal_ref'])
+            resolved = {key: _resolve(documents, ref) for key, ref in observation.items()
+                        if key == 'ref' or key.endswith('_ref')}
+            if observation['kind'] == 'statement_observation':
                 case_id = observation['case_id']
                 fee, held = (3_000, 0) if case_id == 'fee' else (0, 3_000)
-                _check(_same(journal_entry, {
+                _check(_same(resolved['journal_ref'], {
                     'op': 'observe_statement', 'settlement_id': 'claim-1', 'idempotency_key': 'stmt-2',
                     'body': {'movement_id': 'part-2', 'gross': 40_000, 'amount': 37_000,
                              'fee': fee, 'held': held, 'tax': 0, 'adjustment': 0, 'adjustment_reason': None},
                 }), 'statement journal body association: ' + case_id)
+            elif observation['kind'] == 'repayment_observation':
+                original = _resolve(documents, source['repayment_ref'])['arguments']
+                _validate_repayment_observation(observation['case_id'], resolved, original)
         total += len(expected)
     supporting = document['supporting_evidence']
     _check(type(supporting) is list and [e.get('id') for e in supporting] == [s[0] for s in SUPPORTING],
@@ -515,11 +583,11 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
             validate_index(document, lambda p: raw if p == path else _read(p))
 
     def test_complete_index(self):
-        self.assertEqual(validate_index(self.document), 484)
-        self.assertEqual(len(self.document['packs']), 23)
+        self.assertEqual(validate_index(self.document), 486)
+        self.assertEqual(len(self.document['packs']), 24)
         self.assertEqual([len(p['entries']) for p in self.document['packs']],
-                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2, 2, 2])
-        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 132)
+                         [98, 54, 51, 53, 63, 27, 33, 24, 15, 20, 13, 4, 4, 2, 2, 3, 4, 3, 3, 2, 2, 2, 2, 2])
+        self.assertEqual(sum(len(p['observations']) for p in self.document['packs']), 134)
         self.assertEqual(sum(len(p['entries']) for p in self.document['supporting_evidence']), 12)
 
     def test_membership_controls(self):
@@ -783,6 +851,25 @@ class CapitalCompanionEvidenceIndexTests(unittest.TestCase):
         self._reject(swap_index_refs, 'supplemental observation association')
         self._detached(i, 'input', lambda source: swap_refs(source['cases']), 'statement journal association')
         self._detached(i, 'output', swap_bodies, 'statement journal body association')
+
+    def test_repayment_attribution_swapped_journals(self):
+        family = 'capital_repayment_attribution'
+        i = next(i for i, pack in enumerate(self.document['packs']) if pack['id'] == family)
+        path = self.document['packs'][i]['input']['path']
+        documents = {path: decode_json(_read(path).decode('utf-8'))}
+
+        def swap_refs(document):
+            a1, b1 = document['packs'][i]['observations']
+            a1['journal_ref'], b1['journal_ref'] = b1['journal_ref'], a1['journal_ref']
+            self.assertEqual([_resolve(documents, row['journal_ref'])['advance_id'] for row in (a1, b1)],
+                             ['adv-h1-b1', 'adv-h1-a1'])
+
+        def swap_entries(source):
+            a1, b1 = (case['after']['credit']['journal'] for case in source['cases'])
+            a1[12], b1[12] = b1[12], a1[12]
+
+        self._reject(swap_refs, 'supplemental observation association')
+        self._detached(i, 'input', swap_entries, 'repayment journal association: repay_a1')
 
     def test_offsetting_claim_gaps_crossed_result_references(self):
         family = 'capital_offsetting_claim_gaps'
