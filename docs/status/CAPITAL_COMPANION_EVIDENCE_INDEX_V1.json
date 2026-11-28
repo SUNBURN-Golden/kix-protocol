@@ -5574,6 +5574,71 @@
           "journal_ref": "reference/credit_advance_f04/fixtures/capital_statement_component_identity_vectors_v1.json#/cases/1/after/settlement/journal/6"
         }
       ]
+    },
+    {
+      "id": "capital_repayment_attribution",
+      "shape": "self_contained_comparisons",
+      "input": {
+        "path": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json",
+        "sha256": "9c08127c4ed7147647dc98acff258853cc2fd777728f4c7db9772b5a98100b57",
+        "gitBlob": "233980fcebd53caf91d96c68b1a09ce5c30f0d37"
+      },
+      "output": {
+        "path": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json",
+        "sha256": "9c08127c4ed7147647dc98acff258853cc2fd777728f4c7db9772b5a98100b57",
+        "gitBlob": "233980fcebd53caf91d96c68b1a09ce5c30f0d37"
+      },
+      "replay_test": {
+        "path": "reference/credit_advance_f04/test_capital_repayment_attribution.py",
+        "symbol": "CapitalRepaymentAttributionTests.test_repayment_attribution"
+      },
+      "guide_refs": [
+        {
+          "path": "docs/status/ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md",
+          "heading": "Capital repayment attribution"
+        }
+      ],
+      "limitations": [
+        "Equal group outstanding exposure can hide different repayment targets. The accepted mock journal binds the repayment to its advance. The fixture supplies the intended target and synthetic limit."
+      ],
+      "entries": [
+        {
+          "case_id": "repay_a1",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/0",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/0/expected_result"
+        },
+        {
+          "case_id": "repay_b1",
+          "input_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/1",
+          "result_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/1/expected_result"
+        }
+      ],
+      "observations": [
+        {
+          "case_id": "repay_a1",
+          "kind": "repayment_observation",
+          "claim_a_commit_ref": "reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json#/scenarios/0/setup_results/3/result",
+          "claim_b_commit_ref": "reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json#/scenarios/0/setup_results/7/result",
+          "target_draw_ref": "reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json#/scenarios/0/setup_results/11/result",
+          "original_a1_repayment_ref": "reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json#/scenarios/0/history/0/result",
+          "frozen_claim_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/0/after/credit/claims/claim-h1-a",
+          "journal_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/0/after/credit/journal/12",
+          "ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/0/after/shared_exposure",
+          "conflict_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/0/conflict/expected_result"
+        },
+        {
+          "case_id": "repay_b1",
+          "kind": "repayment_observation",
+          "claim_a_commit_ref": "reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json#/scenarios/0/setup_results/3/result",
+          "claim_b_commit_ref": "reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json#/scenarios/0/setup_results/7/result",
+          "target_draw_ref": "reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json#/scenarios/0/setup_results/19/result",
+          "original_a1_repayment_ref": "reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json#/scenarios/0/history/0/result",
+          "frozen_claim_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/1/after/credit/claims/claim-h1-b",
+          "journal_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/1/after/credit/journal/12",
+          "ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/1/after/shared_exposure",
+          "conflict_ref": "reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json#/cases/1/conflict/expected_result"
+        }
+      ]
     }
   ],
   "supporting_evidence": [

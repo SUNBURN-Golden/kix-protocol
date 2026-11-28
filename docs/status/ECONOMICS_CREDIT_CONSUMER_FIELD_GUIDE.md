@@ -2108,3 +2108,31 @@ acceptance remains `UNVERIFIED`. Product limits and tolerances remain
 `UNDETERMINED` with Astra and legal responsibility remains `UNDETERMINED` with
 the User and legal counsel.
 [Replay verifier](../../reference/credit_advance_f04/test_capital_statement_component_identity.py) · [Builder validation](../../validation/2026-11-28-plan-capital-statement-component-identity/README.md)
+
+## Capital repayment attribution
+
+Replay the 20 setup calls of `H1_two_claims_refund_default` independently in
+each branch. Apply the first H1 repayment with `repay-a1-part` as both the
+idempotency key and repayment ID, sequence 1 and 10,000 fixture KRW. Only
+`advance_id` changes between the cases. Both observations use
+`synthetic-h1-pool` and the same 120,000 fixture KRW limit.
+[H1 inputs](../../reference/credit_advance_f04/fixtures/capital_cross_claim_history_v1.json) · [Paired cases](../../reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json)
+
+| Case | `adv-h1-a1` outstanding | `adv-h1-a2` outstanding | `adv-h1-b1` outstanding | Group outstanding |
+| --- | ---: | ---: | ---: | ---: |
+| `repay_a1` | 30,000 | 30,000 | 50,000 | 110,000 |
+| `repay_b1` | 40,000 | 30,000 | 40,000 | 110,000 |
+
+The accepted receipt and credit journal entry identify the repaid advance.
+Reusing the accepted key with the other advance returns `IDEMPOTENCY_CONFLICT`
+and preserves the 13-entry credit journal. Claim A keeps its 100,000 frozen face
+and 70,000 reservation. Claim B keeps its 80,000 frozen face and 50,000
+reservation. Both branches retain the eight starting settlement entries.
+The detached comparison rejects an exchange of the two receipts and snapshots
+even though the group totals still match. [Replay verifier](../../reference/credit_advance_f04/test_capital_repayment_attribution.py) · [Companion index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.md#repayment-attribution)
+
+These source-informed Class B mock observations use the target specified by
+each fixture instruction. External `kix-capital` acceptance is `UNVERIFIED`.
+Product limits and tolerances are `UNDETERMINED` with Astra. Legal
+responsibility is `UNDETERMINED` with the User and legal counsel.
+[F04 contract](../contracts/CREDIT_ADVANCE_F04.md) · [Builder validation](../../validation/2026-11-28-plan-capital-repayment-attribution/README.md)

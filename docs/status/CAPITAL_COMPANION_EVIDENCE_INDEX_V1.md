@@ -1,7 +1,7 @@
 # Capital companion evidence index v1
 
 This [JSON index](CAPITAL_COMPANION_EVIDENCE_INDEX_V1.json) is non-normative,
-read-only discovery metadata for `kix-capital`. It associates twenty-three
+read-only discovery metadata for `kix-capital`. It associates twenty-four
 consumer pack families and 12 supporting entries across two observer fixtures. It defines no
 protocol interface, client, command, endpoint or execution authority. The
 [existing field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md) and unchanged
@@ -69,7 +69,8 @@ used. Digests identify bytes and do not authenticate them.
 | capital_equal_gross_claim_binding | self_contained_comparisons | 2 | 0 |
 | capital_refund_versus_repayment | self_contained_comparisons | 2 | 0 |
 | capital_statement_component_identity | self_contained_comparisons | 2 | 2 |
-| **Total** | | **484** | **132** |
+| capital_repayment_attribution | self_contained_comparisons | 2 | 2 |
+| **Total** | | **486** | **134** |
 
 The eighth family pairs refund and cancellation-acceptance inputs with their
 receipts, errors and current snapshots. For the coverage map and an example of
@@ -367,6 +368,25 @@ entry. The index rejects an exchange of the two `journal_ref` values even
 though both entries resolve and both branches report equal claim totals.
 Replay symbol `CapitalStatementComponentIdentityTests.test_statement_component_identity`.
 [Replay verifier](../../reference/credit_advance_f04/test_capital_statement_component_identity.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-statement-component-identity)
+
+## Repayment attribution
+
+The self-contained pack pins the H1 input and output and identifies the starting
+snapshot and original repayment instruction. Each case has an `input_ref` and
+a `result_ref` to its complete accepted receipt. Each `repayment_observation`
+links both H1 commit receipts, the target draw receipt and the original A1
+repayment receipt. Its case-local links identify the target frozen claim,
+accepted repayment journal entry, shared-exposure observation and conflict
+result. [Vector pack](../../reference/credit_advance_f04/fixtures/capital_repayment_attribution_vectors_v1.json) · [H1 receipts](../../reference/credit_advance_f04/fixtures/capital_cross_claim_history_vectors_v1.json)
+
+| Case | H1 draw receipt | Frozen claim | Accepted journal entry |
+| --- | --- | --- | --- |
+| `repay_a1` | `#/scenarios/0/setup_results/11/result` | `claim-h1-a` | `#/cases/0/after/credit/journal/12` |
+| `repay_b1` | `#/scenarios/0/setup_results/19/result` | `claim-h1-b` | `#/cases/1/after/credit/journal/12` |
+
+Both observations report 110,000 fixture KRW outstanding. The index checks the
+journal target for each case and rejects crossed journal links even when both
+links resolve. [Replay verifier](../../reference/credit_advance_f04/test_capital_repayment_attribution.py) · [Field guide](ECONOMICS_CREDIT_CONSUMER_FIELD_GUIDE.md#capital-repayment-attribution) · [Builder validation](../../validation/2026-11-28-plan-capital-repayment-attribution/README.md)
 
 ## Read-only consumption
 
