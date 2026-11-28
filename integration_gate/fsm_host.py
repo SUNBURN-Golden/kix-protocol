@@ -10,6 +10,7 @@ Real-funds credit kinds stay refusals inside the existing credit machine.
 """
 from __future__ import annotations
 
+import hashlib
 import sys
 
 from integration_gate.fsm_contract import MACHINE_TABLE, ROOT, load_fsm
@@ -28,7 +29,7 @@ def _load_classes():
             sys.path.insert(0, directory)
     from admission_fsm import AdmissionError, AdmissionMachine
     from credit_fsm import CreditError, CreditMachine
-    from reservation_fsm import ReservationError, ReservationMachine
+    from reservation_fsm import ReservationError, ReservationMachine, _canonical
     from resale_fsm import ResaleError, ResaleMachine
     from settlement_fsm import SettlementError, SettlementMachine
     return {
@@ -42,6 +43,7 @@ def _load_classes():
         'ResaleMachine': ResaleMachine,
         'SettlementError': SettlementError,
         'SettlementMachine': SettlementMachine,
+        '_canonical': _canonical,
     }
 
 
@@ -76,6 +78,8 @@ class FsmHost:
             classes['CreditError'],
         )
         self._commands = document['commands']
+        self._queries = document['queries']
+        self._canonical = classes['_canonical']
 
     def call(self, action, body):
         spec = self._commands[action]
@@ -90,3 +94,30 @@ class FsmHost:
             return method(subject, **kwargs)
         except self._errors as exc:
             raise FsmRejected(exc.code) from exc
+
+    def read(self, action, body):
+        """Dispatch one approved point query. Does not append a journal entry."""
+        spec = self._queries[action]
+        machine = self.machines[spec['machine']]
+        method = getattr(machine, spec['method'])
+        subject = body[spec['subject_field']]
+        kwargs = {
+            key: value
+            for key, value in body.items()
+            if key != spec['subject_field']
+        }
+        try:
+            result = method(subject, **kwargs)
+        except self._errors as exc:
+            raise FsmRejected(exc.code) from exc
+        digest = hashlib.sha256(
+            self._canonical({'action': action, 'body': body}).encode('utf-8')
+        ).hexdigest()
+        return {
+            'read_schema_version': '0.1',
+            'query': action,
+            'query_digest': digest,
+            'fixture_mode': 'REFERENCE_IN_MEMORY',
+            'accepted_through': machine.accepted_through(),
+            'result': result,
+        }

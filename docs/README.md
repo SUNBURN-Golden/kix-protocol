@@ -228,6 +228,7 @@ and transport fencing. No policy decision, activation or independent review is i
 - [k-a-reestimate](../validation/2026-10-09-k-a-reestimate/README.md) — 2026-10-09 통합 (a) 잔여 공수 재산정 기록. 계획용 추정이며 착수 승인이 아니다.
 - [k-a-integration-decision](../validation/2026-10-09-k-a-integration-decision/README.md) — 2026-10-09 통합 (a) 결정 제안 기록. 권고는 실행하지 않음. 사용자 병합 때에만 효력.
 - [openapi-catalogue-promotion](../validation/2026-10-09-openapi-catalogue-promotion/README.md) — Evidence for the contract-only catalogue promotion of the 44 FSM `REPLAYABLE` commands.
+- [read-model-reference](../validation/2026-10-09-read-model-reference/README.md) — Point-query catalogue, loopback, and SDK evidence.
 - [audit2-gate-browser-access-test-determinism](../validation/2026-10-09-audit2-gate-browser-access-test-determinism/README.md) — Test harness only.
 - [k2-retention-proposal](../validation/2026-10-09-k2-retention-proposal/README.md) — Document only. No code, no new tests, no duration numbers, no new protocol command.
 - [toss-sandbox-conformance-plan](../validation/2026-10-09-toss-sandbox-conformance-plan/README.md) — Document only. No Toss call, no credential, no new test, no new protocol command.

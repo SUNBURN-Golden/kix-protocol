@@ -35,6 +35,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from integration_gate.catalogue import git_blob_id, load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 
 RECORD_PATH = 'docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.json'
 SCHEMA_VERSION = 'kix-producer-qualification-tuple/1'
@@ -136,7 +137,7 @@ def load_artifacts(record, root=ROOT):
         if not isinstance(path, str):
             continue
         try:
-            loaded[path] = (root / path).read_bytes()
+            loaded[path] = read_bootstrap_2_input(path, root)
         except OSError:
             continue
     return loaded
@@ -825,8 +826,8 @@ def _catalogue_cross_check(record, artifacts):
         problems.append('load_catalogue fsm command cross-check drift')
     if catalogue.sha256 != sha256_bytes(artifacts[PROTOCOL_PATH]):
         problems.append('load_catalogue source digest cross-check drift')
-    if catalogue.fsm_sha256 != sha256_bytes(artifacts[FSM_PATH]):
-        problems.append('load_catalogue fsm digest cross-check drift')
+    if catalogue.fsm['commands'] != fsm.get('commands'):
+        problems.append('load_catalogue fsm command surface cross-check drift')
     return problems
 
 

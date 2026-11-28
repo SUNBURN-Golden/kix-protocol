@@ -14,6 +14,7 @@ import test_commerce_journey_conformance as journey
 import test_commerce_journey_receipts as goldens
 import test_commerce_temporal_vectors as temporal
 from integration_gate.catalogue import load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import problems
 from mock_gates import NON_CLAIMS, _canonical
@@ -63,7 +64,7 @@ REFUSALS["settlement-key-conflicts"] = {
 
 
 def _read(path):
-    return (ROOT / path).read_bytes()
+    return read_bootstrap_2_input(path)
 
 
 _assert_paths = temporal._assert_paths
@@ -248,7 +249,7 @@ class CommerceHistoricalReceiptVectorTests(unittest.TestCase):
         _validate(self.fixture)
         catalogue, host = load_catalogue(ROOT), FsmHost()
         for name in journey.READ_MODEL_QUERY_NAMES:
-            self.assertNotIn(name, catalogue.names)
+            self.assertNotIn(name, catalogue.core_names + catalogue.fsm_names)
             self.assertNotIn(name, host._commands)
         self.assertEqual(len(journey.READ_MODEL_QUERY_NAMES), 13)
         for case in self.fixture["cases"]:

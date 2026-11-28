@@ -9,6 +9,7 @@ import test_commerce_journey_conformance as journey
 import test_commerce_journey_receipts as goldens
 import test_commerce_temporal_vectors as temporal
 from integration_gate.catalogue import load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import problems
 from mock_gates import _canonical
@@ -38,7 +39,7 @@ DIAGNOSTIC_KIND = "TEST_HARNESS_EVIDENCE"
 
 
 def _read(path):
-    return (ROOT / path).read_bytes()
+    return read_bootstrap_2_input(path)
 
 
 def _step_ref(path, index, field):

@@ -29,7 +29,7 @@ HEADINGS = {
 EXPECTED = {
     'I-NO-PROD': ('intro', '운영 엔드포인트는 없다. 공개 호스트는 없다.'),
     'I-CONTRACT-ONLY-MARKERS': ('intro', '`x-kix-live-http-server`는 `false`'),
-    'I-GATE-ROUTING': ('intro', 'FSM 44개 명령은 같은 워커의 인프로세스 기계로 넘긴다'),
+    'I-GATE-ROUTING': ('intro', 'FSM 44개 명령은 같은 워커의 인프로세스 기계로, 점 조회 10개는 기존 `view*`로 넘긴다'),
     'I-READINESS-DIR': ('intro', '`--readiness-dir`를 주면 커밋된 로컬 호출을'),
     'P-CORE-SOURCE': ('pins', '원본 경로'),
     'P-FSM-SOURCE': ('pins', 'FSM 원본 경로'),
@@ -51,7 +51,7 @@ EXPECTED = {
     'K-WIRE-NAMES': ('commands', '`consume_admission`은 카탈로그 이름이 아니다.'),
     'K-READINESS-FSM-REFUSED': ('commands', '`READINESS_FSM_REFUSED`로 거절한다.'),
     'K-FSM-NO-OPID-REMAP': ('commands', '봉투 `operationId`는 FSM `idempotency_key`로 다시 쓰지 않는다.'),
-    'K-OUT-OF-SCOPE': ('commands', '이 카탈로그의 범위 밖이다.'),
+    'K-OUT-OF-SCOPE': ('commands', '복구와 실연 거절은 이 카탈로그 밖이다.'),
     'R-1': ('read', '파일 경로와 `x-kix-source.sha256`을'),
     'R-2': ('read', '계약 전용 파일의 경로를 공개 서비스 주소로 쓰지 않는다.'),
     'R-3': ('read', '로컬 호출 준비 형태는'),

@@ -111,7 +111,7 @@ class OfflineLimitsTests(unittest.TestCase):
         self.assertIn('기본 바인드는 `127.0.0.1`과 포트 `8765`다.', readme)
 
 
-EXPECTED_GATE_OPENAPI_SHA256 = 'd05beb48c234b924af086b886ce9bb524dc34407ad2e4a57f1e8af84255820f6'
+EXPECTED_GATE_OPENAPI_SHA256 = '773abae8a27666e9c16467826a9bc4de3e42f8c9256ae4edc908dcfa774ffaa5'
 
 
 class OfflineGapTests(unittest.TestCase):
@@ -337,7 +337,9 @@ class CommerceJourneyEnvelopeTests(unittest.TestCase):
         cls.fixture = json.loads(
             (COMMERCE_FIXTURES / 'commerce_journey_envelope_cases_v1.json').read_bytes()
         )
-        cls.commands = load_catalogue(ROOT).commands
+        catalogue = load_catalogue(ROOT)
+        cls.commands = catalogue.commands
+        cls.point_queries = catalogue.read_name_set
 
     def _envelope(self, step):
         return {
@@ -418,8 +420,12 @@ class CommerceJourneyEnvelopeTests(unittest.TestCase):
                     target[field] = mutation['value']
                 with self.assertRaises(EnvelopeError) as caught:
                     parse_envelope(envelope, self.commands)
-                self.assertEqual(caught.exception.error, case['gate_error'])
-                self.assertEqual(caught.exception.detail, case['gate_detail'])
+                if path == '/action' and envelope['action'] in self.point_queries:
+                    self.assertEqual(caught.exception.error, 'SCHEMA_REJECTED')
+                    self.assertIn('body: missing ', caught.exception.detail)
+                else:
+                    self.assertEqual(caught.exception.error, case['gate_error'])
+                    self.assertEqual(caught.exception.detail, case['gate_detail'])
 
         expected = deepcopy(tuple(baseline.values()))
         parsed = parse_envelope(baseline, self.commands)
@@ -568,6 +574,7 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
 
     def _verified_evidence(self):
         from integration_gate.catalogue import git_blob_id
+        from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 
         manifest_path = ROOT / f'sdk/compat/manifests/manifest.{COMMERCE_REVISION}.json'
         raw = manifest_path.read_bytes()
@@ -603,7 +610,7 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
         for group in ('producer', 'earlier_evidence'):
             for pin in table['pins'][group]:
                 path = pin['path']
-                data = files[path] if path in files else (ROOT / path).read_bytes()
+                data = files[path] if path in files else read_bootstrap_2_input(path, root=ROOT)
                 self.assertEqual(hashlib.sha256(data).hexdigest(), pin['sha256'], path)
                 self.assertEqual(git_blob_id(data), pin['gitBlob'], path)
         return table, files, profile['catalogue']['schema_digests']
