@@ -38,6 +38,13 @@ const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
 const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
 const LIVE_GATE_PATH = "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json";
 const HISTORICAL_GATE_INPUT = "sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json";
+const HISTORICAL_GATE_SOURCE = "sdk/compat/inputs/server.commerce-fixture-8ba7f6c-1.py.txt";
+// The Commerce fixture tuples pin the producer's gate files by their historical
+// bytes. The archived copies stand in for the live files that later changed.
+const HISTORICAL_PINNED = new Map([
+  [LIVE_GATE_PATH, HISTORICAL_GATE_INPUT],
+  ["integration_gate/server.py", HISTORICAL_GATE_SOURCE],
+]);
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
 const COMMERCE_BINDING_INDEX = "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json";
 const COMMERCE_DELIVERY_INDEX = "docs/status/COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json";
@@ -761,7 +768,7 @@ function copyFixtures(targetRoot, files = NEGATIVE_FIXTURES) {
   for (const path of files) {
     const target = resolve(targetRoot, path);
     mkdirSync(dirname(target), { recursive: true });
-    cpSync(resolve(ROOT, path === LIVE_GATE_PATH ? HISTORICAL_GATE_INPUT : path), target);
+    cpSync(resolve(ROOT, HISTORICAL_PINNED.get(path) ?? path), target);
   }
 }
 
@@ -828,6 +835,9 @@ function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env 
       kind,
       "--expect-revision",
       revision,
+      // A detached copy carries the historical gate bytes at the live path. The
+      // checkout verifies the historical tuples against the archived input.
+      ...(root === ROOT ? ["--integration-gate-input", resolve(root, HISTORICAL_GATE_INPUT)] : []),
     ],
     { cwd: root, encoding: "utf8", env },
   );
@@ -876,7 +886,7 @@ function expectedDetachedFixtureTree(files) {
   const expected = new Map([[EMPTY_VERIFIER_PATH, null]]);
   for (const path of files) {
     const copiedPath = relative(ROOT, resolve(ROOT, path));
-    expected.set(copiedPath, read(path));
+    expected.set(copiedPath, read(HISTORICAL_PINNED.get(path) ?? path));
     for (let directory = dirname(copiedPath); directory !== "."; directory = dirname(directory)) {
       expected.set(directory, null);
     }
@@ -1090,7 +1100,7 @@ function loadCommerceGrant(root, verified) {
   );
   if (!table || !corpus || !sameFixtureJson(table.producer, manifest.producer)) return;
   for (const { path, sha256, gitBlob } of Object.values(table.pins).flat()) {
-    const bytes = readFileSync(resolve(root, path));
+    const bytes = readFileSync(resolve(root, root === ROOT ? HISTORICAL_PINNED.get(path) ?? path : path));
     if (sha256Hex(bytes) !== sha256 || gitBlobId(bytes) !== gitBlob) return;
   }
 
