@@ -333,8 +333,8 @@ second contract. This section extends the boundary map; it does not replace any
 row or statement above.
 
 The [Commerce companion evidence index](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md)
-and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect seventeen
-Commerce input/outcome pack families (426 steps) to exact case/step/action
+and [companion JSON](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.json) connect eighteen
+Commerce input/outcome pack families (434 steps) to exact case/step/action
 identities, byte pins, outcome references and replay locations. They supplement
 navigation within the existing binding index and producer tuple. Use the
 [scoped Commerce fixture qualification](#scoped-commerce-fixture-qualification)
@@ -343,6 +343,13 @@ to determine which steps have semantic evidence. Other steps remain
 `NOT_BOUND`, SD1 is `OPEN` and User-owned, and external consumer acceptance
 remains `UNVERIFIED`.
 [Linked refund replay](../../reference/booking_resale_admission/test_commerce_linked_refund_vectors.py)
+
+The two-gate admission pack carries `HOLD_SEMANTIC`. Each order starts
+from the same paid, issued and unconsumed `issue-B`. The first gate
+authorizes and consumes at a fixed synthetic clock. The other gate
+receives `ADMISSION_LOCKED` and `GATE_MISMATCH`, with all five
+accepted journals preserved across both refusals.
+[Indexed outcomes and replay](COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#two-gate-admission)
 
 The admission replay after resale pack carries `HOLD_SEMANTIC`. The original
 key returns the historical authorization with `duplicate: true` and

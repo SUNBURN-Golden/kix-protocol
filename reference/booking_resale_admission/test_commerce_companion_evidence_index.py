@@ -26,6 +26,7 @@ import test_commerce_admission_replay_after_resale_vectors as admission_replay
 import test_commerce_replaced_admission_binding_vectors as replaced_admission
 import test_commerce_admission_journal_after_transfer_vectors as admission_journal
 import test_commerce_cross_order_issuance_vectors as cross_order_issuance
+import test_commerce_two_gate_admission_vectors as two_gate_admission
 from integration_gate.catalogue import load_catalogue
 from mock_gates import _canonical
 
@@ -59,8 +60,10 @@ PACKS = (
      'test_complete_output_bytes_and_references', 2),
     ('cross_order_issuance', cross_order_issuance, 'CommerceCrossOrderIssuanceVectorTests',
      'test_complete_output_bytes_and_references', 2),
+    ('two_gate_admission', two_gate_admission, 'CommerceTwoGateAdmissionVectorTests',
+     'test_complete_output_bytes_and_references', 8),
 )
-TOTAL_ENTRIES = 426
+TOTAL_ENTRIES = 434
 QUALIFICATION = {
     'semanticConsumerStatus': 'HOLD_SEMANTIC',
     'bootstrapIsConsumerAcceptance': False,
@@ -122,6 +125,10 @@ LIMITATIONS = {
     'cross_order_issuance': [
         'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Each branch replays the same pinned payment-2 checkpoint in a fresh in-process host.',
         'The receipt and refusal describe local issuance binding. Both preserve the transferred resale right and record zero admission consumption.',
+    ],
+    'two_gate_admission': [
+        'Non-normative mock evidence with semantic consumption on HOLD_SEMANTIC. Both gate orders start from the same paid, issued and unconsumed checkpoint in fresh in-process hosts.',
+        'The first gate consumes once at a synthetic pre-expiry clock. The evidence covers sequential calls within each host. Cross-host fencing, venue admission and production clock policy are outside its scope.',
     ],
 }
 ENTRY_KEYS = {'case_id', 'step_id', 'action', 'input_ref', 'outcome_ref',
@@ -403,6 +410,20 @@ class CommerceCompanionEvidenceIndexTests(unittest.TestCase):
 
             with self.subTest(field=field):
                 self._reject(swap, field + ' association')
+
+    def test_two_gate_admission_swapped_winning_outcome_references(self):
+        p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'two_gate_admission')
+
+        def swap(document):
+            entries = document['packs'][p]['entries']
+            winners = [entry for entry in entries
+                       if entry['action'] == 'admission_consume' and entry['outcome_kind'] == 'receipt']
+            first, second = winners
+            self.assertEqual((first['case_id'], second['case_id']), ('gate-1-first', 'gate-2-first'))
+            self.assertEqual(first['binding_ref'], second['binding_ref'])
+            first['outcome_ref'], second['outcome_ref'] = second['outcome_ref'], first['outcome_ref']
+
+        self._reject(swap, 'outcome_ref association')
 
     def test_resale_buyer_release_crossed_outcome_references(self):
         p = next(i for i, pack in enumerate(PACKS) if pack[0] == 'resale_buyer_release')

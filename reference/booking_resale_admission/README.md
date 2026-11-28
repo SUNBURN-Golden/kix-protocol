@@ -4781,3 +4781,31 @@ The pack carries `HOLD_SEMANTIC` and the existing `MOCK_EVIDENCE` binding.
 PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -t reference/booking_resale_admission -p test_commerce_cross_order_issuance_vectors.py
 ```
+
+## Commerce two-gate admission vectors
+
+Each case replays the eight pinned envelopes through
+`booking-admission/adopt-B` in a fresh in-process host. Payment has been
+recorded for `reserve-B`, slot 1 is `ISSUED`, and `issue-B` is eligible
+and unconsumed at version 1. The reservation and admission clocks stay at
+1,000,000, before both authorization presentations' expiry at 1,100,000.
+
+| Case | First authorization | Second authorization | Losing consume | Winning consume |
+|---|---|---|---|---|
+| `gate-1-first` | gate-1 accepted | gate-2 `ADMISSION_LOCKED` | gate-2 `GATE_MISMATCH` | gate-1 `CONSUMED_ONCE` |
+| `gate-2-first` | gate-2 accepted | gate-1 `ADMISSION_LOCKED` | gate-1 `GATE_MISMATCH` | gate-2 `CONSUMED_ONCE` |
+
+Each refusal preserves state and accepted journals across all five machines.
+The winning consume detaches the authorization, advances the right to version
+2, and appends one entry to each bound journal. Slot 1 stays `ISSUED`.
+The pack stores complete receipts and refusal codes with detached diagnostics
+under `HOLD_SEMANTIC`. The histories cover sequential calls within each host.
+[Canonical inputs](fixtures/commerce_two_gate_admission_inputs_v1.json) ·
+[Complete outcomes](fixtures/commerce_two_gate_admission_receipts_v1.json) ·
+[Companion index](../../docs/status/COMMERCE_COMPANION_EVIDENCE_INDEX_V1.md#two-gate-admission) ·
+[Coverage and local verification](../../validation/2026-11-28-plan-commerce-two-gate-admission/README.md)
+
+```bash
+PYTHONPATH=. python3.12 -B -m unittest discover -s reference/booking_resale_admission \
+  -t reference/booking_resale_admission -p test_commerce_two_gate_admission_vectors.py
+```
