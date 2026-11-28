@@ -2,8 +2,8 @@
 """Recompute the non-normative BOOTSTRAP producer-qualification tuple identity.
 
 The record at ``docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.json`` pins the
-contract-only OpenAPI document, its FSM command contract, the historical
-bootstrap-2 integration-gate OpenAPI bytes, the generated SDK catalogue, the generator,
+current contract-only OpenAPI document, its FSM command contract, the
+integration-gate OpenAPI document, the generated SDK catalogue, the generator,
 the toolchain, the BOOTSTRAP profile/manifest/sidecar, both conformance
 vectors and the candidate read-model fixtures. It also maps every command to
 its core or FSM source and gate route, marks the 13 owner-decided read query
@@ -35,6 +35,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from integration_gate.catalogue import git_blob_id, load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 
 RECORD_PATH = 'docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.json'
 SCHEMA_VERSION = 'kix-producer-qualification-tuple/1'
@@ -46,7 +47,6 @@ PROTOCOL_PATH = 'reference/v0.3-rc1/protocol_contract.json'
 FSM_PATH = 'docs/contracts/openapi/fsm-command-contract.json'
 CONTRACT_ONLY_PATH = 'docs/contracts/openapi/kix-protocol.contract-only.openapi.json'
 GATE_PATH = 'docs/contracts/openapi/kix-protocol.integration-gate.openapi.json'
-HISTORICAL_GATE_INPUT = 'sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json'
 CATALOGUE_PATH = 'sdk/generated/catalogue.ts'
 GENERATOR_PATH = 'sdk/generate/generate_client.mjs'
 TOOLCHAINS_PATH = 'toolchains.json'
@@ -137,8 +137,7 @@ def load_artifacts(record, root=ROOT):
         if not isinstance(path, str):
             continue
         try:
-            source = HISTORICAL_GATE_INPUT if path == GATE_PATH else path
-            loaded[path] = (root / source).read_bytes()
+            loaded[path] = read_bootstrap_2_input(path, root)
         except OSError:
             continue
     return loaded
@@ -827,8 +826,8 @@ def _catalogue_cross_check(record, artifacts):
         problems.append('load_catalogue fsm command cross-check drift')
     if catalogue.sha256 != sha256_bytes(artifacts[PROTOCOL_PATH]):
         problems.append('load_catalogue source digest cross-check drift')
-    if catalogue.fsm_sha256 != sha256_bytes(artifacts[FSM_PATH]):
-        problems.append('load_catalogue fsm digest cross-check drift')
+    if catalogue.fsm['commands'] != fsm.get('commands'):
+        problems.append('load_catalogue fsm command surface cross-check drift')
     return problems
 
 

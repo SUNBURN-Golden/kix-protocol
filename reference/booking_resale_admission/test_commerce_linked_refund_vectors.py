@@ -8,6 +8,7 @@ import test_commerce_entry_resale_order_vectors as ordering
 import test_commerce_journey_conformance as journey
 import test_commerce_journey_receipts as goldens
 from integration_gate.catalogue import load_catalogue
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 from integration_gate.fsm_host import FsmHost, FsmRejected
 from integration_gate.schema import problems
 from mock_gates import NON_CLAIMS, _canonical
@@ -59,7 +60,7 @@ _check = journey._check
 
 
 def _read(path):
-    return (ROOT / path).read_bytes()
+    return read_bootstrap_2_input(path)
 
 
 def _check_purchase_bodies(bodies):

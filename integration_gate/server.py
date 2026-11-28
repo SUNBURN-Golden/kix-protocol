@@ -290,14 +290,17 @@ class GateServer(ThreadingMixIn, HTTPServer):
         observation = _journal_observation('not_attempted', self.store)
         self._ensure_core_on_worker()
         identities = ()
-        if self.store is None:
+        if self.store is None and action not in self.catalogue.read_name_set:
             # A queued attempt can reach this worker after its HTTP deadline.
             # Record identity conflicts before the write fence refuses execution.
+            # Point queries ignore the envelope operationId, so they bind nothing.
             identities = self.resale_reads.note_attempt(operation_id, trace_id, actor, action, body)
         if not self.commands_enabled():
             observation['journalDecision'] = 'not_attempted'
             observation['admit'] = 'NOT_READY'
             return 503, _not_ready(), observation
+        if action in self.catalogue.read_name_set:
+            return self._perform_read(action, body, observation)
         if action in self.catalogue.fsm_name_set:
             return self._perform_fsm(action, body, actor, identities, observation)
         fresh = self.store is None or not self.store.has_operation(operation_id)
@@ -384,6 +387,27 @@ class GateServer(ThreadingMixIn, HTTPServer):
             return 200, self.resale_reads.read(query, request), observation
         except ReadRefused as exc:
             return exc.status, _error(exc.code), observation
+
+    def _perform_read(self, action, body, observation):
+        """Point queries ignore the envelope operationId and actor.
+
+        They do not write the core, the FSM journal, or a readiness file.
+        A readiness directory refuses them before the machines are touched.
+        """
+        if self.store is not None:
+            observation['journalDecision'] = 'not_attempted'
+            return 422, _error(READINESS_FSM_REFUSED), observation
+        try:
+            result = self.fsm.read(action, body)
+        except FsmRejected as exc:
+            observation['journalDecision'] = 'inactive'
+            return 422, _error(exc.code), observation
+        except Exception as exc:
+            print('integration-gate internal error: ' + type(exc).__name__, file=sys.stderr)
+            observation['journalDecision'] = 'not_attempted'
+            return 500, _error('INTERNAL_ERROR'), observation
+        observation['journalDecision'] = 'inactive'
+        return 200, result, observation
 
     def ready_view(self):
         self._ensure_core_on_worker()
@@ -645,10 +669,11 @@ class GateHandler(BaseHTTPRequestHandler):
                 return
             try:
                 payload = json.loads(text, object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_constant)
+                _reject_malformed_unicode(payload)
             except DuplicateKey:
                 self._send(400, _error('DUPLICATE_KEY'))
                 return
-            except (json.JSONDecodeError, RecursionError, ValueError):
+            except (json.JSONDecodeError, RecursionError, UnicodeEncodeError, ValueError):
                 self._send(400, _error('INVALID_JSON'))
                 return
             try:
@@ -749,6 +774,20 @@ def _reject_duplicate_keys(pairs):
 
 def _reject_constant(_value):
     raise ValueError('non-standard JSON number')
+
+
+def _reject_malformed_unicode(value):
+    stack = [value]
+    while stack:
+        item = stack.pop()
+        if isinstance(item, str):
+            item.encode('utf-8')
+        elif isinstance(item, dict):
+            for key, child in item.items():
+                key.encode('utf-8')
+                stack.append(child)
+        elif isinstance(item, list):
+            stack.extend(item)
 
 
 def _error(code):

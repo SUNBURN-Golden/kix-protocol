@@ -5,6 +5,8 @@ import copy
 from pathlib import Path
 import unittest
 
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
+
 from credit_fixture import exact_fields
 from credit_fsm import CreditError
 from settlement_credit_boundary_vectors import canonical, replay_scenario_with_state
@@ -126,7 +128,7 @@ def validate_fixture(fixture):
 
 
 def source_pins():
-    return [{'path': path, 'sha256': sha((ROOT / path).read_bytes())} for path in SOURCE_PATHS]
+    return [{'path': path, 'sha256': sha(read_bootstrap_2_input(path))} for path in SOURCE_PATHS]
 
 
 def replay(inputs):

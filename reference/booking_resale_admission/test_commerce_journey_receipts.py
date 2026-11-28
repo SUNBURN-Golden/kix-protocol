@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import test_commerce_journey_conformance as journey
 from integration_gate.catalogue import git_blob_id
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 from mock_gates import _canonical
 
 ROOT = journey.ROOT
@@ -68,7 +69,7 @@ def _decode(raw):
 
 
 def _read(path):
-    return (ROOT / path).read_bytes()
+    return read_bootstrap_2_input(path)
 
 
 def _pin(path, raw):

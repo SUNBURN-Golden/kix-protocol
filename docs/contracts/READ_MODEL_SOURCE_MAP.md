@@ -4,7 +4,7 @@
 이 세션에서 확인한 `origin/main`: `cb59612b847fc2e6ef71810202be5e2ca5f76724`. 작업 시작 HEAD도 같은 SHA다.
 읽는 계약: [READ_MODEL_QUERIES.md](READ_MODEL_QUERIES.md) 초안 0.1, git blob `06b9ec68f9dc9dd4af4d70c236360be964a84ae1`.
 상태: **입력 자료. 결정 문서가 아니다.** 소비자는 `read-model-reference` 노드(`.aiops/program.json`의 노드 id), commerce `bind-list-read`, 후속 `ps-02-query-contract`다 (READ_MODEL_QUERIES.md:32).
-이 문서의 파일:줄 앵커는 위 작업 시작 SHA의 작업 트리 기준이다. 소스가 움직이면 §6 검사가 낡은 앵커를 알린다.
+이 문서의 파일:줄 앵커는 read-model-reference 병합 작업 트리 기준이다. 소스가 움직이면 §6 검사가 낡은 앵커를 알린다.
 
 현행 승인 범위의 정본은 [DEVELOPMENT_PLAN.md](../DEVELOPMENT_PLAN.md)다.
 
@@ -27,23 +27,23 @@
 
 ## 2. 쿼리별 원천 지도
 
-이름은 사용자 결정(2026-10-08, 선택지 A)으로 정해져 있다 (READ_MODEL_QUERIES.md:15, :377-378). 카탈로그 상태는 13개 모두 `NOT_IN_CATALOGUE`이며 이 문서도 그대로 둔다. 검사기가 두 카탈로그 JSON에 13개 이름이 없음을 다시 확인한다 (§5, §6).
+이름은 사용자 결정(2026-10-08, 선택지 A)으로 정해져 있다 (READ_MODEL_QUERIES.md:15, :377-378). 점 조회 10개는 `read-model-reference`에서 두 번째 핀 `fsm-command-contract.json`의 `queries` 키로 카탈로그에 들어갔다. 목록 3개는 `NOT_IN_CATALOGUE`다 (§5, §6).
 
 | 쿼리 이름 | 종류 | 상태 | 원천 표면 (file:line) | 모집단·중첩 | RMQ 앵커 |
 |---|---|---|---|---|---|
 | `list_shows` | list | SOURCE_MISSING | 없음 — `def list_shows`가 어느 쪽에도 없다 | 모집단 `MockGates._shows` `mock_gates.py:97`; 원소 `MockGates._show_view` `mock_gates.py:732`; FSM 쪽 등록 id 집합 `ReservationMachine._shows` `reservation_fsm.py:155` | READ_MODEL_QUERIES.md:91-103 |
-| `get_show` | point | SOURCE_FOUND | `ReservationMachine.view_show` `reservation_fsm.py:705` → `_show_snapshot` `reservation_fsm.py:908` → `MockGates.view_show` `mock_gates.py:633` | 원소 dict는 `_show_view` `mock_gates.py:732`. `MockGates.view_show` 단독 봉투에는 `lifecycle_authority`가 없어 뒷받침은 FSM 쪽이다 (READ_MODEL_QUERIES.md:110) | READ_MODEL_QUERIES.md:105-116 |
-| `get_booking` | point | SOURCE_FOUND | `ReservationMachine.view` `reservation_fsm.py:702` → `_view` `reservation_fsm.py:931` | 중첩 `right`는 `MockGates._right_view` `mock_gates.py:783` | READ_MODEL_QUERIES.md:118-132 |
-| `list_bookings` | list | SOURCE_MISSING | 없음 — `def list_bookings`가 없다 | 모집단 `ReservationMachine._cases` `reservation_fsm.py:156`; 원소는 `_view` `reservation_fsm.py:931`의 요약 부분집합 | READ_MODEL_QUERIES.md:134-145 |
-| `get_right` | point | SOURCE_FOUND | `ResaleMachine.view_right` `resale_fsm.py:659` → `_ticket_view` `resale_fsm.py:1069` | 중첩 `right`는 `_public_right` `resale_fsm.py:1042`가 부르는 `MockGates._right_view` `mock_gates.py:783` | READ_MODEL_QUERIES.md:147-158 |
+| `get_show` | point | SOURCE_FOUND | `ReservationMachine.view_show` `reservation_fsm.py:705` → `_show_snapshot` `reservation_fsm.py:911` → `MockGates.view_show` `mock_gates.py:633` | 원소 dict는 `_show_view` `mock_gates.py:732`. `MockGates.view_show` 단독 봉투에는 `lifecycle_authority`가 없어 뒷받침은 FSM 쪽이다 (READ_MODEL_QUERIES.md:110) | READ_MODEL_QUERIES.md:105-116 |
+| `get_booking` | point | SOURCE_FOUND | `ReservationMachine.view` `reservation_fsm.py:702` → `_view` `reservation_fsm.py:934` | 중첩 `right`는 `MockGates._right_view` `mock_gates.py:783` | READ_MODEL_QUERIES.md:118-132 |
+| `list_bookings` | list | SOURCE_MISSING | 없음 — `def list_bookings`가 없다 | 모집단 `ReservationMachine._cases` `reservation_fsm.py:156`; 원소는 `_view` `reservation_fsm.py:934`의 요약 부분집합 | READ_MODEL_QUERIES.md:134-145 |
+| `get_right` | point | SOURCE_FOUND | `ResaleMachine.view_right` `resale_fsm.py:659` → `_ticket_view` `resale_fsm.py:1072` | 중첩 `right`는 `_public_right` `resale_fsm.py:1045`가 부르는 `MockGates._right_view` `mock_gates.py:783` | READ_MODEL_QUERIES.md:147-158 |
 | `get_presentation` | point | SOURCE_FOUND | `ResaleMachine.view_presentation` `resale_fsm.py:664` | 중첩 `right`는 같은 `_public_right` 경로 | READ_MODEL_QUERIES.md:160-170 |
-| `list_open_listings` | list | SOURCE_MISSING | 없음 — `def list_open_listings`가 없다 | 모집단 `ResaleMachine._listings` `resale_fsm.py:163`; 원소 `_listing_view` `resale_fsm.py:1094`; 기존 전이 집합 `OPEN_PHASES` `resale_fsm.py:49`. 쓰기 `list_resale` `resale_fsm.py:259`를 조회로 쓰지 않는다 (READ_MODEL_QUERIES.md:43-47) | READ_MODEL_QUERIES.md:172-184 |
-| `get_listing` | point | SOURCE_FOUND | `ResaleMachine.view` `resale_fsm.py:656` → `_listing_view` `resale_fsm.py:1094` | 권리·슬롯 필드는 `_public_right` `resale_fsm.py:1042`의 중첩 관찰 | READ_MODEL_QUERIES.md:186-195 |
-| `get_admission` | point | SOURCE_FOUND | `AdmissionMachine.view` `admission_fsm.py:512` → `_credential_view` `admission_fsm.py:1030` | 권리·슬롯 필드는 `_local_right`/`_local_show`가 묶인 게이트에서 읽는다 | READ_MODEL_QUERIES.md:197-207 |
-| `get_credential` | point | SOURCE_FOUND | `AdmissionMachine.view_credential` `admission_fsm.py:515` | 중첩 `credential`은 `_credential_view` `admission_fsm.py:1030`; 원천 불능 코드는 `decision`으로 보고된다 (READ_MODEL_QUERIES.md:218) | READ_MODEL_QUERIES.md:209-219 |
-| `get_settlement` | point | SOURCE_FOUND | `SettlementMachine.view` `settlement_fsm.py:476` → `_view` `settlement_fsm.py:635` | 중첩 `claim`은 `MockSettlement.view` `mock_settlement.py:289` → `_view` `mock_settlement.py:298`. `CAPTURED`/`COMMITTED`에서만 채운다 (READ_MODEL_QUERIES.md:225) | READ_MODEL_QUERIES.md:221-233 |
-| `get_credit_advance` | point | SOURCE_FOUND | `CreditMachine.view` `credit_fsm.py:523` → `_view` `credit_fsm.py:760` | 비변경 감시 `_witness` `credit_fsm.py:830` / `_guard` `credit_fsm.py:839` | READ_MODEL_QUERIES.md:235-247 |
-| `get_credit_claim` | point | SOURCE_FOUND | `CreditMachine.view_claim` `credit_fsm.py:530` → `_mock_claim` `credit_fsm.py:620` → `MockCredit.view_claim` `mock_credit.py:264` → `_view_claim` `mock_credit.py:290` | 이 dict에는 `lifecycle_authority`가 없다 (READ_MODEL_QUERIES.md:253) | READ_MODEL_QUERIES.md:249-259 |
+| `list_open_listings` | list | SOURCE_MISSING | 없음 — `def list_open_listings`가 없다 | 모집단 `ResaleMachine._listings` `resale_fsm.py:163`; 원소 `_listing_view` `resale_fsm.py:1097`; 기존 전이 집합 `OPEN_PHASES` `resale_fsm.py:49`. 쓰기 `list_resale` `resale_fsm.py:259`를 조회로 쓰지 않는다 (READ_MODEL_QUERIES.md:43-47) | READ_MODEL_QUERIES.md:172-184 |
+| `get_listing` | point | SOURCE_FOUND | `ResaleMachine.view` `resale_fsm.py:656` → `_listing_view` `resale_fsm.py:1097` | 권리·슬롯 필드는 `_public_right` `resale_fsm.py:1045`의 중첩 관찰 | READ_MODEL_QUERIES.md:186-195 |
+| `get_admission` | point | SOURCE_FOUND | `AdmissionMachine.view` `admission_fsm.py:512` → `_credential_view` `admission_fsm.py:1033` | 권리·슬롯 필드는 `_local_right`/`_local_show`가 묶인 게이트에서 읽는다 | READ_MODEL_QUERIES.md:197-207 |
+| `get_credential` | point | SOURCE_FOUND | `AdmissionMachine.view_credential` `admission_fsm.py:515` | 중첩 `credential`은 `_credential_view` `admission_fsm.py:1033`; 원천 불능 코드는 `decision`으로 보고된다 (READ_MODEL_QUERIES.md:218) | READ_MODEL_QUERIES.md:209-219 |
+| `get_settlement` | point | SOURCE_FOUND | `SettlementMachine.view` `settlement_fsm.py:476` → `_view` `settlement_fsm.py:638` | 중첩 `claim`은 `MockSettlement.view` `mock_settlement.py:287` → `_view` `mock_settlement.py:296`. `CAPTURED`/`COMMITTED`에서만 채운다 (READ_MODEL_QUERIES.md:225) | READ_MODEL_QUERIES.md:221-233 |
+| `get_credit_advance` | point | SOURCE_FOUND | `CreditMachine.view` `credit_fsm.py:523` → `_view` `credit_fsm.py:763` | 비변경 감시 `_witness` `credit_fsm.py:833` / `_guard` `credit_fsm.py:842` | READ_MODEL_QUERIES.md:235-247 |
+| `get_credit_claim` | point | SOURCE_FOUND | `CreditMachine.view_claim` `credit_fsm.py:530` → `_mock_claim` `credit_fsm.py:623` → `MockCredit.view_claim` `mock_credit.py:264` → `_view_claim` `mock_credit.py:290` | 이 dict에는 `lifecycle_authority`가 없다 (READ_MODEL_QUERIES.md:253) | READ_MODEL_QUERIES.md:249-259 |
 
 관측 정리.
 
@@ -60,29 +60,31 @@
 | 술어 | 원천 표면 | RMQ 앵커 |
 |---|---|---|
 | `NON_CLAIMS` 14개 플래그 (`role_authenticated` … `compensation_defined`)는 그 플래그를 복사하는 예약·리셀·검표 뷰에서 항상 거짓 | `NON_CLAIMS` `mock_gates.py:23-38` | READ_MODEL_QUERIES.md:274, :349 |
-| 정산 뷰의 `funds_executed`, `bank_debit_observed`, `legal_debtor_bound`, `admission_granted`, `durable`, `provider_authorization_executed`는 거짓 | `settlement_fsm.py:649-659` (`_view` 안의 거짓 리터럴) | READ_MODEL_QUERIES.md:233 |
+| 정산 뷰의 `funds_executed`, `bank_debit_observed`, `legal_debtor_bound`, `admission_granted`, `durable`, `provider_authorization_executed`는 거짓 | `settlement_fsm.py:652-662` (`_view` 안의 거짓 리터럴) | READ_MODEL_QUERIES.md:233 |
 | 여신 뷰의 `_flags` 14개(`funds_executed` … `interest_defined`)는 항상 거짓 | `_flags` `mock_credit.py:103` | READ_MODEL_QUERIES.md:238, :252 |
-| `economic_finality_claimed`, `chain_issued`는 그 뷰가 이미 거짓으로 두는 곳에서 거짓. 성공이 참을 만들지 못한다 | 각 `_view`/`_envelope`의 거짓 리터럴 (예 `reservation_fsm.py:892-905`) | READ_MODEL_QUERIES.md:274 |
+| `economic_finality_claimed`, `chain_issued`는 그 뷰가 이미 거짓으로 두는 곳에서 거짓. 성공이 참을 만들지 못한다 | 각 `_view`/`_envelope`의 거짓 리터럴 (예 `reservation_fsm.py:895-908`) | READ_MODEL_QUERIES.md:274 |
 | `matches_current_right`와 `fresh`는 비교다. 입장 허가·현장 스캔·자격 재발급이 아니다 | `resale_fsm.py:664-693`, `admission_fsm.py:515-547` | READ_MODEL_QUERIES.md:357, :170, :219 |
 
 ### 3.2 비변경 (non-mutation)
 
 술어: 조회 호출 전후에 그 기계의 `canonical_state()`, `export_journal()`, 시계가 있는 기계의 `logical_time_ms`가 같다 (READ_MODEL_QUERIES.md:361). 여신 기계는 묶인 소유권 원천의 `canonical_state`까지 같다 (READ_MODEL_QUERIES.md:362).
 
+`read-model-reference`는 다섯 기계에 읽기 전용 접근자 `accepted_through()`를 더했다 (P34–P38). 저널 길이를 읽고, 시계가 있는 세 기계는 `logical_time_ms`를 함께 읽는다. 정산·여신 기계에는 시계가 없어 저널 길이만 낸다. 어느 쪽도 저널·상태·시계를 바꾸지 않는다.
+
 | 기계 | `canonical_state` | `export_journal` | `logical_time_ms` |
 |---|---|---|---|
-| `ReservationMachine` | `reservation_fsm.py:713` | `reservation_fsm.py:710` | 시계 있음 (`reservation_fsm.py:715`, 봉투 `:889`) |
-| `ResaleMachine` | `resale_fsm.py:698` | `resale_fsm.py:695` | 시계 있음 (`resale_fsm.py:701`, 봉투 `:1023`) |
-| `AdmissionMachine` | `admission_fsm.py:552` | `admission_fsm.py:549` | 시계 있음 (`admission_fsm.py:554`, 봉투 `:998`) |
-| `SettlementMachine` | `settlement_fsm.py:485` | `settlement_fsm.py:482` | 시계 없음. 파일에 `logical_time_ms`가 없다 (READ_MODEL_QUERIES.md:226) |
-| `CreditMachine` | `credit_fsm.py:543` | `credit_fsm.py:540` | 시계 없음 (READ_MODEL_QUERIES.md:239). `_guard` `credit_fsm.py:839`는 `_witness` `credit_fsm.py:830`가 읽은 묶인 소유권 `canonical_state` 전후 동등을 강제한다 (READ_MODEL_QUERIES.md:362) |
+| `ReservationMachine` | `reservation_fsm.py:716` | `reservation_fsm.py:713` | 시계 있음 (`reservation_fsm.py:718`, 봉투 `:892`) |
+| `ResaleMachine` | `resale_fsm.py:701` | `resale_fsm.py:698` | 시계 있음 (`resale_fsm.py:704`, 봉투 `:1026`) |
+| `AdmissionMachine` | `admission_fsm.py:555` | `admission_fsm.py:552` | 시계 있음 (`admission_fsm.py:557`, 봉투 `:1001`) |
+| `SettlementMachine` | `settlement_fsm.py:488` | `settlement_fsm.py:485` | 시계 없음. 파일에 `logical_time_ms`가 없다 (READ_MODEL_QUERIES.md:226) |
+| `CreditMachine` | `credit_fsm.py:546` | `credit_fsm.py:543` | 시계 없음 (READ_MODEL_QUERIES.md:239). `_guard` `credit_fsm.py:842`는 `_witness` `credit_fsm.py:833`가 읽은 묶인 소유권 `canonical_state` 전후 동등을 강제한다 (READ_MODEL_QUERIES.md:362) |
 | `MockGates` | 없음 (관측, 분류 B) | 없음 (관측, 분류 B) | `_env`가 `logical_time_ms`를 낸다 `mock_gates.py:726`; `set_clock` `mock_gates.py:107` |
 | `MockSettlement` | 없음 (관측, 분류 B) | 없음 (관측, 분류 B) | 시계 없음 |
 | `MockCredit` | 없음 (관측, 분류 B) | 없음 (관측, 분류 B) | 시계 없음 |
 
 게으른 만료.
 
-- `expired`는 주입된 시계로 계산한다. `ReservationMachine._view`는 `expired`가 참이어도 `phase`를 `HELD`로 둔다 (`reservation_fsm.py:935`); 리셀 `resale_fsm.py:1098`, 검표 `admission_fsm.py:1039`도 같은 모양이다 (READ_MODEL_QUERIES.md:364-365).
+- `expired`는 주입된 시계로 계산한다. `ReservationMachine._view`는 `expired`가 참이어도 `phase`를 `HELD`로 둔다 (`reservation_fsm.py:938`); 리셀 `resale_fsm.py:1101`, 검표 `admission_fsm.py:1042`도 같은 모양이다 (READ_MODEL_QUERIES.md:364-365).
 - 조회가 해제·소비·시계 전이가 되지 않는다. `set_clock`은 조회가 아니라 명령이다 — 세 기계의 `REPLAYABLE`에 있다 (`reservation_fsm.py:55`, `resale_fsm.py:55`, `admission_fsm.py:55`; `def`는 `reservation_fsm.py:162`, `resale_fsm.py:167`, `admission_fsm.py:167`) (READ_MODEL_QUERIES.md:367).
 - 기존 시험 증거: 시계 주입 전후의 `view` 관찰 `test_reservation_fsm.py:283`, `test_reservation_fsm.py:307` (READ_MODEL_QUERIES.md:366).
 - 기존 view 메서드는 `_call`/`_accept`를 거치지 않고 저널에 쓰지 않는다 (예 `reservation_fsm.py:702-703`, `resale_fsm.py:656-657`). 여신 `view`·`view_claim`은 호출 전후를 `_guard`로 스스로 검사한다 (`credit_fsm.py:523-538`).
@@ -92,29 +94,31 @@
 | 술어 | 배관 | RMQ 앵커 |
 |---|---|---|
 | 가시성 클래스는 `public listing`, `owner or holder`, `organizer`, `gate role`, `operator` 다섯 개뿐. 칸의 값은 `UNDETERMINED`(Astra) | 이 문서가 값을 정하지 않는다 | READ_MODEL_QUERIES.md:329-338, :386 |
-| `actor`는 픽스처 문자열이지 인증 결과가 아니다 | `sourceAuthentication: FIXTURE_ONLY`가 원본 핀에 강제된다 `catalogue.py:76`, 생성기 `generate_client.mjs:128-129`, 문서 `openapi/README.md:52`, `openapi/README.md:70` | READ_MODEL_QUERIES.md:325-326 |
+| `actor`는 픽스처 문자열이지 인증 결과가 아니다 | `sourceAuthentication: FIXTURE_ONLY`가 원본 핀에 강제된다 `catalogue.py:87`, 생성기 `generate_client.mjs:128-129`, 문서 `openapi/README.md:52`, `openapi/README.md:70` | READ_MODEL_QUERIES.md:325-326 |
 | fixture 문자열 비교로 행을 거를 수 있으나 그 거름은 접근 통제가 아니다. `role_authenticated`·`organizer_authenticated`는 참이 되지 않는다 | `NON_CLAIMS` `mock_gates.py:24-25` | READ_MODEL_QUERIES.md:340-341 |
 
 ## 4. 게이트·카탈로그 기작 노트
 
-읽기 삽입 자체는 `read-model-reference`의 일이다. 이 절은 그 삽입이 지금 기작에서 어떤 모양이어야 하는지만 적고, 결정은 하지 않는다.
+이 절은 기존 게이트·카탈로그 기작과 `read-model-reference`에서 추가된 점 조회를 기록한다.
 
 ### 4.1 두 층의 명령 집합
 
 - **잠금 핵심.** `reference/v0.3-rc1/protocol_contract.json`의 `commands`는 40개 (`constants.py:20`의 `CORE_COMMAND_COUNT`). 그 안에 `list_*`/`get_*`/`view_*`/`read_*`는 없다 (READ_MODEL_QUERIES.md:36-39). 이 파일은 `reference/v0.3-rc1/**` 잠금 아래 바이트 고정이며, 조회는 여기에 못 들어간다.
-- **가산 FSM 핀.** `docs/contracts/openapi/fsm-command-contract.json`의 44개 `<machine>_<op>` 명령은 `canonical_fsm_document()` (`fsm_contract.py:149-197`)가 `MACHINE_TABLE` (`fsm_contract.py:26-84`)의 `replayable` 튜플에서 생성한다. view 연산은 어느 `REPLAYABLE`에도 없어 44개 전부 쓰기다. `drift_problems` (`fsm_contract.py:200-263`)는 명령 집합의 정확한 동등을 요구한다 (`fsm_contract.py:262`). 즉 읽기를 넣으려면 생성기·표를 확장하거나 새 핀을 더해야 하며, 그것은 카탈로그 바이트 변경이다.
-- **동조 범프.** 그 변경이 일어나면 함께 움직이는 것: `FSM_COMMAND_COUNT` (`constants.py:21`), OpenAPI 핀의 `commandCount` 84 (`generate_client.mjs:150`), `components/schemas`·`x-kix-action-body-map`·봉투 `action` enum (`generate_client.mjs:166-195`), 재생성 `sdk/generated/catalogue.ts`와 `sdk-pin.json` (`check_sdk_client.py`의 바이트 동등), `check_openapi_contract.py`, `check_integration_gate_openapi.py`. 어느 하나만 바꾸는 삽입은 드리프트 검사에서 거절된다.
+- **가산 FSM 핀.** `docs/contracts/openapi/fsm-command-contract.json`의 44개 `<machine>_<op>` 명령은 `canonical_fsm_document()` (`fsm_contract.py:209-274`)가 `MACHINE_TABLE` (`fsm_contract.py:26-84`)의 `replayable` 튜플에서 생성한다. view 연산은 어느 `REPLAYABLE`에도 없어 44개 전부 쓰기다. `drift_problems` (`fsm_contract.py:277-381`)는 명령 집합의 정확한 동등을 요구한다 (`fsm_contract.py:339`). 점 조회는 같은 핀의 `queries` 키에 둔다.
+- **동조 범프.** 점 조회를 포함한 OpenAPI 핀은 `commandCount` 94 및 `readCommandCount` 10을 기록한다 (`generate_client.mjs:150-155`). 함께 검증하는 항목은 `components/schemas`·`x-kix-action-body-map`·봉투 `action` enum (`generate_client.mjs:171-200`), 재생성 `sdk/generated/catalogue.ts`와 `sdk-pin.json` (`check_sdk_client.py`의 바이트 동등), `check_openapi_contract.py`, `check_integration_gate_openapi.py`. 어느 하나만 바꾸는 삽입은 드리프트 검사에서 거절된다.
 
 ### 4.2 이름과 디스패치
 
-- `_reject_names` (`catalogue.py:52-57`)는 소문자 식별자만 받는다. 13개 이름은 모두 그 규칙에 맞다.
-- 디스패치는 `server.py:282`가 FSM 이름을 `_perform_fsm` (`server.py:337-355`)으로 돌린다. FSM 호출은 readiness 저널에 닿지 않고 저널이 켜져 있으면 `READINESS_FSM_REFUSED`로 거절된다 (`server.py:344`). 즉 이 경로로 들어온 읽기는 저널을 쓰지 않는 모양을 물려받는다.
-- `FsmHost.call` (`fsm_host.py:80-92`)은 `machine.op(subject, **kwargs)`를 부른다. `subject`는 첫 파라미터다 (`fsm_contract.py:123-124`). 기존 view 시그니처(단일 subject, `view_presentation`/`view_credential`의 `version`·`holder_role` kwargs)는 이 호출 모양에 맞는다.
-- `get_show`처럼 `<machine>_<op>` 접두가 없는 이름을 어떻게 명령 이름에 옮길지는 이 문서가 정하지 않는다. 기록만 한다 — 명령 이름 자체는 사용자 결정으로 닫혀 있다 (READ_MODEL_QUERIES.md:378).
+- `_reject_names` (`catalogue.py:63-68`)는 소문자 식별자만 받는다. 13개 이름은 모두 그 규칙에 맞다.
+- 디스패치는 `server.py:284`가 FSM 이름을 `_perform_fsm` (`server.py:339-357`)으로 돌린다. FSM 호출은 readiness 저널에 닿지 않고 저널이 켜져 있으면 `READINESS_FSM_REFUSED`로 거절된다 (`server.py:346`). 점 조회는 `server.py:282`에서 `_perform_read` (`server.py:359-378`)로 분기한다.
+- `FsmHost.call` (`fsm_host.py:84-96`)은 `machine.op(subject, **kwargs)`를 부른다. `subject`는 첫 파라미터다 (`fsm_contract.py:138-139`). 기존 view 시그니처(단일 subject, `view_presentation`/`view_credential`의 `version`·`holder_role` kwargs)는 이 호출 모양에 맞는다.
+- 점 조회는 사용자 결정의 `get_show` 등 승인된 이름을 그대로 사용한다 (READ_MODEL_QUERIES.md:378).
+
+`FsmHost.read` (`fsm_host.py:98`)는 기존 `view*`와 `accepted_through()`를 호출한다.
 
 ## 5. 카탈로그 부재 확인
 
-`protocol_contract.json`(40개)과 `fsm-command-contract.json`(44개)의 `commands` 키 어느 쪽에도 13개 조회 이름이 없다. `check_read_model_source_map.py`가 아래 표의 `기대`대로 각 JSON의 `commands`를 대조하고, 세 목록 이름의 `def`가 해당 모듈에 없음도 §6 앵커로 확인한다. 이 문서는 그 부재를 바꾸지 않는다.
+`protocol_contract.json`(40개)과 `fsm-command-contract.json`(44개)의 `commands` 키 어느 쪽에도 13개 조회 이름이 없다. `check_read_model_source_map.py`가 아래 표의 `기대`대로 각 JSON의 `commands`를 대조하고, 세 목록 이름의 `def`가 해당 모듈에 없음도 §6 앵커로 확인한다. C02의 `ABSENT`는 `commands`에 한한다. 별도 `queries` 키의 점 조회 10개는 OpenAPI 핀 검사와 게이트 시험이 대조한다.
 
 아래 표가 검사기가 파싱하는 카탈로그 기대다. `기대`가 `ABSENT`이면 그 파일의 `commands`에 13개 이름이 하나도 없어야 하고, `PRESENT: <이름>[, <이름>…]`이면 적힌 이름만 들어 있고 나머지 13개 이름은 없어야 한다. 후속 노드가 조회 이름을 새 카탈로그 파일에 넣으면 행을 하나 추가한다.
 
@@ -135,57 +139,57 @@
 | A04 | `list_shows` 부재(목) | reference/booking_resale_admission/mock_gates.py | - | `def list_shows(` |
 | A05 | `list_shows` 부재(FSM) | reference/booking_resale_admission/reservation_fsm.py | - | `def list_shows(` |
 | A06 | `get_show` 원천 | reference/booking_resale_admission/reservation_fsm.py | 705 | `def view_show(` |
-| A07 | `get_show` 스냅샷 | reference/booking_resale_admission/reservation_fsm.py | 908 | `def _show_snapshot(` |
+| A07 | `get_show` 스냅샷 | reference/booking_resale_admission/reservation_fsm.py | 911 | `def _show_snapshot(` |
 | A08 | `get_show` 게이트 view | reference/booking_resale_admission/mock_gates.py | 633 | `def view_show(` |
 | A09 | `get_booking` 원천 | reference/booking_resale_admission/reservation_fsm.py | 702 | `def view(` |
-| A10 | `get_booking` view | reference/booking_resale_admission/reservation_fsm.py | 931 | `def _view(` |
+| A10 | `get_booking` view | reference/booking_resale_admission/reservation_fsm.py | 934 | `def _view(` |
 | A11 | `list_bookings` 모집단 | reference/booking_resale_admission/reservation_fsm.py | 156 | `self._cases` |
 | A12 | `list_bookings` 부재 | reference/booking_resale_admission/reservation_fsm.py | - | `def list_bookings(` |
 | A13 | `get_right` 원천 | reference/booking_resale_admission/resale_fsm.py | 659 | `def view_right(` |
-| A14 | `get_right` 티켓 view | reference/booking_resale_admission/resale_fsm.py | 1069 | `def _ticket_view(` |
-| A15 | `get_right` 공개 권리 | reference/booking_resale_admission/resale_fsm.py | 1042 | `def _public_right(` |
+| A14 | `get_right` 티켓 view | reference/booking_resale_admission/resale_fsm.py | 1072 | `def _ticket_view(` |
+| A15 | `get_right` 공개 권리 | reference/booking_resale_admission/resale_fsm.py | 1045 | `def _public_right(` |
 | A16 | `get_right` 게이트 view | reference/booking_resale_admission/mock_gates.py | 783 | `def _right_view(` |
 | A17 | `get_presentation` 원천 | reference/booking_resale_admission/resale_fsm.py | 664 | `def view_presentation(` |
 | A18 | `list_open_listings` 모집단 | reference/booking_resale_admission/resale_fsm.py | 163 | `self._listings` |
-| A19 | `list_open_listings` 원소 | reference/booking_resale_admission/resale_fsm.py | 1094 | `def _listing_view(` |
+| A19 | `list_open_listings` 원소 | reference/booking_resale_admission/resale_fsm.py | 1097 | `def _listing_view(` |
 | A20 | `list_open_listings` 전이 집합 | reference/booking_resale_admission/resale_fsm.py | 49 | `OPEN_PHASES` |
 | A21 | `list_open_listings` 부재 | reference/booking_resale_admission/resale_fsm.py | - | `def list_open_listings(` |
 | A22 | `list_resale`는 쓰기 | reference/booking_resale_admission/resale_fsm.py | 259 | `def list_resale(` |
 | A23 | `get_listing` 원천 | reference/booking_resale_admission/resale_fsm.py | 656 | `def view(` |
 | A24 | `get_admission` 원천 | reference/booking_resale_admission/admission_fsm.py | 512 | `def view(` |
-| A25 | `get_admission` view | reference/booking_resale_admission/admission_fsm.py | 1030 | `def _credential_view(` |
+| A25 | `get_admission` view | reference/booking_resale_admission/admission_fsm.py | 1033 | `def _credential_view(` |
 | A26 | `get_credential` 원천 | reference/booking_resale_admission/admission_fsm.py | 515 | `def view_credential(` |
 | A27 | `get_settlement` 원천 | reference/settlement_f01_f03/settlement_fsm.py | 476 | `def view(` |
-| A28 | `get_settlement` view | reference/settlement_f01_f03/settlement_fsm.py | 635 | `def _view(` |
+| A28 | `get_settlement` view | reference/settlement_f01_f03/settlement_fsm.py | 638 | `def _view(` |
 | A29 | `get_settlement` 중첩 claim | reference/settlement_f01_f03/mock_settlement.py | 287 | `def view(` |
 | A30 | `get_settlement` claim view | reference/settlement_f01_f03/mock_settlement.py | 296 | `def _view(` |
 | A31 | `get_credit_advance` 원천 | reference/credit_advance_f04/credit_fsm.py | 523 | `def view(` |
-| A32 | `get_credit_advance` view | reference/credit_advance_f04/credit_fsm.py | 760 | `def _view(` |
-| A33 | `get_credit_advance` 감시 | reference/credit_advance_f04/credit_fsm.py | 830 | `def _witness(` |
-| A34 | `get_credit_advance` 감시 | reference/credit_advance_f04/credit_fsm.py | 839 | `def _guard(` |
+| A32 | `get_credit_advance` view | reference/credit_advance_f04/credit_fsm.py | 763 | `def _view(` |
+| A33 | `get_credit_advance` 감시 | reference/credit_advance_f04/credit_fsm.py | 833 | `def _witness(` |
+| A34 | `get_credit_advance` 감시 | reference/credit_advance_f04/credit_fsm.py | 842 | `def _guard(` |
 | A35 | `get_credit_claim` 원천 | reference/credit_advance_f04/credit_fsm.py | 530 | `def view_claim(` |
-| A36 | `get_credit_claim` 목 호출 | reference/credit_advance_f04/credit_fsm.py | 620 | `def _mock_claim(` |
+| A36 | `get_credit_claim` 목 호출 | reference/credit_advance_f04/credit_fsm.py | 623 | `def _mock_claim(` |
 | A37 | `get_credit_claim` 목 view | reference/credit_advance_f04/mock_credit.py | 264 | `def view_claim(` |
 | A38 | `get_credit_claim` claim view | reference/credit_advance_f04/mock_credit.py | 290 | `def _view_claim(` |
 | P01 | `NON_CLAIMS` | reference/booking_resale_admission/mock_gates.py | 23 | `NON_CLAIMS` |
 | P02 | 여신 `_flags` | reference/credit_advance_f04/mock_credit.py | 103 | `def _flags(` |
-| P03 | 예약 canonical | reference/booking_resale_admission/reservation_fsm.py | 713 | `def canonical_state(` |
-| P04 | 예약 journal | reference/booking_resale_admission/reservation_fsm.py | 710 | `def export_journal(` |
-| P05 | 예약 시계 | reference/booking_resale_admission/reservation_fsm.py | 715 | `"logical_time_ms"` |
-| P06 | 예약 게으른 만료 | reference/booking_resale_admission/reservation_fsm.py | 935 | `PRE_ISSUE` |
-| P07 | 리셀 canonical | reference/booking_resale_admission/resale_fsm.py | 698 | `def canonical_state(` |
-| P08 | 리셀 journal | reference/booking_resale_admission/resale_fsm.py | 695 | `def export_journal(` |
-| P09 | 리셀 시계 | reference/booking_resale_admission/resale_fsm.py | 701 | `"logical_time_ms"` |
-| P10 | 리셀 게으른 만료 | reference/booking_resale_admission/resale_fsm.py | 1098 | `OPEN_PHASES` |
-| P11 | 검표 canonical | reference/booking_resale_admission/admission_fsm.py | 552 | `def canonical_state(` |
-| P12 | 검표 journal | reference/booking_resale_admission/admission_fsm.py | 549 | `def export_journal(` |
-| P13 | 검표 시계 | reference/booking_resale_admission/admission_fsm.py | 554 | `"logical_time_ms"` |
-| P14 | 검표 게으른 만료 | reference/booking_resale_admission/admission_fsm.py | 1039 | `expired` |
-| P15 | 정산 canonical | reference/settlement_f01_f03/settlement_fsm.py | 485 | `def canonical_state(` |
-| P16 | 정산 journal | reference/settlement_f01_f03/settlement_fsm.py | 482 | `def export_journal(` |
+| P03 | 예약 canonical | reference/booking_resale_admission/reservation_fsm.py | 716 | `def canonical_state(` |
+| P04 | 예약 journal | reference/booking_resale_admission/reservation_fsm.py | 713 | `def export_journal(` |
+| P05 | 예약 시계 | reference/booking_resale_admission/reservation_fsm.py | 718 | `"logical_time_ms"` |
+| P06 | 예약 게으른 만료 | reference/booking_resale_admission/reservation_fsm.py | 938 | `PRE_ISSUE` |
+| P07 | 리셀 canonical | reference/booking_resale_admission/resale_fsm.py | 701 | `def canonical_state(` |
+| P08 | 리셀 journal | reference/booking_resale_admission/resale_fsm.py | 698 | `def export_journal(` |
+| P09 | 리셀 시계 | reference/booking_resale_admission/resale_fsm.py | 704 | `"logical_time_ms"` |
+| P10 | 리셀 게으른 만료 | reference/booking_resale_admission/resale_fsm.py | 1101 | `OPEN_PHASES` |
+| P11 | 검표 canonical | reference/booking_resale_admission/admission_fsm.py | 555 | `def canonical_state(` |
+| P12 | 검표 journal | reference/booking_resale_admission/admission_fsm.py | 552 | `def export_journal(` |
+| P13 | 검표 시계 | reference/booking_resale_admission/admission_fsm.py | 557 | `"logical_time_ms"` |
+| P14 | 검표 게으른 만료 | reference/booking_resale_admission/admission_fsm.py | 1042 | `expired` |
+| P15 | 정산 canonical | reference/settlement_f01_f03/settlement_fsm.py | 488 | `def canonical_state(` |
+| P16 | 정산 journal | reference/settlement_f01_f03/settlement_fsm.py | 485 | `def export_journal(` |
 | P17 | 정산 시계 부재 | reference/settlement_f01_f03/settlement_fsm.py | - | `logical_time_ms` |
-| P18 | 여신 canonical | reference/credit_advance_f04/credit_fsm.py | 543 | `def canonical_state(` |
-| P19 | 여신 journal | reference/credit_advance_f04/credit_fsm.py | 540 | `def export_journal(` |
+| P18 | 여신 canonical | reference/credit_advance_f04/credit_fsm.py | 546 | `def canonical_state(` |
+| P19 | 여신 journal | reference/credit_advance_f04/credit_fsm.py | 543 | `def export_journal(` |
 | P20 | 여신 시계 부재 | reference/credit_advance_f04/credit_fsm.py | - | `logical_time_ms` |
 | P21 | 목 canonical 부재 | reference/booking_resale_admission/mock_gates.py | - | `def canonical_state` |
 | P22 | 목 journal 부재 | reference/booking_resale_admission/mock_gates.py | - | `def export_journal` |
@@ -200,25 +204,30 @@
 | P31 | 검표 set_clock 명령 | reference/booking_resale_admission/admission_fsm.py | 55 | `"set_clock"` |
 | P32 | 게으른 만료 시험 | reference/booking_resale_admission/test_reservation_fsm.py | 283 | `expired` |
 | P33 | 게으른 만료 시험 | reference/booking_resale_admission/test_reservation_fsm.py | 307 | `expired` |
+| P34 | 예약 accepted_through | reference/booking_resale_admission/reservation_fsm.py | 710 | `def accepted_through(` |
+| P35 | 리셀 accepted_through | reference/booking_resale_admission/resale_fsm.py | 695 | `def accepted_through(` |
+| P36 | 검표 accepted_through | reference/booking_resale_admission/admission_fsm.py | 549 | `def accepted_through(` |
+| P37 | 정산 accepted_through | reference/settlement_f01_f03/settlement_fsm.py | 482 | `def accepted_through(` |
+| P38 | 여신 accepted_through | reference/credit_advance_f04/credit_fsm.py | 540 | `def accepted_through(` |
 | G01 | 핵심 40 | integration_gate/constants.py | 20 | `CORE_COMMAND_COUNT = 40` |
 | G02 | FSM 44 | integration_gate/constants.py | 21 | `FSM_COMMAND_COUNT = 44` |
-| G03 | 이름 거절 | integration_gate/catalogue.py | 52 | `def _reject_names(` |
-| G04 | 소문자 규칙 | integration_gate/catalogue.py | 54 | `islower()` |
-| G05 | fixture 인증 라벨 | integration_gate/catalogue.py | 76 | `FIXTURE_ONLY` |
-| G06 | FSM 개수 검사 | integration_gate/catalogue.py | 84 | `FSM_COMMAND_COUNT` |
+| G03 | 이름 거절 | integration_gate/catalogue.py | 63 | `def _reject_names(` |
+| G04 | 소문자 규칙 | integration_gate/catalogue.py | 65 | `islower()` |
+| G05 | fixture 인증 라벨 | integration_gate/catalogue.py | 87 | `FIXTURE_ONLY` |
+| G06 | FSM 개수 검사 | integration_gate/catalogue.py | 95 | `FSM_COMMAND_COUNT` |
 | G07 | 기계 표 | integration_gate/fsm_contract.py | 26 | `MACHINE_TABLE` |
-| G08 | subject는 첫 인자 | integration_gate/fsm_contract.py | 123 | `subject is None` |
-| G09 | 카탈로그 생성 | integration_gate/fsm_contract.py | 149 | `def canonical_fsm_document(` |
-| G10 | 드리프트 검사 | integration_gate/fsm_contract.py | 200 | `def drift_problems(` |
-| G11 | 명령 집합 동등 | integration_gate/fsm_contract.py | 262 | `expected_commands` |
-| G12 | host 호출 | integration_gate/fsm_host.py | 80 | `def call(` |
-| G13 | host 디스패치 | integration_gate/fsm_host.py | 90 | `method(subject, **kwargs)` |
-| G14 | FSM 디스패치 | integration_gate/server.py | 301 | `fsm_name_set` |
-| G15 | FSM 수행 | integration_gate/server.py | 356 | `def _perform_fsm(` |
-| G16 | 저널 거절 | integration_gate/server.py | 363 | `READINESS_FSM_REFUSED` |
+| G08 | subject는 첫 인자 | integration_gate/fsm_contract.py | 138 | `subject is None` |
+| G09 | 카탈로그 생성 | integration_gate/fsm_contract.py | 209 | `def canonical_fsm_document(` |
+| G10 | 드리프트 검사 | integration_gate/fsm_contract.py | 277 | `def drift_problems(` |
+| G11 | 명령 집합 동등 | integration_gate/fsm_contract.py | 339 | `expected_commands` |
+| G12 | host 호출 | integration_gate/fsm_host.py | 84 | `def call(` |
+| G13 | host 디스패치 | integration_gate/fsm_host.py | 94 | `method(subject, **kwargs)` |
+| G14 | FSM 디스패치 | integration_gate/server.py | 304 | `fsm_name_set` |
+| G15 | FSM 수행 | integration_gate/server.py | 359 | `def _perform_fsm(` |
+| G16 | 저널 거절 | integration_gate/server.py | 366 | `READINESS_FSM_REFUSED` |
 | G17 | 생성기 fixture 검사 | sdk/generate/generate_client.mjs | 128 | `FIXTURE_ONLY` |
-| G18 | 생성기 개수 검사 | sdk/generate/generate_client.mjs | 150 | `commandCount` |
-| G19 | 생성기 action enum | sdk/generate/generate_client.mjs | 184 | `actionEnum` |
+| G18 | 생성기 개수 검사 | sdk/generate/generate_client.mjs | 154 | `commandCount` |
+| G19 | 생성기 action enum | sdk/generate/generate_client.mjs | 189 | `actionEnum` |
 | G20 | OpenAPI fixture 라벨 | docs/contracts/openapi/README.md | 70 | `FIXTURE_ONLY` |
 | G21 | OpenAPI 비인증 설명 | docs/contracts/openapi/README.md | 52 | `FIXTURE_ONLY` |
 | R01 | 13개 이름 | docs/contracts/READ_MODEL_QUERIES.md | 15 | `list_shows` |
@@ -260,7 +269,7 @@
 
 ## 7. 남은 불확실과 분류
 
-- `NONE` 뒷받침 목록 3개의 구현 모양 (새 열거 view를 어느 기계·목에 두는지)은 `read-model-reference`가 Astra 값과 함께 정한다. 이 문서는 모집단이 존재함만 기록한다.
+- `NONE` 뒷받침 목록 3개의 구현 모양 (새 열거 view를 어느 기계·목에 두는지)은 후속 목록 변경에서 정한다. 이 문서는 모집단이 존재함만 기록한다.
 - commerce 메서드 시그니처는 RMQ §0.2대로 UNVERIFIED다 (READ_MODEL_QUERIES.md:53-59). 이 문서도 그 한계를 계승한다.
 - 목( mock )의 비변경 표면은 계약 미정의 관측이다 (§1, 분류 B). 목에 `canonical_state`/`export_journal`를 새로 요구하지 않는다.
 - 기존 커버리지: 점 조회 표면은 각 FSM 시험이 이미 다룬다 (예 `test_reservation_fsm.py:283,307`). 목록·커서·가시성 행렬은 구현 전이며 시험도 없다 (READ_MODEL_QUERIES.md:403). 이 문서는 시험을 추가하지 않고 존재 검사(`check_read_model_source_map.py`) 하나만 둔다.

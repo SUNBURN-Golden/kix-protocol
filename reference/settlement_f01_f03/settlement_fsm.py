@@ -479,6 +479,9 @@ class SettlementMachine:
         _require(case is not None, "UNKNOWN_SETTLEMENT")
         return self._view(case)
 
+    def accepted_through(self) -> dict:
+        return {"journal_entries": len(self._journal)}
+
     def export_journal(self) -> list:
         return _copy(self._journal)
 

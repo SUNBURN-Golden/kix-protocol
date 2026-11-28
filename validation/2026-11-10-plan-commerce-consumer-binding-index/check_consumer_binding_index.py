@@ -31,7 +31,8 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from integration_gate.catalogue import git_blob_id, load_catalogue
+from integration_gate.catalogue import Catalogue, git_blob_id
+from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 
 RECORD_PATH = 'docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json'
 
@@ -51,7 +52,6 @@ PROTOCOL_PATH = 'reference/v0.3-rc1/protocol_contract.json'
 FSM_PATH = 'docs/contracts/openapi/fsm-command-contract.json'
 CONTRACT_ONLY_PATH = 'docs/contracts/openapi/kix-protocol.contract-only.openapi.json'
 GATE_PATH = 'docs/contracts/openapi/kix-protocol.integration-gate.openapi.json'
-HISTORICAL_GATE_INPUT = 'sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json'
 PROFILE_PATH = 'sdk/compat/profiles/bootstrap-2.profile.json'
 MANIFEST_PATH = 'sdk/compat/manifests/manifest.bootstrap-2.json'
 SIDECAR_PATH = 'sdk/compat/manifests/manifest.bootstrap-2.json.sha256'
@@ -281,11 +281,16 @@ def load_artefacts(record, root=ROOT):
     loaded = {}
     for path in sorted(paths):
         try:
-            source = HISTORICAL_GATE_INPUT if path == GATE_PATH else path
-            loaded[path] = (root / source).read_bytes()
+            loaded[path] = read_bootstrap_2_input(path, root)
         except OSError:
             continue
     return loaded
+
+
+def load_snapshot_catalogue(artefacts):
+    source_bytes = artefacts[PROTOCOL_PATH]
+    fsm_bytes = artefacts[FSM_PATH]
+    return Catalogue(_json(source_bytes), source_bytes, {'queries': {}, **_json(fsm_bytes)}, fsm_bytes)
 
 
 def _extras(problems, label, actual, allowed):
@@ -978,8 +983,8 @@ def self_test():
     try:
         record, _ = load_record(root)
         artefacts = load_artefacts(record, root)
-        catalogue = load_catalogue(root)
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        catalogue = load_snapshot_catalogue(artefacts)
+    except (KeyError, OSError, UnicodeError, json.JSONDecodeError) as exc:
         print('self-test: cannot read inputs: %s' % exc, file=sys.stderr)
         return 1
     problems = validate(record, artefacts, catalogue)
@@ -1083,7 +1088,7 @@ def main(argv):
         print('- cannot read record/artefacts: %s' % exc, file=sys.stderr)
         return 1
     try:
-        catalogue = load_catalogue(ROOT)
+        catalogue = load_snapshot_catalogue(artefacts)
     except Exception as exc:  # noqa: BLE001 - refuse closed on helper error
         print('consumer binding index check failed:', file=sys.stderr)
         print('- catalogue refused: ' + type(exc).__name__, file=sys.stderr)

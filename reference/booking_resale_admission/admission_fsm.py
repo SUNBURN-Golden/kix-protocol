@@ -546,6 +546,9 @@ class AdmissionMachine:
         }
         return self._envelope(applied="view_credential", credential=self._credential_view(credential), presentation=body)
 
+    def accepted_through(self) -> dict:
+        return {"journal_entries": len(self._journal), "logical_time_ms": self._now}
+
     def export_journal(self) -> list:
         return _copy(self._journal)
 

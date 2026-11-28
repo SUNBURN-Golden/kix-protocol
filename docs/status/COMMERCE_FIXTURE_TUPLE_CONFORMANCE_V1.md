@@ -125,8 +125,7 @@ and provider terms remain `UNDETERMINED`.
 ```sh
 node sdk/compat/verify_compat.mjs \
   --manifest sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json \
-  --expect-kind SEMANTIC_CONFORMANCE --expect-revision commerce-fixture-8ba7f6c-1 \
-  --integration-gate-input sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json
+  --expect-kind SEMANTIC_CONFORMANCE --expect-revision commerce-fixture-8ba7f6c-1
 python3.12 -B -m unittest discover -s reference/booking_resale_admission \
   -p 'test_commerce_fixture_tuple_conformance.py'
 npm --prefix sdk run conformance

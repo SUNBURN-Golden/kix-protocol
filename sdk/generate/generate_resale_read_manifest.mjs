@@ -8,8 +8,8 @@ import { parseStrict } from "../src/jsonschema.ts";
 import { canonicalBytes, gitBlobId, sha256Hex } from "../src/manifest.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const BOOTSTRAP = "sdk/compat/manifests/manifest.bootstrap-2.json";
-const HISTORICAL_PROFILE = "sdk/compat/profiles/bootstrap-2.profile.json";
+const BOOTSTRAP = "sdk/compat/manifests/manifest.read-model-reference-1.json";
+const HISTORICAL_PROFILE = "sdk/compat/profiles/read-model-reference-1.profile.json";
 const REVISION = "commerce-resale-read-transport-1";
 const PROFILE_PATH = `sdk/compat/profiles/${REVISION}.profile.json`;
 const VECTORS = {

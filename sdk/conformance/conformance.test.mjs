@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
-  cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync,
+  mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import test from "node:test";
+import { gunzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 import { createLocalCallClient } from "../src/client.ts";
@@ -17,6 +18,7 @@ import {
   ENVELOPE_REQUIRED,
   FSM_COMMAND_MACHINES,
   OPENAPI_PIN,
+  READ_COMMAND_MACHINES,
 } from "../generated/catalogue.ts";
 import {
   CatalogueRejection,
@@ -34,17 +36,18 @@ const DOMAIN = "kix:fixture:lifecycle:0.3";
 
 const NEGATIVE_VECTOR_PATH = "sdk/conformance/vectors/manifest-verifier-negative.vectors.json";
 const VERIFIER_PATH = "sdk/compat/verify_compat.mjs";
-const MANIFEST_PATH = "sdk/compat/manifests/manifest.bootstrap-2.json";
-const PROFILE_PATH = "sdk/compat/profiles/bootstrap-2.profile.json";
+const READ_MODEL_REVISION = "read-model-reference-1";
+const MANIFEST_PATH = `sdk/compat/manifests/manifest.${READ_MODEL_REVISION}.json`;
+const PROFILE_PATH = `sdk/compat/profiles/${READ_MODEL_REVISION}.profile.json`;
+const HISTORICAL_REVISION = "bootstrap-2";
+const HISTORICAL_MANIFEST = "sdk/compat/manifests/manifest.bootstrap-2.json";
+const HISTORICAL_PROFILE = "sdk/compat/profiles/bootstrap-2.profile.json";
+// The live gate document later gained the resale read routes. The
+// read-model-reference-1 tuple is verified against the gate bytes it bound.
 const LIVE_GATE_PATH = "docs/contracts/openapi/kix-protocol.integration-gate.openapi.json";
-const HISTORICAL_GATE_INPUT = "sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json";
-const HISTORICAL_GATE_SOURCE = "sdk/compat/inputs/server.commerce-fixture-8ba7f6c-1.py.txt";
-// The Commerce fixture tuples pin the producer's gate files by their historical
-// bytes. The archived copies stand in for the live files that later changed.
-const HISTORICAL_PINNED = new Map([
-  [LIVE_GATE_PATH, HISTORICAL_GATE_INPUT],
-  ["integration_gate/server.py", HISTORICAL_GATE_SOURCE],
-]);
+const READ_MODEL_GATE_INPUT = "sdk/compat/inputs/integration-gate.read-model-reference-1.openapi.json";
+const RESALE_REVISION = "commerce-resale-read-transport-1";
+const RESALE_MANIFEST = `sdk/compat/manifests/manifest.${RESALE_REVISION}.json`;
 const COMMERCE_FIXTURES = "reference/booking_resale_admission/fixtures";
 const COMMERCE_BINDING_INDEX = "docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json";
 const COMMERCE_DELIVERY_INDEX = "docs/status/COMMERCE_DELIVERY_EVIDENCE_INDEX_V1.json";
@@ -63,38 +66,31 @@ const VERIFIER_FIXTURES = [
   "toolchains.json",
 ];
 
-// The copied verifier derives ROOT from its own location.
-const NEGATIVE_FIXTURES = [
-  ...VERIFIER_FIXTURES,
-  "sdk/compat/profiles/bootstrap-1.profile.json",
-  PROFILE_PATH,
-  MANIFEST_PATH,
-  `${MANIFEST_PATH}.sha256`,
-  "sdk/generate/generate_client.mjs",
-  "sdk/generate/generate_manifest.mjs",
-  "sdk/generated/catalogue.ts",
-  "sdk/conformance/vectors/canonical-encoding.vectors.json",
-  "sdk/conformance/vectors/mixed-input.vectors.json",
-  "docs/contracts/openapi/kix-protocol.contract-only.openapi.json",
-  LIVE_GATE_PATH,
-  "docs/contracts/openapi/fsm-command-contract.json",
-];
-
 // Positive artifacts the manifest binds directly or indirectly. The negative
 // matrix must not change any of their bytes.
 const POSITIVE_ARTIFACTS = [
   MANIFEST_PATH,
   `${MANIFEST_PATH}.sha256`,
   PROFILE_PATH,
+  HISTORICAL_MANIFEST,
+  `${HISTORICAL_MANIFEST}.sha256`,
+  HISTORICAL_PROFILE,
   "sdk/conformance/vectors/canonical-encoding.vectors.json",
   "sdk/conformance/vectors/mixed-input.vectors.json",
   "sdk/generated/catalogue.ts",
-  HISTORICAL_GATE_INPUT,
   VERIFIER_PATH,
 ];
 
 function read(path) {
   return readFileSync(resolve(ROOT, path));
+}
+
+// Some inputs changed with the read catalogue. Older producer verdicts still use their
+// original bytes, copied under the paths named by the historical manifests.
+const bootstrap2Inputs = JSON.parse(gunzipSync(read("sdk/conformance/fixtures/bootstrap-2-inputs.json.gz")));
+
+function readBootstrap2Input(path) {
+  return Object.hasOwn(bootstrap2Inputs, path) ? Buffer.from(bootstrap2Inputs[path], "utf8") : read(path);
 }
 
 function rejectionCode(run) {
@@ -188,34 +184,26 @@ function independentCanonical(value) {
   return `{${keys.map((key) => `${JSON.stringify(key)}:${independentCanonical(value[key])}`).join(",")}}`;
 }
 
-function runVerifier(manifestPath, kind = "BOOTSTRAP", revision = "bootstrap-2", gateInput = HISTORICAL_GATE_INPUT) {
-  return spawnSync(
-    process.execPath,
-    [
-      resolve(ROOT, "sdk/compat/verify_compat.mjs"),
-      "--manifest",
-      manifestPath,
-      "--expect-kind",
-      kind,
-      "--expect-revision",
-      revision,
-      "--integration-gate-input",
-      resolve(ROOT, gateInput),
-    ],
-    { cwd: ROOT, encoding: "utf8" },
-  );
+function originalGateSha256(manifestPath) {
+  return parseStrict(readFileSync(manifestPath)).contract.integration_gate.sha256;
+}
+
+function runVerifier(manifestPath, kind = SEMANTIC, revision = READ_MODEL_REVISION, gateInput = READ_MODEL_GATE_INPUT) {
+  return runVerifierAt(ROOT, manifestPath, kind, revision, { gateInput });
 }
 
 test("catalogue pin matches the contract-only OpenAPI and the source contract", () => {
   const openapiBytes = read(OPENAPI_PATH);
   const sourceBytes = read(SOURCE_PATH);
   const openapi = JSON.parse(openapiBytes.toString("utf8"));
-  assert.equal(COMMANDS.length, 84);
-  assert.equal(OPENAPI_PIN.commandCount, 84);
+  assert.equal(COMMANDS.length, 94);
+  assert.equal(OPENAPI_PIN.commandCount, 94);
   assert.equal(OPENAPI_PIN.coreCommandCount, 40);
   assert.equal(OPENAPI_PIN.fsmCommandCount, 44);
-  assert.equal(openapi["x-kix-source"].commandCount, 84);
+  assert.equal(OPENAPI_PIN.readCommandCount, 10);
+  assert.equal(openapi["x-kix-source"].commandCount, 94);
   assert.equal(openapi["x-kix-source"].coreCommandCount, 40);
+  assert.equal(openapi["x-kix-source"].readCommandCount, 10);
   assert.equal(COMMANDS.includes("capture"), true);
   assert.equal(COMMANDS.includes("settlement_capture"), true);
   assert.equal(COMMANDS.includes("admission_authorize_admission"), true);
@@ -389,7 +377,8 @@ test("Commerce journey envelope faults are rejected before transport", () => {
     } else {
       target[key] = mutation.value;
     }
-    assert.equal(rejectionCode(() => client.invoke(envelope)), expectedCode, id);
+    const pointQuery = mutation.path === "/action" && Object.hasOwn(READ_COMMAND_MACHINES, envelope.action);
+    assert.equal(rejectionCode(() => client.invoke(envelope)), pointQuery ? "MISSING_REQUIRED" : expectedCode, id);
     assert.equal(calls.length, 0, id);
   }
 
@@ -398,8 +387,12 @@ test("Commerce journey envelope faults are rejected before transport", () => {
   assert.deepEqual(calls, [expected], fixture.base_step);
 });
 
-test("Commerce semantic manifest binds the exact fixture scope and vector bytes", () => {
-  const happy = runVerifier(COMMERCE_MANIFEST, SEMANTIC, COMMERCE_REVISION);
+test("Commerce semantic manifest binds the exact fixture scope and vector bytes", (t) => {
+  const manifest = parseStrict(read(COMMERCE_MANIFEST));
+  const root = mkdtempSync(join(tmpdir(), "kix-commerce-compat-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  copyFixtures(root, verifierFixtureFiles(COMMERCE_MANIFEST, COMMERCE_PROFILE, manifest), readBootstrap2Input);
+  const happy = runVerifierAt(root, COMMERCE_MANIFEST, SEMANTIC, COMMERCE_REVISION);
   assert.equal(happy.status, 0, happy.stderr || happy.stdout);
   assert.deepEqual(JSON.parse(happy.stdout), {
     ok: true, profile_kind: SEMANTIC, profile_revision: COMMERCE_REVISION,
@@ -407,14 +400,13 @@ test("Commerce semantic manifest binds the exact fixture scope and vector bytes"
   });
 
   const table = parseStrict(read(COMMERCE_TABLE));
-  const manifest = parseStrict(read(COMMERCE_MANIFEST));
   const profile = parseStrict(read(COMMERCE_PROFILE));
-  const bootstrap = parseStrict(read(MANIFEST_PATH));
+  const bootstrap = parseStrict(read(HISTORICAL_MANIFEST));
   assert.deepEqual(manifest.producer, table.producer);
   for (const key of ["contract", "generator", "sdk_output", "source_references"]) {
     assert.deepEqual(manifest[key], bootstrap[key], key);
   }
-  assert.deepEqual(profile.catalogue, parseStrict(read(PROFILE_PATH)).catalogue);
+  assert.deepEqual(profile.catalogue, parseStrict(read(HISTORICAL_PROFILE)).catalogue);
   assert.equal(profile.grants, "commerce-fixture-tuples-only: see commerce-fixture-qualification-table");
   assert.deepEqual(
     manifest.vectors.map(({ name, path }) => [name, path]),
@@ -428,7 +420,7 @@ test("Commerce semantic manifest binds the exact fixture scope and vector bytes"
 
   const schemaOnly = runVerifier(MANIFEST_PATH, SEMANTIC, COMMERCE_REVISION);
   assert.equal(schemaOnly.status, 1);
-  assert.deepEqual(JSON.parse(schemaOnly.stdout).errors, ["profile_kind mismatch", "profile_revision mismatch"]);
+  assert.deepEqual(JSON.parse(schemaOnly.stdout).errors, ["profile_revision mismatch"]);
   const directory = mkdtempSync(join(tmpdir(), "kix-commerce-compat-"));
   try {
     const control = join(directory, "manifest.json");
@@ -442,7 +434,7 @@ test("Commerce semantic manifest binds the exact fixture scope and vector bytes"
       const encoded = canonicalStringify(mutant);
       writeFileSync(control, encoded);
       writeFileSync(`${control}.sha256`, `${sha256Hex(encoded)}\n`);
-      const outcome = runVerifier(control, SEMANTIC, COMMERCE_REVISION);
+      const outcome = runVerifierAt(root, control, SEMANTIC, COMMERCE_REVISION);
       assert.equal(outcome.status, 1, outcome.stderr || outcome.stdout);
       assert.ok(JSON.parse(outcome.stdout).errors.includes(error), outcome.stdout);
     }
@@ -622,7 +614,7 @@ test("manifest-v1 bytes exercise the parser depth limit", () => {
 });
 
 test("manifest verifier reports failures in contract order", () => {
-  const manifest = parseStrict(read("sdk/compat/manifests/manifest.bootstrap-2.json"));
+  const manifest = parseStrict(read(MANIFEST_PATH));
   const badDigest = "0".repeat(64);
   manifest.unexpected = true;
   manifest.profile_kind = "UNKNOWN";
@@ -669,32 +661,40 @@ test("manifest verifier reports failures in contract order", () => {
 });
 
 test("mixed-input vectors and the committed manifest", () => {
-  const manifestPath = resolve(ROOT, "sdk/compat/manifests/manifest.bootstrap-2.json");
+  const manifestPath = resolve(ROOT, MANIFEST_PATH);
   const happy = runVerifier(manifestPath);
   assert.equal(happy.status, 0, happy.stderr || happy.stdout);
   const verdict = JSON.parse(happy.stdout);
   assert.equal(verdict.ok, true);
-  assert.equal(verdict.profile_kind, "BOOTSTRAP");
-  assert.equal(verdict.profile_revision, "bootstrap-2");
+  assert.equal(verdict.profile_kind, SEMANTIC);
+  assert.equal(verdict.profile_revision, READ_MODEL_REVISION);
+  assert.equal(parseStrict(read(PROFILE_PATH)).grants, "none");
+  const bootstrap = runVerifier(manifestPath, "BOOTSTRAP", HISTORICAL_REVISION);
+  assert.equal(bootstrap.status, 1);
+  assert.deepEqual(JSON.parse(bootstrap.stdout).errors, ["profile_kind mismatch", "profile_revision mismatch"]);
   const sidecar = readFileSync(`${manifestPath}.sha256`, "utf8");
   assert.equal(sidecar, `${verdict.manifest_sha256}\n`);
   assert.equal(readFileSync(manifestPath, "utf8").includes(verdict.manifest_sha256), false);
-  for (const [path, kind, revision] of [
-    [manifestPath, "BOOTSTRAP", "bootstrap-2"],
-    [COMMERCE_MANIFEST, SEMANTIC, COMMERCE_REVISION],
-  ]) {
-    const mixedGate = runVerifier(path, kind, revision, LIVE_GATE_PATH);
-    assert.equal(mixedGate.status, 1);
-    assert.deepEqual(JSON.parse(mixedGate.stdout).errors, ["integration_gate bytes drift"]);
-  }
+  assert.equal(sha256Hex(read(READ_MODEL_GATE_INPUT)), originalGateSha256(manifestPath));
+  const mixedGate = runVerifier(manifestPath, SEMANTIC, READ_MODEL_REVISION, LIVE_GATE_PATH);
+  assert.equal(mixedGate.status, 1);
+  assert.deepEqual(JSON.parse(mixedGate.stdout).errors, ["integration_gate bytes drift"]);
+  // The resale read tuple binds the live gate document directly.
+  const resale = runVerifier(resolve(ROOT, RESALE_MANIFEST), SEMANTIC, RESALE_REVISION, null);
+  assert.equal(resale.status, 0, resale.stderr || resale.stdout);
+  assert.equal(JSON.parse(resale.stdout).ok, true);
 
   const original = parseStrict(readFileSync(manifestPath));
-  const mixed = parseStrict(read(resolve(ROOT, "sdk/conformance/vectors/mixed-input.vectors.json")));
+  const historical = parseStrict(read(HISTORICAL_MANIFEST));
+  const mixed = parseStrict(read("sdk/conformance/vectors/mixed-input.vectors.json"));
   assert.equal(mixed.profile, "kix-compat-mixed-input/1");
   const directory = mkdtempSync(join(tmpdir(), "kix-sdk-"));
   try {
+    // The pinned wrong-kind mutation targets the archived BOOTSTRAP profile.
+    copyFixtures(directory, verifierFixtureFiles(HISTORICAL_MANIFEST, HISTORICAL_PROFILE, historical), readBootstrap2Input);
     for (const item of mixed.cases) {
       const target = join(directory, `${item.name}.json`);
+      const againstBootstrap = item.name === "wrong-kind";
       if (item.op === "truncate") {
         writeFileSync(target, readFileSync(manifestPath).subarray(0, -1));
       } else if (item.op === "duplicate-key") {
@@ -705,24 +705,32 @@ test("mixed-input vectors and the committed manifest", () => {
         }
         writeFileSync(target, `{"contract":{},${text.slice(1)}`);
       } else {
-        const copy = parseStrict(canonicalStringify(original));
+        const copy = parseStrict(canonicalStringify(againstBootstrap ? historical : original));
         const parts = item.path.split(".");
         let cursor = copy;
         for (const part of parts.slice(0, -1)) {
           cursor = cursor[part];
         }
         const leaf = parts[parts.length - 1];
-        const value = item.name === "wrong-revision" ? "bootstrap-9" : item.value;
-        cursor[leaf] = item.op === "copy" ? getPath(copy, item.from) : value;
+        cursor[leaf] = item.op === "copy" ? getPath(copy, item.from) : item.value;
         const encoded = canonicalStringify(copy);
         writeFileSync(target, encoded);
         writeFileSync(`${target}.sha256`, `${sha256Hex(encoded)}\n`);
       }
-      const result = runVerifier(target);
+      const result = againstBootstrap
+        ? runVerifierAt(directory, target, "BOOTSTRAP", HISTORICAL_REVISION)
+        : runVerifier(target);
       assert.notEqual(result.status, 0, item.name);
       const body = JSON.parse(result.stdout);
       assert.equal(body.ok, false, item.name);
       assert.ok(body.errors.length > 0, item.name);
+      if (againstBootstrap) {
+        assert.deepEqual(body.errors, ["profile_kind mismatch", "profile identity mismatch"], item.name);
+      }
+      if (item.name === "wrong-revision") {
+        assert.ok(body.errors.includes("profile_revision mismatch"), item.name);
+        assert.equal(body.errors.some((error) => error.startsWith("profile unreadable:")), false, item.name);
+      }
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -764,17 +772,17 @@ function mutateDocument(document, item) {
   }
 }
 
-function copyFixtures(targetRoot, files = NEGATIVE_FIXTURES) {
+function copyFixtures(targetRoot, files, readInput = read) {
   for (const path of files) {
     const target = resolve(targetRoot, path);
     mkdirSync(dirname(target), { recursive: true });
-    cpSync(resolve(ROOT, HISTORICAL_PINNED.get(path) ?? path), target);
+    writeFileSync(target, readInput(path));
   }
 }
 
 function writeManifest(targetRoot, manifestBytes) {
-  writeFileSync(resolve(targetRoot, MANIFEST_PATH), manifestBytes);
-  writeFileSync(resolve(targetRoot, `${MANIFEST_PATH}.sha256`), `${sha256Hex(manifestBytes)}\n`);
+  writeFileSync(resolve(targetRoot, HISTORICAL_MANIFEST), manifestBytes);
+  writeFileSync(resolve(targetRoot, `${HISTORICAL_MANIFEST}.sha256`), `${sha256Hex(manifestBytes)}\n`);
 }
 
 function applyManifestCase(targetRoot, pristineManifest, item) {
@@ -804,7 +812,7 @@ function applyProfileCase(targetRoot, pristineManifest, pristineProfile, item) {
   const profile = parseStrict(pristineProfile);
   mutateDocument(profile, item);
   const profileBytes = Buffer.from(canonicalStringify(profile), "utf8");
-  writeFileSync(resolve(targetRoot, PROFILE_PATH), profileBytes);
+  writeFileSync(resolve(targetRoot, HISTORICAL_PROFILE), profileBytes);
   const manifest = parseStrict(pristineManifest);
   manifest.profile_sha256 = sha256Hex(profileBytes);
   writeManifest(targetRoot, Buffer.from(canonicalStringify(manifest), "utf8"));
@@ -812,7 +820,7 @@ function applyProfileCase(targetRoot, pristineManifest, pristineProfile, item) {
 
 function applySidecarCase(targetRoot, pristineManifest, item) {
   writeManifest(targetRoot, pristineManifest);
-  const sidecarPath = resolve(targetRoot, `${MANIFEST_PATH}.sha256`);
+  const sidecarPath = resolve(targetRoot, `${HISTORICAL_MANIFEST}.sha256`);
   if (item.absent === true) {
     rmSync(sidecarPath, { force: true });
   } else if (item.from !== undefined) {
@@ -823,7 +831,7 @@ function applySidecarCase(targetRoot, pristineManifest, item) {
   }
 }
 
-function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env } = {}) {
+function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env, gateInput } = {}) {
   return spawnSync(
     process.execPath,
     [
@@ -835,9 +843,7 @@ function runVerifierAt(root, manifestPath, kind, revision, { nodeArgs = [], env 
       kind,
       "--expect-revision",
       revision,
-      // A detached copy carries the historical gate bytes at the live path. The
-      // checkout verifies the historical tuples against the archived input.
-      ...(root === ROOT ? ["--integration-gate-input", resolve(root, HISTORICAL_GATE_INPUT)] : []),
+      ...(gateInput ? ["--integration-gate-input", resolve(ROOT, gateInput)] : []),
     ],
     { cwd: root, encoding: "utf8", env },
   );
@@ -882,11 +888,11 @@ function detachedVerifierOptions(root) {
   };
 }
 
-function expectedDetachedFixtureTree(files) {
+function expectedDetachedFixtureTree(files, readInput) {
   const expected = new Map([[EMPTY_VERIFIER_PATH, null]]);
   for (const path of files) {
     const copiedPath = relative(ROOT, resolve(ROOT, path));
-    expected.set(copiedPath, read(HISTORICAL_PINNED.get(path) ?? path));
+    expected.set(copiedPath, readInput(path));
     for (let directory = dirname(copiedPath); directory !== "."; directory = dirname(directory)) {
       expected.set(directory, null);
     }
@@ -915,8 +921,8 @@ test("vendored producer manifests return one verdict without changing files", ()
       revision: "bootstrap-2",
       kind: "BOOTSTRAP",
       digest: BOOTSTRAP_MANIFEST_SHA256,
-      manifestPath: MANIFEST_PATH,
-      profilePath: PROFILE_PATH,
+      manifestPath: HISTORICAL_MANIFEST,
+      profilePath: HISTORICAL_PROFILE,
       missing: "mixed-input",
     },
     {
@@ -940,8 +946,8 @@ test("vendored producer manifests return one verdict without changing files", ()
     const root = mkdtempSync(join(realpathSync(tmpdir()), "kix-sdk-vendored-"));
     try {
       const options = detachedVerifierOptions(root);
-      copyFixtures(root, files);
-      const expected = expectedDetachedFixtureTree(files);
+      copyFixtures(root, files, readBootstrap2Input);
+      const expected = expectedDetachedFixtureTree(files, readBootstrap2Input);
 
       function verdict(exitStatus) {
         const context = `${revision}, expected exit ${exitStatus}`;
@@ -988,27 +994,31 @@ test("manifest-v1 verifier negative vectors reject exactly one fault each", () =
   assert.equal(document.profile, "kix-compat-manifest-negative/1");
   assert.equal(document.verifier, VERIFIER_PATH);
   assert.equal(canonicalStringify(document), vectorBytes.toString("utf8"));
-  assert.equal(canonicalStringify(document.expect), '{"kind":"BOOTSTRAP","revision":"bootstrap-2"}');
+  assert.deepEqual({ ...document.expect }, { kind: "BOOTSTRAP", revision: HISTORICAL_REVISION });
   assert.equal(document.cases.length > 0, true);
   assert.equal(new Set(document.cases.map((item) => item.name)).size, document.cases.length);
 
   const before = digestSnapshot();
 
-  const happy = runVerifier(resolve(ROOT, MANIFEST_PATH), document.expect.kind, document.expect.revision);
-  assert.equal(happy.status, 0, happy.stderr || happy.stdout);
-  const verdict = JSON.parse(happy.stdout);
-  assert.equal(verdict.ok, true);
-  assert.equal(verdict.profile_kind, "BOOTSTRAP");
-  assert.equal(verdict.profile_revision, "bootstrap-2");
-
-  const pristineManifest = readFileSync(resolve(ROOT, MANIFEST_PATH));
-  const pristineProfile = readFileSync(resolve(ROOT, PROFILE_PATH));
+  const pristineManifest = read(HISTORICAL_MANIFEST);
+  const pristineProfile = read(HISTORICAL_PROFILE);
+  const inputs = [
+    ...verifierFixtureFiles(HISTORICAL_MANIFEST, HISTORICAL_PROFILE, parseStrict(pristineManifest)),
+    "sdk/generate/generate_manifest.mjs",
+  ];
   const targetRoot = mkdtempSync(join(tmpdir(), "kix-sdk-negative-"));
   try {
-    copyFixtures(targetRoot);
+    copyFixtures(targetRoot, inputs, readBootstrap2Input);
+    const manifestPath = resolve(targetRoot, HISTORICAL_MANIFEST);
+    const happy = runVerifierAt(targetRoot, manifestPath, document.expect.kind, document.expect.revision);
+    const verdict = readVerifierVerdict(happy, 0, HISTORICAL_REVISION);
+    assert.equal(verdict.ok, true);
+    assert.equal(verdict.profile_kind, "BOOTSTRAP");
+    assert.equal(verdict.profile_revision, HISTORICAL_REVISION);
+
     for (const item of document.cases) {
       writeManifest(targetRoot, pristineManifest);
-      writeFileSync(resolve(targetRoot, PROFILE_PATH), pristineProfile);
+      writeFileSync(resolve(targetRoot, HISTORICAL_PROFILE), pristineProfile);
       if (item.surface === "manifest") {
         applyManifestCase(targetRoot, pristineManifest, item);
       } else if (item.surface === "profile") {
@@ -1020,7 +1030,7 @@ test("manifest-v1 verifier negative vectors reject exactly one fault each", () =
       }
       const result = runVerifierAt(
         targetRoot,
-        resolve(targetRoot, MANIFEST_PATH),
+        manifestPath,
         document.expect.kind,
         document.expect.revision,
       );
@@ -1100,7 +1110,7 @@ function loadCommerceGrant(root, verified) {
   );
   if (!table || !corpus || !sameFixtureJson(table.producer, manifest.producer)) return;
   for (const { path, sha256, gitBlob } of Object.values(table.pins).flat()) {
-    const bytes = readFileSync(resolve(root, root === ROOT ? HISTORICAL_PINNED.get(path) ?? path : path));
+    const bytes = readFileSync(resolve(root, path));
     if (sha256Hex(bytes) !== sha256 || gitBlobId(bytes) !== gitBlob) return;
   }
 
@@ -1217,7 +1227,16 @@ test("Commerce grant lookup", async (t) => {
   assert.equal(bytes.toString("utf8"), canonicalStringify(document));
   assert.equal(new Set(document.cases.map(({ id }) => id)).size, document.cases.length);
 
-  const { grantFor, check } = commerceGrantConsumer(ROOT);
+  const manifest = parseStrict(read(COMMERCE_MANIFEST));
+  const table = parseStrict(read(COMMERCE_TABLE));
+  const files = new Set([
+    ...verifierFixtureFiles(COMMERCE_MANIFEST, COMMERCE_PROFILE, manifest),
+    ...Object.values(table.pins).flat().map(({ path }) => path),
+  ]);
+  const root = mkdtempSync(join(tmpdir(), "kix-sdk-commerce-grant-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  copyFixtures(root, files, readBootstrap2Input);
+  const { grantFor, check } = commerceGrantConsumer(root);
   const listed = document.cases.find(({ id }) => id === "cancel-from-LISTED");
   assert.ok(listed, "missing cancel-from-LISTED case");
   assert.deepEqual({ ...listed.expect }, { status: SEMANTIC, vector_id: "resale-market/market-cancel-LISTED" });
@@ -1250,10 +1269,10 @@ test("Commerce grant lookup", async (t) => {
     check(listed, COMMERCE_MANIFEST_SHA256);
     // Fresh consumers pin the ordering: a rejected digest must not read the
     // qualification table or any replay file it pins, even on a cold cache.
-    const different = commerceGrantConsumer(ROOT);
+    const different = commerceGrantConsumer(root);
     different.check({ ...listed, id: "different consumer digest", expect: hold }, BOOTSTRAP_MANIFEST_SHA256);
     assert.equal(different.grantLoads(), 0, "different consumer digest read the grant");
-    const missing = commerceGrantConsumer(ROOT);
+    const missing = commerceGrantConsumer(root);
     missing.check({ ...listed, id: "missing consumer digest", expect: hold });
     assert.equal(missing.grantLoads(), 0, "missing consumer digest read the grant");
   });
@@ -1618,10 +1637,12 @@ test("Commerce grant lookup", async (t) => {
     assert.ok(grant, "Commerce fixture grant must verify");
     const { table, schemaDigests } = grant;
 
-    const catalogue = new Set(COMMANDS);
-    assert.equal(COMMANDS.length, 84);
-    assert.equal(catalogue.size, COMMANDS.length);
-    assert.deepEqual(Object.keys(schemaDigests).sort(), [...COMMANDS].sort());
+    const historicalCommands = COMMANDS.filter((action) => !Object.hasOwn(READ_COMMAND_MACHINES, action));
+    assert.equal(COMMANDS.length, 94);
+    assert.equal(historicalCommands.length, 84);
+    const catalogue = new Set(historicalCommands);
+    assert.equal(catalogue.size, historicalCommands.length);
+    assert.deepEqual(Object.keys(schemaDigests).sort(), [...historicalCommands].sort());
 
     const listedActions = new Set(table.tuples.map(({ action }) => action));
     assert.equal(table.tuples.length, 28);
@@ -1632,7 +1653,7 @@ test("Commerce grant lookup", async (t) => {
     }
 
     const { commands: fsmCommands } = JSON.parse(read(OPENAPI_PIN.fsmSourcePath));
-    const ungrantedActions = COMMANDS.filter((action) => !listedActions.has(action));
+    const ungrantedActions = historicalCommands.filter((action) => !listedActions.has(action));
     const checkedActions = [];
     for (const action of ungrantedActions) {
       const schema = COMMAND_SCHEMAS[action];
@@ -1656,7 +1677,7 @@ test("Commerce grant lookup", async (t) => {
       checkedActions.push(action);
     }
     assert.equal(checkedActions.length, 56);
-    assert.deepEqual([...listedActions, ...checkedActions].sort(), [...COMMANDS].sort());
+    assert.deepEqual([...listedActions, ...checkedActions].sort(), [...historicalCommands].sort());
   });
   await t.test("preserves the unbound reads and proposed recovery lookup", () => {
     const { readQueries } = JSON.parse(read(COMMERCE_BINDING_INDEX));
@@ -1686,7 +1707,7 @@ test("Commerce grant lookup", async (t) => {
       ...verifierFixtureFiles(COMMERCE_MANIFEST, COMMERCE_PROFILE, manifest),
       ...pinPaths,
     ])];
-    const pristine = expectedDetachedFixtureTree(files);
+    const pristine = expectedDetachedFixtureTree(files, readBootstrap2Input);
 
     for (const { name, omittedPath, changedPath, expect } of [
       { name: "intact file set", expect: listed.expect },
@@ -1697,7 +1718,7 @@ test("Commerce grant lookup", async (t) => {
         const root = mkdtempSync(join(realpathSync(tmpdir()), "kix-sdk-grant-"));
         try {
           const options = detachedVerifierOptions(root);
-          copyFixtures(root, files.filter((path) => path !== omittedPath));
+          copyFixtures(root, files.filter((path) => path !== omittedPath), readBootstrap2Input);
           const expected = new Map(pristine);
           if (omittedPath) expected.delete(omittedPath);
           if (changedPath) {

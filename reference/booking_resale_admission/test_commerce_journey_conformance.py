@@ -379,7 +379,6 @@ class CommerceJourneyConformanceTests(unittest.TestCase):
         for name in names:
             self.assertNotIn(name, core_names)
             self.assertNotIn(name, fsm_names)
-            self.assertNotIn(name, self.catalogue.names)
             self.assertNotIn(name, self.host._commands)
 
     def test_replay_returns_the_existing_duplicate_result(self):

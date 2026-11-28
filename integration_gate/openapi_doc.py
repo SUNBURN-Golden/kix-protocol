@@ -29,6 +29,7 @@ from integration_gate.constants import (
     MAX_JOURNAL_BYTES,
     MAX_JOURNAL_RECORDS,
     READINESS_FSM_REFUSED,
+    READ_COMMAND_COUNT,
 )
 from integration_gate.read_schema import READ_PATHS, read_components, read_paths
 
@@ -42,9 +43,12 @@ DESCRIPTION = (
     'validated against that command JSON Schema. A core action is passed to '
     'Core.execute(operationId, actor, action, body). An FSM action, named '
     'machine_op, is passed to the in-process machine on the same worker. '
-    'The catalogue does not define a command outside the pinned core set and '
-    'the pinned FSM REPLAYABLE sets. No REST resource tree is defined for '
-    'events, tickets, payments, venues, or marketplaces.\n\n'
+    'The catalogue is the pinned core set, the pinned FSM REPLAYABLE sets, and '
+    'the ten approved point queries. A point query is read-only: it calls an '
+    'existing view* method and does not mutate state. The envelope actor is a '
+    'fixture actor with no access control. List queries are not in this '
+    'catalogue. No REST resource tree is defined for events, tickets, payments, '
+    'venues, or marketplaces.\n\n'
     'Default state is the in-memory reference model. It is not durable across '
     'process restart. An optional process-local file journal can replay '
     'committed local-call receipts after a restart of this loopback process. '
@@ -55,9 +59,10 @@ DESCRIPTION = (
     'operationId is OPERATION_ID_CONFLICT. That rule is the core-command rule. '
     'An FSM body idempotency_key is not rewritten from the envelope '
     'operationId. An HTTP Idempotency-Key header is not consulted. '
-    'When a readiness directory is set, FSM actions are refused with '
+    'When a readiness directory is set, FSM actions and point queries are refused '
+    'with '
     + READINESS_FSM_REFUSED +
-    ' before any journal append. The spelling of that refusal is the loopback '
+    ' before any journal append and before a query touches a machine. The spelling of that refusal is the loopback '
     'label for the approved fail-closed behavior.\n\n'
     'External payment, KYC, venue, and bank adapters are not attached. Fixture '
     'reject codes from the reference model stay reject codes. GET /health and '
@@ -103,7 +108,21 @@ def build_document(root=None):
     names = catalogue.names
     operations = []
     for name in names:
-        if name in catalogue.fsm_name_set:
+        extra = {}
+        if name in catalogue.read_name_set:
+            description = (
+                'Approved read-only point query, dispatched to an existing view* '
+                'method. operationId here is the query name, not the envelope '
+                'operationId. The envelope operationId and actor are ignored. '
+                'The actor is a fixture actor with no access control. The query '
+                'does not mutate state. Refused when a readiness directory is set. '
+                'Not a production operation.'
+            )
+            extra = {
+                'x-kix-read-only': True,
+                'x-kix-mutates-state': False,
+            }
+        elif name in catalogue.fsm_name_set:
             description = (
                 'Published FSM command, dispatched by the loopback gate to the '
                 'in-process machine. operationId here is the command name '
@@ -124,6 +143,7 @@ def build_document(root=None):
             'x-kix-transport': 'integration-gate',
             'x-kix-production-endpoint': False,
             'x-kix-not-a-public-service': True,
+            **extra,
             'requestBodySchema': (
                 'kix-protocol.contract-only.openapi.json#/components/schemas/' + name
             ),
@@ -157,6 +177,7 @@ def build_document(root=None):
             'commandCount': len(names),
             'coreCommandCount': CORE_COMMAND_COUNT,
             'fsmCommandCount': FSM_COMMAND_COUNT,
+            'readCommandCount': READ_COMMAND_COUNT,
             'fsmSource': {
                 'path': FSM_CONTRACT,
                 'gitBlob': catalogue.fsm_git_blob,
@@ -265,9 +286,16 @@ def build_document(root=None):
                     'responses': {
                         '200': {
                             'description': (
-                                'In-process receipt from Core.execute, including '
-                                'a replay of the same operationId fingerprint. '
-                                'Not evidence of live money movement.'
+                                'For a core or FSM command: an in-process receipt '
+                                'from Core.execute (including a replay of the same '
+                                'operationId fingerprint) or the in-process FSM '
+                                'handler result (using body.idempotency_key replay '
+                                'rules). For a point query: a read envelope '
+                                '(read_schema_version, query, query_digest, '
+                                'fixture_mode, accepted_through, result) returning '
+                                'the current view; envelope operationId and actor '
+                                'are ignored, with no receipt sequencing or command '
+                                'replay. Not evidence of live money movement.'
                             ),
                             'x-kix-production-endpoint': False,
                         },
@@ -298,9 +326,10 @@ def build_document(root=None):
                         '422': {
                             'description': (
                                 'Core.execute raised Rejected, or an FSM handler '
-                                'raised its error code, or a readiness directory '
-                                'refused an FSM action. error is that reject code. '
-                                'Not HTTP 200.'
+                                'raised its error code, or a read query raised an '
+                                'existing view error code, or a readiness directory '
+                                'refused an FSM action or a point query. error is '
+                                'that reject code. Not HTTP 200.'
                             ),
                         },
                         '503': {
@@ -350,15 +379,18 @@ def validate(root=None, document=None):
         if document != build_document(root):
             errors.append('committed integration-gate OpenAPI != canonical derivation')
     names = catalogue.names
-    need(len(names) == COMMAND_COUNT, 'command count must stay 84')
+    need(len(names) == COMMAND_COUNT, 'command count must stay 94')
     need(len(catalogue.core_names) == CORE_COMMAND_COUNT, 'core command count drift')
     need(len(catalogue.fsm_names) == FSM_COMMAND_COUNT, 'fsm command count drift')
+    need(len(catalogue.read_names) == READ_COMMAND_COUNT, 'read command count drift')
     need(document.get('openapi') == '3.1.0', 'openapi version must be 3.1.0')
     info = document.get('info') or {}
     description = info.get('description') or ''
     need('no production endpoint' in description, 'description must deny a production endpoint')
     need('no public host' in description, 'description must deny a public host')
     need('not production approval' in description, 'description must deny production approval')
+    need('fixture actor' in description and 'no access control' in description,
+         'description must state fixture actor and no access control')
     need(document.get('x-kix-contract-status') == 'integration-gate', 'status drift')
     need(document.get('x-kix-live-http-server') == LIVE_HTTP_SERVER, 'liveHttpServer marker drift')
     need(document.get('x-kix-production-endpoint') is False, 'production endpoint must be false')
@@ -373,6 +405,7 @@ def validate(root=None, document=None):
     need(source.get('commandCount') == COMMAND_COUNT, 'source commandCount drift')
     need(source.get('coreCommandCount') == CORE_COMMAND_COUNT, 'coreCommandCount drift')
     need(source.get('fsmCommandCount') == FSM_COMMAND_COUNT, 'fsmCommandCount drift')
+    need(source.get('readCommandCount') == READ_COMMAND_COUNT, 'readCommandCount drift')
     fsm_source = source.get('fsmSource') or {}
     need(fsm_source.get('path') == FSM_CONTRACT, 'fsm source path drift')
     need(fsm_source.get('sha256') == catalogue.fsm_sha256, 'fsm source sha256 drift')
@@ -406,12 +439,24 @@ def validate(root=None, document=None):
     for item in operations:
         need(item.get('x-kix-production-endpoint') is False, 'command claims a production endpoint')
         need(item.get('x-kix-transport') == 'integration-gate', 'command transport drift')
+        operation_id = item.get('operationId')
+        if operation_id in catalogue.read_name_set:
+            need(item.get('x-kix-read-only') is True, 'read-only marker missing: ' + str(operation_id))
+            need(item.get('x-kix-mutates-state') is False, 'mutates-state marker drift: ' + str(operation_id))
+            need('fixture actor' in (item.get('description') or ''),
+                 'read description must name the fixture actor: ' + str(operation_id))
+        else:
+            need('x-kix-read-only' not in item, 'write operation marked read-only: ' + str(operation_id))
     paths = document.get('paths') or {}
     need(list(paths) == [LOCAL_CALL_PATH, *READ_PATHS], 'integration path set drift')
     expected_reads = read_paths()
     need(all(paths.get(path) == item for path, item in expected_reads.items()), 'read routes drift')
     need(document.get('components') == read_components(), 'read components drift')
-    need(set(READ_PATHS.values()).isdisjoint(names), 'read and write operationIds collide')
+    # Loopback resale read routes are addressed by path, not by the local-call
+    # envelope action. They may share a name with an approved point query, but
+    # never with a write command.
+    write_names = [name for name in names if name not in catalogue.read_name_set]
+    need(set(READ_PATHS.values()).isdisjoint(write_names), 'read and write operationIds collide')
     need('/health' not in paths and '/ready' not in paths, 'probes must not be protocol paths')
     post = (paths.get(LOCAL_CALL_PATH) or {}).get('post') or {}
     need(post.get('operationId') == GENERIC_OPERATION_ID, 'generic operationId drift')
@@ -421,6 +466,15 @@ def validate(root=None, document=None):
         need(status in responses, 'missing response ' + status)
     need('Not HTTP 200' in (responses.get('422') or {}).get('description', ''),
          '422 must say it is not HTTP 200')
+    desc_200 = (responses.get('200') or {}).get('description', '')
+    need('Core.execute' in desc_200 and 'operationId' in desc_200,
+         '200 must describe command receipts and operationId replay')
+    need('read envelope' in desc_200
+         and 'read_schema_version' in desc_200
+         and 'query_digest' in desc_200
+         and 'accepted_through' in desc_200
+         and 'no receipt sequencing' in desc_200,
+         '200 must describe the point-query read envelope without receipt sequencing')
     for key, value in _walk(document):
         if key in ('servers', 'security', 'securitySchemes', 'url'):
             errors.append('forbidden transport or auth field: ' + key)
@@ -521,6 +575,13 @@ def self_test(root=None):
     broken['info']['description'] += ' See http://example.invalid/gate.'
     if not validate(root, broken):
         print('self-test: endpoint URL was accepted', file=sys.stderr)
+        return 1
+    broken = copy.deepcopy(document)
+    broken['paths'][LOCAL_CALL_PATH]['post']['responses']['200']['description'] = (
+        'In-process receipt from Core.execute, including a replay of the same operationId fingerprint.'
+    )
+    if not validate(root, broken):
+        print('self-test: receipt-only 200 description was accepted', file=sys.stderr)
         return 1
     print('self-test: pass')
     return 0

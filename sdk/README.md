@@ -27,19 +27,27 @@
 listed synthetic in-memory fixture steps and outcomes across 28 actions at
 producer `8ba7f6c36373ac0ec49246f51f7471c164ac3a28`. The other 56 actions,
 unlisted contexts or steps and mismatched tuples remain `HOLD_SEMANTIC`.
-The 13 approved read names and the separate proposed uncertain-operation
-recovery lookup remain `NOT_BOUND`. External `kix-commerce-apps` acceptance
+The Commerce fixture grant leaves all 13 approved read names and the
+proposed uncertain-operation recovery lookup at `NOT_BOUND`. External `kix-commerce-apps` acceptance
 remains `UNVERIFIED`.
 [Qualification table](../docs/status/COMMERCE_FIXTURE_TUPLE_CONFORMANCE_V1.json) ·
 [Semantic manifest](compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json)
 
-From the repository root, verify the manifest and its pinned files with Node 24.
+Run the verifier with Node 24 from the root of the historical producer file set,
+with every input at its pinned path.
 
 ```sh
 node sdk/compat/verify_compat.mjs \
   --manifest sdk/compat/manifests/manifest.commerce-fixture-8ba7f6c-1.json \
   --expect-kind SEMANTIC_CONFORMANCE --expect-revision commerce-fixture-8ba7f6c-1
 ```
+
+The conformance suite verifies the historical `bootstrap-2` and Commerce
+manifests offline. It reads the archived UTF-8 inputs from
+`conformance/fixtures/bootstrap-2-inputs.json.gz` and verifies them against the
+original pins. The archive contains the pinned paths that changed in this
+merge, with bytes copied from the pre-merge main tree. Other inputs come from
+their original paths in the checkout.
 
 After a successful verdict, compare its `manifest_sha256` with the digest
 pinned independently by the consumer. A missing or different pin yields
@@ -57,14 +65,14 @@ transport. [Consumer lookup and offline replay](../docs/status/CONSUMER_SURFACE_
 | 파일 | 역할 |
 |---|---|
 | `generate/generate_client.mjs` | 카탈로그를 다시 만든다 |
-| `generated/catalogue.ts` | 84개 명령과 본문 스키마, FSM 기계 맵. 바이트 동일 재생성의 대상 |
+| `generated/catalogue.ts` | 94개 명령과 본문 스키마, FSM 기계 맵, 점 조회 기계 맵. 바이트 동일 재생성의 대상 |
 | `sdk-pin.json` | OpenAPI·원본 계약의 git blob과 sha256 |
 | `src/client.ts` | `createLocalCallClient({ transport })` |
 | `src/jsonschema.ts` | 엄격 JSON과 스키마 부분집합 |
-| `compat/` | manifest-v1, BOOTSTRAP 및 Commerce fixture profile, 최소 검증기 |
+| `compat/` | manifest-v1, 역사 BOOTSTRAP 및 Commerce fixture profile, 현재 생산자 profile, 최소 검증기 |
 | `conformance/` | 명령별 적합성과 golden vectors |
 
-현재 생성물은 `bootstrap-2`다. `bootstrap-1`은 40개 명령 역사 핀으로 트리에 남아 있고 다시 생성하지 않는다. 둘 다 카탈로그 스키마 결합만 부여한다. [호환 manifest 형식](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)
+현재 생성물 `read-model-reference-1`은 94개 명령의 생산자 입력을 결합한다. v1의 `SEMANTIC_CONFORMANCE` kind를 사용하며 profile의 `grants`는 `none`이다. 확대 카탈로그의 소비자는 해당 tuple의 의미 적합성 증거가 확보될 때까지 HOLD다. `bootstrap-1`과 `bootstrap-2`는 각각 40개와 84개 명령의 역사 핀이다. [호환 manifest 형식](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md)
 
 N/N−1 compatibility, production qualification, stable release, audit and User
 approval remain outside the scoped grant. The consumer surface map documents
@@ -76,9 +84,8 @@ the local-call, calculator, ticket and token-tool envelopes.
 ## Manifest-v1 verifier negative vectors
 
 `conformance/vectors/manifest-verifier-negative.vectors.json` is a companion to
-the committed manifest, not an entry in the manifest's `vectors` list, so the
-bound `mixed-input.vectors.json` bytes and the generated manifest, profile,
-sidecar and catalogue stay unchanged. `conformance/conformance.test.mjs` copies
+the archived `bootstrap-2` manifest. It is tracked independently of the
+manifest’s pinned vectors. `conformance/conformance.test.mjs` copies
 the verifier and its fixtures into a temporary root, applies exactly one
 mutation per case to the manifest, the `bootstrap-2` profile or the manifest
 sidecar, and requires a non-zero exit with the exact expected error set.
@@ -97,7 +104,7 @@ The current verifier checks the profile byte hash before either OpenAPI
 reference. The ordered regression asserts canonical parse gating and the
 contract's diagnostic sequence. See [manifest contract §4](../docs/contracts/sdk/COMPATIBILITY_MANIFEST_V1.md#4-최소-검증기),
 the [profile hash block](compat/verify_compat.mjs#L146-L150) and
-[`manifest verifier reports failures in contract order`](conformance/conformance.test.mjs#L364-L409).
+[`manifest verifier reports failures in contract order`](conformance/conformance.test.mjs#L619).
 
 The producer tuple records the October `OPEN` / `User` snapshot. Formal
 ledger disposition belongs to JunTae. See the [producer handoff and byte evidence](../docs/status/PRODUCER_QUALIFICATION_TUPLE_V1.md#sd1-verifier-evidence-and-ledger-status).
@@ -114,10 +121,12 @@ npm --prefix sdk run verify-compat
 
 Node는 `toolchains.json`의 `nodeMajor` 24다.
 
-The historical `verify-compat` script selects the archived `bootstrap-2`
-integration gate bytes. To verify another manifest for the original gate,
-pass `--integration-gate-input sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json`
-from the repository root. The verifier still checks the archive's Git blob
-and SHA-256 against the manifest. The local read transport has its own tuple
-and does not add commands to this TypeScript client.
+The `verify-compat` script checks `read-model-reference-1` against the gate
+bytes it bound, archived at
+`sdk/compat/inputs/integration-gate.read-model-reference-1.openapi.json`. The
+live gate document later gained the resale read routes. The verifier still
+checks the archive's Git blob and SHA-256 against the manifest. Historical
+`bootstrap-2` inputs stay in `sdk/conformance/fixtures/bootstrap-2-inputs.json.gz`.
+The local read transport has its own tuple and does not add commands to this
+TypeScript client.
 [Read transport handoff](../docs/status/COMMERCE_RESALE_READ_TRANSPORT.md)

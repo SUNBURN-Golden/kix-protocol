@@ -18,11 +18,6 @@ ROOT = Path(__file__).resolve().parents[1]
 COMMERCE_FIXTURES = ROOT / 'reference/booking_resale_admission/fixtures'
 COMMERCE_BINDING_INDEX = ROOT / 'docs/status/COMMERCE_CONSUMER_BINDING_INDEX_V1.json'
 COMMERCE_VECTORS = ROOT / 'sdk/conformance/vectors'
-HISTORICAL_GATE_PINS = {
-    'docs/contracts/openapi/kix-protocol.integration-gate.openapi.json':
-        'sdk/compat/inputs/integration-gate.bootstrap-2.openapi.json',
-    'integration_gate/server.py': 'sdk/compat/inputs/server.commerce-fixture-8ba7f6c-1.py.txt',
-}
 COMMERCE_REVISION = 'commerce-fixture-8ba7f6c-1'
 _SOCKET_ORIGINALS = {}
 
@@ -116,7 +111,7 @@ class OfflineLimitsTests(unittest.TestCase):
         self.assertIn('기본 바인드는 `127.0.0.1`과 포트 `8765`다.', readme)
 
 
-EXPECTED_GATE_OPENAPI_SHA256 = '5f2a72827347799059e1b7ee4b950350016a501e5bb648e39002b5aa4aecb3df'
+EXPECTED_GATE_OPENAPI_SHA256 = '47bd95d249019adfe6cd04ccb52fd751e3279e5fa0fff658f1b8fd1bb66e3dbc'
 
 
 class OfflineGapTests(unittest.TestCase):
@@ -343,7 +338,9 @@ class CommerceJourneyEnvelopeTests(unittest.TestCase):
         cls.fixture = json.loads(
             (COMMERCE_FIXTURES / 'commerce_journey_envelope_cases_v1.json').read_bytes()
         )
-        cls.commands = load_catalogue(ROOT).commands
+        catalogue = load_catalogue(ROOT)
+        cls.commands = catalogue.commands
+        cls.point_queries = catalogue.read_name_set
 
     def _envelope(self, step):
         return {
@@ -424,8 +421,12 @@ class CommerceJourneyEnvelopeTests(unittest.TestCase):
                     target[field] = mutation['value']
                 with self.assertRaises(EnvelopeError) as caught:
                     parse_envelope(envelope, self.commands)
-                self.assertEqual(caught.exception.error, case['gate_error'])
-                self.assertEqual(caught.exception.detail, case['gate_detail'])
+                if path == '/action' and envelope['action'] in self.point_queries:
+                    self.assertEqual(caught.exception.error, 'SCHEMA_REJECTED')
+                    self.assertIn('body: missing ', caught.exception.detail)
+                else:
+                    self.assertEqual(caught.exception.error, case['gate_error'])
+                    self.assertEqual(caught.exception.detail, case['gate_detail'])
 
         expected = deepcopy(tuple(baseline.values()))
         parsed = parse_envelope(baseline, self.commands)
@@ -575,6 +576,7 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
 
     def _verified_evidence(self):
         from integration_gate.catalogue import git_blob_id
+        from scripts.bootstrap_2_fixtures import read_bootstrap_2_input
 
         manifest_path = ROOT / f'sdk/compat/manifests/manifest.{COMMERCE_REVISION}.json'
         raw = manifest_path.read_bytes()
@@ -610,10 +612,7 @@ class CommerceGateDispatchTests(_CommerceDispatchCase):
         for group in ('producer', 'earlier_evidence'):
             for pin in table['pins'][group]:
                 path = pin['path']
-                # The producer's gate files are pinned by their historical bytes. The
-                # current gate is checked by its own tests.
-                archived = HISTORICAL_GATE_PINS.get(path, path)
-                data = files[path] if path in files else (ROOT / archived).read_bytes()
+                data = files[path] if path in files else read_bootstrap_2_input(path, root=ROOT)
                 self.assertEqual(hashlib.sha256(data).hexdigest(), pin['sha256'], path)
                 self.assertEqual(git_blob_id(data), pin['gitBlob'], path)
         return table, files, profile['catalogue']['schema_digests']
