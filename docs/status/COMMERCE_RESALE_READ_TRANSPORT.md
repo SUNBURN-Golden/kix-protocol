@@ -1,6 +1,6 @@
 # Commerce resale read transport handoff
 
-This mapping covers the 13 `NOT_BOUND` rows from Commerce PR #146. Each bound route is an in-memory loopback `POST` under `/x-kix-contract-only/read/`; the value below is its route suffix and integration OpenAPI `operationId`. The local TypeScript SDK still exposes the pinned write catalogue. [Commerce PR #146 rows](https://github.com/SUNBURN-Golden/kix-commerce-apps/blob/9a55fe4e257376f9db3f877a11b65e3ecc43c661/docs/kix-resale-journey-binding-change-requests.md) · [Owner decision](../decisions/COMMERCE_RESALE_READ_TRANSPORT.md)
+This mapping covers the 13 `NOT_BOUND` rows from Commerce PR #146. Each bound route is an in-memory loopback `POST` under `/x-kix-contract-only/read/`; the value below is its route suffix and integration OpenAPI `operationId`. The local TypeScript SDK exposes the pinned 94-command catalogue (40 core, 44 FSM, and 10 point queries) and does not add these six resale read routes. [Commerce PR #146 rows](https://github.com/SUNBURN-Golden/kix-commerce-apps/blob/9a55fe4e257376f9db3f877a11b65e3ecc43c661/docs/kix-resale-journey-binding-change-requests.md) · [Owner decision](../decisions/COMMERCE_RESALE_READ_TRANSPORT.md)
 
 | Commerce screen need | Local route or disposition | Input besides `actor` |
 | --- | --- | --- |

@@ -1913,6 +1913,8 @@ class ResaleReadTransportTests(unittest.TestCase):
             self.assertEqual(self.read(port, 'get_listing', {**request, 'unexpected': 1}, 400)['error'],
                              'READ_REQUEST_INVALID')
             self.assertEqual(self.read(port, 'get_listing', {**request, 'actor': '\ud800'}, 400)['error'],
+                             'INVALID_JSON')
+            self.assertEqual(self.read(port, 'get_listing', {**request, 'actor': ' fixture'}, 400)['error'],
                              'INVALID_ID')
             for method, payload, status in (('OPTIONS', None, 405), ('POST', request, 404)):
                 actual, _, headers = exchange(port, method, path, payload, {

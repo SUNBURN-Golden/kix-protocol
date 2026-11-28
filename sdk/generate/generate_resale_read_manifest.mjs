@@ -81,7 +81,7 @@ function main() {
   const extension = bootstrap.source_references.extension_profile;
   for (const ref of [bootstrap.contract.contract_only, generator, sdkOutput, extension]) {
     if (sha256Hex(sourceBytes(ref.path)) !== ref.sha256) {
-      throw new Error(`the unchanged write SDK tuple drifted: ${ref.path}`);
+      throw new Error(`the pinned read-model-reference-1 SDK tuple drifted: ${ref.path}`);
     }
   }
   const nodeMajor = JSON.parse(sourceBytes("toolchains.json")).nodeMajor;

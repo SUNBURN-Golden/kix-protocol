@@ -1,6 +1,6 @@
 # Local Commerce resale read decision
 
-The KIX maintainer approved six Protocol-owned reads on 2026-11-24 at 10:07 KST under JunTae's standing order. The approval covers `FIXTURE_ONLY` data in the in-memory loopback integration gate. `read-model-reference` retains ownership of canonical wire names, error names, and catalogue insertion. The 84 command catalogue and both historical SDK compatibility tuples keep their original scope. [Read-model draft](../contracts/READ_MODEL_QUERIES.md) · [Integration OpenAPI](../contracts/openapi/kix-protocol.integration-gate.openapi.json)
+The KIX maintainer approved six Protocol-owned reads on 2026-11-24 at 10:07 KST under JunTae's standing order. The approval covers `FIXTURE_ONLY` data in the in-memory loopback integration gate. `read-model-reference` retains ownership of canonical wire names, error names, and catalogue insertion. The historical 84-command tuples (`bootstrap-2`, `commerce-fixture-8ba7f6c-1`) remain distinct from the current 94-command `read-model-reference-1` catalogue; none of those tuples change scope. [Read-model draft](../contracts/READ_MODEL_QUERIES.md) · [Integration OpenAPI](../contracts/openapi/kix-protocol.integration-gate.openapi.json)
 
 ## Visibility and ordering
 
