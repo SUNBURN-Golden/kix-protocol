@@ -1432,6 +1432,56 @@ test("Commerce grant lookup", async (t) => {
     assert.equal(calls.length, 30);
     assert.equal(originalCases, 3);
   });
+  await t.test("distribution order", () => {
+    check(listed, COMMERCE_MANIFEST_SHA256);
+    const { table, vectorsById } = grantFor(COMMERCE_MANIFEST);
+    const { profile_revision, vector_id, cases } = JSON.parse(
+      read("sdk/conformance/vectors/commerce-distribution-order.vectors.json"),
+    );
+    const context = "booking-resale";
+    const step = "distribute-resale";
+    assert.equal(profile_revision, COMMERCE_REVISION);
+    assert.equal(vector_id, `${context}/${step}`);
+    assert.deepEqual(cases, [
+      { id: "original", order: ["organizer-1", "platform-1"] },
+      { id: "string", order: "organizer-1" },
+      { id: "duplicate", order: ["organizer-1", "platform-1", "organizer-1"] },
+      { id: "missing", order: ["organizer-1"] },
+      { id: "unknown", order: ["organizer-1", "platform-1", "unknown-1"] },
+    ]);
+
+    const tuple = table.tuples.find((row) =>
+      row.method === "POST" && row.path === "/x-kix-contract-only/local-call" &&
+      row.action === "settlement_distribute" && row.machine === "settlement" &&
+      row.op === "distribute" && row.subject_field === "settlement_id");
+    assert.ok(tuple, "missing settlement distribution tuple");
+    assert.deepEqual(tuple.contexts.find((entry) => entry.context === context)?.steps[step], [vector_id]);
+    const vector = vectorsById.get(vector_id);
+    assert.ok(vector, `missing listed vector ${vector_id}`);
+    const request = { ...commandRequestFields(table.producer, tuple, vector, step), outcome: vector.expected };
+    const original = canonicalStringify(request.envelope);
+    const calls = [];
+    const client = createLocalCallClient({ transport: (envelope) => calls.push(structuredClone(envelope)) });
+    for (const { id, order } of cases) {
+      const envelope = structuredClone(request.envelope);
+      envelope.body.order = structuredClone(order);
+      const snapshot = canonicalStringify(envelope);
+      assert.equal(snapshot === original, id === "original", id);
+
+      const before = calls.length;
+      if (id === "string") {
+        assert.equal(rejectionCode(() => client.invoke(envelope)), "WRONG_TYPE", id);
+        assert.equal(calls.length, before, id);
+      } else {
+        client.invoke(envelope);
+        assert.equal(calls.length, before + 1, id);
+        assert.equal(canonicalStringify(calls[before]), snapshot, id);
+      }
+      assert.equal(canonicalStringify(envelope), snapshot, id);
+      const expect = id === "original" ? { status: SEMANTIC, vector_id } : hold;
+      check({ id, request: { ...request, envelope }, expect }, COMMERCE_MANIFEST_SHA256);
+    }
+  });
   await t.test("holds the readiness refusal for every listed Commerce action", () => {
     const { profile_revision, cases } = JSON.parse(
       read("sdk/conformance/vectors/commerce-readiness-refusals.vectors.json"),
