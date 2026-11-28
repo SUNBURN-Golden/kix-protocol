@@ -344,3 +344,16 @@ Not run, and not treated as passed:
 This evidence does not say the kernel is safe, that durability is solved, that the protocol is fully verified, or that `bootstrap-3` qualifies the enlarged catalogue. Consumers stay on HOLD pending a semantic-conformance tuple. The per-query SDK conformance extension belongs to `p-sdk-1`; this node changed only counts, revision and pins in the conformance test. A point query returning 200 is not payment, issuance, admission, chain currency or durability evidence. No production endpoint, no public host, no real funds, no PG/bank/KYC, no Sui testnet or mainnet, no new coin or TIX module, no R2 or own storage engine.
 
 Follow-up candidates: the three list queries with the bound values above; amend `READ_MODEL_QUERIES.md` §2.4 and §5 with the list change; extend `check_read_model_source_map.py` to read `queries` (a CI-script change, so it is not part of this node); register and pointer sync after merge; Astra confirmation of the builder-chosen wire labels.
+
+
+### Round 4 producer source (after supervisor commit)
+
+The round 4 producer inputs (updated integration-gate OpenAPI 200 description,
+request-boundary surrogate rejection, historical tuple labeling, and this
+validation record as of the first supervisor commit) are in
+`672b3a9052e4171096295dea84707d7325a542fa`, tree
+`57ed7d55d8255427b22adbdfd68414f0761e5d91`. The `bootstrap-3` manifest
+`producer.source_commit` / `source_tree` now pin that commit. The branch
+delivery head is the follow-up commit that publishes the regenerated manifest
+and sidecar. Exact-head CI run IDs for that delivery head are not invented
+here; they belong in the PR evidence after hosted workflows complete.
